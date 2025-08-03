@@ -14,6 +14,11 @@ import reflex_ui
 import deployHomepageInteractive as deploy_homepage_interactive
 
 
+def deployHomepageInteractive():
+    """Generate a minimal interactive homepage in app/page.tsx."""
+    return deploy_homepage_interactive.run()
+
+
 def bundleDeployKit():
     """
     Bundles the Hookah+ deploy kit: React UI, YAML configs, and Netlify-ready build.

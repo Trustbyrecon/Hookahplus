@@ -24,4 +24,4 @@ def run():
     target_path.parent.mkdir(parents=True, exist_ok=True)
     target_path.write_text(homepage_content.strip())
 
-    print("✅ Hookah+ interactive homepage deployed to app/page.tsx")
+    return "✅ Hookah+ interactive homepage deployed to app/page.tsx"
