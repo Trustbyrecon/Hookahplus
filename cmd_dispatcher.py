@@ -11,6 +11,12 @@ if MODULE_PATH not in sys.path:
     sys.path.insert(0, MODULE_PATH)
 
 import reflex_ui
+import deployHomepageInteractive as deploy_homepage_interactive
+
+
+def deployHomepageInteractive():
+    """Generate a minimal interactive homepage in app/page.tsx."""
+    return deploy_homepage_interactive.run()
 
 
 def bundleDeployKit():
@@ -228,6 +234,12 @@ def releaseTeaserVideo():
     return "🎬 Teaser video released across marketing outlets"
 
 
+def deployHomepageInteractive():
+    """Deploy an interactive Next.js homepage to app/page.tsx."""
+    deploy_homepage_interactive.run()
+    return "✅ Hookah+ interactive homepage deployed to app/page.tsx"
+
+
 
 # Optional: Extend as new cmd.* actions are needed
 
@@ -253,7 +265,8 @@ COMMANDS = {
     "alignMainPortalUI": alignMainPortalUI,
     "registerLoungeConfig": registerLoungeConfig,
     "pushPressKit": pushPressKit,
-    "releaseTeaserVideo": releaseTeaserVideo
+    "releaseTeaserVideo": releaseTeaserVideo,
+    "deployHomepageInteractive": deployHomepageInteractive
 }
 
 
