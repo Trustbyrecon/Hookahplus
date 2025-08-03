@@ -1,4 +1,8 @@
 {
+  "cmd.deployHomepageInteractive": {
+    "path": "cmd/modules/deployHomepageInteractive.py",
+    "description": "Injects a Next.js homepage with links for onboarding, demo, and live sessions."
+  },
   "cmd.fireSession": {
     "description": "Trigger a new Hookah+ session (start timer, log metadata, attach flavor config).",
     "path": "cmd/modules/fireSession.cmd.js",
