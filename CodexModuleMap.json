@@ -1,59 +1,52 @@
 {
-  "$schema": "https://reconai.dev/codex-module-map/v1",
-  "project": "HookahPlus",
-  "rootDir": "C:/Users/Dwayne Clark/Projects/HookahPlus",
-  "modules": {
-    "pos": {
-      "path": "pos",
-      "repo": "hookahplus-pos",
-      "triggers": [
-        "cmd.deployOperatorDashboard",
-        "cmd.startSessionFlow",
-        "cmd.injectReflexOverlay",
-        "cmd.packageCodexPOSFlow",
-        "cmd.launchFlavorTracker"
-      ]
-    },
-    "backend": {
-      "path": "backend",
-      "repo": "hookahplus-backend",
-      "triggers": [
-        "cmd.deployWebhookListener",
-        "cmd.syncReflexLog",
-        "cmd.activateTrustGraph",
-        "cmd.initSessionNotes",
-        "cmd.processStripeEvents"
-      ]
-    },
-    "netlify": {
-      "path": "netlify",
-      "repo": "hookahplus-netlify",
-      "triggers": [
-        "cmd.deployLandingPage",
-        "cmd.switchDomain",
-        "cmd.setupRedirects",
-        "cmd.bundlePublicTeasers",
-        "cmd.launchGTMStack"
-      ]
-    },
-    "docs": {
-      "path": "docs",
-      "repo": "hookahplus-docs",
-      "triggers": [
-        "cmd.generateMoatPDF",
-        "cmd.writeReflexGuide",
-        "cmd.exportPricingSheet",
-        "cmd.logWhisperJournal",
-        "cmd.snapshotPartnerStatus"
-      ]
-    },
-    "repoOps": {
-      "path": ".",
-      "repo": "hookahplus",
-      "codex": [
-        "ReflexArc_GitRemoteReassignment.codex.md"
-      ]
-    }
+  "cmd.fireSession": {
+    "description": "Trigger a new Hookah+ session (start timer, log metadata, attach flavor config).",
+    "path": "cmd/modules/fireSession.cmd.js",
+    "tags": ["session", "launch", "core"]
   },
-  "defaultModule": "pos"
+  "cmd.deployDashboard": {
+    "description": "Deploy the Hookah+ dashboard UI via Netlify using the existing token and config.",
+    "path": "cmd/modules/deployDashboard.cmd.js",
+    "tags": ["deploy", "netlify", "dashboard"]
+  },
+  "cmd.capturePOSWaitlist": {
+    "description": "Capture email and metadata of lounge partners interested in POS plugin integration.",
+    "path": "cmd/modules/capturePOSWaitlist.cmd.js",
+    "tags": ["onboarding", "partners", "POS"]
+  },
+  "cmd.openWhisperMemory": {
+    "description": "Open the Whisper Memory Panel for reflection, notes, or trust log replay.",
+    "path": "cmd/modules/openWhisperMemory.cmd.js",
+    "tags": ["reflection", "trust", "memory"]
+  },
+  "cmd.spawnVisualGrounderSketch": {
+    "description": "Initiate visual grounding sketch to parse layout photo and auto-generate seating zones.",
+    "path": "cmd/modules/spawnVisualGrounderSketch.cmd.js",
+    "tags": ["visual", "reflex", "layout"]
+  },
+  "cmd.alignMainPortalUI": {
+    "description": "Align the main homepage at hookahplus.net to the updated onboarding, demo, and live flow.",
+    "path": "cmd/modules/alignMainPortalUI.cmd.js",
+    "tags": ["homepage", "UI", "onboarding"]
+  },
+  "cmd.registerLoungeConfig": {
+    "description": "Register YAML configuration for lounge pricing, flavor logic, and QR session mapping.",
+    "path": "cmd/modules/registerLoungeConfig.cmd.js",
+    "tags": ["lounge", "config", "YAML"]
+  },
+  "cmd.bundleDeployKit": {
+    "description": "Bundle the deployable UI + metadata kit and push it to GitHub/Netlify automatically.",
+    "path": "cmd/modules/bundleDeployKit.cmd.js",
+    "tags": ["deploy", "kit", "CI/CD"]
+  },
+  "cmd.switchDomain": {
+    "description": "Switch the live domain to hookahplus.net and apply routing changes.",
+    "path": "cmd/modules/switchDomain.cmd.js",
+    "tags": ["domain", "routing", "live"]
+  },
+  "cmd.triggerReflexDeployChainRealignment": {
+    "description": "Log and realign the deploy chain state across Codex, Netlify, and GitHub PR history.",
+    "path": "cmd/modules/triggerReflexDeployChainRealignment.cmd.js",
+    "tags": ["reflex", "deploy", "log"]
+  }
 }
