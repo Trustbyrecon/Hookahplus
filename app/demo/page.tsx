@@ -1,6 +1,7 @@
 // app/demo/page.tsx
 
 import Link from 'next/link';
+import WhisperButton from './WhisperButton';
 
 export default function DemoPage() {
   return (
@@ -41,15 +42,7 @@ export default function DemoPage() {
           <div className="rounded-xl border border-zinc-700 bg-zinc-800 p-6 shadow hover:shadow-xl transition">
             <h2 className="text-xl font-semibold">🧠 Alie Voice Reflex</h2>
             <p className="mt-2 text-zinc-400">Experience a whisper from Alie guiding session flow.</p>
-            <button
-              onClick={() => {
-                // Trigger future Aliethia whisper interface here
-                alert('Aliethia Whisper Preview Activated 🎙️');
-              }}
-              className="mt-4 text-cyan-400 hover:underline"
-            >
-              Play Whisper →
-            </button>
+            <WhisperButton />
           </div>
         </div>
 
