@@ -1,0 +1,61 @@
+{
+    "cmd.deployFlavorMixUI": {
+        "version": "1.0.0",
+        "description": "Deploys the customer-facing Flavor Mix UI to Netlify.",
+        "when_to_use": "After staging and verifying flavor badge logic.",
+        "category": "deploy",
+        "requires": [
+            "netlify.toml",
+            "flavor badge module"
+        ]
+    },
+    "cmd.capturePOSWaitlist": {
+        "version": "1.0.0",
+        "description": "Activates waitlist form for POS plugin.",
+        "when_to_use": "During Phase 3 GTM push to capture POS interest.",
+        "category": "form",
+        "requires": [
+            "Netlify form config"
+        ]
+    },
+    "cmd.fireSession": {
+        "version": "1.1.0",
+        "description": "Triggers live session interface for lounge operator.",
+        "when_to_use": "When a new session starts in lounge.",
+        "category": "session",
+        "requires": [
+            "Session Tracker UI",
+            "active lounge config"
+        ]
+    },
+    "cmd.deployToNetlify": {
+        "version": "1.0.2",
+        "description": "Deploys entire repo to Netlify using main branch settings.",
+        "when_to_use": "Anytime a major push needs to be reflected on hookahplus.net.",
+        "category": "deploy",
+        "requires": [
+            "linked Netlify site",
+            "branch access"
+        ]
+    },
+    "cmd.pushPricingSheetPDF": {
+        "version": "1.0.1",
+        "description": "Pushes the latest Hookah+ pricing sheet to GTM portal.",
+        "when_to_use": "Right before onboarding new lounges.",
+        "category": "pricing",
+        "requires": [
+            "PDF asset",
+            "GTM portal live"
+        ]
+    },
+    "cmd.seedReflexAgent": {
+        "version": "1.0.0",
+        "description": "Seeds and activates a Reflex Agent into session trust loop.",
+        "when_to_use": "Post-deploy, or during operator session setup.",
+        "category": "reflex",
+        "requires": [
+            "agent config",
+            "Reflex SDK"
+        ]
+    }
+}
