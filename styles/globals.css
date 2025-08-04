@@ -13,7 +13,11 @@
 }
 
 body {
-  background-color: #ffffff;
-  color: #111827;
+  background-color: #1B1B1E; /* charcoal */
+  color: #E8D7B1; /* goldLumen */
   font-family: var(--font-sans);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
 }
