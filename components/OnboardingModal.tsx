@@ -2,6 +2,10 @@ import React, { useState } from 'react';
 import FlavorSelector from './FlavorSelector';
 import TimerControl from './TimerControl';
 
+declare const reflex:
+  | { logEvent: (event: string, payload: Record<string, unknown>) => void }
+  | undefined;
+
 interface Props {
   onComplete: () => void;
 }
@@ -18,7 +22,15 @@ export default function OnboardingModal({ onComplete }: Props) {
         <TimerControl value={timer} onChange={setTimer} />
         <button
           className="mt-4 w-full bg-blue-600 hover:bg-blue-500 text-white py-2 px-4 rounded"
-          onClick={onComplete}
+          onClick={() => {
+            reflex?.logEvent('loyalty_triggered', {
+              flavor,
+              mix: { timer },
+              epScore: 0,
+              timestamp: Date.now(),
+            });
+            onComplete();
+          }}
         >
           Save
         </button>
