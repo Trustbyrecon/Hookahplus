@@ -12,9 +12,9 @@ export default function Onboarding() {
   }, []);
 
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen p-8 bg-black text-white">
-      <h1 className="text-3xl font-bold mb-4">Lounge Onboarding</h1>
-      <p>Start configuring your lounge with Hookah+.</p>
+    <main className="flex flex-col items-center justify-center min-h-screen p-8 bg-charcoal text-goldLumen font-sans">
+      <h1 className="text-3xl font-display font-bold mb-4 text-ember">Lounge Onboarding</h1>
+      <p className="font-sans">Start configuring your lounge with Hookah+.</p>
       {showModal && <OnboardingModal onComplete={() => setShowModal(false)} />}
     </main>
   );

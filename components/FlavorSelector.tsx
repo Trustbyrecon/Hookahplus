@@ -9,6 +9,7 @@ interface Props {
   onChange: (value: string) => void;
 }
 
+// Moodbook classes are required; avoid overriding with default Tailwind colors.
 export default function FlavorSelector({ value, onChange }: Props) {
   const flavors = ['Mint', 'Double Apple', 'Grape'];
 
@@ -21,10 +22,10 @@ export default function FlavorSelector({ value, onChange }: Props) {
   };
 
   return (
-    <div className="mb-4">
+    <div className="mb-4 rounded bg-charcoal p-2 text-goldLumen font-sans">
       <label className="block text-sm font-medium mb-1">Flavor</label>
       <select
-        className="w-full p-2 bg-gray-800 text-white"
+        className="w-full p-2 bg-charcoal text-goldLumen"
         value={value}
         onChange={(e) => handleChange(e.target.value)}
       >

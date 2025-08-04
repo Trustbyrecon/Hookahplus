@@ -5,7 +5,9 @@
     "dev": "next dev",
     "build": "next build",
     "export": "next export",
-    "start": "next start"
+    "start": "next start",
+    "check:palette": "node scripts/check-color-classes.js",
+    "test": "echo 'No tests yet'"
   },
   "dependencies": {
     "js-yaml": "^4.1.0",

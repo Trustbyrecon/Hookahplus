@@ -9,8 +9,13 @@ const data = yaml.load(raw) as any;
 
 export default function HookahIndexPanel() {
   return (
+ codex/update-styles-in-hookah-indexpanel
     <div className="p-4 bg-charcoal rounded text-goldLumen mb-4">
       <h2 className="font-bold mb-2 text-ember">Hookah+ Index {data.index_version}</h2>
+
+    <div className="p-4 bg-deepMoss rounded text-goldLumen mb-4">
+      <h2 className="font-bold mb-2">Hookah+ Index {data.index_version}</h2>
+ main
       <div className="mb-2">
         <span className="font-semibold text-mystic">Base Metrics:</span>
         <ul className="list-disc list-inside marker:text-mystic">

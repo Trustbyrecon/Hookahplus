@@ -64,22 +64,38 @@ export default function Dashboard() {
   };
 
   return (
-    <main className="p-4 bg-black min-h-screen text-white">
-      <h1 className="text-2xl font-bold mb-4">Flavor Flow Dashboard</h1>
-      <ViewModeToggle mode={mode} onChange={setMode} />
-      {sessions.map((session) => (
-        <SessionCard
-          key={session.id}
-          session={session}
-          mode={mode}
-          onRefill={handleRefill}
-          onAddNote={handleAddNote}
-          onBurnout={handleBurnout}
-        />
-      ))}
-      {mode === 'manager' && <SessionAnalytics sessions={sessions} />}
-      {mode === 'owner' && <OwnerMetrics sessions={sessions} />}
-      <TrustLog sessions={sessions} />
+    <main className="min-h-screen bg-gradient-to-br from-charcoal via-deepMoss to-charcoal text-goldLumen font-sans p-6">
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-3xl font-display font-bold mb-6 text-ember text-center">
+          Flavor Flow Dashboard
+        </h1>
+        <ViewModeToggle mode={mode} onChange={setMode} />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {sessions.map((session) => (
+            <SessionCard
+              key={session.id}
+              session={session}
+              mode={mode}
+              onRefill={handleRefill}
+              onAddNote={handleAddNote}
+              onBurnout={handleBurnout}
+            />
+          ))}
+        </div>
+        {mode === 'manager' && (
+          <div className="mt-8">
+            <SessionAnalytics sessions={sessions} />
+          </div>
+        )}
+        {mode === 'owner' && (
+          <div className="mt-8">
+            <OwnerMetrics sessions={sessions} />
+          </div>
+        )}
+        <div className="mt-8">
+          <TrustLog sessions={sessions} />
+        </div>
+      </div>
     </main>
   );
 }
