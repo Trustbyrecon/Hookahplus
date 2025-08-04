@@ -26,6 +26,12 @@ export default function SelectorAphrodite({ flavors }: Props) {
     localStorage.setItem('flavor-metrics', JSON.stringify(metrics));
   }, [metrics]);
 
+  useEffect(() => {
+    if (selected.length > 0) {
+      alert('Session memory secured.');
+    }
+  }, [selected]);
+
   const toggleFlavor = (name: string) => {
     setSelected((prev) =>
       prev.includes(name) ? prev.filter((f) => f !== name) : [...prev, name]
@@ -36,12 +42,6 @@ export default function SelectorAphrodite({ flavors }: Props) {
     }));
   };
 
-  const metadata = {
-    stripe: { flavors: selected },
-    loyalty: { points: selected.length * 5 },
-  };
-
-  const mixTags = selected.join(', ');
 
   return (
     <div className="mt-4">
@@ -65,24 +65,7 @@ export default function SelectorAphrodite({ flavors }: Props) {
 
       {selected.length > 0 && (
         <div className="mt-6 space-y-4">
-          <div>
-            <h3 className="font-semibold">Suggested Mix Tags</h3>
-            <p className="text-sm text-zinc-400">{mixTags}</p>
-          </div>
-          <div>
-            <h3 className="font-semibold">Metadata Injection</h3>
-            <pre className="text-xs bg-zinc-900 p-2 rounded">
-              {JSON.stringify(metadata, null, 2)}
-            </pre>
-          </div>
-          <div>
-            <h3 className="font-semibold">Popularity Metrics</h3>
-            <ul className="text-sm text-zinc-400">
-              {Object.entries(metrics).map(([name, count]) => (
-                <li key={name}>{name}: {count} taps</li>
-              ))}
-            </ul>
-          </div>
+          <p className="text-mystic">Your loyalty flavor has been saved.</p>
         </div>
       )}
     </div>
