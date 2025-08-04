@@ -17,12 +17,12 @@ export const ReflexCard: React.FC<ReflexCardProps> = ({ title, description, cta,
       {href ? (
         <Link
           href={href}
-          className="inline-block bg-ember hover:bg-mystic text-white mt-4 px-4 py-2 rounded"
+          className="inline-block bg-ember hover:bg-mystic text-goldLumen mt-4 px-4 py-2 rounded"
         >
           {cta}
         </Link>
       ) : (
-        <button className="bg-ember hover:bg-mystic text-white mt-4 px-4 py-2 rounded">{cta}</button>
+        <button className="bg-ember hover:bg-mystic text-goldLumen mt-4 px-4 py-2 rounded">{cta}</button>
       )}
     </div>
   );

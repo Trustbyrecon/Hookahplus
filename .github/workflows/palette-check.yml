@@ -1,0 +1,24 @@
+name: Palette Check
+
+on:
+  pull_request:
+
+jobs:
+  palette:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      - run: npm ci
+      - name: check palette
+        run: |
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | tr '\n' ' ')
+          if [ -n "$CHANGED_FILES" ]; then
+            npm run check:palette -- $CHANGED_FILES
+          else
+            echo 'No files to check.'
+          fi

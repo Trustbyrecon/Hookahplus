@@ -12,7 +12,11 @@ export default function TimerControl({ value, onChange }: Props) {
       <input
         type="number"
         min="0"
+ codex/add-moodbook-fonts-to-components
         className="w-full p-2 bg-gray-800 text-white font-sans"
+
+        className="w-full p-2 bg-charcoal text-goldLumen"
+ main
         value={value}
         onChange={(e) => onChange(parseInt(e.target.value, 10))}
       />
