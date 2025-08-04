@@ -62,7 +62,11 @@ export default function SessionCard({ session, mode, onRefill, onAddNote, onBurn
         <div className="space-x-2">
           <button
             onClick={() => onRefill(session.id)}
+ codex/audit-and-replace-color-classes
             className="bg-charcoal/20 px-3 py-1 rounded disabled:opacity-50"
+
+            className="bg-charcoal bg-opacity-20 px-3 py-1 rounded disabled:opacity-50"
+ main
             disabled={status.label === 'Burnt Out'}
           >
             Refill
@@ -72,7 +76,10 @@ export default function SessionCard({ session, mode, onRefill, onAddNote, onBurn
               const note = window.prompt('Session note');
               if (note) onAddNote(session.id, note);
             }}
+ codex/audit-and-replace-color-classes
             className="bg-charcoal/20 px-3 py-1 rounded"
+            className="bg-charcoal bg-opacity-20 px-3 py-1 rounded"
+main
           >
             Add Note
           </button>
