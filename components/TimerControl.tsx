@@ -12,7 +12,7 @@ export default function TimerControl({ value, onChange }: Props) {
       <input
         type="number"
         min="0"
-        className="w-full p-2 bg-gray-800 text-white"
+        className="w-full p-2 bg-charcoal text-goldLumen"
         value={value}
         onChange={(e) => onChange(parseInt(e.target.value, 10))}
       />
