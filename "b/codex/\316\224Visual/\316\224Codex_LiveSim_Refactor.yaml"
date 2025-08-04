@@ -20,13 +20,13 @@ update:
 section_icons:
   - Demo: "🧠"
   - Live Session: "🌬️"
-  - Flavor Flow: "🔥" or "🌿"
+  - Flavor Flow: "\"🔥\" or \"🌿\""
   - Loyalty Dashboard: "📈"
-  - Alie Voice Reflex: "🪶" or "🎧"
+  - Alie Voice Reflex: "\"🪶\" or \"🎧\""
 
 ---
 
-🧩 Live Session Simulation: Anchored Flow Logic
+# 🧩 Live Session Simulation: Anchored Flow Logic
 
 anchor_statement: >
   "Preview how customers engage, order, and unlock flavor points."
@@ -39,7 +39,7 @@ live_session_flow:
     - whisper overlay from Alie
     - time-tracking logic
 
-outcome:
+outcome: |
   ✅ Yes — **Flavor Mix is an active component of Live Session**
   → This confirms: mix = substep in order experience
 
@@ -53,29 +53,27 @@ recommended_refactor:
 
 ---
 
-🔄 Trust Loop Enhancement:
-- After flavor is mixed and submitted:
-  - Inject to SessionNotes
-  - Trigger `EP Score +0.3` increase
-  - Whisper: "You've unlocked a loyalty thread."
+trust_loop_enhancement:
+  - After flavor is mixed and submitted:
+    - Inject to SessionNotes
+    - Trigger `EP Score +0.3` increase
+    - Whisper: "You've unlocked a loyalty thread."
 
 ---
 
 commands:
-  - cmd.reorderHomepageSections(order=["Demo", "Live", "Onboarding"])
-  - cmd.mergeFlavorMixIntoLive()
-  - cmd.updateIconsAutonomously()
-  - cmd.injectSessionNotesOnFlavorSave()
-  - cmd.triggerWhisper('loyalty/mix/unlock')
+  - "cmd.reorderHomepageSections(order=[\"Demo\", \"Live\", \"Onboarding\"])"
+  - "cmd.mergeFlavorMixIntoLive()"
+  - "cmd.updateIconsAutonomously()"
+  - "cmd.injectSessionNotesOnFlavorSave()"
+  - "cmd.triggerWhisper('loyalty/mix/unlock')"
 
 ---
 
-🧠 Reflex Sync Forecast:
-| Action                    | Reflex Score Impact |
-|---------------------------|---------------------|
-| Homepage reorder          | +0.4                |
-| Flavor flow merger        | +0.6                |
-| Whisper on unlock         | +0.3                |
-| SessionNotes memory save  | +0.5                |
-
----
+'🧠 Reflex Sync Forecast': |
+  | Action                    | Reflex Score Impact |
+  |---------------------------|---------------------|
+  | Homepage reorder          | +0.4                |
+  | Flavor flow merger        | +0.6                |
+  | Whisper on unlock         | +0.3                |
+  | SessionNotes memory save  | +0.5                |
