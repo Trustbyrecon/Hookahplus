@@ -20,11 +20,12 @@ interface Props {
   onBurnout: (id: number) => void;
 }
 
+// Moodbook classes are required; avoid overriding with default Tailwind colors.
 function getStatus(elapsed: number) {
-  if (elapsed >= 70) return { label: 'Burnt Out', tone: 'bg-red-700' };
-  if (elapsed >= 45) return { label: 'Shisha Low', tone: 'bg-orange-600' };
-  if (elapsed >= 25) return { label: 'Coal Low', tone: 'bg-yellow-600' };
-  return { label: 'Active', tone: 'bg-green-700' };
+  if (elapsed >= 70) return { label: 'Burnt Out', tone: 'bg-ember' };
+  if (elapsed >= 45) return { label: 'Shisha Low', tone: 'bg-mystic' };
+  if (elapsed >= 25) return { label: 'Coal Low', tone: 'bg-deepMoss' };
+  return { label: 'Active', tone: 'bg-charcoal' };
 }
 
 export default function SessionCard({ session, mode, onRefill, onAddNote, onBurnout }: Props) {
@@ -47,7 +48,7 @@ export default function SessionCard({ session, mode, onRefill, onAddNote, onBurn
   const price = session.flavors.length * 15 + session.refills * 5;
 
   return (
-    <div className={`p-4 rounded-xl text-white mb-4 ${status.tone}`}>
+    <div className={`p-4 rounded-xl mb-4 bg-charcoal text-goldLumen ${status.tone}`}>
       <h3 className="font-bold text-lg mb-1">Table {session.table}</h3>
       <div className="mb-2">
         {session.flavors.map((f) => (
@@ -62,7 +63,7 @@ export default function SessionCard({ session, mode, onRefill, onAddNote, onBurn
         <div className="space-x-2">
           <button
             onClick={() => onRefill(session.id)}
-            className="bg-black bg-opacity-20 px-3 py-1 rounded disabled:opacity-50"
+            className="bg-charcoal/20 px-3 py-1 rounded disabled:opacity-50"
             disabled={status.label === 'Burnt Out'}
           >
             Refill
@@ -72,7 +73,7 @@ export default function SessionCard({ session, mode, onRefill, onAddNote, onBurn
               const note = window.prompt('Session note');
               if (note) onAddNote(session.id, note);
             }}
-            className="bg-black bg-opacity-20 px-3 py-1 rounded"
+            className="bg-charcoal/20 px-3 py-1 rounded"
           >
             Add Note
           </button>

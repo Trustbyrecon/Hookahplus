@@ -5,14 +5,15 @@ interface Props {
   onChange: (value: number) => void;
 }
 
+// Moodbook classes are required; avoid overriding with default Tailwind colors.
 export default function TimerControl({ value, onChange }: Props) {
   return (
-    <div className="mb-4">
+    <div className="mb-4 rounded bg-charcoal p-2 text-goldLumen">
       <label className="block text-sm font-medium mb-1">Session Timer (min)</label>
       <input
         type="number"
         min="0"
-        className="w-full p-2 bg-gray-800 text-white"
+        className="w-full p-2 bg-deepMoss text-goldLumen"
         value={value}
         onChange={(e) => onChange(parseInt(e.target.value, 10))}
       />
