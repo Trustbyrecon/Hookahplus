@@ -2,7 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --font-display: 'Playfair Display', serif;
+  --font-sans: 'Inter', sans-serif;
+
+  --text-xl: 48px;
+  --text-lg: 28px;
+  --text-base: 18px;
+  --text-sm: 14px;
+}
+
 body {
   background-color: #ffffff;
   color: #111827;
+  font-family: var(--font-sans);
 }
