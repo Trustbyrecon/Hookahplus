@@ -15,7 +15,7 @@ export default function ViewModeToggle({ mode, onChange }: Props) {
       {modes.map((m) => (
         <button
           key={m}
-          className={`px-3 py-1 rounded ${m === mode ? 'bg-ember text-white' : 'bg-gray-800 text-gray-300'}`}
+          className={`px-3 py-1 rounded ${m === mode ? 'bg-ember text-goldLumen' : 'bg-charcoal text-goldLumen/70'}`}
           onClick={() => onChange(m)}
         >
           {m.charAt(0).toUpperCase() + m.slice(1)}

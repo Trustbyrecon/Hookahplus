@@ -47,7 +47,7 @@ export default function SessionCard({ session, mode, onRefill, onAddNote, onBurn
   const price = session.flavors.length * 15 + session.refills * 5;
 
   return (
-    <div className={`p-4 rounded-xl text-white mb-4 ${status.tone}`}>
+    <div className={`p-4 rounded-xl text-goldLumen mb-4 ${status.tone}`}>
       <h3 className="font-bold text-lg mb-1">Table {session.table}</h3>
       <div className="mb-2">
         {session.flavors.map((f) => (
@@ -62,7 +62,7 @@ export default function SessionCard({ session, mode, onRefill, onAddNote, onBurn
         <div className="space-x-2">
           <button
             onClick={() => onRefill(session.id)}
-            className="bg-black bg-opacity-20 px-3 py-1 rounded disabled:opacity-50"
+            className="bg-charcoal/20 px-3 py-1 rounded disabled:opacity-50"
             disabled={status.label === 'Burnt Out'}
           >
             Refill
@@ -72,7 +72,7 @@ export default function SessionCard({ session, mode, onRefill, onAddNote, onBurn
               const note = window.prompt('Session note');
               if (note) onAddNote(session.id, note);
             }}
-            className="bg-black bg-opacity-20 px-3 py-1 rounded"
+            className="bg-charcoal/20 px-3 py-1 rounded"
           >
             Add Note
           </button>
