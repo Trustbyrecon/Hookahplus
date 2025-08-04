@@ -11,6 +11,10 @@ git submodule update --init --recursive
 
 This command fetches the `netlify` submodule and checks out the appropriate commit.
 
+## Global Styles
+
+Ensure every Next.js entry point (`pages/_app.tsx`, custom `_document.tsx`, or `app/layout.tsx`) imports `styles/globals.css`. For standalone sub-apps like `app/dashboard`, include the global import or copy the moodbook variables so styling stays consistent.
+
 ## Command Dispatcher
 Utility tasks can be run via `cmd_dispatcher.py`. Invoke it with a command name to call the corresponding helper in `cmd/modules/reflex_ui.py`:
 
