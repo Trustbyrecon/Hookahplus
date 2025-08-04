@@ -25,3 +25,7 @@ Available commands:
 - `fireSession` – launch a simulated session with QR tracking and dynamic pricing
 
 More commands can be added by extending `cmd/modules/reflex_ui.py` and updating the `COMMANDS` table in `cmd_dispatcher.py`.
+
+## Design Guidelines
+
+Refer to [design-guidelines.md](design-guidelines.md) for Moodbook styling rules and the approved color palette.
