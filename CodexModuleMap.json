@@ -52,5 +52,10 @@
     "description": "Log and realign the deploy chain state across Codex, Netlify, and GitHub PR history.",
     "path": "cmd/modules/triggerReflexDeployChainRealignment.cmd.js",
     "tags": ["reflex", "deploy", "log"]
+  },
+  "codex.chronosKairos": {
+    "description": "Agent Chronos_ΔKairos for session timing and reflex decay tracking.",
+    "path": "codex/Modules/2025-08-02_chronos_kairos.ts",
+    "tags": ["session", "timer", "reflex"]
   }
 }
