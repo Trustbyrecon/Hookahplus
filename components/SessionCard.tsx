@@ -47,8 +47,13 @@ export default function SessionCard({ session, mode, onRefill, onAddNote, onBurn
   const price = session.flavors.length * 15 + session.refills * 5;
 
   return (
+ codex/add-moodbook-fonts-to-components
+    <div className={`p-4 rounded-xl text-white mb-4 ${status.tone} font-sans`}>
+      <h3 className="font-display font-bold text-lg mb-1">Table {session.table}</h3>
+
     <div className={`p-4 rounded-xl text-goldLumen mb-4 ${status.tone}`}>
       <h3 className="font-bold text-lg mb-1">Table {session.table}</h3>
+ main
       <div className="mb-2">
         {session.flavors.map((f) => (
           <FlavorBadge key={f} flavor={f} />

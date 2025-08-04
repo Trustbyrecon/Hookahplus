@@ -21,10 +21,14 @@ export default function FlavorSelector({ value, onChange }: Props) {
   };
 
   return (
-    <div className="mb-4">
+    <div className="mb-4 font-sans">
       <label className="block text-sm font-medium mb-1">Flavor</label>
       <select
+ codex/add-moodbook-fonts-to-components
+        className="w-full p-2 bg-gray-800 text-white font-sans"
+
         className="w-full p-2 bg-charcoal text-goldLumen"
+ main
         value={value}
         onChange={(e) => handleChange(e.target.value)}
       >

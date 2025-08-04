@@ -7,12 +7,16 @@ interface Props {
 
 export default function TimerControl({ value, onChange }: Props) {
   return (
-    <div className="mb-4">
+    <div className="mb-4 font-sans">
       <label className="block text-sm font-medium mb-1">Session Timer (min)</label>
       <input
         type="number"
         min="0"
+ codex/add-moodbook-fonts-to-components
+        className="w-full p-2 bg-gray-800 text-white font-sans"
+
         className="w-full p-2 bg-charcoal text-goldLumen"
+ main
         value={value}
         onChange={(e) => onChange(parseInt(e.target.value, 10))}
       />
