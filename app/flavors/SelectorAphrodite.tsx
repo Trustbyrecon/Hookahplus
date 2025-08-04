@@ -52,13 +52,13 @@ export default function SelectorAphrodite({ flavors }: Props) {
               onClick={() => toggleFlavor(flavor.name)}
               className={`px-4 py-2 border rounded ${
                 selected.includes(flavor.name)
-                  ? 'bg-cyan-600 text-white'
-                  : 'bg-zinc-800 text-zinc-200'
+                  ? 'bg-ember text-goldLumen'
+                  : 'bg-charcoal text-mystic'
               }`}
             >
               {flavor.name}
             </button>
-            <span className="ml-2 text-sm text-zinc-400">{flavor.notes}</span>
+            <span className="ml-2 text-sm text-goldLumen">{flavor.notes}</span>
           </li>
         ))}
       </ul>
