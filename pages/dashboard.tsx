@@ -64,8 +64,8 @@ export default function Dashboard() {
   };
 
   return (
-    <main className="p-4 bg-black min-h-screen text-white">
-      <h1 className="text-2xl font-bold mb-4">Flavor Flow Dashboard</h1>
+    <main className="p-4 bg-black min-h-screen text-white font-sans">
+      <h1 className="text-2xl font-display font-bold mb-4">Flavor Flow Dashboard</h1>
       <ViewModeToggle mode={mode} onChange={setMode} />
       {sessions.map((session) => (
         <SessionCard

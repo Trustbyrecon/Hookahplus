@@ -9,8 +9,8 @@ export default function FlavorsPage() {
   const flavors = yaml.load(fileContents) as { name: string; notes: string }[];
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold">Flavor Selector</h1>
+    <div className="p-8 font-sans">
+      <h1 className="text-2xl font-display font-bold">Flavor Selector</h1>
       <SelectorAphrodite flavors={flavors} />
     </div>
   );

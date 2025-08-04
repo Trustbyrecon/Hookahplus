@@ -44,13 +44,13 @@ export default function SelectorAphrodite({ flavors }: Props) {
 
 
   return (
-    <div className="mt-4">
+    <div className="mt-4 font-sans">
       <ul className="space-y-2">
         {flavors.map((flavor) => (
           <li key={flavor.name}>
             <button
               onClick={() => toggleFlavor(flavor.name)}
-              className={`px-4 py-2 border rounded ${
+              className={`px-4 py-2 border rounded font-sans ${
                 selected.includes(flavor.name)
                   ? 'bg-cyan-600 text-white'
                   : 'bg-zinc-800 text-zinc-200'
@@ -65,7 +65,7 @@ export default function SelectorAphrodite({ flavors }: Props) {
 
       {selected.length > 0 && (
         <div className="mt-6 space-y-4">
-          <p className="text-mystic">Your loyalty flavor has been saved.</p>
+          <p className="text-mystic font-sans">Your loyalty flavor has been saved.</p>
         </div>
       )}
     </div>

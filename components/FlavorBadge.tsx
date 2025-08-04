@@ -14,7 +14,10 @@ const flavorEmoji: Record<string, string> = {
 
 export default function FlavorBadge({ flavor }: Props) {
   return (
-    <span className="inline-flex items-center px-2 py-1 bg-gray-800 rounded text-sm mr-1" title={flavor}>
+    <span
+      className="font-sans inline-flex items-center px-2 py-1 bg-gray-800 rounded text-sm mr-1"
+      title={flavor}
+    >
       <span className="mr-1">{flavorEmoji[flavor] || '🍓'}</span>
       {flavor}
     </span>

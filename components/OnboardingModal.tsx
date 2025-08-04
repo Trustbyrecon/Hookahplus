@@ -16,8 +16,8 @@ export default function OnboardingModal({ onComplete }: Props) {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70">
-      <div className="bg-gray-900 p-6 rounded shadow-xl w-80">
-        <h2 className="text-xl font-bold mb-4">Set Up Session</h2>
+      <div className="bg-gray-900 p-6 rounded shadow-xl w-80 font-sans">
+        <h2 className="text-xl font-display font-bold mb-4">Set Up Session</h2>
         <FlavorSelector value={flavor} onChange={setFlavor} />
         <TimerControl value={timer} onChange={setTimer} />
         <button

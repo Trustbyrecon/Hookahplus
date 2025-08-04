@@ -21,10 +21,10 @@ export default function FlavorSelector({ value, onChange }: Props) {
   };
 
   return (
-    <div className="mb-4">
+    <div className="mb-4 font-sans">
       <label className="block text-sm font-medium mb-1">Flavor</label>
       <select
-        className="w-full p-2 bg-gray-800 text-white"
+        className="w-full p-2 bg-gray-800 text-white font-sans"
         value={value}
         onChange={(e) => handleChange(e.target.value)}
       >

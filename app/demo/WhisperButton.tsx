@@ -7,7 +7,7 @@ export default function WhisperButton() {
         // Trigger future Aliethia whisper interface here
         alert('Aliethia Whisper Preview Activated 🎙️');
       }}
-      className="mt-4 text-cyan-400 hover:underline"
+      className="mt-4 text-cyan-400 hover:underline font-sans"
     >
       Play Whisper →
     </button>
