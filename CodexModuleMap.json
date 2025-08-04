@@ -52,5 +52,10 @@
     "description": "Log and realign the deploy chain state across Codex, Netlify, and GitHub PR history.",
     "path": "cmd/modules/triggerReflexDeployChainRealignment.cmd.js",
     "tags": ["reflex", "deploy", "log"]
+  },
+  "agent.pricerHermes": {
+    "path": "codex/Modules/pricer_hermes.ts",
+    "description": "Dynamic pricing logic with premium detection and margin sync.",
+    "tags": ["pricing", "stripe", "drift"]
   }
 }
