@@ -12,9 +12,20 @@ export default function Onboarding() {
   }, []);
 
   return (
+ codex/update-component-styles-to-moodbook-palette
     <main className="flex flex-col items-center justify-center min-h-screen p-8 bg-charcoal text-goldLumen">
       <h1 className="text-3xl font-bold mb-4 text-ember">Lounge Onboarding</h1>
+
+ codex/add-moodbook-fonts-to-components
+    <main className="flex flex-col items-center justify-center min-h-screen p-8 bg-black text-white font-sans">
+      <h1 className="text-3xl font-display font-bold mb-4">Lounge Onboarding</h1>
+      <p className="font-sans">Start configuring your lounge with Hookah+.</p>
+
+    <main className="flex flex-col items-center justify-center min-h-screen p-8 bg-charcoal text-goldLumen">
+      <h1 className="text-3xl font-bold mb-4">Lounge Onboarding</h1>
+ main
       <p>Start configuring your lounge with Hookah+.</p>
+ main
       {showModal && <OnboardingModal onComplete={() => setShowModal(false)} />}
     </main>
   );

@@ -20,11 +20,17 @@ interface Props {
   onBurnout: (id: number) => void;
 }
 
+// Moodbook classes are required; avoid overriding with default Tailwind colors.
 function getStatus(elapsed: number) {
   if (elapsed >= 70) return { label: 'Burnt Out', tone: 'bg-ember' };
   if (elapsed >= 45) return { label: 'Shisha Low', tone: 'bg-mystic' };
+ codex/update-component-styles-to-moodbook-palette
   if (elapsed >= 25) return { label: 'Coal Low', tone: 'bg-charcoal' };
   return { label: 'Active', tone: 'bg-deepMoss' };
+
+  if (elapsed >= 25) return { label: 'Coal Low', tone: 'bg-deepMoss' };
+  return { label: 'Active', tone: 'bg-charcoal' };
+ main
 }
 
 export default function SessionCard({ session, mode, onRefill, onAddNote, onBurnout }: Props) {
@@ -47,8 +53,21 @@ export default function SessionCard({ session, mode, onRefill, onAddNote, onBurn
   const price = session.flavors.length * 15 + session.refills * 5;
 
   return (
+ codex/update-component-styles-to-moodbook-palette
     <div className={`p-4 rounded-xl text-goldLumen mb-4 ${status.tone}`}>
+
+ codex/add-moodbook-classes-to-reusable-components
+    <div className={`p-4 rounded-xl mb-4 bg-charcoal text-goldLumen ${status.tone}`}>
+
+ codex/add-moodbook-fonts-to-components
+    <div className={`p-4 rounded-xl text-white mb-4 ${status.tone} font-sans`}>
+      <h3 className="font-display font-bold text-lg mb-1">Table {session.table}</h3>
+
+    <div className={`p-4 rounded-xl text-goldLumen mb-4 ${status.tone}`}>
+ main
+ main
       <h3 className="font-bold text-lg mb-1">Table {session.table}</h3>
+ main
       <div className="mb-2">
         {session.flavors.map((f) => (
           <FlavorBadge key={f} flavor={f} />
@@ -62,7 +81,19 @@ export default function SessionCard({ session, mode, onRefill, onAddNote, onBurn
         <div className="space-x-2">
           <button
             onClick={() => onRefill(session.id)}
+ codex/update-component-styles-to-moodbook-palette
             className="bg-charcoal bg-opacity-20 px-3 py-1 rounded disabled:opacity-50"
+
+ codex/add-moodbook-classes-to-reusable-components
+            className="bg-charcoal/20 px-3 py-1 rounded disabled:opacity-50"
+
+ codex/audit-and-replace-color-classes
+            className="bg-charcoal/20 px-3 py-1 rounded disabled:opacity-50"
+
+            className="bg-charcoal bg-opacity-20 px-3 py-1 rounded disabled:opacity-50"
+ main
+ main
+ main
             disabled={status.label === 'Burnt Out'}
           >
             Refill
@@ -72,7 +103,18 @@ export default function SessionCard({ session, mode, onRefill, onAddNote, onBurn
               const note = window.prompt('Session note');
               if (note) onAddNote(session.id, note);
             }}
+ codex/update-component-styles-to-moodbook-palette
             className="bg-charcoal bg-opacity-20 px-3 py-1 rounded"
+
+ codex/add-moodbook-classes-to-reusable-components
+            className="bg-charcoal/20 px-3 py-1 rounded"
+
+ codex/audit-and-replace-color-classes
+            className="bg-charcoal/20 px-3 py-1 rounded"
+            className="bg-charcoal bg-opacity-20 px-3 py-1 rounded"
+main
+ main
+ main
           >
             Add Note
           </button>

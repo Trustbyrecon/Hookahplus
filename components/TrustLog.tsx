@@ -8,9 +8,9 @@ interface Props {
 // Renders session notes for audit purposes; hidden from regular view
 export default function TrustLog({ sessions }: Props) {
   return (
-    <div className="hidden" aria-hidden>
+    <div className="hidden font-sans" aria-hidden>
       {sessions.map((s) => (
-        <pre key={s.id} data-table={s.table}>
+        <pre key={s.id} data-table={s.table} className="font-mono">
           {JSON.stringify(s.notes)}
         </pre>
       ))}

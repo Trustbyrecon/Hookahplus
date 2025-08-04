@@ -64,8 +64,18 @@ export default function Dashboard() {
   };
 
   return (
+ codex/update-component-styles-to-moodbook-palette
     <main className="p-4 bg-charcoal min-h-screen text-goldLumen">
       <h1 className="text-2xl font-bold mb-4 text-ember">Flavor Flow Dashboard</h1>
+
+ codex/add-moodbook-fonts-to-components
+    <main className="p-4 bg-black min-h-screen text-white font-sans">
+      <h1 className="text-2xl font-display font-bold mb-4">Flavor Flow Dashboard</h1>
+
+    <main className="p-4 bg-charcoal min-h-screen text-goldLumen">
+      <h1 className="text-2xl font-bold mb-4">Flavor Flow Dashboard</h1>
+ main
+ main
       <ViewModeToggle mode={mode} onChange={setMode} />
       {sessions.map((session) => (
         <SessionCard
