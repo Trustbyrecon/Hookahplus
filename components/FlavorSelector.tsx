@@ -26,6 +26,9 @@ export default function FlavorSelector({ value, onChange }: Props) {
     <div className="mb-4 rounded bg-charcoal p-2 text-goldLumen">
       <label className="block text-sm font-medium mb-1">Flavor</label>
       <select
+ codex/update-component-styles-to-moodbook-palette
+        className="w-full p-2 bg-charcoal text-goldLumen"
+
         className="w-full p-2 bg-deepMoss text-goldLumen"
 
     <div className="mb-4 font-sans">
@@ -35,6 +38,7 @@ export default function FlavorSelector({ value, onChange }: Props) {
         className="w-full p-2 bg-gray-800 text-white font-sans"
 
         className="w-full p-2 bg-charcoal text-goldLumen"
+ main
  main
  main
         value={value}

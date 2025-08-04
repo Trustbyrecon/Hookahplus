@@ -15,6 +15,10 @@ export default function OnboardingModal({ onComplete }: Props) {
   const [timer, setTimer] = useState(60);
 
   return (
+ codex/update-component-styles-to-moodbook-palette
+    <div className="fixed inset-0 flex items-center justify-center bg-charcoal bg-opacity-70">
+      <div className="bg-deepMoss p-6 rounded shadow-xl w-80 text-goldLumen">
+
  codex/add-moodbook-fonts-to-components
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70">
       <div className="bg-gray-900 p-6 rounded shadow-xl w-80 font-sans">
@@ -27,6 +31,7 @@ export default function OnboardingModal({ onComplete }: Props) {
     <div className="fixed inset-0 flex items-center justify-center bg-charcoal bg-opacity-70">
       <div className="bg-charcoal text-goldLumen p-6 rounded shadow-xl w-80">
 main
+ main
         <h2 className="text-xl font-bold mb-4">Set Up Session</h2>
  main
         <FlavorSelector value={flavor} onChange={setFlavor} />

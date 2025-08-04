@@ -9,7 +9,7 @@ const data = yaml.load(raw) as any;
 
 export default function HookahIndexPanel() {
   return (
-    <div className="p-4 bg-gray-900 rounded text-white mb-4">
+    <div className="p-4 bg-deepMoss rounded text-goldLumen mb-4">
       <h2 className="font-bold mb-2">Hookah+ Index {data.index_version}</h2>
       <div className="mb-2">
         <span className="font-semibold">Base Metrics:</span>

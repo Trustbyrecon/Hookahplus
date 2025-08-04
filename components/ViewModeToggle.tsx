@@ -17,6 +17,9 @@ export default function ViewModeToggle({ mode, onChange }: Props) {
       {modes.map((m) => (
         <button
           key={m}
+ codex/update-component-styles-to-moodbook-palette
+          className={`px-3 py-1 rounded ${m === mode ? 'bg-ember text-goldLumen' : 'bg-charcoal text-mystic'}`}
+
           className={`rounded px-3 py-1 ${
             m === mode ? 'bg-ember text-charcoal' : 'bg-deepMoss text-goldLumen'
           }`}
@@ -31,6 +34,7 @@ export default function ViewModeToggle({ mode, onChange }: Props) {
           }`}
 
           className={`px-3 py-1 rounded ${m === mode ? 'bg-ember text-goldLumen' : 'bg-charcoal text-goldLumen/70'}`}
+ main
  main
  main
           onClick={() => onChange(m)}
