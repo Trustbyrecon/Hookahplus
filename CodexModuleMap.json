@@ -53,9 +53,16 @@
     "path": "cmd/modules/triggerReflexDeployChainRealignment.cmd.js",
     "tags": ["reflex", "deploy", "log"]
   },
+ codex/implement-session-time-control-features
   "codex.chronosKairos": {
     "description": "Agent Chronos_ΔKairos for session timing and reflex decay tracking.",
     "path": "codex/Modules/2025-08-02_chronos_kairos.ts",
     "tags": ["session", "timer", "reflex"]
+
+  "agent.pricerHermes": {
+    "path": "codex/Modules/pricer_hermes.ts",
+    "description": "Dynamic pricing logic with premium detection and margin sync.",
+    "tags": ["pricing", "stripe", "drift"]
+ main
   }
 }
