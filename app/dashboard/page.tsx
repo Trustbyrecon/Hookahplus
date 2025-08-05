@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from 'react';
-import SessionCard, { Session } from '../components/SessionCard';
-import ViewModeToggle, { ViewMode } from '../components/ViewModeToggle';
-import TrustLog from '../components/TrustLog';
-import SessionAnalytics from '../components/SessionAnalytics';
-import OwnerMetrics from '../components/OwnerMetrics';
+import SessionCard, { Session } from '../../components/SessionCard';
+import ViewModeToggle, { ViewMode } from '../../components/ViewModeToggle';
+import TrustLog from '../../components/TrustLog';
+import SessionAnalytics from '../../components/SessionAnalytics';
+import OwnerMetrics from '../../components/OwnerMetrics';
 
 const initialSessions: Session[] = [
   {
