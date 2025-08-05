@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import yaml from 'js-yaml';
 
+// Renders key data from the Hookah+ index YAML file.
 const indexPath = path.join(process.cwd(), 'codex/indices/ΔHookahIndex_V1.yaml');
 const raw = fs.readFileSync(indexPath, 'utf8');
 const data = yaml.load(raw) as any;
