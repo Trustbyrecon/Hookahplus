@@ -3,11 +3,13 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ReflexCard from '../components/ReflexCard';
-import WhisperTrigger from '../components/WhisperTrigger';
 import OnboardingModal from '../components/OnboardingModal';
-import TrustArcDisplay from '../components/TrustArcDisplay';
-import ReflexPromptModal from '../components/ReflexPromptModal';
-import MemoryPulseTracker from '../components/MemoryPulseTracker';
+import {
+  WhisperTrigger,
+  TrustArcDisplay,
+  ReflexPromptModal,
+  MemoryPulseTracker,
+} from '../components/ReflexOverlay';
 import { sessionIgnition } from '../sessionIgnition';
 
 declare const reflex:
