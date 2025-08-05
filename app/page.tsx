@@ -1,8 +1,28 @@
-import React from 'react';
+"use client";
+
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import ReflexCard from '../components/ReflexCard';
 import WhisperTrigger from '../components/WhisperTrigger';
+import OnboardingModal from '../components/OnboardingModal';
+import { sessionIgnition } from '../sessionIgnition';
+
+declare const reflex:
+  | { logEvent: (event: string, payload: Record<string, unknown>) => void }
+  | undefined;
 
 export default function Home() {
+  const router = useRouter();
+  const [showOverlay, setShowOverlay] = useState(false);
+
+  useEffect(() => {
+    reflex?.logEvent('trust_load', {
+      page: 'homepage',
+      score: 8.9,
+      timestamp: Date.now(),
+    });
+  }, []);
+
   const cards = [
     {
       title: 'Dashboard',
@@ -25,10 +45,21 @@ export default function Home() {
     {
       title: 'Live Session',
       description: 'Engage with a real-time session.',
-      cta: 'Join Live Session',
-      href: '/live',
+      cta: 'Initiate Live Session',
+      onClick: () => setShowOverlay(true),
     },
   ];
+
+  const handleSessionStart = () => {
+    sessionIgnition(
+      { live: true },
+      { mix: true },
+      { preview: true }
+    );
+    reflex?.logEvent('session_started', { timestamp: Date.now() });
+    setShowOverlay(false);
+    router.push('/live');
+  };
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-charcoal via-deepMoss to-charcoal text-goldLumen px-6 py-12 font-sans">
@@ -38,13 +69,14 @@ export default function Home() {
         <p className="mt-6 text-lg text-goldLumen/80">Navigate the experience portal: dashboard, onboarding, demo, and live session.</p>
         <div className="mt-10 grid gap-6 sm:grid-cols-3">
           {cards.map((card) => (
-            <ReflexCard key={card.href} {...card} />
+            <ReflexCard key={card.title} {...card} />
           ))}
         </div>
         <div className="mt-12">
           <WhisperTrigger />
         </div>
       </div>
+      {showOverlay && <OnboardingModal onComplete={handleSessionStart} />}
     </main>
   );
 }

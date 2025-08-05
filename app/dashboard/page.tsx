@@ -6,10 +6,7 @@ import ViewModeToggle, { ViewMode } from '../../components/ViewModeToggle';
 import TrustLog from '../../components/TrustLog';
 import SessionAnalytics from '../../components/SessionAnalytics';
 import OwnerMetrics from '../../components/OwnerMetrics';
- codex/import-whispertrigger-into-page.tsx
 import WhisperTrigger from '../../components/WhisperTrigger';
-
- main
 
 const initialSessions: Session[] = [
   {
@@ -99,17 +96,10 @@ export default function Dashboard() {
         <div className="mt-8">
           <TrustLog sessions={sessions} />
         </div>
- codex/import-whispertrigger-into-page.tsx
         <div className="mt-8">
           <WhisperTrigger />
         </div>
-
- main
       </div>
     </main>
   );
 }
- codex/import-whispertrigger-into-page.tsx
-
-
- main
