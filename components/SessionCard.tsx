@@ -22,10 +22,15 @@ interface Props {
 
 // Moodbook classes are required; avoid overriding with default Tailwind colors.
 function getStatus(elapsed: number) {
-  if (elapsed >= 70) return { label: 'Burnt Out', tone: 'ring-ember' };
-  if (elapsed >= 45) return { label: 'Shisha Low', tone: 'ring-mystic' };
-  if (elapsed >= 25) return { label: 'Coal Low', tone: 'ring-charcoal' };
-  return { label: 'Active', tone: 'ring-deepMoss' };
+  if (elapsed >= 60)
+    return { label: 'Burnt Out', tone: 'ring-ember', text: 'text-ember' };
+  if (elapsed >= 45)
+    return {
+      label: 'Needs Refill',
+      tone: 'ring-mystic',
+      text: 'text-mystic',
+    };
+  return { label: 'Active', tone: 'ring-deepMoss', text: 'text-deepMoss' };
 }
 
 export default function SessionCard({ session, mode, onRefill, onAddNote, onBurnout }: Props) {
@@ -61,7 +66,7 @@ export default function SessionCard({ session, mode, onRefill, onAddNote, onBurn
       <div className="font-mono mb-2">
         Timer: {Math.floor(elapsedMin)}:{String(elapsedSec).padStart(2, '0')}
       </div>
-      <div className="mb-2">Status: {status.label}</div>
+      <div className={`mb-2 ${status.text}`}>Status: {status.label}</div>
       {mode === 'staff' && (
         <div className="space-x-2">
           <button
@@ -84,7 +89,16 @@ export default function SessionCard({ session, mode, onRefill, onAddNote, onBurn
       )}
       {mode !== 'staff' && <div className="mb-1">Price: ${price.toFixed(2)}</div>}
       {mode === 'owner' && (
-        <div className="text-xs">Loyalty Signal: {session.notes?.length || 0} notes</div>
+        <button
+          title={
+            session.notes && session.notes.length > 0
+              ? session.notes.join(', ')
+              : 'No notes'
+          }
+          className="text-xs mt-1 px-2 py-1 rounded bg-mystic text-charcoal hover:bg-ember hover:text-goldLumen transition-colors"
+        >
+          #{session.notes?.length || 0} notes
+        </button>
       )}
     </div>
   );
