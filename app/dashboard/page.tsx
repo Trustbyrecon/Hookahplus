@@ -7,6 +7,9 @@ import TrustLog from '../../components/TrustLog';
 import SessionAnalytics from '../../components/SessionAnalytics';
 import OwnerMetrics from '../../components/OwnerMetrics';
 import WhisperTrigger from '../../components/WhisperTrigger';
+import TrustArcDisplay from '../../components/TrustArcDisplay';
+import ReflexPromptModal from '../../components/ReflexPromptModal';
+import MemoryPulseTracker from '../../components/MemoryPulseTracker';
 
 const initialSessions: Session[] = [
   {
@@ -112,10 +115,13 @@ export default function Dashboard() {
         <div className="mt-8">
           <TrustLog sessions={sessions} />
         </div>
-        <div className="mt-8">
+        <div className="mt-8 space-y-4">
           <WhisperTrigger />
+          <ReflexPromptModal />
         </div>
       </div>
+      <TrustArcDisplay score={9.2} />
+      <MemoryPulseTracker />
     </main>
   );
 }
