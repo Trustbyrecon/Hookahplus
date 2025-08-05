@@ -9,11 +9,13 @@ interface Props {
 export default function TrustLog({ sessions }: Props) {
   return (
     <div className="hidden font-sans" aria-hidden>
-      {sessions.map((s) => (
-        <pre key={s.id} data-table={s.table} className="font-mono">
-          {JSON.stringify(s.notes)}
-        </pre>
-      ))}
+      {sessions.map((s) =>
+        s.notes && s.notes.length > 0 ? (
+          <pre key={s.id} data-table={s.table} className="font-mono">
+            {JSON.stringify(s.notes)}
+          </pre>
+        ) : null
+      )}
     </div>
   );
 }
