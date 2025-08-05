@@ -2,6 +2,10 @@
 
 import Link from 'next/link';
 import WhisperButton from './WhisperButton';
+import WhisperTrigger from '../../components/WhisperTrigger';
+import TrustArcDisplay from '../../components/TrustArcDisplay';
+import ReflexPromptModal from '../../components/ReflexPromptModal';
+import MemoryPulseTracker from '../../components/MemoryPulseTracker';
 
 export default function DemoPage() {
   const features = [
@@ -52,10 +56,16 @@ export default function DemoPage() {
             <WhisperButton />
           </div>
         </div>
+        <div className="mt-8 space-y-4 text-center">
+          <WhisperTrigger />
+          <ReflexPromptModal />
+        </div>
         <div className="mt-12 text-center text-mystic text-sm">
           ⌛ Demo Layer: Reflex Preview Mode | v1.0 | EP Score: 8.7 → awaiting session lock
         </div>
       </div>
+      <TrustArcDisplay score={8.7} />
+      <MemoryPulseTracker />
     </main>
   );
 }

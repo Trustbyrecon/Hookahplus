@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import ReflexCard from '../components/ReflexCard';
 import WhisperTrigger from '../components/WhisperTrigger';
 import OnboardingModal from '../components/OnboardingModal';
+import TrustArcDisplay from '../components/TrustArcDisplay';
+import ReflexPromptModal from '../components/ReflexPromptModal';
+import MemoryPulseTracker from '../components/MemoryPulseTracker';
 import { sessionIgnition } from '../sessionIgnition';
 
 declare const reflex:
@@ -73,11 +76,14 @@ export default function Home() {
             <ReflexCard key={card.title} {...card} />
           ))}
         </div>
-        <div className="mt-12">
+        <div className="mt-12 space-y-4">
           <WhisperTrigger />
+          <ReflexPromptModal />
         </div>
       </div>
       {showOverlay && <OnboardingModal onComplete={handleSessionStart} />}
+      <TrustArcDisplay score={8.9} />
+      <MemoryPulseTracker />
     </main>
   );
 }

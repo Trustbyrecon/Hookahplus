@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from "react";
 import OnboardingModal from "../../components/OnboardingModal";
+import WhisperTrigger from "../../components/WhisperTrigger";
+import TrustArcDisplay from "../../components/TrustArcDisplay";
+import ReflexPromptModal from "../../components/ReflexPromptModal";
+import MemoryPulseTracker from "../../components/MemoryPulseTracker";
 
 export default function Onboarding() {
   const [showModal, setShowModal] = useState(false);
@@ -16,6 +20,12 @@ export default function Onboarding() {
       <h1 className="text-3xl font-display font-bold mb-4 text-ember">Lounge Onboarding</h1>
       <p className="font-sans">Start configuring your lounge with Hookah+.</p>
       {showModal && <OnboardingModal onComplete={() => setShowModal(false)} />}
+      <div className="mt-8 space-y-4">
+        <WhisperTrigger />
+        <ReflexPromptModal />
+      </div>
+      <TrustArcDisplay score={9.0} />
+      <MemoryPulseTracker />
     </main>
   );
 }
