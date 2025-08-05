@@ -25,17 +25,20 @@ export default function Home() {
   ];
 
   return (
-    <main className="p-8 flex flex-col items-center space-y-8 font-sans">
-      <h1 className="text-3xl font-display">Welcome to Hookah+</h1>
-      <p className="mt-2 text-center max-w-xl font-sans">
-        Your command center for flavor, flow, and loyalty intelligence.
-      </p>
-      <div className="grid gap-6 md:grid-cols-3">
-        {cards.map((card) => (
-          <ReflexCard key={card.href} {...card} />
-        ))}
+    <main className="min-h-screen bg-gradient-to-br from-charcoal via-deepMoss to-charcoal text-goldLumen px-6 py-12 font-sans">
+      <div className="max-w-5xl mx-auto text-center">
+        <h1 className="text-4xl font-display font-extrabold tracking-tight">Hookah+ Command Center</h1>
+        <div className="mt-2 h-1 w-32 bg-mystic mx-auto rounded-full animate-pulse" />
+        <p className="mt-6 text-lg text-goldLumen/80">Navigate the experience portal: onboarding, demo, and live session.</p>
+        <div className="mt-10 grid gap-6 sm:grid-cols-3">
+          {cards.map((card) => (
+            <ReflexCard key={card.href} {...card} />
+          ))}
+        </div>
+        <div className="mt-12">
+          <WhisperTrigger />
+        </div>
       </div>
-      <WhisperTrigger />
     </main>
   );
 }
