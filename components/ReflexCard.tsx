@@ -6,9 +6,10 @@ interface ReflexCardProps {
   description: string;
   cta: string;
   href?: string;
+  onClick?: () => void;
 }
 
-export const ReflexCard: React.FC<ReflexCardProps> = ({ title, description, cta, href }) => {
+export const ReflexCard: React.FC<ReflexCardProps> = ({ title, description, cta, href, onClick }) => {
   return (
     <div className="bg-charcoal text-goldLumen rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all">
       <div className="text-mystic mb-2">{/* Icon placeholder */}</div>
@@ -22,7 +23,12 @@ export const ReflexCard: React.FC<ReflexCardProps> = ({ title, description, cta,
           {cta}
         </Link>
       ) : (
-        <button className="bg-ember hover:bg-mystic text-goldLumen mt-4 px-4 py-2 rounded">{cta}</button>
+        <button
+          onClick={onClick}
+          className="bg-ember hover:bg-mystic text-goldLumen mt-4 px-4 py-2 rounded"
+        >
+          {cta}
+        </button>
       )}
     </div>
   );
