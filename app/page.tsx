@@ -58,14 +58,15 @@ export default function Home() {
     );
     reflex?.logEvent('session_started', { timestamp: Date.now() });
     setShowOverlay(false);
-    router.push('/live');
+    router.push('/live-session');
   };
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-charcoal via-deepMoss to-charcoal text-goldLumen px-6 py-12 font-sans">
       <div className="max-w-5xl mx-auto text-center">
-        <h1 className="text-4xl font-display font-extrabold tracking-tight">Hookah+ Command Center</h1>
+        <h1 className="text-4xl font-display font-extrabold tracking-tight">Hookah+</h1>
         <div className="mt-2 h-1 w-32 bg-mystic mx-auto rounded-full animate-pulse" />
+        <p className="mt-4 text-xl text-goldLumen/90">Session Reimagined. Loyalty Reinforced.</p>
         <p className="mt-6 text-lg text-goldLumen/80">Navigate the experience portal: dashboard, onboarding, demo, and live session.</p>
         <div className="mt-10 grid gap-6 sm:grid-cols-3">
           {cards.map((card) => (

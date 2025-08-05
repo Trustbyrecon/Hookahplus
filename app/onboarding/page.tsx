@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import OnboardingModal from "../components/OnboardingModal";
+import OnboardingModal from "../../components/OnboardingModal";
 
 export default function Onboarding() {
   const [showModal, setShowModal] = useState(false);
