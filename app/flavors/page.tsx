@@ -2,10 +2,12 @@ import fs from 'fs';
 import path from 'path';
 import yaml from 'js-yaml';
 import SelectorAphrodite from './SelectorAphrodite';
-import WhisperTrigger from '../../components/WhisperTrigger';
-import TrustArcDisplay from '../../components/TrustArcDisplay';
-import ReflexPromptModal from '../../components/ReflexPromptModal';
-import MemoryPulseTracker from '../../components/MemoryPulseTracker';
+import {
+  WhisperTrigger,
+  TrustArcDisplay,
+  ReflexPromptModal,
+  MemoryPulseTracker,
+} from '../../components/ReflexOverlay';
 
 export default function FlavorsPage() {
   const filePath = path.join(process.cwd(), 'data', 'flavor_profiles.yaml');

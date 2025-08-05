@@ -2,10 +2,12 @@
 
 import Link from 'next/link';
 import WhisperButton from './WhisperButton';
-import WhisperTrigger from '../../components/WhisperTrigger';
-import TrustArcDisplay from '../../components/TrustArcDisplay';
-import ReflexPromptModal from '../../components/ReflexPromptModal';
-import MemoryPulseTracker from '../../components/MemoryPulseTracker';
+import {
+  WhisperTrigger,
+  TrustArcDisplay,
+  ReflexPromptModal,
+  MemoryPulseTracker,
+} from '../../components/ReflexOverlay';
 
 export default function DemoPage() {
   const features = [

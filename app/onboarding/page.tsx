@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import OnboardingModal from "../../components/OnboardingModal";
-import WhisperTrigger from "../../components/WhisperTrigger";
-import TrustArcDisplay from "../../components/TrustArcDisplay";
-import ReflexPromptModal from "../../components/ReflexPromptModal";
-import MemoryPulseTracker from "../../components/MemoryPulseTracker";
+import {
+  WhisperTrigger,
+  TrustArcDisplay,
+  ReflexPromptModal,
+  MemoryPulseTracker,
+} from "../../components/ReflexOverlay";
 
 export default function Onboarding() {
   const [showModal, setShowModal] = useState(false);

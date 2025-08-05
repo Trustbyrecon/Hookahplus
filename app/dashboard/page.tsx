@@ -6,10 +6,12 @@ import ViewModeToggle, { ViewMode } from '../../components/ViewModeToggle';
 import TrustLog from '../../components/TrustLog';
 import SessionAnalytics from '../../components/SessionAnalytics';
 import OwnerMetrics from '../../components/OwnerMetrics';
-import WhisperTrigger from '../../components/WhisperTrigger';
-import TrustArcDisplay from '../../components/TrustArcDisplay';
-import ReflexPromptModal from '../../components/ReflexPromptModal';
-import MemoryPulseTracker from '../../components/MemoryPulseTracker';
+import {
+  WhisperTrigger,
+  TrustArcDisplay,
+  ReflexPromptModal,
+  MemoryPulseTracker,
+} from '../../components/ReflexOverlay';
 
 const initialSessions: Session[] = [
   {
