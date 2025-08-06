@@ -23,7 +23,8 @@ jobs:
       - name: Run Reflex Command Dispatcher
         run: |
           python cmd_dispatcher.py "${{ github.event.inputs.command }}"
-                - name: Commit Codex Log Update
+
+      - name: Commit Codex Log Update
         run: |
           mkdir -p codex/logs
           cp codex_command_log.txt codex/logs/command_history.log || true
