@@ -14,6 +14,7 @@ import reflex_ui
 import deployHomepageInteractive as deploy_homepage_interactive
 import reflex_loop
 import surge_loop
+import stripe_integration
 
 
 def bundleDeployKit():
@@ -257,6 +258,12 @@ COMMANDS = {
     "deployLoyaltyBalanceUI": reflex_ui.deploy_loyalty_balance_ui,
     "runQuarterlySurgeRotation": surge_loop.run_quarterly_surge_rotation,
     # Add more here...
+
+    "injectFlavorMetadataStripe": stripe_integration.inject_flavor_metadata_stripe,
+    "attachLoyaltyToStripeEvents": stripe_integration.attach_loyalty_to_stripe_events,
+    "addSurgeAddonToStripePrice": stripe_integration.add_surge_addon_to_stripe_price,
+    "generateStripeQR": stripe_integration.generate_stripe_qr,
+    "linkStripeToWhisper": stripe_integration.link_stripe_to_whisper,
 
     "deployToNetlify": reflex_ui.deploy_to_netlify,
     "deployLoyaltyBalanceUI": reflex_ui.deploy_loyalty_balance_ui,
