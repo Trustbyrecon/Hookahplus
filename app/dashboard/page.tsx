@@ -7,6 +7,7 @@ import TrustLog from '../../components/TrustLog';
 import SessionAnalytics from '../../components/SessionAnalytics';
 import OwnerMetrics from '../../components/OwnerMetrics';
 import LoyaltyWallet from '../../components/LoyaltyWallet';
+import MoodBookOverlay from '../../components/MoodBookOverlay';
 import {
   WhisperTrigger,
   TrustArcDisplay,
@@ -94,6 +95,7 @@ export default function Dashboard() {
         <div className="mt-4 mb-6 flex justify-center">
           <LoyaltyWallet />
         </div>
+        <MoodBookOverlay />
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 max-h-[70vh] overflow-y-auto pr-2">
           {sessions.map((session) => (
             <SessionCard
