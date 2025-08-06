@@ -1,16 +1,17 @@
 version: 1
+test_mode: true
 application:
   name: HookahPlus POS Connector
   url: https://hookahplus.net
   support_email: hookahplusconnector@gmail.com
   privacy_policy_url: https://hookahplus.net/privacy
   terms_of_service_url: https://hookahplus.net/terms
+  onboarding_url: https://hookahplus.net/onboarding
 oauth:
   redirect_uris:
     - https://hookahplus.net/onboarding/stripe/callback
   scopes:
-    - checkout.sessions:read
-    - checkout.sessions:write
+    - checkout.sessions:read_write
     - charges:read
     - products:read
     - metadata:write

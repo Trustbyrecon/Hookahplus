@@ -4,6 +4,10 @@ import os
 import sys
 import zipfile
 import shutil
+import subprocess
+import json
+
+import yaml
 
 # Ensure modules in ./cmd/modules can be imported without installing as a package
 MODULE_PATH = os.path.join(os.path.dirname(__file__), "cmd", "modules")
@@ -15,6 +19,72 @@ import deployHomepageInteractive as deploy_homepage_interactive
 import reflex_loop
 import surge_loop
 import stripe_integration
+
+
+def initStripeAppTestMode(manifest_path: str = "stripe-app/manifest.yaml"):
+    """Ensure the Stripe app manifest is marked for test mode."""
+    try:
+        with open(manifest_path, "r") as f:
+            manifest = yaml.safe_load(f) or {}
+    except FileNotFoundError:
+        return f"❌ Manifest not found at {manifest_path}"
+
+    changed = False
+    if not manifest.get("test_mode"):
+        manifest["test_mode"] = True
+        changed = True
+
+    if changed:
+        with open(manifest_path, "w") as f:
+            yaml.safe_dump(manifest, f)
+
+    return f"🧪 Test mode {'enabled' if changed else 'already enabled'} using {manifest_path}"
+
+
+def bundleReviewManifest(manifest_path: str = "stripe-app/manifest.yaml"):
+    """Create a bundled copy of the manifest and return a summary."""
+    try:
+        with open(manifest_path, "r") as f:
+            manifest = yaml.safe_load(f) or {}
+    except FileNotFoundError:
+        return f"❌ Manifest not found at {manifest_path}"
+
+    bundle_path = os.path.join(os.path.dirname(manifest_path), "manifest.bundle.json")
+    with open(bundle_path, "w") as f:
+        json.dump(manifest, f, indent=2)
+
+    scopes = manifest.get("oauth", {}).get("scopes", [])
+    name = manifest.get("application", {}).get("name", "unknown")
+    summary = f"{name} | scopes: {', '.join(scopes)}"
+    return f"📦 Manifest bundled at {bundle_path} — {summary}"
+
+
+def deployStripeApp(manifest_path: str = "stripe-app/manifest.yaml"):
+    """Attempt to deploy the Stripe app using the Stripe CLI."""
+    cli = shutil.which("stripe")
+    if not cli:
+        return "🚀 Stripe CLI not installed — deploy simulated"
+
+    cmd = [cli, "apps", "deploy", "--manifest", manifest_path]
+    try:
+        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        return result.stdout.strip() or "🚀 Stripe app deployed"
+    except subprocess.CalledProcessError as e:
+        return f"⚠️ Deploy failed: {e.stderr.strip()}"
+
+
+def runLiveWebhookSync(forward_url: str = "http://localhost:3000/webhook"):
+    """Start a live webhook forwarder via the Stripe CLI."""
+    cli = shutil.which("stripe")
+    if not cli:
+        return "🔄 Stripe CLI not installed — webhook sync simulated"
+
+    cmd = [cli, "listen", "--forward-to", forward_url]
+    try:
+        subprocess.Popen(cmd)
+        return f"🔄 Webhook sync forwarding to {forward_url}"
+    except Exception as e:
+        return f"⚠️ Webhook sync failed: {e}"
 
 
 def bundleDeployKit():
