@@ -8,6 +8,7 @@ import {
   ReflexPromptModal,
   MemoryPulseTracker,
 } from '../../components/ReflexOverlay';
+import SessionReplayTimeline from '../../components/SessionReplayTimeline';
 
 export default function DemoPage() {
   const features = [
@@ -58,6 +59,7 @@ export default function DemoPage() {
             <WhisperButton />
           </div>
         </div>
+        <SessionReplayTimeline />
         <div className="mt-8 space-y-4 text-center">
           <WhisperTrigger />
           <ReflexPromptModal />
