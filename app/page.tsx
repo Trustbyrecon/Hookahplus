@@ -11,8 +11,12 @@ import {
   ReflexPromptModal,
   MemoryPulseTracker,
 } from '../components/ReflexOverlay';
+ codex/add-global-whisperlayer-ui-support
+import WhisperOverlayEngine from '../components/WhisperOverlayEngine';
+
 import SessionReplaySection from '../components/SessionReplaySection';
 import WhisperCatch from '../components/WhisperCatch';
+ main
 import { sessionIgnition } from '../sessionIgnition';
 
 declare const reflex:
@@ -72,6 +76,7 @@ export default function Home() {
   return (
     <>
       <StickyNav onStartSession={() => setShowOverlay(true)} />
+      <WhisperOverlayEngine />
       <main className="min-h-screen bg-gradient-to-br from-charcoal via-deepMoss to-charcoal text-goldLumen px-6 py-12 font-sans">
         <div className="max-w-5xl mx-auto text-center">
           <h1 className="text-4xl font-display font-extrabold tracking-tight">Hookah+</h1>

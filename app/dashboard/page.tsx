@@ -13,6 +13,7 @@ import {
   ReflexPromptModal,
   MemoryPulseTracker,
 } from '../../components/ReflexOverlay';
+import WhisperOverlayEngine from '../../components/WhisperOverlayEngine';
 
 export default function Dashboard() {
   const [mode, setMode] = useState<ViewMode>('staff');
@@ -84,6 +85,7 @@ export default function Dashboard() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-charcoal via-deepMoss to-charcoal text-goldLumen font-sans p-6">
+      <WhisperOverlayEngine />
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-display font-bold mb-6 text-ember text-center">
           Flavor Flow Dashboard
