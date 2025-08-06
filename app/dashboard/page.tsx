@@ -34,6 +34,7 @@ export default function Dashboard() {
         refills: updated.refills,
         notes: updated.notes,
         start_time: new Date(updated.startTime).toISOString(),
+        end_time: updated.endTime ? new Date(updated.endTime).toISOString() : null,
       }),
     });
   };
@@ -70,6 +71,17 @@ export default function Dashboard() {
     await updateSession(updated);
   };
 
+  const handleEnd = async (id: number) => {
+    const session = sessions.find((s) => s.id === id);
+    if (!session || session.endTime) return;
+    const updated = {
+      ...session,
+      endTime: Date.now(),
+    };
+    await updateSession(updated);
+    console.log('Session ended, triggering next steps', id);
+  };
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-charcoal via-deepMoss to-charcoal text-goldLumen font-sans p-6">
       <div className="max-w-6xl mx-auto">
@@ -80,7 +92,7 @@ export default function Dashboard() {
         <div className="mt-4 mb-6 flex justify-center">
           <LoyaltyWallet />
         </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 max-h-[70vh] overflow-y-auto pr-2">
           {sessions.map((session) => (
             <SessionCard
               key={session.id}
@@ -89,6 +101,7 @@ export default function Dashboard() {
               onRefill={handleRefill}
               onAddNote={handleAddNote}
               onBurnout={handleBurnout}
+              onEnd={handleEnd}
             />
           ))}
         </div>
