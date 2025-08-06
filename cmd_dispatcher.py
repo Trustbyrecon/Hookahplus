@@ -1,5 +1,15 @@
 import sys
 import time
+import datetime
+import os
+
+def log_to_codex(command: str):
+    timestamp = datetime.datetime.utcnow().isoformat()
+    log_entry = f"[{timestamp}] Executed Command: {command}\n"
+    log_file_path = os.path.join(os.getcwd(), "codex_command_log.txt")
+    with open(log_file_path, "a") as f:
+        f.write(log_entry)
+    print(f"🔹 Logged to Codex: {log_entry.strip()}")
 
 # === Phase I Reflex Commands ===
 def cmd_syncCodexToSite():
@@ -108,6 +118,9 @@ def run_command(input_command):
     else:
         print(f"❌ Unknown command: {command}")
         print("💡 Tip: Check spelling or implement it in cmd_dispatcher.py.")
+
+    # Always log the command execution
+    log_to_codex(command)
 
 # Entry point
 if __name__ == "__main__":
