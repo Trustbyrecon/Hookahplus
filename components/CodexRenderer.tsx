@@ -1,5 +1,6 @@
- codex/activate-codexreflex-sync-mode
-import { useEffect, useState } from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 
 interface CodexEntry {
   title: string;
@@ -39,9 +40,7 @@ export default function CodexRenderer({ limit, offset }: Props) {
       {entries.map((entry, idx) => (
         <div key={idx} className="codex-card">
           <h3 className="codex-title">{entry.title}</h3>
-          <div className="codex-triggers">
-            {entry.triggers.join(', ')}
-          </div>
+          <div className="codex-triggers">{entry.triggers.join(', ')}</div>
           <p className="codex-summary">{entry.summary}</p>
           <div className="codex-meta">
             <span className="codex-score">Reflex Score: {entry.reflexScore}</span>
@@ -53,12 +52,4 @@ export default function CodexRenderer({ limit, offset }: Props) {
       ))}
     </div>
   );
-
-'use client';
-
-import React from 'react';
-
-export default function CodexRenderer() {
-  return <div className="mb-4">Codex Renderer</div>;
- main
 }

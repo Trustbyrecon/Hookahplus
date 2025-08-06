@@ -11,12 +11,10 @@ import {
   ReflexPromptModal,
   MemoryPulseTracker,
 } from '../components/ReflexOverlay';
- codex/add-global-whisperlayer-ui-support
 import WhisperOverlayEngine from '../components/WhisperOverlayEngine';
 
 import SessionReplaySection from '../components/SessionReplaySection';
 import WhisperCatch from '../components/WhisperCatch';
- main
 import { sessionIgnition } from '../sessionIgnition';
 
 declare const reflex:
