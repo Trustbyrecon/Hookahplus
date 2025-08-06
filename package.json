@@ -7,7 +7,8 @@
     "export": "next export",
     "start": "next start",
     "check:palette": "node scripts/check-color-classes.js",
-    "test": "echo 'No tests yet'"
+    "test": "echo 'No tests yet'",
+    "db:seed": "node scripts/init_db.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.859.0",
@@ -16,7 +17,8 @@
     "next": "13.4.19",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "yaml": "^2.8.0"
+    "yaml": "^2.8.0",
+    "pg": "^8.11.3"
   },
   "engines": {
     "node": ">=16.0.0"

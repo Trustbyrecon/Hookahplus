@@ -15,17 +15,33 @@ const defaultRewards: Reward[] = [
 
 export default function LoyaltyWallet() {
   const [mounted, setMounted] = useState(false);
-  const [points] = useState(120);
-  const [streak] = useState(3);
+  const [points, setPoints] = useState(0);
+  const [streak, setStreak] = useState(0);
   const multiplier = 1 + streak * 0.1;
 
   useEffect(() => {
-    setMounted(true);
+    fetch('/api/loyalty')
+      .then((res) => res.json())
+      .then((data) => {
+        setPoints(data.points);
+        setStreak(data.streak);
+        setMounted(true);
+      });
   }, []);
 
   if (!mounted) return null;
 
   const nextReward = defaultRewards.find((r) => r.cost > points);
+
+  const addPoints = async () => {
+    const newPoints = points + 10;
+    setPoints(newPoints);
+    await fetch('/api/loyalty', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ points: newPoints, streak }),
+    });
+  };
 
   return (
     <div className="bg-deepMoss text-goldLumen p-4 rounded shadow font-sans w-full max-w-md">
@@ -47,6 +63,12 @@ export default function LoyaltyWallet() {
           Only {nextReward.cost - points} pts until {nextReward.name}!
         </div>
       )}
+      <button
+        onClick={addPoints}
+        className="mt-2 bg-charcoal px-2 py-1 rounded text-sm"
+      >
+        Add 10 pts
+      </button>
     </div>
   );
 }

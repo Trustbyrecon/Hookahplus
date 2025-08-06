@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import SessionCard, { Session } from '../../components/SessionCard';
 import ViewModeToggle, { ViewMode } from '../../components/ViewModeToggle';
 import TrustLog from '../../components/TrustLog';
@@ -14,76 +14,60 @@ import {
   MemoryPulseTracker,
 } from '../../components/ReflexOverlay';
 
-const initialSessions: Session[] = [
-  {
-    id: 1,
-    table: 'A1',
-    flavors: ['Mint', 'Lemon'],
-    startTime: Date.now() - 50 * 60000,
-    refills: 1,
-    notes: ['likes iced water', 'extra lemon'],
-  },
-  {
-    id: 2,
-    table: 'B2',
-    flavors: ['Grape'],
-    startTime: Date.now() - 16 * 60000,
-    refills: 0,
-    notes: ['no mint requests', 'prefers corner booth', 'check id'],
-  },
-  {
-    id: 3,
-    table: 'C3',
-    flavors: ['Watermelon'],
-    startTime: Date.now() - 10 * 60000,
-    refills: 0,
-    notes: ['first time visitor'],
-  },
-  {
-    id: 4,
-    table: 'E5',
-    flavors: ['Peach', 'Grape', 'Apple'],
-    startTime: Date.now() - 70 * 60000,
-    refills: 2,
-    notes: ['watch heat', 'last bowl burnt'],
-  },
-];
-
 export default function Dashboard() {
   const [mode, setMode] = useState<ViewMode>('staff');
-  const [sessions, setSessions] = useState<Session[]>(initialSessions);
+  const [sessions, setSessions] = useState<Session[]>([]);
 
-  const handleRefill = (id: number) => {
-    setSessions((prev) =>
-      prev.map((s) =>
-        s.id === id
-          ? {
-              ...s,
-              startTime: Date.now(),
-              refills: s.refills + 1,
-              notes: [...(s.notes || []), 'refill'],
-            }
-          : s
-      )
-    );
+  useEffect(() => {
+    fetch('/api/sessions')
+      .then((res) => res.json())
+      .then((data) => setSessions(data));
+  }, []);
+
+  const updateSession = async (updated: Session) => {
+    setSessions((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+    await fetch('/api/sessions', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: updated.id,
+        refills: updated.refills,
+        notes: updated.notes,
+        start_time: new Date(updated.startTime).toISOString(),
+      }),
+    });
   };
 
-  const handleAddNote = (id: number, note: string) => {
-    setSessions((prev) =>
-      prev.map((s) =>
-        s.id === id ? { ...s, notes: [...(s.notes || []), note] } : s
-      )
-    );
+  const handleRefill = async (id: number) => {
+    const session = sessions.find((s) => s.id === id);
+    if (!session) return;
+    const updated = {
+      ...session,
+      startTime: Date.now(),
+      refills: session.refills + 1,
+      notes: [...(session.notes || []), 'refill'],
+    };
+    await updateSession(updated);
   };
 
-  const handleBurnout = (id: number) => {
-    setSessions((prev) =>
-      prev.map((s) =>
-        s.id === id && !(s.notes || []).includes('burnout')
-          ? { ...s, notes: [...(s.notes || []), 'burnout'] }
-          : s
-      )
-    );
+  const handleAddNote = async (id: number, note: string) => {
+    const session = sessions.find((s) => s.id === id);
+    if (!session) return;
+    const updated = {
+      ...session,
+      notes: [...(session.notes || []), note],
+    };
+    await updateSession(updated);
+  };
+
+  const handleBurnout = async (id: number) => {
+    const session = sessions.find((s) => s.id === id);
+    if (!session || (session.notes || []).includes('burnout')) return;
+    const updated = {
+      ...session,
+      notes: [...(session.notes || []), 'burnout'],
+    };
+    await updateSession(updated);
   };
 
   return (
