@@ -31,6 +31,9 @@ export default function FlavorsPage() {
   return (
     <div className="p-8 font-sans">
       <h1 className="text-2xl font-display font-bold">Flavor Selector</h1>
+      <div className="mt-2 mb-4 p-4 bg-deepMoss text-goldLumen rounded">
+        Buy 3, Earn 1 Premium Flavor
+      </div>
       <SelectorAphrodite flavors={flavors} />
       <h2 className="mt-8 text-xl font-display font-bold">Top Flavors</h2>
       <FlavorLeaderboard flavors={leaderboard} />

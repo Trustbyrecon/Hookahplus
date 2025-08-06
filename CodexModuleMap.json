@@ -59,6 +59,15 @@
     "path": "cmd/modules/reflex_ui.py",
     "description": "Injects Reflex Heatmap into dashboard."
   },
+ codex/activate-hookah+-loyalty-yield-engine
+  "cmd.deployLoyaltyBalanceUI": {
+    "path": "cmd/modules/reflex_ui.py",
+    "description": "Deploys the Loyalty Wallet user interface."
+  },
+  "cmd.generateAtlantaRevenueForecast": {
+    "path": "cmd/modules/reflex_ui.py",
+    "description": "Outputs the 7-day revenue forecast for Atlanta."
+
   "cmd.deployTrustHeatmap": {
     "path": "cmd/modules/reflex_loop.py",
     "description": "Renders lounge trust event heatmaps."
@@ -94,6 +103,7 @@
   "cmd.nudgePartnerInvites": {
     "path": "cmd/modules/reflex_loop.py",
     "description": "Sends partner invite nudges."
+ main
   },
   "cmd.deployToNetlify": {
     "path": "cmd/modules/reflex_ui.py",

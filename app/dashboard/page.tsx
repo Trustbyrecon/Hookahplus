@@ -6,6 +6,7 @@ import ViewModeToggle, { ViewMode } from '../../components/ViewModeToggle';
 import TrustLog from '../../components/TrustLog';
 import SessionAnalytics from '../../components/SessionAnalytics';
 import OwnerMetrics from '../../components/OwnerMetrics';
+import LoyaltyWallet from '../../components/LoyaltyWallet';
 import {
   WhisperTrigger,
   TrustArcDisplay,
@@ -92,6 +93,9 @@ export default function Dashboard() {
           Flavor Flow Dashboard
         </h1>
         <ViewModeToggle mode={mode} onChange={setMode} />
+        <div className="mt-4 mb-6 flex justify-center">
+          <LoyaltyWallet />
+        </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {sessions.map((session) => (
             <SessionCard

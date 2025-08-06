@@ -256,6 +256,8 @@ COMMANDS = {
     # Add more here...
 
     "deployToNetlify": reflex_ui.deploy_to_netlify,
+    "deployLoyaltyBalanceUI": reflex_ui.deploy_loyalty_balance_ui,
+    "generateAtlantaRevenueForecast": reflex_ui.generate_atlanta_revenue_forecast,
 
     "bundleDeployKit": bundleDeployKit,
     "switchDomain": switchDomain,
