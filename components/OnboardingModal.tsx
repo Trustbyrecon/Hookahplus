@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import FlavorSelector from './FlavorSelector';
 import TimerControl from './TimerControl';
