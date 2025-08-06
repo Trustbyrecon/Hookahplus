@@ -1,3 +1,4 @@
+ codex/activate-codexreflex-sync-mode
 import { useEffect, useState } from 'react';
 
 interface CodexEntry {
@@ -52,4 +53,12 @@ export default function CodexRenderer({ limit, offset }: Props) {
       ))}
     </div>
   );
+
+'use client';
+
+import React from 'react';
+
+export default function CodexRenderer() {
+  return <div className="mb-4">Codex Renderer</div>;
+ main
 }
