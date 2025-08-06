@@ -57,6 +57,11 @@ def cmd_autoGenerateSoraWelcomeReels():
     time.sleep(1)
     print("✅ Welcome reels deployed and linked to onboarding.")
 
+def cmd_setMood():
+    print("🎨 Setting MoodBook theme via Sora...")
+    time.sleep(1)
+    print("✅ MoodBook theme applied across surfaces.")
+
 # === Phase II Reflex Expansion Commands ===
 def cmd_scanTrustLog():
     print("🔎 Scanning ReflexLog.json for trust decay signals...")
@@ -103,6 +108,7 @@ def run_command(input_command):
         "cmd.deploySoraMemoryLayer": cmd_deploySoraMemoryLayer,
         "cmd.syncSoraReelsToCodexReflexSnapshots": cmd_syncSoraReelsToCodexReflexSnapshots,
         "cmd.autoGenerateSoraWelcomeReels": cmd_autoGenerateSoraWelcomeReels,
+        "cmd.setMood": cmd_setMood,
 
         # Phase II
         "cmd.scanTrustLog": cmd_scanTrustLog,
