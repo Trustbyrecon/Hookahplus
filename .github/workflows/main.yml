@@ -1,0 +1,25 @@
+name: Reflex Launcher
+
+on:
+  workflow_dispatch:
+    inputs:
+      command:
+        description: 'Enter Reflex Command (e.g. cmd.syncCodexToSite)'
+        required: true
+        default: 'cmd.syncCodexToSite'
+
+jobs:
+  run-reflex-command:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Run Reflex Command Dispatcher
+        run: |
+          python cmd_dispatcher.py "${{ github.event.inputs.command }}"
