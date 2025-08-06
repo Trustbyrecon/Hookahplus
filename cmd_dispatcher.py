@@ -12,6 +12,7 @@ if MODULE_PATH not in sys.path:
 
 import reflex_ui
 import deployHomepageInteractive as deploy_homepage_interactive
+import reflex_loop
 
 
 def bundleDeployKit():
@@ -243,6 +244,15 @@ COMMANDS = {
     "renderReflexLoyalty": reflex_ui.render_reflex_loyalty,
     "injectReflexHeatmap": reflex_ui.inject_reflex_heatmap,
     "deployFlavorMixUI": reflex_ui.deploy_flavor_mix_ui,
+    "deployTrustHeatmap": reflex_loop.deploy_trust_heatmap,
+    "syncFlavorUsageToPricing": reflex_loop.sync_flavor_usage_to_pricing,
+    "enableSessionReplayConsent": reflex_loop.enable_session_replay_consent,
+    "generateLoyaltyCoachHints": reflex_loop.generate_loyalty_coach_hints,
+    "autoOptimizeFlavorMixes": reflex_loop.auto_optimize_flavor_mixes,
+    "exportOwnerTrustDigest": reflex_loop.export_owner_trust_digest,
+    "simulateFlavorBloom": reflex_loop.simulate_flavor_bloom,
+    "unlockPremiumReflexTools": reflex_loop.unlock_premium_reflex_tools,
+    "nudgePartnerInvites": reflex_loop.nudge_partner_invites,
     # Add more here...
 
     "deployToNetlify": reflex_ui.deploy_to_netlify,
