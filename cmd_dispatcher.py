@@ -13,6 +13,7 @@ if MODULE_PATH not in sys.path:
 import reflex_ui
 import deployHomepageInteractive as deploy_homepage_interactive
 import reflex_loop
+import surge_loop
 
 
 def bundleDeployKit():
@@ -253,6 +254,8 @@ COMMANDS = {
     "simulateFlavorBloom": reflex_loop.simulate_flavor_bloom,
     "unlockPremiumReflexTools": reflex_loop.unlock_premium_reflex_tools,
     "nudgePartnerInvites": reflex_loop.nudge_partner_invites,
+    "deployLoyaltyBalanceUI": reflex_ui.deploy_loyalty_balance_ui,
+    "runQuarterlySurgeRotation": surge_loop.run_quarterly_surge_rotation,
     # Add more here...
 
     "deployToNetlify": reflex_ui.deploy_to_netlify,
