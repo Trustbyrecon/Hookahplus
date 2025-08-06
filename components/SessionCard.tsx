@@ -8,6 +8,7 @@ export interface Session {
   table: string;
   flavors: string[];
   startTime: number; // ms timestamp
+  endTime?: number;
   refills: number;
   notes?: string[];
 }
@@ -18,6 +19,7 @@ interface Props {
   onRefill: (id: number) => void;
   onAddNote: (id: number, note: string) => void;
   onBurnout: (id: number) => void;
+  onEnd: (id: number) => void;
 }
 
 // Moodbook classes are required; avoid overriding with default Tailwind colors.
@@ -33,7 +35,7 @@ function getStatus(elapsed: number) {
   return { label: 'Active', tone: 'ring-deepMoss', text: 'text-deepMoss' };
 }
 
-export default function SessionCard({ session, mode, onRefill, onAddNote, onBurnout }: Props) {
+export default function SessionCard({ session, mode, onRefill, onAddNote, onBurnout, onEnd }: Props) {
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
@@ -41,8 +43,9 @@ export default function SessionCard({ session, mode, onRefill, onAddNote, onBurn
     return () => clearInterval(tick);
   }, []);
 
-  const elapsedMin = (now - session.startTime) / 60000;
-  const elapsedSec = Math.floor((now - session.startTime) / 1000) % 60;
+  const referenceTime = session.endTime || now;
+  const elapsedMin = (referenceTime - session.startTime) / 60000;
+  const elapsedSec = Math.floor((referenceTime - session.startTime) / 1000) % 60;
   const status = getStatus(elapsedMin);
 
   useEffect(() => {
@@ -63,6 +66,14 @@ export default function SessionCard({ session, mode, onRefill, onAddNote, onBurn
           <FlavorBadge key={f} flavor={f} />
         ))}
       </div>
+      <div className="font-mono mb-1">
+        Start: {new Date(session.startTime).toLocaleTimeString()}
+      </div>
+      {session.endTime && (
+        <div className="font-mono mb-1">
+          End: {new Date(session.endTime).toLocaleTimeString()}
+        </div>
+      )}
       <div className="font-mono mb-2">
         Timer: {Math.floor(elapsedMin)}:{String(elapsedSec).padStart(2, '0')}
       </div>
@@ -72,7 +83,7 @@ export default function SessionCard({ session, mode, onRefill, onAddNote, onBurn
           <button
             onClick={() => onRefill(session.id)}
             className="bg-deepMoss/40 px-3 py-1 rounded disabled:opacity-50 hover:bg-deepMoss/60 transition-colors"
-            disabled={status.label === 'Burnt Out'}
+            disabled={status.label === 'Burnt Out' || !!session.endTime}
           >
             Refill
           </button>
@@ -84,6 +95,13 @@ export default function SessionCard({ session, mode, onRefill, onAddNote, onBurn
             className="bg-deepMoss/40 px-3 py-1 rounded hover:bg-deepMoss/60 transition-colors"
           >
             Add Note
+          </button>
+          <button
+            onClick={() => onEnd(session.id)}
+            className="bg-ember/40 px-3 py-1 rounded hover:bg-ember/60 transition-colors disabled:opacity-50"
+            disabled={!!session.endTime}
+          >
+            End
           </button>
         </div>
       )}
