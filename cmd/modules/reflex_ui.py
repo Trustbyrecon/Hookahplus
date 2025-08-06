@@ -24,6 +24,13 @@ def deploy_flavor_mix_ui():
     print("🍹 Deploying Flavor Mix UI...")
     return "Flavor Mix UI deployment triggered."
 
+
+
+def deploy_loyalty_balance_ui():
+    """Deploy the Loyalty Wallet UI with SPS integration."""
+    print("💰 Deploying Loyalty Balance UI...")
+    return "Loyalty Balance UI deployment triggered."
+
 def deploy_to_netlify(branch: str = "main"):
     """Trigger a Netlify deploy for the specified branch."""
     print(f"🚀 Triggering Netlify deploy for branch: {branch}...")
