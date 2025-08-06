@@ -5,7 +5,6 @@ dist/
 node_modules/
 out/
 .next/
-package-lock.json
 app/dashboard/node_modules/
 app/dashboard/out/
 app/dashboard/.next/
