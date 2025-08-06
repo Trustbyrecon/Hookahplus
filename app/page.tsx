@@ -11,6 +11,8 @@ import {
   ReflexPromptModal,
   MemoryPulseTracker,
 } from '../components/ReflexOverlay';
+import SessionReplaySection from '../components/SessionReplaySection';
+import WhisperCatch from '../components/WhisperCatch';
 import { sessionIgnition } from '../sessionIgnition';
 
 declare const reflex:
@@ -86,9 +88,11 @@ export default function Home() {
             <ReflexPromptModal />
           </div>
         </div>
+        <SessionReplaySection />
         {showOverlay && <OnboardingModal onComplete={handleSessionStart} />}
         <TrustArcDisplay score={8.9} />
         <MemoryPulseTracker />
+        <WhisperCatch />
       </main>
     </>
   );
