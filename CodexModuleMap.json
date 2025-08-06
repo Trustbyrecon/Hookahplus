@@ -120,5 +120,25 @@
   "agent.pricerHermes": {
     "path": "codex/Modules/pricer_hermes.ts",
     "description": "Dynamic pricing logic with premium detection and margin sync."
+  },
+  "cmd.injectFlavorMetadataStripe": {
+    "path": "cmd/modules/stripe_integration.py",
+    "description": "Inject flavor mix metadata into Stripe checkout sessions."
+  },
+  "cmd.attachLoyaltyToStripeEvents": {
+    "path": "cmd/modules/stripe_integration.py",
+    "description": "Attach loyalty gains to Stripe payment events."
+  },
+  "cmd.addSurgeAddonToStripePrice": {
+    "path": "cmd/modules/stripe_integration.py",
+    "description": "Adjust Stripe prices with weekend surge add-ons."
+  },
+  "cmd.generateStripeQR": {
+    "path": "cmd/modules/stripe_integration.py",
+    "description": "Generate QR codes linking to Stripe Checkout sessions."
+  },
+  "cmd.linkStripeToWhisper": {
+    "path": "cmd/modules/stripe_integration.py",
+    "description": "Trigger Whisper prompts after successful Stripe payments."
   }
 }
