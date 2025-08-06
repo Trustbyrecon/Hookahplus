@@ -1,4 +1,5 @@
 import '../styles/globals.css';
+import '../styles/whisper.css';
 import React from 'react';
 import ErrorBoundary from '../components/ErrorBoundary';
 
