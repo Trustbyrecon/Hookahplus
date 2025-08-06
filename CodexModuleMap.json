@@ -59,6 +59,14 @@
     "path": "cmd/modules/reflex_ui.py",
     "description": "Injects Reflex Heatmap into dashboard."
   },
+  "cmd.deployLoyaltyBalanceUI": {
+    "path": "cmd/modules/reflex_ui.py",
+    "description": "Deploys the Loyalty Wallet user interface."
+  },
+  "cmd.generateAtlantaRevenueForecast": {
+    "path": "cmd/modules/reflex_ui.py",
+    "description": "Outputs the 7-day revenue forecast for Atlanta."
+  },
   "cmd.deployToNetlify": {
     "path": "cmd/modules/reflex_ui.py",
     "description": "Triggers a Netlify deploy for a given branch."
