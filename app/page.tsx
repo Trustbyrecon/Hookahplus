@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ReflexCard from '../components/ReflexCard';
 import OnboardingModal from '../components/OnboardingModal';
+import StickyNav from '../components/StickyNav';
 import {
   WhisperTrigger,
   TrustArcDisplay,
@@ -67,25 +68,28 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-charcoal via-deepMoss to-charcoal text-goldLumen px-6 py-12 font-sans">
-      <div className="max-w-5xl mx-auto text-center">
-        <h1 className="text-4xl font-display font-extrabold tracking-tight">Hookah+</h1>
-        <div className="mt-2 h-1 w-32 bg-mystic mx-auto rounded-full animate-pulse" />
-        <p className="mt-4 text-xl text-goldLumen/90">Session Reimagined. Loyalty Reinforced.</p>
-        <p className="mt-6 text-lg text-goldLumen/80">Navigate the experience portal: dashboard, onboarding, demo, and live session.</p>
-        <div className="mt-10 grid gap-6 sm:grid-cols-3">
-          {cards.map((card) => (
-            <ReflexCard key={card.title} {...card} />
-          ))}
+    <>
+      <StickyNav onStartSession={() => setShowOverlay(true)} />
+      <main className="min-h-screen bg-gradient-to-br from-charcoal via-deepMoss to-charcoal text-goldLumen px-6 py-12 font-sans">
+        <div className="max-w-5xl mx-auto text-center">
+          <h1 className="text-4xl font-display font-extrabold tracking-tight">Hookah+</h1>
+          <div className="mt-2 h-1 w-32 bg-mystic mx-auto rounded-full animate-pulse" />
+          <p className="mt-4 text-xl text-goldLumen/90">Session Reimagined. Loyalty Reinforced.</p>
+          <p className="mt-6 text-lg text-goldLumen/80">Navigate the experience portal: dashboard, onboarding, demo, and live session.</p>
+          <div className="mt-10 grid gap-6 sm:grid-cols-3">
+            {cards.map((card) => (
+              <ReflexCard key={card.title} {...card} />
+            ))}
+          </div>
+          <div className="mt-12 space-y-4">
+            <WhisperTrigger />
+            <ReflexPromptModal />
+          </div>
         </div>
-        <div className="mt-12 space-y-4">
-          <WhisperTrigger />
-          <ReflexPromptModal />
-        </div>
-      </div>
-      {showOverlay && <OnboardingModal onComplete={handleSessionStart} />}
-      <TrustArcDisplay score={8.9} />
-      <MemoryPulseTracker />
-    </main>
+        {showOverlay && <OnboardingModal onComplete={handleSessionStart} />}
+        <TrustArcDisplay score={8.9} />
+        <MemoryPulseTracker />
+      </main>
+    </>
   );
 }
