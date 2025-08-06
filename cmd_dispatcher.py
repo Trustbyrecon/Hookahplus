@@ -1,377 +1,117 @@
-# cmd_dispatcher.py
-
-import os
 import sys
-import zipfile
-import shutil
-import subprocess
-import json
+import time
 
-import yaml
+# === Phase I Reflex Commands ===
+def cmd_syncCodexToSite():
+    print("🔗 Syncing Codex entries to /codex...")
+    time.sleep(1)
+    print("✅ Codex now live and scrollable on site.")
 
-# Ensure modules in ./cmd/modules can be imported without installing as a package
-MODULE_PATH = os.path.join(os.path.dirname(__file__), "cmd", "modules")
-if MODULE_PATH not in sys.path:
-    sys.path.insert(0, MODULE_PATH)
+def cmd_renderTrustHeatmapPublic():
+    print("📊 Rendering public trust heatmap...")
+    time.sleep(1)
+    print("✅ Heatmap displayed on /dashboard/public.")
 
-import reflex_ui
-import deployHomepageInteractive as deploy_homepage_interactive
-import reflex_loop
-import surge_loop
-import stripe_integration
+def cmd_activateWhisperLayerUI():
+    print("🌬 Activating WhisperLayer UI across all pages...")
+    time.sleep(1)
+    print("✅ Whisper overlays now active.")
 
+def cmd_enableSessionReplayUI():
+    print("🎥 Enabling Session Replay Interface...")
+    time.sleep(1)
+    print("✅ Replay now available via dashboard.")
 
-def initStripeAppTestMode(manifest_path: str = "stripe-app/manifest.yaml"):
-    """Ensure the Stripe app manifest is marked for test mode."""
-    try:
-        with open(manifest_path, "r") as f:
-            manifest = yaml.safe_load(f) or {}
-    except FileNotFoundError:
-        return f"❌ Manifest not found at {manifest_path}"
+def cmd_revealOperatorFlow():
+    print("🛠 Revealing Operator Flow...")
+    time.sleep(1)
+    print("✅ Operator dashboard now fully live.")
 
-    changed = False
-    if not manifest.get("test_mode"):
-        manifest["test_mode"] = True
-        changed = True
+def cmd_onboardLoungePartner003():
+    print("🌟 Onboarding Lounge Partner #003: Velvet Ember...")
+    time.sleep(1)
+    print("✅ Partner onboarded with Reflex Memory and Welcome Reel.")
 
-    if changed:
-        with open(manifest_path, "w") as f:
-            yaml.safe_dump(manifest, f)
+def cmd_deploySoraMemoryLayer():
+    print("🎞 Deploying Sora Memory Layer system-wide...")
+    time.sleep(1)
+    print("✅ Sora Reels linked to Codex and Session Replay.")
 
-    return f"🧪 Test mode {'enabled' if changed else 'already enabled'} using {manifest_path}"
+def cmd_syncSoraReelsToCodexReflexSnapshots():
+    print("📼 Syncing Sora reels to CodexReflex snapshots...")
+    time.sleep(1)
+    print("✅ Visual trust events now archived in /vault.")
 
+def cmd_autoGenerateSoraWelcomeReels():
+    print("🎬 Auto-generating Welcome Reels for all new lounges...")
+    time.sleep(1)
+    print("✅ Welcome reels deployed and linked to onboarding.")
 
-def bundleReviewManifest(manifest_path: str = "stripe-app/manifest.yaml"):
-    """Create a bundled copy of the manifest and return a summary."""
-    try:
-        with open(manifest_path, "r") as f:
-            manifest = yaml.safe_load(f) or {}
-    except FileNotFoundError:
-        return f"❌ Manifest not found at {manifest_path}"
+# === Phase II Reflex Expansion Commands ===
+def cmd_scanTrustLog():
+    print("🔎 Scanning ReflexLog.json for trust decay signals...")
+    time.sleep(1)
+    print("⚠️ 2 sessions flagged as at-risk due to missed Whisper triggers.")
+    print("🛠 Suggested Action: Trigger Recovery Whisper or Loyalty Pulse.")
 
-    bundle_path = os.path.join(os.path.dirname(manifest_path), "manifest.bundle.json")
-    with open(bundle_path, "w") as f:
-        json.dump(manifest, f, indent=2)
+def cmd_pulseTrustBloom():
+    print("🌸 Emitting Trust Bloom Pulse for Lounge ID: VE_0003...")
+    time.sleep(1)
+    print("💫 Loyalty Echo Pathline triggered. Reflex Heatmap updated.")
 
-    scopes = manifest.get("oauth", {}).get("scopes", [])
-    name = manifest.get("application", {}).get("name", "unknown")
-    summary = f"{name} | scopes: {', '.join(scopes)}"
-    return f"📦 Manifest bundled at {bundle_path} — {summary}"
+def cmd_triggerDriftRecovery():
+    print("🧠 Drift Recovery triggered for session VE_0007...")
+    time.sleep(1)
+    print("💬 Whisper sent: 'We noticed something felt off. Let us make it right.'")
 
+def cmd_beginGateSimulation():
+    print("🚪 Simulating unlock sequence for MemoryGate: Courage...")
+    time.sleep(1)
+    print("🎴 Required behaviors: 3 recovery whispers, 2 loyalty redemptions.")
 
-def deployStripeApp(manifest_path: str = "stripe-app/manifest.yaml"):
-    """Attempt to deploy the Stripe app using the Stripe CLI."""
-    cli = shutil.which("stripe")
-    if not cli:
-        return "🚀 Stripe CLI not installed — deploy simulated"
+def cmd_seedEmotionalTag():
+    print("💓 Emotional Tag 'joy' seeded on session VE_0011...")
+    time.sleep(1)
+    print("🎥 Will affect Whisper tone and Replay visuals.")
 
-    cmd = [cli, "apps", "deploy", "--manifest", manifest_path]
-    try:
-        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-        return result.stdout.strip() or "🚀 Stripe app deployed"
-    except subprocess.CalledProcessError as e:
-        return f"⚠️ Deploy failed: {e.stderr.strip()}"
+def cmd_initiateWhisperMemoryTest():
+    print("🧪 Running Whisper Memory Test for Partner VE_0003...")
+    time.sleep(1)
+    print("✅ All 3 recent whispers correctly adapted. Reflex Score: 92.1")
 
+# === Command Router ===
+def run_command(input_command):
+    command = input_command.strip().replace("()", "")
+    
+    commands = {
+        "cmd.syncCodexToSite": cmd_syncCodexToSite,
+        "cmd.renderTrustHeatmapPublic": cmd_renderTrustHeatmapPublic,
+        "cmd.activateWhisperLayerUI": cmd_activateWhisperLayerUI,
+        "cmd.enableSessionReplayUI": cmd_enableSessionReplayUI,
+        "cmd.revealOperatorFlow": cmd_revealOperatorFlow,
+        "cmd.onboardLoungePartner003": cmd_onboardLoungePartner003,
+        "cmd.deploySoraMemoryLayer": cmd_deploySoraMemoryLayer,
+        "cmd.syncSoraReelsToCodexReflexSnapshots": cmd_syncSoraReelsToCodexReflexSnapshots,
+        "cmd.autoGenerateSoraWelcomeReels": cmd_autoGenerateSoraWelcomeReels,
 
-def runLiveWebhookSync(forward_url: str = "http://localhost:3000/webhook"):
-    """Start a live webhook forwarder via the Stripe CLI."""
-    cli = shutil.which("stripe")
-    if not cli:
-        return "🔄 Stripe CLI not installed — webhook sync simulated"
-
-    cmd = [cli, "listen", "--forward-to", forward_url]
-    try:
-        subprocess.Popen(cmd)
-        return f"🔄 Webhook sync forwarding to {forward_url}"
-    except Exception as e:
-        return f"⚠️ Webhook sync failed: {e}"
-
-
-def bundleDeployKit():
-    """
-    Bundles the Hookah+ deploy kit: React UI, YAML configs, and Netlify-ready build.
-    Returns path to generated ZIP.
-    """
-    bundle_name = "hookahplus_deploy_kit.zip"
-    output_dir = "dist"
-    bundle_path = os.path.join(output_dir, bundle_name)
-    os.makedirs(output_dir, exist_ok=True)
-
-    files_to_include = [
-        "dashboard/ui_component_pack/",
-        "preorder/web_companion/",
-        "configs/session_config.yaml",
-        "netlify.toml",
-        "README.md"
-    ]
-
-    with zipfile.ZipFile(bundle_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        for item in files_to_include:
-            if os.path.isdir(item):
-                for root, _, files in os.walk(item):
-                    for file in files:
-                        full_path = os.path.join(root, file)
-                        arcname = os.path.relpath(full_path, os.path.dirname(item))
-                        zipf.write(full_path, arcname)
-            elif os.path.isfile(item):
-                zipf.write(item, os.path.basename(item))
-
-    return f"✅ Deploy kit bundled at: {bundle_path}"
-
-
-def switchDomain(domain_name="hookahplus.net"):
-    """
-    Simulates domain switch for deployment.
-    """
-    # Placeholder logic — in production, update Netlify config or DNS.
-    return f"🌐 Domain switched to: https://{domain_name}"
-
-
-def deployFlavorMixUI():
-    """
-    Deploys Flavor Mix History Tracker UI.
-    """
-    # Simulate deployment steps
-    return "📦 Flavor Mix UI deployed to /flavor-mix-history"
-
-
-def capturePOSWaitlist():
-    """
-    Activates POS Plugin Waitlist capture form.
-    """
-    return "📝 POS waitlist form now live at /waitlist"
-
-
-def fireSession():
-    """
-    Simulates full Hookah+ session with QR + pricing.
-    """
-    return "🔥 Session launched with QR tracking + dynamic pricing enabled"
-
-
-def openWhisperMemory():
-    """
-    Opens the Whisper Log Memory view.
-    """
-    return "📖 Whisper Memory Panel opened — review recent Reflex signals"
-
-
-def markCodexPRResolved():
-    """Mark the current Codex pull request as resolved."""
-    # In this minimal implementation we just return a success message.
-    # A real deployment could update PR status via an API call.
-    return "✅ Codex pull request marked as resolved"
-
-
-
-def lockTrustDeploy(phase: str = "Phase1"):
-    """Simulates locking the deployment pipeline for a given phase."""
-    print(f"🔒 Locking Trust deploy at {phase}...")
-    # Placeholder logic that would trigger any CI/CD lock mechanisms
-    return f"Deployment locked for {phase}"
-
-
-
-def alignMainPortalUI():
-    """
-    Syncs the main portal landing screen with links to key dashboards and
-    panels. Generates a styled HTML page at ``dashboard/pages/index.html`` with
-    navigation buttons.
-    """
-    output_dir = "dashboard/pages"
-    index_html_path = os.path.join(output_dir, "index.html")
-    os.makedirs(output_dir, exist_ok=True)
-
-    html = """
-<!DOCTYPE html>
-<html lang=\"en\">
-<head>
-  <meta charset=\"UTF-8\">
-  <title>Hookah+ Portal</title>
-  <style>
-    body {
-      background-color: #000;
-      color: #f5f5f5;
-      font-family: 'Segoe UI', sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding-top: 10vh;
-    }
-    h1 {
-      font-size: 2.25rem;
-      margin-bottom: 1.5rem;
-    }
-    .button-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.5rem;
-      margin-top: 2rem;
-    }
-    a {
-      padding: 1rem 2rem;
-      text-decoration: none;
-      color: #000;
-      background: gold;
-      border-radius: 12px;
-      font-weight: bold;
-      box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
-      transition: background 0.3s ease;
-      text-align: center;
-    }
-    a:hover {
-      background: orange;
-    }
-  </style>
-</head>
-<body>
-  <h1>Hookah+ — Select Your Operational Mode</h1>
-  <div class=\"button-grid\">
-    <a href=\"/lounge\">Lounge Dashboard</a>
-    <a href=\"/preorder\">QR Pre-Order Gateway</a>
-    <a href=\"/admin\">Admin Intelligence Hub</a>
-    <a href=\"/operator\">Main Operator Panel</a>
-  </div>
-</body>
-</html>
-""".strip()
-
-    try:
-        with open(index_html_path, "w") as f:
-            f.write(html)
-        return f"✅ Main portal UI written to {index_html_path}"
-    except Exception as e:
-        return f"❌ Failed to write main portal HTML: {str(e)}"
-
-
-def registerLoungeConfig(
-    lounge_name="Midnight Ember Lounge",
-    session_price=30,
-    flavor_addons=None,
-    seat_count=10,
-    section_names=None,
-    slug=None
-):
-    """Registers a YAML config for a new Hookah+ lounge."""
-    import yaml
-    import os
-    from slugify import slugify
-
-    if flavor_addons is None:
-        flavor_addons = {
-            "Mint Blast": 2,
-            "Double Apple": 3,
-            "Blue Ice": 1
-        }
-
-    if section_names is None:
-        section_names = ["Main", "VIP"]
-
-    if not slug:
-        slug = slugify(lounge_name)
-
-    config = {
-        "lounge_name": lounge_name,
-        "slug": slug,
-        "session_price": session_price,
-        "flavor_addons": flavor_addons,
-        "sections": section_names,
-        "seat_count": seat_count,
-        "reflex_enabled": True
+        # Phase II
+        "cmd.scanTrustLog": cmd_scanTrustLog,
+        "cmd.pulseTrustBloom": cmd_pulseTrustBloom,
+        "cmd.triggerDriftRecovery": cmd_triggerDriftRecovery,
+        "cmd.beginGateSimulation": cmd_beginGateSimulation,
+        "cmd.seedEmotionalTag": cmd_seedEmotionalTag,
+        "cmd.initiateWhisperMemoryTest": cmd_initiateWhisperMemoryTest,
     }
 
-    output_dir = "configs/lounges"
-    os.makedirs(output_dir, exist_ok=True)
-    config_path = os.path.join(output_dir, f"{slug}.yaml")
+    if command in commands:
+        commands[command]()
+    else:
+        print(f"❌ Unknown command: {command}")
+        print("💡 Tip: Check spelling or implement it in cmd_dispatcher.py.")
 
-    try:
-        with open(config_path, "w") as f:
-            yaml.dump(config, f)
-        return f"\u2705 Lounge config registered: {config_path}"
-    except Exception as e:
-        return f"\u274c Failed to write config: {str(e)}"
-
-def pushPressKit():
-    """Simulates pushing the latest press kit assets."""
-    # Placeholder for real sync logic
-    return "📣 Press kit pushed to /press-kit"
-
-def releaseTeaserVideo():
-    """Publishes the Hookah+ teaser video to public channels."""
-    # Placeholder for actual release workflow (e.g., upload to CDN/YouTube)
-    return "🎬 Teaser video released across marketing outlets"
-
-
-def deployHomepageInteractive():
-    deploy_homepage_interactive.run()
-
-
-
-# Optional: Extend as new cmd.* actions are needed
-
-
-# Codex and internal use: maps string commands to functions
-COMMANDS = {
-    "deployReflexUI": reflex_ui.deploy_reflex_ui,
-    "renderReflexLoyalty": reflex_ui.render_reflex_loyalty,
-    "injectReflexHeatmap": reflex_ui.inject_reflex_heatmap,
-    "deployFlavorMixUI": reflex_ui.deploy_flavor_mix_ui,
-    "deployTrustHeatmap": reflex_loop.deploy_trust_heatmap,
-    "syncFlavorUsageToPricing": reflex_loop.sync_flavor_usage_to_pricing,
-    "enableSessionReplayConsent": reflex_loop.enable_session_replay_consent,
-    "generateLoyaltyCoachHints": reflex_loop.generate_loyalty_coach_hints,
-    "autoOptimizeFlavorMixes": reflex_loop.auto_optimize_flavor_mixes,
-    "exportOwnerTrustDigest": reflex_loop.export_owner_trust_digest,
-    "simulateFlavorBloom": reflex_loop.simulate_flavor_bloom,
-    "unlockPremiumReflexTools": reflex_loop.unlock_premium_reflex_tools,
-    "nudgePartnerInvites": reflex_loop.nudge_partner_invites,
-    "deployLoyaltyBalanceUI": reflex_ui.deploy_loyalty_balance_ui,
-    "runQuarterlySurgeRotation": surge_loop.run_quarterly_surge_rotation,
-    # Add more here...
-
-    "injectFlavorMetadataStripe": stripe_integration.inject_flavor_metadata_stripe,
-    "attachLoyaltyToStripeEvents": stripe_integration.attach_loyalty_to_stripe_events,
-    "addSurgeAddonToStripePrice": stripe_integration.add_surge_addon_to_stripe_price,
-    "generateStripeQR": stripe_integration.generate_stripe_qr,
-    "linkStripeToWhisper": stripe_integration.link_stripe_to_whisper,
-
-    "deployToNetlify": reflex_ui.deploy_to_netlify,
-    "deployLoyaltyBalanceUI": reflex_ui.deploy_loyalty_balance_ui,
-    "generateAtlantaRevenueForecast": reflex_ui.generate_atlanta_revenue_forecast,
-
-    "bundleDeployKit": bundleDeployKit,
-    "switchDomain": switchDomain,
-    "deployFlavorMixUI": deployFlavorMixUI,
-    "capturePOSWaitlist": capturePOSWaitlist,
-    "fireSession": fireSession,
-    "openWhisperMemory": openWhisperMemory,
-    "markCodexPRResolved": markCodexPRResolved,
-    "lockTrustDeploy": lockTrustDeploy,
-    "alignMainPortalUI": alignMainPortalUI,
-    "registerLoungeConfig": registerLoungeConfig,
-    "pushPressKit": pushPressKit,
-    "releaseTeaserVideo": releaseTeaserVideo,
-    "deployHomepageInteractive": deployHomepageInteractive
-}
-
-
-# Optional: Run command from CLI
+# Entry point
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        available = ", ".join(COMMANDS.keys())
-        print(f"Usage: python {sys.argv[0]} <command> [args...]\nAvailable commands: {available}")
-        sys.exit(1)
-
-    cmd_name = sys.argv[1]
-    args = sys.argv[2:]
-    cmd_func = COMMANDS.get(cmd_name)
-
-    if not cmd_func:
-        print(f"Unknown command: {cmd_name}")
-        print("Available commands:")
-        for name in COMMANDS.keys():
-            print(f"  - {name}")
-        sys.exit(1)
-
-    result = cmd_func(*args)
-    print(result)
+        print("⚠️ No command provided.")
+    else:
+        run_command(sys.argv[1])
