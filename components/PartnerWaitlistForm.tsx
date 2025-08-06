@@ -3,22 +3,35 @@
 import { useState } from 'react';
 
 export default function PartnerWaitlistForm() {
-  const [submitted, setSubmitted] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [message, setMessage] = useState('');
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    await fetch('/api/partner-waitlist', {
-      method: 'POST',
-      body: formData,
-    });
-    setSubmitted(true);
+    try {
+      const res = await fetch('/api/partner-waitlist', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || 'Submission failed');
+      }
+      setStatus('success');
+      setMessage(
+        'Thanks for joining the waitlist! Your config file has been generated.'
+      );
+    } catch (err: any) {
+      setStatus('error');
+      setMessage(err.message || 'Something went wrong.');
+    }
   };
 
-  if (submitted) {
+  if (status === 'success') {
     return (
       <p className="mt-4 font-sans text-mystic">
-        Thanks for joining the waitlist! Your config file has been generated.
+        {message}
       </p>
     );
   }
@@ -54,9 +67,12 @@ export default function PartnerWaitlistForm() {
         <option value="Toast">Toast</option>
       </select>
       <div className="text-sm">Seating Photo</div>
-      <input type="file" name="photo" accept="image/*" className="w-full" />
+      <input type="file" name="photo" accept="image/*" className="w-full" required />
       <div className="text-sm">Pricing YAML</div>
-      <input type="file" name="pricing" accept=".yml,.yaml" className="w-full" />
+      <input type="file" name="pricing" accept=".yml,.yaml" className="w-full" required />
+      {status === 'error' && (
+        <p className="text-red-600 text-sm">{message}</p>
+      )}
       <button
         type="submit"
         className="bg-ember text-goldLumen px-4 py-2 rounded w-full"
