@@ -23,7 +23,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
 
   componentDidCatch(error: unknown, info: React.ErrorInfo) {
     try {
-      reflex?.logEvent?.('error_boundary_triggered', {
+      reflex.logEvent?.('error_boundary_triggered', {
         error: String(error),
         info,
       });

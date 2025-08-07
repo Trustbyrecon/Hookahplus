@@ -22,7 +22,7 @@ export default function OnboardingModal({ onComplete }: Props) {
         <button
           className="mt-4 w-full bg-ember hover:bg-mystic text-goldLumen py-2 px-4 rounded"
           onClick={() => {
-            reflex?.logEvent('loyalty_triggered', {
+            reflex.logEvent?.('loyalty_triggered', {
               flavor,
               mix: { timer },
               epScore: 0,

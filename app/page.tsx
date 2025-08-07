@@ -23,7 +23,7 @@ export default function Home() {
   const [showOverlay, setShowOverlay] = useState(false);
 
   useEffect(() => {
-    reflex?.logEvent('trust_load', {
+    reflex.logEvent?.('trust_load', {
       page: 'homepage',
       score: 8.9,
       timestamp: Date.now(),
@@ -63,7 +63,7 @@ export default function Home() {
       { mix: true },
       { preview: true }
     );
-    reflex?.logEvent('session_started', { timestamp: Date.now() });
+    reflex.logEvent?.('session_started', { timestamp: Date.now() });
     setShowOverlay(false);
     router.push('/live-session');
   };

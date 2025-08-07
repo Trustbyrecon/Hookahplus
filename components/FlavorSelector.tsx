@@ -13,7 +13,7 @@ export default function FlavorSelector({ value, onChange }: Props) {
   const flavors = ['Mint', 'Double Apple', 'Grape'];
 
   const handleChange = (newValue: string) => {
-    reflex?.logEvent('flavor_selected', {
+    reflex.logEvent?.('flavor_selected', {
       flavor: newValue,
       timestamp: Date.now(),
     });
