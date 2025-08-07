@@ -54,3 +54,15 @@ def nudge_partner_invites():
     print("📩 Partner invite nudges dispatched.")
     return "Partner invites nudged"
 
+
+def enable_whisper_customizer():
+    """Personalize Whisper prompts for lounge staff."""
+    print("🎨 Whisper customizer enabled for staff.")
+    return "Whisper customizer enabled"
+
+
+def spawn_staff_journal_loop():
+    """Activate staff reflection journal loop."""
+    print("📝 Staff journal loop activated.")
+    return "Staff journal loop spawned"
+
