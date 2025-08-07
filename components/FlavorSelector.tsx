@@ -1,10 +1,7 @@
 'use client';
 
 import React from 'react';
-
-declare const reflex:
-  | { logEvent: (event: string, payload: Record<string, unknown>) => void }
-  | undefined;
+import { reflex } from '../lib/reflex';
 
 interface Props {
   value: string;

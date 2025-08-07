@@ -3,10 +3,7 @@
 import React, { useState } from 'react';
 import FlavorSelector from './FlavorSelector';
 import TimerControl from './TimerControl';
-
-declare const reflex:
-  | { logEvent: (event: string, payload: Record<string, unknown>) => void }
-  | undefined;
+import { reflex } from '../lib/reflex';
 
 interface Props {
   onComplete: () => void;

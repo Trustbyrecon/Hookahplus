@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { reflex } from '../lib/reflex';
 
 interface Props {
   children: React.ReactNode;
@@ -21,6 +22,14 @@ export default class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: unknown, info: React.ErrorInfo) {
+    try {
+      reflex?.logEvent?.('error_boundary_triggered', {
+        error: String(error),
+        info,
+      });
+    } catch (e) {
+      console.warn('Reflex failed to load, using fallback.', e);
+    }
     console.error('ErrorBoundary caught', error, info);
   }
 

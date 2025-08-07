@@ -16,10 +16,7 @@ import WhisperOverlayEngine from '../components/WhisperOverlayEngine';
 import SessionReplaySection from '../components/SessionReplaySection';
 import WhisperCatch from '../components/WhisperCatch';
 import { sessionIgnition } from '../sessionIgnition';
-
-declare const reflex:
-  | { logEvent: (event: string, payload: Record<string, unknown>) => void }
-  | undefined;
+import { reflex } from '../lib/reflex';
 
 export default function Home() {
   const router = useRouter();
