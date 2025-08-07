@@ -15,6 +15,8 @@ import {
   MemoryPulseTracker,
 } from '../../components/ReflexOverlay';
 import WhisperOverlayEngine from '../../components/WhisperOverlayEngine';
+import StaffJournalModal from '../../components/StaffJournalModal';
+import WhisperToneSelector from '../../components/WhisperToneSelector';
 
 export default function Dashboard() {
   const [mode, setMode] = useState<ViewMode>('staff');
@@ -121,6 +123,12 @@ export default function Dashboard() {
         )}
         <div className="mt-8">
           <TrustLog sessions={sessions} />
+        </div>
+        <div className="mt-8">
+          <WhisperToneSelector />
+        </div>
+        <div className="mt-4">
+          <StaffJournalModal />
         </div>
         <div className="mt-8 space-y-4">
           <WhisperTrigger />
