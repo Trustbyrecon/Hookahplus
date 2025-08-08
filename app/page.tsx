@@ -1,35 +1,43 @@
 'use client';
 import { useState } from 'react';
 
+/** Bump this to force Netlify/CDN to fetch fresh CSS every deploy */
+const CACHE_BUST = 'v=2025-08-08-01';
+
 export default function Landing(){
   const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string>('');
+  const [err, setErr]   = useState<string>('');
 
-  async function startCheckout(){
-    try{
+  async function handleCheckout() {
+    try {
       setBusy(true); setErr('');
-      const res = await fetch('/.netlify/functions/createCheckout',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          sessionId:`hp_${Date.now()}`,
-          loungeId:'demo-lounge-001',
-          flavorMix:['Mint','Blue Mist'],
-          basePrice:3000,
-          addOns:[{name:'Premium Flavor', amount:500}],
-          ref:'LANDING-CHECKOUT'
+      const res = await fetch('/.netlify/functions/createCheckout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: `hp_${Date.now()}`,
+          loungeId: 'demo-lounge-001',
+          flavorMix: ['Mint', 'Blue Mist'],
+          basePrice: 3000,
+          addOns: [{ name: 'Premium Flavor', amount: 500 }],
+          ref: 'LANDING-CHECKOUT'
         })
       });
       const data = await res.json();
-      if(res.ok && data.url){ window.location.href = data.url; }
-      else { setErr(data.error || 'Unable to start checkout'); }
-    }catch(e:any){ setErr(e.message); }
-    finally{ setBusy(false); }
+      if (res.ok && data.url) window.location.href = data.url;
+      else setErr(data.error || 'Unable to start checkout');
+    } catch (e: any) {
+      setErr(e.message);
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
     <div>
-      <link rel="stylesheet" href="/landing.css" />
+      {/* Cache-busted CSS to break any stale edge content */}
+      <link rel="stylesheet" href={`/landing.css?${CACHE_BUST}`} />
+
       <div className="nav">
         <div className="brand">Hookah<span>+</span></div>
         <nav>
@@ -44,12 +52,12 @@ export default function Landing(){
           <h1>Session Reimagined. <br className="br-sm" />Loyalty Reinforced.</h1>
           <p>Hookah+ gives lounges a premium, modern experience: flavor mixes, live session checkout, and loyalty—beautifully tied together.</p>
           <div className="actions">
-            <button className="btn primary" onClick={startCheckout} disabled={busy}>
+            <button className="btn primary" onClick={handleCheckout} disabled={busy}>
               {busy ? 'Starting…' : 'Checkout (Test)'}
             </button>
             <a className="btn ghost" href="/dashboard/notes">Operator Dashboard</a>
           </div>
-          {err && <div style={{color:'tomato',marginTop:8}}>{err}</div>}
+          {err && <div style={{ color:'tomato', marginTop:8 }}>{err}</div>}
           <div className="badges">
             <span>Fast checkout</span>
             <span>Flavor memory</span>
