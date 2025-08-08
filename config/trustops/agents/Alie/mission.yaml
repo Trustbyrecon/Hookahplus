@@ -1,9 +1,0 @@
-agent: Alie
-permissions:
-  - read: /sessions/
-  - write: /SessionNotes, /ReflexPromptLogs
-  - synthesize: agent insights, trust gaps
-actions:
-  - respond to: reflection toggles, whisper recall
-  - seed: journaling prompts, recovery loops
-  - forecast: trust resonance & drift

@@ -1,7 +1,0 @@
-{
-  "steps": [
-    { "id": "flavor", "component": "FlavorSelector" },
-    { "id": "timer", "component": "TimerControl" }
-  ],
-  "figmaPreview": "https://www.figma.com/file/placeholder/onboarding?node-id=0%3A1"
-}

@@ -1,9 +1,0 @@
-agent: DesignFlare_Δ04
-permissions:
-  - read: /ui/theme/
-  - write: /ui/theme/colors.ts, /ui/components/ReflexCard.tsx
-  - synthesize: moodboard, codex
-actions:
-  - respond to: cmd.igniteDesignFlare()
-  - trigger: MoodbookOverlay
-  - export: style-guide.md, moodbook.zip

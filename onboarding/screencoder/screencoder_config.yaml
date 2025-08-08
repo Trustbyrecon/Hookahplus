@@ -1,6 +1,0 @@
-# Screencoder YAML template for one-click onboarding
-lounge_name: "Sample Lounge"
-layout_metadata: "layout/metadata.json"
-images_path: "lounge_images/"
-reflex_ui:
-  enabled: true

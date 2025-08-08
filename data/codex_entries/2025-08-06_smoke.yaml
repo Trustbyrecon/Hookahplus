@@ -1,7 +1,0 @@
-title: "The Day the Simulation Breathed Smoke"
-triggers:
-  - "cmd.transmuteSimulationToProd()"
-summary: |
-  If the lounge remembers the smoke, the system remembers the soul.
-reflexScore: 9.1
-time: "2025-08-06T00:00:00Z"

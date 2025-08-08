@@ -1,5 +1,0 @@
-# Loyalty point balances per session
-sessions:
-  - session_id: demo-session-1
-    user: guest
-    points: 120
