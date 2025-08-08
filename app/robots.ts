@@ -1,9 +1,7 @@
-import type { MetadataRoute } from 'next';
-
-export default function robots(): MetadataRoute.Robots {
+// Next.js App Router robots generator
+export default function robots() {
   return {
     rules: [{ userAgent: '*', allow: '/' }],
     sitemap: 'https://hookahplus.net/sitemap.xml',
-    host: 'https://hookahplus.net',
   };
 }
