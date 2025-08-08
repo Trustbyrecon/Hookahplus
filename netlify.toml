@@ -9,3 +9,15 @@ directory = "netlify/functions"
 from = "/api/*"
 to = "/.netlify/functions/:splat"
 status = 200
+
+# Redirect root to demo until homepage is ready (remove later if you want / as home)
+[[redirects]]
+from = "/"
+to = "/demo"
+status = 302
+
+# Catch-all redirect for missing pages → home (prevents Netlify 404 box)
+[[redirects]]
+from = "/*"
+to = "/"
+status = 302
