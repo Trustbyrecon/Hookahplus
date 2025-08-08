@@ -2,34 +2,29 @@
 import { useState } from 'react';
 
 export default function Landing(){
-  const [loading, setLoading] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string>('');
 
-  async function checkout(){
+  async function startCheckout(){
     try{
-      setLoading(true);
-      const res = await fetch('/.netlify/functions/createCheckout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sessionId: `hp_${Date.now()}`,
-          loungeId: 'demo-lounge-001',
-          flavorMix: ['Mint','Blue Mist'],
-          basePrice: 3000,
-          addOns: [{ name: 'Premium Flavor', amount: 500 }],
-          ref: 'LANDING-CHECKOUT'
+      setBusy(true); setErr('');
+      const res = await fetch('/.netlify/functions/createCheckout',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          sessionId:`hp_${Date.now()}`,
+          loungeId:'demo-lounge-001',
+          flavorMix:['Mint','Blue Mist'],
+          basePrice:3000,
+          addOns:[{name:'Premium Flavor', amount:500}],
+          ref:'LANDING-CHECKOUT'
         })
       });
       const data = await res.json();
-      if (res.ok && data.url){
-        window.location.href = data.url;
-      } else {
-        console.error(data.error || 'Checkout error');
-      }
-    } catch(e){
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
+      if(res.ok && data.url){ window.location.href = data.url; }
+      else { setErr(data.error || 'Unable to start checkout'); }
+    }catch(e:any){ setErr(e.message); }
+    finally{ setBusy(false); }
   }
 
   return (
@@ -49,10 +44,12 @@ export default function Landing(){
           <h1>Session Reimagined. <br className="br-sm" />Loyalty Reinforced.</h1>
           <p>Hookah+ gives lounges a premium, modern experience: flavor mixes, live session checkout, and loyalty—beautifully tied together.</p>
           <div className="actions">
-            <a className="btn primary" href="/demo">Start a Demo</a>
+            <button className="btn primary" onClick={startCheckout} disabled={busy}>
+              {busy ? 'Starting…' : 'Checkout (Test)'}
+            </button>
             <a className="btn ghost" href="/dashboard/notes">Operator Dashboard</a>
-            <button className="btn" onClick={checkout} disabled={loading}>{loading ? 'Processing…' : 'Checkout'}</button>
           </div>
+          {err && <div style={{color:'tomato',marginTop:8}}>{err}</div>}
           <div className="badges">
             <span>Fast checkout</span>
             <span>Flavor memory</span>
@@ -129,5 +126,5 @@ export default function Landing(){
         </div>
       </footer>
     </div>
-  )
+  );
 }
