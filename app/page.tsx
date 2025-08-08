@@ -1,9 +1,6 @@
 'use client';
 import { useState } from 'react';
 
-/** Bump this to force Netlify/CDN to fetch fresh CSS every deploy */
-const CACHE_BUST = 'v=2025-08-08-01';
-
 export default function Landing(){
   const [busy, setBusy] = useState(false);
   const [err, setErr]   = useState<string>('');
@@ -36,7 +33,7 @@ export default function Landing(){
   return (
     <div>
       {/* Cache-busted CSS to break any stale edge content */}
-      <link rel="stylesheet" href={`/landing.css?${CACHE_BUST}`} />
+      <link rel="stylesheet" href={`/landing.css?v=2025-08-08-01`} />
 
       <div className="nav">
         <div className="brand">Hookah<span>+</span></div>
