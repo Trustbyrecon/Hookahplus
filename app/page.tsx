@@ -1,99 +1,83 @@
-"use client";
+'use client';
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import ReflexCard from '../components/ReflexCard';
-import OnboardingModal from '../components/OnboardingModal';
-import StickyNav from '../components/StickyNav';
-import {
-  WhisperTrigger,
-  TrustArcDisplay,
-  ReflexPromptModal,
-  MemoryPulseTracker,
-} from '../components/ReflexOverlay';
-import WhisperOverlayEngine from '../components/WhisperOverlayEngine';
+function getCookie(name: string) {
+  if (typeof document === 'undefined') return '';
+  const m = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  return m ? decodeURIComponent(m[2]) : '';
+}
 
-import SessionReplaySection from '../components/SessionReplaySection';
-import WhisperCatch from '../components/WhisperCatch';
-import { sessionIgnition } from '../sessionIgnition';
-import { reflex } from '../lib/reflex';
+async function startHookahSession(payload:any) {
+  const res = await fetch('/api/createCheckout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const { url } = await res.json();
+  window.location.href = url;
+}
 
 export default function Home() {
-  const router = useRouter();
-  const [showOverlay, setShowOverlay] = useState(false);
+  const [sessionId, setSessionId] = useState('');
+  const [ref, setRef] = useState('');
+  const [autofire, setAutofire] = useState(false);
 
   useEffect(() => {
-    reflex.logEvent?.('trust_load', {
-      page: 'homepage',
-      score: 8.9,
-      timestamp: Date.now(),
-    });
+    // @ts-ignore
+    setSessionId(crypto?.randomUUID?.() ?? `${Date.now()}`);
+    const sp = new URLSearchParams(window.location.search);
+    setAutofire(sp.get('autofire') === '1');
+    const urlRef = sp.get('ref') || '';
+    const cookieRef = getCookie('hp_ref');
+    setRef(urlRef || cookieRef || '');
   }, []);
 
-  const cards = [
-    {
-      title: 'Dashboard',
-      description: 'Monitor operations and insights.',
-      cta: 'View Dashboard',
-      href: '/dashboard',
-    },
-    {
-      title: 'Onboarding',
-      description: 'Begin the journey and align your lounge.',
-      cta: 'Start Onboarding',
-      href: '/onboarding',
-    },
-    {
-      title: 'Demo',
-      description: 'Preview capabilities and flow.',
-      cta: 'See a Demo',
-      href: '/demo',
-    },
-    {
-      title: 'Live Session',
-      description: 'Engage with a real-time session.',
-      cta: 'Initiate Live Session',
-      onClick: () => setShowOverlay(true),
-    },
-  ];
+  const loungeId = useMemo(() => 'demo-lounge-001', []);
 
-  const handleSessionStart = () => {
-    sessionIgnition(
-      { live: true },
-      { mix: true },
-      { preview: true }
-    );
-    reflex.logEvent?.('session_started', { timestamp: Date.now() });
-    setShowOverlay(false);
-    router.push('/live-session');
+  const handleStart = async () => {
+    await startHookahSession({
+      sessionId,
+      loungeId,
+      flavorMix: ['Mint', 'Blue Mist'],
+      basePrice: 3000,
+      addOns: [{ name: 'Premium Flavor', amount: 500 }],
+      notes: '',
+      ref,
+    });
   };
 
+  // Auto-fire from homepage when explicitly requested
+  useEffect(() => {
+    if (sessionId && autofire) handleStart();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId, autofire]);
+
   return (
-    <>
-      <StickyNav onStartSession={() => setShowOverlay(true)} />
-      <WhisperOverlayEngine />
-      <main className="min-h-screen bg-gradient-to-br from-charcoal via-deepMoss to-charcoal text-goldLumen px-6 py-12 font-sans">
-        <div className="max-w-5xl mx-auto text-center">
-          <h1 className="text-4xl font-display font-extrabold tracking-tight">Hookah+</h1>
-          <div className="mt-2 h-1 w-32 bg-mystic mx-auto rounded-full animate-pulse" />
-          <p className="mt-4 text-xl text-goldLumen/90">Session Reimagined. Loyalty Reinforced.</p>
-          <p className="mt-6 text-lg text-goldLumen/80">Navigate the experience portal: dashboard, onboarding, demo, and live session.</p>
-          <div className="mt-10 grid gap-6 sm:grid-cols-3">
-            {cards.map((card) => (
-              <ReflexCard key={card.title} {...card} />
-            ))}
-          </div>
-          <div className="mt-12 space-y-4">
-            <WhisperTrigger />
-            <ReflexPromptModal />
-          </div>
-        </div>
-        <SessionReplaySection />
-        {showOverlay && <OnboardingModal onComplete={handleSessionStart} />}
-        <TrustArcDisplay score={8.9} />
-        <MemoryPulseTracker />
-        <WhisperCatch />
-      </main>
-    </>
+    <main style={{
+      maxWidth: 880, margin: '72px auto', padding: '0 16px',
+      display: 'grid', gap: 20
+    }}>
+      <header style={{display:'grid',gap:8}}>
+        <h1 style={{fontSize:36,margin:0}}>Hookah+</h1>
+        <p style={{opacity:0.8,margin:0}}>
+          Session-ready POS for lounges — Stripe checkout, flavor-mix metadata, referrals, and partner onboarding.
+        </p>
+      </header>
+
+      <section style={{display:'flex',gap:12,flexWrap:'wrap'}}>
+        <button onClick={handleStart}
+          style={{padding:'10px 14px',border:'1px solid #333',borderRadius:10,cursor:'pointer'}}>
+          Start Session (Stripe)
+        </button>
+        <Link href="/demo" style={{padding:'10px 14px',border:'1px solid #333',borderRadius:10,textDecoration:'none'}}>Run Demo</Link>
+        <Link href="/partner" style={{padding:'10px 14px',border:'1px solid #333',borderRadius:10,textDecoration:'none'}}>Partner Onboarding</Link>
+        <Link href="/referral" style={{padding:'10px 14px',border:'1px solid #333',borderRadius:10,textDecoration:'none'}}>Referral Program</Link>
+      </section>
+
+      <small style={{opacity:0.7}}>
+        Tip: add <code>?autofire=1</code> to <code>/</code> or <code>/demo</code> to auto-launch a checkout for beacon testing.
+      </small>
+    </main>
   );
 }
