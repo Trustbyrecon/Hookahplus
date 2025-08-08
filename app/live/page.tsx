@@ -1,21 +1,13 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import {
-  WhisperTrigger,
-  TrustArcDisplay,
-  ReflexPromptModal,
-  MemoryPulseTracker,
-} from '../../components/ReflexOverlay';
+import { UnifrakturCook, Raleway } from 'next/font/google';
 
-interface LiveMessage {
-  message: string;
-  timestamp: string;
-}
+const unifraktur = UnifrakturCook({ weight: '700', subsets: ['latin'] });
+const raleway = Raleway({ weight: ['300', '600'], subsets: ['latin'] });
 
 export default function LivePage() {
-  const [status, setStatus] = useState('connecting');
-  const [messages, setMessages] = useState<LiveMessage[]>([]);
+  const [status, setStatus] = useState('disconnected');
 
   useEffect(() => {
     const url =
@@ -25,52 +17,49 @@ export default function LivePage() {
     ws.onopen = () => setStatus('connected');
     ws.onclose = () => setStatus('disconnected');
     ws.onerror = () => setStatus('error');
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        setMessages((prev) => [
-          ...prev,
-          {
-            message: data.message ?? event.data,
-            timestamp: new Date().toISOString(),
-          },
-        ]);
-      } catch {
-        setMessages((prev) => [
-          ...prev,
-          { message: event.data, timestamp: new Date().toISOString() },
-        ]);
-      }
-    };
 
     return () => {
       ws.close();
     };
   }, []);
 
+  const playIntro = () => alert("Playing Alie’s Intro...");
+  const elevateLoyalty = () => alert('Initiating Loyalty Elevation Path...');
+
   return (
-    <main className="p-8 font-sans">
-      <h1 className="text-2xl font-display font-bold">Live Session</h1>
-      <p className="mt-2 font-sans">Status: {status}</p>
-      <ul className="mt-4 space-y-2">
-        {messages.map((msg, idx) => (
-          <li
-            key={idx}
-            className="text-sm text-goldLumen/80 border-b border-goldLumen/20 pb-2"
-          >
-            <span className="font-mono">
-              {new Date(msg.timestamp).toLocaleTimeString()}:
-            </span>{' '}
-            {msg.message}
-          </li>
-        ))}
-      </ul>
-      <div className="mt-8 space-y-4">
-        <WhisperTrigger />
-        <ReflexPromptModal />
+    <main
+      className={`p-8 bg-charcoal text-goldLumen ${raleway.className}`}
+    >
+      <h1
+        className={`${unifraktur.className} text-3xl mb-2 text-ember`}
+      >
+        Live Session
+      </h1>
+      <div className="text-lg text-ember/80 mb-4">
+        Status: <span id="status">{status}</span>
       </div>
-      <TrustArcDisplay score={7.9} />
-      <MemoryPulseTracker />
+      <div className="flex flex-wrap gap-3">
+        <button
+          onClick={playIntro}
+          className="px-4 py-3 rounded-lg bg-mystic text-charcoal hover:bg-deepMoss transition"
+        >
+          🔊 Play Alie’s Intro
+        </button>
+        <button
+          onClick={elevateLoyalty}
+          className="px-4 py-3 rounded-lg bg-deepMoss text-charcoal hover:bg-mystic transition"
+        >
+          ✨ Ready to elevate loyalty?
+        </button>
+      </div>
+      <div className="text-lg text-deepMoss mt-6">
+        Trust: <strong>7.9</strong>
+      </div>
+      <div className="mt-8 p-6 rounded-lg border border-goldLumen/20 bg-charcoal">
+        <p className="italic text-mystic">
+          "Sometimes, all it takes is a spark. Let your service whisper the difference."
+        </p>
+      </div>
     </main>
   );
 }
