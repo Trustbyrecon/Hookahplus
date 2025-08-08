@@ -25,6 +25,7 @@ feat/stripe-live
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import SecurePaymentNotice from '../../components/SecurePaymentNotice';
 
 async function startHookahSession(payload:any) {
   const res = await fetch('/api/createCheckout', {
@@ -90,6 +91,7 @@ export default function Demo() {
         <button onClick={handleStart} style={{padding:12,borderRadius:8,marginTop:8}}>
           Start Session (Stripe)
         </button>
+        <SecurePaymentNotice />
       </section>
 
       {wantsStaff && (
