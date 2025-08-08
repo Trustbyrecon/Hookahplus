@@ -5,19 +5,33 @@
     "dev": "next dev",
     "build": "next build",
     "export": "next export",
-    "start": "next start"
+    "start": "next start",
+    "check:palette": "node scripts/check-color-classes.js",
+    "test": "echo 'No tests yet'",
+    "db:seed": "node scripts/init_db.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.859.0",
+    "@sendgrid/mail": "^8.1.5",
+    "debug": "^4.4.1",
+    "js-yaml": "^4.1.0",
     "next": "13.4.19",
+    "pg": "^8.11.3",
     "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
+    "supports-color": "^8.1.1",
+    "yaml": "^2.8.0"
   },
   "engines": {
     "node": ">=16.0.0"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.11",
     "@types/node": "24.1.0",
     "@types/react": "19.1.9",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.11",
     "typescript": "5.9.2"
   }
 }
