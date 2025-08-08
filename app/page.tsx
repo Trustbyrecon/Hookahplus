@@ -1,5 +1,8 @@
 'use client';
 import { useState } from 'react';
+import Head from 'next/head';
+
+const HTML_BUST = '2025-08-08T18-00-00Z';
 
 export default function Landing(){
   const [busy, setBusy] = useState(false);
@@ -31,18 +34,22 @@ export default function Landing(){
   }
 
   return (
-    <div>
-      {/* Cache-busted CSS to break any stale edge content */}
-      <link rel="stylesheet" href={`/landing.css?v=2025-08-08-01`} />
+    <>
+      <Head>
+        <meta name="x-build-bust" content={HTML_BUST} />
+      </Head>
+      <div>
+        {/* Cache-busted CSS to break any stale edge content */}
+        <link rel="stylesheet" href={`/landing.css?v=2025-08-08-01`} />
 
-      <div className="nav">
-        <div className="brand">Hookah<span>+</span></div>
-        <nav>
-          <a href="#features">Features</a>
-          <a href="#pricing">Pricing</a>
-          <a className="cta" href="/demo">See a Demo</a>
-        </nav>
-      </div>
+        <div className="nav">
+          <div className="brand">Hookah<span>+</span></div>
+          <nav>
+            <a href="#features">Features</a>
+            <a href="#pricing">Pricing</a>
+            <a className="cta" href="/demo">See a Demo</a>
+          </nav>
+        </div>
 
       <section className="hero">
         <div className="hero-inner">
@@ -131,5 +138,6 @@ export default function Landing(){
         </div>
       </footer>
     </div>
+    </>
   );
 }
