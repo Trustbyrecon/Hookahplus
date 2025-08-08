@@ -1,4 +1,27 @@
- feat/stripe-live
+// at top of app/demo/page.tsx
+import type { Metadata } from "next";
+
+export async function generateMetadata(
+  { searchParams }: { searchParams: { [k: string]: string | string[] | undefined } }
+): Promise<Metadata> {
+  const ref = typeof searchParams.ref === "string" ? searchParams.ref : "";
+  const mix = typeof searchParams.mix === "string" ? searchParams.mix : "";
+  const qs = new URLSearchParams();
+  if (ref) qs.set("ref", ref);
+  if (mix) qs.set("mix", mix);
+
+  const ogUrl = qs.toString()
+    ? `/demo/opengraph-image?${qs.toString()}`
+    : `/demo/opengraph-image`;
+
+  return {
+    title: "Hookah+ Demo — Live Session",
+    openGraph: { images: [{ url: ogUrl, width: 1200, height: 630 }] },
+    twitter:   { images: [ogUrl], card: "summary_large_image" }
+  };
+}
+
+feat/stripe-live
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
