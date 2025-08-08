@@ -1,1 +1,12 @@
-export default function Success(){return (<main style={{maxWidth:760,margin:'64px auto',padding:'0 16px',display:'grid',gap:12}}><h1>Payment successful</h1><p>Thanks! Your Hookah+ session is confirmed.</p><a href='/' style={{padding:'10px 14px',border:'1px solid #333',borderRadius:8}}>Back to home</a></main>);}
+import SecurePaymentNotice from '../../../components/SecurePaymentNotice';
+
+export default function Success() {
+  return (
+    <main style={{maxWidth:760,margin:'64px auto',padding:'0 16px',display:'grid',gap:12}}>
+      <h1>Payment successful</h1>
+      <p>Thanks! Your Hookah+ session is confirmed.</p>
+      <SecurePaymentNotice />
+      <a href='/' style={{padding:'10px 14px',border:'1px solid #333',borderRadius:8}}>Back to home</a>
+    </main>
+  );
+}
