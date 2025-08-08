@@ -1,20 +1,19 @@
-import '../styles/globals.css';
-import '../styles/whisper.css';
-import React from 'react';
-import ErrorBoundary from '../components/ErrorBoundary';
-
 export const metadata = {
-  title: 'Hookah+',
-  description: 'Hookah+ portal',
+  title: 'Hookah+ — Session Reimagined',
+  description: 'Premium lounge experience: flavor mixes, live session checkout, and loyalty.',
+  metadataBase: new URL('https://hookahplus.net'),
+  openGraph: {
+    title: 'Hookah+ — Session Reimagined',
+    description: 'Live sessions, premium flavors, and loyalty—brought together.',
+    url: 'https://hookahplus.net',
+    type: 'website'
+  }
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <head />
-      <body className="min-h-screen bg-charcoal text-goldLumen">
-        <ErrorBoundary>{children}</ErrorBoundary>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
