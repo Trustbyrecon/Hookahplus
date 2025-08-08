@@ -1,13 +1,12 @@
 'use client';
 import { useState } from 'react';
 
-export default function Home() {
+export default function Landing(){
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState('');
 
-  async function testCheckout() {
-    try {
-      setLoading(true); setMsg('');
+  async function checkout(){
+    try{
+      setLoading(true);
       const res = await fetch('/.netlify/functions/createCheckout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -17,37 +16,118 @@ export default function Home() {
           flavorMix: ['Mint','Blue Mist'],
           basePrice: 3000,
           addOns: [{ name: 'Premium Flavor', amount: 500 }],
-          ref: 'HOMEPAGE-TEST'
+          ref: 'LANDING-CHECKOUT'
         })
       });
       const data = await res.json();
-      if (res.ok && data.url) {
+      if (res.ok && data.url){
         window.location.href = data.url;
       } else {
-        setMsg(data.error || 'Unknown error');
+        console.error(data.error || 'Checkout error');
       }
-    } catch (e:any) {
-      setMsg(e.message);
+    } catch(e){
+      console.error(e);
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <main style={{maxWidth:880,margin:'64px auto',padding:'0 16px'}}>
-      <h1>Hookah+</h1>
-      <p>Session reimagined. Loyalty reinforced.</p>
+    <div>
+      <link rel="stylesheet" href="/landing.css" />
+      <div className="nav">
+        <div className="brand">Hookah<span>+</span></div>
+        <nav>
+          <a href="#features">Features</a>
+          <a href="#pricing">Pricing</a>
+          <a className="cta" href="/demo">See a Demo</a>
+        </nav>
+      </div>
 
-      <button onClick={testCheckout} disabled={loading}
-        style={{padding:'12px 16px',border:'1px solid #333',borderRadius:10}}>
-        {loading ? 'Starting…' : 'Test Checkout'}
-      </button>
-      {msg && <div style={{marginTop:8,color:'tomato'}}>{msg}</div>}
+      <section className="hero">
+        <div className="hero-inner">
+          <h1>Session Reimagined. <br className="br-sm" />Loyalty Reinforced.</h1>
+          <p>Hookah+ gives lounges a premium, modern experience: flavor mixes, live session checkout, and loyalty—beautifully tied together.</p>
+          <div className="actions">
+            <a className="btn primary" href="/demo">Start a Demo</a>
+            <a className="btn ghost" href="/dashboard/notes">Operator Dashboard</a>
+            <button className="btn" onClick={checkout} disabled={loading}>{loading ? 'Processing…' : 'Checkout'}</button>
+          </div>
+          <div className="badges">
+            <span>Fast checkout</span>
+            <span>Flavor memory</span>
+            <span>Loyalty built-in</span>
+          </div>
+        </div>
+      </section>
 
-      <ul style={{lineHeight:1.8, marginTop:16}}>
-        <li><a href="/staff/notes">Staff Notes</a></li>
-        <li><a href="/dashboard/notes">Notes Dashboard</a></li>
-      </ul>
-    </main>
-  );
+      <section id="features" className="features">
+        <h2>Why lounges choose Hookah+</h2>
+        <div className="grid">
+          <article className="card">
+            <h3>Premium Flavor Mix</h3>
+            <p>Create, save, and replay your lounge’s signature blends—customers come back for the exact taste they love.</p>
+          </article>
+          <article className="card">
+            <h3>Live Session Checkout</h3>
+            <p>Frictionless payments with Stripe. Quick upsells, add-ons, and a smooth end to every session.</p>
+          </article>
+          <article className="card">
+            <h3>Loyalty that Grows</h3>
+            <p>Built-in rewards and visit memory—delight regulars and recognize VIPs instantly.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="pricing" className="pricing">
+        <h2>Simple pricing</h2>
+        <div className="tiers">
+          <div className="tier">
+            <h3>Starter</h3>
+            <p className="price">$0<span>/mo</span></p>
+            <ul>
+              <li>1 Lounge</li>
+              <li>Flavor Memory</li>
+              <li>Basic Checkout</li>
+            </ul>
+            <a className="btn small" href="/demo">Try it</a>
+          </div>
+          <div className="tier featured">
+            <h3>Pro</h3>
+            <p className="price">$99<span>/mo</span></p>
+            <ul>
+              <li>Up to 3 Lounges</li>
+              <li>Upsells & Add-ons</li>
+              <li>Loyalty & Perks</li>
+            </ul>
+            <a className="btn small primary" href="/demo">Go Pro</a>
+          </div>
+          <div className="tier">
+            <h3>Enterprise</h3>
+            <p className="price">Custom</p>
+            <ul>
+              <li>Unlimited Lounges</li>
+              <li>SLA & White-label</li>
+              <li>Priority Support</li>
+            </ul>
+            <a className="btn small" href="mailto:team@hookahplus.net">Talk to us</a>
+          </div>
+        </div>
+      </section>
+
+      <section className="cta-wide">
+        <h2>Ready to elevate your lounge?</h2>
+        <a className="btn primary" href="/demo">See a Demo</a>
+      </section>
+
+      <footer className="footer">
+        <div>© {new Date().getFullYear()} Hookah+. All rights reserved.</div>
+        <div className="links">
+          <a href="/press">Press</a>
+          <a href="/onboarding">Onboard</a>
+          <a href="/live-session">Live Session</a>
+        </div>
+      </footer>
+    </div>
+  )
 }
