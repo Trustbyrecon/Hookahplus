@@ -1,4 +1,11 @@
 [build]
-  base = ""
-  command = "npm run build && npm run export"
-  publish = "out"
+command = "npm run build"
+publish = ".next"
+
+[functions]
+directory = "netlify/functions"
+
+[[redirects]]
+from = "/api/*"
+to = "/.netlify/functions/:splat"
+status = 200
