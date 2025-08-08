@@ -1,17 +1,1 @@
-'use client';
-
-import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
-
-export default function Success() {
-  const sp = useSearchParams();
-  const sid = sp.get('sid') || 'unknown';
-  return (
-    <main style={{maxWidth:640,margin:'64px auto',padding:'0 16px'}}>
-      <h1>Payment Successful ✅</h1>
-      <p>Checkout Session ID: <code>{sid}</code></p>
-      <p>Your hookah session is confirmed. Staff will get your setup started.</p>
-      <Link href="/">Back to Dashboard</Link>
-    </main>
-  );
-}
+export default function Success(){return (<main style={{maxWidth:760,margin:'64px auto',padding:'0 16px',display:'grid',gap:12}}><h1>Payment successful</h1><p>Thanks! Your Hookah+ session is confirmed.</p><a href='/' style={{padding:'10px 14px',border:'1px solid #333',borderRadius:8}}>Back to home</a></main>);}

@@ -10,7 +10,6 @@ export default function StaffNotesPage(){
   const [status, setStatus] = useState<string>('');
 
   const requiredPin = process.env.NEXT_PUBLIC_STAFF_DEMO_PIN || '735911';
-
   const verify = () => setOk(pin === requiredPin);
 
   const submit = async () => {
@@ -26,11 +25,8 @@ export default function StaffNotesPage(){
         })
       });
       const data = await res.json();
-      if (res.ok) {
-        setStatus('Saved ✓');
-      } else {
-        setStatus('Error: ' + (data.error || 'unknown error'));
-      }
+      if (res.ok) setStatus('Saved ✓');
+      else setStatus('Error: ' + (data.error || 'unknown'));
     } catch (e:any){
       setStatus('Error: ' + e.message);
     }
@@ -44,7 +40,7 @@ export default function StaffNotesPage(){
           <label htmlFor="pin">Enter Staff PIN</label>
           <input id="pin" type="password" value={pin} onChange={e=>setPin(e.target.value)} placeholder="PIN" style={{padding:8,borderRadius:8}} />
           <button onClick={verify} style={{padding:10,borderRadius:8}}>Unlock</button>
-          <small>Default PIN is <code>735911</code>. Override with <code>NEXT_PUBLIC_STAFF_DEMO_PIN</code>.</small>
+          <small>Set <code>NEXT_PUBLIC_STAFF_DEMO_PIN</code> in Netlify env (default 735911).</small>
         </section>
       ) : (
         <section style={{display:'grid',gap:12}}>
