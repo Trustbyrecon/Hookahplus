@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import type { AnalyticsEvent } from './events';
 
-type Event = { delta?: number; trigger?: string };
+type Event = AnalyticsEvent;
 const trustStore: Record<string, number> = {};
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -21,7 +22,18 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'POST') {
     const events: Event[] = Array.isArray(req.body?.events)
       ? req.body.events
-      : [{ delta: req.body?.delta, trigger: req.body?.trigger }];
+      : [
+          {
+            delta: req.body?.delta,
+            trigger: req.body?.trigger,
+            sessionId,
+            staffId,
+            zone: req.body?.zone || 'unknown',
+            flavor: req.body?.flavor || 'unknown',
+            latency: Number(req.body?.latency || 0),
+            timestamp: Date.now(),
+          },
+        ];
     const totalDelta = events.reduce(
       (sum, e) => sum + Number(e.delta || 0),
       0

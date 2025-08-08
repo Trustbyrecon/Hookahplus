@@ -6,17 +6,33 @@ import { UnifrakturCook, Raleway } from 'next/font/google';
 const unifraktur = UnifrakturCook({ weight: '700', subsets: ['latin'] });
 const raleway = Raleway({ weight: ['300', '600'], subsets: ['latin'] });
 
+interface LiveEvent {
+  delta: number;
+  trigger: string;
+  sessionId: string;
+  staffId: string;
+  zone: string;
+  flavor: string;
+  latency: number;
+  timestamp: number;
+}
+
 export default function LivePage() {
   const [status, setStatus] = useState('disconnected');
   const [trust, setTrust] = useState(7.9);
+  const [events, setEvents] = useState<LiveEvent[]>([]);
+  const [expanded, setExpanded] = useState<Record<number, boolean>>({});
 
-  const trustQueue = useRef<{ delta: number; trigger: string }[]>([]);
+  const eventQueue = useRef<LiveEvent[]>([]);
   const flushTimer = useRef<NodeJS.Timeout | null>(null);
 
   const SESSION_API = '/api/live/trust';
+  const ANALYTICS_API = '/api/live/events';
   const STAFF_ID = 'staff-demo'; // replace with real staff id
   const SESSION_ID = 'session-demo'; // replace with real session id
+  const ZONE_ID = 'main'; // replace with real zone
   const LS_KEY = 'hp.trust.score';
+
 
   useEffect(() => {
     const url =
@@ -65,18 +81,19 @@ export default function LivePage() {
     setTrustDisplay(cached);
   }
 
-  function queueTrust(delta: number, trigger: string) {
-    const optimistic = trust + delta;
+  function queueEvent(event: LiveEvent) {
+    const optimistic = trust + event.delta;
     setTrustDisplay(optimistic);
-    trustQueue.current.push({ delta, trigger });
+    setEvents((prev) => [...prev, event]);
+    eventQueue.current.push(event);
     if (!flushTimer.current) {
-      flushTimer.current = setTimeout(flushTrust, 1000);
+      flushTimer.current = setTimeout(flushEvents, 1000);
     }
   }
 
-  async function flushTrust() {
-    const batch = trustQueue.current;
-    trustQueue.current = [];
+  async function flushEvents() {
+    const batch = eventQueue.current;
+    eventQueue.current = [];
     flushTimer.current = null;
     try {
       const res = await fetch(SESSION_API, {
@@ -96,6 +113,20 @@ export default function LivePage() {
       }
     } catch (err) {
       console.warn('Persist trust failed:', err);
+    }
+    try {
+      await fetch(ANALYTICS_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          staffId: STAFF_ID,
+          sessionId: SESSION_ID,
+          events: batch,
+        }),
+      });
+    } catch (err) {
+      console.warn('Persist analytics failed:', err);
     }
   }
 
@@ -117,10 +148,28 @@ export default function LivePage() {
       loyalty: '/assets/audio/alie/loyalty.mp3',
       custom: '/assets/audio/alie/custom.mp3',
     };
+    const flavorMap: Record<string, string> = {
+      intro: 'house-blend',
+      loyalty: 'citrus-mint',
+      custom: 'custom',
+    };
     const src = audioMap[trigger] || audioMap.custom;
     const audio = new Audio(src);
     audio.volume = 0.85;
-    audio.addEventListener('playing', () => queueTrust(0.3, trigger));
+    const start = performance.now();
+    audio.addEventListener('playing', () => {
+      const latency = performance.now() - start;
+      queueEvent({
+        delta: 0.3,
+        trigger,
+        sessionId: SESSION_ID,
+        staffId: STAFF_ID,
+        zone: ZONE_ID,
+        flavor: flavorMap[trigger] || 'custom',
+        latency,
+        timestamp: Date.now(),
+      });
+    });
     audio.addEventListener('error', () =>
       console.warn('Alie audio missing:', src)
     );
@@ -159,6 +208,37 @@ export default function LivePage() {
       <div className="text-lg text-deepMoss mt-6">
         Trust: <strong>{trust.toFixed(1)}</strong>
       </div>
+      {events.length > 0 && (
+        <ul className="mt-6 space-y-2">
+          {events.map((ev, idx) => (
+            <li
+              key={idx}
+              className="border border-goldLumen/20 rounded bg-charcoal"
+            >
+              <button
+                className="w-full flex justify-between items-center p-3 text-left text-mystic"
+                onClick={() =>
+                  setExpanded((prev) => ({ ...prev, [idx]: !prev[idx] }))
+                }
+              >
+                <span>
+                  {ev.trigger} @ {new Date(ev.timestamp).toLocaleTimeString()}
+                </span>
+                <span>{expanded[idx] ? '▲' : '▼'}</span>
+              </button>
+              {expanded[idx] && (
+                <div className="p-3 text-sm space-y-1">
+                  <div>Session: {ev.sessionId}</div>
+                  <div>Staff: {ev.staffId}</div>
+                  <div>Zone: {ev.zone}</div>
+                  <div>Flavor: {ev.flavor}</div>
+                  <div>Latency: {Math.round(ev.latency)}ms</div>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
       <div className="mt-8 p-6 rounded-lg border border-goldLumen/20 bg-charcoal">
         <p className="italic text-mystic">
           "Sometimes, all it takes is a spark. Let your service whisper the difference."
