@@ -1,0 +1,76 @@
+name: Hookah+ MVP ETA Updater
+
+on:
+  push:
+    branches: [ main ]
+  schedule:
+    # Every day at 15:00 UTC (adjust as needed)
+    - cron: "0 15 * * *"
+  workflow_dispatch:
+
+jobs:
+  update-eta:
+    runs-on: ubuntu-latest
+    env:
+      # 1) Set these in repo secrets (Settings → Secrets → Actions):
+      #    - NETLIFY_HPLUS_ETA_TOKEN  (same value also in Netlify env)
+      #    - HPLUS_SITE_URL           (e.g. https://hookahplus.netlify.app)
+      TOKEN: ${{ secrets.NETLIFY_HPLUS_ETA_TOKEN }}
+      SITE:  ${{ secrets.HPLUS_SITE_URL }}
+      TASK:  cmd.launchHookahPlusMVP
+
+      # 2) Optional: tweak your fallback target window here
+      #    (kept here so the nightly job nudges ETA if no other updates run)
+      TARGET_ISO: "2025-09-01T17:00:00Z"
+
+    steps:
+      - name: Checkout (optional)
+        uses: actions/checkout@v4
+
+      # Example: compute progress from a simple checklist file (optional)
+      # If you keep a JSON with completion flags at scripts/hplus_status.json:
+      # {
+      #   "stage1": {"finalizeSessionUIUX": true, "deployFlavorMixHistoryUI": false, "enableQRPreorders": true, "validateHookahTrustLock": false},
+      #   "stage2": {"enableStripeReferrals": false, "injectCloverReflexSync": false, "scaffoldToastAdapter": false, "finishOperatorOnboardingFlows": false},
+      #   "stage3": {"launchDemoPage": false, "pushPricingSheetPDF": false, "pushPressKit": false, "finalMoatPass": false}
+      # }
+      - name: Derive progress (optional)
+        id: progress
+        run: |
+          if [ -f scripts/hplus_status.json ]; then
+            node - <<'NODE'
+            const fs = require('fs');
+            const s = JSON.parse(fs.readFileSync('scripts/hplus_status.json','utf8'));
+            const pct = o => {
+              const vals = Object.values(o);
+              const done = vals.filter(Boolean).length;
+              return Math.round((done / vals.length) * 100);
+            };
+            const stage1 = pct(s.stage1 || {});
+            const stage2 = pct(s.stage2 || {});
+            const stage3 = pct(s.stage3 || {});
+            const overall = Math.round((stage1 + stage2 + stage3) / 3);
+            console.log(`stage1=${stage1}\nstage2=${stage2}\nstage3=${stage3}\noverall=${overall}`);
+            NODE
+          else
+            echo "stage1=0"; echo "stage2=0"; echo "stage3=0"; echo "overall=0";
+          fi >> $GITHUB_OUTPUT
+
+      - name: Push ETA update to Netlify
+        run: |
+          curl -sS -X POST "$SITE/api/hplus-eta/update" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $TOKEN" \
+            -d "{
+              \"taskName\": \"${TASK}\",
+              \"isoTarget\": \"${TARGET_ISO}\",
+              \"progressPct\": ${OVERALL:-${{ steps.progress.outputs.overall }}},
+              \"stageBreakdown\": {
+                \"stage1\": ${STAGE1:-${{ steps.progress.outputs.stage1 }}},
+                \"stage2\": ${STAGE2:-${{ steps.progress.outputs.stage2 }}},
+                \"stage3\": ${STAGE3:-${{ steps.progress.outputs.stage3 }}}
+              },
+              \"notes\": \"Auto heartbeat: syncing Hookah+ MVP ETA from CI.\",
+              \"source\": \"ci\"
+            }"
+
