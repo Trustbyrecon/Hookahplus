@@ -1,3 +1,12 @@
+ codex/apply-moodbook-to-all-pages-on-hookahplus
+import { Page } from "../../components/Page";
+
+export default function Integrations() {
+  return (
+    <Page title="Integrations" kicker="Connect your tools">
+      <p>Hookah+ plays nicely with POS and loyalty apps.</p>
+    </Page>
+
  feat/moodbook-all-in-one
 // app/integrations/page.tsx
 import { Section } from "@/components/Section";
@@ -26,6 +35,7 @@ export default function Page() {
       <p className="opacity-80 mb-6">Placeholder for /integrations (L+4 scaffolding). Replace with real content.</p>
       <ul className="list-disc pl-5"><li><a className="underline" href="/integrations/clover">Clover</a></li><li><a className="underline" href="/integrations/toast">Toast</a></li></ul>
     </main>
+ main
  main
   );
 }

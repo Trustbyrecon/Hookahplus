@@ -1,9 +1,9 @@
-export default function Page() {
-  return (
-    <main className="max-w-3xl mx-auto px-6 py-12">
-      <h1 className="text-3xl mb-4">Hookah+ Flavor Mix History</h1>
-      <p className="opacity-80 mb-6">Placeholder for /flavor-mix-history (L+4 scaffolding). Replace with real content.</p>
+import { Page } from "../../components/Page";
 
-    </main>
+export default function FlavorMixHistory() {
+  return (
+    <Page title="Flavor mix history">
+      <p>Track blends and customer favorites over time.</p>
+    </Page>
   );
 }

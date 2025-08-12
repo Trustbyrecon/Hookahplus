@@ -1,9 +1,9 @@
-export default function Page() {
-  return (
-    <main className="max-w-3xl mx-auto px-6 py-12">
-      <h1 className="text-3xl mb-4">Hookah+ 404</h1>
-      <p className="opacity-80 mb-6">Placeholder for /404 (L+4 scaffolding). Replace with real content.</p>
+import { Page } from "../../components/Page";
 
-    </main>
+export default function NotFound() {
+  return (
+    <Page title="Not found">
+      <p>The page you're looking for could not be found.</p>
+    </Page>
   );
 }

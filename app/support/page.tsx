@@ -1,3 +1,14 @@
+ codex/apply-moodbook-to-all-pages-on-hookahplus
+import { Page } from "../../components/Page";
+
+export default function Support() {
+  return (
+    <Page title="Support">
+      <p>Find answers or contact us for help.</p>
+    </Page>
+  );
+}
+
  feat/moodbook-all-in-one
 // app/support/page.tsx
 import { Section } from "@/components/Section";
@@ -32,4 +43,5 @@ export default function Page() {
         </main>
       );
     }
+ main
  main
