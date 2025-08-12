@@ -1,0 +1,23 @@
+name: preview-check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+      - run: |
+          npx next start &
+          PID=$!
+          sleep 5
+          curl -sL http://localhost:3000/ | grep -qi "Session Reimagined"
+          kill $PID
