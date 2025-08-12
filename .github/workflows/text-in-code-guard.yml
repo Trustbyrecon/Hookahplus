@@ -1,0 +1,12 @@
+name: Text-In-Code Guard
+on: [pull_request, push]
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fail on suspicious prose in source
+        run: |
+          if git grep -nE '^(Sure!|Here(’|')s|In this (file|PR)|```|diff --git)' -- \
+              -- '*.[tj]sx' '*.[tj]s'; then
+            echo "Prose detected in code files"; exit 1; fi
