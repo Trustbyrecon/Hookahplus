@@ -1,5 +1,5 @@
 import React from 'react';
-import { Session } from './SessionCard';
+import { Session } from './sessionTypes';
 
 export default function OwnerMetrics({ sessions }: { sessions: Session[] }) {
   const flavorRevenue: Record<string, number> = {};
