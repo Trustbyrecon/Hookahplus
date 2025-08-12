@@ -1,20 +1,9 @@
-import Image from 'next/image';
-import Link from 'next/link';
-
-export default function PressPage() {
+export default function Page() {
   return (
-    <main className="min-h-screen bg-charcoal text-goldLumen p-8 font-sans">
-      <h1 className="text-3xl font-display font-bold mb-4">Media Kit</h1>
-      <p className="mb-6">Session Reimagined. Loyalty Reinforced.</p>
-      <div className="space-y-4">
-        <Image src="/assets/branding.svg" alt="Hookah+ Logo" width={200} height={200} />
-        <Link
-          href="/assets/press-deck.pdf"
-          className="underline text-ember"
-        >
-          Download Press Deck
-        </Link>
-      </div>
+    <main className="max-w-3xl mx-auto px-6 py-12">
+      <h1 className="text-3xl mb-4">Hookah+ Press</h1>
+      <p className="opacity-80 mb-6">Placeholder for /press (L+4 scaffolding). Replace with real content.</p>
+      <ul className="list-disc pl-5"><li>Logo pack (coming soon)</li><li>Brand guidelines (coming soon)</li><li>Media contact: <a className="underline" href="mailto:hookahplusconnector@gmail.com">hookahplusconnector@gmail.com</a></li></ul>
     </main>
   );
 }
