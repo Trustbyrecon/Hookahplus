@@ -1,0 +1,40 @@
+lounge_name: "Your Lounge Name"
+location: "City, State"
+date_captured: "2025-08-07"
+layout:
+  sections:
+    - name: "Main Lounge"
+      seats: 12
+      type: "couches"
+      zone_marker: "Zone A"
+    - name: "Patio"
+      seats: 6
+      type: "low tables"
+      zone_marker: "Zone B"
+    - name: "VIP Booths"
+      seats: 4
+      type: "private booth"
+      zone_marker: "Zone C"
+flavor_station:
+  type: "bar"
+  has_ai_mix_suggestion: true
+  staff_present: true
+pricing:
+  base_session_price: 30
+  add_ons:
+    - name: "Premium Flavor"
+      price: 5
+    - name: "Double Hose"
+      price: 3
+reflex_hooks:
+  loyalty_engine: true
+  replay_heatmap: true
+  whisper_overlay: true
+session_zones:
+  - id: "A1"
+    type: "standard"
+    seats: 4
+  - id: "C1"
+    type: "vip"
+    seats: 2
+notes: "Photo captured during midday setup. No customers visible."

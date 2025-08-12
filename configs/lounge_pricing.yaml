@@ -1,0 +1,15 @@
+base_price: 30
+flavors:
+  Mint Blast:
+    premium: false
+    addon: 0
+  Double Apple:
+    premium: true
+    addon: 3
+  Blue Ice:
+    premium: true
+    addon: 2
+session_lengths:
+  30: 20
+  60: 30
+  90: 40
