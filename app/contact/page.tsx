@@ -1,9 +1,9 @@
-export default function Page() {
+import { Page } from "../../components/Page";
+
+export default function Contact() {
   return (
-    <main className="max-w-3xl mx-auto px-6 py-12">
-      <h1 className="text-3xl mb-4">Hookah+ Contact</h1>
-      <p className="opacity-80 mb-6">Placeholder for /contact (L+4 scaffolding). Replace with real content.</p>
-      <p>For now, contact us via the Support form.</p>
-    </main>
+    <Page title="Contact">
+      <p>Reach out to our team for any questions.</p>
+    </Page>
   );
 }

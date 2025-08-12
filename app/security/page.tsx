@@ -1,9 +1,9 @@
-export default function Page() {
+import { Page } from "../../components/Page";
+
+export default function Security() {
   return (
-    <main className="max-w-3xl mx-auto px-6 py-12">
-      <h1 className="text-3xl mb-4">Hookah+ Security</h1>
-      <p className="opacity-80 mb-6">Placeholder for /security (L+4 scaffolding). Replace with real content.</p>
-      <p>Placeholder policy page. Replace with approved copy.</p>
-    </main>
+    <Page title="Security">
+      <p>Security is built into every layer of Hookah+.</p>
+    </Page>
   );
 }

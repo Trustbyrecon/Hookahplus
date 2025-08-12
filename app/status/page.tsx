@@ -1,9 +1,9 @@
-export default function Page() {
+import { Page } from "../../components/Page";
+
+export default function Status() {
   return (
-    <main className="max-w-3xl mx-auto px-6 py-12">
-      <h1 className="text-3xl mb-4">Hookah+ Status</h1>
-      <p className="opacity-80 mb-6">Placeholder for /status (L+4 scaffolding). Replace with real content.</p>
-      <p>Operational. Uptime badge and incident log coming soon.</p>
-    </main>
+    <Page title="Status">
+      <p>Monitor real-time uptime and incident history.</p>
+    </Page>
   );
 }
