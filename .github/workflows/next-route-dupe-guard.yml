@@ -11,8 +11,7 @@ jobs:
           for f in app/*/page.tsx; do
             r="$(basename "$(dirname "$f")")"
             if [ -f "pages/$r.tsx" ]; then
-              echo "Duplicate route: pages/$r.tsx vs $f"
-              err=1
+              echo "Duplicate route: pages/$r.tsx vs $f"; err=1
             fi
           done
           if [ -f app/page.tsx ] && [ -f pages/index.tsx ]; then
