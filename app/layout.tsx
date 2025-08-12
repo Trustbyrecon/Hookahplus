@@ -1,4 +1,4 @@
-import { NavBar, SiteFooter } from "@/components/NavFooter";
+import { NavBar, SiteFooter } from "../components/NavFooter";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
