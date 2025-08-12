@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && npx ts-node scripts/generate-sitemap.ts",
+    "build": "next build && node scripts/generate-sitemap.js",
     "export": "next export",
     "start": "next start",
     "check-palette": "node scripts/check-color-classes.js",
