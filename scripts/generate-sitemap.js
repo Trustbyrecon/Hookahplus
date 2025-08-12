@@ -1,5 +1,5 @@
-import fs from 'fs';
-import path from 'path';
+const fs = require('fs');
+const path = require('path');
 
 const routes = ["/", "/dashboard", "/preorder", "/operator", "/pricing", "/waitlist", "/flavor-mix-history", "/demo/session-replay", "/integrations", "/integrations/clover", "/integrations/toast", "/docs", "/press", "/partners", "/api", "/support", "/status", "/changelog", "/security", "/accessibility", "/terms", "/privacy", "/contact", "/404", "/500"];
 const BASE = process.env.SITE_ORIGIN || 'https://hookahplus.net';
