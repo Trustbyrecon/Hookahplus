@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import SessionCard, { Session } from '../../components/SessionCard';
+import SessionCard from '../../components/SessionCard';
+import { Session } from '../../components/sessionTypes';
 import ViewModeToggle, { ViewMode } from '../../components/ViewModeToggle';
 import TrustLog from '../../components/TrustLog';
 import SessionAnalytics from '../../components/SessionAnalytics';
@@ -55,7 +56,9 @@ export default function Dashboard() {
     await updateSession(updated);
   };
 
-  const handleAddNote = async (id: number, note: string) => {
+  const handleAddNote = async (id: number) => {
+    const note = prompt('Enter note');
+    if (!note) return;
     const session = sessions.find((s) => s.id === id);
     if (!session) return;
     const updated = {
@@ -102,12 +105,22 @@ export default function Dashboard() {
           {sessions.map((session) => (
             <SessionCard
               key={session.id}
-              session={session}
-              mode={mode}
-              onRefill={handleRefill}
-              onAddNote={handleAddNote}
-              onBurnout={handleBurnout}
-              onEnd={handleEnd}
+              sessionId={String(session.id)}
+              tableLabel={session.table}
+              flavorMix={session.flavors.join(', ')}
+              payment={{ base: session.flavors.length * 15, status: 'paid' }}
+              metrics={{ edr: 95, shr: 90 }}
+              timers={{
+                startedAt: new Date(session.startTime).toISOString(),
+                lastRefillAt: new Date(session.startTime).toISOString(),
+              }}
+              actions={{
+                onRefill: () => handleRefill(session.id),
+                onAdd: () => handleAddNote(session.id),
+                onRepair: () => handleBurnout(session.id),
+                onClose: () => handleEnd(session.id),
+              }}
+              role={mode}
             />
           ))}
         </div>

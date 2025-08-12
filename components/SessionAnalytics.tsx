@@ -1,5 +1,5 @@
 import React from 'react';
-import { Session } from './SessionCard';
+import { Session } from './sessionTypes';
 
 export default function SessionAnalytics({ sessions }: { sessions: Session[] }) {
   const now = Date.now();
