@@ -1,11 +1,22 @@
 [build]
+<<<<<<< HEAD
 command = "npm run build"
 publish = ".next"
+=======
+  command = "npm run build"
+  publish = ".next"
+>>>>>>> origin/main
 
 [functions]
-directory = "netlify/functions"
+  directory = "netlify/functions"
 
 [[redirects]]
+<<<<<<< HEAD
 from = "/api/*"
 to = "/.netlify/functions/:splat"
 status = 200
+=======
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+>>>>>>> origin/main

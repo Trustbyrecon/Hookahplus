@@ -1,0 +1,566 @@
+diff --git a/components/NavFooter.tsx b/components/NavFooter.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/components/NavFooter.tsx
+@@ -0,0 +1,44 @@
++// components/NavFooter.tsx
++export function NavBar() {
++  const items = [
++    { href: '/', label: 'Home' },
++    { href: '/dashboard', label: 'Dashboard' },
++    { href: '/preorder', label: 'Pre-order' },
++    { href: '/operator', label: 'Operator' },
++    { href: '/pricing', label: 'Pricing' },
++    { href: '/waitlist', label: 'Waitlist' },
++    { href: '/integrations', label: 'Integrations' },
++    { href: '/press', label: 'Press' },
++    { href: '/support', label: 'Support' },
++  ];
++  return (
++    <nav className="w-full border-b border-white/10">
++      <div className="max-w-5xl mx-auto px-6 py-4 flex gap-6 flex-wrap">
++        {items.map(i => <a key={i.href} href={i.href} className="opacity-80 hover:opacity-100">{i.label}</a>)}
++      </div>
++    </nav>
++  );
++}
++
++export function SiteFooter() {
++  const items = [
++    { href: '/terms', label: 'Terms' },
++    { href: '/privacy', label: 'Privacy' },
++    { href: '/security', label: 'Security' },
++    { href: '/status', label: 'Status' },
++    { href: '/changelog', label: 'Changelog' },
++    { href: '/accessibility', label: 'Accessibility' },
++    { href: '/partners', label: 'Partners' },
++    { href: '/api', label: 'API' },
++    { href: '/docs', label: 'Docs' },
++    { href: '/contact', label: 'Contact' },
++    { href: '/sitemap.xml', label: 'Sitemap' },
++  ];
++  return (
++    <footer className="w-full border-t border-white/10 mt-16">
++      <div className="max-w-5xl mx-auto px-6 py-8 grid gap-2 sm:flex sm:flex-wrap sm:gap-6">
++        {items.map(i => <a key={i.href} href={i.href} className="opacity-80 hover:opacity-100">{i.label}</a>)}
++      </div>
++    </footer>
++  );
++}
+
+diff --git a/public/robots.txt b/public/robots.txt
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/public/robots.txt
+@@ -0,0 +1,4 @@
++User-agent: *
++Allow: /
++Sitemap: https://hookahplus.net/sitemap.xml
++
+
+diff --git a/scripts/generate-sitemap.ts b/scripts/generate-sitemap.ts
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/scripts/generate-sitemap.ts
+@@ -0,0 +1,20 @@
++import fs from 'fs';
++import path from 'path';
++
++const routes = [
++  '/', '/dashboard', '/preorder', '/operator', '/pricing', '/waitlist',
++  '/flavor-mix-history', '/demo/session-replay',
++  '/integrations', '/integrations/clover', '/integrations/toast',
++  '/docs', '/press', '/partners', '/api',
++  '/support', '/status', '/changelog', '/security', '/accessibility',
++  '/terms', '/privacy', '/contact'
++];
++
++const BASE = process.env.SITE_ORIGIN || 'https://hookahplus.net';
++const urls = routes.map(r => `<url><loc>${BASE}${r}</loc><changefreq>weekly</changefreq></url>`).join('');
++const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}</urlset>`;
++
++const out = path.join(process.cwd(), 'public', 'sitemap.xml');
++fs.mkdirSync(path.dirname(out), { recursive: true });
++fs.writeFileSync(out, xml);
++console.log('Wrote', out);
+
+diff --git a/.github/workflows/landing-integrity.yml b/.github/workflows/landing-integrity.yml
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/.github/workflows/landing-integrity.yml
+@@ -0,0 +1,34 @@
++name: Landing Integrity
++
++on:
++  pull_request:
++  push:
++    branches: [ main ]
++  workflow_dispatch:
++
++permissions:
++  contents: read
++
++jobs:
++  check:
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v4
++      - uses: actions/setup-node@v4
++        with:
++          node-version: '20'
++      - name: Install linkinator
++        run: npm i -g linkinator
++      - name: Generate sitemap
++        run: |
++          npm i ts-node
++          npx ts-node scripts/generate-sitemap.ts
++      - name: Link check (site tree)
++        run: |
++          echo "Checking internal links..."
++          linkinator file://$GITHUB_WORKSPACE/app --recurse --silent --skip '^(?!.*app).*' || true
++      - name: Upload sitemap
++        uses: actions/upload-artifact@v4
++        with:
++          name: sitemap
++          path: public/sitemap.xml
+
+diff --git a/public/og-image.svg b/public/og-image.svg
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/public/og-image.svg
+@@ -0,0 +1,2 @@
++<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630"><rect width="100%" height="100%" fill="#0b0b0f"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#d4af37" font-size="72" font-family="sans-serif">Hookah+</text></svg>
++
+
+diff --git a/app/page.tsx b/app/page.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/app/page.tsx
+@@ -0,0 +1,9 @@
++export default function Page() {
++  return (
++    <main className="max-w-3xl mx-auto px-6 py-12">
++      <h1 className="text-3xl mb-4">Hookah+ Home</h1>
++      <p className="opacity-80 mb-6">Placeholder for / (L+4 scaffolding). Replace with real content.</p>
++      <p>Welcome. Explore the demo links below.</p>
++    </main>
++  );
++}
+
+diff --git a/app/dashboard/page.tsx b/app/dashboard/page.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/app/dashboard/page.tsx
+@@ -0,0 +1,9 @@
++export default function Page() {
++  return (
++    <main className="max-w-3xl mx-auto px-6 py-12">
++      <h1 className="text-3xl mb-4">Hookah+ Dashboard</h1>
++      <p className="opacity-80 mb-6">Placeholder for /dashboard (L+4 scaffolding). Replace with real content.</p>
++      
++    </main>
++  );
++}
+
+diff --git a/app/preorder/page.tsx b/app/preorder/page.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/app/preorder/page.tsx
+@@ -0,0 +1,9 @@
++export default function Page() {
++  return (
++    <main className="max-w-3xl mx-auto px-6 py-12">
++      <h1 className="text-3xl mb-4">Hookah+ Preorder</h1>
++      <p className="opacity-80 mb-6">Placeholder for /preorder (L+4 scaffolding). Replace with real content.</p>
++      
++    </main>
++  );
++}
+
+diff --git a/app/operator/page.tsx b/app/operator/page.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/app/operator/page.tsx
+@@ -0,0 +1,9 @@
++export default function Page() {
++  return (
++    <main className="max-w-3xl mx-auto px-6 py-12">
++      <h1 className="text-3xl mb-4">Hookah+ Operator</h1>
++      <p className="opacity-80 mb-6">Placeholder for /operator (L+4 scaffolding). Replace with real content.</p>
++      
++    </main>
++  );
++}
+
+diff --git a/app/pricing/page.tsx b/app/pricing/page.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/app/pricing/page.tsx
+@@ -0,0 +1,9 @@
++export default function Page() {
++  return (
++    <main className="max-w-3xl mx-auto px-6 py-12">
++      <h1 className="text-3xl mb-4">Hookah+ Pricing</h1>
++      <p className="opacity-80 mb-6">Placeholder for /pricing (L+4 scaffolding). Replace with real content.</p>
++      
++    </main>
++  );
++}
+
+diff --git a/app/waitlist/page.tsx b/app/waitlist/page.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/app/waitlist/page.tsx
+@@ -0,0 +1,15 @@
++export default function Page() {
++  return (
++    <main className="max-w-3xl mx-auto px-6 py-12">
++      <h1 className="text-3xl mb-4">Hookah+ Waitlist</h1>
++      <p className="opacity-80 mb-6">Placeholder for /waitlist (L+4 scaffolding). Replace with real content.</p>
++      <form name="waitlist" method="POST" data-netlify="true" className="grid gap-3 max-w-md">
++  <input type="hidden" name="form-name" value="waitlist" />
++  <input name="name" placeholder="Name" className="px-3 py-2 rounded" required />
++  <input type="email" name="email" placeholder="Email" className="px-3 py-2 rounded" required />
++  <input name="company" placeholder="Lounge / Company" className="px-3 py-2 rounded" />
++  <button type="submit" className="px-4 py-2 rounded-xl shadow">Join Waitlist</button>
++</form>
++    </main>
++  );
++}
+
+diff --git a/app/flavor-mix-history/page.tsx b/app/flavor-mix-history/page.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/app/flavor-mix-history/page.tsx
+@@ -0,0 +1,9 @@
++export default function Page() {
++  return (
++    <main className="max-w-3xl mx-auto px-6 py-12">
++      <h1 className="text-3xl mb-4">Hookah+ Flavor Mix History</h1>
++      <p className="opacity-80 mb-6">Placeholder for /flavor-mix-history (L+4 scaffolding). Replace with real content.</p>
++      
++    </main>
++  );
++}
+
+diff --git a/app/demo/session-replay/page.tsx b/app/demo/session-replay/page.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/app/demo/session-replay/page.tsx
+@@ -0,0 +1,9 @@
++export default function Page() {
++  return (
++    <main className="max-w-3xl mx-auto px-6 py-12">
++      <h1 className="text-3xl mb-4">Hookah+ Demo / Session Replay</h1>
++      <p className="opacity-80 mb-6">Placeholder for /demo/session-replay (L+4 scaffolding). Replace with real content.</p>
++      <div><p>Teaser video placeholder.</p><div className="aspect-video bg-black/20 rounded-xl grid place-items-center">Video</div></div>
++    </main>
++  );
++}
+
+diff --git a/app/integrations/page.tsx b/app/integrations/page.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/app/integrations/page.tsx
+@@ -0,0 +1,9 @@
++export default function Page() {
++  return (
++    <main className="max-w-3xl mx-auto px-6 py-12">
++      <h1 className="text-3xl mb-4">Hookah+ Integrations</h1>
++      <p className="opacity-80 mb-6">Placeholder for /integrations (L+4 scaffolding). Replace with real content.</p>
++      <ul className="list-disc pl-5"><li><a className="underline" href="/integrations/clover">Clover</a></li><li><a className="underline" href="/integrations/toast">Toast</a></li></ul>
++    </main>
++  );
++}
+
+diff --git a/app/integrations/clover/page.tsx b/app/integrations/clover/page.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/app/integrations/clover/page.tsx
+@@ -0,0 +1,9 @@
++export default function Page() {
++  return (
++    <main className="max-w-3xl mx-auto px-6 py-12">
++      <h1 className="text-3xl mb-4">Hookah+ Integrations / Clover</h1>
++      <p className="opacity-80 mb-6">Placeholder for /integrations/clover (L+4 scaffolding). Replace with real content.</p>
++      
++    </main>
++  );
++}
+
+diff --git a/app/integrations/toast/page.tsx b/app/integrations/toast/page.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/app/integrations/toast/page.tsx
+@@ -0,0 +1,9 @@
++export default function Page() {
++  return (
++    <main className="max-w-3xl mx-auto px-6 py-12">
++      <h1 className="text-3xl mb-4">Hookah+ Integrations / Toast</h1>
++      <p className="opacity-80 mb-6">Placeholder for /integrations/toast (L+4 scaffolding). Replace with real content.</p>
++      
++    </main>
++  );
++}
+
+diff --git a/app/docs/page.tsx b/app/docs/page.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/app/docs/page.tsx
+@@ -0,0 +1,9 @@
++export default function Page() {
++  return (
++    <main className="max-w-3xl mx-auto px-6 py-12">
++      <h1 className="text-3xl mb-4">Hookah+ Docs</h1>
++      <p className="opacity-80 mb-6">Placeholder for /docs (L+4 scaffolding). Replace with real content.</p>
++      <p>Docs coming soon. For now, email <a href="mailto:hookahplusconnector@gmail.com" className="underline">hookahplusconnector@gmail.com</a>.</p>
++    </main>
++  );
++}
+
+diff --git a/app/press/page.tsx b/app/press/page.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/app/press/page.tsx
+@@ -0,0 +1,9 @@
++export default function Page() {
++  return (
++    <main className="max-w-3xl mx-auto px-6 py-12">
++      <h1 className="text-3xl mb-4">Hookah+ Press</h1>
++      <p className="opacity-80 mb-6">Placeholder for /press (L+4 scaffolding). Replace with real content.</p>
++      <ul className="list-disc pl-5"><li>Logo pack (coming soon)</li><li>Brand guidelines (coming soon)</li><li>Media contact: <a className="underline" href="mailto:hookahplusconnector@gmail.com">hookahplusconnector@gmail.com</a></li></ul>
++    </main>
++  );
++}
+
+diff --git a/app/partners/page.tsx b/app/partners/page.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/app/partners/page.tsx
+@@ -0,0 +1,9 @@
++export default function Page() {
++  return (
++    <main className="max-w-3xl mx-auto px-6 py-12">
++      <h1 className="text-3xl mb-4">Hookah+ Partners</h1>
++      <p className="opacity-80 mb-6">Placeholder for /partners (L+4 scaffolding). Replace with real content.</p>
++      
++    </main>
++  );
++}
+
+diff --git a/app/api/page.tsx b/app/api/page.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/app/api/page.tsx
+@@ -0,0 +1,9 @@
++export default function Page() {
++  return (
++    <main className="max-w-3xl mx-auto px-6 py-12">
++      <h1 className="text-3xl mb-4">Hookah+ Api</h1>
++      <p className="opacity-80 mb-6">Placeholder for /api (L+4 scaffolding). Replace with real content.</p>
++      
++    </main>
++  );
++}
+
+diff --git a/app/support/page.tsx b/app/support/page.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/app/support/page.tsx
+@@ -0,0 +1,14 @@
++export default function Page() {
++  return (
++    <main className="max-w-3xl mx-auto px-6 py-12">
++      <h1 className="text-3xl mb-4">Hookah+ Support</h1>
++      <p className="opacity-80 mb-6">Placeholder for /support (L+4 scaffolding). Replace with real content.</p>
++      <form name="support" method="POST" data-netlify="true" className="grid gap-3 max-w-md">
++  <input type="hidden" name="form-name" value="support" />
++  <input name="email" type="email" placeholder="Email" className="px-3 py-2 rounded" required />
++  <textarea name="message" placeholder="How can we help?" className="px-3 py-2 rounded min-h-[140px]" required></textarea>
++  <button type="submit" className="px-4 py-2 rounded-xl shadow">Send</button>
++</form>
++    </main>
++  );
++}
+
+diff --git a/app/status/page.tsx b/app/status/page.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/app/status/page.tsx
+@@ -0,0 +1,9 @@
++export default function Page() {
++  return (
++    <main className="max-w-3xl mx-auto px-6 py-12">
++      <h1 className="text-3xl mb-4">Hookah+ Status</h1>
++      <p className="opacity-80 mb-6">Placeholder for /status (L+4 scaffolding). Replace with real content.</p>
++      <p>Operational. Uptime badge and incident log coming soon.</p>
++    </main>
++  );
++}
+
+diff --git a/app/changelog/page.tsx b/app/changelog/page.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/app/changelog/page.tsx
+@@ -0,0 +1,9 @@
++export default function Page() {
++  return (
++    <main className="max-w-3xl mx-auto px-6 py-12">
++      <h1 className="text-3xl mb-4">Hookah+ Changelog</h1>
++      <p className="opacity-80 mb-6">Placeholder for /changelog (L+4 scaffolding). Replace with real content.</p>
++      <ul className="list-disc pl-5"><li>Initial L+4 scaffold deployed.</li></ul>
++    </main>
++  );
++}
+
+diff --git a/app/security/page.tsx b/app/security/page.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/app/security/page.tsx
+@@ -0,0 +1,9 @@
++export default function Page() {
++  return (
++    <main className="max-w-3xl mx-auto px-6 py-12">
++      <h1 className="text-3xl mb-4">Hookah+ Security</h1>
++      <p className="opacity-80 mb-6">Placeholder for /security (L+4 scaffolding). Replace with real content.</p>
++      <p>Placeholder policy page. Replace with approved copy.</p>
++    </main>
++  );
++}
+
+diff --git a/app/accessibility/page.tsx b/app/accessibility/page.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/app/accessibility/page.tsx
+@@ -0,0 +1,9 @@
++export default function Page() {
++  return (
++    <main className="max-w-3xl mx-auto px-6 py-12">
++      <h1 className="text-3xl mb-4">Hookah+ Accessibility</h1>
++      <p className="opacity-80 mb-6">Placeholder for /accessibility (L+4 scaffolding). Replace with real content.</p>
++      <p>Placeholder policy page. Replace with approved copy.</p>
++    </main>
++  );
++}
+
+diff --git a/app/terms/page.tsx b/app/terms/page.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/app/terms/page.tsx
+@@ -0,0 +1,9 @@
++export default function Page() {
++  return (
++    <main className="max-w-3xl mx-auto px-6 py-12">
++      <h1 className="text-3xl mb-4">Hookah+ Terms</h1>
++      <p className="opacity-80 mb-6">Placeholder for /terms (L+4 scaffolding). Replace with real content.</p>
++      <p>Placeholder policy page. Replace with approved copy.</p>
++    </main>
++  );
++}
+
+diff --git a/app/privacy/page.tsx b/app/privacy/page.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/app/privacy/page.tsx
+@@ -0,0 +1,9 @@
++export default function Page() {
++  return (
++    <main className="max-w-3xl mx-auto px-6 py-12">
++      <h1 className="text-3xl mb-4">Hookah+ Privacy</h1>
++      <p className="opacity-80 mb-6">Placeholder for /privacy (L+4 scaffolding). Replace with real content.</p>
++      <p>Placeholder policy page. Replace with approved copy.</p>
++    </main>
++  );
++}
+
+diff --git a/app/contact/page.tsx b/app/contact/page.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/app/contact/page.tsx
+@@ -0,0 +1,9 @@
++export default function Page() {
++  return (
++    <main className="max-w-3xl mx-auto px-6 py-12">
++      <h1 className="text-3xl mb-4">Hookah+ Contact</h1>
++      <p className="opacity-80 mb-6">Placeholder for /contact (L+4 scaffolding). Replace with real content.</p>
++      <p>For now, contact us via the Support form.</p>
++    </main>
++  );
++}
+
+diff --git a/app/404/page.tsx b/app/404/page.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/app/404/page.tsx
+@@ -0,0 +1,9 @@
++export default function Page() {
++  return (
++    <main className="max-w-3xl mx-auto px-6 py-12">
++      <h1 className="text-3xl mb-4">Hookah+ 404</h1>
++      <p className="opacity-80 mb-6">Placeholder for /404 (L+4 scaffolding). Replace with real content.</p>
++      
++    </main>
++  );
++}
+
+diff --git a/app/500/page.tsx b/app/500/page.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/app/500/page.tsx
+@@ -0,0 +1,9 @@
++export default function Page() {
++  return (
++    <main className="max-w-3xl mx-auto px-6 py-12">
++      <h1 className="text-3xl mb-4">Hookah+ 500</h1>
++      <p className="opacity-80 mb-6">Placeholder for /500 (L+4 scaffolding). Replace with real content.</p>
++      
++    </main>
++  );
++}
+
+diff --git a/README-Lplus4.md b/README-Lplus4.md
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/README-Lplus4.md
+@@ -0,0 +1,10 @@
++# Hookah+ L+4 Landing Shell (No Binary)
++
++This PR adds all L0→L4 public routes, nav/footer components, Netlify-ready forms, a sitemap generator, and a link-integrity workflow.
++
++- Add `NavBar` / `SiteFooter` to your `app/layout.tsx` (see PR description).
++- Run `npx ts-node scripts/generate-sitemap.ts` to refresh `public/sitemap.xml` after route changes.
++- CI uses linkinator to sanity-check internal links during PRs.
++
++Generated: 2025-08-12T17:13:35.096822Z
++
