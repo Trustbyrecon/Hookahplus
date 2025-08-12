@@ -1,8 +1,19 @@
+Sure! To clean up the code for `SessionCard.tsx` based on your provided diff, here are some recommendations and a revised version:
+
+**Key cleanups:**
+- Remove commented-out code and legacy types.
+- Organize imports.
+- Group related logic and hooks.
+- Improve readability (consistent spacing, concise comments).
+- Use clear variable names and avoid unnecessary intermediate variables.
+
+---
+
+```tsx
 import { useEffect, useState } from 'react';
 
 /**
- * SessionCardProps defines the data model for a hookah session card.
- * Copy and behaviour are derived from the Session Card spec.
+ * Data model for a hookah session card, derived from the Session Card spec.
  */
 export interface SessionCardProps {
   sessionId: string;
@@ -27,13 +38,7 @@ export interface SessionCardProps {
     paused?: boolean;
     lastRefillAt?: string; // ISO timestamp
   };
-  state?:
-    | 'active'
-    | 'due-refill'
-    | 'overdue'
-    | 'paused'
-    | 'completed'
-    | 'repairing';
+  state?: 'active' | 'due-refill' | 'overdue' | 'paused' | 'completed' | 'repairing';
   actions: {
     onRefill(): void;
     onAdd(): void;
@@ -42,7 +47,6 @@ export interface SessionCardProps {
   };
   role?: 'owner' | 'manager' | 'staff';
   accessibility?: { announceChanges: boolean };
-  /** Optional analytics hook */
   emitEvent?: (event: string, payload?: Record<string, unknown>) => void;
 }
 
@@ -58,15 +62,9 @@ function useRunningClock(startedAtISO: string, paused = false, nowISO?: string) 
   }, [paused]);
 
   const elapsedMs = Math.max(0, now - base);
-  const hh = Math.floor(elapsedMs / 3600000)
-    .toString()
-    .padStart(2, '0');
-  const mm = Math.floor((elapsedMs % 3600000) / 60000)
-    .toString()
-    .padStart(2, '0');
-  const ss = Math.floor((elapsedMs % 60000) / 1000)
-    .toString()
-    .padStart(2, '0');
+  const hh = Math.floor(elapsedMs / 3600000).toString().padStart(2, '0');
+  const mm = Math.floor((elapsedMs % 3600000) / 60000).toString().padStart(2, '0');
+  const ss = Math.floor((elapsedMs % 60000) / 1000).toString().padStart(2, '0');
   return { now, elapsed: `${hh}:${mm}:${ss}` };
 }
 
@@ -74,8 +72,7 @@ function useRunningClock(startedAtISO: string, paused = false, nowISO?: string) 
 function deriveState(timers: SessionCardProps['timers']) {
   if (timers.paused) return 'paused';
   const reference = timers.lastRefillAt ?? timers.startedAt;
-  const minutes =
-    (Date.now() - new Date(reference).getTime()) / 60000;
+  const minutes = (Date.now() - new Date(reference).getTime()) / 60000;
   if (minutes > 45) return 'overdue';
   if (minutes > 35) return 'due-refill';
   return 'active';
@@ -95,6 +92,7 @@ export default function SessionCard(props: SessionCardProps) {
     role = 'staff',
     accessibility,
     emitEvent,
+    state: propState,
   } = props;
 
   const { elapsed } = useRunningClock(
@@ -103,38 +101,39 @@ export default function SessionCard(props: SessionCardProps) {
     timers.now
   );
 
-  const state = props.state ?? deriveState(timers);
+  const state = propState ?? deriveState(timers);
+
+  // Reflex banner state
   const [showReflex, setShowReflex] = useState(
     metrics.reflexDelta !== undefined && metrics.reflexDelta !== 0
   );
-
-  // auto hide reflex banner
   useEffect(() => {
     if (metrics.reflexDelta === undefined || metrics.reflexDelta === 0) {
       setShowReflex(false);
       return;
     }
     setShowReflex(true);
-    const id = setTimeout(() => setShowReflex(false), 90000);
-    return () => clearTimeout(id);
+    const timeout = setTimeout(() => setShowReflex(false), 90000);
+    return () => clearTimeout(timeout);
   }, [metrics.reflexDelta]);
 
-  // initial events
+  // Analytics: fire initial event
   useEffect(() => {
     emitEvent?.('SessionStarted', { sessionId });
   }, [emitEvent, sessionId]);
 
   const handle = (action: keyof SessionCardProps['actions']) => {
-    const map = {
+    const eventMap = {
       onRefill: 'RefillPerformed',
       onAdd: 'AddPerformed',
       onRepair: 'RepairApplied',
       onClose: 'SessionClosed',
     } as const;
     actions[action]();
-    emitEvent?.(map[action], { sessionId });
+    emitEvent?.(eventMap[action], { sessionId });
   };
 
+  // Status ring/pulse class
   let ring = 'ring-deepMoss';
   let pulse = '';
   if (state === 'due-refill') {
@@ -154,12 +153,15 @@ export default function SessionCard(props: SessionCardProps) {
   const shrTip =
     'Session Health Rating: service timing and risk. Penalties for overdue refills/alerts, bonuses for on-time actions. Aim for 85%+';
 
-  const overdueMinutes = (() => {
-    if (state !== 'overdue') return 0;
-    const ref = timers.lastRefillAt ?? timers.startedAt;
-    const diff = (Date.now() - new Date(ref).getTime()) / 60000 - 45;
-    return Math.floor(diff);
-  })();
+  const overdueMinutes =
+    state === 'overdue'
+      ? Math.floor(
+          (Date.now() -
+            new Date(timers.lastRefillAt ?? timers.startedAt).getTime()) /
+            60000 -
+            45
+        )
+      : 0;
 
   const statusTooltip =
     state === 'overdue'
@@ -175,11 +177,11 @@ export default function SessionCard(props: SessionCardProps) {
       <header className="flex justify-between items-center mb-2">
         <div className="font-display font-bold text-lg">
           Session {sessionId}
-          {zoneLabel || tableLabel ? (
+          {(zoneLabel || tableLabel) && (
             <span className="ml-1 text-mystic text-sm">
               — {zoneLabel || tableLabel}
             </span>
-          ) : null}
+          )}
         </div>
         <div className="flex space-x-2 text-sm">
           {(role === 'owner' || role === 'manager') && (
@@ -207,7 +209,8 @@ export default function SessionCard(props: SessionCardProps) {
         <div>
           <div className="text-sm text-mystic">Stripe</div>
           <div>
-            ${payment.base}{payment.addOnsTotal ? ` + ${payment.addOnsTotal}` : ''}
+            ${payment.base}
+            {payment.addOnsTotal ? ` + ${payment.addOnsTotal}` : ''}
           </div>
         </div>
       </div>
@@ -269,4 +272,6 @@ export default function SessionCard(props: SessionCardProps) {
     </div>
   );
 }
+```
 
+Let me know if you want even further simplifications or refactors!
