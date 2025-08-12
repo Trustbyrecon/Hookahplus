@@ -1,5 +1,5 @@
 import React from 'react';
-import { Session } from './SessionCard';
+import { Session } from './sessionTypes';
 
 interface Props {
   sessions: Session[];
