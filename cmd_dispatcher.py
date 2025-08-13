@@ -1,4 +1,3 @@
-
 import sys
 import os
 try:
@@ -86,12 +85,25 @@ def simulateReflexScoreDelta():
     return {"lounges": lounges, "average_delta": avg_delta}
 
 
+def deployLandingPatch():
+    import importlib.util
+    import pathlib
+
+    module_path = pathlib.Path("cmd/modules/deployLandingPatch.py")
+    spec = importlib.util.spec_from_file_location("deployLandingPatch", module_path)
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    module.run()
+
+
 def dispatcher(command):
     commands = {
         "cmd.syncCodexToSite": syncCodexToSite,
         "cmd.renderTrustHeatmapPublic": renderTrustHeatmapPublic,
         "cmd.wrapOneClickWithPlanner": wrapOneClickWithPlanner,
         "cmd.simulateReflexScoreDelta": simulateReflexScoreDelta,
+        "cmd.deployLandingPatch": deployLandingPatch,
     }
     if command in commands:
         result = commands[command]()
