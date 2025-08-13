@@ -1,3 +1,9 @@
+@import "../styles/moodbook.css";
+
+/* Your existing globals... */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
