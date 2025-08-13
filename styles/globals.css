@@ -2,18 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
-:root{
-  --font-display:'Playfair Display', serif;
-  --font-sans:'Inter', sans-serif;
-  --bg:#0b0f12; --panel:#0f151a; --text:#e7f1f1; --muted:#9fb1b7;
-  --accent:#22e3a3; --accent-2:#6aa8ff; --danger:#ff5c7a; --warning:#f2b750;
-  --radius:16px;
+html {
+  scroll-behavior: smooth;
 }
-html,body{background:var(--bg); color:var(--text);}
-*{box-sizing:border-box}
-a{color:var(--accent-2)}
-.btn{border-radius:var(--radius); padding:.6rem 1rem;}
-.card{background:var(--panel); border:1px solid rgb(255 255 255/0.06); border-radius:var(--radius)}
-.container{max-width:72rem; margin:0 auto; padding-inline:1rem}
-.prose h1{font-size:clamp(2rem,4vw,2.5rem);font-weight:600}
-.prose h2{font-size:clamp(1.5rem,3vw,2rem);font-weight:600}
+
+body {
+  background-color: #000;
+  color: #fff;
+}
