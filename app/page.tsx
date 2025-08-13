@@ -1,120 +1,62 @@
-"use client";
-
-import Image from "next/image";
-import Link from "next/link";
-import { Hero } from "../components/Hero";
-import { Section } from "../components/Section";
-import { ReflexPromptModal, TrustArcDisplay } from "../components/ReflexOverlay";
-import ReflexScoreAudit from "../components/ReflexScoreAudit";
-
-const features = [
-  {
-    title: "QR Preorders",
-    desc: "Guests scan a table code and pay before coals drop.",
-  },
-  {
-    title: "Session Assistant",
-    desc: "Timed prompts keep service tight and coals fresh.",
-  },
-  {
-    title: "Live Metrics",
-    desc: "Dashboards track heat, pulls and revenue in real time.",
-  },
-];
-
-const tiers = [
-  {
-    name: "Starter",
-    price: "$29/mo",
-    bullets: ["1 venue · unlimited sessions", "Basic analytics", "Email support"],
-  },
-  {
-    name: "Growth",
-    price: "$79/mo",
-    bullets: ["Up to 3 venues", "Flavor flow & Reflex", "Priority support"],
-  },
-  {
-    name: "Pro",
-    price: "$149/mo",
-    bullets: ["Unlimited venues", "Advanced analytics", "On-call concierge"],
-  },
-];
+import Image from 'next/image';
 
 export default function Home() {
   return (
-    <>
-      <TrustArcDisplay score={9.2} />
-      <Hero
-        title="The lounge operator stack built for revenue & reliability"
-        subtitle="Modern tools that keep sessions flowing, payments cleared and guests coming back."
-        primary={{ href: "/preorder", label: "Preorder" }}
-        secondary={{ href: "/waitlist", label: "Join POS Waitlist" }}
-      >
-        <div className="rounded-xl overflow-hidden border border-goldLumen/10 shadow-lg">
-          <Image
-            src="/assets/qr.png"
-            alt="Product preview"
-            width={800}
-            height={600}
-            priority
-          />
-        </div>
-      </Hero>
-
-      <Section title="Why lounges choose Hookah+" kicker="Features">
-        <div className="grid gap-6 md:grid-cols-3">
-          {features.map((f) => (
-            <Feature key={f.title} title={f.title} desc={f.desc} />
-          ))}
-        </div>
-      </Section>
-
-      <Section title="Simple, transparent pricing" kicker="Pricing">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {tiers.map((t) => (
-            <div key={t.name} className="card p-5">
-              <div className="text-lg font-semibold">{t.name}</div>
-              <div className="mt-2 text-3xl font-bold">{t.price}</div>
-              <ul className="mt-3 space-y-1 text-sm text-goldLumen/80">
-                {t.bullets.map((b, i) => (
-                  <li key={i}>• {b}</li>
-                ))}
-              </ul>
-              <Link
-                href="/preorder"
-                className="mt-4 inline-block btn bg-accent text-charcoal font-semibold"
-              >
-                Get started
-              </Link>
-            </div>
-          ))}
-        </div>
-        <p className="mt-6 text-goldLumen/70 text-sm">
-          Prices are launch promos. POS bundle and add‑ons available.
-        </p>
-      </Section>
-
-      <Section title="Onboard in minutes" kicker="Reflex Stack">
-        <div className="space-y-4">
-          <p className="text-goldLumen/80">
-            Engage the Reflex stack from day one. Trigger loyalty prompts, monitor
-            trust arcs, and track memory pulses as your lounge grows.
-          </p>
-          <ReflexPromptModal />
-          <div className="bg-deepMoss text-goldLumen px-4 py-2 rounded">
-            <ReflexScoreAudit />
+    <main className="bg-charcoal text-goldLumen min-h-screen font-sans">
+      <section className="max-w-screen-xl mx-auto py-20 px-6 space-y-16">
+        <header className="text-center space-y-4">
+          <h1 className="text-5xl font-display tracking-tight">The lounge operator stack</h1>
+          <p className="text-xl text-muted">Built for revenue & reliability</p>
+          <div className="flex justify-center gap-4">
+            <button className="bg-ember px-6 py-2 rounded-xl text-white">Start Preorders</button>
+            <button className="border border-ember px-6 py-2 rounded-xl text-ember">Join POS Waitlist</button>
           </div>
-        </div>
-      </Section>
-    </>
+        </header>
+
+        <section>
+          <h2 className="text-3xl font-semibold mb-8">Everything you need to run modern lounges</h2>
+          <div className="grid md:grid-cols-3 gap-6">
+            <FeatureCard title="QR Preorders" desc="Guests scan table code and pay before coals drop." />
+            <FeatureCard title="Session Assistant" desc="Smart timers & prompts to keep coals tight." />
+            <FeatureCard title="Live Metrics" desc="Track heat, pulls & revenue live." />
+            {/* add more cards */}
+          </div>
+        </section>
+
+        <section className="pt-16">
+          <h2 className="text-3xl font-semibold mb-6">Simple, transparent pricing</h2>
+          <div className="grid md:grid-cols-3 gap-6">
+            <PricingTier title="Starter" price="$29/mo" features={['1 venue', 'Unlimited sessions', 'Email support']} />
+            <PricingTier title="Growth" price="$79/mo" features={['3 venues', 'Flavor flow & Reflex', 'Priority support']} />
+            <PricingTier title="Pro" price="$149/mo" features={['Unlimited venues', 'On-call concierge']} />
+          </div>
+        </section>
+
+        <footer className="pt-10 text-sm text-muted text-center">
+          &copy; 2025 HookahPlus. Built with ❤️
+        </footer>
+      </section>
+    </main>
   );
 }
 
-function Feature({ title, desc }: { title: string; desc: string }) {
+function FeatureCard({ title, desc }: { title: string; desc: string }) {
   return (
-    <div className="card p-6">
-      <h3 className="mb-2 text-lg font-semibold text-accent">{title}</h3>
-      <p className="text-sm text-goldLumen/80">{desc}</p>
+    <div className="bg-panel rounded-2xl p-6 shadow-soft hover:shadow-xl transition">
+      <h3 className="text-xl font-semibold">{title}</h3>
+      <p className="text-muted">{desc}</p>
+    </div>
+  );
+}
+
+function PricingTier({ title, price, features }: { title: string; price: string; features: string[] }) {
+  return (
+    <div className="bg-deepMoss rounded-2xl p-6 text-white space-y-2">
+      <h3 className="text-2xl font-bold">{title}</h3>
+      <p className="text-lg">{price}</p>
+      <ul className="list-disc pl-5">
+        {features.map(f => <li key={f}>{f}</li>)}
+      </ul>
     </div>
   );
 }
