@@ -1,45 +1,47 @@
-// app/layout.tsx
-import './globals.css';
-import type { Metadata } from 'next';
-import { baseMetadata } from './app/metadata';
+import './globals.css'
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  ...baseMetadata,
-  icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon.ico',
-    apple: '/hookahplus-logo.png',
-  },
+  title: 'HookahPlus Lounge Onboarding',
+  description: 'Exclusive HookahPlus lounge owner onboarding experience',
+  metadataBase: new URL('https://hookahplus.net'),
   openGraph: {
-    title: 'Hookah+ — Lounge Operator Stack',
-    description: 'The Future of Lounge Management Starts Here',
+    title: 'HookahPlus Lounge Onboarding',
+    description: 'Elevate your lounge with HookahPlus premium onboarding experience.',
     url: 'https://hookahplus.net',
-    siteName: 'Hookah+',
+    siteName: 'HookahPlus',
     images: [
       {
-        url: '/hookahplus-logo.png',
-        width: 800,
-        height: 800,
-        alt: 'Hookah+ Logo',
+        url: '/favicon.ico',
+        width: 256,
+        height: 256,
+        alt: 'HookahPlus Logo',
       },
     ],
+    locale: 'en_US',
     type: 'website',
   },
-  twitter: {
-    card: 'summary_large_image',
-    site: '@YourTwitterHandle',
-    images: ['/hookahplus-logo.png'],
+  icons: {
+    icon: '/favicon.ico',
   },
-};
+}
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+      </head>
+      <body className={`${inter.className} bg-gradient-to-b from-[#1e1e1e] to-[#121212] text-white`}>
+        {children}
+      </body>
     </html>
-  );
+  )
 }
