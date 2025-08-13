@@ -11,6 +11,13 @@ export default function Home() {
             <button className="bg-ember px-6 py-2 rounded-xl text-white">Start Preorders</button>
             <button className="border border-ember px-6 py-2 rounded-xl text-ember">Join POS Waitlist</button>
           </div>
+          <Image
+            src="/og-default.png"
+            alt="HookahPlus dashboard preview"
+            width={1200}
+            height={630}
+            className="mx-auto rounded-2xl shadow-lg"
+          />
         </header>
 
         <section>
