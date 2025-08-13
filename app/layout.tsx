@@ -1,3 +1,5 @@
+"use client";
+
 import React from 'react';
 import MoodbookReflexPanel from '../components/MoodbookReflexPanel';
 import './globals.css';
