@@ -1,3 +1,8 @@
+from pathlib import Path
+import textwrap
+
+def run():
+    landing_content = """
 "use client";
 
 import { useEffect, useState } from 'react';
@@ -86,3 +91,8 @@ export default function Home() {
     </section>
   );
 }
+"""
+
+    target_path = Path("app/page.tsx")
+    target_path.write_text(textwrap.dedent(landing_content).strip())
+    print("✅ Landing patch deployed to app/page.tsx")
