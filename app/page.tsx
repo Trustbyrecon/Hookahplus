@@ -1,69 +1,51 @@
-import Image from 'next/image';
-
 export default function Home() {
+  const features = [
+    { title: "QR Preorders", desc: "Guests order from their phones; orders flow to POS with Stripe sync." },
+    { title: "Stripe Checkout", desc: "Take session deposits, promos, and full checkouts with Stripe." },
+    { title: "Flavor Mix History", desc: "Save mixes, auto-reorder ingredients, and recommend best-sellers." },
+    { title: "Session Assistant", desc: "Track shisha, coal, and prevent early tab changes." },
+    { title: "Live Metrics", desc: "Track ROI, Sell Rate, MTTR and more." },
+    { title: "Refire Reliability", desc: "Instant fault tracking and recovery for every session." },
+  ];
+
   return (
-    <main className="bg-charcoal text-goldLumen min-h-screen font-sans">
-      <section className="max-w-screen-xl mx-auto py-20 px-6 space-y-16">
-        <header className="text-center space-y-4">
-          <h1 className="text-5xl font-display tracking-tight">The lounge operator stack</h1>
-          <p className="text-xl text-muted">Built for revenue & reliability</p>
-          <div className="flex justify-center gap-4">
-            <button className="bg-ember px-6 py-2 rounded-xl text-white">Start Preorders</button>
-            <button className="border border-ember px-6 py-2 rounded-xl text-ember">Join POS Waitlist</button>
+    <main className="min-h-screen bg-black text-white">
+      {/* Hero */}
+      <section className="max-w-6xl mx-auto px-6 py-16">
+        <header className="mb-10">
+          <h1 className="text-5xl font-bold leading-tight">
+            The lounge operator stack <br />
+            <span className="text-emerald-400">built for revenue & reliability.</span>
+          </h1>
+          <p className="mt-4 max-w-2xl text-lg text-gray-400">
+            HookahPlus powers QR preorders, flavor mix tracking, session-based POS, loyalty, and Recon Refire reliability so your team serves faster—with fewer mistakes.
+          </p>
+          <div className="mt-6 flex gap-4">
+            <a href="#start" className="bg-emerald-500 px-5 py-3 rounded-lg font-semibold hover:bg-emerald-400">Start preorders</a>
+            <a href="#waitlist" className="border border-white px-5 py-3 rounded-lg font-semibold hover:bg-white hover:text-black">Join POS waitlist</a>
           </div>
-          <Image
-            src="/og-default.png"
-            alt="HookahPlus dashboard preview"
-            width={1200}
-            height={630}
-            className="mx-auto rounded-2xl shadow-lg"
-          />
         </header>
+      </section>
 
-        <section>
-          <h2 className="text-3xl font-semibold mb-8">Everything you need to run modern lounges</h2>
-          <div className="grid md:grid-cols-3 gap-6">
-            <FeatureCard title="QR Preorders" desc="Guests scan table code and pay before coals drop." />
-            <FeatureCard title="Session Assistant" desc="Smart timers & prompts to keep coals tight." />
-            <FeatureCard title="Live Metrics" desc="Track heat, pulls & revenue live." />
-            {/* add more cards */}
+      {/* Features */}
+      <section className="max-w-6xl mx-auto px-6 py-12 grid md:grid-cols-3 gap-6">
+        {features.map((f, idx) => (
+          <div key={idx} className="bg-gray-900 p-6 rounded-xl">
+            <h3 className="text-xl font-bold mb-2">{f.title}</h3>
+            <p className="text-gray-400">{f.desc}</p>
           </div>
-        </section>
+        ))}
+      </section>
 
-        <section className="pt-16">
-          <h2 className="text-3xl font-semibold mb-6">Simple, transparent pricing</h2>
-          <div className="grid md:grid-cols-3 gap-6">
-            <PricingTier title="Starter" price="$29/mo" features={['1 venue', 'Unlimited sessions', 'Email support']} />
-            <PricingTier title="Growth" price="$79/mo" features={['3 venues', 'Flavor flow & Reflex', 'Priority support']} />
-            <PricingTier title="Pro" price="$149/mo" features={['Unlimited venues', 'On-call concierge']} />
-          </div>
-        </section>
-
-        <footer className="pt-10 text-sm text-muted text-center">
-          &copy; 2025 HookahPlus. Built with ❤️
-        </footer>
+      {/* Video Placeholder */}
+      <section className="max-w-6xl mx-auto px-6 py-12">
+        <div className="bg-gray-800 rounded-xl p-10 flex flex-col items-center justify-center">
+          <p className="text-gray-400 mb-4">Teaser video placeholder (15–30s)</p>
+          <button className="bg-emerald-500 px-6 py-3 rounded-lg font-semibold hover:bg-emerald-400">
+            Try preorder demo
+          </button>
+        </div>
       </section>
     </main>
-  );
-}
-
-function FeatureCard({ title, desc }: { title: string; desc: string }) {
-  return (
-    <div className="bg-panel rounded-2xl p-6 shadow-soft hover:shadow-xl transition">
-      <h3 className="text-xl font-semibold">{title}</h3>
-      <p className="text-muted">{desc}</p>
-    </div>
-  );
-}
-
-function PricingTier({ title, price, features }: { title: string; price: string; features: string[] }) {
-  return (
-    <div className="bg-deepMoss rounded-2xl p-6 text-white space-y-2">
-      <h3 className="text-2xl font-bold">{title}</h3>
-      <p className="text-lg">{price}</p>
-      <ul className="list-disc pl-5">
-        {features.map(f => <li key={f}>{f}</li>)}
-      </ul>
-    </div>
   );
 }
