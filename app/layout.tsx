@@ -1,7 +1,7 @@
-import "./globals.css";
-import { metadata } from "./metadata";
+import '../styles/globals.css';
+import './metadata';
 
-export { metadata };
+export { metadata } from './metadata';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
