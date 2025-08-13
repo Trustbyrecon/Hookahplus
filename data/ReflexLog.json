@@ -1,0 +1,20 @@
+[
+  {
+    "type": "system",
+    "trigger": "cmd.transmuteSimulationToProd()",
+    "message": "Simulation promoted to production",
+    "timestamp": "2025-08-06T01:00:00Z"
+  },
+  {
+    "type": "whisper",
+    "trigger": "Whisper: open logs",
+    "message": "Whisper event captured",
+    "timestamp": "2025-08-06T02:00:00Z"
+  },
+  {
+    "type": "replay",
+    "trigger": "Replay moment",
+    "message": "Replay system engaged",
+    "timestamp": "2025-08-06T03:00:00Z"
+  }
+]

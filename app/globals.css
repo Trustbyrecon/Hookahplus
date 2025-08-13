@@ -1,0 +1,24 @@
+@import "../styles/moodbook.css";
+
+/* Your existing globals... */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom brand styles */
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: black;
+  color: white;
+}
+
+a {
+  text-decoration: none;
+}
+
+a:hover {
+  opacity: 0.8;
+}

@@ -1,7 +1,6 @@
-// app/press/page.tsx
-import { Section } from "@/components/Section";
+import { Section } from "../../components/Section";
 
-export default function Press(){
+export default function Press() {
   return (
     <Section title="Press kit" kicker="Press & media">
       <div className="grid gap-4 sm:grid-cols-2">

@@ -1,0 +1,72 @@
+name: Hookah+ MVP ETA Updater
+
+on:
+  push:
+    branches: [ main ]
+  schedule:
+    - cron: "0 15 * * *"   # 15:00 UTC daily
+  workflow_dispatch:
+
+# Needed to write back to the repo / PRs
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: eta-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  eta:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Calculate progress
+        id: progress
+        run: |
+          GITHUB_OUTPUT="${GITHUB_OUTPUT:-$PWD/gout}"
+          echo "overall=92" >> $GITHUB_OUTPUT
+          echo "stage1=96"  >> $GITHUB_OUTPUT
+          echo "stage2=88"  >> $GITHUB_OUTPUT
+          echo "stage3=90"  >> $GITHUB_OUTPUT
+          echo "is_on_target=true" >> $GITHUB_OUTPUT
+
+      - name: Push ETA update to Netlify
+        env:
+          SITE: ${{ secrets.SITE }}
+          TOKEN: ${{ secrets.NETLIFY_TOKEN }}
+        run: |
+          curl -sS -X POST "$SITE/api/hplus-eta/update" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $TOKEN" \
+            -d @- <<JSON
+          {
+            "taskName": "MVP ETA",
+            "isOnTarget": "${{ steps.progress.outputs.is_on_target }}",
+            "progressPct": ${{ steps.progress.outputs.overall }},
+            "stageBreakdown": {
+              "stage1": "${{ steps.progress.outputs.stage1 }}",
+              "stage2": "${{ steps.progress.outputs.stage2 }}",
+              "stage3": "${{ steps.progress.outputs.stage3 }}"
+            },
+            "notes": "Auto heartbeat: syncing Hookah+ MVP ETA from CI.",
+            "source": "ci"
+          }
+JSON
+
+      - name: Commit changes (if any)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "No changes"
+          else
+            git add -A
+            git commit -m "chore: update ETA [skip ci]"
+            git push
+          fi

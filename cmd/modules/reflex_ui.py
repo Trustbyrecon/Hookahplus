@@ -24,8 +24,36 @@ def deploy_flavor_mix_ui():
     print("🍹 Deploying Flavor Mix UI...")
     return "Flavor Mix UI deployment triggered."
 
+
+
+def deploy_loyalty_balance_ui():
+    """Deploy the Loyalty Wallet UI with SPS integration."""
+    print("💰 Deploying Loyalty Balance UI...")
+    return "Loyalty Balance UI deployment triggered."
+
 def deploy_to_netlify(branch: str = "main"):
     """Trigger a Netlify deploy for the specified branch."""
     print(f"🚀 Triggering Netlify deploy for branch: {branch}...")
     # Placeholder for actual deployment logic
     return f"Netlify deploy initiated for {branch}"
+
+
+def deploy_loyalty_balance_ui():
+    print("🪙 Deploying Loyalty Wallet UI...")
+    return "Loyalty Wallet UI deployed."
+
+
+def generate_atlanta_revenue_forecast():
+    print("📈 Generating Atlanta revenue forecast...")
+    import os
+    import yaml
+
+    path = os.path.join(
+        os.path.dirname(__file__), "..", "..", "data", "SimForecast_ATL_7D.yaml"
+    )
+    try:
+        with open(path, "r") as f:
+            data = yaml.safe_load(f)
+        return data
+    except FileNotFoundError:
+        return "Forecast file not found"

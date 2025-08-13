@@ -1,0 +1,22 @@
+name: Verify Landing in Netlify Preview
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  check-landing:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Netlify Preview URL
+        uses: actions-ecosystem/action-wait-for-netlify-preview@v1
+        with:
+          max_timeout: 600000   # 10 min
+        id: wait
+      - name: Curl preview root
+        run: |
+          set -e
+          echo "Preview URL: ${{ steps.wait.outputs.url }}"
+          curl -sL "${{ steps.wait.outputs.url }}/" | tee page.html
+          grep -i "Session Reimagined" page.html
+
