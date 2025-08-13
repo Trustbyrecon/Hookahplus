@@ -1,0 +1,281 @@
+diff --git a/components/Hero.tsx b/components/Hero.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/components/Hero.tsx
+@@ -0,0 +1,56 @@
++// components/Hero.tsx
++"use client";
++import React from "react";
++import Link from "next/link";
++
++type CTA = { href: string; label: string };
++
++export function Hero({
++  title,
++  subtitle,
++  primary,
++  secondary,
++  children,
++}: {
++  title: React.ReactNode;
++  subtitle?: React.ReactNode;
++  primary?: CTA;
++  secondary?: CTA;
++  children?: React.ReactNode;
++}) {
++  return (
++    <section className="relative isolate overflow-hidden">
++      <div
++        className="pointer-events-none absolute inset-0 -z-10"
++        aria-hidden
++        style={{
++          background: `radial-gradient(600px 300px at 20% 0%, rgba(34,227,163,.12), transparent 60%),
++                       radial-gradient(600px 300px at 80% 0%, rgba(106,168,255,.10), transparent 60%)`,
++        }}
++      />
++      <div className="container py-16 grid gap-10 lg:grid-cols-2 items-center">
++        <div>
++          <h1 className="text-4xl md:text-5xl font-semibold tracking-tight">{title}</h1>
++          {subtitle && (
++            <p className="mt-4 text-white/80 max-w-2xl text-[15px] leading-7">{subtitle}</p>
++          )}
++          {(primary || secondary) && (
++            <div className="mt-8 flex flex-wrap gap-3">
++              {primary && (
++                <Link href={primary.href} className="btn bg-accent text-black font-semibold">
++                  {primary.label}
++                </Link>
++              )}
++              {secondary && (
++                <Link href={secondary.href} className="btn border border-white/20">
++                  {secondary.label}
++                </Link>
++              )}
++            </div>
++          )}
++        </div>
++        <div className="max-lg:order-first lg:order-none">{children}</div>
++      </div>
++    </section>
++  );
++}
+
+diff --git a/components/Section.tsx b/components/Section.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/components/Section.tsx
+@@ -0,0 +1,22 @@
++// components/Section.tsx
++import React from "react";
++
++export function Section({
++  title,
++  kicker,
++  children,
++  className = "",
++}: {
++  title?: React.ReactNode;
++  kicker?: React.ReactNode;
++  children: React.ReactNode;
++  className?: string;
++}) {
++  return (
++    <section className={"container py-12 " + className}>
++      {kicker && <div className="mb-2 text-accent text-sm">{kicker}</div>}
++      {title && <h2 className="text-2xl md:text-3xl font-semibold tracking-tight">{title}</h2>}
++      <div className={title ? "mt-6" : ""}>{children}</div>
++    </section>
++  );
++}
+
+diff --git a/components/FAQ.tsx b/components/FAQ.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/components/FAQ.tsx
+@@ -0,0 +1,27 @@
++// components/FAQ.tsx
++"use client";
++import React, { useState } from "react";
++
++export type FAQItem = { q: string; a: React.ReactNode };
++export function FAQ({ items }: { items: FAQItem[] }) {
++  const [open, setOpen] = useState<number | null>(0);
++  return (
++    <div className="divide-y divide-white/10 rounded-2xl border border-white/10 bg-panel">
++      {items.map((it, i) => (
++        <div key={i}>
++          <button
++            className="flex w-full items-center justify-between px-5 py-4 text-left hover:bg-white/5"
++            onClick={() => setOpen(open === i ? null : i)}
++            aria-expanded={open === i}
++          >
++            <span className="font-medium">{it.q}</span>
++            <span className="text-accent">{open === i ? "−" : "+"}</span>
++          </button>
++          {open === i && (
++            <div className="px-5 pb-5 text-white/80 text-[15px] leading-7">{it.a}</div>
++          )}
++        </div>
++      ))}
++    </div>
++  );
++}
+
+diff --git a/components/LogoWall.tsx b/components/LogoWall.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/components/LogoWall.tsx
+@@ -0,0 +1,31 @@
++// components/LogoWall.tsx
++import React from "react";
++
++export type Logo = { src: string; alt: string; href?: string };
++export function LogoWall({ logos }: { logos: Logo[] }) {
++  return (
++    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 items-center">
++      {logos.map((l, i) => {
++        const img = (
++          <img
++            src={l.src}
++            alt={l.alt}
++            className="max-h-8 w-auto opacity-80 saturate-0 contrast-150 hover:opacity-100 transition"
++            loading="lazy"
++          />
++        );
++        return (
++          <div key={i} className="flex items-center justify-center">
++            {l.href ? (
++              <a href={l.href} target="_blank" rel="noreferrer noopener" aria-label={l.alt}>
++                {img}
++              </a>
++            ) : (
++              img
++            )}
++          </div>
++        );
++      })}
++    </div>
++  );
++}
+
+diff --git a/app/pricing/page.tsx b/app/pricing/page.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/app/pricing/page.tsx
+@@ -0,0 +1,30 @@
++// app/pricing/page.tsx
++import { Section } from "@/components/Section";
++
++const tiers = [
++  { name: "Starter", price: "$29/mo", bullets: ["1 venue · unlimited sessions", "Basic analytics", "Email support"] },
++  { name: "Growth", price: "$79/mo", bullets: ["Up to 3 venues", "Flavor flow & Reflex", "Priority support"] },
++  { name: "Pro", price: "$149/mo", bullets: ["Unlimited venues", "Advanced analytics", "On-call concierge"] },
++];
++
++export default function Pricing(){
++  return (
++    <>
++      <Section title="Simple, transparent pricing" kicker="Pricing">
++        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
++          {tiers.map(t => (
++            <div key={t.name} className="card p-5">
++              <div className="text-lg font-semibold">{t.name}</div>
++              <div className="mt-2 text-3xl font-bold">{t.price}</div>
++              <ul className="mt-3 space-y-1 text-sm text-white/80">
++                {t.bullets.map((b,i)=>(<li key={i}>• {b}</li>))}
++              </ul>
++              <a href="/preorder" className="mt-4 inline-block btn bg-accent text-black font-semibold">Get started</a>
++            </div>
++          ))}
++        </div>
++        <p className="mt-6 text-white/70 text-sm">Prices are launch promos. POS bundle and add‑ons available.</p>
++      </Section>
++    </>
++  );
++}
+
+diff --git a/app/integrations/page.tsx b/app/integrations/page.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/app/integrations/page.tsx
+@@ -0,0 +1,21 @@
++// app/integrations/page.tsx
++import { Section } from "@/components/Section";
++import { LogoWall } from "@/components/LogoWall";
++
++export default function Integrations(){
++  return (
++    <>
++      <Section title="Integrations" kicker="Connect your stack">
++        <p className="text-white/80">Payments, hosting, analytics and messaging out of the box.</p>
++        <div className="mt-6">
++          <LogoWall logos={[
++            {src:"/logos/stripe.svg", alt:"Stripe"},
++            {src:"/logos/netlify.svg", alt:"Netlify"},
++            {src:"/logos/twilio.svg", alt:"Twilio"},
++            {src:"/logos/plausible.svg", alt:"Plausible"},
++          ]}/>
++        </div>
++      </Section>
++    </>
++  );
++}
+
+diff --git a/app/press/page.tsx b/app/press/page.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/app/press/page.tsx
+@@ -0,0 +1,21 @@
++// app/press/page.tsx
++import { Section } from "@/components/Section";
++
++export default function Press(){
++  return (
++    <Section title="Press kit" kicker="Press & media">
++      <div className="grid gap-4 sm:grid-cols-2">
++        <div className="card p-5">
++          <div className="text-lg font-semibold">Brand assets</div>
++          <p className="mt-2 text-white/80">Logo pack and usage guide.</p>
++          <a className="mt-3 inline-block btn border border-white/20" href="/press/kit.zip">Download</a>
++        </div>
++        <div className="card p-5">
++          <div className="text-lg font-semibold">Contact</div>
++          <p className="mt-2 text-white/80">Media inquiries and speaking.</p>
++          <a className="mt-3 inline-block btn bg-accent text-black font-semibold" href="mailto:press@hookahplus.net">press@hookahplus.net</a>
++        </div>
++      </div>
++    </Section>
++  );
++}
+
+diff --git a/app/support/page.tsx b/app/support/page.tsx
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/app/support/page.tsx
+@@ -0,0 +1,18 @@
++// app/support/page.tsx
++import { Section } from "@/components/Section";
++import { FAQ } from "@/components/FAQ";
++
++export default function Support(){
++  return (
++    <Section title="Support" kicker="We’re here to help">
++      <FAQ items={[
++        { q: "How does QR preorder work?", a: "Guests scan a table QR, choose flavors, and pay. Orders route to staff tablets." },
++        { q: "What is Reflex Δ?", a: "A quick recovery metric after repair/refill—higher is better, fewer mistakes." },
++        { q: "Can I migrate data?", a: "Yes. We provide templates and concierge import for early customers." },
++      ]}/>
++      <p className="mt-6 text-white/70 text-sm">
++        Still stuck? Email <a href="mailto:support@hookahplus.net" className="underline">support@hookahplus.net</a>.
++      </p>
++    </Section>
++  );
++}

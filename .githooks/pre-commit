@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+if git grep -nE '^(<<<<<<<|=======|>>>>>>>)' -- . >/dev/null; then
+  echo "❌ Merge conflict markers found. Resolve before committing."
+  exit 1
+fi
