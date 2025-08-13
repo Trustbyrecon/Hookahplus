@@ -1,4 +1,12 @@
+"use client";
+
+import { useEffect } from 'react';
+import { reflex } from '../lib/reflex';
+
 export default function Home(){
+  useEffect(() => {
+    reflex.logEvent?.('homepage_view');
+  }, []);
   return (
     <section className="container py-16">
       <h1 className="text-4xl md:text-5xl font-semibold tracking-tight">
