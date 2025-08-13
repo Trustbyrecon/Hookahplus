@@ -1,29 +1,23 @@
-/** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
+  content: [
+    "./app/**/*.{js,ts,jsx,tsx}",
+    "./components/**/*.{js,ts,jsx,tsx}"
+  ],
   theme: {
     extend: {
       colors: {
-        charcoal: '#1B1B1E',
-        ember: '#D35930',
-        mystic: '#8E79B9',
-        deepMoss: '#486964',
-        goldLumen: '#E8D7B1',
-        bg: "var(--bg)",
-        panel: "var(--panel)",
-        accent: "var(--accent)",
-        accent2: "var(--accent-2)",
-        muted: "var(--muted)",
-        danger: "var(--danger)",
-        warning: "var(--warning)",
-      },
-      fontFamily: {
-        display: ['var(--font-display)', 'serif'],
-        sans: ['var(--font-sans)', 'sans-serif'],
-      },
-      borderRadius: { xl: "var(--radius)", "2xl": "var(--radius)" },
-      boxShadow: { soft: "0 8px 24px rgba(0,0,0,.35)" },
-    },
+        primary: "rgb(var(--color-primary) / <alpha-value>)",
+        "primary-dark": "rgb(var(--color-primary-dark) / <alpha-value>)",
+        secondary: "rgb(var(--color-secondary) / <alpha-value>)",
+        "secondary-dark": "rgb(var(--color-secondary-dark) / <alpha-value>)",
+        accent: "rgb(var(--color-accent) / <alpha-value>)",
+        "accent-dark": "rgb(var(--color-accent-dark) / <alpha-value>)",
+        background: "rgb(var(--color-background) / <alpha-value>)",
+        surface: "rgb(var(--color-surface) / <alpha-value>)",
+        text: "rgb(var(--color-text) / <alpha-value>)",
+        "text-light": "rgb(var(--color-text-light) / <alpha-value>)"
+      }
+    }
   },
-  plugins: [],
+  plugins: []
 };
