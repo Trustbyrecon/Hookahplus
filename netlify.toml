@@ -1,14 +1,9 @@
-[build]
-  command = "npm run build"
-  publish = ".next"
+[context.production.environment]
+  NEXT_PUBLIC_SITE_URL = "https://hookahplus.net"
 
-[functions]
-  directory = "netlify/functions"
+# Use the live preview URL for PR/preview builds
+[context.deploy-preview.environment]
+  NEXT_PUBLIC_SITE_URL = "${DEPLOY_PRIME_URL}"
 
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
-
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
+[context.branch-deploy.environment]
+  NEXT_PUBLIC_SITE_URL = "${DEPLOY_URL}"
