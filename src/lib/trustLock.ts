@@ -1,6 +1,6 @@
 // src/lib/trustLock.ts
 import crypto from "crypto";
-import { env } from "@/config/env";
+import { env } from "../config/env";
 
 export function trustSignature(agentId: string, intent: string) {
   const hmac = crypto.createHmac("sha256", env.TRUST_SIGNATURE_SALT);
