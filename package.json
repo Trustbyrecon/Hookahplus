@@ -5,13 +5,16 @@
     "dev": "next dev",
     "build": "next build",
     "export": "next export",
-    "start": "next start"
+    "start": "next start",
+    "test:env": "node scripts/test-env.js",
+    "generate:secrets": "node scripts/generate-secrets.js"
   },
   "dependencies": {
     "next": "13.4.19",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "reactflow": "^11.11.4"
+    "reactflow": "^11.11.4",
+    "zod": "^3.22.4"
   },
   "engines": {
     "node": ">=16.0.0"
