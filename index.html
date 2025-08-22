@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HookahPlus — The lounge operator stack</title>
+  <meta name="description" content="QR preorders, flavor mix tracking, session-based POS, loyalty, and Reflex reliability." />
+  <link rel="canonical" href="https://hookahplus.net" />
+  <meta property="og:title" content="HookahPlus — The lounge operator stack" />
+  <meta property="og:description" content="Built for revenue & reliability." />
+  <meta property="og:url" content="https://hookahplus.net" />
+  <meta property="og:site_name" content="HookahPlus" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="HookahPlus — The lounge operator stack" />
+  <meta name="twitter:description" content="Built for revenue & reliability." />
+
+  <!-- Tailwind CDN for Canvas preview (replaces Next.js asset links) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { 
+            teal: { 400: '#2dd4bf', 500: '#14b8a6' }, 
+            emerald: { 400: '#34d399', 500: '#10b981' },
+            zinc: { 800: '#27272a', 900: '#18181b', 950: '#09090b' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    html, body { height: 100%; }
+    body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+  </style>
+</head>
+<body>
+  <!-- Canvas preview: fade in any initially hidden hero/card elements -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('[style*="opacity:0"]').forEach(el => {
+        el.style.transition = 'opacity .5s ease, transform .5s ease';
+        requestAnimationFrame(() => { el.style.opacity = '1'; el.style.transform = 'none'; });
+      });
+    });
+  </script>
+
+  <div class="min-h-screen bg-zinc-950 text-white selection:bg-teal-400/30">
+    <!-- Header -->
+    <header class="sticky top-0 z-30 backdrop-blur supports-[backdrop-filter]:bg-zinc-950/60 border-b border-zinc-800">
+      <div class="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="h-7 w-7 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-500"></div>
+          <span class="font-semibold tracking-tight">HookahPlus</span>
+        </div>
+        <nav class="hidden md:flex items-center gap-6 text-sm text-zinc-300">
+          <a href="#features" class="hover:text-white transition-colors">Features</a>
+          <a href="#pricing" class="hover:text-white transition-colors">Pricing</a>
+          <a href="#demo" class="hover:text-white transition-colors">Demo</a>
+          <a href="#waitlist" class="inline-flex items-center gap-2 rounded-full border border-zinc-700 px-3 py-1 hover:border-teal-500/70 hover:text-white transition-all duration-200">
+            <!-- sparkles icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063A2 2 0 0 0 14.063 15.5l-1.582 6.135a.5.5 0 0 1-.963 0z"></path><path d="M20 3v4"></path><path d="M22 5h-4"></path><path d="M4 17v2"></path><path d="M5 18H3"></path></svg>
+            POS Waitlist
+          </a>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="relative overflow-hidden">
+      <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_60%_at_50%_-10%,rgba(20,184,166,0.25),transparent_60%)]"></div>
+      <div class="mx-auto max-w-7xl px-4 py-20 md:py-28">
+        <div class="grid md:grid-cols-2 gap-10 items-center">
+          <div>
+            <h1 class="text-4xl md:text-6xl font-semibold leading-tight tracking-tight" style="opacity:0;transform:translateY(10px)">
+              The lounge operator stack
+              <span class="block bg-gradient-to-br from-teal-400 to-emerald-400 bg-clip-text text-transparent">built for revenue & reliability.</span>
+            </h1>
+            <p class="mt-5 text-zinc-300 max-w-xl">HookahPlus powers QR preorders, flavor mix tracking, session-based POS, loyalty, and Reflex-driven reliability so your team serves faster—with fewer mistakes.</p>
+            <div class="mt-8 flex flex-wrap items-center gap-3">
+              <a href="#preorder" class="rounded-xl bg-teal-500 px-5 py-3 font-medium text-zinc-950 hover:bg-teal-400 transition-all duration-200 hover:scale-105">Start preorders</a>
+              <a href="#waitlist" class="rounded-xl border border-zinc-700 px-5 py-3 font-medium hover:border-teal-500/70 hover:text-white transition-all duration-200">Join POS waitlist</a>
+              <a href="#features" class="text-zinc-300 hover:text-white transition-colors">See features →</a>
+            </div>
+            <div class="mt-6 flex items-center gap-5 text-xs text-zinc-400">
+              <div class="flex items-center gap-2">
+                <!-- shield-check -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-teal-400"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="m9 12 2 2 4-4"></path></svg>
+                Reflex reliability layer
+              </div>
+              <div class="flex items-center gap-2">
+                <!-- clock -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-teal-400"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                Fast go‑live
+              </div>
+              <div class="flex items-center gap-2">
+                <!-- wallet -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-teal-400"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path></svg>
+                Stripe-ready
+              </div>
+            </div>
+          </div>
+
+          <!-- Session Card -->
+          <div class="relative rounded-2xl border border-zinc-800 bg-zinc-900 p-4 shadow-2xl" style="opacity:0;transform:scale(0.98)">
+            <div class="rounded-xl bg-zinc-950 p-5 border border-zinc-800">
+              <div class="flex items-center justify-between">
+                <div class="text-sm font-medium">Session #1294 · VIP Booth</div>
+                <div class="text-xs text-zinc-400">EDR 92% · SHR 84%</div>
+              </div>
+              <div class="mt-4 grid grid-cols-3 gap-3">
+                <div class="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+                  <!-- cup-soda -->
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-teal-400"><path d="m6 8 1.75 12.28a2 2 0 0 0 2 1.72h4.54a2 2 0 0 0 2-1.72L18 8"></path><path d="M5 8h14"></path><path d="M7 15a6.47 6.47 0 0 1 5 0 6.47 6.47 0 0 0 5 0"></path><path d="m12 8 1-6h2"></path></svg>
+                  <div class="mt-2 text-sm font-medium">Flavor Mix</div>
+                  <div class="text-xs text-zinc-400">Blue Mist + Mint</div>
+                </div>
+                <div class="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+                  <!-- qr-code -->
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-teal-400"><rect width="5" height="5" x="3" y="3" rx="1"></rect><rect width="5" height="5" x="16" y="3" rx="1"></rect><rect width="5" height="5" x="3" y="16" rx="1"></rect><path d="M21 16h-3a2 2 0 0 0-2 2v3"></path><path d="M21 21v.01"></path><path d="M12 7v3a2 2 0 0 1-2 2H7"></path><path d="M3 12h.01"></path><path d="M12 3h.01"></path><path d="M12 16v.01"></path><path d="M16 12h1"></path><path d="M21 12v.01"></path><path d="M12 21v-1"></path></svg>
+                  <div class="mt-2 text-sm font-medium">QR Preorder</div>
+                  <div class="text-xs text-zinc-400">Paid · #ORD-9812</div>
+                </div>
+                <div class="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+                  <!-- credit-card -->
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-teal-400"><rect width="20" height="14" x="2" y="5" rx="2"></rect><line x1="2" x2="22" y1="10" y2="10"></line></svg>
+                  <div class="mt-2 text-sm font-medium">Stripe</div>
+                  <div class="text-xs text-zinc-400">$30 base + add‑ons</div>
+                </div>
+              </div>
+              <div class="mt-4 rounded-xl bg-gradient-to-br from-teal-500/10 to-emerald-500/10 p-4 text-sm">
+                <div class="flex items-center gap-2">
+                  <!-- chart-column -->
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-teal-400"><path d="M3 3v16a2 2 0 0 0 2 2h16"></path><path d="M18 17V9"></path><path d="M13 17V5"></path><path d="M8 17v-3"></path></svg>
+                  Reflex Δ +0.18 after repair
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section id="features" class="mx-auto max-w-7xl px-4 py-16">
+      <h2 class="text-2xl md:text-3xl font-semibold">Everything you need to run modern lounges</h2>
+      <p class="mt-2 text-zinc-400 max-w-2xl">From QR preorders to POS adapters, HookahPlus streamlines front-of-house while Recon Reflex protects reliability behind the scenes.</p>
+      <div class="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Card 1 -->
+        <div class="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 hover:border-zinc-700 transition-all duration-200 hover:scale-105">
+          <div class="flex items-center gap-2">
+            <!-- qr-code icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-teal-400"><rect width="5" height="5" x="3" y="3" rx="1"></rect><rect width="5" height="5" x="16" y="3" rx="1"></rect><rect width="5" height="5" x="3" y="16" rx="1"></rect><path d="M21 16h-3a2 2 0 0 0-2 2v3"></path><path d="M21 21v.01"></path><path d="M12 7v3a2 2 0 0 1-2 2H7"></path><path d="M3 12h.01"></path><path d="M12 3h.01"></path><path d="M12 16v.01"></path><path d="M16 12h1"></path><path d="M21 12v.01"></path><path d="M12 21v-1"></path></svg>
+            <div class="font-medium">QR Preorders</div>
+          </div>
+          <div class="mt-1 text-sm text-zinc-300">Guests order from their phones; staff see live prep queues.</div>
+        </div>
+        <!-- Card 2 -->
+        <div class="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 hover:border-zinc-700 transition-all duration-200 hover:scale-105">
+          <div class="font-medium">Stripe Checkout</div>
+          <div class="mt-1 text-sm text-zinc-300">One‑tap payments; tips & add‑ons supported.</div>
+        </div>
+        <!-- Card 3 -->
+        <div class="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 hover:border-zinc-700 transition-all duration-200 hover:scale-105">
+          <div class="font-medium">Flavor Mix History</div>
+          <div class="mt-1 text-sm text-zinc-300">Keep favorites; surface top mixes automatically.</div>
+        </div>
+        <!-- Card 4 -->
+        <div class="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 hover:border-zinc-700 transition-all duration-200 hover:scale-105">
+          <div class="font-medium">Session Assistant</div>
+          <div class="mt-1 text-sm text-zinc-300">Timers, prompts, and rapid re‑fire for coals.</div>
+        </div>
+        <!-- Card 5 -->
+        <div class="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 hover:border-zinc-700 transition-all duration-200 hover:scale-105">
+          <div class="font-medium">Live Metrics</div>
+          <div class="mt-1 text-sm text-zinc-300">Occupancy, order flow, and repair feedback.</div>
+        </div>
+        <!-- Card 6 -->
+        <div class="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 hover:border-zinc-700 transition-all duration-200 hover:scale-105">
+          <div class="font-medium">Reflex Reliability</div>
+          <div class="mt-1 text-sm text-zinc-300">Trust‑Lock snapshots & echo checks behind the scenes.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pricing -->
+    <section id="pricing" class="mx-auto max-w-7xl px-4 py-16">
+      <h2 class="text-2xl md:text-3xl font-semibold">Simple pricing that scales with you</h2>
+      <p class="mt-2 text-zinc-400 max-w-2xl">Start small, grow confidently. Switch plans anytime.</p>
+      <div class="mt-8 grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Starter -->
+        <div class="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 flex flex-col hover:border-zinc-700 transition-all duration-200">
+          <div class="text-sm text-zinc-400">Starter</div>
+          <div class="mt-1 text-3xl font-semibold">$99<span class="text-base font-normal text-zinc-400">/mo</span></div>
+          <div class="mt-2 text-sm">1 lounge</div>
+          <ul class="mt-4 space-y-2 text-sm text-zinc-300">
+            <li>Session timer</li>
+            <li>QR payments</li>
+            <li>Basic flavor mix log</li>
+            <li>Text receipts</li>
+          </ul>
+          <a href="#waitlist" class="mt-6 rounded-xl bg-zinc-700 text-white px-4 py-2 text-center font-medium hover:bg-zinc-600 transition-colors">Choose Starter</a>
+        </div>
+        <!-- Pro -->
+        <div class="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 flex flex-col hover:border-zinc-700 transition-all duration-200">
+          <div class="text-sm text-zinc-400">Pro</div>
+          <div class="mt-1 text-3xl font-semibold">$249<span class="text-base font-normal text-zinc-400">/mo</span></div>
+          <div class="mt-2 text-sm">Up to 3 lounges</div>
+          <ul class="mt-4 space-y-2 text-sm text-zinc-300">
+            <li>Loyalty pricing</li>
+            <li>Analytics dashboard</li>
+            <li>Premium flavor detection</li>
+            <li>YAML config</li>
+          </ul>
+          <a href="#waitlist" class="mt-6 rounded-xl bg-teal-500 text-zinc-950 px-4 py-2 text-center font-medium hover:bg-teal-400 transition-colors">Choose Pro</a>
+        </div>
+        <!-- Trust+ -->
+        <div class="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 ring-1 ring-teal-500/40 relative flex flex-col hover:border-zinc-700 transition-all duration-200">
+          <div class="absolute -top-3 left-6 rounded-full bg-teal-500/20 text-teal-300 text-xs px-2 py-0.5 border border-teal-500/30">Most popular</div>
+          <div class="text-sm text-zinc-400">Trust+</div>
+          <div class="mt-1 text-3xl font-semibold">$499<span class="text-base font-normal text-zinc-400">/mo</span></div>
+          <div class="mt-2 text-sm">Up to 7 lounges</div>
+          <ul class="mt-4 space-y-2 text-sm text-zinc-300">
+            <li>Reflex scoring</li>
+            <li>SessionNotes memory</li>
+            <li>Priority support</li>
+            <li>Dynamic margin logic</li>
+          </ul>
+          <a href="#waitlist" class="mt-6 rounded-xl bg-teal-500 text-zinc-950 px-4 py-2 text-center font-medium hover:bg-teal-400 transition-colors">Choose Trust+</a>
+        </div>
+        <!-- Enterprise+ -->
+        <div class="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 flex flex-col hover:border-zinc-700 transition-all duration-200">
+          <div class="text-sm text-zinc-400">Enterprise+</div>
+          <div class="mt-1 text-3xl font-semibold">Custom</div>
+          <div class="mt-2 text-sm">8+ lounges</div>
+          <ul class="mt-4 space-y-2 text-sm text-zinc-300">
+            <li>White-labeling</li>
+            <li>Multi-location reporting</li>
+            <li>API access</li>
+            <li>Advanced agent assist</li>
+          </ul>
+          <a href="#waitlist" class="mt-6 rounded-xl border border-zinc-700 px-4 py-2 text-center font-medium hover:border-teal-500/70 transition-colors">Talk to sales</a>
+        </div>
+      </div>
+
+      <!-- Add-ons -->
+      <div class="mt-10 rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+        <h3 class="font-medium">Add-ons</h3>
+        <div class="mt-4 grid md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-zinc-300">
+          <div>
+            <div class="font-medium">Flavor AI Recommender</div>
+            <div class="text-zinc-400">$29/mo — Suggests optimal combos based on history</div>
+          </div>
+          <div>
+            <div class="font-medium">Session Replay Heatmap</div>
+            <div class="text-zinc-400">$49/mo — Visual heatmaps of usage/timing</div>
+          </div>
+          <div>
+            <div class="font-medium">Text-to-Order Hookah</div>
+            <div class="text-zinc-400">$19/mo — Reorder via SMS or QR</div>
+          </div>
+          <div>
+            <div class="font-medium">QR-Based Bill Pay</div>
+            <div class="text-zinc-400">Included — Free in all tiers</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Demo CTA -->
+    <section id="demo" class="mx-auto max-w-7xl px-4 py-16">
+      <div class="rounded-2xl border border-zinc-800 bg-zinc-900 p-8 lg:p-12 flex flex-col lg:flex-row items-center gap-8">
+        <div class="flex-1">
+          <h2 class="text-2xl md:text-3xl font-semibold">See it in action</h2>
+          <p class="mt-2 text-zinc-400 max-w-xl">Kick the tires: run a sample QR preorder, then open the staff view to watch it flow through sessions and Stripe.</p>
+          <div class="mt-6 flex flex-wrap gap-3">
+            <a href="#preorder" class="rounded-xl bg-teal-500 text-zinc-950 px-5 py-3 font-medium hover:bg-teal-400 transition-all duration-200 hover:scale-105">Try preorder</a>
+            <a href="#waitlist" class="rounded-xl border border-zinc-700 px-5 py-3 font-medium hover:border-teal-500/70 transition-all duration-200">Join POS waitlist</a>
+          </div>
+        </div>
+        <div class="flex-1 w-full">
+          <div class="aspect-video rounded-xl bg-zinc-800 border border-zinc-700 grid place-items-center text-zinc-400">
+            15–30s product teaser (placeholder)
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Waitlist / Contact -->
+    <section id="waitlist" class="mx-auto max-w-7xl px-4 py-16">
+      <div class="rounded-2xl border border-zinc-800 bg-zinc-900 p-8">
+        <h2 class="text-2xl md:text-3xl font-semibold">Get early access to POS</h2>
+        <p class="mt-2 text-zinc-400 max-w-xl">We onboard lounges in waves so we can keep reliability high. Hop on the list and we'll reach out.</p>
+        <form class="mt-6 grid sm:grid-cols-2 gap-3">
+          <input type="text" placeholder="Your name" class="rounded-lg bg-zinc-950 border border-zinc-800 px-4 py-3 outline-none focus-visible:ring-2 focus-visible:ring-teal-500 transition-all duration-200"/>
+          <input type="email" placeholder="you@lounge.com" class="rounded-lg bg-zinc-950 border border-zinc-800 px-4 py-3 outline-none focus-visible:ring-2 focus-visible:ring-teal-500 transition-all duration-200"/>
+          <input type="text" placeholder="Lounge name" class="rounded-lg bg-zinc-950 border border-zinc-800 px-4 py-3 outline-none focus-visible:ring-2 focus-visible:ring-teal-500 transition-all duration-200"/>
+          <button class="rounded-lg bg-teal-500 text-zinc-950 px-4 py-3 font-medium hover:bg-teal-400 transition-all duration-200 hover:scale-105">Join waitlist</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-zinc-800 py-10 text-sm text-zinc-400">
+      <div class="mx-auto max-w-7xl px-4 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-2">
+          <div class="h-6 w-6 rounded-lg bg-gradient-to-br from-teal-500 to-emerald-500"></div>
+          <span>HookahPlus</span>
+        </div>
+        <div class="flex gap-6">
+          <a href="#features" class="hover:text-white transition-colors">Features</a>
+          <a href="#pricing" class="hover:text-white transition-colors">Pricing</a>
+          <a href="#demo" class="hover:text-white transition-colors">Demo</a>
+          <a href="#waitlist" class="hover:text-white transition-colors">POS Waitlist</a>
+        </div>
+        <div>© <span id="y"></span> Trust by Recon</div>
+      </div>
+    </footer>
+
+    <script>
+      // small UX niceties (layer 4): smooth scroll, focus-visible, dynamic year
+      document.getElementById('y').textContent = new Date().getFullYear();
+      document.querySelectorAll('a[href^="#"]').forEach(a => {
+        a.addEventListener('click', e => {
+          const id = a.getAttribute('href');
+          const el = document.querySelector(id);
+          if (!el) return;
+          e.preventDefault();
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      });
+      // reduced motion respect
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.querySelectorAll('[style*="opacity:0"]').forEach(el => {
+          el.style.opacity = '1'; el.style.transform = 'none'; el.style.transition = 'none';
+        });
+      }
+    </script>
+
+  </div>
+</body>
+</html>

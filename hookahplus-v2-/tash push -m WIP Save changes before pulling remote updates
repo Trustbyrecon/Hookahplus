@@ -1,0 +1,12 @@
+* [33m19744e37[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m Fix: resolved merge conflict in package.json
+[31m|[m * [33mcdf495d6[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Update package.json
+[31m|[m * [33mc395b670[m Create reflexSync.js
+[31m|[m * [33m695a9ac4[m Update index.html
+[31m|[m[31m/[m  
+*   [33m36bffc6c[m Initial commit with workflows
+[33m|[m[34m\[m  
+[33m|[m * [33mefe69660[m Create manual.yml
+[33m|[m * [33mc4a7fe5c[m Create greetings.yml
+[33m|[m * [33m6afbedfe[m Create codeql.yml
+[33m|[m * [33m3e41e5c4[m Create static.yml
+[33m|[m * [33m86c537b4[m Create node.js.yml

@@ -1,0 +1,31 @@
+exports.handler = async (event) => {
+  let body = {};
+
+  try {
+    body = JSON.parse(event.body || "{}");
+  } catch (e) {
+    console.log("⚠️ JSON Parse Error:", e.message);
+    return {
+      statusCode: 400,
+      body: "Invalid JSON payload",
+    };
+  }
+
+  // Handle webhook verification handshake
+  if (body?.verificationCode) {
+    console.log("🔐 Clover Verification Code Received:", body.verificationCode);
+    return {
+      statusCode: 200,
+      body: body.verificationCode,
+    };
+  }
+
+  // Log any webhook activity for debugging
+  console.log("📦 Webhook Payload Received:", JSON.stringify(body));
+
+  return {
+    statusCode: 200,
+    body: "Webhook received",
+  };
+};
+

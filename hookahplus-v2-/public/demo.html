@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hookah+ Demo - Experience the Future</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            color: white;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .hero {
+            text-align: center;
+            padding: 4rem 0;
+        }
+        
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, #14b8a6, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .hero p {
+            font-size: 1.25rem;
+            color: #a1a1aa;
+            margin-bottom: 2rem;
+        }
+        
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+        
+        .demo-card {
+            background: rgba(24, 24, 27, 0.8);
+            border: 1px solid #14b8a6;
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .demo-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(20, 184, 166, 0.2);
+        }
+        
+        .demo-card .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .demo-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #14b8a6;
+        }
+        
+        .demo-card p {
+            color: #a1a1aa;
+            margin-bottom: 1.5rem;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(45deg, #14b8a6, #3b82f6);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            font-weight: 600;
+            transition: transform 0.2s ease;
+        }
+        
+        .cta-button:hover {
+            transform: scale(1.05);
+        }
+        
+        .trust-lock {
+            background: rgba(24, 24, 27, 0.8);
+            border: 1px solid #14b8a6;
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+            margin: 3rem 0;
+        }
+        
+        .trust-lock .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        
+        .back-link {
+            display: inline-block;
+            color: #14b8a6;
+            text-decoration: none;
+            margin-top: 2rem;
+            font-weight: 600;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            .demo-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="hero">
+            <h1>Hookah+ Demo</h1>
+            <p>Experience the future of lounge management with AI-powered personalization</p>
+        </div>
+        
+        <div class="demo-grid">
+            <div class="demo-card">
+                <div class="icon">📱</div>
+                <h3>QR Pre-Ordering</h3>
+                <p>Scan table QR codes to instantly access the menu and place orders from your phone</p>
+                <a href="/preorder/T-001" class="cta-button">Try Pre-Order</a>
+            </div>
+            
+            <div class="demo-card">
+                <div class="icon">💳</div>
+                <h3>Secure Payments</h3>
+                <p>Stripe-powered checkout with Trust-Lock verification for every transaction</p>
+                <a href="/checkout" class="cta-button">View Checkout</a>
+            </div>
+            
+            <div class="demo-card">
+                <div class="icon">📊</div>
+                <h3>Live Dashboard</h3>
+                <p>Real-time order tracking and analytics for lounge operators</p>
+                <a href="/dashboard" class="cta-button">Open Dashboard</a>
+            </div>
+        </div>
+        
+        <div class="trust-lock">
+            <div class="status">
+                🔒 Trust-Lock: TLH-v1::active
+            </div>
+            <h3>Cryptographic Security</h3>
+            <p>Every order is cryptographically signed and verified using HMAC-SHA256. Our Trust-Lock system ensures that only legitimate orders are processed and paid.</p>
+        </div>
+        
+        <div style="text-align: center;">
+            <a href="/" class="back-link">← Back to Home</a>
+        </div>
+    </div>
+</body>
+</html>

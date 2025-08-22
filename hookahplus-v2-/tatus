@@ -1,0 +1,5 @@
+[33m9da2ca60[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m feat(verification): add production environment verification script
+[33mff4c23e6[m commit
+[33mb594c465[m[33m ([m[1;31mnew-origin/main[m[33m, [m[1;31mnew-origin/HEAD[m[33m)[m feat(live-mode): complete setup scripts for production deployment and live mode verification
+[33me5ab538b[m fix(typescript): resolve verbatimModuleSyntax import issues; add zod dependency; fix trustlock build-time errors
+[33m8167b6ca[m commit

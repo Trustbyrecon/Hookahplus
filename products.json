@@ -1,0 +1,122 @@
+[
+  {
+<<<<<<< HEAD
+    "name": "Hookah Session",
+    "description": "Standard hookah session with 1 flavor included.",
+    "type": "service",
+    "default_price_data": {
+      "currency": "usd",
+      "unit_amount": 1500,
+      "recurring": null
+    }
+  },
+  {
+    "name": "Flavor Add-On",
+    "description": "Additional flavor shot for your hookah session.",
+    "type": "service",
+    "default_price_data": {
+      "currency": "usd",
+      "unit_amount": 200
+    }
+  },
+  {
+    "name": "VIP Monthly",
+    "description": "Unlimited premium lounge access with perks.",
+    "type": "service",
+    "default_price_data": {
+      "currency": "usd",
+      "unit_amount": 5000,
+      "recurring": { "interval": "month" }
+    }
+=======
+    "id": "hp_hookah_session",
+    "name": "Hookah Session",
+    "description": "Single hookah session including 1 flavor by default.",
+    "type": "service",
+    "metadata": { "category": "consumer", "roi_anchor": "30_base" },
+    "prices": [
+      { "nickname": "Session $30", "currency": "usd", "unit_amount": 3000 }
+    ]
+  },
+  {
+    "id": "hp_flavor_addon",
+    "name": "Flavor Add-On",
+    "description": "Extra hookah flavor per session.",
+    "type": "service",
+    "metadata": { "category": "consumer_addon" },
+    "prices": [
+      { "nickname": "Flavor $1.50", "currency": "usd", "unit_amount": 150 }
+    ]
+  },
+  {
+    "id": "hp_tier_starter",
+    "name": "Hookah+ Starter",
+    "description": "1 lounge | Timer, QR payments, basic flavor mix log, text receipts. QR Bill Pay included.",
+    "type": "service",
+    "metadata": {
+      "category": "owner_saas",
+      "tier": "starter",
+      "included_addons": "qr_bill_pay"
+    },
+    "prices": [
+      {
+        "nickname": "Starter $99/mo",
+        "currency": "usd",
+        "unit_amount": 9900,
+        "recurring": { "interval": "month" }
+      }
+    ]
+  },
+  {
+    "id": "hp_tier_pro",
+    "name": "Hookah+ Pro",
+    "description": "Up to 3 lounges | Loyalty pricing, analytics dashboard, premium flavor detection, YAML config. Includes Flavor AI Recommender.",
+    "type": "service",
+    "metadata": {
+      "category": "owner_saas",
+      "tier": "pro",
+      "included_addons": "qr_bill_pay,flavor_ai"
+    },
+    "prices": [
+      {
+        "nickname": "Pro $249/mo",
+        "currency": "usd",
+        "unit_amount": 24900,
+        "recurring": { "interval": "month" }
+      }
+    ]
+  },
+  {
+    "id": "hp_tier_trust_plus",
+    "name": "Hookah+ Trust+",
+    "description": "Up to 7 lounges | Reflex scoring, SessionNotes memory, dynamic margin logic, priority support. Includes Flavor AI + Session Replay Heatmap.",
+    "type": "service",
+    "metadata": {
+      "category": "owner_saas",
+      "tier": "trust_plus",
+      "included_addons": "qr_bill_pay,flavor_ai,session_heatmap"
+    },
+    "prices": [
+      {
+        "nickname": "Trust+ $499/mo",
+        "currency": "usd",
+        "unit_amount": 49900,
+        "recurring": { "interval": "month" }
+      }
+    ]
+  },
+  {
+    "id": "hp_tier_enterprise_plus",
+    "name": "Hookah+ Enterprise+",
+    "description": "8+ lounges | White-labeling, multi-location reporting, API access, advanced agent assist. All add-ons included. Custom quote.",
+    "type": "service",
+    "metadata": {
+      "category": "owner_saas",
+      "tier": "enterprise_plus",
+      "included_addons": "all",
+      "billing": "custom_quote"
+    },
+    "prices": []
+>>>>>>> stripe-integration-clean
+  }
+]

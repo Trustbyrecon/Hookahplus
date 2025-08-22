@@ -1,0 +1,23 @@
+[
+  {
+    "name": "Hookah Session",
+    "productId": "prod_Su0vOeTVjuSLrt",
+    "priceId": "price_1RyCtSDuKNq0KFAAihtnSInq",
+    "amount": 15,
+    "currency": "usd"
+  },
+  {
+    "name": "Flavor Add-On",
+    "productId": "prod_Su0vP2qLg7kX4F",
+    "priceId": "price_1RyCtTDuKNq0KFAAP6sAbA2z",
+    "amount": 2,
+    "currency": "usd"
+  },
+  {
+    "name": "VIP Monthly",
+    "productId": "prod_Su0vuW88U3CZVG",
+    "priceId": "price_1RyCtTDuKNq0KFAAu9DW0Ar9",
+    "amount": 50,
+    "currency": "usd"
+  }
+]

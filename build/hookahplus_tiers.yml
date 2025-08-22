@@ -1,0 +1,18 @@
+tiers:
+  - name: Starter
+    price: 29
+    features:
+      - Session Timer
+      - QR Order Link
+  - name: Pro
+    price: 79
+    features:
+      - Everything in Starter
+      - Flavor Mix Tracking
+      - Receipt Generation
+  - name: Premium
+    price: 149
+    features:
+      - Everything in Pro
+      - Session Analytics
+      - Loyalty Integrations

@@ -1,0 +1,12 @@
+{
+  "name": "hookahplus",
+  "version": "1.0.0",
+  "description": "HookahPlus Netlify Full Launch",
+  "scripts": {
+    "dev": "live-server"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  }
+}

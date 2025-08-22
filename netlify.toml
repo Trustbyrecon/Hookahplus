@@ -1,0 +1,57 @@
+[build]
+command = "npm install && npm run build"
+publish = ".next"
+
+[build.environment]
+NODE_VERSION = "20.19.0"
+NPM_FLAGS = "--legacy-peer-deps"
+
+# Production environment
+[context.production.environment]
+NODE_ENV = "production"
+NEXT_PUBLIC_APP_URL = "https://hookahplus.net"
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_live_your_live_publishable_key_here"
+STRIPE_SECRET_KEY = "sk_live_your_live_secret_key_here"
+STRIPE_WEBHOOK_SECRET = "whsec_your_live_webhook_secret_here"
+NEXT_PUBLIC_GA_ID = "G-XXXXXXXXXX"
+TRUSTLOCK_SECRET = "your_production_trustlock_secret_here"
+
+# Staging environment
+[context.staging.environment]
+NODE_ENV = "staging"
+NEXT_PUBLIC_APP_URL = "https://staging.hookahplus.net"
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_test_your_test_publishable_key_here"
+STRIPE_SECRET_KEY = "sk_test_your_test_secret_key_here"
+STRIPE_WEBHOOK_SECRET = "whsec_your_test_webhook_secret_here"
+NEXT_PUBLIC_GA_ID = "G-XXXXXXXXXX"
+TRUSTLOCK_SECRET = "your_staging_trustlock_secret_here"
+
+# Deploy previews (PR builds)
+[context.deploy-preview.environment]
+NODE_ENV = "development"
+NEXT_PUBLIC_APP_URL = "https://deploy-preview-{id}--hookahplus.netlify.app"
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_test_your_test_publishable_key_here"
+STRIPE_SECRET_KEY = "sk_test_your_test_secret_key_here"
+STRIPE_WEBHOOK_SECRET = "whsec_your_test_webhook_secret_here"
+NEXT_PUBLIC_GA_ID = "G-XXXXXXXXXX"
+TRUSTLOCK_SECRET = "your_staging_trustlock_secret_here"
+
+[[plugins]]
+package = "@netlify/plugin-nextjs"
+
+[[redirects]]
+from = "/demo"
+to = "/demo.html"
+status = 200
+
+# Stripe webhook endpoint
+[[redirects]]
+from = "/api/webhooks/stripe"
+to = "/.netlify/functions/stripe-webhook"
+status = 200
+
+# Health check endpoint
+[[redirects]]
+from = "/health"
+to = "/api/health"
+status = 200
