@@ -1,3 +1,4 @@
+# Netlify configuration for HookahPlus deployment
 [build]
 base = "hookahplus-v2-"
 command = "cd hookahplus-v2- && npm ci --legacy-peer-deps && npm run build"
