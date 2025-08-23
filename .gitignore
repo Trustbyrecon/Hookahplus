@@ -1,18 +1,14 @@
-<<<<<<< HEAD
+# Build outputs
 dist/
+out/
+.next/
 *.url
 
 # Node dependencies
 node_modules/
-out/
-.next/
 package-lock.json
-app/dashboard/node_modules/
-app/dashboard/out/
-app/dashboard/.next/
-app/dashboard/package-lock.json
-=======
-node_modules/
+
+# Environment files
 .env
 *.log
 /logs/
@@ -20,6 +16,13 @@ node_modules/
 
 # Local Netlify folder
 .netlify
->>>>>>> 1720e30bee34ab738cfd08a47b42d87217c4be27
+
+# App-specific
+app/dashboard/node_modules/
+app/dashboard/out/
+app/dashboard/.next/
+app/dashboard/package-lock.json
+
+# Project-specific
 ReflexAutoOps_StarterKit/
 ScreenCoder/
