@@ -126,7 +126,7 @@ export default function BehavioralMemoryStaffPanel() {
             <div className="flex flex-col gap-2">
               <button onClick={startSession} className="w-full rounded-lg border border-[#2a3570] bg-[#17204a] p-2 text-sm hover:bg-[#1b2658]">Start Session</button>
               <button onClick={endSession} className="w-full rounded-lg border border-[#2a3570] bg-[#17204a] p-2 text-sm hover:bg-[#1b2658]">End Session</button>
-              <button onClick={awardBadge} className="w-full rounded-lg border border-[#2a3570] bg-[#2a3570] p-2 text-sm hover:bg-[#1b2658]">Award Badge</button>
+              <button onClick={awardBadge} className="w-full rounded-lg border border-[#2a3570] bg-[#17204a] p-2 text-sm hover:bg-[#1b2658]">Award Badge</button>
             </div>
           </div>
 
@@ -155,9 +155,9 @@ export default function BehavioralMemoryStaffPanel() {
               </div>
 
               <div className="mt-2 text-xs text-[#aab6ff]">Last 3 Preferences</div>
-              <div className="mt-1">{(profile?.prefs ?? []).map(chip)}</div>
+              <div className="mt-1">{(profile?.prefs ?? []).map((pref, i) => <span key={`pref-${i}`}>{chip(pref)}</span>)}</div>
               <div className="mt-2 text-xs text-[#aab6ff]">Suggested Actions</div>
-              <div className="mt-1">{(profile?.suggest ?? []).map(s=>chip("→ "+s))}</div>
+              <div className="mt-1">{(profile?.suggest ?? []).map((s, i) => <span key={`suggest-${i}`}>{chip("→ "+s)}</span>)}</div>
             </section>
 
             {/* Badges */}
@@ -181,7 +181,7 @@ export default function BehavioralMemoryStaffPanel() {
                 <button onClick={()=> profile && setProfile({ ...profile, notesL: [] })} className="rounded-full border border-[#2a2f54] bg-[#0f1433] px-3 py-1 text-xs">Clear</button></div>
               <div>
                 {(profile?.notesL ?? []).map((n,i)=> (
-                  <div key={i} className="mt-2 rounded-md border border-[#2a3570] bg-[#18204a] px-3 py-2 text-sm">{n}</div>
+                  <div key={`lounge-note-${i}`} className="mt-2 rounded-md border border-[#2a3570] bg-[#18204a] px-3 py-2 text-sm">{n}</div>
                 ))}
               </div>
             </section>
@@ -192,7 +192,7 @@ export default function BehavioralMemoryStaffPanel() {
                 <button onClick={()=> profile && setProfile({ ...profile, notesN: [] })} className="rounded-full border border-[#2a2f54] bg-[#0f1433] px-3 py-1 text-xs">Clear</button></div>
               <div>
                 {(profile?.notesN ?? []).map((n,i)=> (
-                  <div key={i} className="mt-2 rounded-md border border-[#2a2f54] bg-[#18204a] px-3 py-2 text-sm">{n}</div>
+                  <div key={`network-note-${i}`} className="mt-2 rounded-md border border-[#2a3570] bg-[#18204a] px-3 py-2 text-sm">{n}</div>
                 ))}
               </div>
             </section>
@@ -203,7 +203,7 @@ export default function BehavioralMemoryStaffPanel() {
                 <div className="text-xs text-[#b8c2ff]">{sessionActive ? `Session Active: ${sessionStamp}` : "No active session"}</div></div>
               <div className="mt-2 text-xs text-[#aab6ff]">Flavor / Service Selector</div>
               <div className="mt-1 flex flex-wrap">
-                {(profile?.catalog ?? demoProfile.catalog).map(chip)}
+                {(profile?.catalog ?? demoProfile.catalog).map((item, i) => <span key={`catalog-${i}`}>{chip(item)}</span>)}
               </div>
             </section>
 

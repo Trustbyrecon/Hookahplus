@@ -184,6 +184,12 @@ export default function Home() {
                 <div className="text-sm">Admin</div>
               </div>
             </Link>
+            <Link href="/staff-panel">
+              <div className="bg-zinc-900 border border-teal-500 rounded-lg p-4 text-center hover:bg-teal-900/20 transition-colors">
+                <div className="text-2xl mb-2">👥</div>
+                <div className="text-sm">Staff Panel</div>
+              </div>
+            </Link>
           </div>
         </div>
       </div>
