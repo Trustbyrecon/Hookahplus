@@ -1,0 +1,22 @@
+{
+  "name": "stripe-seed",
+  "version": "1.0.0",
+  "description": "Stripe catalog seeding for Hookah+ MVP",
+  "main": "seed.js",
+  "scripts": {
+    "setup": "node -e \"console.log('🔐 Run setup-secure.bat (Windows) or setup-secure.sh (Mac/Linux) to create .env file')\"",
+    "seed": "node seed.js",
+    "seed:check": "node -e \"require('dotenv').config(); console.log('Environment check:', process.env.STRIPE_SECRET_KEY ? '✅ Key found' : '❌ No key'); console.log('Key starts with sk_test_:', process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_') ? '✅' : '❌')\"",
+    "postinstall": "echo '🔐 Run npm run setup to create secure environment file'"
+  },
+  "dependencies": {
+    "stripe": "^14.0.0",
+    "dotenv": "^16.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": ["stripe", "seeding", "hookah", "mvp"],
+  "author": "Hookah+ Team",
+  "license": "MIT"
+}

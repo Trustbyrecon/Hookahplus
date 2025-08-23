@@ -1,0 +1,21 @@
+  chore/health-stamp                [m c25e276b [[34morigin/chore/health-stamp[m] fix(netlify): clean TOML
+  feat/beacon                       [m ab8eea3b feat: sitemap + robots + OG image + web manifest (beacon)
+  feat/demo-dynamic-og              [m c25e276b [[34morigin/feat/demo-dynamic-og[m] fix(netlify): clean TOML
+  feat/home-autofire                [m c25e276b [[34morigin/feat/home-autofire[m] fix(netlify): clean TOML
+  feat/landing-Lplus4               [m c98b98ac [[34morigin/feat/landing-Lplus4[m] feat: complete L+4 landing shell (routes, sitemap, link checks, forms)
+  feat/moodbook-all-in-one          [m d3cbec2c [[34morigin/feat/moodbook-all-in-one[m] fix: resolve Netlify build errors for MoodbookReflexPanel integration
+  feat/next-mvp                     [m c075dd11 commit
+  feat/partner-landing              [m 29360d5b wip: partner landing progress
+  feat/stripe-live                  [m a2db83f8 feat: Stripe Checkout + Webhook + SessionNotes (demo panel)
+  fix/deploy                        [m 8247289a [[34morigin/fix/deploy[m] fix: restore valid package.json and resolve netlify.toml markers
+  fix/landing-static-fallback       [m c25e276b [[34morigin/fix/landing-static-fallback[m] fix(netlify): clean TOML
+  fix/netlify-toml                  [m c25e276b [[34morigin/fix/netlify-toml[m] fix(netlify): clean TOML
+  fix/remove-invalid-reflexcard-line[m ede77031 [[34morigin/fix/remove-invalid-reflexcard-line[m: ahead 7] uncommit all files
+  hotfix/deploy-build               [m 9ab5b2dd [[34morigin/hotfix/deploy-build[m] fix(netlify): clean TOML
+  hotfix/home                       [m fdff56d9 [[34morigin/hotfix/home[m] fix(netlify): clean, valid TOML (UTF-8 LF; no partial lines)
+  hotfix/remove-duplicate-preorder  [m 9ab5b2dd [[34morigin/hotfix/remove-duplicate-preorder[m] fix(netlify): clean TOML
+  hotfix/remove-legacy-duplicates   [m 9ab5b2dd [[34morigin/hotfix/remove-legacy-duplicates[m] fix(netlify): clean TOML
+  hotfix/sessioncard-clean          [m 9ab5b2dd [[34morigin/hotfix/sessioncard-clean[m] fix(netlify): clean TOML
+* [32mmain                              [m fbf3f574 [[34mnew-origin/main[m] commit all
+  pr-119                            [m c25e276b fix(netlify): clean TOML
+  pr-9                              [m 58d00657 [[34morigin/pr-9[m] commit all

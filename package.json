@@ -1,0 +1,28 @@
+{
+  "name": "hookahplus",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "cd hookahplus-v2- && npm run dev",
+    "build": "cd hookahplus-v2- && npm run build",
+    "start": "cd hookahplus-v2- && npm run start",
+    "lint": "cd hookahplus-v2- && npm run lint",
+    "codex:start": "openai-codex start",
+    "codex:review": "openai-codex review",
+    "test:pos": "ts-node scripts/test-pos.ts",
+    "seed:stripe": "node scripts/seed-stripe-products.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.1",
+    "stripe": "^14.21.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^24.1.0",
+    "@types/stripe": "^8.0.417",
+    "ts-node": "^10.9.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

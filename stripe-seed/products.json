@@ -1,0 +1,24 @@
+{
+  "currency": "usd",
+  "products": [
+    {
+      "name": "Hookah Session",
+      "type": "one_time",
+      "unit_amount": 3000,
+      "lookup_key": "hookah_session"
+    },
+    {
+      "name": "Flavor Add-on",
+      "type": "one_time",
+      "unit_amount": 150,
+      "lookup_key": "flavor_addon_150"
+    },
+    {
+      "name": "Trust Core (Pro)",
+      "type": "recurring",
+      "unit_amount": 24900,
+      "interval": "month",
+      "lookup_key": "trust_core_pro_mo"
+    }
+  ]
+}

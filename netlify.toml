@@ -1,0 +1,8 @@
+[build]
+base = "hookahplus-v2-"
+command = "cd hookahplus-v2- && npm ci --legacy-peer-deps && npm run build"
+publish = "hookahplus-v2-/.next"
+
+[build.environment]
+NODE_VERSION = "18"
+NPM_FLAGS = "--legacy-peer-deps"

@@ -1,0 +1,4 @@
+# Hookah+ MVP Configuration
+branding: active
+sessionFlow: enabled
+qrTextOrder: ready
