@@ -1,6 +1,7 @@
 [build]
 command = "npm install && npm run build"
 publish = ".next"
+base = "hookahplus-v2-"
 
 [build.environment]
 NODE_VERSION = "20.19.0"
