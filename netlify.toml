@@ -1,6 +1,6 @@
 [build]
   base = "hookahplus-v2-"
-  command = "npm install && npm run build"
+  command = "cd hookahplus-v2- && npm ci --legacy-peer-deps && npm run build"
   publish = "hookahplus-v2-/.next"
 
 [build.environment]
@@ -8,6 +8,17 @@
   NPM_FLAGS = "--legacy-peer-deps"
   NPM_CONFIG_BUILD_FROM_SOURCE = "false"
   NODE_OPTIONS = "--max-old-space-size=4096"
+
+[build.processing]
+  skip_processing = false
+
+[[build.processing.css]]
+  bundle = true
+  minify = true
+
+[[build.processing.js]]
+  bundle = true
+  minify = true
 
 [[redirects]]
   from = "/*"
