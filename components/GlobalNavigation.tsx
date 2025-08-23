@@ -247,6 +247,15 @@ const GlobalNavigation: React.FC = () => {
           flowState: 'idle',
           nextAction: 'Configure integrations',
           aiRecommendation: 'System connectivity setup'
+        },
+        { 
+          label: 'Staff Panel', 
+          href: '/staff-panel', 
+          icon: '👥', 
+          description: 'Behavioral memory & customer profiles',
+          flowState: 'idle',
+          nextAction: 'Manage customer preferences',
+          aiRecommendation: 'Access customer behavioral data and session management'
         }
       ]
     },

@@ -1,0 +1,52 @@
+{
+  "appTitle": "Behavioral Memory Staff Panel — Demo",
+  "strap": "Scan/lookup → load portable preferences, badges, and notes (venue vs network)",
+  "checkin": {
+    "title": "Check-in (phone / email / QR code)",
+    "placeholder": "+1 555-867-5309 or guest@email.com",
+    "simulate": "Simulate Check-in",
+    "autostart": "Auto-start session"
+  },
+  "newNote": {
+    "title": "New Note",
+    "placeholder": "e.g., Prefers low heat, mint-forward mix. Allergic to pineapple.",
+    "addLounge": "Add (Lounge scope)",
+    "addNetwork": "Add (Network scope)"
+  },
+  "quick": {
+    "title": "Quick Actions",
+    "start": "Start Session",
+    "end": "End Session",
+    "award": "Award Badge"
+  },
+  "export": {
+    "title": "Export / Share",
+    "download": "Download JSON Snapshot"
+  },
+  "profile": {
+    "last3": "Last 3 Preferences",
+    "suggested": "Suggested Actions",
+    "tier": "Tier",
+    "loyaltyProgress": "Loyalty progress"
+  },
+  "notes": {
+    "lounge": "Notes — Lounge",
+    "network": "Notes — Network",
+    "clear": "Clear"
+  },
+  "session": {
+    "title": "Session",
+    "selector": "Flavor / Service Selector",
+    "inactive": "No active session",
+    "activePrefix": "Session Active: "
+  },
+  "venue": {
+    "title": "Venue Context",
+    "value": "Venue: Demo Lounge (POS: Clover) • City: Austin, TX"
+  },
+  "toasts": {
+    "simulated": "Simulated HID resolved: {{hid}}\\nProfile loaded.",
+    "enterNote": "Enter a note first.",
+    "badgePrompt": "Badge code (e.g., EXPLORER, MIX, LOYAL):"
+  }
+}
