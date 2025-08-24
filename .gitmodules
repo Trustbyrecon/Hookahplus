@@ -1,3 +1,6 @@
 [submodule "backend"]
 	path = backend
 	url = https://github.com/Trustbyrecon/hookahplus-backend
+[submodule "pos"]
+	path = pos
+	url = https://github.com/Trustbyrecon/hookahplus-pos
