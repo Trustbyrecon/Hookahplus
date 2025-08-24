@@ -1,8 +1,8 @@
 # Netlify configuration for HookahPlus deployment
 [build]
-base = "hookahplus-v2-"
-command = "cd hookahplus-v2- && npm ci --legacy-peer-deps && npm run build"
-publish = "hookahplus-v2-/.next"
+base = "app"
+command = "npm ci --legacy-peer-deps && npm run build"
+publish = ".next"
 
 [build.environment]
 NODE_VERSION = "18"
