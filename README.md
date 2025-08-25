@@ -2,6 +2,23 @@
 
 Hookahplus aggregates several repositories for the Hookah+ project using Git submodules. Currently only the `netlify` site is linked as a submodule so it remains a separate repo while sharing a common root.
 
+## CI/CD Pipeline
+
+This repository includes a robust CI/CD setup with resilient font loading to prevent build failures. See [Font Loading Best Practices](docs/FONT_LOADING.md) for details on how we handle Google Fonts in CI environments.
+
+## Quick Start
+
+```bash
+# Install dependencies
+npm ci
+
+# Build the project
+npm run build
+
+# Run in development
+npm run dev
+```
+
 ## Initializing Submodules
 After cloning this repository, pull in the linked modules with:
 
