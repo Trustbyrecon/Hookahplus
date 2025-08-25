@@ -159,6 +159,5 @@ class ClientSessionManager {
 // Export singleton instance
 export const sessionManager = new ClientSessionManager();
 
-// Export types and functions for use in components
-export type { Session };
+// Export the class for use in components
 export { ClientSessionManager };
