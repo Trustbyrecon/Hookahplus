@@ -42,6 +42,7 @@ class ClientSessionManager {
       // Create demo sessions
       for (let i = 1; i <= 10; i++) {
         const sessionId = `demo-${i}`;
+        const deliveryBufferOptions: (5 | 10 | 15)[] = [5, 10, 15];
         const session: Session = {
           id: sessionId,
           tableId: `T-${i}`,
@@ -51,7 +52,7 @@ class ClientSessionManager {
           customer: `Customer ${i}`,
           payment: { status: 'completed', amount: [30, 50, 70][Math.floor(Math.random() * 3)] },
           timers: {
-            deliveryBuffer: [5, 10, 15][Math.floor(Math.random() * 3)],
+            deliveryBuffer: deliveryBufferOptions[Math.floor(Math.random() * 3)],
             lastActivity: Date.now()
           },
           meta: {
