@@ -1,9 +1,13 @@
-# Netlify configuration for HookahPlus deployment
+# Netlify configuration for HookahPlus deployment with Functions
 [build]
 base = "hookahplus-v2-"
 command = "npm ci --legacy-peer-deps && npm run build"
-publish = "out"
+publish = ".next"
 
 [build.environment]
 NODE_VERSION = "20"
 NPM_FLAGS = "--legacy-peer-deps"
+
+# Enable Netlify Functions for API routes
+[functions]
+directory = "netlify/functions"

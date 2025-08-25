@@ -1,13 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Static export for Netlify deployment
-  output: 'export',
+  // Standard Next.js configuration for Netlify deployment with Functions
   reactStrictMode: true,
   swcMinify: true,
   trailingSlash: true,
-  // Disable image optimization for static export
-  images: {
-    unoptimized: true,
+  // Enable experimental features for better Netlify compatibility
+  experimental: {
+    esmExternals: 'loose',
   },
   // Webpack configuration for native modules
   webpack: (config, { isServer }) => {
