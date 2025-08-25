@@ -23,15 +23,31 @@ export type SessionState =
 
 export type ActorRole = "foh" | "boh" | "system" | "agent";
 
+// Delivery buffer options in seconds
+export type DeliveryBuffer = 5 | 10 | 15;
+
 export type Session = {
   id: string;
   state: SessionState;
   table: string;
   items: Array<{ sku: string; qty: number; notes?: string }>;
   payment: { status: "started" | "confirmed" | "failed"; intentId?: string };
-  timers: { heatUpStart?: number; deliveredAt?: number; expiresAt?: number };
+  timers: { 
+    heatUpStart?: number; 
+    deliveredAt?: number; 
+    expiresAt?: number;
+    deliveryBuffer?: DeliveryBuffer; // Delivery buffer in seconds
+    lastActivity?: number; // Last activity timestamp
+  };
   flags: { vip?: boolean; ageVerified?: boolean; allergy?: string | null };
-  meta: { createdBy: string; loungeId: string; trustLock?: string; customerId?: string };
+  meta: { 
+    createdBy: string; 
+    loungeId: string; 
+    trustLock?: string; 
+    customerId?: string;
+    deliveryZone?: string; // Delivery zone for FOH routing
+    prepNotes?: string; // Prep instructions for BOH
+  };
   audit: Array<SessionEvent>;
 };
 
@@ -53,7 +69,10 @@ export type Command =
   | "PAYMENT_FAILED"
   | "VOID"
   | "REFUND_REQUEST"
-  | "REFUND_COMPLETE";
+  | "REFUND_COMPLETE"
+  | "SET_DELIVERY_BUFFER"
+  | "UPDATE_DELIVERY_ZONE"
+  | "ADD_PREP_NOTES";
 
 export type SessionEvent = {
   id: string;
@@ -98,17 +117,40 @@ export function seedSession(id = "sess_demo", table = "T-12") {
   if (!store.has(id)) {
     putSession({
       id,
-      state: "NEW",
+      state: "PAID_CONFIRMED",
       table,
-      items: [{ sku: "hookah.session", qty: 1 }],
-      payment: { status: "confirmed" },
-      timers: {},
-      flags: {},
-      meta: { createdBy: "system", loungeId: "lounge_demo", trustLock: "TLH-v1::seed" },
-      audit: [],
+      items: [{ sku: "hookah.double.apple", qty: 1, notes: "Double Apple" }],
+      payment: { status: "confirmed", intentId: "intent_demo" },
+      timers: { 
+        heatUpStart: Date.now() - 300000, // 5 min ago
+        deliveredAt: Date.now() - 120000, // 2 min ago
+        expiresAt: Date.now() + 1800000, // 30 min from now
+        deliveryBuffer: 10, // 10 seconds default
+        lastActivity: Date.now()
+      },
+      flags: { vip: false, ageVerified: true, allergy: null },
+      meta: { 
+        createdBy: "system", 
+        loungeId: "lounge_demo",
+        trustLock: "TLH-v1::active",
+        customerId: "customer_demo",
+        deliveryZone: "Zone A",
+        prepNotes: "Standard prep, no special instructions"
+      },
+      audit: [{
+        id: "evt_seed",
+        type: "session.state.changed",
+        ts: Date.now(),
+        actor: { role: "system" },
+        sessionId: id,
+        from: "NEW",
+        to: "PAID_CONFIRMED",
+        cmd: "PAYMENT_CONFIRMED",
+        meta: { seeded: true }
+      }]
     });
   }
-  return getSession(id)!;
+  return store.get(id)!;
 }
 
 // Generate multiple demo sessions for testing
@@ -298,7 +340,25 @@ export function reduce(session: Session, cmd: Command, actor: ActorRole, data: a
     if (data.amount) {
       session.payment.intentId = `intent_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     }
+    // Set default delivery buffer to 10 seconds
+    session.timers.deliveryBuffer = 10;
   }
+  
+  // Handle new delivery buffer and workflow commands
+  if (cmd === "SET_DELIVERY_BUFFER" && data?.buffer) {
+    session.timers.deliveryBuffer = data.buffer;
+  }
+  
+  if (cmd === "UPDATE_DELIVERY_ZONE" && data?.zone) {
+    session.meta.deliveryZone = data.zone;
+  }
+  
+  if (cmd === "ADD_PREP_NOTES" && data?.notes) {
+    session.meta.prepNotes = data.notes;
+  }
+  
+  // Update last activity timestamp for all commands
+  session.timers.lastActivity = Date.now();
 
   session.state = to;
 

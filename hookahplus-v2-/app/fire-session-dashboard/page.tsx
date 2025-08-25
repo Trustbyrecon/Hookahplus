@@ -246,7 +246,7 @@ const FireSessionDashboard = () => {
         const tableId = `T-${Math.floor(Math.random() * 20) + 1}`;
         const sessionId = `floor_${tableId}_${Date.now()}_${i}`;
         
-        console.log(`📝 Creating session ${i + 1}/5: ${sessionId} for table ${tableId}`);
+        console.log(`📝 Creating session ${i + 1}/${sessionLimit}: ${sessionId} for table ${tableId}`);
         
         // Start with PAYMENT_CONFIRMED
         const paymentResponse = await fetch(`/api/sessions/${sessionId}/command`, {
@@ -312,6 +312,17 @@ const FireSessionDashboard = () => {
           continue;
         }
         console.log(`✅ Ready for delivery successful for ${sessionId}`);
+
+        // Set delivery buffer (5, 10, or 15 seconds)
+        const deliveryBuffer = [5, 10, 15][Math.floor(Math.random() * 3)] as 5 | 10 | 15;
+        await fetch(`/api/sessions/${sessionId}/command`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            cmd: "SET_DELIVERY_BUFFER", 
+            data: { buffer: deliveryBuffer } 
+          })
+        });
 
         // Randomly distribute floor sessions across different states
         const floorState = Math.random();
@@ -384,7 +395,7 @@ const FireSessionDashboard = () => {
       markStepComplete(1);
     } catch (error) {
       console.error("Error generating floor sessions:", error);
-      alert("Error generating floor sessions");
+      alert("Error generating floor sessions: " + (error instanceof Error ? error.message : String(error)));
     } finally {
       setLoading(false);
     }
@@ -603,7 +614,7 @@ const FireSessionDashboard = () => {
   };
 
   // Enhanced command execution with flow tracking
-  const executeCommand = async (session: Session, command: string) => {
+  const executeCommand = async (session: Session, command: string, data?: any) => {
     if (!canExecuteCommand(session, command)) {
       alert(`Command ${command} is not valid for session in state ${session.state}`);
       return;
@@ -615,6 +626,7 @@ const FireSessionDashboard = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           cmd: command,
+          data: data, // Pass data if available
           actor: activeView === "foh" ? "foh" : "boh",
           flowData: getSessionFlowData(session)
         })
@@ -1149,6 +1161,36 @@ const FireSessionDashboard = () => {
                         )}
                       </div>
                     </div>
+
+                    {/* Delivery Buffer Control */}
+                    {selectedSession.state === "READY_FOR_DELIVERY" && (
+                      <div className="p-4 bg-zinc-800 rounded-lg border border-zinc-700">
+                        <h3 className="font-medium text-white mb-2">Delivery Buffer Control</h3>
+                        <div className="space-y-2">
+                          <div className="text-sm text-zinc-400">
+                            Current Buffer: {selectedSession.timers.deliveryBuffer || 10} seconds
+                          </div>
+                          <div className="flex space-x-2">
+                            {[5, 10, 15].map((buffer) => (
+                              <button
+                                key={buffer}
+                                onClick={() => executeCommand(selectedSession, "SET_DELIVERY_BUFFER", { buffer })}
+                                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                  selectedSession.timers.deliveryBuffer === buffer
+                                    ? "bg-teal-500 text-zinc-950"
+                                    : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+                                }`}
+                              >
+                                {buffer}s
+                              </button>
+                            ))}
+                          </div>
+                          <div className="text-xs text-zinc-500">
+                            Set delivery timing for customer experience optimization
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Available Commands */}
                     <div className="space-y-2">
