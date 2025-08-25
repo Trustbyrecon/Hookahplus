@@ -1,15 +1,17 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Standard Next.js configuration for Netlify deployment
+  // Static export for Netlify deployment
+  output: 'export',
   reactStrictMode: true,
   swcMinify: true,
-  // Remove static export to support API routes
   trailingSlash: true,
-  // Handle native modules
+  // Disable image optimization for static export
+  images: {
+    unoptimized: true,
+  },
+  // Remove experimental features that aren't needed for static export
   experimental: {
     esmExternals: 'loose',
-    // Enable API routes
-    appDir: true,
   },
   // Webpack configuration for native modules
   webpack: (config, { isServer }) => {
