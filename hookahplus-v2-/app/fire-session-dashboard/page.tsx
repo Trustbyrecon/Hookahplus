@@ -569,11 +569,11 @@ const FireSessionDashboard = () => {
     
     // Role-based command permissions
     const rolePermissions: Record<string, string[]> = {
-      'staff': ['DELIVER_NOW', 'MARK_DELIVERED', 'START_ACTIVE', 'CLOSE_SESSION'],
-      'owner': ['DELIVER_NOW', 'MARK_DELIVERED', 'START_ACTIVE', 'CLOSE_SESSION', 'CLAIM_PREP', 'HEAT_UP', 'READY_FOR_DELIVERY', 'REMAKE', 'STAFF_HOLD', 'MOVE_TABLE', 'ADD_COAL_SWAP', 'REFUND_REQUEST'],
-      'manager': ['DELIVER_NOW', 'MARK_DELIVERED', 'START_ACTIVE', 'CLOSE_SESSION', 'CLAIM_PREP', 'HEAT_UP', 'READY_FOR_DELIVERY', 'REMAKE', 'STAFF_HOLD', 'MOVE_TABLE', 'ADD_COAL_SWAP', 'REFUND_REQUEST'],
-      'hookah-prep': ['CLAIM_PREP', 'HEAT_UP', 'READY_FOR_DELIVERY', 'REMAKE', 'STAFF_HOLD'],
-      'bar-tender': ['DELIVER_NOW', 'MARK_DELIVERED', 'START_ACTIVE', 'CLOSE_SESSION', 'ADD_COAL_SWAP']
+      'staff': ['DELIVER_NOW', 'MARK_DELIVERED', 'START_ACTIVE', 'CLOSE_SESSION', 'SET_DELIVERY_BUFFER', 'UPDATE_DELIVERY_ZONE'],
+      'owner': ['DELIVER_NOW', 'MARK_DELIVERED', 'START_ACTIVE', 'CLOSE_SESSION', 'CLAIM_PREP', 'HEAT_UP', 'READY_FOR_DELIVERY', 'REMAKE', 'STAFF_HOLD', 'MOVE_TABLE', 'ADD_COAL_SWAP', 'REFUND_REQUEST', 'SET_DELIVERY_BUFFER', 'UPDATE_DELIVERY_ZONE', 'ADD_PREP_NOTES'],
+      'manager': ['DELIVER_NOW', 'MARK_DELIVERED', 'START_ACTIVE', 'CLOSE_SESSION', 'CLAIM_PREP', 'HEAT_UP', 'READY_FOR_DELIVERY', 'REMAKE', 'STAFF_HOLD', 'MOVE_TABLE', 'ADD_COAL_SWAP', 'REFUND_REQUEST', 'SET_DELIVERY_BUFFER', 'UPDATE_DELIVERY_ZONE', 'ADD_PREP_NOTES'],
+      'hookah-prep': ['CLAIM_PREP', 'HEAT_UP', 'READY_FOR_DELIVERY', 'REMAKE', 'STAFF_HOLD', 'ADD_PREP_NOTES'],
+      'bar-tender': ['DELIVER_NOW', 'MARK_DELIVERED', 'START_ACTIVE', 'CLOSE_SESSION', 'ADD_COAL_SWAP', 'SET_DELIVERY_BUFFER', 'UPDATE_DELIVERY_ZONE']
     };
     
     const userPermissions = rolePermissions[selectedRole] || [];
@@ -608,6 +608,16 @@ const FireSessionDashboard = () => {
     
     if (["DELIVERED", "ACTIVE", "CLOSE_PENDING"].includes(session.state)) {
       if (userPermissions.includes("REFUND_REQUEST")) commands.push("REFUND_REQUEST");
+    }
+    
+    // Enhanced workflow commands
+    if (session.state === "READY_FOR_DELIVERY") {
+      if (userPermissions.includes("SET_DELIVERY_BUFFER")) commands.push("SET_DELIVERY_BUFFER");
+      if (userPermissions.includes("UPDATE_DELIVERY_ZONE")) commands.push("UPDATE_DELIVERY_ZONE");
+    }
+    
+    if (session.state === "PREP_IN_PROGRESS") {
+      if (userPermissions.includes("ADD_PREP_NOTES")) commands.push("ADD_PREP_NOTES");
     }
     
     return commands;
@@ -1034,6 +1044,20 @@ const FireSessionDashboard = () => {
                             🕐 Delivery Buffer: {session.timers.deliveryBuffer}s
                           </div>
                         )}
+                        
+                        {/* Delivery Zone Display */}
+                        {session.meta.deliveryZone && (
+                          <div className="mt-1 text-xs text-blue-400">
+                            📍 Zone: {session.meta.deliveryZone}
+                          </div>
+                        )}
+                        
+                        {/* Prep Notes Display */}
+                        {session.meta.prepNotes && (
+                          <div className="mt-1 text-xs text-orange-400">
+                            📝 Prep: {session.meta.prepNotes}
+                          </div>
+                        )}
 
                         {/* ENHANCED: Complete Flow indicator */}
                         <div className="mt-2 flex items-center space-x-1">
@@ -1207,6 +1231,66 @@ const FireSessionDashboard = () => {
                       </div>
                     )}
 
+                    {/* Delivery Zone Control */}
+                    {selectedSession.state === "READY_FOR_DELIVERY" && (
+                      <div className="p-4 bg-zinc-800 rounded-lg border border-zinc-700">
+                        <h3 className="font-medium text-white mb-2">Delivery Zone Control</h3>
+                        <div className="space-y-2">
+                          <div className="text-sm text-zinc-400">
+                            Current Zone: {selectedSession.meta.deliveryZone || 'Not set'}
+                          </div>
+                          <div className="flex space-x-2">
+                            {['Zone A', 'Zone B', 'Zone C', 'Zone D', 'Zone E'].map((zone) => (
+                              <button
+                                key={zone}
+                                onClick={() => executeCommand(selectedSession, "UPDATE_DELIVERY_ZONE", { zone })}
+                                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                  selectedSession.meta.deliveryZone === zone
+                                    ? "bg-blue-500 text-zinc-950"
+                                    : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+                                }`}
+                              >
+                                {zone}
+                              </button>
+                            ))}
+                          </div>
+                          <div className="text-xs text-zinc-500">
+                            Set delivery zone for FOH routing optimization
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Prep Notes Control */}
+                    {selectedSession.state === "PREP_IN_PROGRESS" && (
+                      <div className="p-4 bg-zinc-800 rounded-lg border border-zinc-700">
+                        <h3 className="font-medium text-white mb-2">Prep Notes Control</h3>
+                        <div className="space-y-2">
+                          <div className="text-sm text-zinc-400">
+                            Current Notes: {selectedSession.meta.prepNotes || 'No notes'}
+                          </div>
+                          <div className="flex space-x-2">
+                            {['Standard prep', 'Extra mint', 'Light heat', 'Special mix', 'Customer request'].map((note) => (
+                              <button
+                                key={note}
+                                onClick={() => executeCommand(selectedSession, "ADD_PREP_NOTES", { notes: note })}
+                                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                  selectedSession.meta.prepNotes === note
+                                    ? "bg-orange-500 text-zinc-950"
+                                    : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+                                }`}
+                              >
+                                {note}
+                              </button>
+                            ))}
+                          </div>
+                          <div className="text-xs text-zinc-500">
+                            Add prep instructions for BOH workflow
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Available Commands */}
                     <div className="space-y-2">
                       <h4 className="font-medium text-white text-sm">Available Actions:</h4>
@@ -1236,11 +1320,11 @@ const FireSessionDashboard = () => {
                         <div className="grid grid-cols-2 gap-2">
                           {(() => {
                             const rolePermissions: Record<string, string[]> = {
-                              'staff': ['DELIVER_NOW', 'MARK_DELIVERED', 'START_ACTIVE', 'CLOSE_SESSION'],
-                              'owner': ['DELIVER_NOW', 'MARK_DELIVERED', 'START_ACTIVE', 'CLOSE_SESSION', 'CLAIM_PREP', 'HEAT_UP', 'READY_FOR_DELIVERY', 'REMAKE', 'STAFF_HOLD', 'MOVE_TABLE', 'ADD_COAL_SWAP', 'REFUND_REQUEST'],
-                              'manager': ['DELIVER_NOW', 'MARK_DELIVERED', 'START_ACTIVE', 'CLOSE_SESSION', 'CLAIM_PREP', 'HEAT_UP', 'READY_FOR_DELIVERY', 'REMAKE', 'STAFF_HOLD', 'MOVE_TABLE', 'ADD_COAL_SWAP', 'REFUND_REQUEST'],
-                              'hookah-prep': ['CLAIM_PREP', 'HEAT_UP', 'READY_FOR_DELIVERY', 'REMAKE', 'STAFF_HOLD'],
-                              'bar-tender': ['DELIVER_NOW', 'MARK_DELIVERED', 'START_ACTIVE', 'CLOSE_SESSION', 'ADD_COAL_SWAP']
+                              'staff': ['DELIVER_NOW', 'MARK_DELIVERED', 'START_ACTIVE', 'CLOSE_SESSION', 'SET_DELIVERY_BUFFER', 'UPDATE_DELIVERY_ZONE'],
+                              'owner': ['DELIVER_NOW', 'MARK_DELIVERED', 'START_ACTIVE', 'CLOSE_SESSION', 'CLAIM_PREP', 'HEAT_UP', 'READY_FOR_DELIVERY', 'REMAKE', 'STAFF_HOLD', 'MOVE_TABLE', 'ADD_COAL_SWAP', 'REFUND_REQUEST', 'SET_DELIVERY_BUFFER', 'UPDATE_DELIVERY_ZONE', 'ADD_PREP_NOTES'],
+                              'manager': ['DELIVER_NOW', 'MARK_DELIVERED', 'START_ACTIVE', 'CLOSE_SESSION', 'CLAIM_PREP', 'HEAT_UP', 'READY_FOR_DELIVERY', 'REMAKE', 'STAFF_HOLD', 'MOVE_TABLE', 'ADD_COAL_SWAP', 'REFUND_REQUEST', 'SET_DELIVERY_BUFFER', 'UPDATE_DELIVERY_ZONE', 'ADD_PREP_NOTES'],
+                              'hookah-prep': ['CLAIM_PREP', 'HEAT_UP', 'READY_FOR_DELIVERY', 'REMAKE', 'STAFF_HOLD', 'ADD_PREP_NOTES'],
+                              'bar-tender': ['DELIVER_NOW', 'MARK_DELIVERED', 'START_ACTIVE', 'CLOSE_SESSION', 'ADD_COAL_SWAP', 'SET_DELIVERY_BUFFER', 'UPDATE_DELIVERY_ZONE']
                             };
                             const permissions = rolePermissions[selectedRole] || [];
                             return permissions.map(perm => (
@@ -1266,6 +1350,9 @@ const FireSessionDashboard = () => {
                               <div>DELIVERED → START_ACTIVE → ACTIVE</div>
                               <div>ACTIVE → CLOSE_SESSION → CLOSED</div>
                             </div>
+                            <div className="mt-2 text-xs text-blue-300">
+                              <div>⚙️ Optimize: SET_DELIVERY_BUFFER, UPDATE_DELIVERY_ZONE</div>
+                            </div>
                           </div>
                         ) : (
                           <div>
@@ -1274,6 +1361,9 @@ const FireSessionDashboard = () => {
                               <div>PAID → CLAIM_PREP → PREP_IN_PROGRESS</div>
                               <div>PREP → HEAT_UP → HEAT_UP</div>
                               <div>HEAT → READY_FOR_DELIVERY → READY</div>
+                            </div>
+                            <div className="mt-2 text-xs text-blue-300">
+                              <div>📝 Notes: ADD_PREP_NOTES for quality control</div>
                             </div>
                           </div>
                         )}
@@ -1333,6 +1423,33 @@ const FireSessionDashboard = () => {
                               }
                             </div>
                           </div>
+                          
+                          {selectedSession.timers.deliveryBuffer && (
+                            <div>
+                              <span className="font-medium">Delivery Buffer:</span>
+                              <div className="text-emerald-400 font-medium">
+                                {selectedSession.timers.deliveryBuffer} seconds
+                              </div>
+                            </div>
+                          )}
+                          
+                          {selectedSession.meta.deliveryZone && (
+                            <div>
+                              <span className="font-medium">Delivery Zone:</span>
+                              <div className="text-blue-400 font-medium">
+                                {selectedSession.meta.deliveryZone}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {selectedSession.meta.prepNotes && (
+                            <div>
+                              <span className="font-medium">Prep Notes:</span>
+                              <div className="text-orange-400 font-medium">
+                                {selectedSession.meta.prepNotes}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}

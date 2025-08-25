@@ -161,23 +161,30 @@ export function seedMultipleSessions() {
   tables.forEach((table, index) => {
     const sessionId = `demo_${table}_${Date.now()}`;
     const state = states[index % states.length];
+    const deliveryBuffer = [5, 10, 15][Math.floor(Math.random() * 3)] as 5 | 10 | 15;
+    const flavors = ['Double Apple', 'Mint', 'Strawberry', 'Grape', 'Rose', 'Vanilla'];
+    const flavor = flavors[Math.floor(Math.random() * flavors.length)];
     
     putSession({
       id: sessionId,
       state,
       table,
-      items: [{ sku: "hookah.session", qty: 1 }],
+      items: [{ sku: `hookah.${flavor.toLowerCase().replace(' ', '.')}`, qty: 1, notes: flavor }],
       payment: { status: "confirmed" },
       timers: {
         heatUpStart: state === "HEAT_UP" ? Date.now() - Math.random() * 300000 : undefined,
         deliveredAt: state === "DELIVERED" || state === "ACTIVE" ? Date.now() - Math.random() * 600000 : undefined,
+        deliveryBuffer: deliveryBuffer,
+        lastActivity: Date.now() - Math.random() * 3600000,
       },
       flags: { vip: Math.random() > 0.7, ageVerified: true },
       meta: { 
         createdBy: "system", 
         loungeId: "lounge_demo", 
         trustLock: "TLH-v1::seed",
-        customerId: `customer_${Math.floor(Math.random() * 1000)}`
+        customerId: `customer_${Math.floor(Math.random() * 1000)}`,
+        deliveryZone: `Zone ${String.fromCharCode(65 + Math.floor(Math.random() * 5))}`,
+        prepNotes: Math.random() > 0.8 ? 'Special prep instructions' : 'Standard prep'
       },
       audit: [{
         id: `evt_${Date.now()}_${Math.random().toString(36).slice(2)}`,
