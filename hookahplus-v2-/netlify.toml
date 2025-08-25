@@ -1,6 +1,6 @@
 [build]
 command = "npm ci --legacy-peer-deps && npm run build"
-publish = "hookahplus-v2-/out"
+publish = "out"
 
 [build.environment]
 NODE_VERSION = "20"
