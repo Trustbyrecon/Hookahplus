@@ -9,7 +9,6 @@
     "start": "next start",
     "lint": "next lint",
     "prebuild": "echo 'Building from package.json: ' && cat package.json | grep '\"name\"'",
-    "postinstall": "node -e \"try { require('fibers'); } catch(e) { console.log('fibers not available, skipping'); }\"",
     "codex:start": "openai-codex start",
     "codex:review": "openai-codex review",
     "test:pos": "ts-node scripts/test-pos.ts"
@@ -20,7 +19,6 @@
     "@types/react": "^18.2.0",
     "autoprefixer": "^10.4.0",
     "dotenv": "^17.2.1",
-    "fibers": "^5.0.0",
     "lucide-react": "^0.263.1",
     "next": "^14.1.0",
     "postcss": "^8.4.0",
