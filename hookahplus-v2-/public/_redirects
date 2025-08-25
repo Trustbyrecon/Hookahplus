@@ -1,12 +1,7 @@
-# Netlify redirects for Next.js with Functions
-# Route API calls to Netlify Functions for dynamic functionality
-
-# Route API calls to Netlify Functions
-/api/sessions/*  /.netlify/functions/sessions  200
-/api/mobile-orders/*  /.netlify/functions/mobile-orders  200
-/api/fire-session/*  /.netlify/functions/fire-session  200
-
+# Netlify redirects for Next.js static export
 # Handle client-side routing for SPA behavior
+
+# Redirect all routes to index.html for client-side routing
 /*    /index.html   200
 
 # Handle dynamic routes

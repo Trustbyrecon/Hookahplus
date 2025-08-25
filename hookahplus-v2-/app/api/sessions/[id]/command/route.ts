@@ -3,6 +3,13 @@ import { NextResponse } from "next/server";
 import { reduce, getSession, putSession, seedSession, type Command } from "@/lib/sessionState";
 import { publishSessionEvent } from "@/lib/eventBus";
 
+// Generate static params for static export
+export async function generateStaticParams() {
+  // Generate common session IDs for static export
+  const sessionIds = ['demo-1', 'demo-2', 'demo-3', 'test-1', 'test-2'];
+  return sessionIds.map((id) => ({ id: id }));
+}
+
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   const sessionId = params.id;
   // seed if missing (for local/dev)

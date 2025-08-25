@@ -1,8 +1,8 @@
-# Netlify configuration for HookahPlus deployment with Functions
+# Netlify configuration for HookahPlus deployment with static export
 [build]
 base = "hookahplus-v2-"
 command = "npm ci --legacy-peer-deps && npm run build"
-publish = ".next"
+publish = "out"
 
 [build.environment]
 NODE_VERSION = "20"
