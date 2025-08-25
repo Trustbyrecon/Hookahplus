@@ -1,0 +1,11 @@
+# Netlify redirects for Next.js App Router
+# Handle client-side routing for SPA behavior
+
+# Redirect all routes to index.html for client-side routing
+/*    /index.html   200
+
+# Handle API routes
+/api/*    /api/:splat    200
+
+# Handle dynamic routes
+/*/    /index.html   200
