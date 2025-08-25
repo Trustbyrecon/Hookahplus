@@ -1027,6 +1027,13 @@ const FireSessionDashboard = () => {
                             Delivered: {new Date(session.timers.deliveredAt).toLocaleTimeString()}
                           </div>
                         )}
+                        
+                        {/* Delivery Buffer Display */}
+                        {session.timers.deliveryBuffer && (
+                          <div className="mt-1 text-xs text-emerald-400">
+                            🕐 Delivery Buffer: {session.timers.deliveryBuffer}s
+                          </div>
+                        )}
 
                         {/* ENHANCED: Complete Flow indicator */}
                         <div className="mt-2 flex items-center space-x-1">
@@ -1088,6 +1095,14 @@ const FireSessionDashboard = () => {
                                   {getEstimatedCompletion(session.state)}m
                                 </div>
                               </div>
+                              {session.timers.deliveryBuffer && (
+                                <div>
+                                  <span className="text-zinc-400">Delivery Buffer:</span>
+                                  <div className="text-emerald-400 font-medium">
+                                    {session.timers.deliveryBuffer}s
+                                  </div>
+                                </div>
+                              )}
                             </div>
                             
                             {/* Workflow Progress Bar */}
