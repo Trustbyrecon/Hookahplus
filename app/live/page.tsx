@@ -1,10 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
-import { UnifrakturCook, Raleway } from 'next/font/google';
-
-const unifraktur = UnifrakturCook({ weight: '700', subsets: ['latin'] });
-const raleway = Raleway({ weight: ['300', '600'], subsets: ['latin'] });
+import { unifraktur, raleway } from '../../lib/fonts';
 
 interface LiveEvent {
   delta: number;

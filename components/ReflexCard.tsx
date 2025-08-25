@@ -1,4 +1,3 @@
- feat/moodbook-all-in-one
 import React from "react";
 import Link from "next/link";
 
@@ -8,6 +7,8 @@ type ReflexCardProps = {
   href?: string;
   badge?: string;
   className?: string;
+  cta?: string;
+  onClick?: () => void;
 };
 
 export default function ReflexCard({
@@ -16,6 +17,8 @@ export default function ReflexCard({
   href,
   badge,
   className,
+  cta = "Open",
+  onClick,
 }: ReflexCardProps) {
   const Shell = href ? (props: any) => <Link href={href!} {...props} /> : (props: any) => <div {...props} />;
 
@@ -44,53 +47,17 @@ export default function ReflexCard({
       <div className="pt-4">
         {href ? (
           <span className="inline-block bg-primary hover:bg-primary-dark text-black font-semibold px-4 py-2 rounded-lg">
-            Open
+            {cta}
           </span>
         ) : (
-          <button className="bg-primary hover:bg-primary-dark text-black font-semibold px-4 py-2 rounded-lg">
-            Inspect
+          <button 
+            onClick={onClick}
+            className="bg-primary hover:bg-primary-dark text-black font-semibold px-4 py-2 rounded-lg"
+          >
+            {cta}
           </button>
         )}
       </div>
     </Shell>
   );
 }
-
-import React from 'react';
-import Link from 'next/link';
-
-interface ReflexCardProps {
-  title: string;
-  description: string;
-  cta: string;
-  href?: string;
-  onClick?: () => void;
-}
-
-export const ReflexCard: React.FC<ReflexCardProps> = ({ title, description, cta, href, onClick }) => {
-  return (
-    <div className="bg-charcoal text-goldLumen rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all">
-      <div className="text-mystic mb-2">{/* Icon placeholder */}</div>
-      <h2 className="font-display text-xl mb-2">{title}</h2>
-      <p className="font-sans text-base">{description}</p>
-      {href ? (
-        <Link
-          href={href}
-          className="inline-block bg-ember hover:bg-mystic text-goldLumen mt-4 px-4 py-2 rounded"
-        >
-          {cta}
-        </Link>
-      ) : (
-        <button
-          onClick={onClick}
-          className="bg-ember hover:bg-mystic text-goldLumen mt-4 px-4 py-2 rounded"
-        >
-          {cta}
-        </button>
-      )}
-    </div>
-  );
-};
-
-export default ReflexCard;
- main

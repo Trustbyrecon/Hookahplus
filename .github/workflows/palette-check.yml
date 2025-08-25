@@ -6,6 +6,8 @@ on:
 jobs:
   palette:
     runs-on: ubuntu-latest
+    env:
+      CI: true
     steps:
       - uses: actions/checkout@v3
         with:
@@ -18,7 +20,7 @@ jobs:
         run: |
           CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | tr '\n' ' ')
           if [ -n "$CHANGED_FILES" ]; then
-            npm run check:palette -- $CHANGED_FILES
+            npm run check-palette -- $CHANGED_FILES
           else
             echo 'No files to check.'
           fi
