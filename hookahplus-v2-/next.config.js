@@ -3,6 +3,8 @@ const nextConfig = {
   // Standard Next.js configuration for Netlify deployment
   reactStrictMode: true,
   swcMinify: true,
+  // Ensure proper static export for Netlify
+  trailingSlash: true,
   // Handle native modules
   experimental: {
     esmExternals: 'loose',
