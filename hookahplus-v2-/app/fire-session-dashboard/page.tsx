@@ -1,36 +1,114 @@
 "use client";
-import useSWR from "swr";
 import { useState } from "react";
 import type { FireSession, DeliveryZone, Action } from "@/app/lib/workflow";
-
-const fetcher = (u:string)=> fetch(u).then(r=>r.json());
 
 function toast(msg:string, kind:"ok"|"warn"|"err"="ok"){
   // simple, replace with your toast lib
   console[kind==="ok"?"log":kind==="warn"?"warn":"error"]("[toast]", msg);
 }
 
+// Demo data generator
+function generateDemoSessions(count: number = 12): FireSession[] {
+  const zones: DeliveryZone[] = ["A", "B", "C", "D", "E"];
+  const positions = ["Main (2,3)", "Bar (3,1)", "Patio (1,4)"];
+  const states: FireSession["state"][] = ["READY", "OUT", "DELIVERED", "ACTIVE"];
+  
+  return Array.from({ length: count }, (_, i) => ({
+    id: `demo-${i + 1}`,
+    table: `T-${1 + Math.floor(Math.random() * 12)}`,
+    customerLabel: `customer_${Math.floor(Math.random() * 900) + 100}`,
+    durationMin: Math.floor(Math.random() * 60),
+    bufferSec: [5, 10, 15][Math.floor(Math.random() * 3)],
+    zone: zones[Math.floor(Math.random() * zones.length)],
+    items: Math.floor(Math.random() * 3) + 1,
+    etaMin: [2, 3, 5][Math.floor(Math.random() * 3)],
+    position: positions[Math.floor(Math.random() * positions.length)],
+    state: states[Math.floor(Math.random() * states.length)],
+    createdAt: Date.now() - Math.random() * 3600000,
+    updatedAt: Date.now()
+  }));
+}
+
 export default function FireSessionDashboard(){
-  const { data, mutate, isLoading } = useSWR<{sessions:FireSession[]}>("/api/fire-sessions", fetcher, { refreshInterval: 4000 });
+  const [sessions, setSessions] = useState<FireSession[]>([]);
   const [busy, setBusy] = useState(false);
 
-  async function postAction(id:string, action:Action){
+  function postAction(id: string, action: Action) {
     try {
       setBusy(true);
-      const res = await fetch(`/api/fire-sessions/${id}/action`, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(action) });
-      const j = await res.json();
-      if(!res.ok){ toast(`${j.error}: ${j.message}`,"err"); return; }
+      
+      // Find the session
+      const sessionIndex = sessions.findIndex(s => s.id === id);
+      if (sessionIndex === -1) {
+        toast("Session not found", "err");
+        return;
+      }
+
+      // Create a copy of the session
+      const session = { ...sessions[sessionIndex] };
+      
+      // Apply the action (simplified workflow logic)
+      switch (action.type) {
+        case "DELIVER_NOW":
+        case "MARK_OUT":
+          if (session.state === "READY") {
+            session.state = "OUT";
+            session.etaMin = Math.max(1, session.etaMin);
+          }
+          break;
+        case "MARK_DELIVERED":
+          if (session.state === "OUT") {
+            session.state = "DELIVERED";
+          }
+          break;
+        case "START_ACTIVE":
+          if (session.state === "DELIVERED") {
+            session.state = "ACTIVE";
+          }
+          break;
+        case "CLOSE":
+          session.state = "CLOSE";
+          break;
+        case "SET_BUFFER":
+          session.bufferSec = Math.max(0, action.value);
+          break;
+        case "SET_ZONE":
+          session.zone = action.value;
+          break;
+        case "ADD_ITEM":
+          session.items = Math.max(0, session.items + action.value);
+          break;
+        case "EXTEND_MIN":
+          session.durationMin += action.value;
+          break;
+        case "UNDO":
+          // Simple undo logic
+          if (session.state === "OUT") session.state = "READY";
+          else if (session.state === "DELIVERED") session.state = "OUT";
+          else if (session.state === "ACTIVE") session.state = "DELIVERED";
+          else if (session.state === "CLOSE") session.state = "ACTIVE";
+          break;
+      }
+      
+      session.updatedAt = Date.now();
+      
+      // Update the sessions array
+      const newSessions = [...sessions];
+      newSessions[sessionIndex] = session;
+      setSessions(newSessions);
+      
       toast("Updated");
-      mutate(); // refresh
-    } catch(e:any){
-      toast(e.message || "Network error","err");
-    } finally { setBusy(false); }
+    } catch (e: any) {
+      toast(e.message || "Action failed", "err");
+    } finally {
+      setBusy(false);
+    }
   }
 
-  async function populate(count=12){
-    const res = await fetch("/api/fire-sessions", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ count, reset: true }) });
-    if(!res.ok){ toast("Populate failed","err"); return; }
-    toast("Floor populated"); mutate();
+  function populate(count = 12) {
+    const newSessions = generateDemoSessions(count);
+    setSessions(newSessions);
+    toast("Floor populated");
   }
 
   return (
@@ -42,13 +120,15 @@ export default function FireSessionDashboard(){
         </div>
         <div className="flex gap-2">
           <button onClick={()=>populate()} className="rounded-lg border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658]">Populate Floor Sessions (Demo)</button>
-          <button onClick={()=>mutate()} className="rounded-lg border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658]">Refresh</button>
+          <button onClick={()=>setSessions([...sessions])} className="rounded-lg border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658]">Refresh</button>
         </div>
       </header>
 
-      {isLoading ? <div className="text-sm text-[#aab6ff]">Loading…</div> : (
+      {sessions.length === 0 ? (
+        <div className="text-sm text-[#aab6ff]">No sessions yet. Click "Populate Floor Sessions" to get started!</div>
+      ) : (
         <div className="grid gap-3 md:grid-cols-2">
-          {(data?.sessions ?? []).map(s => (
+          {sessions.map(s => (
             <Card key={s.id} s={s} postAction={postAction} busy={busy}/>
           ))}
         </div>
@@ -62,7 +142,7 @@ function Chip({children}:{children:React.ReactNode}){ return <span className="in
 function Card({ s, postAction, busy }:{
   s: FireSession;
   busy: boolean;
-  postAction: (id:string, action:Action)=>Promise<void>;
+  postAction: (id:string, action:Action)=>void;
 }){
   const disabled = (t:Action["type"]) => !allowed(s.state).includes(t) || busy;
   function allowed(state:FireSession["state"]): Action["type"][] {
