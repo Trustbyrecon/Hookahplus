@@ -11,16 +11,104 @@ function toast(msg:string, kind:"ok"|"warn"|"err"="ok"){
   console[kind==="ok"?"log":kind==="warn"?"warn":"error"]("[toast]", msg);
 }
 
-// Demo data generator
-function generateDemoSessions(count: number = 12): FireSession[] {
+// Pre-generated demo sessions for static export compatibility
+const PRE_GENERATED_SESSIONS: FireSession[] = [
+  {
+    id: "session-1",
+    table: "T1",
+    customerLabel: "VIP Customer",
+    durationMin: 45,
+    bufferSec: 8,
+    zone: "A",
+    items: 2,
+    etaMin: 7,
+    position: "VIP",
+    state: "READY",
+    createdAt: new Date(Date.now() - 300000),
+    updatedAt: new Date()
+  },
+  {
+    id: "session-2",
+    table: "T2",
+    customerLabel: "Window Seat",
+    durationMin: 60,
+    bufferSec: 12,
+    zone: "B",
+    items: 1,
+    etaMin: 5,
+    position: "Window",
+    state: "OUT",
+    createdAt: new Date(Date.now() - 600000),
+    updatedAt: new Date()
+  },
+  {
+    id: "session-3",
+    table: "T3",
+    customerLabel: "Bar Regular",
+    durationMin: 30,
+    bufferSec: 6,
+    zone: "C",
+    items: 3,
+    etaMin: 3,
+    position: "Bar",
+    state: "DELIVERED",
+    createdAt: new Date(Date.now() - 900000),
+    updatedAt: new Date()
+  },
+  {
+    id: "session-4",
+    table: "T4",
+    customerLabel: "Center Table",
+    durationMin: 75,
+    bufferSec: 15,
+    zone: "D",
+    items: 2,
+    etaMin: 8,
+    position: "Center",
+    state: "ACTIVE",
+    createdAt: new Date(Date.now() - 1200000),
+    updatedAt: new Date()
+  },
+  {
+    id: "session-5",
+    table: "T5",
+    customerLabel: "Corner Booth",
+    durationMin: 90,
+    bufferSec: 10,
+    zone: "E",
+    items: 1,
+    etaMin: 4,
+    position: "Corner",
+    state: "CLOSE",
+    createdAt: new Date(Date.now() - 1800000),
+    updatedAt: new Date()
+  },
+  {
+    id: "session-6",
+    table: "T6",
+    customerLabel: "Premium Guest",
+    durationMin: 55,
+    bufferSec: 9,
+    zone: "A",
+    items: 2,
+    etaMin: 6,
+    position: "VIP",
+    state: "READY",
+    createdAt: new Date(Date.now() - 240000),
+    updatedAt: new Date()
+  }
+];
+
+// Demo data generator for additional sessions
+function generateDemoSessions(count: number = 6): FireSession[] {
   const zones: DeliveryZone[] = ["A", "B", "C", "D", "E"];
   const positions = ["VIP", "Window", "Bar", "Center", "Corner"];
   const states: FireSession["state"][] = ["READY", "OUT", "DELIVERED", "ACTIVE", "CLOSE"];
   
   return Array.from({ length: count }, (_, i) => ({
-    id: `session-${i + 1}`,
-    table: `T${i + 1}`,
-    customerLabel: `Customer ${i + 1}`,
+    id: `session-${i + 7}`,
+    table: `T${i + 7}`,
+    customerLabel: `Customer ${i + 7}`,
     durationMin: Math.floor(Math.random() * 60) + 30,
     bufferSec: Math.floor(Math.random() * 15) + 5,
     zone: zones[Math.floor(Math.random() * zones.length)],
@@ -34,7 +122,7 @@ function generateDemoSessions(count: number = 12): FireSession[] {
 }
 
 export default function FireSessionDashboard(){
-  const [sessions, setSessions] = useState<FireSession[]>([]);
+  const [sessions, setSessions] = useState<FireSession[]>(PRE_GENERATED_SESSIONS);
   const [busy, setBusy] = useState(false);
   const [currentUser, setCurrentUser] = useState<User>(demoUsers[0]);
   const [showUserSelector, setShowUserSelector] = useState(false);
@@ -88,10 +176,16 @@ export default function FireSessionDashboard(){
     }
   }
 
-  function populate(count = 12) {
-    const newSessions = generateDemoSessions(count);
-    setSessions(newSessions);
-    toast("Floor populated");
+  function populate(count = 6) {
+    const additionalSessions = generateDemoSessions(count);
+    const allSessions = [...PRE_GENERATED_SESSIONS, ...additionalSessions];
+    setSessions(allSessions);
+    toast(`Floor populated with ${allSessions.length} sessions`);
+  }
+
+  function resetToDefault() {
+    setSessions(PRE_GENERATED_SESSIONS);
+    toast("Reset to default sessions");
   }
 
   return (
@@ -165,6 +259,7 @@ export default function FireSessionDashboard(){
             >
               Populate Floor Sessions (Demo)
             </button>
+            <button onClick={()=>resetToDefault()} className="rounded-lg border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658]">Reset</button>
             <button onClick={()=>setSessions([...sessions])} className="rounded-lg border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658]">Refresh</button>
           </div>
         </div>
