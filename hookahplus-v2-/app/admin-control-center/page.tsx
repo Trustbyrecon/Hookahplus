@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import type { FireSession, User, TrustLevel } from "@/app/lib/workflow";
+import type { FireSession, User, TrustLevel, DeliveryZone } from "@/app/lib/workflow";
 import { demoUsers, canPerformAction } from "@/app/lib/users";
 
 // Enhanced session types for admin management
@@ -34,13 +34,13 @@ const FLAVOR_COMBINATIONS = [
 function generateEnhancedDemoSessions(count: number = 10): AdminSession[] {
   const zones = ["A", "B", "C", "D", "E"];
   const positions = ["VIP", "Window", "Bar", "Center", "Corner", "Patio"];
-  const states = ["NEW", "PAID_CONFIRMED", "PREP_IN_PROGRESS", "HEAT_UP", "READY_FOR_DELIVERY", "OUT_FOR_DELIVERY", "DELIVERED", "ACTIVE", "CLOSE_PENDING", "CLOSED"];
+  const states = ["READY", "OUT", "DELIVERED", "ACTIVE", "CLOSE"];
   const priorities = ["low", "medium", "high", "urgent"];
   const paymentMethods = ["card", "cash", "mobile"];
   
   return Array.from({ length: count }, (_, i) => {
     const flavorCount = Math.floor(Math.random() * 3) + 1;
-    const flavors = [];
+    const flavors: string[] = [];
     for (let j = 0; j < flavorCount; j++) {
       const randomFlavor = FLAVOR_COMBINATIONS[Math.floor(Math.random() * FLAVOR_COMBINATIONS.length)];
       if (!flavors.includes(randomFlavor)) {
@@ -140,7 +140,7 @@ export default function AdminControlCenter() {
   // Calculate session statistics
   const sessionStats = {
     total: sessions.length,
-    live: sessions.filter(s => !["CLOSED", "CANCELLED"].includes(s.state)).length,
+    live: sessions.filter(s => s.state !== "CLOSE").length,
     totalOrders: sessions.filter(s => s.paymentStatus === "confirmed").length,
     revenue: sessions.filter(s => s.paymentStatus === "confirmed").length * 25.99 // Mock price
   };
@@ -380,16 +380,16 @@ export default function AdminControlCenter() {
                   <tr key={session.id} className="hover:bg-[#1b2658]">
                     <td className="px-4 py-3 text-sm text-[#aab6ff] font-mono">{session.id.slice(0, 12)}...</td>
                     <td className="px-4 py-3 text-sm text-[#e9ecff]">{session.table}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                        session.state === "PAID_CONFIRMED" ? "bg-green-900/30 text-green-300" :
-                        session.state === "ACTIVE" ? "bg-blue-900/30 text-blue-300" :
-                        session.state === "CLOSED" ? "bg-gray-900/30 text-gray-300" :
-                        "bg-yellow-900/30 text-yellow-300"
-                      }`}>
-                        {session.state.replace(/_/g, ' ')}
-                      </span>
-                    </td>
+                                         <td className="px-4 py-3">
+                       <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                         session.state === "ACTIVE" ? "bg-blue-900/30 text-blue-300" :
+                         session.state === "CLOSE" ? "bg-gray-900/30 text-gray-300" :
+                         session.state === "DELIVERED" ? "bg-green-900/30 text-green-300" :
+                         "bg-yellow-900/30 text-yellow-300"
+                       }`}>
+                         {session.state}
+                       </span>
+                     </td>
                     <td className="px-4 py-3 text-sm text-[#e9ecff]">{session.customerLabel}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
@@ -501,22 +501,17 @@ export default function AdminControlCenter() {
             <div className="mb-6">
               <h4 className="text-sm font-medium text-[#aab6ff] mb-2">Quick Actions</h4>
               <div className="grid grid-cols-2 gap-2">
-                <select
-                  value={selectedSession.state}
-                  onChange={(e) => updateSessionStatus(selectedSession.id, e.target.value)}
-                  className="bg-[#1b2658] border border-[#2a3570] rounded px-3 py-2 text-sm text-[#e9ecff]"
-                >
-                  <option value="NEW">New</option>
-                  <option value="PAID_CONFIRMED">Paid Confirmed</option>
-                  <option value="PREP_IN_PROGRESS">Prep In Progress</option>
-                  <option value="HEAT_UP">Heat Up</option>
-                  <option value="READY_FOR_DELIVERY">Ready For Delivery</option>
-                  <option value="OUT_FOR_DELIVERY">Out For Delivery</option>
-                  <option value="DELIVERED">Delivered</option>
-                  <option value="ACTIVE">Active</option>
-                  <option value="CLOSE_PENDING">Close Pending</option>
-                  <option value="CLOSED">Closed</option>
-                </select>
+                                 <select
+                   value={selectedSession.state}
+                   onChange={(e) => updateSessionStatus(selectedSession.id, e.target.value)}
+                   className="bg-[#1b2658] border border-[#2a3570] rounded px-3 py-2 text-sm text-[#e9ecff]"
+                 >
+                   <option value="READY">Ready</option>
+                   <option value="OUT">Out</option>
+                   <option value="DELIVERED">Delivered</option>
+                   <option value="ACTIVE">Active</option>
+                   <option value="CLOSE">Close</option>
+                 </select>
                 <select
                   value={selectedSession.priority}
                   onChange={(e) => updatePriority(selectedSession.id, e.target.value)}
