@@ -1,5 +1,5 @@
 [build]
-command = "cd hookahplus-v2- && npm ci --legacy-peer-deps && npx next build"
+command = "npm ci --legacy-peer-deps && npm run build"
 publish = "hookahplus-v2-/out"
 
 [build.environment]
