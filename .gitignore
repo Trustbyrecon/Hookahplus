@@ -5,6 +5,17 @@ dist/
 node_modules/
 out/
 .next/
+
+# Apps build artifacts
+apps/*/node_modules/
+apps/*/out/
+apps/*/.next/
+apps/*/package-lock.json
+
+# pnpm
+pnpm-lock.yaml
+
+# Legacy (can be removed after migration)
 app/dashboard/node_modules/
 app/dashboard/out/
 app/dashboard/.next/

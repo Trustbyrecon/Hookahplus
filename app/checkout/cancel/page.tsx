@@ -1,9 +1,0 @@
-export default function Cancel() {
-  return (
-    <main style={{ maxWidth: 760, margin: '64px auto', padding: '0 16px', display: 'grid', gap: 12 }}>
-      <h1>Checkout canceled</h1>
-      <p>No worries—your card wasn’t charged.</p>
-      <a href='/' style={{ padding: '10px 14px', border: '1px solid #333', borderRadius: 8 }}>Back to Home</a>
-    </main>
-  );
-}
