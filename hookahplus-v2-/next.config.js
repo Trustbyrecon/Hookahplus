@@ -1,13 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Static export for Netlify deployment
-  output: 'export',
+  // Remove static export to enable API routes
+  // output: 'export',
   reactStrictMode: true,
   swcMinify: true,
   trailingSlash: true,
-  // Disable image optimization for static export
+  // Enable image optimization
   images: {
-    unoptimized: true,
+    unoptimized: false,
   },
 
   // Webpack configuration for native modules

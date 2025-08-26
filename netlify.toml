@@ -1,6 +1,6 @@
 [build]
 command = "cd hookahplus-v2- && npm ci --legacy-peer-deps && npx next build"
-publish = "hookahplus-v2-/out"
+publish = "hookahplus-v2-"
 
 [build.environment]
 NODE_VERSION = "20"
