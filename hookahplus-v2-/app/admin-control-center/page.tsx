@@ -54,21 +54,21 @@ function generateEnhancedDemoSessions(count: number = 10): AdminSession[] {
       customerLabel: `customer_${Math.floor(Math.random() * 900) + 100}`,
       durationMin: Math.floor(Math.random() * 60) + 30,
       bufferSec: [5, 10, 15][Math.floor(Math.random() * 3)],
-      zone: zones[Math.floor(Math.random() * zones.length)],
+      zone: zones[Math.floor(Math.random() * zones.length)] as DeliveryZone,
       items: Math.floor(Math.random() * 3) + 1,
       etaMin: Math.floor(Math.random() * 10) + 5,
       position: positions[Math.floor(Math.random() * positions.length)],
-      state: states[Math.floor(Math.random() * states.length)],
+      state: states[Math.floor(Math.random() * states.length)] as FireSession["state"],
       createdAt: Date.now() - Math.random() * 86400000,
       updatedAt: Date.now(),
-      paymentStatus: ["pending", "confirmed", "failed"][Math.floor(Math.random() * 3)] as any,
+      paymentStatus: ["pending", "confirmed", "failed"][Math.floor(Math.random() * 3)] as "pending" | "confirmed" | "failed",
       paymentMethod: paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
       flavorCombinations: flavors,
       specialRequests: Math.random() > 0.7 ? ["Extra ice", "Light on flavor", "Strong mix"][Math.floor(Math.random() * 3)] : undefined,
       runnerId: Math.random() > 0.5 ? `runner_${Math.floor(Math.random() * 5) + 1}` : undefined,
       estimatedCompletion: Date.now() + (Math.random() * 3600000),
       customerNotes: Math.random() > 0.8 ? "VIP customer - handle with care" : undefined,
-      priority: priorities[Math.floor(Math.random() * priorities.length)] as any
+      priority: priorities[Math.floor(Math.random() * priorities.length)] as "low" | "medium" | "high" | "urgent"
     };
   });
 }
