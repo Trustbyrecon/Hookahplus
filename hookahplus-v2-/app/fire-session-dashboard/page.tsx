@@ -1,18 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { FireSession, DeliveryZone, Action, User, TrustLevel } from "@/app/lib/workflow";
 import { nextStateWithTrust, TrustError } from "@/app/lib/workflow";
 import { logAction } from "@/app/lib/audit";
 import { demoUsers, canPerformAction, getUserDisplayInfo } from "@/app/lib/users";
 
-function toast(msg:string, kind:"ok"|"warn"|"err"="ok"){
-  // simple, replace with your toast lib
-  console[kind==="ok"?"log":kind==="warn"?"warn":"error"]("[toast]", msg);
+// Enhanced session interface with new fields
+interface EnhancedFireSession extends FireSession {
+  flavor: string;
+  addOns: string[];
+  currentAmount: number;
+  assignedStaff?: string;
+  sessionStartTime?: number;
+  bohState?: "WARMING_UP" | "READY_FOR_PICKUP" | "PICKED_UP" | "DELIVERED";
+  sessionTimer?: number;
 }
 
-// Pre-generated demo sessions for static export compatibility
-const PRE_GENERATED_SESSIONS: FireSession[] = [
+function toast(msg: string, kind: "ok" | "warn" | "err" = "ok") {
+  // simple, replace with your toast lib
+  console[kind === "ok" ? "log" : kind === "warn" ? "warn" : "error"]("[toast]", msg);
+}
+
+// Enhanced demo sessions with new fields
+const PRE_GENERATED_SESSIONS: EnhancedFireSession[] = [
   {
     id: "session-1",
     table: "T1",
@@ -25,7 +36,13 @@ const PRE_GENERATED_SESSIONS: FireSession[] = [
     position: "VIP",
     state: "READY",
     createdAt: Date.now() - 300000,
-    updatedAt: Date.now()
+    updatedAt: Date.now(),
+    flavor: "Double Apple + Mint",
+    addOns: ["Ice", "Extra Heat"],
+    currentAmount: 25.99,
+    assignedStaff: "Alex Runner",
+    sessionStartTime: Date.now() - 300000,
+    sessionTimer: 300
   },
   {
     id: "session-2",
@@ -39,7 +56,13 @@ const PRE_GENERATED_SESSIONS: FireSession[] = [
     position: "Window",
     state: "OUT",
     createdAt: Date.now() - 600000,
-    updatedAt: Date.now()
+    updatedAt: Date.now(),
+    flavor: "Blue Mist",
+    addOns: ["Ice"],
+    currentAmount: 18.99,
+    assignedStaff: "Sarah Server",
+    sessionStartTime: Date.now() - 600000,
+    sessionTimer: 600
   },
   {
     id: "session-3",
@@ -53,7 +76,13 @@ const PRE_GENERATED_SESSIONS: FireSession[] = [
     position: "Bar",
     state: "DELIVERED",
     createdAt: Date.now() - 900000,
-    updatedAt: Date.now()
+    updatedAt: Date.now(),
+    flavor: "Grape + Peach",
+    addOns: ["Extra Heat", "Premium Coal"],
+    currentAmount: 32.99,
+    assignedStaff: "Mike Manager",
+    sessionStartTime: Date.now() - 900000,
+    sessionTimer: 900
   },
   {
     id: "session-4",
@@ -67,7 +96,13 @@ const PRE_GENERATED_SESSIONS: FireSession[] = [
     position: "Center",
     state: "ACTIVE",
     createdAt: Date.now() - 1200000,
-    updatedAt: Date.now()
+    updatedAt: Date.now(),
+    flavor: "Strawberry + Vanilla",
+    addOns: ["Ice", "Extra Heat", "Premium Coal"],
+    currentAmount: 28.99,
+    assignedStaff: "Lisa Lead",
+    sessionStartTime: Date.now() - 1200000,
+    sessionTimer: 1200
   },
   {
     id: "session-5",
@@ -81,7 +116,13 @@ const PRE_GENERATED_SESSIONS: FireSession[] = [
     position: "Corner",
     state: "CLOSE",
     createdAt: Date.now() - 1800000,
-    updatedAt: Date.now()
+    updatedAt: Date.now(),
+    flavor: "Lemon + Mint",
+    addOns: ["Ice"],
+    currentAmount: 22.99,
+    assignedStaff: "Tom Trainer",
+    sessionStartTime: Date.now() - 1800000,
+    sessionTimer: 1800
   },
   {
     id: "session-6",
@@ -95,15 +136,24 @@ const PRE_GENERATED_SESSIONS: FireSession[] = [
     position: "VIP",
     state: "READY",
     createdAt: Date.now() - 240000,
-    updatedAt: Date.now()
+    updatedAt: Date.now(),
+    flavor: "Rose + Cardamom",
+    addOns: ["Premium Coal", "Extra Heat"],
+    currentAmount: 35.99,
+    assignedStaff: "Alex Runner",
+    sessionStartTime: Date.now() - 240000,
+    sessionTimer: 240
   }
 ];
 
 // Demo data generator for additional sessions
-function generateDemoSessions(count: number = 6): FireSession[] {
+function generateDemoSessions(count: number = 6): EnhancedFireSession[] {
   const zones: DeliveryZone[] = ["A", "B", "C", "D", "E"];
   const positions = ["VIP", "Window", "Bar", "Center", "Corner"];
   const states: FireSession["state"][] = ["READY", "OUT", "DELIVERED", "ACTIVE", "CLOSE"];
+  const flavors = ["Double Apple", "Mint", "Blue Mist", "Grape", "Lemon", "Peach", "Watermelon", "Rose", "Cardamom"];
+  const addOns = ["Ice", "Extra Heat", "Premium Coal", "Fruit", "Herbs"];
+  const staff = ["Alex Runner", "Sarah Server", "Mike Manager", "Lisa Lead", "Tom Trainer"];
   
   return Array.from({ length: count }, (_, i) => ({
     id: `session-${i + 7}`,
@@ -117,15 +167,39 @@ function generateDemoSessions(count: number = 6): FireSession[] {
     position: positions[Math.floor(Math.random() * positions.length)],
     state: states[Math.floor(Math.random() * states.length)],
     createdAt: Date.now() - Math.random() * 86400000,
-    updatedAt: Date.now()
+    updatedAt: Date.now(),
+    flavor: flavors[Math.floor(Math.random() * flavors.length)],
+    addOns: addOns.slice(0, Math.floor(Math.random() * 3) + 1),
+    currentAmount: Math.floor(Math.random() * 20) + 15.99,
+    assignedStaff: staff[Math.floor(Math.random() * staff.length)],
+    sessionStartTime: Date.now() - Math.random() * 86400000,
+    sessionTimer: Math.floor(Math.random() * 1800)
   }));
 }
 
-export default function FireSessionDashboard(){
-  const [sessions, setSessions] = useState<FireSession[]>(PRE_GENERATED_SESSIONS);
+export default function FireSessionDashboard() {
+  const [sessions, setSessions] = useState<EnhancedFireSession[]>(PRE_GENERATED_SESSIONS);
   const [busy, setBusy] = useState(false);
   const [currentUser, setCurrentUser] = useState<User>(demoUsers[0]);
   const [showUserSelector, setShowUserSelector] = useState(false);
+  const [viewMode, setViewMode] = useState<"FOH" | "BOH">("FOH");
+
+  // Session timer effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSessions(prevSessions => 
+        prevSessions.map(session => {
+          if (session.sessionStartTime && session.state === "ACTIVE") {
+            const elapsed = Math.floor((Date.now() - session.sessionStartTime) / 1000);
+            return { ...session, sessionTimer: elapsed };
+          }
+          return session;
+        })
+      );
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   function postAction(id: string, action: Action) {
     try {
@@ -147,9 +221,20 @@ export default function FireSessionDashboard(){
       const previousSession = { ...sessions[sessionIndex] };
 
       // Apply the action with trust validation
-      let updatedSession: FireSession;
+      let updatedSession: EnhancedFireSession;
       try {
         updatedSession = nextStateWithTrust(previousSession, action, currentUser);
+        
+        // Handle BOH state transitions
+        if (action.type === "DELIVER_NOW" || action.type === "MARK_OUT") {
+          updatedSession.bohState = "WARMING_UP";
+        } else if (action.type === "MARK_DELIVERED") {
+          updatedSession.bohState = "READY_FOR_PICKUP";
+        } else if (action.type === "START_ACTIVE") {
+          updatedSession.bohState = "PICKED_UP";
+          updatedSession.sessionStartTime = Date.now();
+        }
+        
       } catch (e: any) {
         if (e instanceof TrustError) {
           toast(`Trust validation failed: ${e.message}`, "err");
@@ -188,22 +273,65 @@ export default function FireSessionDashboard(){
     toast("Reset to default sessions");
   }
 
+  function autoAssignStaff() {
+    const availableStaff = ["Alex Runner", "Sarah Server", "Mike Manager", "Lisa Lead", "Tom Trainer"];
+    setSessions(prevSessions => 
+      prevSessions.map(session => ({
+        ...session,
+        assignedStaff: availableStaff[Math.floor(Math.random() * availableStaff.length)]
+      }))
+    );
+    toast("Staff auto-assigned to all sessions");
+  }
+
   return (
     <div className="min-h-screen bg-[#0e1220] text-[#e9ecff] p-4">
-      <header className="flex items-center justify-between mb-6">
+      {/* Enhanced Navigation Header */}
+      <header className="bg-gradient-to-r from-[#1a1f3a] to-[#2a2f4a] border border-[#2a3570] rounded-xl p-6 mb-6 shadow-lg">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-4">
+            <div className="text-4xl">🔥</div>
             <div>
-          <h1 className="text-2xl font-bold">Fire Session Dashboard</h1>
-          <p className="text-sm text-[#aab6ff]">
-            AI Agents: Collaborating • Workflow: Session • Trust: {currentUser.trustLevel}
-          </p>
+              <h1 className="text-3xl font-bold text-[#8ff4c2]">Fire Session Dashboard</h1>
+              <p className="text-sm text-[#aab6ff]">
+                AI Agents: Collaborating • Workflow: Session • Trust: {currentUser.trustLevel}
+              </p>
             </div>
-            
-        <div className="flex items-center gap-4">
+          </div>
+          
+          {/* FOH/BOH Toggle */}
+          <div className="flex items-center gap-4">
+            <div className="flex bg-[#17204a] rounded-lg p-1 border border-[#2a3570]">
+              <button
+                onClick={() => setViewMode("FOH")}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  viewMode === "FOH" 
+                    ? "bg-[#8ff4c2] text-[#0e1220]" 
+                    : "text-[#aab6ff] hover:text-[#e9ecff]"
+                }`}
+              >
+                🎯 Front of House
+              </button>
+              <button
+                onClick={() => setViewMode("BOH")}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  viewMode === "BOH" 
+                    ? "bg-[#8ff4c2] text-[#0e1220]" 
+                    : "text-[#aab6ff] hover:text-[#e9ecff]"
+                }`}
+              >
+                🏪 Back of House
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between">
           {/* User Selector */}
           <div className="relative">
-              <button
+            <button
               onClick={() => setShowUserSelector(!showUserSelector)}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#2a3570] bg-[#17204a] hover:bg-[#1b2658]"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-[#2a3570] bg-[#17204a] hover:bg-[#1b2658] transition-colors"
             >
               <span className="text-sm">{currentUser.name}</span>
               <span className={`text-xs px-2 py-1 rounded ${
@@ -214,13 +342,13 @@ export default function FireSessionDashboard(){
                 {currentUser.trustLevel}
               </span>
               <span className="text-xs text-[#aab6ff]">({currentUser.role})</span>
-              </button>
+            </button>
 
             {showUserSelector && (
-              <div className="absolute top-full right-0 mt-2 w-64 bg-[#0f1433] border border-[#2a3570] rounded-lg shadow-lg z-10">
+              <div className="absolute top-full left-0 mt-2 w-64 bg-[#0f1433] border border-[#2a3570] rounded-lg shadow-lg z-10">
                 <div className="p-3 border-b border-[#2a3570]">
                   <h3 className="text-sm font-medium text-[#e9ecff]">Select User</h3>
-              </div>
+                </div>
                 <div className="max-h-48 overflow-y-auto">
                   {demoUsers.map(user => (
                     <button
@@ -242,62 +370,109 @@ export default function FireSessionDashboard(){
                         }`}>
                           {user.trustLevel}
                         </span>
-                  </div>
+                      </div>
                       <div className="text-xs text-[#aab6ff] mt-1">{user.role}</div>
                     </button>
-              ))}
-            </div>
-          </div>
-        )}
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="flex gap-2">
-              <button
-              onClick={()=>populate()}
-              className="rounded-lg border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658]"
+          <div className="flex gap-3">
+            <button
+              onClick={() => populate()}
+              className="rounded-lg border border-[#2a3570] bg-[#17204a] px-4 py-2 text-sm hover:bg-[#1b2658] transition-colors"
               disabled={!canPerformAction(currentUser, "deliver")}
             >
-              Populate Floor Sessions (Demo)
-              </button>
-            <button onClick={()=>resetToDefault()} className="rounded-lg border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658]">Reset</button>
-            <button onClick={()=>setSessions([...sessions])} className="rounded-lg border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658]">Refresh</button>
+              🚀 Populate Floor Sessions (Demo)
+            </button>
+            <button 
+              onClick={() => resetToDefault()} 
+              className="rounded-lg border border-[#2a3570] bg-[#17204a] px-4 py-2 text-sm hover:bg-[#1b2658] transition-colors"
+            >
+              🔄 Reset
+            </button>
+            <button 
+              onClick={() => setSessions([...sessions])} 
+              className="rounded-lg border border-[#2a3570] bg-[#17204a] px-4 py-2 text-sm hover:bg-[#1b2658] transition-colors"
+            >
+              📊 Refresh
+            </button>
+            <button 
+              onClick={autoAssignStaff} 
+              className="rounded-lg border border-[#2a3570] bg-[#8ff4c2] text-[#0e1220] px-4 py-2 text-sm hover:bg-[#7ee4b2] transition-colors"
+            >
+              👥 Auto-Assign Staff
+            </button>
           </div>
         </div>
       </header>
 
-                {sessions.length === 0 ? (
-        <div className="text-sm text-[#aab6ff]">No sessions yet. Click "Populate Floor Sessions" to get started!</div>
+      {/* View Mode Indicator */}
+      <div className="mb-6 text-center">
+        <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium ${
+          viewMode === "FOH" 
+            ? "bg-blue-900/30 text-blue-300 border border-blue-700" 
+            : "bg-amber-900/30 text-amber-300 border border-amber-700"
+        }`}>
+          {viewMode === "FOH" ? "🎯 Front of House View" : "🏪 Back of House View"}
+        </div>
+      </div>
+
+      {sessions.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="text-6xl mb-4">🔥</div>
+          <div className="text-xl text-[#aab6ff] mb-2">No sessions yet</div>
+          <div className="text-sm text-[#8a94a8]">Click "Populate Floor Sessions" to get started!</div>
+        </div>
       ) : (
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {sessions.map(s => (
-            <Card key={s.id} s={s} postAction={postAction} user={currentUser} busy={busy}/>
+            <EnhancedCard 
+              key={s.id} 
+              s={s} 
+              postAction={postAction} 
+              user={currentUser} 
+              busy={busy}
+              viewMode={viewMode}
+            />
           ))}
-                          </div>
-                        )}
-                          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
-function Chip({children}:{children:React.ReactNode}){ return <span className="inline-block rounded-md border border-[#2a3570] bg-[#18204a] px-2.5 py-1 text-xs text-[#dfe6ff] mr-2 mt-1">{children}</span>; }
+function Chip({ children }: { children: React.ReactNode }) { 
+  return <span className="inline-block rounded-md border border-[#2a3570] bg-[#18204a] px-2.5 py-1 text-xs text-[#dfe6ff] mr-2 mt-1">{children}</span>; 
+}
 
-function Card({ s, postAction, user, busy }:{
-  s: FireSession;
+function EnhancedCard({ 
+  s, 
+  postAction, 
+  user, 
+  busy, 
+  viewMode 
+}: {
+  s: EnhancedFireSession;
   busy: boolean;
   user: User;
-  postAction: (id:string, action:Action)=>void;
-}){
-  const disabled = (t:Action["type"]) => {
+  postAction: (id: string, action: Action) => void;
+  viewMode: "FOH" | "BOH";
+}) {
+  const disabled = (t: Action["type"]) => {
     const stateAllowed = allowed(s.state).includes(t);
     const userCanPerform = canPerformAction(user, t);
     return !stateAllowed || !userCanPerform || busy;
   };
 
-  function allowed(state:FireSession["state"]): Action["type"][] {
-    const map:any = {
-      READY: ["DELIVER_NOW","MARK_OUT","SET_BUFFER","SET_ZONE","CANCEL","ADD_ITEM"],
-      OUT: ["MARK_DELIVERED","SET_BUFFER","SET_ZONE","REASSIGN_RUNNER","CANCEL","UNDO"],
-      DELIVERED: ["START_ACTIVE","UNDO"],
-      ACTIVE: ["CLOSE","EXTEND_MIN","ADD_ITEM","UNDO"],
+  function allowed(state: FireSession["state"]): Action["type"][] {
+    const map: any = {
+      READY: ["DELIVER_NOW", "MARK_OUT", "SET_BUFFER", "SET_ZONE", "CANCEL", "ADD_ITEM"],
+      OUT: ["MARK_DELIVERED", "SET_BUFFER", "SET_ZONE", "REASSIGN_RUNNER", "CANCEL", "UNDO"],
+      DELIVERED: ["START_ACTIVE", "UNDO"],
+      ACTIVE: ["CLOSE", "EXTEND_MIN", "ADD_ITEM", "UNDO"],
       CLOSE: ["UNDO"]
     };
     return map[state];
@@ -322,82 +497,229 @@ function Card({ s, postAction, user, busy }:{
     return trustMap[actionType];
   };
 
-  return (
-    <div className="rounded-xl border border-[#2a2f4a] bg-[#0f1433] p-3">
-      <div className="flex items-center justify-between">
-        <div className="font-semibold">Table {s.table}</div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-[#8ff4c2]">{s.state}</span>
-          <span className="text-xs text-[#aab6ff]">• Trust: {user.trustLevel}</span>
-                </div>
-              </div>
-      <div className="mt-1 grid grid-cols-2 gap-2 text-xs text-[#b8c2ff]">
-        <div>Customer: <span className="text-[#e9ecff]">{s.customerLabel}</span></div>
-        <div>Position: <span className="text-[#e9ecff]">{s.position}</span></div>
-        <div>Duration: {s.durationMin}m</div>
-        <div>ETA: {s.etaMin}m</div>
-        <div>Items: {s.items}</div>
-                    </div>
+  // Format session timer
+  const formatTimer = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
-      <div className="mt-2 flex flex-wrap">
+  return (
+    <div className="rounded-xl border border-[#2a2f4a] bg-[#0f1433] p-4 hover:bg-[#1a1f3a] transition-colors">
+      {/* Header with Table and Status */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="font-bold text-lg text-[#8ff4c2]">Table {s.table}</div>
+        <div className="flex items-center gap-2">
+          <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+            s.state === 'READY' ? 'bg-green-900/30 text-green-300 border border-green-700' :
+            s.state === 'OUT' ? 'bg-orange-900/30 text-orange-300 border border-orange-700' :
+            s.state === 'DELIVERED' ? 'bg-blue-900/30 text-blue-300 border border-blue-700' :
+            s.state === 'ACTIVE' ? 'bg-purple-900/30 text-purple-300 border border-purple-700' :
+            'bg-gray-900/30 text-gray-300 border border-gray-700'
+          }`}>
+            {s.state}
+          </span>
+          <span className="text-xs text-[#aab6ff]">• Trust: {user.trustLevel}</span>
+        </div>
+      </div>
+
+      {/* Customer and Position Info */}
+      <div className="grid grid-cols-2 gap-2 text-sm text-[#b8c2ff] mb-3">
+        <div>Customer: <span className="text-[#e9ecff] font-medium">{s.customerLabel}</span></div>
+        <div>Position: <span className="text-[#e9ecff] font-medium">{s.position}</span></div>
+      </div>
+
+      {/* Session Details */}
+      <div className="grid grid-cols-2 gap-2 text-sm text-[#b8c2ff] mb-3">
+        <div>Duration: <span className="text-[#e9ecff]">{s.durationMin}m</span></div>
+        <div>ETA: <span className="text-[#e9ecff]">{s.etaMin}m</span></div>
+        <div>Items: <span className="text-[#e9ecff]">{s.items}</span></div>
+        <div>Amount: <span className="text-[#e9ecff] font-medium">${s.currentAmount}</span></div>
+      </div>
+
+      {/* Session Timer (if active) */}
+      {s.state === "ACTIVE" && s.sessionTimer && (
+        <div className="mb-3 p-2 bg-[#1a1f3a] rounded-lg border border-[#2a3570]">
+          <div className="text-center">
+            <div className="text-lg font-mono text-[#8ff4c2]">{formatTimer(s.sessionTimer)}</div>
+            <div className="text-xs text-[#aab6ff]">Session Timer</div>
+          </div>
+        </div>
+      )}
+
+      {/* Flavor and Add-ons */}
+      <div className="mb-3">
+        <div className="text-sm text-[#b8c2ff] mb-1">Flavor:</div>
+        <div className="text-[#e9ecff] font-medium mb-2">{s.flavor}</div>
+        {s.addOns.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {s.addOns.map((addon, index) => (
+              <span key={index} className="text-xs bg-[#2a3570] text-[#aab6ff] px-2 py-1 rounded">
+                {addon}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Assigned Staff */}
+      {s.assignedStaff && (
+        <div className="mb-3 p-2 bg-[#1a1f3a] rounded-lg border border-[#2a3570]">
+          <div className="text-xs text-[#aab6ff] mb-1">Assigned Staff:</div>
+          <div className="text-[#e9ecff] font-medium">{s.assignedStaff}</div>
+        </div>
+      )}
+
+      {/* BOH State (if in BOH view) */}
+      {viewMode === "BOH" && s.bohState && (
+        <div className="mb-3 p-2 bg-[#1a1f3a] rounded-lg border border-[#2a3570]">
+          <div className="text-xs text-[#aab6ff] mb-1">BOH Status:</div>
+          <div className={`text-[#e9ecff] font-medium ${
+            s.bohState === 'WARMING_UP' ? 'text-orange-300' :
+            s.bohState === 'READY_FOR_PICKUP' ? 'text-green-300' :
+            s.bohState === 'PICKED_UP' ? 'text-blue-300' :
+            'text-gray-300'
+          }`}>
+            {s.bohState.replace('_', ' ')}
+          </div>
+        </div>
+      )}
+
+      {/* Delivery Buffer and Zone */}
+      <div className="mb-3 flex flex-wrap">
         <Chip>Delivery Buffer: <b>{s.bufferSec}s</b></Chip>
         <Chip>Zone: <b>{s.zone}</b></Chip>
-                          </div>
+      </div>
 
-      {/* Actions */}
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        {/* Primary flow */}
-                              <button
-          disabled={disabled("DELIVER_NOW")}
-          onClick={()=>postAction(s.id,{type:"DELIVER_NOW"})}
-          className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40"
-          title={`Requires ${getTrustRequirement("DELIVER_NOW")} trust level`}
-        >
-          Deliver Now
-                              </button>
-                              <button
-          disabled={disabled("MARK_OUT")}
-          onClick={()=>postAction(s.id,{type:"MARK_OUT"})}
-          className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40"
-          title={`Requires ${getTrustRequirement("MARK_OUT")} trust level`}
-        >
-          Mark Out
-                              </button>
+      {/* Actions - Different for FOH vs BOH */}
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        {viewMode === "FOH" ? (
+          // FOH Actions
+          <>
+            {/* Primary flow */}
+            <button
+              disabled={disabled("DELIVER_NOW")}
+              onClick={() => postAction(s.id, { type: "DELIVER_NOW" })}
+              className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40 transition-colors"
+              title={`Requires ${getTrustRequirement("DELIVER_NOW")} trust level`}
+            >
+              🚀 Deliver Now
+            </button>
+            <button
+              disabled={disabled("MARK_OUT")}
+              onClick={() => postAction(s.id, { type: "MARK_OUT" })}
+              className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40 transition-colors"
+              title={`Requires ${getTrustRequirement("MARK_OUT")} trust level`}
+            >
+              📤 Mark Out
+            </button>
 
-        <button disabled={disabled("MARK_DELIVERED")} onClick={()=>postAction(s.id,{type:"MARK_DELIVERED"})} className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40">Mark Delivered</button>
-        <button disabled={disabled("START_ACTIVE")} onClick={()=>postAction(s.id,{type:"START_ACTIVE"})} className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40">Start Active</button>
+            <button 
+              disabled={disabled("MARK_DELIVERED")} 
+              onClick={() => postAction(s.id, { type: "MARK_DELIVERED" })} 
+              className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40 transition-colors"
+            >
+              ✅ Mark Delivered
+            </button>
+            <button 
+              disabled={disabled("START_ACTIVE")} 
+              onClick={() => postAction(s.id, { type: "START_ACTIVE" })} 
+              className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40 transition-colors"
+            >
+              ▶️ Start Active
+            </button>
 
-                              <button
-          disabled={disabled("CLOSE")}
-          onClick={()=>postAction(s.id,{type:"CLOSE"})}
-          className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40"
-          title={`Requires ${getTrustRequirement("CLOSE")} trust level`}
-        >
-          Close
-                              </button>
-                        <button
-          disabled={disabled("UNDO")}
-          onClick={()=>postAction(s.id,{type:"UNDO"})}
-          className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40"
-          title={`Requires ${getTrustRequirement("UNDO")} trust level`}
-        >
-          Undo
-                        </button>
+            <button
+              disabled={disabled("CLOSE")}
+              onClick={() => postAction(s.id, { type: "CLOSE" })}
+              className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40 transition-colors"
+              title={`Requires ${getTrustRequirement("CLOSE")} trust level`}
+            >
+              🔚 Close
+            </button>
+            <button
+              disabled={disabled("UNDO")}
+              onClick={() => postAction(s.id, { type: "UNDO" })}
+              className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40 transition-colors"
+              title={`Requires ${getTrustRequirement("UNDO")} trust level`}
+            >
+              ↩️ Undo
+            </button>
+          </>
+        ) : (
+          // BOH Actions
+          <>
+            <button
+              disabled={s.bohState !== "WARMING_UP"}
+              onClick={() => postAction(s.id, { type: "MARK_DELIVERED" })}
+              className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40 transition-colors"
+            >
+              🔥 Ready for Pickup
+            </button>
+            <button
+              disabled={s.bohState !== "READY_FOR_PICKUP"}
+              onClick={() => postAction(s.id, { type: "START_ACTIVE" })}
+              className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40 transition-colors"
+            >
+              📦 Picked Up
+            </button>
+          </>
+        )}
 
-        {/* Controls */}
-        {[5,10,15].map(sec=>(
-          <button key={sec} disabled={disabled("SET_BUFFER")} onClick={()=>postAction(s.id,{type:"SET_BUFFER", value:sec})} className="rounded-md border border-[#2a3570] bg-[#0f183f] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40">Buffer {sec}s</button>
+        {/* Common Controls */}
+        {[5, 10, 15].map(sec => (
+          <button 
+            key={sec} 
+            disabled={disabled("SET_BUFFER")} 
+            onClick={() => postAction(s.id, { type: "SET_BUFFER", value: sec })} 
+            className="rounded-md border border-[#2a3570] bg-[#0f183f] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40 transition-colors"
+          >
+            ⏱️ Buffer {sec}s
+          </button>
         ))}
-        {(["A","B","C","D","E"] as DeliveryZone[]).map(z=>(
-          <button key={z} disabled={disabled("SET_ZONE")} onClick={()=>postAction(s.id,{type:"SET_ZONE", value:z})} className={`rounded-md border border-[#2a3570] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40 ${s.zone===z ? "bg-[#1b2658]" : "bg-[#0f183f]"}`}>Zone {z}</button>
+        {(["A", "B", "C", "D", "E"] as DeliveryZone[]).map(z => (
+          <button 
+            key={z} 
+            disabled={disabled("SET_ZONE")} 
+            onClick={() => postAction(s.id, { type: "SET_ZONE", value: z })} 
+            className={`rounded-md border border-[#2a3570] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40 transition-colors ${
+              s.zone === z ? "bg-[#1b2658]" : "bg-[#0f183f]"
+            }`}
+          >
+            🗺️ Zone {z}
+          </button>
         ))}
 
-        {/* Secondary */}
-        <button disabled={disabled("ADD_ITEM")} onClick={()=>postAction(s.id,{type:"ADD_ITEM", value:1})} className="rounded-md border border-[#2a3570] bg-[#0f183f] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40">+ Item</button>
-        <button disabled={disabled("EXTEND_MIN")} onClick={()=>postAction(s.id,{type:"EXTEND_MIN", value:5})} className="rounded-md border border-[#2a3570] bg-[#0f183f] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40">Extend 5m</button>
-        <button disabled={disabled("REASSIGN_RUNNER")} onClick={()=>postAction(s.id,{type:"REASSIGN_RUNNER", value:"runner_2"})} className="rounded-md border border-[#2a3570] bg-[#0f183f] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40">Reassign Runner</button>
-        <button disabled={disabled("CANCEL")} onClick={()=>postAction(s.id,{type:"CANCEL"})} className="rounded-md border border-rose-800 bg-rose-900/30 px-3 py-2 text-sm hover:bg-rose-900/50 disabled:opacity-40">Cancel</button>
-                        </div>
-                        </div>
+        {/* Secondary Actions */}
+        <button 
+          disabled={disabled("ADD_ITEM")} 
+          onClick={() => postAction(s.id, { type: "ADD_ITEM", value: 1 })} 
+          className="rounded-md border border-[#2a3570] bg-[#0f183f] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40 transition-colors"
+        >
+          ➕ + Item
+        </button>
+        <button 
+          disabled={disabled("EXTEND_MIN")} 
+          onClick={() => postAction(s.id, { type: "EXTEND_MIN", value: 5 })} 
+          className="rounded-md border border-[#2a3570] bg-[#0f183f] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40 transition-colors"
+        >
+          ⏰ Extend 5m
+        </button>
+        <button 
+          disabled={disabled("REASSIGN_RUNNER")} 
+          onClick={() => postAction(s.id, { type: "REASSIGN_RUNNER", value: "runner_2" })} 
+          className="rounded-md border border-[#2a3570] bg-[#0f183f] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40 transition-colors"
+        >
+          👤 Reassign Runner
+        </button>
+        <button 
+          disabled={disabled("CANCEL")} 
+          onClick={() => postAction(s.id, { type: "CANCEL" })} 
+          className="rounded-md border border-rose-800 bg-rose-900/30 px-3 py-2 text-sm hover:bg-rose-900/50 disabled:opacity-40 transition-colors"
+        >
+          ❌ Cancel
+        </button>
+      </div>
+    </div>
   );
 }
