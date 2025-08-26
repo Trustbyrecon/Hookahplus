@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-inter: 'Inter', sans-serif;
+  --font-raleway: 'Raleway', sans-serif;
+  --font-unifraktur: 'UnifrakturCook', cursive;
+}

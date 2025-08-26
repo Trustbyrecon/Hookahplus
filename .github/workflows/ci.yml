@@ -1,0 +1,107 @@
+name: CI & Deploy
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-matrix:
+    name: Build ${{ matrix.app }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [hookahplus-next, hookahplus-site]
+    steps:
+      - name: Checkout (with submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Python (if needed)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Python deps (if any)
+        if: hashFiles('requirements.txt') != ''
+        run: pip install -r requirements.txt
+
+      - name: Install JS deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Build (${{ matrix.app }})
+        env:
+          STATIC_EXPORT: 'true'
+        run: |
+          if [ "${{ matrix.app }}" = "hookahplus-next" ]; then
+            pnpm -w run build:next
+          else
+            pnpm -w run build:site
+          fi
+
+      - name: Archive build (${{ matrix.app }})
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.app }}-out
+          path: |
+            apps/${{ matrix.app }}/out
+
+  deploy-preview:
+    if: github.event_name == 'pull_request'
+    needs: build-matrix
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: hookahplus-next-out, path: next-out }
+      - uses: actions/download-artifact@v4
+        with: { name: hookahplus-site-out, path: site-out }
+
+      - name: Deploy NEXT (PR)
+        run: npx netlify deploy --dir=next-out --auth=$NETLIFY_AUTH_TOKEN --site=$NETLIFY_SITE_ID_NEXT --message "PR #${{ github.event.number }} preview" --draft
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID_NEXT: ${{ secrets.NETLIFY_SITE_ID_NEXT }}
+
+      - name: Deploy SITE (PR)
+        run: npx netlify deploy --dir=site-out --auth=$NETLIFY_AUTH_TOKEN --site=$NETLIFY_SITE_ID_SITE --message "PR #${{ github.event.number }} preview" --draft
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID_SITE: ${{ secrets.NETLIFY_SITE_ID_SITE }}
+
+  deploy-prod:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build-matrix
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: hookahplus-next-out, path: next-out }
+      - uses: actions/download-artifact@v4
+        with: { name: hookahplus-site-out, path: site-out }
+
+      - name: Deploy NEXT (prod)
+        run: npx netlify deploy --prod --dir=next-out --auth=$NETLIFY_AUTH_TOKEN --site=$NETLIFY_SITE_ID_NEXT --message "main deploy"
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID_NEXT: ${{ secrets.NETLIFY_SITE_ID_NEXT }}
+
+      - name: Deploy SITE (prod)
+        run: npx netlify deploy --prod --dir=site-out --auth=$NETLIFY_AUTH_TOKEN --site=$NETLIFY_SITE_ID_SITE --message "main deploy"
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID_SITE: ${{ secrets.NETLIFY_SITE_ID_SITE }}
