@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react';
 
-interface MOATMetrics {
+interface ConnectorPartnershipMetrics {
   networkGrowth: {
     totalLounges: number;
     activeConnectors: number;
@@ -22,12 +22,12 @@ interface MOATMetrics {
   };
 }
 
-export default function MOATAnalytics() {
-  const [metrics, setMetrics] = useState<MOATMetrics | null>(null);
+export default function ConnectorPartnershipAnalytics() {
+  const [metrics, setMetrics] = useState<ConnectorPartnershipMetrics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate fetching MOAT metrics
+    // Simulate fetching Connector Partnership metrics
     setTimeout(() => {
       setMetrics({
         networkGrowth: {
@@ -56,7 +56,7 @@ export default function MOATAnalytics() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white p-8">
-        <div className="text-center text-zinc-400">Loading MOAT Analytics...</div>
+        <div className="text-center text-zinc-400">Loading Connector Partnership Analytics...</div>
       </div>
     );
   }
@@ -67,7 +67,7 @@ export default function MOATAnalytics() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-teal-400">MOAT Analytics</h1>
+            <h1 className="text-3xl md:text-4xl font-bold text-teal-400">Connector Partnership Analytics</h1>
             <p className="text-xl text-zinc-300">Network Effect & Scale Growth Metrics</p>
           </div>
           <div className="text-right">
@@ -194,9 +194,9 @@ export default function MOATAnalytics() {
           </div>
         </div>
 
-        {/* MOAT Growth Indicators */}
+        {/* Connector Partnership Growth Indicators */}
         <div className="bg-gradient-to-r from-purple-900 to-blue-900 rounded-xl p-6">
-          <h2 className="text-xl font-semibold text-white mb-4">MOAT Growth Indicators</h2>
+          <h2 className="text-xl font-semibold text-white mb-4">Connector Partnership Growth Indicators</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="text-center">
               <div className="text-4xl mb-2">🌐</div>
@@ -216,7 +216,7 @@ export default function MOATAnalytics() {
               <div className="text-4xl mb-2">🏆</div>
               <h3 className="text-lg font-semibold text-white mb-2">Sustainable Advantage</h3>
               <p className="text-zinc-300 text-sm">
-                Building an ecosystem that's difficult to replicate through network effects and data moats
+                Building an ecosystem that's difficult to replicate through network effects and data partnerships
               </p>
             </div>
           </div>
@@ -224,14 +224,14 @@ export default function MOATAnalytics() {
 
         {/* Action Items */}
         <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-6">
-          <h2 className="text-xl font-semibold text-teal-300 mb-4">Next Actions for MOAT Growth</h2>
+          <h2 className="text-xl font-semibold text-teal-300 mb-4">Next Actions for Connector Partnership Growth</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-zinc-800 rounded-lg p-4">
               <h3 className="text-lg font-medium text-white mb-2">Immediate (This Week)</h3>
               <ul className="text-sm text-zinc-300 space-y-1">
                 <li>• Deploy current Connector Partnership Program</li>
                 <li>• Test real-time data integration</li>
-                <li>• Validate MOAT metrics accuracy</li>
+                <li>• Validate Connector Partnership metrics accuracy</li>
               </ul>
             </div>
             <div className="bg-zinc-800 rounded-lg p-4">

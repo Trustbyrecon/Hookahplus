@@ -177,7 +177,7 @@ export default function ConnectorPartnershipManager() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h3 className="text-xl font-semibold text-teal-300">Connector Partnership Program</h3>
-          <p className="text-zinc-400 text-sm">Accelerating MOAT Scale Growth</p>
+          <p className="text-zinc-400 text-sm">Lounge Owner Intent Communication</p>
         </div>
         <div className="flex gap-2">
           <button
