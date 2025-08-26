@@ -1,7 +1,8 @@
 // app/api/fire-sessions/[id]/action/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getSession, upsertSession } from "@/app/lib/store";
-import { Action, nextState, assertAllowed, FSMError } from "@/app/lib/workflow";
+import type { Action, FSMError } from "@/app/lib/workflow";
+import { nextState, assertAllowed } from "@/app/lib/workflow";
 
 export async function POST(
   req: NextRequest,
