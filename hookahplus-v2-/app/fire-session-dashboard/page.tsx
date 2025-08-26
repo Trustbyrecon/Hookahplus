@@ -1,4 +1,5 @@
 "use client";
+
 import { useState } from "react";
 import type { FireSession, DeliveryZone, Action, User, TrustLevel } from "@/app/lib/workflow";
 import { nextStateWithTrust, TrustError } from "@/app/lib/workflow";
@@ -10,30 +11,118 @@ function toast(msg:string, kind:"ok"|"warn"|"err"="ok"){
   console[kind==="ok"?"log":kind==="warn"?"warn":"error"]("[toast]", msg);
 }
 
-// Demo data generator
-function generateDemoSessions(count: number = 12): FireSession[] {
+// Pre-generated demo sessions for static export compatibility
+const PRE_GENERATED_SESSIONS: FireSession[] = [
+  {
+    id: "session-1",
+    table: "T1",
+    customerLabel: "VIP Customer",
+    durationMin: 45,
+    bufferSec: 8,
+    zone: "A",
+    items: 2,
+    etaMin: 7,
+    position: "VIP",
+    state: "READY",
+    createdAt: Date.now() - 300000,
+    updatedAt: Date.now()
+  },
+  {
+    id: "session-2",
+    table: "T2",
+    customerLabel: "Window Seat",
+    durationMin: 60,
+    bufferSec: 12,
+    zone: "B",
+    items: 1,
+    etaMin: 5,
+    position: "Window",
+    state: "OUT",
+    createdAt: Date.now() - 600000,
+    updatedAt: Date.now()
+  },
+  {
+    id: "session-3",
+    table: "T3",
+    customerLabel: "Bar Regular",
+    durationMin: 30,
+    bufferSec: 6,
+    zone: "C",
+    items: 3,
+    etaMin: 3,
+    position: "Bar",
+    state: "DELIVERED",
+    createdAt: Date.now() - 900000,
+    updatedAt: Date.now()
+  },
+  {
+    id: "session-4",
+    table: "T4",
+    customerLabel: "Center Table",
+    durationMin: 75,
+    bufferSec: 15,
+    zone: "D",
+    items: 2,
+    etaMin: 8,
+    position: "Center",
+    state: "ACTIVE",
+    createdAt: Date.now() - 1200000,
+    updatedAt: Date.now()
+  },
+  {
+    id: "session-5",
+    table: "T5",
+    customerLabel: "Corner Booth",
+    durationMin: 90,
+    bufferSec: 10,
+    zone: "E",
+    items: 1,
+    etaMin: 4,
+    position: "Corner",
+    state: "CLOSE",
+    createdAt: Date.now() - 1800000,
+    updatedAt: Date.now()
+  },
+  {
+    id: "session-6",
+    table: "T6",
+    customerLabel: "Premium Guest",
+    durationMin: 55,
+    bufferSec: 9,
+    zone: "A",
+    items: 2,
+    etaMin: 6,
+    position: "VIP",
+    state: "READY",
+    createdAt: Date.now() - 240000,
+    updatedAt: Date.now()
+  }
+];
+
+// Demo data generator for additional sessions
+function generateDemoSessions(count: number = 6): FireSession[] {
   const zones: DeliveryZone[] = ["A", "B", "C", "D", "E"];
-  const positions = ["Main (2,3)", "Bar (3,1)", "Patio (1,4)"];
-  const states: FireSession["state"][] = ["READY", "OUT", "DELIVERED", "ACTIVE"];
+  const positions = ["VIP", "Window", "Bar", "Center", "Corner"];
+  const states: FireSession["state"][] = ["READY", "OUT", "DELIVERED", "ACTIVE", "CLOSE"];
   
   return Array.from({ length: count }, (_, i) => ({
-    id: `demo-${i + 1}`,
-    table: `T-${1 + Math.floor(Math.random() * 12)}`,
-    customerLabel: `customer_${Math.floor(Math.random() * 900) + 100}`,
-    durationMin: Math.floor(Math.random() * 60),
-    bufferSec: [5, 10, 15][Math.floor(Math.random() * 3)],
+    id: `session-${i + 7}`,
+    table: `T${i + 7}`,
+    customerLabel: `Customer ${i + 7}`,
+    durationMin: Math.floor(Math.random() * 60) + 30,
+    bufferSec: Math.floor(Math.random() * 15) + 5,
     zone: zones[Math.floor(Math.random() * zones.length)],
     items: Math.floor(Math.random() * 3) + 1,
-    etaMin: [2, 3, 5][Math.floor(Math.random() * 3)],
+    etaMin: Math.floor(Math.random() * 10) + 5,
     position: positions[Math.floor(Math.random() * positions.length)],
     state: states[Math.floor(Math.random() * states.length)],
-    createdAt: Date.now() - Math.random() * 3600000,
+    createdAt: Date.now() - Math.random() * 86400000,
     updatedAt: Date.now()
   }));
 }
 
 export default function FireSessionDashboard(){
-  const [sessions, setSessions] = useState<FireSession[]>([]);
+  const [sessions, setSessions] = useState<FireSession[]>(PRE_GENERATED_SESSIONS);
   const [busy, setBusy] = useState(false);
   const [currentUser, setCurrentUser] = useState<User>(demoUsers[0]);
   const [showUserSelector, setShowUserSelector] = useState(false);
@@ -41,13 +130,13 @@ export default function FireSessionDashboard(){
   function postAction(id: string, action: Action) {
     try {
       setBusy(true);
-      
+
       // Check if user can perform this action
       if (!canPerformAction(currentUser, action.type)) {
         toast(`Insufficient permissions for ${action.type}`, "err");
         return;
       }
-      
+
       // Find the session
       const sessionIndex = sessions.findIndex(s => s.id === id);
       if (sessionIndex === -1) {
@@ -56,7 +145,7 @@ export default function FireSessionDashboard(){
       }
 
       const previousSession = { ...sessions[sessionIndex] };
-      
+
       // Apply the action with trust validation
       let updatedSession: FireSession;
       try {
@@ -70,15 +159,15 @@ export default function FireSessionDashboard(){
           return;
         }
       }
-      
+
       // Log the action for audit
       logAction(currentUser, action, previousSession, updatedSession);
-      
+
       // Update the sessions array
       const newSessions = [...sessions];
       newSessions[sessionIndex] = updatedSession;
       setSessions(newSessions);
-      
+
       toast("Action executed successfully");
     } catch (e: any) {
       toast(e.message || "Action failed", "err");
@@ -87,10 +176,16 @@ export default function FireSessionDashboard(){
     }
   }
 
-  function populate(count = 12) {
-    const newSessions = generateDemoSessions(count);
-    setSessions(newSessions);
-    toast("Floor populated");
+  function populate(count = 6) {
+    const additionalSessions = generateDemoSessions(count);
+    const allSessions = [...PRE_GENERATED_SESSIONS, ...additionalSessions];
+    setSessions(allSessions);
+    toast(`Floor populated with ${allSessions.length} sessions`);
+  }
+
+  function resetToDefault() {
+    setSessions(PRE_GENERATED_SESSIONS);
+    toast("Reset to default sessions");
   }
 
   return (
@@ -102,11 +197,11 @@ export default function FireSessionDashboard(){
             AI Agents: Collaborating • Workflow: Session • Trust: {currentUser.trustLevel}
           </p>
         </div>
-        
+
         <div className="flex items-center gap-4">
           {/* User Selector */}
           <div className="relative">
-            <button 
+            <button
               onClick={() => setShowUserSelector(!showUserSelector)}
               className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#2a3570] bg-[#17204a] hover:bg-[#1b2658]"
             >
@@ -120,7 +215,7 @@ export default function FireSessionDashboard(){
               </span>
               <span className="text-xs text-[#aab6ff]">({currentUser.role})</span>
             </button>
-            
+
             {showUserSelector && (
               <div className="absolute top-full right-0 mt-2 w-64 bg-[#0f1433] border border-[#2a3570] rounded-lg shadow-lg z-10">
                 <div className="p-3 border-b border-[#2a3570]">
@@ -155,15 +250,16 @@ export default function FireSessionDashboard(){
               </div>
             )}
           </div>
-          
+
           <div className="flex gap-2">
-            <button 
-              onClick={()=>populate()} 
+            <button
+              onClick={()=>populate()}
               className="rounded-lg border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658]"
               disabled={!canPerformAction(currentUser, "deliver")}
             >
               Populate Floor Sessions (Demo)
             </button>
+            <button onClick={()=>resetToDefault()} className="rounded-lg border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658]">Reset</button>
             <button onClick={()=>setSessions([...sessions])} className="rounded-lg border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658]">Refresh</button>
           </div>
         </div>
@@ -195,7 +291,7 @@ function Card({ s, postAction, user, busy }:{
     const userCanPerform = canPerformAction(user, t);
     return !stateAllowed || !userCanPerform || busy;
   };
-  
+
   function allowed(state:FireSession["state"]): Action["type"][] {
     const map:any = {
       READY: ["DELIVER_NOW","MARK_OUT","SET_BUFFER","SET_ZONE","CANCEL","ADD_ITEM"],
@@ -251,17 +347,17 @@ function Card({ s, postAction, user, busy }:{
       {/* Actions */}
       <div className="mt-3 grid grid-cols-2 gap-2">
         {/* Primary flow */}
-        <button 
-          disabled={disabled("DELIVER_NOW")} 
-          onClick={()=>postAction(s.id,{type:"DELIVER_NOW"})} 
+        <button
+          disabled={disabled("DELIVER_NOW")}
+          onClick={()=>postAction(s.id,{type:"DELIVER_NOW"})}
           className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40"
           title={`Requires ${getTrustRequirement("DELIVER_NOW")} trust level`}
         >
           Deliver Now
         </button>
-        <button 
-          disabled={disabled("MARK_OUT")} 
-          onClick={()=>postAction(s.id,{type:"MARK_OUT"})} 
+        <button
+          disabled={disabled("MARK_OUT")}
+          onClick={()=>postAction(s.id,{type:"MARK_OUT"})}
           className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40"
           title={`Requires ${getTrustRequirement("MARK_OUT")} trust level`}
         >
@@ -271,17 +367,17 @@ function Card({ s, postAction, user, busy }:{
         <button disabled={disabled("MARK_DELIVERED")} onClick={()=>postAction(s.id,{type:"MARK_DELIVERED"})} className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40">Mark Delivered</button>
         <button disabled={disabled("START_ACTIVE")} onClick={()=>postAction(s.id,{type:"START_ACTIVE"})} className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40">Start Active</button>
 
-        <button 
-          disabled={disabled("CLOSE")} 
-          onClick={()=>postAction(s.id,{type:"CLOSE"})} 
+        <button
+          disabled={disabled("CLOSE")}
+          onClick={()=>postAction(s.id,{type:"CLOSE"})}
           className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40"
           title={`Requires ${getTrustRequirement("CLOSE")} trust level`}
         >
           Close
         </button>
-        <button 
-          disabled={disabled("UNDO")} 
-          onClick={()=>postAction(s.id,{type:"UNDO"})} 
+        <button
+          disabled={disabled("UNDO")}
+          onClick={()=>postAction(s.id,{type:"UNDO"})}
           className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40"
           title={`Requires ${getTrustRequirement("UNDO")} trust level`}
         >
@@ -290,10 +386,10 @@ function Card({ s, postAction, user, busy }:{
 
         {/* Controls */}
         {[5,10,15].map(sec=>(
-          <button key={sec} disabled={disabled("SET_BUFFER")} onClick={()=>postAction(s.id,{type:"SET_BUFFER", value:sec})} className="rounded-md border border-[#2a3570] bg-[#0f183f] px-3 py-2 text-sm hover:bg-[#18204a] disabled:opacity-40">Buffer {sec}s</button>
+          <button key={sec} disabled={disabled("SET_BUFFER")} onClick={()=>postAction(s.id,{type:"SET_BUFFER", value:sec})} className="rounded-md border border-[#2a3570] bg-[#0f183f] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40">Buffer {sec}s</button>
         ))}
         {(["A","B","C","D","E"] as DeliveryZone[]).map(z=>(
-          <button key={z} disabled={disabled("SET_ZONE")} onClick={()=>postAction(s.id,{type:"SET_ZONE", value:z})} className={`rounded-md border border-[#2a3570] px-3 py-2 text-sm hover:bg-[#18204a] disabled:opacity-40 ${s.zone===z ? "bg-[#1b2658]" : "bg-[#0f183f]"}`}>Zone {z}</button>
+          <button key={z} disabled={disabled("SET_ZONE")} onClick={()=>postAction(s.id,{type:"SET_ZONE", value:z})} className={`rounded-md border border-[#2a3570] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40 ${s.zone===z ? "bg-[#1b2658]" : "bg-[#0f183f]"}`}>Zone {z}</button>
         ))}
 
         {/* Secondary */}
