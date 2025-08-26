@@ -191,17 +191,17 @@ export default function FireSessionDashboard(){
   return (
     <div className="min-h-screen bg-[#0e1220] text-[#e9ecff] p-4">
       <header className="flex items-center justify-between mb-6">
-        <div>
+            <div>
           <h1 className="text-2xl font-bold">Fire Session Dashboard</h1>
           <p className="text-sm text-[#aab6ff]">
             AI Agents: Collaborating • Workflow: Session • Trust: {currentUser.trustLevel}
           </p>
-        </div>
-
+            </div>
+            
         <div className="flex items-center gap-4">
           {/* User Selector */}
           <div className="relative">
-            <button
+              <button
               onClick={() => setShowUserSelector(!showUserSelector)}
               className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#2a3570] bg-[#17204a] hover:bg-[#1b2658]"
             >
@@ -214,13 +214,13 @@ export default function FireSessionDashboard(){
                 {currentUser.trustLevel}
               </span>
               <span className="text-xs text-[#aab6ff]">({currentUser.role})</span>
-            </button>
+              </button>
 
             {showUserSelector && (
               <div className="absolute top-full right-0 mt-2 w-64 bg-[#0f1433] border border-[#2a3570] rounded-lg shadow-lg z-10">
                 <div className="p-3 border-b border-[#2a3570]">
                   <h3 className="text-sm font-medium text-[#e9ecff]">Select User</h3>
-                </div>
+              </div>
                 <div className="max-h-48 overflow-y-auto">
                   {demoUsers.map(user => (
                     <button
@@ -242,39 +242,39 @@ export default function FireSessionDashboard(){
                         }`}>
                           {user.trustLevel}
                         </span>
-                      </div>
+                  </div>
                       <div className="text-xs text-[#aab6ff] mt-1">{user.role}</div>
                     </button>
-                  ))}
-                </div>
-              </div>
-            )}
+              ))}
+            </div>
+          </div>
+        )}
           </div>
 
           <div className="flex gap-2">
-            <button
+              <button
               onClick={()=>populate()}
               className="rounded-lg border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658]"
               disabled={!canPerformAction(currentUser, "deliver")}
             >
               Populate Floor Sessions (Demo)
-            </button>
+              </button>
             <button onClick={()=>resetToDefault()} className="rounded-lg border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658]">Reset</button>
             <button onClick={()=>setSessions([...sessions])} className="rounded-lg border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658]">Refresh</button>
           </div>
         </div>
       </header>
 
-      {sessions.length === 0 ? (
+                {sessions.length === 0 ? (
         <div className="text-sm text-[#aab6ff]">No sessions yet. Click "Populate Floor Sessions" to get started!</div>
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
           {sessions.map(s => (
             <Card key={s.id} s={s} postAction={postAction} user={currentUser} busy={busy}/>
           ))}
-        </div>
-      )}
-    </div>
+                          </div>
+                        )}
+                          </div>
   );
 }
 
@@ -329,60 +329,60 @@ function Card({ s, postAction, user, busy }:{
         <div className="flex items-center gap-2">
           <span className="text-xs text-[#8ff4c2]">{s.state}</span>
           <span className="text-xs text-[#aab6ff]">• Trust: {user.trustLevel}</span>
-        </div>
-      </div>
+                </div>
+              </div>
       <div className="mt-1 grid grid-cols-2 gap-2 text-xs text-[#b8c2ff]">
         <div>Customer: <span className="text-[#e9ecff]">{s.customerLabel}</span></div>
         <div>Position: <span className="text-[#e9ecff]">{s.position}</span></div>
         <div>Duration: {s.durationMin}m</div>
         <div>ETA: {s.etaMin}m</div>
         <div>Items: {s.items}</div>
-      </div>
+                    </div>
 
       <div className="mt-2 flex flex-wrap">
         <Chip>Delivery Buffer: <b>{s.bufferSec}s</b></Chip>
         <Chip>Zone: <b>{s.zone}</b></Chip>
-      </div>
+                          </div>
 
       {/* Actions */}
       <div className="mt-3 grid grid-cols-2 gap-2">
         {/* Primary flow */}
-        <button
+                              <button
           disabled={disabled("DELIVER_NOW")}
           onClick={()=>postAction(s.id,{type:"DELIVER_NOW"})}
           className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40"
           title={`Requires ${getTrustRequirement("DELIVER_NOW")} trust level`}
         >
           Deliver Now
-        </button>
-        <button
+                              </button>
+                              <button
           disabled={disabled("MARK_OUT")}
           onClick={()=>postAction(s.id,{type:"MARK_OUT"})}
           className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40"
           title={`Requires ${getTrustRequirement("MARK_OUT")} trust level`}
         >
           Mark Out
-        </button>
+                              </button>
 
         <button disabled={disabled("MARK_DELIVERED")} onClick={()=>postAction(s.id,{type:"MARK_DELIVERED"})} className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40">Mark Delivered</button>
         <button disabled={disabled("START_ACTIVE")} onClick={()=>postAction(s.id,{type:"START_ACTIVE"})} className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40">Start Active</button>
 
-        <button
+                              <button
           disabled={disabled("CLOSE")}
           onClick={()=>postAction(s.id,{type:"CLOSE"})}
           className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40"
           title={`Requires ${getTrustRequirement("CLOSE")} trust level`}
         >
           Close
-        </button>
-        <button
+                              </button>
+                        <button
           disabled={disabled("UNDO")}
           onClick={()=>postAction(s.id,{type:"UNDO"})}
           className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40"
           title={`Requires ${getTrustRequirement("UNDO")} trust level`}
         >
           Undo
-        </button>
+                        </button>
 
         {/* Controls */}
         {[5,10,15].map(sec=>(
@@ -397,7 +397,7 @@ function Card({ s, postAction, user, busy }:{
         <button disabled={disabled("EXTEND_MIN")} onClick={()=>postAction(s.id,{type:"EXTEND_MIN", value:5})} className="rounded-md border border-[#2a3570] bg-[#0f183f] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40">Extend 5m</button>
         <button disabled={disabled("REASSIGN_RUNNER")} onClick={()=>postAction(s.id,{type:"REASSIGN_RUNNER", value:"runner_2"})} className="rounded-md border border-[#2a3570] bg-[#0f183f] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40">Reassign Runner</button>
         <button disabled={disabled("CANCEL")} onClick={()=>postAction(s.id,{type:"CANCEL"})} className="rounded-md border border-rose-800 bg-rose-900/30 px-3 py-2 text-sm hover:bg-rose-900/50 disabled:opacity-40">Cancel</button>
-      </div>
-    </div>
+                        </div>
+                        </div>
   );
 }
