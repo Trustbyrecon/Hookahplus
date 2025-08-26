@@ -1,0 +1,10 @@
+[33mad6731d[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mnetlify-build-fix[m[33m, [m[1;31morigin/netlify-build-fix[m[33m)[m commit
+[33mb056121[m commit
+[33m9f70f7d[m Convert Fire Session Dashboard to static data - remove API dependencies for Netlify compatibility
+[33m0024ba1[m Fix Netlify publish directory path - point to hookahplus-v2-/out where Next.js generates static files
+[33m860b756[m Fix Next.js static export build - add generateStaticParams for dynamic API routes
+[33m8409db2[m Fix TypeScript type import in store.ts - use type-only import for FireSession
+[33med00388[m Fix TypeScript type imports in fire-sessions route - use type-only imports for DeliveryZone and FireSession
+[33m84f90ab[m Fix FSMError import - use as value import since it's a constructor
+[33mb782071[m Fix TypeScript type import error in fire-sessions action route
+[33m04c90d5[m Add package-lock.json for hookahplus-v2- to fix npm ci build error
