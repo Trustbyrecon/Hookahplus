@@ -1,2 +1,3 @@
 
-# List any Python dependencies here
+PyYAML>=6.0
+# For cmd/ scripts and YAML processing
