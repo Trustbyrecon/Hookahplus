@@ -4,6 +4,19 @@ import { getSession, upsertSession } from "@/app/lib/store";
 import type { Action } from "@/app/lib/workflow";
 import { nextState, assertAllowed, FSMError } from "@/app/lib/workflow";
 
+// Required for static export - generate all possible session IDs
+export async function generateStaticParams() {
+  // For static export, we need to pre-generate all possible session IDs
+  // Return sample IDs that will be generated at build time
+  return [
+    { id: 'sample-1' },
+    { id: 'sample-2' },
+    { id: 'sample-3' },
+    { id: 'sample-4' },
+    { id: 'sample-5' },
+  ];
+}
+
 export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }

@@ -9,6 +9,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+
   // Webpack configuration for native modules
   webpack: (config, { isServer }) => {
     // Handle native modules
