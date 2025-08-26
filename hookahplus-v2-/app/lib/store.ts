@@ -1,5 +1,5 @@
 // app/lib/store.ts
-import { FireSession } from "./workflow";
+import type { FireSession } from "./workflow";
 
 type Store = { byId: Map<string, FireSession> };
 
