@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "cd hookahplus-v2- && npm run dev",
-    "build": "cd hookahplus-v2- && npm run build",
+    "build": "cd hookahplus-v2- && npx next build",
     "start": "cd hookahplus-v2- && npm run start",
     "lint": "cd hookahplus-v2- && npm run lint",
     "codex:start": "openai-codex start",
