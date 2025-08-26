@@ -2,6 +2,18 @@
 export type SessionState = "READY" | "OUT" | "DELIVERED" | "ACTIVE" | "CLOSE";
 export type DeliveryZone = "A" | "B" | "C" | "D" | "E";
 
+// Trust system types
+export type TrustLevel = "NONE" | "BASIC" | "VERIFIED" | "ADMIN";
+export type UserRole = "STAFF" | "RUNNER" | "SUPERVISOR" | "MANAGER" | "OWNER";
+
+export interface User {
+  id: string;
+  name: string;
+  role: UserRole;
+  trustLevel: TrustLevel;
+  permissions: string[];
+}
+
 export interface FireSession {
   id: string;
   table: string;               // e.g., "T-5"
@@ -31,6 +43,22 @@ export type Action =
   | { type: "ADD_ITEM"; value: number }
   | { type: "EXTEND_MIN"; value: number };
 
+// Trust requirements for each action
+export const trustRequirements: Record<Action["type"], TrustLevel> = {
+  "DELIVER_NOW": "BASIC",
+  "MARK_OUT": "BASIC", 
+  "MARK_DELIVERED": "VERIFIED",
+  "START_ACTIVE": "VERIFIED",
+  "CLOSE": "ADMIN",
+  "SET_BUFFER": "BASIC",
+  "SET_ZONE": "BASIC",
+  "ADD_ITEM": "BASIC",
+  "EXTEND_MIN": "VERIFIED",
+  "UNDO": "VERIFIED",
+  "REASSIGN_RUNNER": "VERIFIED",
+  "CANCEL": "ADMIN"
+};
+
 export const allowed: Record<SessionState, Action["type"][]> = {
   READY: ["DELIVER_NOW","MARK_OUT","SET_BUFFER","SET_ZONE","CANCEL","ADD_ITEM"],
   OUT: ["MARK_DELIVERED","SET_BUFFER","SET_ZONE","REASSIGN_RUNNER","CANCEL","UNDO"],
@@ -44,10 +72,55 @@ export class FSMError extends Error {
   constructor(code: string, msg: string) { super(msg); this.code = code; }
 }
 
+export class TrustError extends Error {
+  code: string;
+  requiredTrust: TrustLevel;
+  userTrust: TrustLevel;
+  
+  constructor(code: string, msg: string, requiredTrust: TrustLevel, userTrust: TrustLevel) { 
+    super(msg); 
+    this.code = code; 
+    this.requiredTrust = requiredTrust;
+    this.userTrust = userTrust;
+  }
+}
+
+// Trust validation function
+export function hasTrustLevel(userTrust: TrustLevel, requiredTrust: TrustLevel): boolean {
+  const trustHierarchy: Record<TrustLevel, number> = {
+    "NONE": 0,
+    "BASIC": 1,
+    "VERIFIED": 2,
+    "ADMIN": 3
+  };
+  
+  return trustHierarchy[userTrust] >= trustHierarchy[requiredTrust];
+}
+
 export function assertAllowed(state: SessionState, action: Action["type"]) {
   if (!allowed[state].includes(action)) {
     throw new FSMError("ACTION_NOT_ALLOWED", `Action ${action} not allowed from ${state}`);
   }
+}
+
+// Enhanced workflow with trust validation
+export function nextStateWithTrust(session: FireSession, action: Action, user: User): FireSession {
+  // Check if action is allowed from current state
+  assertAllowed(session.state, action.type);
+  
+  // Check trust level
+  const requiredTrust = trustRequirements[action.type];
+  if (!hasTrustLevel(user.trustLevel, requiredTrust)) {
+    throw new TrustError(
+      "INSUFFICIENT_TRUST", 
+      `Action ${action.type} requires ${requiredTrust} trust level, but user has ${user.trustLevel}`,
+      requiredTrust,
+      user.trustLevel
+    );
+  }
+  
+  // Execute the action
+  return nextState(session, action);
 }
 
 export function nextState(session: FireSession, action: Action): FireSession {
