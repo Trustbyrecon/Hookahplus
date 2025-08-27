@@ -1,0 +1,31 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/demo-flow",
+      "dest": "/demo-flow/"
+    },
+    {
+      "src": "/fire-session-dashboard",
+      "dest": "/fire-session-dashboard/"
+    },
+    {
+      "src": "/preorder/(.*)",
+      "dest": "/preorder/$1/"
+    }
+  ],
+  "functions": {
+    "app/api/**/*.ts": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "env": {
+    "NODE_ENV": "production"
+  }
+}

@@ -6,7 +6,11 @@ publish = "hookahplus-v2-/.next"
 NODE_VERSION = "20"
 NPM_FLAGS = "--legacy-peer-deps"
 
-# No plugins - manual build approach to avoid dependency issues
+# Try minimal plugin configuration to avoid dependency issues
+[[plugins]]
+package = "@netlify/plugin-nextjs"
+inputs = {}
+
 # Add proper redirects for Next.js routing
 [[redirects]]
   from = "/*"
