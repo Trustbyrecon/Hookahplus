@@ -307,6 +307,9 @@ export default function FireSessionDashboard() {
               <p className="text-sm text-[#aab6ff]">
                 AI Agents: Collaborating • Workflow: Session • Trust: {currentUser.trustLevel}
               </p>
+              <p className="text-xs text-[#8a94a8] mt-1">
+                📱 Mobile QR Orders • 🍽️ Table Orders • 🔥 BOH Workflow
+              </p>
             </div>
           </div>
           

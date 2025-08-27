@@ -1,13 +1,25 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import GlobalNavigation from "../../components/GlobalNavigation";
 
 type DemoStep = 'qr-scan' | 'flavor-selection' | 'checkout' | 'confirmation' | 'dashboard';
+
+interface MobileOrder {
+  orderId: string;
+  table: string;
+  status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered';
+  flavor: string;
+  amount: number;
+  customerName: string;
+  timestamp: Date;
+}
 
 export default function DemoFlowPage() {
   const [currentStep, setCurrentStep] = useState<DemoStep>('qr-scan');
   const [selectedFlavors, setSelectedFlavors] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [mobileOrders, setMobileOrders] = useState<MobileOrder[]>([]);
+  const [currentOrder, setCurrentOrder] = useState<MobileOrder | null>(null);
 
   const flavors = [
     'Double Apple',
@@ -19,6 +31,49 @@ export default function DemoFlowPage() {
     'Coconut',
     'Pineapple'
   ];
+
+  // Simulate mobile order creation
+  useEffect(() => {
+    if (currentStep === 'confirmation') {
+      const newOrder: MobileOrder = {
+        orderId: `ord_${Date.now()}`,
+        table: 'T-3',
+        status: 'pending',
+        flavor: selectedFlavors.join(' + ') || 'Double Apple + Mint',
+        amount: 15 + selectedFlavors.length * 2,
+        customerName: 'Demo Customer',
+        timestamp: new Date()
+      };
+      setCurrentOrder(newOrder);
+      setMobileOrders(prev => [...prev, newOrder]);
+      
+      // Simulate order flow to fire session dashboard
+      simulateOrderFlow(newOrder);
+    }
+  }, [currentStep, selectedFlavors]);
+
+  const simulateOrderFlow = async (order: MobileOrder) => {
+    try {
+      // Simulate sending order to fire session dashboard
+      const response = await fetch('/api/fire-session/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          table: order.table,
+          flavor: order.flavor,
+          amount: order.amount,
+          customerName: order.customerName,
+          source: 'mobile-qr'
+        })
+      });
+      
+      if (response.ok) {
+        console.log('Order sent to fire session dashboard');
+      }
+    } catch (error) {
+      console.log('Demo mode - order simulation');
+    }
+  };
 
   const handleFlavorToggle = (flavor: string) => {
     setSelectedFlavors(prev => 
@@ -48,6 +103,8 @@ export default function DemoFlowPage() {
     setCurrentStep('qr-scan');
     setSelectedFlavors([]);
     setIsProcessing(false);
+    setMobileOrders([]);
+    setCurrentOrder(null);
   };
 
   return (
@@ -227,6 +284,27 @@ export default function DemoFlowPage() {
                   </div>
                 </div>
               </div>
+
+              {/* BOH Workflow Indicators */}
+              {currentOrder && (
+                <div className="mt-6 bg-orange-900/20 border border-orange-500 rounded-xl p-6 max-w-lg mx-auto">
+                  <div className="text-orange-400 font-bold text-lg mb-2">🔥 BOH Workflow Initiated</div>
+                  <div className="text-orange-300 text-sm space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 bg-orange-500 rounded-full animate-pulse"></span>
+                      <span>Flavor preparation started</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 bg-orange-500 rounded-full animate-pulse"></span>
+                      <span>Coals being ignited</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 bg-orange-500 rounded-full animate-pulse"></span>
+                      <span>Hookah assembly in progress</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             <button
               onClick={handleNextStep}
@@ -294,10 +372,10 @@ export default function DemoFlowPage() {
                 🚀 Try Live System
               </a>
               <a
-                href="/owner-cta?form=preorder"
+                href="/fire-session-dashboard"
                 className="bg-emerald-500 hover:bg-emerald-400 text-zinc-950 px-6 py-3 rounded-xl font-medium transition-colors"
               >
-                💳 Start Preorders
+                🔥 Fire Session Dashboard
               </a>
             </div>
           </div>
@@ -312,28 +390,40 @@ export default function DemoFlowPage() {
             {/* Mobile Order Status */}
             <div className="bg-zinc-800 rounded-xl border border-zinc-700 p-6">
               <h4 className="text-lg font-semibold text-pink-300 mb-4">📱 Mobile Order Status</h4>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-zinc-300">Order ID:</span>
-                  <span className="font-mono text-sm text-pink-400">ord_123456</span>
+              {currentOrder ? (
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-zinc-300">Order ID:</span>
+                    <span className="font-mono text-sm text-pink-400">{currentOrder.orderId}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-zinc-300">Table:</span>
+                    <span className="text-emerald-400">{currentOrder.table}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-zinc-300">Status:</span>
+                    <span className="bg-emerald-900 text-emerald-300 px-2 py-1 rounded text-sm">{currentOrder.status}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-zinc-300">Flavor:</span>
+                    <span className="text-blue-400">{currentOrder.flavor}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-zinc-300">Amount:</span>
+                    <span className="text-yellow-400">${currentOrder.amount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-zinc-300">Customer:</span>
+                    <span className="text-purple-400">{currentOrder.customerName}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-zinc-300">Table:</span>
-                  <span className="text-emerald-400">T-3</span>
+              ) : (
+                <div className="text-zinc-400 text-center py-8">
+                  <div className="text-4xl mb-2">📱</div>
+                  <div>No active orders</div>
+                  <div className="text-sm">Complete the demo to see orders</div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-zinc-300">Status:</span>
-                  <span className="bg-emerald-900 text-emerald-300 px-2 py-1 rounded text-sm">Active</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-zinc-300">Flavor:</span>
-                  <span className="text-blue-400">Double Apple + Mint</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-zinc-300">Amount:</span>
-                  <span className="text-yellow-400">$23.00</span>
-                </div>
-              </div>
+              )}
             </div>
 
             {/* Mobile Workflow Progress */}
@@ -353,12 +443,16 @@ export default function DemoFlowPage() {
                   <span className="text-zinc-300">Payment Processed</span>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <div className="w-4 h-4 bg-blue-500 rounded-full animate-pulse"></div>
-                  <span className="text-blue-400">Order Confirmed</span>
+                  <div className={`w-4 h-4 rounded-full ${currentOrder ? 'bg-blue-500 animate-pulse' : 'bg-gray-500'}`}></div>
+                  <span className={currentOrder ? 'text-blue-400' : 'text-zinc-500'}>Order Confirmed</span>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <div className="w-4 h-4 bg-gray-500 rounded-full"></div>
-                  <span className="text-zinc-500">Session Active</span>
+                  <div className={`w-4 h-4 rounded-full ${currentOrder ? 'bg-orange-500 animate-pulse' : 'bg-gray-500'}`}></div>
+                  <span className={currentOrder ? 'text-orange-400' : 'text-zinc-500'}>BOH Preparation</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className={`w-4 h-4 rounded-full ${currentOrder ? 'bg-purple-500 animate-pulse' : 'bg-gray-500'}`}></div>
+                  <span className={currentOrder ? 'text-purple-400' : 'text-zinc-500'}>Ready for Delivery</span>
                 </div>
               </div>
             </div>
