@@ -1,0 +1,21 @@
+# Ignore Netlify plugins and auto-installation
+.netlify/
+.netlify/plugins/
+.netlify/state.json
+
+# Ignore build artifacts that might cause issues
+.next/
+out/
+build/
+
+# Ignore development files
+node_modules/
+*.log
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Ignore any plugin-related files
+**/plugins/
+**/plugin-*/

@@ -6,5 +6,5 @@ publish = "hookahplus-v2-/.next"
 NODE_VERSION = "20"
 NPM_FLAGS = "--legacy-peer-deps"
 
-[[plugins]]
-package = "@netlify/plugin-nextjs"
+# No plugins - manual build approach to avoid dependency issues
+# The @netlify/blobs@10.0.9 dependency issue is caused by automatic plugin detection

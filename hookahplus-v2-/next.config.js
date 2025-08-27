@@ -6,6 +6,12 @@ const nextConfig = {
   swcMinify: true,
   trailingSlash: true,
   
+  // Ensure compatibility with Netlify
+  experimental: {
+    // Disable features that might cause issues on Netlify
+    serverComponentsExternalPackages: [],
+  },
+  
   // Enable image optimization
   images: {
     unoptimized: true,
