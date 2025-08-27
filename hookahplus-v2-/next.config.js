@@ -25,6 +25,15 @@ const nextConfig = {
     
     return config;
   },
+  
+  // Ensure proper output for Netlify
+  distDir: '.next',
+  
+  // Add base path if needed for Netlify
+  // basePath: '',
+  
+  // Ensure proper asset handling
+  assetPrefix: '',
 };
 
 module.exports = nextConfig;

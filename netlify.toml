@@ -7,4 +7,24 @@ NODE_VERSION = "20"
 NPM_FLAGS = "--legacy-peer-deps"
 
 # No plugins - manual build approach to avoid dependency issues
-# The @netlify/blobs@10.0.9 dependency issue is caused by automatic plugin detection
+# Add proper redirects for Next.js routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Add specific redirects for common routes
+[[redirects]]
+  from = "/demo-flow"
+  to = "/demo-flow/"
+  status = 301
+
+[[redirects]]
+  from = "/fire-session-dashboard"
+  to = "/fire-session-dashboard/"
+  status = 301
+
+[[redirects]]
+  from = "/preorder/*"
+  to = "/preorder/:splat/"
+  status = 301
