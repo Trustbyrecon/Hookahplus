@@ -8,21 +8,30 @@
   ],
   "routes": [
     {
+      "src": "/",
+      "dest": "/apps/web"
+    },
+    {
       "src": "/demo-flow",
-      "dest": "/demo-flow/"
+      "dest": "/apps/web/demo-flow"
     },
     {
       "src": "/fire-session-dashboard",
-      "dest": "/fire-session-dashboard/"
+      "dest": "/apps/dashboard/fire"
     },
     {
       "src": "/preorder/(.*)",
-      "dest": "/preorder/$1/"
+      "dest": "/apps/preorder/$1"
+    },
+    {
+      "src": "/admin/(.*)",
+      "dest": "/apps/admin/$1"
     }
   ],
   "functions": {
-    "app/api/**/*.ts": {
-      "runtime": "nodejs18.x"
+    "apps/*/app/api/**/*.ts": {
+      "runtime": "nodejs18.x",
+      "maxDuration": 30
     }
   },
   "env": {
