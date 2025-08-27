@@ -202,7 +202,7 @@ export default function DemoPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div className="bg-zinc-800 rounded-lg p-4">
-                <h4 className="text-lg font-semibold text-white mb-2">🌐 ScreenCoder Integration</h4>
+                <h4 className="text-lg font-semibold text-white mb-2">🌐 Lounge Layout</h4>
                 <p className="text-zinc-400 text-sm">
                   Visual lounge layout with real-time table status, customer information, and interactive navigation
                 </p>

@@ -945,10 +945,10 @@ export default function SessionsDashboard() {
                     </div>
                   </div>
 
-                  {/* ScreenCoder Integration Info */}
+                  {/* Lounge Layout Position Info */}
                   {session.tablePosition && (
                     <div className="bg-gradient-to-r from-cyan-900 to-cyan-800 border border-cyan-600 rounded-lg p-3">
-                      <div className="text-sm text-cyan-300 mb-1">ScreenCoder Position</div>
+                      <div className="text-sm text-cyan-300 mb-1">Lounge Position</div>
                       <div className="text-xs text-cyan-200">
                         X: {session.tablePosition.x}, Y: {session.tablePosition.y}
                       </div>
