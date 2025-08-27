@@ -223,7 +223,18 @@ export default function FireSessionDashboard() {
       // Apply the action with trust validation
       let updatedSession: EnhancedFireSession;
       try {
-        updatedSession = nextStateWithTrust(previousSession, action, currentUser);
+        const baseSession = nextStateWithTrust(previousSession, action, currentUser);
+        // Merge the base session with the enhanced properties
+        updatedSession = {
+          ...baseSession,
+          flavor: previousSession.flavor,
+          addOns: previousSession.addOns,
+          currentAmount: previousSession.currentAmount,
+          assignedStaff: previousSession.assignedStaff,
+          sessionStartTime: previousSession.sessionStartTime,
+          bohState: previousSession.bohState,
+          sessionTimer: previousSession.sessionTimer
+        };
         
         // Handle BOH state transitions
         if (action.type === "DELIVER_NOW" || action.type === "MARK_OUT") {

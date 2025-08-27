@@ -1,7 +1,10 @@
 [build]
 command = "cd hookahplus-v2- && npm ci --legacy-peer-deps && npx next build"
-publish = "hookahplus-v2-/out"
+publish = "hookahplus-v2-/.next"
 
 [build.environment]
 NODE_VERSION = "20"
 NPM_FLAGS = "--legacy-peer-deps"
+
+[[plugins]]
+package = "@netlify/plugin-nextjs"

@@ -1,10 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Enable static export for Netlify deployment
-  output: 'export',
+  // Disable static export to allow server-side rendering
+  // output: 'export', // Commented out to fix useContext errors
   reactStrictMode: true,
   swcMinify: true,
   trailingSlash: true,
+  
   // Enable image optimization
   images: {
     unoptimized: true,
