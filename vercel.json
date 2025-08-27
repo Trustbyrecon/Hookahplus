@@ -2,34 +2,30 @@
   "version": 2,
   "builds": [
     {
-      "src": "package.json",
+      "src": "hookahplus-v2-/package.json",
       "use": "@vercel/next"
     }
   ],
   "routes": [
     {
       "src": "/",
-      "dest": "/apps/web"
-    },
-    {
-      "src": "/demo-flow",
-      "dest": "/apps/web/demo-flow"
+      "dest": "/hookahplus-v2-"
     },
     {
       "src": "/fire-session-dashboard",
-      "dest": "/apps/dashboard/fire"
+      "dest": "/hookahplus-v2-/fire-session-dashboard"
+    },
+    {
+      "src": "/demo-flow",
+      "dest": "/hookahplus-v2-/demo-flow"
     },
     {
       "src": "/preorder/(.*)",
-      "dest": "/apps/preorder/$1"
-    },
-    {
-      "src": "/admin/(.*)",
-      "dest": "/apps/admin/$1"
+      "dest": "/hookahplus-v2-/preorder/$1"
     }
   ],
   "functions": {
-    "apps/*/app/api/**/*.ts": {
+    "hookahplus-v2-/app/api/**/*.ts": {
       "runtime": "nodejs18.x",
       "maxDuration": 30
     }
