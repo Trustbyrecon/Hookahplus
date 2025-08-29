@@ -1,13 +1,20 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Remove static export to enable API routes
-  // output: 'export',
+  // Disable static export to allow server-side rendering
+  // output: 'export', // Commented out to fix useContext errors
   reactStrictMode: true,
   swcMinify: true,
   trailingSlash: true,
+  
+  // Ensure compatibility with Netlify
+  experimental: {
+    // Disable features that might cause issues on Netlify
+    serverComponentsExternalPackages: [],
+  },
+  
   // Enable image optimization
   images: {
-    unoptimized: false,
+    unoptimized: true,
   },
 
   // Webpack configuration for native modules
@@ -18,6 +25,15 @@ const nextConfig = {
     
     return config;
   },
+  
+  // Ensure proper output for Netlify
+  distDir: '.next',
+  
+  // Add base path if needed for Netlify
+  // basePath: '',
+  
+  // Ensure proper asset handling
+  assetPrefix: '',
 };
 
 module.exports = nextConfig;

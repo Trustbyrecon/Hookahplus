@@ -40,7 +40,7 @@
       "path": "docs",
       "repo": "hookahplus-docs",
       "triggers": [
-        "cmd.generateMoatPDF",
+        "cmd.generateConnectorPartnershipPDF",
         "cmd.writeReflexGuide",
         "cmd.exportPricingSheet",
         "cmd.logWhisperJournal",

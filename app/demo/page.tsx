@@ -102,10 +102,10 @@ export default function DemoPage() {
                 🚀 Live Sessions
               </Link>
               <Link
-                href="/moat-analytics"
+                href="/connector-partnership-analytics"
                 className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg text-lg font-medium transition-colors"
               >
-                📊 MOAT Analytics
+                📊 Connector Partnership Analytics
               </Link>
             </div>
           </div>
@@ -222,9 +222,9 @@ export default function DemoPage() {
                 </p>
               </div>
               <div className="bg-zinc-800 rounded-lg p-4">
-                <h4 className="text-lg font-semibold text-white mb-2">🚀 MOAT Scale Growth</h4>
+                <h4 className="text-lg font-semibold text-white mb-2">🚀 Connector Partnership Program</h4>
                 <p className="text-zinc-400 text-sm">
-                  Connector Partnership Program for rapid expansion and network effects
+                  Lounge Owner Intent Communication for rapid expansion and network effects
                 </p>
               </div>
             </div>
@@ -245,8 +245,8 @@ export default function DemoPage() {
               🚀 Launch Live Sessions
             </Link>
             <Link
-              href="/moat-analytics"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg text-xl font-bold transition-colors"
+              href="/connector-partnership-analytics"
+              className="bg-blue-600 hover:bg-blue-700 text-xl font-bold transition-colors"
             >
               📊 View Analytics
             </Link>

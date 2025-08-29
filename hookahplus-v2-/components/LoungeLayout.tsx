@@ -65,7 +65,7 @@ export default function LoungeLayout({ sessions, onTableClick }: LoungeLayoutPro
 
   return (
     <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-6">
-      <h3 className="text-xl font-semibold text-teal-300 mb-4">Lounge Layout (ScreenCoder Integration)</h3>
+      <h3 className="text-xl font-semibold text-teal-300 mb-4">Lounge Layout</h3>
       
       <div className="relative bg-zinc-800 rounded-lg p-4" style={{ height: '500px' }}>
         {/* Bar Area */}

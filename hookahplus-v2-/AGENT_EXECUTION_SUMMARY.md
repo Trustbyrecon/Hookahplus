@@ -187,7 +187,7 @@ All agent pages are now accessible from the main sessions dashboard:
 - 🎯 Landing Page → `/landing`
 - 🎬 Demo Video → `/demo-video`
 - 🚀 Interactive Demo → `/demo-flow`
-- 📊 MOAT Analytics → `/moat-analytics`
+- 📊 Connector Partnership Analytics → `/connector-partnership-analytics`
 - 🚀 EP Agent Launch → `/ep-agent-launch`
 - 📱 Clover App → `/alethia-clover-app`
 

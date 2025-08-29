@@ -350,7 +350,7 @@ export default function AdminControlCenter() {
       {/* OVERVIEW */}
       {activeTab === 'overview' && (
         <div className="space-y-4">
-          {/* EP Agent & MOAT Analytics Buttons */}
+          {/* EP Agent & Connector Partnership Analytics Buttons */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-zinc-900/60 border border-zinc-800 rounded-lg p-6">
               <h2 className="text-lg font-medium mb-3">EP Agent Launch</h2>
@@ -364,10 +364,10 @@ export default function AdminControlCenter() {
             </div>
             
             <div className="bg-zinc-900/60 border border-zinc-800 rounded-lg p-6">
-              <h2 className="text-lg font-medium mb-3">MOAT Analytics</h2>
+              <h2 className="text-lg font-medium mb-3">Connector Partnership Analytics</h2>
               <p className="text-sm text-zinc-400 mb-4">Advanced analytics and insights</p>
               <button 
-                onClick={() => window.location.href = '/moat-analytics'} 
+                onClick={() => window.location.href = '/connector-partnership-analytics'} 
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg gap-2 flex items-center w-full justify-center"
               >
                 <TrendingUp className="w-4 h-4" /> View Analytics

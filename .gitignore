@@ -26,3 +26,6 @@ app/dashboard/package-lock.json
 # Project-specific
 ReflexAutoOps_StarterKit/
 ScreenCoder/
+
+# Build artifacts
+*.tsbuildinfo

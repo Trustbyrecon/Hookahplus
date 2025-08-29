@@ -1,7 +1,34 @@
 [build]
 command = "cd hookahplus-v2- && npm ci --legacy-peer-deps && npx next build"
-publish = "hookahplus-v2-"
+publish = "hookahplus-v2-/.next"
 
 [build.environment]
 NODE_VERSION = "20"
 NPM_FLAGS = "--legacy-peer-deps"
+
+# Try minimal plugin configuration to avoid dependency issues
+[[plugins]]
+package = "@netlify/plugin-nextjs"
+inputs = {}
+
+# Add proper redirects for Next.js routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Add specific redirects for common routes
+[[redirects]]
+  from = "/demo-flow"
+  to = "/demo-flow/"
+  status = 301
+
+[[redirects]]
+  from = "/fire-session-dashboard"
+  to = "/fire-session-dashboard/"
+  status = 301
+
+[[redirects]]
+  from = "/preorder/*"
+  to = "/preorder/:splat/"
+  status = 301

@@ -3,6 +3,10 @@ import './globals.css';
 import { SessionProvider } from '../components/SessionContext';
 import { ReflexAgentProvider } from '../components/ReflexAgentContext';
 
+// Force dynamic rendering to prevent useContext errors
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export const metadata = {
   title: 'Hookah+ Dashboard',
   description: 'POS System for Hookah Lounge',
