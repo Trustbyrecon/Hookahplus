@@ -1,9 +1,9 @@
 // ✅ All imports first
 import './globals.css'
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
 
-const inter = Inter({ subsets: ['latin'] })
+// Fallback font classes when Google Fonts are unavailable
+const inter = { className: 'font-sans' }
 
 export const metadata: Metadata = {
   title: 'HookahPlus Lounge Onboarding',
@@ -30,7 +30,6 @@ export const metadata: Metadata = {
   },
 }
 
-// ✅ HTML & BODY are allowed here in app router layout
 export default function RootLayout({
   children,
 }: {
@@ -38,7 +37,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-gradient-to-b from-[#1e1e1e] to-[#121212] text-white`}>
+      <body className="font-inter bg-gradient-to-b from-[#1e1e1e] to-[#121212] text-white">
         {children}
       </body>
     </html>

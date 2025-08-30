@@ -9,3 +9,6 @@ app/dashboard/node_modules/
 app/dashboard/out/
 app/dashboard/.next/
 app/dashboard/package-lock.json
+
+# Generated files
+public/sitemap.xml

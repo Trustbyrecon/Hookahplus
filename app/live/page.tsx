@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
-import { UnifrakturCook, Raleway } from 'next/font/google';
 
-const unifraktur = UnifrakturCook({ weight: '700', subsets: ['latin'] });
-const raleway = Raleway({ weight: ['300', '600'], subsets: ['latin'] });
+// Fallback font classes when Google Fonts are unavailable
+const unifraktur = { className: 'font-serif font-bold' };
+const raleway = { className: 'font-sans' };
 
 interface LiveEvent {
   delta: number;
@@ -181,10 +181,10 @@ export default function LivePage() {
 
   return (
     <main
-      className={`p-8 bg-charcoal text-goldLumen ${raleway.className}`}
+      className="p-8 bg-charcoal text-goldLumen font-raleway"
     >
       <h1
-        className={`${unifraktur.className} text-3xl mb-2 text-ember`}
+        className="font-unifraktur text-3xl mb-2 text-ember"
       >
         Live Session
       </h1>

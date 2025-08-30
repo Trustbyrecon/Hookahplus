@@ -16,6 +16,11 @@ module.exports = {
         surface: "rgb(var(--color-surface) / <alpha-value>)",
         text: "rgb(var(--color-text) / <alpha-value>)",
         "text-light": "rgb(var(--color-text-light) / <alpha-value>)"
+      },
+      fontFamily: {
+        'inter': ['Inter', 'system-ui', 'sans-serif'],
+        'raleway': ['Raleway', 'system-ui', 'sans-serif'],
+        'unifraktur': ['UnifrakturCook', 'serif'],
       }
     }
   },

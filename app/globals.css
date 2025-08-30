@@ -1,18 +1,32 @@
 @import "../styles/moodbook.css";
 
+/* Import Google Fonts at runtime to avoid build-time network issues */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@300;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&display=swap');
+
 /* Your existing globals... */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* Custom brand styles */
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   background-color: black;
   color: white;
+}
+
+.font-inter {
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.font-raleway {
+  font-family: 'Raleway', system-ui, sans-serif;
+}
+
+.font-unifraktur {
+  font-family: 'UnifrakturCook', serif;
 }
 
 a {
