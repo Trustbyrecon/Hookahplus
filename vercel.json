@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "framework": "nextjs",
+  "git": {
+    "deploymentBranch": "netlify-build-fix"
+  },
+  "rootDirectory": "apps/web",
+  "env": {
+    "NODE_ENV": "production"
+  }
+}
