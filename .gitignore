@@ -29,3 +29,4 @@ ScreenCoder/
 
 # Build artifacts
 *.tsbuildinfo
+.vercel
