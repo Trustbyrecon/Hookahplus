@@ -1,11 +1,9 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "hookahplus-v2-/package.json",
-      "use": "@vercel/next"
-    }
-  ],
+  "framework": "nextjs",
+  "git": {
+    "deploymentBranch": "netlify-build-fix"
+  },
   "routes": [
     {
       "src": "/",
