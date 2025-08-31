@@ -11,7 +11,8 @@
     "cssesc": "^3.0.0",
     "next": "14.2.7",
     "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "react-dom": "18.3.1",
+    "util-deprecate": "^1.0.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.12",
