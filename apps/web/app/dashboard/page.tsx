@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import CustomerFlowLogic from "../../components/CustomerFlowLogic";
 
 // AI Agent Collaboration Interface
 interface DashboardState {
@@ -393,6 +394,36 @@ const Dashboard = () => {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Workflow Tab */}
+        {activeView === 'workflow' && (
+          <div className="space-y-6">
+            <CustomerFlowLogic />
+            
+            <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-6">
+              <h3 className="text-xl font-semibold text-teal-300 mb-4">Workflow Management</h3>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-zinc-800 rounded-lg p-4 text-center">
+                    <div className="text-2xl mb-2">📋</div>
+                    <div className="text-white font-medium">Order Processing</div>
+                    <div className="text-sm text-zinc-400">Mobile & Staff Orders</div>
+                  </div>
+                  <div className="bg-zinc-800 rounded-lg p-4 text-center">
+                    <div className="text-2xl mb-2">👨‍🍳</div>
+                    <div className="text-white font-medium">BOH Preparation</div>
+                    <div className="text-sm text-zinc-400">Hookah Assembly</div>
+                  </div>
+                  <div className="bg-zinc-800 rounded-lg p-4 text-center">
+                    <div className="text-2xl mb-2">👥</div>
+                    <div className="text-white font-medium">FOH Delivery</div>
+                    <div className="text-sm text-zinc-400">Customer Service</div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}

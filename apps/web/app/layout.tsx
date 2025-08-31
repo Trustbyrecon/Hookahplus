@@ -2,6 +2,7 @@
 import './globals.css';
 import { SessionProvider } from '../components/SessionContext';
 import { ReflexAgentProvider } from '../components/ReflexAgentContext';
+import GlobalNavigation from '../components/GlobalNavigation';
 
 export const metadata = {
   title: 'Hookah+ Dashboard',
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <ReflexAgentProvider>
           <SessionProvider>
+            <GlobalNavigation />
             {children}
           </SessionProvider>
         </ReflexAgentProvider>
