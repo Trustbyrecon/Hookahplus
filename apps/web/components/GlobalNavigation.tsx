@@ -30,12 +30,12 @@ const navigationGroups: NavigationGroup[] = [
     bgColor: 'bg-purple-600/20 border-purple-500/50',
     pages: ['/staff', '/admin']
   },
-  {
-    id: 'operations',
-    label: 'Operations',
-    bgColor: 'bg-orange-600/20 border-orange-500/50',
-    pages: ['/pre-order', '/checkout', '/demo']
-  }
+            {
+            id: 'operations',
+            label: 'Operations',
+            bgColor: 'bg-orange-600/20 border-orange-500/50',
+            pages: ['/pre-order', '/checkout', '/demo', '/pos-waitlist']
+          }
 ];
 
 const GlobalNavigation: React.FC = () => {
@@ -153,16 +153,27 @@ const GlobalNavigation: React.FC = () => {
               👥 Staff
             </Link>
             
-            <Link 
-              href="/admin" 
-              className={`px-3 py-2 rounded-lg transition-all duration-200 ${
-                pathname === '/admin' 
-                  ? 'bg-orange-600 text-white' 
-                  : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
-              }`}
-            >
-              ⚙️ Admin
-            </Link>
+                                <Link
+                      href="/admin"
+                      className={`px-3 py-2 rounded-lg transition-all duration-200 ${
+                        pathname === '/admin'
+                          ? 'bg-orange-600 text-white'
+                          : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
+                      }`}
+                    >
+                      ⚙️ Admin
+                    </Link>
+
+                    <Link
+                      href="/pos-waitlist"
+                      className={`px-3 py-2 rounded-lg transition-all duration-200 ${
+                        pathname === '/pos-waitlist'
+                          ? 'bg-orange-600 text-white'
+                          : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
+                      }`}
+                    >
+                      📋 POS Waitlist
+                    </Link>
           </div>
 
           {/* Quick Actions and Status */}
