@@ -28,7 +28,7 @@ function useReflexAgent(routeName: string) {
 
 export default function Home() {
   useReflexAgent("Home");
-  const [videoLoaded, setVideoLoaded] = useState(false);
+
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
@@ -105,30 +105,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Demo Video Section */}
-      <div className="px-4 py-12 bg-zinc-900/30">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-6 text-teal-300">See Hookah+ in Action</h2>
-          <div className="relative aspect-video bg-zinc-800 rounded-2xl overflow-hidden">
-            {!videoLoaded && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="text-6xl mb-4">🎬</div>
-                  <div className="text-zinc-400">Demo Video Loading...</div>
-                </div>
-              </div>
-            )}
-            <iframe
-              src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=0&rel=0"
-              title="Hookah+ Demo"
-              className="w-full h-full"
-              onLoad={() => setVideoLoaded(true)}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          </div>
-        </div>
-      </div>
+
 
       {/* Feature Grid */}
       <div className="px-4 py-16">

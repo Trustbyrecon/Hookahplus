@@ -37,6 +37,7 @@ export default function FireSessionDashboard() {
     boh: ['Chef Mike', 'Chef Sarah', 'Chef Alex'],
     foh: ['Sarah Chen', 'Alex Johnson', 'Mike Rodriguez']
   });
+  const [sessionTimers, setSessionTimers] = useState<Record<string, {remaining: number, total: number, isActive: boolean}>>({});
 
   // Generate demo sessions with 10 popular lounge personas
   useEffect(() => {
@@ -215,6 +216,21 @@ export default function FireSessionDashboard() {
       }
     ];
     setSessions(demoSessions);
+    
+    // Initialize timers for active sessions
+    const initialTimers: Record<string, {remaining: number, total: number, isActive: boolean}> = {};
+    demoSessions.forEach(session => {
+      if (session.status === 'ACTIVE' && session.sessionStartTime) {
+        const elapsed = Date.now() - session.sessionStartTime;
+        const total = session.sessionDuration || 3600000; // Default 1 hour
+        initialTimers[session.id] = {
+          remaining: Math.max(0, total - elapsed),
+          total: total,
+          isActive: true
+        };
+      }
+    });
+    setSessionTimers(initialTimers);
   }, []);
 
   // Auto-create session from Pre-Order Station
@@ -223,6 +239,29 @@ export default function FireSessionDashboard() {
     if (urlParams.get('newSession') === 'true') {
       createNewSession();
     }
+  }, []);
+
+  // Timer countdown effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSessionTimers(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(sessionId => {
+          if (updated[sessionId].isActive && updated[sessionId].remaining > 0) {
+            updated[sessionId].remaining -= 1000;
+            if (updated[sessionId].remaining <= 0) {
+              updated[sessionId].remaining = 0;
+              updated[sessionId].isActive = false;
+              // Auto-extend session or mark for cleanup
+              alert(`Session ${sessionId} time expired! Consider extending or closing.`);
+            }
+          }
+        });
+        return updated;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const getStatusColor = (status: string) => {
@@ -437,6 +476,58 @@ export default function FireSessionDashboard() {
       }
       return session;
     }));
+  };
+
+  const startSessionTimer = (sessionId: string, duration: number) => {
+    setSessionTimers(prev => ({
+      ...prev,
+      [sessionId]: {
+        remaining: duration,
+        total: duration,
+        isActive: true
+      }
+    }));
+    
+    setSessions(prev => prev.map(session => {
+      if (session.id === sessionId) {
+        return {
+          ...session,
+          status: 'ACTIVE',
+          sessionStartTime: Date.now(),
+          sessionDuration: duration,
+          notes: `${session.notes}\n[${new Date().toLocaleTimeString()}] Session timer started: ${Math.floor(duration / 60000)} minutes`
+        };
+      }
+      return session;
+    }));
+  };
+
+  const extendSessionTimer = (sessionId: string, additionalTime: number) => {
+    setSessionTimers(prev => ({
+      ...prev,
+      [sessionId]: {
+        ...prev[sessionId],
+        remaining: prev[sessionId].remaining + additionalTime,
+        total: prev[sessionId].total + additionalTime
+      }
+    }));
+    
+    setSessions(prev => prev.map(session => {
+      if (session.id === sessionId) {
+        return {
+          ...session,
+          sessionDuration: session.sessionDuration + additionalTime,
+          notes: `${session.notes}\n[${new Date().toLocaleTimeString()}] Session extended by ${Math.floor(additionalTime / 60000)} minutes`
+        };
+      }
+      return session;
+    }));
+  };
+
+  const formatTime = (ms: number) => {
+    const minutes = Math.floor(ms / 60000);
+    const seconds = Math.floor((ms % 60000) / 1000);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
   const activeSessions = sessions.filter(s => s.status === 'ACTIVE');
@@ -663,6 +754,63 @@ export default function FireSessionDashboard() {
                   </div>
                 </div>
 
+                {/* Session Timer */}
+                {sessionTimers[session.id] && (
+                  <div className="mb-4 p-4 bg-zinc-800 rounded-lg border border-zinc-700">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-zinc-400">Session Timer:</span>
+                      <div className={`text-lg font-bold ${
+                        sessionTimers[session.id].remaining < 300000 ? 'text-red-400' : // Less than 5 min
+                        sessionTimers[session.id].remaining < 900000 ? 'text-yellow-400' : // Less than 15 min
+                        'text-green-400'
+                      }`}>
+                        {formatTime(sessionTimers[session.id].remaining)}
+                      </div>
+                    </div>
+                    <div className="w-full bg-zinc-700 rounded-full h-2 mb-3">
+                      <div 
+                        className={`h-2 rounded-full transition-all duration-1000 ${
+                          sessionTimers[session.id].remaining < 300000 ? 'bg-red-400' :
+                          sessionTimers[session.id].remaining < 900000 ? 'bg-yellow-400' :
+                          'bg-green-400'
+                        }`}
+                        style={{ 
+                          width: `${(sessionTimers[session.id].remaining / sessionTimers[session.id].total) * 100}%` 
+                        }}
+                      ></div>
+                    </div>
+                    <div className="flex gap-2">
+                      {!sessionTimers[session.id].isActive && (
+                        <button
+                          onClick={() => startSessionTimer(session.id, 1800000)} // 30 minutes
+                          className="px-3 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded"
+                        >
+                          ⏱️ Start 30min
+                        </button>
+                      )}
+                      <button
+                        onClick={() => extendSessionTimer(session.id, 900000)} // 15 minutes
+                        className="px-3 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded"
+                      >
+                        ⏰ +15min
+                      </button>
+                      <button
+                        onClick={() => extendSessionTimer(session.id, 1800000)} // 30 minutes
+                        className="px-3 py-1 text-xs bg-purple-600 hover:bg-purple-700 text-white rounded"
+                      >
+                        ⏰ +30min
+                      </button>
+                      <button
+                        onClick={() => extendSessionTimer(session.id, 3600000)} // 1 hour
+                        className="px-3 py-1 text-xs bg-orange-600 hover:bg-orange-700 text-white rounded"
+                      >
+                        ⏰ +1hr
+                      </button>
+                    </div>
+                  </div>
+                )}
+                </div>
+
                                         <div className="flex gap-2 flex-wrap">
                           {session.status === 'PAID_CONFIRMED' && (
                             <button
@@ -800,6 +948,63 @@ export default function FireSessionDashboard() {
                       {session.status === 'READY_FOR_DELIVERY' ? 'Ready for Pickup' : 'In Progress'}
                     </div>
                   </div>
+                </div>
+
+                {/* Session Timer */}
+                {sessionTimers[session.id] && (
+                  <div className="mb-4 p-4 bg-zinc-800 rounded-lg border border-zinc-700">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-zinc-400">Session Timer:</span>
+                      <div className={`text-lg font-bold ${
+                        sessionTimers[session.id].remaining < 300000 ? 'text-red-400' : // Less than 5 min
+                        sessionTimers[session.id].remaining < 900000 ? 'text-yellow-400' : // Less than 15 min
+                        'text-green-400'
+                      }`}>
+                        {formatTime(sessionTimers[session.id].remaining)}
+                      </div>
+                    </div>
+                    <div className="w-full bg-zinc-700 rounded-full h-2 mb-3">
+                      <div 
+                        className={`h-2 rounded-full transition-all duration-1000 ${
+                          sessionTimers[session.id].remaining < 300000 ? 'bg-red-400' :
+                          sessionTimers[session.id].remaining < 900000 ? 'bg-yellow-400' :
+                          'bg-green-400'
+                        }`}
+                        style={{ 
+                          width: `${(sessionTimers[session.id].remaining / sessionTimers[session.id].total) * 100}%` 
+                        }}
+                      ></div>
+                    </div>
+                    <div className="flex gap-2">
+                      {!sessionTimers[session.id].isActive && (
+                        <button
+                          onClick={() => startSessionTimer(session.id, 1800000)} // 30 minutes
+                          className="px-3 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded"
+                        >
+                          ⏱️ Start 30min
+                        </button>
+                      )}
+                      <button
+                        onClick={() => extendSessionTimer(session.id, 900000)} // 15 minutes
+                        className="px-3 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded"
+                      >
+                        ⏰ +15min
+                      </button>
+                      <button
+                        onClick={() => extendSessionTimer(session.id, 1800000)} // 30 minutes
+                        className="px-3 py-1 text-xs bg-purple-600 hover:bg-purple-700 text-white rounded"
+                      >
+                        ⏰ +30min
+                      </button>
+                      <button
+                        onClick={() => extendSessionTimer(session.id, 3600000)} // 1 hour
+                        className="px-3 py-1 text-xs bg-orange-600 hover:bg-orange-700 text-white rounded"
+                      >
+                        ⏰ +1hr
+                      </button>
+                    </div>
+                  </div>
+                )}
                 </div>
 
                                         <div className="flex gap-2 flex-wrap">
