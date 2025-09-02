@@ -167,6 +167,11 @@ export default function POSWaitlist() {
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-teal-300 mb-2">📋 POS Waitlist</h1>
           <p className="text-zinc-400">Manage the waitlist for Hookah+ POS system access</p>
+          <div className="mt-4 p-4 bg-purple-900/20 border border-purple-500/50 rounded-lg">
+            <p className="text-purple-300 text-sm">
+              <strong>Business-to-Business:</strong> Track lounge owners and businesses waiting to get access to the Hookah+ POS system.
+            </p>
+          </div>
         </div>
 
         {/* Quick Stats */}

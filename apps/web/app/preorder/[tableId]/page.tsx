@@ -161,8 +161,23 @@ export default function PreOrderTablePage() {
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 2000));
     setIsSubmitting(false);
-    // Redirect to checkout or show success
-    alert('Order submitted successfully!');
+    
+    // Create session in Fire Session Dashboard
+    const sessionData = {
+      tableId: tableId,
+      customerName: 'John Smith', // In real app, this would come from form
+      flavor: selectedItems.map(item => item.name).join(' + '),
+      amount: getTotalPrice(),
+      status: 'PAID_CONFIRMED',
+      currentStage: 'BOH',
+      notes: `Pre-order from T-${tableId}: ${selectedItems.map(item => item.name).join(', ')}`
+    };
+    
+    // In a real app, this would call an API to create the session
+    console.log('Creating Fire Session:', sessionData);
+    
+    // Redirect to Fire Session Dashboard
+    window.location.href = `/fire-session-dashboard?newSession=true&tableId=${tableId}`;
   };
 
   const getTableStatusColor = (status: string) => {
@@ -183,6 +198,11 @@ export default function PreOrderTablePage() {
             <div>
               <h1 className="text-4xl font-bold text-teal-300 mb-2">🍃 Pre-Order Station</h1>
               <p className="text-zinc-400">Table {tableId} • Pre-order your favorites</p>
+              <div className="mt-2 p-3 bg-green-900/20 border border-green-500/50 rounded-lg">
+                <p className="text-green-300 text-sm">
+                  <strong>Customer Interface:</strong> Browse menu, select items, and start your Fire Session
+                </p>
+              </div>
             </div>
             <div className="text-right">
               <div className="text-sm text-zinc-400">Table Status</div>
@@ -320,7 +340,7 @@ export default function PreOrderTablePage() {
                       disabled={isSubmitting || selectedItems.length === 0}
                       className="w-full bg-teal-600 hover:bg-teal-700 disabled:bg-zinc-600 text-white py-3 rounded-lg font-medium transition-colors"
                     >
-                      {isSubmitting ? 'Submitting...' : 'Submit Pre-Order'}
+                      {isSubmitting ? 'Creating Fire Session...' : '🔥 Start Fire Session'}
                     </button>
                   </div>
                 </div>

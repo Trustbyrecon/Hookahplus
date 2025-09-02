@@ -32,13 +32,13 @@ export default function FireSessionDashboard() {
   const [currentUser, setCurrentUser] = useState({ role: 'admin', id: 'user-1' });
   const [isCreatingSession, setIsCreatingSession] = useState(false);
 
-  // Generate demo sessions
+  // Generate demo sessions with 10 popular lounge personas
   useEffect(() => {
     const demoSessions: FireSession[] = [
       {
         id: 'session-1',
         tableId: 'T-001',
-        customerName: 'Alex Johnson',
+        customerName: 'Alex "The Regular" Johnson',
         flavor: 'Blue Mist + Mint',
         amount: 3000,
         status: 'ACTIVE',
@@ -50,13 +50,13 @@ export default function FireSessionDashboard() {
         sessionDuration: 1800000,
         coalStatus: 'needs_refill',
         refillStatus: 'requested',
-        notes: 'Customer requested extra mint',
+        notes: 'VIP customer - always orders Blue Mist with extra mint',
         edgeCase: null
       },
       {
         id: 'session-2',
         tableId: 'T-003',
-        customerName: 'Emily Davis',
+        customerName: 'Emily "Double Apple Queen" Davis',
         flavor: 'Double Apple',
         amount: 3200,
         status: 'READY_FOR_DELIVERY',
@@ -67,13 +67,13 @@ export default function FireSessionDashboard() {
         sessionDuration: 0,
         coalStatus: 'active',
         refillStatus: 'none',
-        notes: 'Ready for pickup',
+        notes: 'Classic Double Apple lover - knows her stuff',
         edgeCase: null
       },
       {
         id: 'session-3',
         tableId: 'Bar-1',
-        customerName: 'Mike Rodriguez',
+        customerName: 'Mike "Peach Wave" Rodriguez',
         flavor: 'Peach Wave',
         amount: 2800,
         status: 'STAFF_HOLD',
@@ -84,11 +84,139 @@ export default function FireSessionDashboard() {
         sessionDuration: 0,
         coalStatus: 'active',
         refillStatus: 'none',
-        notes: 'Waiting for flavor restock',
+        notes: 'Waiting for Peach Wave restock - popular flavor',
         edgeCase: 'STOCK_BLOCKED'
+      },
+      {
+        id: 'session-4',
+        tableId: 'T-005',
+        customerName: 'Sarah "Mint Fresh" Chen',
+        flavor: 'Mint Fresh + Ice',
+        amount: 3100,
+        status: 'PREP_IN_PROGRESS',
+        currentStage: 'BOH',
+        assignedStaff: { boh: 'Chef Alex' },
+        createdAt: Date.now() - 450000,
+        updatedAt: Date.now(),
+        sessionDuration: 0,
+        coalStatus: 'active',
+        refillStatus: 'none',
+        notes: 'Loves the cooling effect - always requests extra ice',
+        edgeCase: null
+      },
+      {
+        id: 'session-5',
+        tableId: 'T-007',
+        customerName: 'David "Strawberry Fields" Lee',
+        flavor: 'Strawberry + Vanilla',
+        amount: 3300,
+        status: 'HEAT_UP',
+        currentStage: 'BOH',
+        assignedStaff: { boh: 'Chef Mike' },
+        createdAt: Date.now() - 300000,
+        updatedAt: Date.now(),
+        sessionDuration: 0,
+        coalStatus: 'active',
+        refillStatus: 'none',
+        notes: 'Sweet tooth - loves dessert flavors',
+        edgeCase: null
+      },
+      {
+        id: 'session-6',
+        tableId: 'T-009',
+        customerName: 'Maria "Grape Escape" Garcia',
+        flavor: 'Grape + Lemon',
+        amount: 2900,
+        status: 'OUT_FOR_DELIVERY',
+        currentStage: 'FOH',
+        assignedStaff: { boh: 'Chef Sarah', foh: 'Alex Johnson' },
+        createdAt: Date.now() - 180000,
+        updatedAt: Date.now(),
+        sessionDuration: 0,
+        coalStatus: 'active',
+        refillStatus: 'none',
+        notes: 'Fruity combination expert - always experimenting',
+        edgeCase: null
+      },
+      {
+        id: 'session-7',
+        tableId: 'T-011',
+        customerName: 'James "Watermelon King" Wilson',
+        flavor: 'Watermelon + Ice',
+        amount: 3000,
+        status: 'DELIVERED',
+        currentStage: 'FOH',
+        assignedStaff: { foh: 'Sarah Chen' },
+        createdAt: Date.now() - 120000,
+        updatedAt: Date.now(),
+        sessionDuration: 0,
+        coalStatus: 'active',
+        refillStatus: 'none',
+        notes: 'Summer favorite - refreshing and light',
+        edgeCase: null
+      },
+      {
+        id: 'session-8',
+        tableId: 'T-013',
+        customerName: 'Lisa "Rose Garden" Thompson',
+        flavor: 'Rose + Mint',
+        amount: 3200,
+        status: 'PAID_CONFIRMED',
+        currentStage: 'BOH',
+        assignedStaff: {},
+        createdAt: Date.now() - 60000,
+        updatedAt: Date.now(),
+        sessionDuration: 0,
+        coalStatus: 'active',
+        refillStatus: 'none',
+        notes: 'Elegant taste - loves floral combinations',
+        edgeCase: null
+      },
+      {
+        id: 'session-9',
+        tableId: 'T-015',
+        customerName: 'Carlos "Mango Tango" Martinez',
+        flavor: 'Mango + Peach',
+        amount: 3100,
+        status: 'NEW',
+        currentStage: 'BOH',
+        assignedStaff: {},
+        createdAt: Date.now() - 30000,
+        updatedAt: Date.now(),
+        sessionDuration: 0,
+        coalStatus: 'active',
+        refillStatus: 'none',
+        notes: 'Tropical paradise lover - exotic flavors only',
+        edgeCase: null
+      },
+      {
+        id: 'session-10',
+        tableId: 'T-017',
+        customerName: 'Amanda "Vanilla Dreams" Brown',
+        flavor: 'Vanilla + Caramel',
+        amount: 3000,
+        status: 'CLOSE_PENDING',
+        currentStage: 'CUSTOMER',
+        assignedStaff: { foh: 'Mike Rodriguez' },
+        createdAt: Date.now() - 7200000,
+        updatedAt: Date.now(),
+        sessionStartTime: Date.now() - 7200000,
+        sessionDuration: 7200000,
+        coalStatus: 'burnt_out',
+        refillStatus: 'delivered',
+        notes: 'Long session - loves the creamy vanilla caramel blend',
+        edgeCase: null
       }
     ];
     setSessions(demoSessions);
+  }, []);
+
+  // Auto-create session from Pre-Order Station
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('newSession') === 'true') {
+      createNewSession();
+    }
   }, []);
 
   const getStatusColor = (status: string) => {
@@ -237,13 +365,18 @@ export default function FireSessionDashboard() {
   };
 
   const createNewSession = () => {
+    // Check for URL parameters from Pre-Order Station
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromPreOrder = urlParams.get('newSession') === 'true';
+    const tableId = urlParams.get('tableId') || `T-${Math.floor(Math.random() * 20) + 1}`;
+    
     const newSession: FireSession = {
       id: `session-${Date.now()}`,
-      tableId: `T-${Math.floor(Math.random() * 20) + 1}`,
-      customerName: `Customer ${Math.floor(Math.random() * 100) + 1}`,
-      flavor: ['Blue Mist', 'Double Apple', 'Peach Wave', 'Mint Fresh'][Math.floor(Math.random() * 4)],
-      amount: 2500 + Math.floor(Math.random() * 1000),
-      status: 'NEW',
+      tableId: tableId,
+      customerName: fromPreOrder ? 'John Smith' : `Customer ${Math.floor(Math.random() * 100) + 1}`,
+      flavor: fromPreOrder ? 'Blue Mist + Mint' : ['Blue Mist', 'Double Apple', 'Peach Wave', 'Mint Fresh'][Math.floor(Math.random() * 4)],
+      amount: fromPreOrder ? 3200 : 2500 + Math.floor(Math.random() * 1000),
+      status: fromPreOrder ? 'PAID_CONFIRMED' : 'NEW',
       currentStage: 'BOH',
       assignedStaff: {},
       createdAt: Date.now(),
@@ -251,12 +384,17 @@ export default function FireSessionDashboard() {
       sessionDuration: 0,
       coalStatus: 'active',
       refillStatus: 'none',
-      notes: 'New session created',
+      notes: fromPreOrder ? `Pre-order from ${tableId}: Blue Mist + Mint` : 'New session created',
       edgeCase: null
     };
 
     setSessions(prev => [newSession, ...prev]);
     setIsCreatingSession(false);
+    
+    // Clear URL parameters
+    if (fromPreOrder) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
   };
 
   const activeSessions = sessions.filter(s => s.status === 'ACTIVE');

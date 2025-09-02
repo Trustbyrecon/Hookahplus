@@ -172,8 +172,13 @@ export default function StartPreorders() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-teal-300 mb-2">🚀 Start Preorders</h1>
-          <p className="text-zinc-400">Launch and manage pre-order campaigns with real-time tracking</p>
+          <h1 className="text-4xl font-bold text-teal-300 mb-2">🚀 Campaign Pre-Orders</h1>
+          <p className="text-zinc-400">Launch and manage customer pre-order campaigns with real-time tracking</p>
+          <div className="mt-4 p-4 bg-blue-900/20 border border-blue-500/50 rounded-lg">
+            <p className="text-blue-300 text-sm">
+              <strong>Business-to-Customer:</strong> Create promotional campaigns for customers to pre-order hookah sessions, drinks, and food items.
+            </p>
+          </div>
         </div>
 
         {/* Quick Stats */}
