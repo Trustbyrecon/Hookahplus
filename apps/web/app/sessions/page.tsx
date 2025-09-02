@@ -24,7 +24,7 @@ export default function SessionsDashboard() {
   const [activeTab, setActiveTab] = useState<'active' | 'completed' | 'analytics'>('active');
   const [refillTimers, setRefillTimers] = useState<Record<string, number>>({});
 
-  // Generate demo sessions
+  // Generate demo sessions with 10 popular lounge personas (unified with Fire Session Dashboard)
   useEffect(() => {
     const demoSessions: Session[] = [
       {
@@ -33,11 +33,11 @@ export default function SessionsDashboard() {
         flavor: 'Blue Mist + Mint',
         amount: 3000,
         status: 'active',
-        createdAt: Date.now() - 3600000, // 1 hour ago
-        sessionStartTime: Date.now() - 3600000,
-        sessionDuration: 3600000,
+        createdAt: Date.now() - 3600000,
+        sessionStartTime: Date.now() - 1800000,
+        sessionDuration: 1800000,
         coalStatus: 'needs_refill',
-        customerName: 'Alex Johnson',
+        customerName: 'Alex "The Regular" Johnson',
         tableType: 'table',
         deliveryStatus: 'delivered',
         totalRevenue: 3000
@@ -48,11 +48,11 @@ export default function SessionsDashboard() {
         flavor: 'Double Apple',
         amount: 3200,
         status: 'active',
-        createdAt: Date.now() - 1800000, // 30 minutes ago
-        sessionStartTime: Date.now() - 1800000,
-        sessionDuration: 1800000,
+        createdAt: Date.now() - 900000,
+        sessionStartTime: Date.now() - 900000,
+        sessionDuration: 900000,
         coalStatus: 'active',
-        customerName: 'Sarah Chen',
+        customerName: 'Emily "Double Apple Queen" Davis',
         tableType: 'booth',
         deliveryStatus: 'delivered',
         totalRevenue: 3200
@@ -63,14 +63,119 @@ export default function SessionsDashboard() {
         flavor: 'Peach Wave',
         amount: 2800,
         status: 'active',
-        createdAt: Date.now() - 900000, // 15 minutes ago
-        sessionStartTime: Date.now() - 900000,
-        sessionDuration: 900000,
+        createdAt: Date.now() - 600000,
+        sessionStartTime: Date.now() - 600000,
+        sessionDuration: 600000,
         coalStatus: 'active',
-        customerName: 'Mike Rodriguez',
+        customerName: 'Mike "Peach Wave" Rodriguez',
         tableType: 'bar',
         deliveryStatus: 'ready',
         totalRevenue: 2800
+      },
+      {
+        id: 'session-4',
+        tableId: 'T-005',
+        flavor: 'Mint Fresh + Ice',
+        amount: 3100,
+        status: 'active',
+        createdAt: Date.now() - 450000,
+        sessionStartTime: Date.now() - 450000,
+        sessionDuration: 450000,
+        coalStatus: 'active',
+        customerName: 'Sarah "Mint Fresh" Chen',
+        tableType: 'table',
+        deliveryStatus: 'delivered',
+        totalRevenue: 3100
+      },
+      {
+        id: 'session-5',
+        tableId: 'T-007',
+        flavor: 'Strawberry + Vanilla',
+        amount: 3300,
+        status: 'active',
+        createdAt: Date.now() - 300000,
+        sessionStartTime: Date.now() - 300000,
+        sessionDuration: 300000,
+        coalStatus: 'active',
+        customerName: 'David "Strawberry Fields" Lee',
+        tableType: 'booth',
+        deliveryStatus: 'delivered',
+        totalRevenue: 3300
+      },
+      {
+        id: 'session-6',
+        tableId: 'T-009',
+        flavor: 'Grape + Lemon',
+        amount: 2900,
+        status: 'active',
+        createdAt: Date.now() - 180000,
+        sessionStartTime: Date.now() - 180000,
+        sessionDuration: 180000,
+        coalStatus: 'active',
+        customerName: 'Maria "Grape Escape" Garcia',
+        tableType: 'table',
+        deliveryStatus: 'delivered',
+        totalRevenue: 2900
+      },
+      {
+        id: 'session-7',
+        tableId: 'T-011',
+        flavor: 'Watermelon + Ice',
+        amount: 3000,
+        status: 'completed',
+        createdAt: Date.now() - 120000,
+        sessionStartTime: Date.now() - 120000,
+        sessionDuration: 120000,
+        coalStatus: 'burnt_out',
+        customerName: 'James "Watermelon King" Wilson',
+        tableType: 'booth',
+        deliveryStatus: 'delivered',
+        totalRevenue: 3000
+      },
+      {
+        id: 'session-8',
+        tableId: 'T-013',
+        flavor: 'Rose + Mint',
+        amount: 3200,
+        status: 'completed',
+        createdAt: Date.now() - 60000,
+        sessionStartTime: Date.now() - 60000,
+        sessionDuration: 60000,
+        coalStatus: 'burnt_out',
+        customerName: 'Lisa "Rose Garden" Thompson',
+        tableType: 'table',
+        deliveryStatus: 'delivered',
+        totalRevenue: 3200
+      },
+      {
+        id: 'session-9',
+        tableId: 'T-015',
+        flavor: 'Mango + Peach',
+        amount: 3100,
+        status: 'completed',
+        createdAt: Date.now() - 30000,
+        sessionStartTime: Date.now() - 30000,
+        sessionDuration: 30000,
+        coalStatus: 'burnt_out',
+        customerName: 'Carlos "Mango Tango" Martinez',
+        tableType: 'booth',
+        deliveryStatus: 'delivered',
+        totalRevenue: 3100
+      },
+      {
+        id: 'session-10',
+        tableId: 'T-017',
+        flavor: 'Vanilla + Caramel',
+        amount: 3000,
+        status: 'completed',
+        createdAt: Date.now() - 7200000,
+        sessionStartTime: Date.now() - 7200000,
+        sessionDuration: 7200000,
+        coalStatus: 'burnt_out',
+        customerName: 'Amanda "Vanilla Dreams" Brown',
+        tableType: 'sectional',
+        deliveryStatus: 'delivered',
+        totalRevenue: 3000
       }
     ];
     setSessions(demoSessions);

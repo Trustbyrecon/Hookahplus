@@ -29,6 +29,11 @@ export default function StaffPanel() {
   const [tables, setTables] = useState<TableStatus[]>([]);
   const [activeTab, setActiveTab] = useState<'overview' | 'staff' | 'tables' | 'orders'>('overview');
   const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
+  const [isAssigningTable, setIsAssigningTable] = useState<string | null>(null);
+  const [isEditingStaff, setIsEditingStaff] = useState<string | null>(null);
+  const [isAddingStaff, setIsAddingStaff] = useState(false);
+  const [newStaffName, setNewStaffName] = useState('');
+  const [newStaffRole, setNewStaffRole] = useState<'manager' | 'boh' | 'foh' | 'host'>('foh');
 
   // Generate demo data
   useEffect(() => {
@@ -149,16 +154,108 @@ export default function StaffPanel() {
       if (member.id === staffId) {
         switch (action) {
           case 'start_break':
-            return { ...member, status: 'break' as const };
+            return { ...member, status: 'break' as const, lastActivity: 'Just now' };
           case 'end_break':
-            return { ...member, status: 'active' as const };
+            return { ...member, status: 'active' as const, lastActivity: 'Just now' };
           case 'assign_table':
-            return { ...member, currentTable: 'T-001' };
+            setIsAssigningTable(staffId);
+            return member;
+          case 'edit':
+            setIsEditingStaff(staffId);
+            return member;
           default:
             return member;
         }
       }
       return member;
+    }));
+  };
+
+  const assignTableToStaff = (staffId: string, tableId: string) => {
+    setStaff(prev => prev.map(member => {
+      if (member.id === staffId) {
+        return { 
+          ...member, 
+          currentTable: tableId,
+          lastActivity: 'Just now'
+        };
+      }
+      return member;
+    }));
+    
+    setTables(prev => prev.map(table => {
+      if (table.id === tableId) {
+        return { 
+          ...table, 
+          status: 'occupied' as const,
+          assignedStaff: staff.find(s => s.id === staffId)?.name
+        };
+      }
+      return table;
+    }));
+    
+    setIsAssigningTable(null);
+  };
+
+  const addNewStaff = () => {
+    if (!newStaffName.trim()) return;
+    
+    const newStaff: StaffMember = {
+      id: `staff-${Date.now()}`,
+      name: newStaffName,
+      role: newStaffRole,
+      status: 'active',
+      ordersHandled: 0,
+      lastActivity: 'Just now',
+      permissions: newStaffRole === 'manager' ? ['all', 'override', 'financial', 'staff_management'] : ['basic']
+    };
+    
+    setStaff(prev => [...prev, newStaff]);
+    setNewStaffName('');
+    setNewStaffRole('foh');
+    setIsAddingStaff(false);
+  };
+
+  const generateReport = () => {
+    const reportData = {
+      totalStaff: staff.length,
+      activeStaff: staff.filter(s => s.status === 'active').length,
+      totalTables: tables.length,
+      occupiedTables: tables.filter(t => t.status === 'occupied').length,
+      totalOrders: staff.reduce((sum, s) => sum + s.ordersHandled, 0)
+    };
+    
+    alert(`Staff Report Generated!\n\nTotal Staff: ${reportData.totalStaff}\nActive Staff: ${reportData.activeStaff}\nTotal Tables: ${reportData.totalTables}\nOccupied Tables: ${reportData.occupiedTables}\nTotal Orders: ${reportData.totalOrders}`);
+  };
+
+  const handleTableAction = (tableId: string, action: string) => {
+    setTables(prev => prev.map(table => {
+      if (table.id === tableId) {
+        switch (action) {
+          case 'seat_customer':
+            return { 
+              ...table, 
+              status: 'occupied' as const,
+              customerName: 'New Customer',
+              estimatedTime: 120
+            };
+          case 'view_session':
+            // Redirect to Fire Session Dashboard
+            window.open('/fire-session-dashboard', '_blank');
+            return table;
+          case 'mark_clean':
+            return { 
+              ...table, 
+              status: 'available' as const,
+              customerName: undefined,
+              assignedStaff: undefined,
+              estimatedTime: undefined
+            };
+          default:
+            return table;
+        }
+      }
+      return table;
     }));
   };
 
@@ -202,10 +299,16 @@ export default function StaffPanel() {
         {/* Action Bar */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex gap-4">
-            <button className="px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-medium transition-colors">
+            <button 
+              onClick={() => setIsAddingStaff(true)}
+              className="px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-medium transition-colors"
+            >
               ➕ Add Staff
             </button>
-            <button className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
+            <button 
+              onClick={generateReport}
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+            >
               📊 Generate Report
             </button>
           </div>
@@ -391,7 +494,10 @@ export default function StaffPanel() {
                   >
                     🪑 Assign Table
                   </button>
-                  <button className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg transition-colors">
+                  <button 
+                    onClick={() => handleStaffAction(member.id, 'edit')}
+                    className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg transition-colors"
+                  >
                     ✏️ Edit
                   </button>
                 </div>
@@ -442,17 +548,26 @@ export default function StaffPanel() {
 
                   <div className="flex gap-2">
                     {table.status === 'available' && (
-                      <button className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg transition-colors text-sm">
+                      <button 
+                        onClick={() => handleTableAction(table.id, 'seat_customer')}
+                        className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg transition-colors text-sm"
+                      >
                         🪑 Seat Customer
                       </button>
                     )}
                     {table.status === 'occupied' && (
-                      <button className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg transition-colors text-sm">
+                      <button 
+                        onClick={() => handleTableAction(table.id, 'view_session')}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg transition-colors text-sm"
+                      >
                         📋 View Session
                       </button>
                     )}
                     {table.status === 'cleaning' && (
-                      <button className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg transition-colors text-sm">
+                      <button 
+                        onClick={() => handleTableAction(table.id, 'mark_clean')}
+                        className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg transition-colors text-sm"
+                      >
                         ✅ Mark Clean
                       </button>
                     )}
@@ -495,6 +610,129 @@ export default function StaffPanel() {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Assign Table Modal */}
+        {isAssigningTable && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-6 max-w-md w-full mx-4">
+              <h3 className="text-xl font-semibold text-teal-300 mb-4">Assign Table</h3>
+              <p className="text-zinc-400 mb-4">
+                Select a table to assign to {staff.find(s => s.id === isAssigningTable)?.name}
+              </p>
+              <div className="space-y-2 mb-6">
+                {tables.filter(t => t.status === 'available').map(table => (
+                  <button
+                    key={table.id}
+                    onClick={() => assignTableToStaff(isAssigningTable, table.id)}
+                    className="w-full p-3 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-left transition-colors"
+                  >
+                    <div className="font-medium text-white">Table {table.number}</div>
+                    <div className="text-sm text-zinc-400">Available</div>
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setIsAssigningTable(null)}
+                className="w-full bg-zinc-700 hover:bg-zinc-600 text-white py-2 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Staff Modal */}
+        {isEditingStaff && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-6 max-w-md w-full mx-4">
+              <h3 className="text-xl font-semibold text-teal-300 mb-4">Edit Staff</h3>
+              <p className="text-zinc-400 mb-4">
+                Edit details for {staff.find(s => s.id === isEditingStaff)?.name}
+              </p>
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="block text-sm text-zinc-400 mb-2">Role</label>
+                  <select className="w-full p-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white">
+                    <option value="manager">Manager</option>
+                    <option value="boh">Back of House</option>
+                    <option value="foh">Front of House</option>
+                    <option value="host">Host</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm text-zinc-400 mb-2">Status</label>
+                  <select className="w-full p-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white">
+                    <option value="active">Active</option>
+                    <option value="break">On Break</option>
+                    <option value="off">Off Shift</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setIsEditingStaff(null)}
+                  className="flex-1 bg-teal-600 hover:bg-teal-700 text-white py-2 rounded-lg transition-colors"
+                >
+                  Save Changes
+                </button>
+                <button
+                  onClick={() => setIsEditingStaff(null)}
+                  className="flex-1 bg-zinc-700 hover:bg-zinc-600 text-white py-2 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Add Staff Modal */}
+        {isAddingStaff && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-6 max-w-md w-full mx-4">
+              <h3 className="text-xl font-semibold text-teal-300 mb-4">Add New Staff</h3>
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="block text-sm text-zinc-400 mb-2">Name</label>
+                  <input
+                    type="text"
+                    value={newStaffName}
+                    onChange={(e) => setNewStaffName(e.target.value)}
+                    placeholder="Enter staff name"
+                    className="w-full p-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-zinc-400 mb-2">Role</label>
+                  <select
+                    value={newStaffRole}
+                    onChange={(e) => setNewStaffRole(e.target.value as any)}
+                    className="w-full p-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white"
+                  >
+                    <option value="manager">Manager</option>
+                    <option value="boh">Back of House</option>
+                    <option value="foh">Front of House</option>
+                    <option value="host">Host</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={addNewStaff}
+                  className="flex-1 bg-teal-600 hover:bg-teal-700 text-white py-2 rounded-lg transition-colors"
+                >
+                  Add Staff
+                </button>
+                <button
+                  onClick={() => setIsAddingStaff(false)}
+                  className="flex-1 bg-zinc-700 hover:bg-zinc-600 text-white py-2 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
               </div>
             </div>
           </div>
