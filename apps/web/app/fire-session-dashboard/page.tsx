@@ -119,28 +119,38 @@ export default function FireSessionDashboard() {
     }
   };
 
-  const canPerformAction = (userRole: string, action: string, session: FireSession) => {
-    if (userRole === 'admin') return true;
-    
-    switch (action) {
-      case 'claim_prep':
-        return userRole === 'boh' && session.status === 'PAID_CONFIRMED';
-      case 'heat_up':
-        return userRole === 'boh' && session.status === 'PREP_IN_PROGRESS';
-      case 'ready_for_delivery':
-        return userRole === 'boh' && session.status === 'HEAT_UP';
-      case 'deliver_now':
-        return userRole === 'foh' && session.status === 'READY_FOR_DELIVERY';
-      case 'mark_delivered':
-        return userRole === 'foh' && session.status === 'OUT_FOR_DELIVERY';
-      case 'start_active':
-        return userRole === 'foh' && session.status === 'DELIVERED';
-      case 'handle_edge_case':
-        return true;
-      default:
-        return false;
-    }
-  };
+            const canPerformAction = (userRole: string, action: string, session: FireSession) => {
+            if (userRole === 'admin') return true;
+
+            switch (action) {
+              case 'claim_prep':
+                return userRole === 'boh' && session.status === 'PAID_CONFIRMED';
+              case 'heat_up':
+                return userRole === 'boh' && session.status === 'PREP_IN_PROGRESS';
+              case 'ready_for_delivery':
+                return userRole === 'boh' && session.status === 'HEAT_UP';
+              case 'deliver_now':
+                return userRole === 'foh' && session.status === 'READY_FOR_DELIVERY';
+              case 'mark_delivered':
+                return userRole === 'foh' && session.status === 'OUT_FOR_DELIVERY';
+              case 'start_active':
+                return userRole === 'foh' && session.status === 'DELIVERED';
+              case 'handle_edge_case':
+                return true;
+              case 'restart_prep':
+                return userRole === 'boh' && (session.status === 'STAFF_HOLD' || session.status === 'STOCK_BLOCKED' || session.status === 'REMAKE');
+              case 'resolve_issue':
+                return userRole === 'boh' && session.edgeCase !== null;
+              case 'flag_manager':
+                return userRole === 'boh' && session.edgeCase !== null;
+              case 'process_payment':
+                return userRole === 'foh' && session.status === 'ACTIVE';
+              case 'close_session':
+                return userRole === 'foh' && session.status === 'ACTIVE';
+              default:
+                return false;
+            }
+          };
 
   const handleAction = async (sessionId: string, action: string) => {
     try {
@@ -155,37 +165,60 @@ export default function FireSessionDashboard() {
 
       const updatedSession = { ...session };
       
-      // Apply action logic
-      switch (action) {
-        case 'claim_prep':
-          updatedSession.status = 'PREP_IN_PROGRESS';
-          updatedSession.currentStage = 'BOH';
-          updatedSession.assignedStaff.boh = currentUser.id;
-          break;
-        case 'heat_up':
-          updatedSession.status = 'HEAT_UP';
-          break;
-        case 'ready_for_delivery':
-          updatedSession.status = 'READY_FOR_DELIVERY';
-          updatedSession.currentStage = 'FOH';
-          break;
-        case 'deliver_now':
-          updatedSession.status = 'OUT_FOR_DELIVERY';
-          updatedSession.assignedStaff.foh = currentUser.id;
-          break;
-        case 'mark_delivered':
-          updatedSession.status = 'DELIVERED';
-          break;
-        case 'start_active':
-          updatedSession.status = 'ACTIVE';
-          updatedSession.currentStage = 'CUSTOMER';
-          updatedSession.sessionStartTime = Date.now();
-          break;
-        case 'handle_edge_case':
-          updatedSession.status = 'STAFF_HOLD';
-          updatedSession.edgeCase = 'MANUAL_INTERVENTION';
-          break;
-      }
+                    // Apply action logic
+              switch (action) {
+                case 'claim_prep':
+                  updatedSession.status = 'PREP_IN_PROGRESS';
+                  updatedSession.currentStage = 'BOH';
+                  updatedSession.assignedStaff.boh = currentUser.id;
+                  break;
+                case 'heat_up':
+                  updatedSession.status = 'HEAT_UP';
+                  break;
+                case 'ready_for_delivery':
+                  updatedSession.status = 'READY_FOR_DELIVERY';
+                  updatedSession.currentStage = 'FOH';
+                  break;
+                case 'deliver_now':
+                  updatedSession.status = 'OUT_FOR_DELIVERY';
+                  updatedSession.assignedStaff.foh = currentUser.id;
+                  break;
+                case 'mark_delivered':
+                  updatedSession.status = 'DELIVERED';
+                  break;
+                case 'start_active':
+                  updatedSession.status = 'ACTIVE';
+                  updatedSession.currentStage = 'CUSTOMER';
+                  updatedSession.sessionStartTime = Date.now();
+                  break;
+                case 'handle_edge_case':
+                  updatedSession.status = 'STAFF_HOLD';
+                  updatedSession.edgeCase = 'MANUAL_INTERVENTION';
+                  break;
+                case 'restart_prep':
+                  updatedSession.status = 'PREP_IN_PROGRESS';
+                  updatedSession.currentStage = 'BOH';
+                  updatedSession.edgeCase = null;
+                  updatedSession.notes = `${updatedSession.notes}\n[${new Date().toLocaleTimeString()}] Prep restarted by BOH staff`;
+                  break;
+                case 'resolve_issue':
+                  updatedSession.edgeCase = null;
+                  updatedSession.status = 'PREP_IN_PROGRESS';
+                  updatedSession.notes = `${updatedSession.notes}\n[${new Date().toLocaleTimeString()}] Issue resolved by BOH staff`;
+                  break;
+                case 'flag_manager':
+                  updatedSession.notes = `${updatedSession.notes}\n[${new Date().toLocaleTimeString()}] FLAGGED FOR MANAGER REVIEW - ${updatedSession.edgeCase}`;
+                  break;
+                case 'process_payment':
+                  // Redirect to Stripe checkout
+                  window.open(`/checkout?sessionId=${sessionId}&amount=${updatedSession.amount}`, '_blank');
+                  break;
+                case 'close_session':
+                  updatedSession.status = 'CLOSED';
+                  updatedSession.currentStage = 'BOH';
+                  updatedSession.notes = `${updatedSession.notes}\n[${new Date().toLocaleTimeString()}] Session closed by FOH staff`;
+                  break;
+              }
 
       updatedSession.updatedAt = Date.now();
       
@@ -410,38 +443,62 @@ export default function FireSessionDashboard() {
                   </div>
                 </div>
 
-                <div className="flex gap-2">
-                  {session.status === 'PAID_CONFIRMED' && (
-                    <button
-                      onClick={() => handleAction(session.id, 'claim_prep')}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-                    >
-                      🚀 Claim Prep
-                    </button>
-                  )}
-                  {session.status === 'PREP_IN_PROGRESS' && (
-                    <button
-                      onClick={() => handleAction(session.id, 'heat_up')}
-                      className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition-colors"
-                    >
-                      🔥 Heat Up
-                    </button>
-                  )}
-                  {session.status === 'HEAT_UP' && (
-                    <button
-                      onClick={() => handleAction(session.id, 'ready_for_delivery')}
-                      className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
-                    >
-                      ✅ Ready for Delivery
-                    </button>
-                  )}
-                  <button
-                    onClick={() => handleAction(session.id, 'handle_edge_case')}
-                    className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg transition-colors"
-                  >
-                    ⚠️ Hold Session
-                  </button>
-                </div>
+                                        <div className="flex gap-2 flex-wrap">
+                          {session.status === 'PAID_CONFIRMED' && (
+                            <button
+                              onClick={() => handleAction(session.id, 'claim_prep')}
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                            >
+                              🚀 Claim Prep
+                            </button>
+                          )}
+                          {session.status === 'PREP_IN_PROGRESS' && (
+                            <button
+                              onClick={() => handleAction(session.id, 'heat_up')}
+                              className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition-colors"
+                            >
+                              🔥 Heat Up
+                            </button>
+                          )}
+                          {session.status === 'HEAT_UP' && (
+                            <button
+                              onClick={() => handleAction(session.id, 'ready_for_delivery')}
+                              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
+                            >
+                              ✅ Ready for Delivery
+                            </button>
+                          )}
+                          {canPerformAction(currentUser.role, 'restart_prep', session) && (
+                            <button
+                              onClick={() => handleAction(session.id, 'restart_prep')}
+                              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
+                            >
+                              🔄 Restart Prep
+                            </button>
+                          )}
+                          {canPerformAction(currentUser.role, 'resolve_issue', session) && (
+                            <button
+                              onClick={() => handleAction(session.id, 'resolve_issue')}
+                              className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg transition-colors"
+                            >
+                              ✅ Resolve Issue
+                            </button>
+                          )}
+                          {canPerformAction(currentUser.role, 'flag_manager', session) && (
+                            <button
+                              onClick={() => handleAction(session.id, 'flag_manager')}
+                              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
+                            >
+                              🚨 Flag Manager
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleAction(session.id, 'handle_edge_case')}
+                            className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg transition-colors"
+                          >
+                            ⚠️ Hold Session
+                          </button>
+                        </div>
               </div>
             ))}
           </div>
@@ -485,32 +542,48 @@ export default function FireSessionDashboard() {
                   </div>
                 </div>
 
-                <div className="flex gap-2">
-                  {session.status === 'READY_FOR_DELIVERY' && (
-                    <button
-                      onClick={() => handleAction(session.id, 'deliver_now')}
-                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
-                    >
-                      🚚 Pick Up & Deliver
-                    </button>
-                  )}
-                  {session.status === 'OUT_FOR_DELIVERY' && (
-                    <button
-                      onClick={() => handleAction(session.id, 'mark_delivered')}
-                      className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg transition-colors"
-                    >
-                      ✅ Mark Delivered
-                    </button>
-                  )}
-                  {session.status === 'DELIVERED' && (
-                    <button
-                      onClick={() => handleAction(session.id, 'start_active')}
-                      className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
-                    >
-                      🎯 Start Active Session
-                    </button>
-                  )}
-                </div>
+                                        <div className="flex gap-2 flex-wrap">
+                          {session.status === 'READY_FOR_DELIVERY' && (
+                            <button
+                              onClick={() => handleAction(session.id, 'deliver_now')}
+                              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
+                            >
+                              🚚 Pick Up & Deliver
+                            </button>
+                          )}
+                          {session.status === 'OUT_FOR_DELIVERY' && (
+                            <button
+                              onClick={() => handleAction(session.id, 'mark_delivered')}
+                              className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg transition-colors"
+                            >
+                              ✅ Mark Delivered
+                            </button>
+                          )}
+                          {session.status === 'DELIVERED' && (
+                            <button
+                              onClick={() => handleAction(session.id, 'start_active')}
+                              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
+                            >
+                              🎯 Start Active Session
+                            </button>
+                          )}
+                          {canPerformAction(currentUser.role, 'process_payment', session) && (
+                            <button
+                              onClick={() => handleAction(session.id, 'process_payment')}
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                            >
+                              💳 Process Payment
+                            </button>
+                          )}
+                          {canPerformAction(currentUser.role, 'close_session', session) && (
+                            <button
+                              onClick={() => handleAction(session.id, 'close_session')}
+                              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
+                            >
+                              🔚 Close Session
+                            </button>
+                          )}
+                        </div>
               </div>
             ))}
           </div>

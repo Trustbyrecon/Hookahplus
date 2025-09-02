@@ -9,10 +9,23 @@ export default function Checkout() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [showTrustLock, setShowTrustLock] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [amount, setAmount] = useState(3000);
+  const [tableId, setTableId] = useState("T-001");
 
-  // Check for success/cancel parameters
+  // Check for success/cancel parameters and session data
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
+    
+    // Handle URL parameters for session data
+    const urlSessionId = urlParams.get('sessionId');
+    const urlAmount = urlParams.get('amount');
+    const urlTableId = urlParams.get('tableId');
+    
+    if (urlSessionId) setSessionId(urlSessionId);
+    if (urlAmount) setAmount(parseInt(urlAmount));
+    if (urlTableId) setTableId(urlTableId);
+    
     if (urlParams.get('success') === '1') {
       setShowTrustLock(true);
       // Hide after 5 seconds
@@ -26,12 +39,12 @@ export default function Checkout() {
           (window as any).gtag('event', 'Order_Confirmed', {
             event_category: 'Ecommerce',
             event_label: orderId,
-            value: 30.00,
+            value: amount / 100,
           });
         }
       }
     }
-  }, []);
+  }, [amount]);
 
   async function pay() {
     try {
@@ -46,11 +59,16 @@ export default function Checkout() {
         });
       }
 
-      // For demo, table + flavor could be passed via query or local state
+      // Use session data from URL parameters or defaults
       const res = await fetch("/api/checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tableId: "T-001", flavor: "Blue Mist + Mint", amount: 3000 }),
+        body: JSON.stringify({ 
+          tableId: tableId, 
+          flavor: "Blue Mist + Mint", 
+          amount: amount,
+          sessionId: sessionId 
+        }),
       });
       const json = await res.json();
       if (!json.id) throw new Error(json.error || "No session");
@@ -92,7 +110,7 @@ export default function Checkout() {
           <div className="space-y-3 mb-6">
             <div className="flex justify-between">
               <span>Table:</span>
-              <span className="text-teal-400">T-001</span>
+              <span className="text-teal-400">{tableId}</span>
             </div>
             <div className="flex justify-between">
               <span>Flavor:</span>
@@ -100,8 +118,14 @@ export default function Checkout() {
             </div>
             <div className="flex justify-between">
               <span>Amount:</span>
-              <span className="text-teal-400">$30.00</span>
+              <span className="text-teal-400">${(amount / 100).toFixed(2)}</span>
             </div>
+            {sessionId && (
+              <div className="flex justify-between">
+                <span>Session ID:</span>
+                <span className="text-teal-400 text-sm">{sessionId}</span>
+              </div>
+            )}
           </div>
           
           {msg && <p className="text-sm text-red-400 mb-4">{msg}</p>}
