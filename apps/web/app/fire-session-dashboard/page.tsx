@@ -31,6 +31,8 @@ export default function FireSessionDashboard() {
   const [activeTab, setActiveTab] = useState<'overview' | 'boh' | 'foh' | 'edge-cases'>('overview');
   const [currentUser, setCurrentUser] = useState({ role: 'admin', id: 'user-1' });
   const [isCreatingSession, setIsCreatingSession] = useState(false);
+  const [editingNotes, setEditingNotes] = useState<string | null>(null);
+  const [newNote, setNewNote] = useState('');
 
   // Generate demo sessions with 10 popular lounge personas
   useEffect(() => {
