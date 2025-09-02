@@ -809,7 +809,6 @@ export default function FireSessionDashboard() {
                     </div>
                   </div>
                 )}
-                </div>
 
                                         <div className="flex gap-2 flex-wrap">
                           {session.status === 'PAID_CONFIRMED' && (
@@ -1005,7 +1004,6 @@ export default function FireSessionDashboard() {
                     </div>
                   </div>
                 )}
-                </div>
 
                                         <div className="flex gap-2 flex-wrap">
                           {session.status === 'READY_FOR_DELIVERY' && (
