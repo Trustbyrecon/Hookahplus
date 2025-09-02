@@ -33,6 +33,10 @@ export default function FireSessionDashboard() {
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [editingNotes, setEditingNotes] = useState<string | null>(null);
   const [newNote, setNewNote] = useState('');
+  const [availableStaff, setAvailableStaff] = useState<{boh: string[], foh: string[]}>({
+    boh: ['Chef Mike', 'Chef Sarah', 'Chef Alex'],
+    foh: ['Sarah Chen', 'Alex Johnson', 'Mike Rodriguez']
+  });
 
   // Generate demo sessions with 10 popular lounge personas
   useEffect(() => {
@@ -399,6 +403,42 @@ export default function FireSessionDashboard() {
     }
   };
 
+  const addSessionNote = (sessionId: string) => {
+    if (!newNote.trim()) return;
+    
+    setSessions(prev => prev.map(session => {
+      if (session.id === sessionId) {
+        const timestamp = new Date().toLocaleTimeString();
+        return {
+          ...session,
+          notes: `${session.notes}\n[${timestamp}] ${newNote}`,
+          updatedAt: Date.now()
+        };
+      }
+      return session;
+    }));
+    
+    setNewNote('');
+    setEditingNotes(null);
+  };
+
+  const assignStaff = (sessionId: string, role: 'boh' | 'foh', staffName: string) => {
+    setSessions(prev => prev.map(session => {
+      if (session.id === sessionId) {
+        return {
+          ...session,
+          assignedStaff: {
+            ...session.assignedStaff,
+            [role]: staffName
+          },
+          notes: `${session.notes}\n[${new Date().toLocaleTimeString()}] Assigned ${role.toUpperCase()}: ${staffName}`,
+          updatedAt: Date.now()
+        };
+      }
+      return session;
+    }));
+  };
+
   const activeSessions = sessions.filter(s => s.status === 'ACTIVE');
   const bohSessions = sessions.filter(s => s.currentStage === 'BOH');
   const fohSessions = sessions.filter(s => s.currentStage === 'FOH');
@@ -568,12 +608,52 @@ export default function FireSessionDashboard() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                   <div>
-                    <span className="text-zinc-400">Assigned Staff:</span>
-                    <div className="text-blue-300 font-medium">{session.assignedStaff.boh || 'Unassigned'}</div>
+                    <span className="text-zinc-400">Assigned BOH Staff:</span>
+                    <div className="flex items-center gap-2">
+                      <div className="text-blue-300 font-medium">{session.assignedStaff.boh || 'Unassigned'}</div>
+                      <select
+                        value={session.assignedStaff.boh || ''}
+                        onChange={(e) => assignStaff(session.id, 'boh', e.target.value)}
+                        className="text-xs bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-white"
+                      >
+                        <option value="">Assign BOH</option>
+                        {availableStaff.boh.map(staff => (
+                          <option key={staff} value={staff}>{staff}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                   <div>
-                    <span className="text-zinc-400">Notes:</span>
-                    <div className="text-zinc-300 font-medium">{session.notes}</div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-zinc-400">Session Notes:</span>
+                      <button
+                        onClick={() => setEditingNotes(editingNotes === session.id ? null : session.id)}
+                        className="text-xs text-teal-400 hover:text-teal-300"
+                      >
+                        {editingNotes === session.id ? 'Cancel' : 'Add Note'}
+                      </button>
+                    </div>
+                    <div className="text-zinc-300 text-sm whitespace-pre-line max-h-20 overflow-y-auto bg-zinc-800 p-2 rounded border border-zinc-700">
+                      {session.notes}
+                    </div>
+                    {editingNotes === session.id && (
+                      <div className="mt-2 flex gap-2">
+                        <input
+                          type="text"
+                          value={newNote}
+                          onChange={(e) => setNewNote(e.target.value)}
+                          placeholder="Add session note..."
+                          className="flex-1 px-2 py-1 text-xs bg-zinc-700 border border-zinc-600 rounded text-white"
+                          onKeyPress={(e) => e.key === 'Enter' && addSessionNote(session.id)}
+                        />
+                        <button
+                          onClick={() => addSessionNote(session.id)}
+                          className="px-2 py-1 text-xs bg-teal-600 hover:bg-teal-700 text-white rounded"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <div>
                     <span className="text-zinc-400">Created:</span>
@@ -667,12 +747,52 @@ export default function FireSessionDashboard() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                   <div>
-                    <span className="text-zinc-400">Assigned Staff:</span>
-                    <div className="text-green-300 font-medium">{session.assignedStaff.foh || 'Unassigned'}</div>
+                    <span className="text-zinc-400">Assigned FOH Staff:</span>
+                    <div className="flex items-center gap-2">
+                      <div className="text-green-300 font-medium">{session.assignedStaff.foh || 'Unassigned'}</div>
+                      <select
+                        value={session.assignedStaff.foh || ''}
+                        onChange={(e) => assignStaff(session.id, 'foh', e.target.value)}
+                        className="text-xs bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-white"
+                      >
+                        <option value="">Assign FOH</option>
+                        {availableStaff.foh.map(staff => (
+                          <option key={staff} value={staff}>{staff}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                   <div>
-                    <span className="text-zinc-400">Notes:</span>
-                    <div className="text-zinc-300 font-medium">{session.notes}</div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-zinc-400">Session Notes:</span>
+                      <button
+                        onClick={() => setEditingNotes(editingNotes === session.id ? null : session.id)}
+                        className="text-xs text-teal-400 hover:text-teal-300"
+                      >
+                        {editingNotes === session.id ? 'Cancel' : 'Add Note'}
+                      </button>
+                    </div>
+                    <div className="text-zinc-300 text-sm whitespace-pre-line max-h-20 overflow-y-auto bg-zinc-800 p-2 rounded border border-zinc-700">
+                      {session.notes}
+                    </div>
+                    {editingNotes === session.id && (
+                      <div className="mt-2 flex gap-2">
+                        <input
+                          type="text"
+                          value={newNote}
+                          onChange={(e) => setNewNote(e.target.value)}
+                          placeholder="Add session note..."
+                          className="flex-1 px-2 py-1 text-xs bg-zinc-700 border border-zinc-600 rounded text-white"
+                          onKeyPress={(e) => e.key === 'Enter' && addSessionNote(session.id)}
+                        />
+                        <button
+                          onClick={() => addSessionNote(session.id)}
+                          className="px-2 py-1 text-xs bg-teal-600 hover:bg-teal-700 text-white rounded"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <div>
                     <span className="text-zinc-400">Status:</span>
