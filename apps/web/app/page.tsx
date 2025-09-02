@@ -79,14 +79,14 @@ export default function Home() {
               🎬 See Demo
             </button>
           </Link>
-          <Link href="/onboarding#waitlist">
+          <Link href="/pos-waitlist">
             <button 
               className="bg-zinc-700 hover:bg-zinc-600 text-white font-medium py-3 px-6 rounded-lg transition-colors"
               onClick={() => {
                 if (typeof window !== 'undefined' && (window as any).gtag) {
-                  (window as any).gtag('event', 'Hero_ViewDemo', {
+                  (window as any).gtag('event', 'Hero_POSWaitlist', {
                     event_category: 'Navigation',
-                    event_label: 'Waitlist',
+                    event_label: 'POS Waitlist',
                   });
                 }
               }}
@@ -187,6 +187,12 @@ export default function Home() {
               <div className="bg-zinc-900 border border-teal-500 rounded-lg p-4 text-center hover:bg-teal-900/20 transition-colors">
                 <div className="text-2xl mb-2">👥</div>
                 <div className="text-sm">Staff Panel</div>
+              </div>
+            </Link>
+            <Link href="/pos-waitlist">
+              <div className="bg-zinc-900 border border-teal-500 rounded-lg p-4 text-center hover:bg-teal-900/20 transition-colors">
+                <div className="text-2xl mb-2">📋</div>
+                <div className="text-sm">POS Waitlist</div>
               </div>
             </Link>
           </div>
