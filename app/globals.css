@@ -1,9 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@300;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&display=swap');
 @import "../styles/moodbook.css";
 
 /* Your existing globals... */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

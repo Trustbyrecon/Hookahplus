@@ -5,6 +5,11 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        'inter': ['Inter', 'sans-serif'],
+        'raleway': ['Raleway', 'sans-serif'],
+        'unifraktur': ['UnifrakturCook', 'serif'],
+      },
       colors: {
         primary: "rgb(var(--color-primary) / <alpha-value>)",
         "primary-dark": "rgb(var(--color-primary-dark) / <alpha-value>)",
