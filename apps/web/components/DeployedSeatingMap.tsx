@@ -35,7 +35,7 @@ export default function DeployedSeatingMap() {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [loungeName, setLoungeName] = useState<string>('');
 
-  useEffect(() => {
+  const loadDeployedMap = () => {
     // Load deployed seating map from localStorage
     const mapData = localStorage.getItem('lounge_seating_map');
     const suggestionsData = localStorage.getItem('lounge_seating_suggestions');
@@ -49,7 +49,38 @@ export default function DeployedSeatingMap() {
       if (suggestionsData) {
         setSuggestions(JSON.parse(suggestionsData));
       }
+    } else {
+      setSeatingMap(null);
+      setLoungeName('');
+      setSuggestions([]);
     }
+  };
+
+  useEffect(() => {
+    loadDeployedMap();
+    
+    // Listen for storage changes (when deployed from another component)
+    const handleStorageChange = () => {
+      loadDeployedMap();
+    };
+    
+    // Listen for custom deployment event
+    const handleSeatingMapDeployed = (event: any) => {
+      console.log('Seating map deployed event received:', event.detail);
+      loadDeployedMap();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('seatingMapDeployed', handleSeatingMapDeployed);
+    
+    // Also check periodically in case of same-tab updates
+    const interval = setInterval(loadDeployedMap, 1000);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('seatingMapDeployed', handleSeatingMapDeployed);
+      clearInterval(interval);
+    };
   }, []);
 
   if (!seatingMap) {
@@ -58,9 +89,15 @@ export default function DeployedSeatingMap() {
         <div className="text-center">
           <div className="text-4xl mb-4">📋</div>
           <h3 className="text-xl font-semibold text-white mb-2">No Seating Map Deployed</h3>
-          <p className="text-zinc-400">
+          <p className="text-zinc-400 mb-4">
             Use the Visual Grounder to create and deploy a seating map for your lounge.
           </p>
+          <button
+            onClick={loadDeployedMap}
+            className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+          >
+            🔄 Refresh
+          </button>
         </div>
       </div>
     );

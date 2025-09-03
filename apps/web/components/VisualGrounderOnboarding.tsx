@@ -124,6 +124,11 @@ export default function VisualGrounderOnboarding() {
       
       setDeployed(true);
       
+      // Trigger custom event to notify other components
+      window.dispatchEvent(new CustomEvent('seatingMapDeployed', {
+        detail: { seatingMap: results.seatingMap, suggestions: results.suggestions, name: seedData.name }
+      }));
+      
       // Show success message
       alert('✅ Seating map successfully deployed to dashboard!');
       
