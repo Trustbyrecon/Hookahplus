@@ -162,6 +162,12 @@ const Dashboard = () => {
               >
                 🤖 Agent CMD
               </Link>
+              <Link 
+                href="/layout-preview" 
+                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                🗺️ Layout Preview
+              </Link>
             </div>
           </div>
         </div>
