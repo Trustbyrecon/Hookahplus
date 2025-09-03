@@ -148,6 +148,12 @@ export default function PreOrderTablePage() {
     }
   };
 
+  const addPopularToQuickOrder = (item: PreOrderItem) => {
+    if (item.inStock) {
+      setSelectedItems(prev => [...prev, item]);
+    }
+  };
+
   const removeFromOrder = (itemId: string) => {
     setSelectedItems(prev => prev.filter(item => item.id !== itemId));
   };
@@ -221,6 +227,17 @@ export default function PreOrderTablePage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Menu Section */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Quick Order */}
+            <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-6">
+              <h2 className="text-2xl font-bold text-teal-300 mb-4">⚡ Quick Order</h2>
+              <div id="quick-order-display" className="p-4 bg-zinc-800 rounded-lg border border-zinc-700">
+                <div className="text-center text-zinc-400">
+                  <div className="text-2xl mb-2">🎯</div>
+                  <p>Select popular flavors to build your quick order</p>
+                </div>
+              </div>
+            </div>
+
             {/* Popular Items */}
             <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-6">
               <h2 className="text-2xl font-bold text-teal-300 mb-4">🔥 Popular This Week</h2>
@@ -235,11 +252,23 @@ export default function PreOrderTablePage() {
                         <div className="flex items-center justify-between mt-2">
                           <span className="text-teal-400 font-bold">${(item.price / 100).toFixed(2)}</span>
                           <button
-                            onClick={() => addToOrder(item)}
+                            onClick={() => {
+                              addPopularToQuickOrder(item);
+                              // Update quick order display
+                              const quickOrderElement = document.getElementById('quick-order-display');
+                              if (quickOrderElement) {
+                                const existingItems = selectedItems.filter(i => i.id === item.id).length + 1;
+                                quickOrderElement.innerHTML = `
+                                  <div class="text-sm text-teal-300 font-medium">Quick Order Updated:</div>
+                                  <div class="text-white">${item.name} x${existingItems} - $${(item.price / 100).toFixed(2)} each</div>
+                                  <div class="text-xs text-zinc-400 mt-1">Added to your order below</div>
+                                `;
+                              }
+                            }}
                             disabled={!item.inStock}
                             className="bg-teal-600 hover:bg-teal-700 disabled:bg-zinc-600 text-white px-3 py-1 rounded-lg transition-colors text-sm"
                           >
-                            {item.inStock ? 'Add' : 'Out of Stock'}
+                            {item.inStock ? '⚡ Quick Add' : 'Out of Stock'}
                           </button>
                         </div>
                       </div>

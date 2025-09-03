@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import GlobalNavigation from '../../components/GlobalNavigation';
+
 
 interface FireSession {
   id: string;
@@ -10,7 +10,7 @@ interface FireSession {
   customerName: string;
   flavor: string;
   amount: number;
-  status: 'NEW' | 'PAID_CONFIRMED' | 'PREP_IN_PROGRESS' | 'HEAT_UP' | 'READY_FOR_DELIVERY' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'ACTIVE' | 'CLOSE_PENDING' | 'CLOSED' | 'STAFF_HOLD' | 'STOCK_BLOCKED' | 'REMAKE';
+  status: 'NEW' | 'PAID_CONFIRMED' | 'PREP_IN_PROGRESS' | 'HEAT_UP' | 'READY_FOR_DELIVERY' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'ACTIVE' | 'PAUSED' | 'CLOSE_PENDING' | 'CLOSED' | 'STAFF_HOLD' | 'STOCK_BLOCKED' | 'REMAKE';
   currentStage: 'BOH' | 'FOH' | 'CUSTOMER';
   assignedStaff: {
     boh?: string;
@@ -34,7 +34,7 @@ export default function FireSessionDashboard() {
   const [editingNotes, setEditingNotes] = useState<string | null>(null);
   const [newNote, setNewNote] = useState('');
   const [availableStaff, setAvailableStaff] = useState<{boh: string[], foh: string[]}>({
-    boh: ['Chef Mike', 'Chef Sarah', 'Chef Alex'],
+    boh: ['Mike Rodriguez', 'Sarah Chen', 'Alex Johnson'],
     foh: ['Sarah Chen', 'Alex Johnson', 'Mike Rodriguez']
   });
   const [sessionTimers, setSessionTimers] = useState<Record<string, {remaining: number, total: number, isActive: boolean}>>({});
@@ -50,7 +50,7 @@ export default function FireSessionDashboard() {
         amount: 3000,
         status: 'ACTIVE',
         currentStage: 'CUSTOMER',
-        assignedStaff: { boh: 'Chef Mike', foh: 'Sarah Chen' },
+        assignedStaff: { boh: 'Mike Rodriguez', foh: 'Sarah Chen' },
         createdAt: Date.now() - 3600000,
         updatedAt: Date.now(),
         sessionStartTime: Date.now() - 1800000,
@@ -68,7 +68,7 @@ export default function FireSessionDashboard() {
         amount: 3200,
         status: 'READY_FOR_DELIVERY',
         currentStage: 'BOH',
-        assignedStaff: { boh: 'Chef Mike' },
+        assignedStaff: { boh: 'Mike Rodriguez' },
         createdAt: Date.now() - 900000,
         updatedAt: Date.now(),
         sessionDuration: 0,
@@ -85,7 +85,7 @@ export default function FireSessionDashboard() {
         amount: 2800,
         status: 'STAFF_HOLD',
         currentStage: 'BOH',
-        assignedStaff: { boh: 'Chef Sarah' },
+        assignedStaff: { boh: 'Sarah Chen' },
         createdAt: Date.now() - 600000,
         updatedAt: Date.now(),
         sessionDuration: 0,
@@ -102,7 +102,7 @@ export default function FireSessionDashboard() {
         amount: 3100,
         status: 'PREP_IN_PROGRESS',
         currentStage: 'BOH',
-        assignedStaff: { boh: 'Chef Alex' },
+        assignedStaff: { boh: 'Alex Johnson' },
         createdAt: Date.now() - 450000,
         updatedAt: Date.now(),
         sessionDuration: 0,
@@ -119,7 +119,7 @@ export default function FireSessionDashboard() {
         amount: 3300,
         status: 'HEAT_UP',
         currentStage: 'BOH',
-        assignedStaff: { boh: 'Chef Mike' },
+        assignedStaff: { boh: 'Mike Rodriguez' },
         createdAt: Date.now() - 300000,
         updatedAt: Date.now(),
         sessionDuration: 0,
@@ -530,6 +530,75 @@ export default function FireSessionDashboard() {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  const pauseSession = (sessionId: string) => {
+    setSessions(prev => prev.map(session => {
+      if (session.id === sessionId) {
+        return {
+          ...session,
+          status: 'PAUSED',
+          notes: `${session.notes}\n[${new Date().toLocaleTimeString()}] Session paused by staff`
+        };
+      }
+      return session;
+    }));
+    
+    setSessionTimers(prev => ({
+      ...prev,
+      [sessionId]: {
+        ...prev[sessionId],
+        isActive: false
+      }
+    }));
+  };
+
+  const resumeSession = (sessionId: string) => {
+    setSessions(prev => prev.map(session => {
+      if (session.id === sessionId) {
+        return {
+          ...session,
+          status: 'ACTIVE',
+          notes: `${session.notes}\n[${new Date().toLocaleTimeString()}] Session resumed by staff`
+        };
+      }
+      return session;
+    }));
+    
+    setSessionTimers(prev => ({
+      ...prev,
+      [sessionId]: {
+        ...prev[sessionId],
+        isActive: true
+      }
+    }));
+  };
+
+  const requestRefill = (sessionId: string) => {
+    setSessions(prev => prev.map(session => {
+      if (session.id === sessionId) {
+        return {
+          ...session,
+          coalStatus: 'needs_refill',
+          notes: `${session.notes}\n[${new Date().toLocaleTimeString()}] Coal refill requested`
+        };
+      }
+      return session;
+    }));
+  };
+
+  const completeRefill = (sessionId: string) => {
+    setSessions(prev => prev.map(session => {
+      if (session.id === sessionId) {
+        return {
+          ...session,
+          coalStatus: 'active',
+          refillStatus: 'delivered',
+          notes: `${session.notes}\n[${new Date().toLocaleTimeString()}] Coal refill completed`
+        };
+      }
+      return session;
+    }));
+  };
+
   const activeSessions = sessions.filter(s => s.status === 'ACTIVE');
   const bohSessions = sessions.filter(s => s.currentStage === 'BOH');
   const fohSessions = sessions.filter(s => s.currentStage === 'FOH');
@@ -537,8 +606,6 @@ export default function FireSessionDashboard() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
-      <GlobalNavigation />
-      
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -865,6 +932,38 @@ export default function FireSessionDashboard() {
                           >
                             ⚠️ Hold Session
                           </button>
+                          {session.status === 'ACTIVE' && (
+                            <button
+                              onClick={() => pauseSession(session.id)}
+                              className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition-colors"
+                            >
+                              ⏸️ Pause Session
+                            </button>
+                          )}
+                          {session.status === 'PAUSED' && (
+                            <button
+                              onClick={() => resumeSession(session.id)}
+                              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
+                            >
+                              ▶️ Resume Session
+                            </button>
+                          )}
+                          {session.coalStatus === 'active' && (
+                            <button
+                              onClick={() => requestRefill(session.id)}
+                              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
+                            >
+                              🔥 Request Refill
+                            </button>
+                          )}
+                          {session.coalStatus === 'needs_refill' && (
+                            <button
+                              onClick={() => completeRefill(session.id)}
+                              className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg transition-colors"
+                            >
+                              ✅ Complete Refill
+                            </button>
+                          )}
                         </div>
               </div>
             ))}
@@ -1044,6 +1143,38 @@ export default function FireSessionDashboard() {
                               className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
                             >
                               🔚 Close Session
+                            </button>
+                          )}
+                          {session.status === 'ACTIVE' && (
+                            <button
+                              onClick={() => pauseSession(session.id)}
+                              className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition-colors"
+                            >
+                              ⏸️ Pause Session
+                            </button>
+                          )}
+                          {session.status === 'PAUSED' && (
+                            <button
+                              onClick={() => resumeSession(session.id)}
+                              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
+                            >
+                              ▶️ Resume Session
+                            </button>
+                          )}
+                          {session.coalStatus === 'active' && (
+                            <button
+                              onClick={() => requestRefill(session.id)}
+                              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
+                            >
+                              🔥 Request Refill
+                            </button>
+                          )}
+                          {session.coalStatus === 'needs_refill' && (
+                            <button
+                              onClick={() => completeRefill(session.id)}
+                              className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg transition-colors"
+                            >
+                              ✅ Complete Refill
                             </button>
                           )}
                         </div>
