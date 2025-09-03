@@ -163,18 +163,23 @@ export default function StaffPanel() {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-teal-300">Staff Panel</h1>
-              <p className="text-zinc-400">Front-of-house operations management</p>
+              <h1 className="text-3xl font-bold text-teal-300">👥 Staff Operations</h1>
+              <p className="text-zinc-400">Staff performance monitoring and operations overview</p>
+              <div className="mt-2 p-3 bg-blue-900/20 border border-blue-500/50 rounded-lg">
+                <p className="text-blue-300 text-sm">
+                  <strong>Operations Dashboard:</strong> Monitor staff performance, ratings, and order completion metrics.
+                </p>
+              </div>
             </div>
             <div className="flex gap-4">
+              <Link href="/staff-panel" className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors">
+                ⚙️ Staff Management
+              </Link>
               <Link href="/sessions" className="bg-zinc-700 hover:bg-zinc-600 text-white px-4 py-2 rounded-lg transition-colors">
                 🔥 Sessions
               </Link>
               <Link href="/dashboard" className="bg-zinc-700 hover:bg-zinc-600 text-white px-4 py-2 rounded-lg transition-colors">
                 📊 Dashboard
-              </Link>
-              <Link href="/" className="bg-zinc-700 hover:bg-zinc-600 text-white px-4 py-2 rounded-lg transition-colors">
-                🏠 Home
               </Link>
             </div>
           </div>

@@ -268,8 +268,13 @@ export default function StaffPanel() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-teal-300 mb-2">👥 Staff Panel</h1>
-          <p className="text-zinc-400">Manage staff, tables, and operations in real-time</p>
+          <h1 className="text-4xl font-bold text-teal-300 mb-2">⚙️ Staff Management</h1>
+          <p className="text-zinc-400">Manage staff assignments, table operations, and real-time workflow</p>
+          <div className="mt-4 p-4 bg-purple-900/20 border border-purple-500/50 rounded-lg">
+            <p className="text-purple-300 text-sm">
+              <strong>Management Panel:</strong> Assign tables, edit staff details, manage table status, and generate operational reports.
+            </p>
+          </div>
         </div>
 
         {/* Quick Stats */}
@@ -314,6 +319,12 @@ export default function StaffPanel() {
           </div>
           
           <div className="flex items-center gap-4">
+            <Link
+              href="/staff"
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+            >
+              👥 Staff Operations
+            </Link>
             <Link
               href="/fire-session-dashboard"
               className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium"

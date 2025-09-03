@@ -145,12 +145,23 @@ const GlobalNavigation: React.FC = () => {
             <Link 
               href="/staff" 
               className={`px-3 py-2 rounded-lg transition-all duration-200 ${
-                pathname.startsWith('/staff') 
+                pathname === '/staff' 
                   ? 'bg-purple-600 text-white' 
                   : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
               }`}
             >
-              👥 Staff
+              👥 Staff Ops
+            </Link>
+            
+            <Link 
+              href="/staff-panel" 
+              className={`px-3 py-2 rounded-lg transition-all duration-200 ${
+                pathname === '/staff-panel' 
+                  ? 'bg-purple-600 text-white' 
+                  : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
+              }`}
+            >
+              ⚙️ Staff Mgmt
             </Link>
             
                                 <Link
