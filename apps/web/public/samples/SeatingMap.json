@@ -1,0 +1,190 @@
+{
+  "lounge_id": "lounge-pilot-001",
+  "name": "Copper Fern Lounge",
+  "nodes": [
+    {
+      "id": "seat-001",
+      "type": "seat.stool",
+      "position": {"x": 120, "y": 150},
+      "data": {
+        "zone": "bar_zone_A",
+        "capacity": 1,
+        "ada_clear": true,
+        "dim_in": {"seat_h": 30, "ctr_h": 42},
+        "tags": ["bar", "stool"],
+        "stripe_meta": {"session_id": null, "flavor_mix": null}
+      }
+    },
+    {
+      "id": "seat-002",
+      "type": "seat.stool",
+      "position": {"x": 140, "y": 150},
+      "data": {
+        "zone": "bar_zone_A",
+        "capacity": 1,
+        "ada_clear": true,
+        "dim_in": {"seat_h": 30, "ctr_h": 42},
+        "tags": ["bar", "stool"],
+        "stripe_meta": {"session_id": null, "flavor_mix": null}
+      }
+    },
+    {
+      "id": "seat-003",
+      "type": "seat.stool",
+      "position": {"x": 160, "y": 150},
+      "data": {
+        "zone": "bar_zone_A",
+        "capacity": 1,
+        "ada_clear": true,
+        "dim_in": {"seat_h": 30, "ctr_h": 42},
+        "tags": ["bar", "stool"],
+        "stripe_meta": {"session_id": null, "flavor_mix": null}
+      }
+    },
+    {
+      "id": "seat-004",
+      "type": "seat.booth_single",
+      "position": {"x": 50, "y": 100},
+      "data": {
+        "zone": "booth_zone_A",
+        "capacity": 4,
+        "ada_clear": false,
+        "dim_in": {"seat_h": 34, "ctr_h": 34},
+        "tags": ["booth", "single"],
+        "stripe_meta": {"session_id": null, "flavor_mix": null}
+      }
+    },
+    {
+      "id": "seat-005",
+      "type": "seat.booth_single",
+      "position": {"x": 110, "y": 100},
+      "data": {
+        "zone": "booth_zone_A",
+        "capacity": 4,
+        "ada_clear": false,
+        "dim_in": {"seat_h": 34, "ctr_h": 34},
+        "tags": ["booth", "single"],
+        "stripe_meta": {"session_id": null, "flavor_mix": null}
+      }
+    },
+    {
+      "id": "seat-006",
+      "type": "table.high",
+      "position": {"x": 200, "y": 300},
+      "data": {
+        "zone": "lounge_zone_A",
+        "capacity": 4,
+        "ada_clear": false,
+        "dim_in": {"seat_h": 42, "ctr_h": 42},
+        "tags": ["high_top", "table"],
+        "stripe_meta": {"session_id": null, "flavor_mix": null}
+      }
+    },
+    {
+      "id": "seat-007",
+      "type": "table.high",
+      "position": {"x": 250, "y": 300},
+      "data": {
+        "zone": "lounge_zone_A",
+        "capacity": 4,
+        "ada_clear": false,
+        "dim_in": {"seat_h": 42, "ctr_h": 42},
+        "tags": ["high_top", "table"],
+        "stripe_meta": {"session_id": null, "flavor_mix": null}
+      }
+    },
+    {
+      "id": "seat-008",
+      "type": "seat.sofa",
+      "position": {"x": 300, "y": 200},
+      "data": {
+        "zone": "lounge_zone_B",
+        "capacity": 6,
+        "ada_clear": false,
+        "dim_in": {"seat_h": 34, "ctr_h": 34},
+        "tags": ["sofa", "lounge"],
+        "stripe_meta": {"session_id": null, "flavor_mix": null}
+      }
+    },
+    {
+      "id": "seat-009",
+      "type": "seat.lounge_chair",
+      "position": {"x": 350, "y": 180},
+      "data": {
+        "zone": "lounge_zone_B",
+        "capacity": 1,
+        "ada_clear": false,
+        "dim_in": {"seat_h": 34, "ctr_h": 34},
+        "tags": ["lounge_chair", "lounge"],
+        "stripe_meta": {"session_id": null, "flavor_mix": null}
+      }
+    },
+    {
+      "id": "seat-010",
+      "type": "seat.lounge_chair",
+      "position": {"x": 380, "y": 180},
+      "data": {
+        "zone": "lounge_zone_B",
+        "capacity": 1,
+        "ada_clear": false,
+        "dim_in": {"seat_h": 34, "ctr_h": 34},
+        "tags": ["lounge_chair", "lounge"],
+        "stripe_meta": {"session_id": null, "flavor_mix": null}
+      }
+    },
+    {
+      "id": "seat-011",
+      "type": "service_counter",
+      "position": {"x": 400, "y": 50},
+      "data": {
+        "zone": "service_zone",
+        "capacity": 0,
+        "ada_clear": true,
+        "dim_in": {"seat_h": 36, "ctr_h": 36},
+        "tags": ["service", "counter", "ada_compliant"],
+        "stripe_meta": {"session_id": null, "flavor_mix": null}
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-001",
+      "source": "seat-001",
+      "target": "seat-002",
+      "type": "aisle",
+      "data": {"width": 8, "type": "stool_spacing"}
+    },
+    {
+      "id": "edge-002",
+      "source": "seat-002",
+      "target": "seat-003",
+      "type": "aisle",
+      "data": {"width": 8, "type": "stool_spacing"}
+    },
+    {
+      "id": "edge-003",
+      "source": "seat-004",
+      "target": "seat-005",
+      "type": "aisle",
+      "data": {"width": 36, "type": "accessible_route"}
+    }
+  ],
+  "metadata": {
+    "total_capacity": 32,
+    "zones": ["bar_zone_A", "booth_zone_A", "lounge_zone_A", "lounge_zone_B", "service_zone"],
+    "generated_at": "2024-01-15T10:30:00Z",
+    "version": "1.0",
+    "ada_compliance": {
+      "accessible_seats": 3,
+      "total_seats": 11,
+      "compliance_rate": 27.3
+    },
+    "zoning": {
+      "bar_zone_A": {"capacity": 3, "type": "quick_turn"},
+      "booth_zone_A": {"capacity": 8, "type": "medium_stay"},
+      "lounge_zone_A": {"capacity": 8, "type": "long_stay"},
+      "lounge_zone_B": {"capacity": 8, "type": "long_stay"},
+      "service_zone": {"capacity": 0, "type": "service"}
+    }
+  }
+}

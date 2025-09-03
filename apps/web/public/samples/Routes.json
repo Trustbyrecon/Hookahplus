@@ -1,0 +1,144 @@
+{
+  "lounge_id": "lounge-pilot-001",
+  "routes": [
+    {
+      "id": "route-bar-restroom",
+      "type": "service_route",
+      "waypoints": [
+        {"x": 100, "y": 200},
+        {"x": 400, "y": 200},
+        {"x": 400, "y": 400}
+      ],
+      "width": 36,
+      "purpose": "bar_to_restroom",
+      "priority": "high",
+      "usage": "staff_service"
+    },
+    {
+      "id": "route-entrance-exit",
+      "type": "egress_route",
+      "waypoints": [
+        {"x": 0, "y": 0},
+        {"x": 200, "y": 0},
+        {"x": 200, "y": 100}
+      ],
+      "width": 36,
+      "purpose": "entrance_to_exit",
+      "priority": "critical",
+      "usage": "customer_egress"
+    },
+    {
+      "id": "route-bar-lounge",
+      "type": "customer_route",
+      "waypoints": [
+        {"x": 150, "y": 150},
+        {"x": 250, "y": 150},
+        {"x": 250, "y": 250}
+      ],
+      "width": 36,
+      "purpose": "bar_to_lounge",
+      "priority": "medium",
+      "usage": "customer_circulation"
+    }
+  ],
+  "accessible_paths": [
+    {
+      "id": "accessible-001",
+      "type": "accessible_route",
+      "width": 40,
+      "compliant": true,
+      "waypoints": [
+        {"x": 150, "y": 250},
+        {"x": 190, "y": 250},
+        {"x": 190, "y": 450}
+      ],
+      "constraints": {
+        "min_width": 36,
+        "turning_space": 60,
+        "clearance_height": 80
+      },
+      "features": ["smooth_surface", "no_obstructions", "adequate_lighting"]
+    },
+    {
+      "id": "accessible-002",
+      "type": "accessible_route",
+      "width": 38,
+      "compliant": true,
+      "waypoints": [
+        {"x": 0, "y": 0},
+        {"x": 200, "y": 0},
+        {"x": 200, "y": 100}
+      ],
+      "constraints": {
+        "min_width": 36,
+        "turning_space": 60,
+        "clearance_height": 80
+      },
+      "features": ["smooth_surface", "no_obstructions", "adequate_lighting"]
+    },
+    {
+      "id": "accessible-003",
+      "type": "accessible_route",
+      "width": 32,
+      "compliant": false,
+      "waypoints": [
+        {"x": 50, "y": 100},
+        {"x": 110, "y": 100}
+      ],
+      "constraints": {
+        "min_width": 36,
+        "turning_space": 60,
+        "clearance_height": 80
+      },
+      "features": ["smooth_surface", "narrow_width"],
+      "violations": ["insufficient_width"]
+    }
+  ],
+  "turning_spaces": [
+    {
+      "id": "turning-001",
+      "type": "turning_circle",
+      "center": {"x": 200, "y": 200},
+      "diameter": 60,
+      "compliant": true,
+      "location": "main_circulation_hub"
+    },
+    {
+      "id": "turning-002",
+      "type": "turning_circle",
+      "center": {"x": 400, "y": 300},
+      "diameter": 60,
+      "compliant": true,
+      "location": "restroom_access"
+    }
+  ],
+  "compliance": {
+    "ada_compliant": false,
+    "violations": [
+      "Route accessible-003: 32\" width (minimum 36\" required)"
+    ],
+    "suggestions": [
+      "Widen route accessible-003 to meet 36\" minimum width requirement",
+      "Add turning space at booth zone intersection",
+      "Verify all accessible routes have smooth, slip-resistant surfaces"
+    ],
+    "compliance_score": 85.7,
+    "critical_issues": 0,
+    "moderate_issues": 1,
+    "minor_issues": 0
+  },
+  "metadata": {
+    "generated_at": "2024-01-15T10:30:00Z",
+    "version": "1.0",
+    "total_routes": 3,
+    "accessible_routes": 3,
+    "turning_spaces": 2,
+    "coverage_analysis": {
+      "bar_zone_accessible": true,
+      "lounge_zone_accessible": true,
+      "booth_zone_accessible": false,
+      "restroom_accessible": true,
+      "exit_accessible": true
+    }
+  }
+}

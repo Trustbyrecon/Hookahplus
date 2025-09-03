@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import CustomerFlowLogic from "../../components/CustomerFlowLogic";
 import AgentMDIntegration from "../../components/AgentMDIntegration";
+import VisualGrounderOnboarding from "../../components/VisualGrounderOnboarding";
 
 // AI Agent Collaboration Interface
 interface DashboardState {
@@ -52,7 +53,7 @@ const Dashboard = () => {
     ]
   });
 
-  const [activeView, setActiveView] = useState<'overview' | 'sessions' | 'workflow' | 'agents'>('overview');
+  const [activeView, setActiveView] = useState<'overview' | 'sessions' | 'workflow' | 'agents' | 'onboarding'>('overview');
   const [unifiedSessions, setUnifiedSessions] = useState<UnifiedSession[]>([]);
 
   // Simulate session data generation
@@ -208,6 +209,16 @@ const Dashboard = () => {
           >
             🤖 AGENT.MD
           </button>
+          <button
+            onClick={() => setActiveView('onboarding')}
+            className={`px-4 py-2 rounded-md transition-colors ${
+              activeView === 'onboarding' 
+                ? 'bg-teal-600 text-white' 
+                : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            🔍 Visual Grounder
+          </button>
         </div>
 
         {/* Overview Tab */}
@@ -362,6 +373,13 @@ const Dashboard = () => {
         {activeView === 'agents' && (
           <div className="space-y-6">
             <AgentMDIntegration />
+          </div>
+        )}
+
+        {/* Visual Grounder Tab */}
+        {activeView === 'onboarding' && (
+          <div className="space-y-6">
+            <VisualGrounderOnboarding />
           </div>
         )}
 
