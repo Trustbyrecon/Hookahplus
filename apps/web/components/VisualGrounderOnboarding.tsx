@@ -28,6 +28,8 @@ export default function VisualGrounderOnboarding() {
   });
   const [processing, setProcessing] = useState(false);
   const [results, setResults] = useState<any>(null);
+  const [deploying, setDeploying] = useState(false);
+  const [deployed, setDeployed] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const steps: OnboardingStep[] = [
@@ -52,8 +54,8 @@ export default function VisualGrounderOnboarding() {
     {
       id: 'review',
       title: 'Review & Deploy',
-      description: 'Review compliance report and deploy to dashboard',
-      completed: false
+      description: 'Review seating map and deploy to dashboard',
+      completed: deployed
     }
   ];
 
@@ -102,6 +104,34 @@ export default function VisualGrounderOnboarding() {
       alert('Processing failed. Please try again.');
     } finally {
       setProcessing(false);
+    }
+  };
+
+  const deployToDashboard = async () => {
+    if (!results) return;
+
+    setDeploying(true);
+    
+    try {
+      // Store the seating map in localStorage for the dashboard to use
+      localStorage.setItem('lounge_seating_map', JSON.stringify(results.seatingMap));
+      localStorage.setItem('lounge_seating_suggestions', JSON.stringify(results.suggestions));
+      localStorage.setItem('lounge_seating_deployed', 'true');
+      localStorage.setItem('lounge_seating_name', seedData.name);
+      
+      // Simulate deployment delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      setDeployed(true);
+      
+      // Show success message
+      alert('✅ Seating map successfully deployed to dashboard!');
+      
+    } catch (error) {
+      console.error('Deployment error:', error);
+      alert('Deployment failed. Please try again.');
+    } finally {
+      setDeploying(false);
     }
   };
 
@@ -287,31 +317,27 @@ export default function VisualGrounderOnboarding() {
             
             {results && (
               <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-zinc-800 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-white">{results.seatingMap.metadata.total_capacity}</div>
-                    <div className="text-sm text-zinc-400">Total Seats</div>
-                  </div>
-                  <div className="bg-zinc-800 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-orange-400">{results.complianceReport.summary.total_violations}</div>
-                    <div className="text-sm text-zinc-400">Violations</div>
-                  </div>
-                  <div className="bg-zinc-800 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-teal-400">{results.suggestions.length}</div>
-                    <div className="text-sm text-zinc-400">Suggestions</div>
-                  </div>
-                </div>
-                
-                <div className="bg-zinc-800 rounded-lg p-4">
-                  <h4 className="text-white font-medium mb-3">Compliance Status</h4>
-                  <div className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                    results.complianceReport.overall_compliance === 'compliant' 
-                      ? 'bg-green-600 text-white' 
-                      : 'bg-yellow-600 text-white'
-                  }`}>
-                    {results.complianceReport.overall_compliance === 'compliant' ? '✅ COMPLIANT' : '⚠️ NON-COMPLIANT'}
-                  </div>
-                </div>
+                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                   <div className="bg-zinc-800 rounded-lg p-4 text-center">
+                     <div className="text-2xl font-bold text-white">{results.seatingMap.metadata.total_capacity}</div>
+                     <div className="text-sm text-zinc-400">Total Seats</div>
+                   </div>
+                   <div className="bg-zinc-800 rounded-lg p-4 text-center">
+                     <div className="text-2xl font-bold text-teal-400">{results.seatingMap.metadata.zones.length}</div>
+                     <div className="text-sm text-zinc-400">Zones</div>
+                   </div>
+                   <div className="bg-zinc-800 rounded-lg p-4 text-center">
+                     <div className="text-2xl font-bold text-blue-400">{results.suggestions.length}</div>
+                     <div className="text-sm text-zinc-400">Suggestions</div>
+                   </div>
+                 </div>
+                 
+                 <div className="bg-zinc-800 rounded-lg p-4">
+                   <h4 className="text-white font-medium mb-3">Seating Map Status</h4>
+                   <div className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-green-600 text-white">
+                     ✅ READY TO DEPLOY
+                   </div>
+                 </div>
                 
                 <div className="bg-zinc-800 rounded-lg p-4">
                   <h4 className="text-white font-medium mb-3">Suggestions</h4>
@@ -325,23 +351,33 @@ export default function VisualGrounderOnboarding() {
                   </ul>
                 </div>
                 
-                <div className="flex space-x-4">
-                  <button
-                    onClick={() => {
-                      // Deploy to dashboard
-                      console.log('Deploying to dashboard...');
-                    }}
-                    className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-lg transition-colors"
-                  >
-                    Deploy to Dashboard
-                  </button>
-                  <button
-                    onClick={() => setCurrentStep(0)}
-                    className="bg-zinc-700 hover:bg-zinc-600 text-white px-6 py-3 rounded-lg transition-colors"
-                  >
-                    Start Over
-                  </button>
-                </div>
+                                 <div className="flex space-x-4">
+                   {!deployed ? (
+                     <button
+                       onClick={deployToDashboard}
+                       disabled={deploying}
+                       className="bg-teal-600 hover:bg-teal-700 disabled:bg-zinc-600 text-white px-6 py-3 rounded-lg transition-colors"
+                     >
+                       {deploying ? 'Deploying...' : 'Deploy to Dashboard'}
+                     </button>
+                   ) : (
+                     <div className="flex items-center space-x-2 text-green-400">
+                       <span className="text-2xl">✅</span>
+                       <span className="font-medium">Successfully Deployed!</span>
+                     </div>
+                   )}
+                   <button
+                     onClick={() => {
+                       setCurrentStep(0);
+                       setResults(null);
+                       setDeployed(false);
+                       setPhotos([]);
+                     }}
+                     className="bg-zinc-700 hover:bg-zinc-600 text-white px-6 py-3 rounded-lg transition-colors"
+                   >
+                     Start Over
+                   </button>
+                 </div>
               </div>
             )}
           </div>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import CustomerFlowLogic from "../../components/CustomerFlowLogic";
 import AgentMDIntegration from "../../components/AgentMDIntegration";
 import VisualGrounderOnboarding from "../../components/VisualGrounderOnboarding";
+import DeployedSeatingMap from "../../components/DeployedSeatingMap";
 
 // AI Agent Collaboration Interface
 interface DashboardState {
@@ -379,6 +380,7 @@ const Dashboard = () => {
         {/* Visual Grounder Tab */}
         {activeView === 'onboarding' && (
           <div className="space-y-6">
+            <DeployedSeatingMap />
             <VisualGrounderOnboarding />
           </div>
         )}

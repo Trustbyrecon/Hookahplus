@@ -184,8 +184,6 @@ export class ReflexVisualGrounder {
   // Process photos and generate seating map
   public async processPhotos(photos: File[], seed: LoungeSeed): Promise<{
     seatingMap: SeatingMapData;
-    routes: RoutesData;
-    complianceReport: ComplianceReport;
     suggestions: string[];
   }> {
     console.log('🔍 Reflex Visual Grounder: Processing photos for', seed.name);
@@ -196,19 +194,11 @@ export class ReflexVisualGrounder {
     // Generate seating map from detections
     const seatingMap = this.generateSeatingMap(detections, seed);
     
-    // Generate routes and accessibility paths
-    const routes = this.generateRoutes(detections, seatingMap);
-    
-    // Check compliance and generate report
-    const complianceReport = this.checkCompliance(seatingMap, routes);
-    
-    // Generate owner suggestions
-    const suggestions = this.generateSuggestions(complianceReport, seatingMap);
+    // Generate simple suggestions
+    const suggestions = this.generateSimpleSuggestions(seatingMap);
     
     return {
       seatingMap,
-      routes,
-      complianceReport,
       suggestions
     };
   }
@@ -274,7 +264,7 @@ export class ReflexVisualGrounder {
           data: {
             zone: detection.metadata.zone || 'lounge_zone',
             capacity: detection.metadata.capacity || 1,
-            ada_clear: detection.metadata.compliant || false,
+            available: true,
             dim_in: {
               seat_h: detection.dimensions?.height || 30,
               ctr_h: detection.dimensions?.height || 34
@@ -305,143 +295,41 @@ export class ReflexVisualGrounder {
     };
   }
 
-  // Generate routes and accessibility paths
-  private generateRoutes(detections: DetectionTarget[], seatingMap: SeatingMapData): RoutesData {
-    const routes: Route[] = [];
-    const accessiblePaths: AccessiblePath[] = [];
-
-    // Find accessible routes from detections
-    const routeDetections = detections.filter(d => d.class === 'accessible_route');
-    
-    routeDetections.forEach((route, index) => {
-      const path: AccessiblePath = {
-        id: `route-${index + 1}`,
-        type: 'accessible_route',
-        width: route.metadata.width || 36,
-        compliant: route.metadata.compliant || false,
-        waypoints: [
-          { x: route.boundingBox.x, y: route.boundingBox.y },
-          { x: route.boundingBox.x + route.boundingBox.width, y: route.boundingBox.y + route.boundingBox.height }
-        ],
-        constraints: {
-          min_width: 36,
-          turning_space: 60,
-          clearance_height: 80
-        }
-      };
-      accessiblePaths.push(path);
-    });
-
-    // Generate routes between key areas
-    const keyRoutes = this.generateKeyRoutes(seatingMap);
-    routes.push(...keyRoutes);
-
-    return {
-      lounge_id: seatingMap.lounge_id,
-      routes,
-      accessible_paths: accessiblePaths,
-      compliance: {
-        ada_compliant: accessiblePaths.every(path => path.compliant),
-        violations: this.findRouteViolations(accessiblePaths),
-        suggestions: this.generateRouteSuggestions(accessiblePaths)
-      }
-    };
-  }
-
-  // Check compliance and generate report
-  private checkCompliance(seatingMap: SeatingMapData, routes: RoutesData): ComplianceReport {
-    const violations: ComplianceViolation[] = [];
-    const passes: CompliancePass[] = [];
-
-    // Check accessible route widths
-    routes.accessible_paths.forEach(path => {
-      if (path.width < 36) {
-        violations.push({
-          type: 'accessible_route_width',
-          severity: 'high',
-          description: `Route ${path.id} is ${path.width}" wide, minimum required is 36"`,
-          location: { x: path.waypoints[0].x, y: path.waypoints[0].y },
-          fix: `Widen route to minimum 36" width`
-        });
-      } else {
-        passes.push({
-          type: 'accessible_route_width',
-          description: `Route ${path.id} meets minimum width requirement`,
-          location: { x: path.waypoints[0].x, y: path.waypoints[0].y }
-        });
-      }
-    });
-
-    // Check turning spaces
-    const turningSpaces = routes.accessible_paths.filter(path => 
-      path.waypoints.length > 2 && this.hasTurningSpace(path)
-    );
-    
-    if (turningSpaces.length === 0) {
-      violations.push({
-        type: 'turning_space',
-        severity: 'medium',
-        description: 'No 60" diameter turning spaces detected in key areas',
-        location: { x: 0, y: 0 },
-        fix: 'Add turning spaces at route intersections and dead ends'
-      });
-    }
-
-    // Check dining surface heights
-    seatingMap.nodes.forEach(node => {
-      if (node.data.dim_in.ctr_h < 28 || node.data.dim_in.ctr_h > 34) {
-        violations.push({
-          type: 'dining_surface_height',
-          severity: 'medium',
-          description: `Table ${node.id} height ${node.data.dim_in.ctr_h}" outside ADA range (28-34")`,
-          location: node.position,
-          fix: 'Adjust table height to 28-34" range or add accessible table'
-        });
-      }
-    });
-
-    return {
-      lounge_id: seatingMap.lounge_id,
-      generated_at: new Date().toISOString(),
-      overall_compliance: violations.length === 0 ? 'compliant' : 'non_compliant',
-      violations,
-      passes,
-      summary: {
-        total_violations: violations.length,
-        high_severity: violations.filter(v => v.severity === 'high').length,
-        medium_severity: violations.filter(v => v.severity === 'medium').length,
-        low_severity: violations.filter(v => v.severity === 'low').length
-      }
-    };
-  }
-
-  // Generate owner suggestions
-  private generateSuggestions(complianceReport: ComplianceReport, seatingMap: SeatingMapData): string[] {
+  // Generate simple suggestions for seating optimization
+  private generateSimpleSuggestions(seatingMap: SeatingMapData): string[] {
     const suggestions: string[] = [];
 
-    // Check for missing lowered counter
-    const hasLoweredCounter = seatingMap.nodes.some(node => 
-      node.type === 'service_counter' && node.data.dim_in.ctr_h <= 36
+    // Check for seating density
+    const totalCapacity = seatingMap.metadata.total_capacity;
+    if (totalCapacity < 20) {
+      suggestions.push('Consider adding more seating to increase capacity');
+    } else if (totalCapacity > 50) {
+      suggestions.push('High capacity detected - ensure adequate staff coverage');
+    }
+
+    // Check zone distribution
+    const zones = seatingMap.metadata.zones;
+    if (!zones.includes('bar_zone')) {
+      suggestions.push('Consider adding a bar area for quick-turn customers');
+    }
+    
+    if (!zones.includes('lounge_zone')) {
+      suggestions.push('Add lounge seating for longer-stay customers');
+    }
+
+    // Check for service areas
+    const hasServiceArea = seatingMap.nodes.some(node => 
+      node.type === 'service_counter' || node.data.zone === 'service_zone'
     );
     
-    if (!hasLoweredCounter) {
-      suggestions.push('Add 1 lowered 36" counter segment at check-in for ADA compliance');
-    }
-
-    // Check for narrow aisles
-    const narrowAisles = complianceReport.violations.filter(v => v.type === 'accessible_route_width');
-    if (narrowAisles.length > 0) {
-      suggestions.push(`Widen ${narrowAisles.length} aisle(s) to 36" minimum width`);
-    }
-
-    // Check for stool spacing
-    const barStools = seatingMap.nodes.filter(node => node.type === 'stool');
-    if (barStools.length > 0) {
-      suggestions.push('Verify stool spacing meets 6-8" minimum for comfort and accessibility');
+    if (!hasServiceArea) {
+      suggestions.push('Add a service counter for customer check-in and orders');
     }
 
     return suggestions;
   }
+
+
 
   // Helper methods
   private isSeatingElement(className: string): boolean {
@@ -467,55 +355,7 @@ export class ReflexVisualGrounder {
     return mapping[className] || 'seat.unknown';
   }
 
-  private generateKeyRoutes(seatingMap: SeatingMapData): Route[] {
-    // Generate routes between key areas (bar, restroom, exit)
-    return [
-      {
-        id: 'route-bar-restroom',
-        type: 'service_route',
-        waypoints: [
-          { x: 100, y: 200 },
-          { x: 400, y: 200 },
-          { x: 400, y: 400 }
-        ],
-        width: 36,
-        purpose: 'bar_to_restroom'
-      },
-      {
-        id: 'route-entrance-exit',
-        type: 'egress_route',
-        waypoints: [
-          { x: 0, y: 0 },
-          { x: 200, y: 0 },
-          { x: 200, y: 100 }
-        ],
-        width: 36,
-        purpose: 'entrance_to_exit'
-      }
-    ];
-  }
 
-  private findRouteViolations(paths: AccessiblePath[]): string[] {
-    return paths
-      .filter(path => !path.compliant)
-      .map(path => `Route ${path.id}: ${path.width}" width (minimum 36" required)`);
-  }
-
-  private generateRouteSuggestions(paths: AccessiblePath[]): string[] {
-    const suggestions: string[] = [];
-    const narrowPaths = paths.filter(path => path.width < 36);
-    
-    if (narrowPaths.length > 0) {
-      suggestions.push(`Widen ${narrowPaths.length} route(s) to meet 36" minimum width`);
-    }
-    
-    return suggestions;
-  }
-
-  private hasTurningSpace(path: AccessiblePath): boolean {
-    // Check if path has sufficient turning space (simplified)
-    return path.waypoints.length > 2;
-  }
 
   // Export knowledge pack for other agents
   public exportKnowledgePack(): Record<string, any> {
@@ -548,7 +388,7 @@ export interface SeatingNode {
   data: {
     zone: string;
     capacity: number;
-    ada_clear: boolean;
+    available: boolean;
     dim_in: { seat_h: number; ctr_h: number };
     tags: string[];
     stripe_meta: { session_id: string | null; flavor_mix: string | null };
@@ -576,65 +416,7 @@ export interface SeatingMapData {
   };
 }
 
-export interface Route {
-  id: string;
-  type: string;
-  waypoints: { x: number; y: number }[];
-  width: number;
-  purpose: string;
-}
 
-export interface AccessiblePath {
-  id: string;
-  type: string;
-  width: number;
-  compliant: boolean;
-  waypoints: { x: number; y: number }[];
-  constraints: {
-    min_width: number;
-    turning_space: number;
-    clearance_height: number;
-  };
-}
-
-export interface RoutesData {
-  lounge_id: string;
-  routes: Route[];
-  accessible_paths: AccessiblePath[];
-  compliance: {
-    ada_compliant: boolean;
-    violations: string[];
-    suggestions: string[];
-  };
-}
-
-export interface ComplianceViolation {
-  type: string;
-  severity: 'high' | 'medium' | 'low';
-  description: string;
-  location: { x: number; y: number };
-  fix: string;
-}
-
-export interface CompliancePass {
-  type: string;
-  description: string;
-  location: { x: number; y: number };
-}
-
-export interface ComplianceReport {
-  lounge_id: string;
-  generated_at: string;
-  overall_compliance: 'compliant' | 'non_compliant';
-  violations: ComplianceViolation[];
-  passes: CompliancePass[];
-  summary: {
-    total_violations: number;
-    high_severity: number;
-    medium_severity: number;
-    low_severity: number;
-  };
-}
 
 // Singleton instance
 export const visualGrounder = new ReflexVisualGrounder();

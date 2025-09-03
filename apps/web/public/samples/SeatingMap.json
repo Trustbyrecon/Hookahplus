@@ -9,7 +9,7 @@
       "data": {
         "zone": "bar_zone_A",
         "capacity": 1,
-        "ada_clear": true,
+        "available": true,
         "dim_in": {"seat_h": 30, "ctr_h": 42},
         "tags": ["bar", "stool"],
         "stripe_meta": {"session_id": null, "flavor_mix": null}
@@ -22,7 +22,7 @@
       "data": {
         "zone": "bar_zone_A",
         "capacity": 1,
-        "ada_clear": true,
+        "available": true,
         "dim_in": {"seat_h": 30, "ctr_h": 42},
         "tags": ["bar", "stool"],
         "stripe_meta": {"session_id": null, "flavor_mix": null}
@@ -35,7 +35,7 @@
       "data": {
         "zone": "bar_zone_A",
         "capacity": 1,
-        "ada_clear": true,
+        "available": true,
         "dim_in": {"seat_h": 30, "ctr_h": 42},
         "tags": ["bar", "stool"],
         "stripe_meta": {"session_id": null, "flavor_mix": null}
@@ -48,7 +48,7 @@
       "data": {
         "zone": "booth_zone_A",
         "capacity": 4,
-        "ada_clear": false,
+        "available": true,
         "dim_in": {"seat_h": 34, "ctr_h": 34},
         "tags": ["booth", "single"],
         "stripe_meta": {"session_id": null, "flavor_mix": null}
@@ -61,7 +61,7 @@
       "data": {
         "zone": "booth_zone_A",
         "capacity": 4,
-        "ada_clear": false,
+        "available": true,
         "dim_in": {"seat_h": 34, "ctr_h": 34},
         "tags": ["booth", "single"],
         "stripe_meta": {"session_id": null, "flavor_mix": null}
@@ -74,7 +74,7 @@
       "data": {
         "zone": "lounge_zone_A",
         "capacity": 4,
-        "ada_clear": false,
+        "available": true,
         "dim_in": {"seat_h": 42, "ctr_h": 42},
         "tags": ["high_top", "table"],
         "stripe_meta": {"session_id": null, "flavor_mix": null}
@@ -87,7 +87,7 @@
       "data": {
         "zone": "lounge_zone_A",
         "capacity": 4,
-        "ada_clear": false,
+        "available": true,
         "dim_in": {"seat_h": 42, "ctr_h": 42},
         "tags": ["high_top", "table"],
         "stripe_meta": {"session_id": null, "flavor_mix": null}
@@ -100,7 +100,7 @@
       "data": {
         "zone": "lounge_zone_B",
         "capacity": 6,
-        "ada_clear": false,
+        "available": true,
         "dim_in": {"seat_h": 34, "ctr_h": 34},
         "tags": ["sofa", "lounge"],
         "stripe_meta": {"session_id": null, "flavor_mix": null}
@@ -113,7 +113,7 @@
       "data": {
         "zone": "lounge_zone_B",
         "capacity": 1,
-        "ada_clear": false,
+        "available": true,
         "dim_in": {"seat_h": 34, "ctr_h": 34},
         "tags": ["lounge_chair", "lounge"],
         "stripe_meta": {"session_id": null, "flavor_mix": null}
@@ -126,7 +126,7 @@
       "data": {
         "zone": "lounge_zone_B",
         "capacity": 1,
-        "ada_clear": false,
+        "available": true,
         "dim_in": {"seat_h": 34, "ctr_h": 34},
         "tags": ["lounge_chair", "lounge"],
         "stripe_meta": {"session_id": null, "flavor_mix": null}
@@ -139,7 +139,7 @@
       "data": {
         "zone": "service_zone",
         "capacity": 0,
-        "ada_clear": true,
+        "available": true,
         "dim_in": {"seat_h": 36, "ctr_h": 36},
         "tags": ["service", "counter", "ada_compliant"],
         "stripe_meta": {"session_id": null, "flavor_mix": null}
@@ -174,11 +174,7 @@
     "zones": ["bar_zone_A", "booth_zone_A", "lounge_zone_A", "lounge_zone_B", "service_zone"],
     "generated_at": "2024-01-15T10:30:00Z",
     "version": "1.0",
-    "ada_compliance": {
-      "accessible_seats": 3,
-      "total_seats": 11,
-      "compliance_rate": 27.3
-    },
+
     "zoning": {
       "bar_zone_A": {"capacity": 3, "type": "quick_turn"},
       "booth_zone_A": {"capacity": 8, "type": "medium_stay"},
