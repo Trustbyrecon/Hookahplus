@@ -1,0 +1,44 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Badge {
+  id     String  @id
+  label  String
+  scope  String  // 'lounge' | 'network'
+  rule   Json
+  active Boolean @default(true)
+  awards Award[]
+}
+
+model Award {
+  id         String   @id
+  profileId  String
+  badgeId    String
+  badge      Badge    @relation(fields: [badgeId], references: [id])
+  venueId    String?
+  progress   Int      @default(100)
+  awardedAt  DateTime @default(now())
+  awardedBy  String?
+  revoked    Boolean  @default(false)
+
+  @@index([profileId, badgeId, venueId, revoked])
+}
+
+model Event {
+  id        String   @id @default(cuid())
+  ts        DateTime @default(now())
+  type      String   // 'check_in' | 'visit_closed' | 'mix_ordered'
+  profileId String
+  venueId   String?
+  comboHash String?
+  staffId   String?
+
+  @@index([profileId])
+  @@index([profileId, venueId])
+}

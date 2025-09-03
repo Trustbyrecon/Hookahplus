@@ -5,11 +5,19 @@
     "apps/*",
     "packages/*"
   ],
+  "dependencies": {
+    "@prisma/client": "^5.7.1"
+  },
   "devDependencies": {
-    "turbo": "2.0.6"
+    "turbo": "2.0.6",
+    "prisma": "^5.7.1",
+    "ts-node": "^10.9.2"
   },
   "scripts": {
     "dev": "turbo run dev --parallel",
     "build": "turbo run build"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
   }
 }
