@@ -298,7 +298,7 @@ export class ReflexVisualGrounder {
       edges,
       metadata: {
         total_capacity: nodes.reduce((sum, node) => sum + node.data.capacity, 0),
-        zones: [...new Set(nodes.map(node => node.data.zone))],
+        zones: Array.from(new Set(nodes.map(node => node.data.zone))),
         generated_at: new Date().toISOString(),
         version: '1.0'
       }
