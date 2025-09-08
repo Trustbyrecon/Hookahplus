@@ -11,11 +11,63 @@ import ReactFlow, {
   MarkerType,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+
+// Simple UI components - replace with your preferred UI library
+const Button = ({ children, className = "", onClick, disabled = false, variant = "default", ...props }) => (
+  <button
+    className={`px-4 py-2 rounded-md font-medium transition-colors ${
+      variant === "outline" 
+        ? "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50" 
+        : "bg-blue-600 text-white hover:bg-blue-700"
+    } ${disabled ? "opacity-50 cursor-not-allowed" : ""} ${className}`}
+    onClick={onClick}
+    disabled={disabled}
+    {...props}
+  >
+    {children}
+  </button>
+);
+
+const Card = ({ children, className = "" }) => (
+  <div className={`bg-white rounded-lg border border-gray-200 shadow-sm ${className}`}>
+    {children}
+  </div>
+);
+
+const CardHeader = ({ children, className = "" }) => (
+  <div className={`px-6 py-4 border-b border-gray-200 ${className}`}>
+    {children}
+  </div>
+);
+
+const CardTitle = ({ children, className = "" }) => (
+  <h3 className={`text-lg font-semibold text-gray-900 ${className}`}>
+    {children}
+  </h3>
+);
+
+const CardContent = ({ children, className = "" }) => (
+  <div className={`p-6 ${className}`}>
+    {children}
+  </div>
+);
+
+const Input = ({ className = "", ...props }) => (
+  <input
+    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${className}`}
+    {...props}
+  />
+);
+
+const Badge = ({ children, variant = "default", className = "" }) => (
+  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+    variant === "secondary" 
+      ? "bg-gray-100 text-gray-800" 
+      : "bg-blue-100 text-blue-800"
+  } ${className}`}>
+    {children}
+  </span>
+);
 
 /**
  * Hookah+ Operator Dashboard – React Flow Preview
