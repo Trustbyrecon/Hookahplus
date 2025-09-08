@@ -11,5 +11,9 @@
     "dev": {
       "cache": false
     }
-  }
+  },
+  "globalDependencies": [
+    "package.json",
+    "pnpm-workspace.yaml"
+  ]
 }
