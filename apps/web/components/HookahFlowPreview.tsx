@@ -135,9 +135,9 @@ function toFlowNodes(seatingMap: SeatingMap) {
     data: {
       raw: n,
       label: (
-        <div className="text-xs">
-          <div className="font-medium">{n.type}</div>
-          {n.data?.zone && <div className="opacity-70">{n.data.zone}</div>}
+        <div className="text-xs text-center">
+          <div className="font-medium">{n.type.replace('seat.', '').replace('fixture.', '')}</div>
+          {n.data?.zone && <div className="opacity-70 text-xs">{n.data.zone.replace('zone_', '')}</div>}
         </div>
       ),
     },
@@ -147,17 +147,31 @@ function toFlowNodes(seatingMap: SeatingMap) {
 
 function styleForType(t: string) {
   const base = { 
-    borderRadius: 12, 
-    padding: 6, 
-    border: "1px solid rgba(0,0,0,.1)", 
-    boxShadow: "0 1px 2px rgba(0,0,0,.1)", 
-    background: "white" 
+    borderRadius: 8, 
+    padding: 8, 
+    border: "2px solid rgba(0,0,0,.15)", 
+    boxShadow: "0 2px 4px rgba(0,0,0,.1)", 
+    background: "white",
+    minWidth: 60,
+    minHeight: 40,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center"
   };
-  if (t.startsWith("fixture")) return { ...base, background: "#f9fafb", border: "1px dashed rgba(0,0,0,.2)" };
-  if (t.includes("booth")) return { ...base, background: "#fff7ed" };
-  if (t.includes("stool")) return { ...base, background: "#eef2ff" };
-  if (t.includes("sofa") || t.includes("lounge_chair")) return { ...base, background: "#ecfeff" };
-  if (t.includes("table")) return { ...base, background: "#f0fdf4" };
+  
+  if (t.startsWith("fixture")) return { 
+    ...base, 
+    background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)", 
+    border: "2px dashed #64748b",
+    borderRadius: 12,
+    minWidth: 80,
+    minHeight: 50
+  };
+  if (t.includes("booth")) return { ...base, background: "linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%)", borderColor: "#fb923c" };
+  if (t.includes("stool")) return { ...base, background: "linear-gradient(135deg, #eef2ff 0%, #c7d2fe 100%)", borderColor: "#6366f1" };
+  if (t.includes("sofa")) return { ...base, background: "linear-gradient(135deg, #ecfeff 0%, #a7f3d0 100%)", borderColor: "#10b981" };
+  if (t.includes("lounge_chair")) return { ...base, background: "linear-gradient(135deg, #f0f9ff 0%, #bae6fd 100%)", borderColor: "#0ea5e9" };
+  if (t.includes("table")) return { ...base, background: "linear-gradient(135deg, #f0fdf4 0%, #bbf7d0 100%)", borderColor: "#22c55e" };
   return base;
 }
 
@@ -166,6 +180,8 @@ export default function HookahFlowPreview() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<SeatingNode | null>(null);
+  const [zoneFilter, setZoneFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   // Fetch seating map from hosted JSON
   useEffect(() => {
@@ -202,8 +218,43 @@ export default function HookahFlowPreview() {
   }, []);
 
   const baseNodes = useMemo(() => seating ? toFlowNodes(seating) : [], [seating]);
-  const nodesAll = useMemo(() => baseNodes, [baseNodes]);
+  
+  // Filter nodes based on zone and status
+  const filteredNodes = useMemo(() => {
+    if (!seating) return baseNodes;
+    
+    return baseNodes.filter(node => {
+      const raw = node.data.raw;
+      const zoneMatch = zoneFilter === 'all' || raw.data.zone === zoneFilter;
+      const statusMatch = statusFilter === 'all' || raw.data.status === statusFilter;
+      return zoneMatch && statusMatch;
+    });
+  }, [baseNodes, zoneFilter, statusFilter, seating]);
+  
+  const nodesAll = useMemo(() => filteredNodes, [filteredNodes]);
   const edgesAll = useMemo(() => [], []);
+  
+  // Calculate zone statistics
+  const zoneStats = useMemo(() => {
+    if (!seating) return {};
+    
+    const stats: Record<string, { total: number; occupied: number; available: number }> = {};
+    
+    seating.nodes.forEach(node => {
+      const zone = node.data.zone;
+      if (!stats[zone]) {
+        stats[zone] = { total: 0, occupied: 0, available: 0 };
+      }
+      stats[zone].total++;
+      if (node.data.session?.session_id) {
+        stats[zone].occupied++;
+      } else {
+        stats[zone].available++;
+      }
+    });
+    
+    return stats;
+  }, [seating]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(nodesAll);
   const [edges, setEdges, onEdgesChange] = useEdgesState(edgesAll);
@@ -216,20 +267,31 @@ export default function HookahFlowPreview() {
     setEdges(edgesAll); 
   }, [nodesAll, edgesAll, setNodes, setEdges]);
 
-  // Fire Session handler - calls real API
+  // Fire Session handler - calls real API with enhanced functionality
   const handleFireSession = async (seatData: SeatingNode) => {
     try {
+      // Generate a more descriptive session ID
+      const sessionId = `session_${seatData.data.zone.replace('zone_', '')}_${seatData.id}_${Date.now()}`;
+      
       const payload = {
         action: 'create',
-        sessionId: `session_${Date.now()}`,
+        sessionId: sessionId,
         tableId: seatData.id,
-        flavorMix: seatData.data.stripe_meta?.flavor_mix || 'Default Mix',
-        prepStaffId: 'staff_001', // Default staff ID
+        tableType: seatData.type,
+        flavorMix: seatData.data.stripe_meta?.flavor_mix || 'Premium Mix',
+        prepStaffId: 'staff_001',
         metadata: {
           zone: seatData.data.zone,
+          zoneLabel: seatData.data.zone.replace('zone_', '').replace('_', ' ').toUpperCase(),
           capacity: seatData.data.capacity,
           timestamp: new Date().toISOString(),
-          lounge_id: seating?.lounge_id
+          lounge_id: seating?.lounge_id,
+          lounge_name: seating?.name,
+          table_position: {
+            x: seatData.position.x,
+            y: seatData.position.y
+          },
+          is_pos_connected: seatData.data.tags?.includes('pos_connected') || false
         }
       };
 
@@ -248,7 +310,24 @@ export default function HookahFlowPreview() {
       if (response.ok) {
         const result = await response.json();
         console.log('Fire session created successfully:', result);
-        alert(`✅ Fire Session Created!\nSession ID: ${result.session?.id || result.id}\nTable: ${seatData.id}\nZone: ${seatData.data.zone}`);
+        
+        // Enhanced success message with more details
+        const successMessage = `🎉 Fire Session Created Successfully!
+        
+Session ID: ${result.session?.id || result.id}
+Table: ${seatData.id} (${seatData.type.replace('seat.', '').replace('fixture.', '')})
+Zone: ${seatData.data.zone.replace('zone_', '').replace('_', ' ').toUpperCase()}
+Capacity: ${seatData.data.capacity} people
+Flavor: ${payload.flavorMix}
+Status: Ready for preparation
+
+The session has been queued for BOH preparation.`;
+        
+        alert(successMessage);
+        
+        // Update the seat status in the UI (if we had state management)
+        // This would typically update the seating map to show the seat as occupied
+        
       } else {
         let errorMessage = 'Unknown error';
         try {
@@ -413,34 +492,111 @@ export default function HookahFlowPreview() {
             <div className="space-y-2">
               <div className="text-xs uppercase tracking-wide opacity-60">Selected Seat/Table</div>
               {selected ? (
-                <div className="text-sm space-y-1">
-                  <div><span className="font-medium">ID:</span> {selected.id}</div>
-                  <div><span className="font-medium">Type:</span> {selected.type}</div>
-                  <div><span className="font-medium">Zone:</span> {selected.data?.zone}</div>
-                  <div><span className="font-medium">Capacity:</span> {selected.data?.capacity ?? "—"}</div>
-                  <div><span className="font-medium">Status:</span> {selected.data?.status ?? "idle"}</div>
-                  <div><span className="font-medium">Session:</span> {selected.data?.session?.session_id ? "Active" : "None"}</div>
-                  <div><span className="font-medium">Flavor:</span> {selected.data?.stripe_meta?.flavor_mix || "—"}</div>
-                  <Button 
-                    className="w-full mt-2" 
-                    onClick={() => handleFireSession(selected)}
-                    disabled={loading}
-                  >
-                    {loading ? "Creating..." : "Fire Session"}
-                  </Button>
+                <div className="space-y-3">
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <h4 className="font-semibold text-gray-900 mb-2">
+                      {selected.type.replace('seat.', '').replace('fixture.', '').replace('_', ' ').toUpperCase()}
+                    </h4>
+                    <div className="text-sm space-y-1">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Zone:</span>
+                        <span className="font-medium">{selected.data?.zone?.replace('zone_', '').replace('_', ' ').toUpperCase()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Capacity:</span>
+                        <span className="font-medium">{selected.data?.capacity ?? "—"} people</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Status:</span>
+                        <span className={`font-medium ${selected.data?.status === 'idle' ? 'text-green-600' : 'text-orange-600'}`}>
+                          {selected.data?.status ?? "idle"}
+                        </span>
+                      </div>
+                      {selected.data?.session?.session_id && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Session:</span>
+                          <span className="font-medium text-blue-600">Active</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Button 
+                      className="w-full bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl" 
+                      onClick={() => handleFireSession(selected)}
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        <div className="flex items-center justify-center">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Creating Session...
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center">
+                          🔥 Fire Session
+                        </div>
+                      )}
+                    </Button>
+                    
+                    {selected.data?.tags?.includes('pos_connected') && (
+                      <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded text-center">
+                        💳 Connected to POS Terminal
+                      </div>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <div className="text-sm opacity-70">Click a seat/table to view details.</div>
               )}
             </div>
 
-            <div className="pt-2 text-sm opacity-80">
-              <div className="font-medium mb-1">Session/Stripe Hooks</div>
-              <ul className="list-disc list-inside space-y-1">
-                <li>Nodes include <code>status</code>, <code>session</code>, and <code>stripe_meta</code></li>
-                <li><strong>Fire Session</strong> creates real session via API</li>
-                <li>Use <code>ops.filters</code> to show FOH/BOH subsets</li>
-              </ul>
+            {/* Zone Filter */}
+            <div className="space-y-2">
+              <div className="text-xs uppercase tracking-wide opacity-60">Zone Filter</div>
+              <select 
+                value={zoneFilter} 
+                onChange={(e) => setZoneFilter(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md text-sm"
+              >
+                <option value="all">All Zones</option>
+                {seating?.zones.map(zone => (
+                  <option key={zone.id} value={zone.id}>
+                    {zone.label} ({zoneStats[zone.id]?.available || 0}/{zoneStats[zone.id]?.total || 0})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Status Filter */}
+            <div className="space-y-2">
+              <div className="text-xs uppercase tracking-wide opacity-60">Status Filter</div>
+              <select 
+                value={statusFilter} 
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md text-sm"
+              >
+                <option value="all">All Status</option>
+                <option value="idle">Available</option>
+                <option value="occupied">Occupied</option>
+                <option value="reserved">Reserved</option>
+              </select>
+            </div>
+
+            {/* Zone Statistics */}
+            <div className="space-y-2">
+              <div className="text-xs uppercase tracking-wide opacity-60">Zone Statistics</div>
+              <div className="space-y-1 max-h-32 overflow-y-auto">
+                {Object.entries(zoneStats).map(([zone, stats]) => (
+                  <div key={zone} className="text-xs bg-gray-50 p-2 rounded">
+                    <div className="font-medium">{zone.replace('zone_', '').replace('_', ' ').toUpperCase()}</div>
+                    <div className="flex justify-between text-gray-600">
+                      <span>Available: {stats.available}</span>
+                      <span>Occupied: {stats.occupied}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="pt-2 space-y-2">
