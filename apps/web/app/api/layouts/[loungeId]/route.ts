@@ -15,50 +15,47 @@ const MOCK_SEATING_MAP = {
     { "id": "zone_patio_E", "type": "patio_zone", "label": "Patio (Glass Door)", "bounds": [1260, 200, 1380, 520] }
   ],
   "nodes": [
-    {"id":"fixture_bar_counter","type":"fixture.bar_counter","position":{"x":80,"y":140},"size":{"w":460,"h":40},"data":{"zone":"zone_bar_A","tags":["service_edge"]}},
-    {"id":"seat_stool_01","type":"seat.stool","position":{"x":110,"y":190},"size":{"w":20,"h":20},"data":{"zone":"zone_bar_A","capacity":1,"dim_in":{"seat_h":30,"ctr_h":42},"tags":["bar","stool"],"stripe_meta":{"session_id":null,"flavor_mix":null}}},
-    {"id":"seat_stool_02","type":"seat.stool","position":{"x":155,"y":190},"size":{"w":20,"h":20},"data":{"zone":"zone_bar_A","capacity":1,"dim_in":{"seat_h":30,"ctr_h":42},"tags":["bar","stool"],"stripe_meta":{"session_id":null,"flavor_mix":null}}},
-    {"id":"seat_stool_03","type":"seat.stool","position":{"x":200,"y":190},"size":{"w":20,"h":20},"data":{"zone":"zone_bar_A","capacity":1,"dim_in":{"seat_h":30,"ctr_h":42},"tags":["bar","stool"],"stripe_meta":{"session_id":null,"flavor_mix":null}}},
-    {"id":"seat_stool_04","type":"seat.stool","position":{"x":245,"y":190},"size":{"w":20,"h":20},"data":{"zone":"zone_bar_A","capacity":1,"dim_in":{"seat_h":30,"ctr_h":42},"tags":["bar","stool"],"stripe_meta":{"session_id":null,"flavor_mix":null}}},
-    {"id":"seat_stool_05","type":"seat.stool","position":{"x":290,"y":190},"size":{"w":20,"h":20},"data":{"zone":"zone_bar_A","capacity":1,"dim_in":{"seat_h":30,"ctr_h":42},"tags":["bar","stool"],"stripe_meta":{"session_id":null,"flavor_mix":null}}},
-    {"id":"seat_stool_06","type":"seat.stool","position":{"x":335,"y":190},"size":{"w":20,"h":20},"data":{"zone":"zone_bar_A","capacity":1,"dim_in":{"seat_h":30,"ctr_h":42},"tags":["bar","stool"],"stripe_meta":{"session_id":null,"flavor_mix":null}}},
-    {"id":"seat_stool_07","type":"seat.stool","position":{"x":380,"y":190},"size":{"w":20,"h":20},"data":{"zone":"zone_bar_A","capacity":1,"dim_in":{"seat_h":30,"ctr_h":42},"tags":["bar","stool"],"stripe_meta":{"session_id":null,"flavor_mix":null}}},
-    {"id":"seat_stool_08","type":"seat.stool","position":{"x":425,"y":190},"size":{"w":20,"h":20},"data":{"zone":"zone_bar_A","capacity":1,"dim_in":{"seat_h":30,"ctr_h":42},"tags":["bar","stool"],"stripe_meta":{"session_id":null,"flavor_mix":null}}},
-    {"id":"seat_stool_09","type":"seat.stool","position":{"x":470,"y":190},"size":{"w":20,"h":20},"data":{"zone":"zone_bar_A","capacity":1,"dim_in":{"seat_h":30,"ctr_h":42},"tags":["bar","stool"],"stripe_meta":{"session_id":null,"flavor_mix":null}}},
+    // POS Terminal (Bar Counter) - Central position
+    {"id":"fixture_bar_counter","type":"fixture.bar_counter","position":{"x":300,"y":200},"size":{"w":200,"h":40},"data":{"zone":"zone_bar_A","tags":["pos_terminal","service_edge"],"pos_terminal":true,"sequence":0}},
+    
+    // Bar Area - Stools (sequenced 1-8, arranged around POS terminal)
+    {"id":"seat_stool_01","type":"seat.stool","position":{"x":250,"y":150},"size":{"w":25,"h":25},"data":{"zone":"zone_bar_A","capacity":1,"status":"idle","sequence":1,"session":{"session_id":null,"started_at":null,"assigned_staff":null},"stripe_meta":{"flavor_mix":null,"price_cents":null},"tags":["bar","stool","pos_connected"]}},
+    {"id":"seat_stool_02","type":"seat.stool","position":{"x":300,"y":150},"size":{"w":25,"h":25},"data":{"zone":"zone_bar_A","capacity":1,"status":"idle","sequence":2,"session":{"session_id":null,"started_at":null,"assigned_staff":null},"stripe_meta":{"flavor_mix":null,"price_cents":null},"tags":["bar","stool","pos_connected"]}},
+    {"id":"seat_stool_03","type":"seat.stool","position":{"x":350,"y":150},"size":{"w":25,"h":25},"data":{"zone":"zone_bar_A","capacity":1,"status":"idle","sequence":3,"session":{"session_id":null,"started_at":null,"assigned_staff":null},"stripe_meta":{"flavor_mix":null,"price_cents":null},"tags":["bar","stool","pos_connected"]}},
+    {"id":"seat_stool_04","type":"seat.stool","position":{"x":400,"y":150},"size":{"w":25,"h":25},"data":{"zone":"zone_bar_A","capacity":1,"status":"idle","sequence":4,"session":{"session_id":null,"started_at":null,"assigned_staff":null},"stripe_meta":{"flavor_mix":null,"price_cents":null},"tags":["bar","stool","pos_connected"]}},
+    {"id":"seat_stool_05","type":"seat.stool","position":{"x":250,"y":250},"size":{"w":25,"h":25},"data":{"zone":"zone_bar_A","capacity":1,"status":"idle","sequence":5,"session":{"session_id":null,"started_at":null,"assigned_staff":null},"stripe_meta":{"flavor_mix":null,"price_cents":null},"tags":["bar","stool","pos_connected"]}},
+    {"id":"seat_stool_06","type":"seat.stool","position":{"x":300,"y":250},"size":{"w":25,"h":25},"data":{"zone":"zone_bar_A","capacity":1,"status":"idle","sequence":6,"session":{"session_id":null,"started_at":null,"assigned_staff":null},"stripe_meta":{"flavor_mix":null,"price_cents":null},"tags":["bar","stool","pos_connected"]}},
+    {"id":"seat_stool_07","type":"seat.stool","position":{"x":350,"y":250},"size":{"w":25,"h":25},"data":{"zone":"zone_bar_A","capacity":1,"status":"idle","sequence":7,"session":{"session_id":null,"started_at":null,"assigned_staff":null},"stripe_meta":{"flavor_mix":null,"price_cents":null},"tags":["bar","stool","pos_connected"]}},
+    {"id":"seat_stool_08","type":"seat.stool","position":{"x":400,"y":250},"size":{"w":25,"h":25},"data":{"zone":"zone_bar_A","capacity":1,"status":"idle","sequence":8,"session":{"session_id":null,"started_at":null,"assigned_staff":null},"stripe_meta":{"flavor_mix":null,"price_cents":null},"tags":["bar","stool","pos_connected"]}},
 
     {"id":"seat_booth_pair_01","type":"seat.booth_double","position":{"x":100,"y":300},"size":{"w":90,"h":60},"data":{"zone":"zone_booths_W","capacity":4,"dim_in":{"depth":49,"len_range":[60,90]},"tags":["booth","double"]}},
     {"id":"seat_booth_pair_02","type":"seat.booth_double","position":{"x":210,"y":300},"size":{"w":90,"h":60},"data":{"zone":"zone_booths_W","capacity":4,"dim_in":{"depth":49,"len_range":[60,90]},"tags":["booth","double"]}},
     {"id":"seat_booth_pair_03","type":"seat.booth_double","position":{"x":320,"y":300},"size":{"w":90,"h":60},"data":{"zone":"zone_booths_W","capacity":4,"dim_in":{"depth":49,"len_range":[60,90]},"tags":["booth","double"]}},
     {"id":"seat_booth_pair_04","type":"seat.booth_double","position":{"x":430,"y":300},"size":{"w":90,"h":60},"data":{"zone":"zone_booths_W","capacity":4,"dim_in":{"depth":49,"len_range":[60,90]},"tags":["booth","double"]}},
 
-    // Lounge clusters
-    {"id":"table_low_round_1","type":"table.low_round","position":{"x":900,"y":200},"size":{"w":36,"h":36},"data":{"zone":"zone_lounge_NE","tags":["coffee_table"]}},
-    {"id":"seat_sofa_1","type":"seat.sofa","position":{"x":860,"y":240},"size":{"w":80,"h":28},"data":{"zone":"zone_lounge_NE","capacity":3,"tags":["sofa"]}},
-    {"id":"seat_chair_L_1","type":"seat.lounge_chair","position":{"x":820,"y":190},"size":{"w":26,"h":26},"data":{"zone":"zone_lounge_NE","capacity":1,"tags":["lounge_chair"]}},
-    {"id":"seat_chair_R_1","type":"seat.lounge_chair","position":{"x":980,"y":190},"size":{"w":26,"h":26},"data":{"zone":"zone_lounge_NE","capacity":1,"tags":["lounge_chair"]}},
+    // Lounge Area - Chairs, Sofas, Tables (sequenced 15-23, arranged in 3 rows)
+    // Top Row - Lounge Chairs
+    {"id":"seat_lounge_chair_01","type":"seat.lounge_chair","position":{"x":500,"y":100},"size":{"w":30,"h":30},"data":{"zone":"zone_lounge_NE","capacity":1,"status":"idle","sequence":15,"session":{"session_id":null,"started_at":null,"assigned_staff":null},"stripe_meta":{"flavor_mix":null,"price_cents":null},"tags":["lounge","chair"]}},
+    {"id":"seat_lounge_chair_02","type":"seat.lounge_chair","position":{"x":550,"y":100},"size":{"w":30,"h":30},"data":{"zone":"zone_lounge_NE","capacity":1,"status":"idle","sequence":16,"session":{"session_id":null,"started_at":null,"assigned_staff":null},"stripe_meta":{"flavor_mix":null,"price_cents":null},"tags":["lounge","chair"]}},
+    {"id":"seat_lounge_chair_03","type":"seat.lounge_chair","position":{"x":600,"y":100},"size":{"w":30,"h":30},"data":{"zone":"zone_lounge_NE","capacity":1,"status":"idle","sequence":17,"session":{"session_id":null,"started_at":null,"assigned_staff":null},"stripe_meta":{"flavor_mix":null,"price_cents":null},"tags":["lounge","chair"]}},
+    
+    // Middle Row - Sofas
+    {"id":"seat_sofa_01","type":"seat.sofa","position":{"x":500,"y":150},"size":{"w":80,"h":30},"data":{"zone":"zone_lounge_NE","capacity":3,"status":"idle","sequence":18,"session":{"session_id":null,"started_at":null,"assigned_staff":null},"stripe_meta":{"flavor_mix":null,"price_cents":null},"tags":["lounge","sofa"]}},
+    {"id":"seat_sofa_02","type":"seat.sofa","position":{"x":600,"y":150},"size":{"w":80,"h":30},"data":{"zone":"zone_lounge_NE","capacity":3,"status":"idle","sequence":19,"session":{"session_id":null,"started_at":null,"assigned_staff":null},"stripe_meta":{"flavor_mix":null,"price_cents":null},"tags":["lounge","sofa"]}},
+    {"id":"seat_sofa_03","type":"seat.sofa","position":{"x":700,"y":150},"size":{"w":80,"h":30},"data":{"zone":"zone_lounge_NE","capacity":3,"status":"idle","sequence":20,"session":{"session_id":null,"started_at":null,"assigned_staff":null},"stripe_meta":{"flavor_mix":null,"price_cents":null},"tags":["lounge","sofa"]}},
+    
+    // Bottom Row - Tables
+    {"id":"table_low_round_01","type":"table.low_round","position":{"x":500,"y":200},"size":{"w":40,"h":40},"data":{"zone":"zone_lounge_NE","capacity":4,"status":"idle","sequence":21,"session":{"session_id":null,"started_at":null,"assigned_staff":null},"stripe_meta":{"flavor_mix":null,"price_cents":null},"tags":["lounge","table"]}},
+    {"id":"table_low_round_02","type":"table.low_round","position":{"x":600,"y":200},"size":{"w":40,"h":40},"data":{"zone":"zone_lounge_NE","capacity":4,"status":"idle","sequence":22,"session":{"session_id":null,"started_at":null,"assigned_staff":null},"stripe_meta":{"flavor_mix":null,"price_cents":null},"tags":["lounge","table"]}},
+    {"id":"table_low_round_03","type":"table.low_round","position":{"x":700,"y":200},"size":{"w":40,"h":40},"data":{"zone":"zone_lounge_NE","capacity":4,"status":"idle","sequence":23,"session":{"session_id":null,"started_at":null,"assigned_staff":null},"stripe_meta":{"flavor_mix":null,"price_cents":null},"tags":["lounge","table"]}},
 
-    {"id":"table_low_round_2","type":"table.low_round","position":{"x":1080,"y":260},"size":{"w":36,"h":36},"data":{"zone":"zone_lounge_NE","tags":["coffee_table"]}},
-    {"id":"seat_sofa_2","type":"seat.sofa","position":{"x":1040,"y":300},"size":{"w":80,"h":28},"data":{"zone":"zone_lounge_NE","capacity":3,"tags":["sofa"]}},
-    {"id":"seat_chair_L_2","type":"seat.lounge_chair","position":{"x":1000,"y":250},"size":{"w":26,"h":26},"data":{"zone":"zone_lounge_NE","capacity":1,"tags":["lounge_chair"]}},
-    {"id":"seat_chair_R_2","type":"seat.lounge_chair","position":{"x":1160,"y":250},"size":{"w":26,"h":26},"data":{"zone":"zone_lounge_NE","capacity":1,"tags":["lounge_chair"]}},
-
-    {"id":"table_low_round_3","type":"table.low_round","position":{"x":980,"y":360},"size":{"w":36,"h":36},"data":{"zone":"zone_lounge_NE","tags":["coffee_table"]}},
-    {"id":"seat_sofa_3","type":"seat.sofa","position":{"x":940,"y":400},"size":{"w":80,"h":28},"data":{"zone":"zone_lounge_NE","capacity":3,"tags":["sofa"]}},
-    {"id":"seat_chair_L_3","type":"seat.lounge_chair","position":{"x":900,"y":350},"size":{"w":26,"h":26},"data":{"zone":"zone_lounge_NE","capacity":1,"tags":["lounge_chair"]}},
-    {"id":"seat_chair_R_3","type":"seat.lounge_chair","position":{"x":1060,"y":350},"size":{"w":26,"h":26},"data":{"zone":"zone_lounge_NE","capacity":1,"tags":["lounge_chair"]}},
-
-    // VIP high-tops + stools
-    {"id":"table_high_1","type":"table.high_round","position":{"x":960,"y":600},"size":{"w":30,"h":30},"data":{"zone":"zone_vip_SE","tags":["high_top"]}},
-    {"id":"seat_vip_stool_1_1","type":"seat.stool","position":{"x":938,"y":574},"size":{"w":18,"h":18},"data":{"zone":"zone_vip_SE","capacity":1,"tags":["stool","vip"]}},
-    {"id":"seat_vip_stool_1_2","type":"seat.stool","position":{"x":982,"y":574},"size":{"w":18,"h":18},"data":{"zone":"zone_vip_SE","capacity":1,"tags":["stool","vip"]}},
-    {"id":"seat_vip_stool_1_3","type":"seat.stool","position":{"x":938,"y":626},"size":{"w":18,"h":18},"data":{"zone":"zone_vip_SE","capacity":1,"tags":["stool","vip"]}},
-    {"id":"seat_vip_stool_1_4","type":"seat.stool","position":{"x":982,"y":626},"size":{"w":18,"h":18},"data":{"zone":"zone_vip_SE","capacity":1,"tags":["stool","vip"]}},
-
-    {"id":"table_high_2","type":"table.high_round","position":{"x":1120,"y":680},"size":{"w":30,"h":30},"data":{"zone":"zone_vip_SE","tags":["high_top"]}},
-    {"id":"seat_vip_stool_2_1","type":"seat.stool","position":{"x":1098,"y":654},"size":{"w":18,"h":18},"data":{"zone":"zone_vip_SE","capacity":1,"tags":["stool","vip"]}},
-    {"id":"seat_vip_stool_2_2","type":"seat.stool","position":{"x":1142,"y":654},"size":{"w":18,"h":18},"data":{"zone":"zone_vip_SE","capacity":1,"tags":["stool","vip"]}},
-    {"id":"seat_vip_stool_2_3","type":"seat.stool","position":{"x":1098,"y":706},"size":{"w":18,"h":18},"data":{"zone":"zone_vip_SE","capacity":1,"tags":["stool","vip"]}},
-    {"id":"seat_vip_stool_2_4","type":"seat.stool","position":{"x":1142,"y":706},"size":{"w":18,"h":18},"data":{"zone":"zone_vip_SE","capacity":1,"tags":["stool","vip"]}}
+    // VIP Area - Stools (sequenced 9-14, arranged in 2 rows of 3)
+    {"id":"seat_stool_09","type":"seat.stool","position":{"x":100,"y":400},"size":{"w":25,"h":25},"data":{"zone":"zone_vip_SE","capacity":1,"status":"idle","sequence":9,"session":{"session_id":null,"started_at":null,"assigned_staff":null},"stripe_meta":{"flavor_mix":null,"price_cents":null},"tags":["vip","stool"]}},
+    {"id":"seat_stool_10","type":"seat.stool","position":{"x":150,"y":400},"size":{"w":25,"h":25},"data":{"zone":"zone_vip_SE","capacity":1,"status":"idle","sequence":10,"session":{"session_id":null,"started_at":null,"assigned_staff":null},"stripe_meta":{"flavor_mix":null,"price_cents":null},"tags":["vip","stool"]}},
+    {"id":"seat_stool_11","type":"seat.stool","position":{"x":200,"y":400},"size":{"w":25,"h":25},"data":{"zone":"zone_vip_SE","capacity":1,"status":"idle","sequence":11,"session":{"session_id":null,"started_at":null,"assigned_staff":null},"stripe_meta":{"flavor_mix":null,"price_cents":null},"tags":["vip","stool"]}},
+    {"id":"seat_stool_12","type":"seat.stool","position":{"x":100,"y":450},"size":{"w":25,"h":25},"data":{"zone":"zone_vip_SE","capacity":1,"status":"idle","sequence":12,"session":{"session_id":null,"started_at":null,"assigned_staff":null},"stripe_meta":{"flavor_mix":null,"price_cents":null},"tags":["vip","stool"]}},
+    {"id":"seat_stool_13","type":"seat.stool","position":{"x":150,"y":450},"size":{"w":25,"h":25},"data":{"zone":"zone_vip_SE","capacity":1,"status":"idle","sequence":13,"session":{"session_id":null,"started_at":null,"assigned_staff":null},"stripe_meta":{"flavor_mix":null,"price_cents":null},"tags":["vip","stool"]}},
+    {"id":"seat_stool_14","type":"seat.stool","position":{"x":200,"y":450},"size":{"w":25,"h":25},"data":{"zone":"zone_vip_SE","capacity":1,"status":"idle","sequence":14,"session":{"session_id":null,"started_at":null,"assigned_staff":null},"stripe_meta":{"flavor_mix":null,"price_cents":null},"tags":["vip","stool"]}},
   ],
   "edges": [],
   "meta": { "notes": "API mock derived from public Atlanta lounge photos; positions approximate for demo.", "source": "api_mock", "generated_at": "2025-09-03" }

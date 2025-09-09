@@ -137,6 +137,7 @@ function toFlowNodes(seatingMap: SeatingMap) {
       label: (
         <div className="text-xs">
           <div className="font-medium">{n.type}</div>
+          {n.data?.sequence && <div className="text-blue-600 font-bold">#{n.data.sequence}</div>}
           {n.data?.zone && <div className="opacity-70">{n.data.zone}</div>}
         </div>
       ),
@@ -223,7 +224,7 @@ export default function HookahFlowPreview() {
         action: 'create',
         sessionId: `session_${Date.now()}`,
         tableId: seatData.id,
-        flavorMix: seatData.data.stripe_meta.flavor_mix || 'Default Mix',
+        flavorMix: seatData.data.stripe_meta?.flavor_mix || 'Default Mix',
         prepStaffId: 'staff_001', // Default staff ID
         metadata: {
           zone: seatData.data.zone,
@@ -299,7 +300,53 @@ export default function HookahFlowPreview() {
 
   // [cursor-agent] Auto-suggest minor seat spacing tweaks
   const handleSuggest = () => {
-    alert("💡 Suggestion: Move 2 stools ~10px apart near Main Bar to reduce clustering.");
+    if (!seating) return;
+    
+    const suggestions = [];
+    const nodes = seating.nodes;
+    
+    // Check for overlapping nodes
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const node1 = nodes[i];
+        const node2 = nodes[j];
+        
+        // Calculate if nodes overlap
+        const overlap = (
+          node1.position.x < node2.position.x + node2.size.w &&
+          node1.position.x + node1.size.w > node2.position.x &&
+          node1.position.y < node2.position.y + node2.size.h &&
+          node1.position.y + node1.size.h > node2.position.y
+        );
+        
+        if (overlap) {
+          suggestions.push(`Move ${node1.id} and ${node2.id} apart to prevent overlap`);
+        }
+      }
+    }
+    
+    // Check for nodes too close together (less than 10px apart)
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const node1 = nodes[i];
+        const node2 = nodes[j];
+        
+        const distance = Math.sqrt(
+          Math.pow(node1.position.x - node2.position.x, 2) + 
+          Math.pow(node1.position.y - node2.position.y, 2)
+        );
+        
+        if (distance < 10 && distance > 0) {
+          suggestions.push(`Increase spacing between ${node1.id} and ${node2.id} (currently ${distance.toFixed(1)}px)`);
+        }
+      }
+    }
+    
+    if (suggestions.length === 0) {
+      alert("✅ Layout looks good! No spacing issues detected.");
+    } else {
+      alert(`💡 Suggestions:\n\n${suggestions.slice(0, 5).join('\n')}${suggestions.length > 5 ? '\n...and more' : ''}`);
+    }
   };
 
   if (loading) {
@@ -370,11 +417,13 @@ export default function HookahFlowPreview() {
                 <div className="text-sm space-y-1">
                   <div><span className="font-medium">ID:</span> {selected.id}</div>
                   <div><span className="font-medium">Type:</span> {selected.type}</div>
+                  {selected.data?.sequence && <div><span className="font-medium">Sequence:</span> #{selected.data.sequence}</div>}
                   <div><span className="font-medium">Zone:</span> {selected.data?.zone}</div>
                   <div><span className="font-medium">Capacity:</span> {selected.data?.capacity ?? "—"}</div>
                   <div><span className="font-medium">Status:</span> {selected.data?.status ?? "idle"}</div>
                   <div><span className="font-medium">Session:</span> {selected.data?.session?.session_id ? "Active" : "None"}</div>
                   <div><span className="font-medium">Flavor:</span> {selected.data?.stripe_meta?.flavor_mix || "—"}</div>
+                  {selected.data?.pos_terminal && <div className="text-blue-600 font-medium">🎯 POS Terminal</div>}
                   <Button 
                     className="w-full mt-2" 
                     onClick={() => handleFireSession(selected)}
