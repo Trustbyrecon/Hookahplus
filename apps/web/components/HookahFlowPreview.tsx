@@ -233,6 +233,8 @@ export default function HookahFlowPreview() {
         }
       };
 
+      console.log('Creating fire session with payload:', payload);
+
       const response = await fetch('/api/fire-session', {
         method: 'POST',
         headers: {
@@ -241,12 +243,21 @@ export default function HookahFlowPreview() {
         body: JSON.stringify(payload),
       });
 
+      console.log('Fire session response status:', response.status);
+
       if (response.ok) {
         const result = await response.json();
+        console.log('Fire session created successfully:', result);
         alert(`✅ Fire Session Created!\nSession ID: ${result.session?.id || result.id}\nTable: ${seatData.id}\nZone: ${seatData.data.zone}`);
       } else {
-        const error = await response.json();
-        alert(`❌ Failed to create session: ${error.error || 'Unknown error'}`);
+        let errorMessage = 'Unknown error';
+        try {
+          const error = await response.json();
+          errorMessage = error.error || error.message || 'Unknown error';
+        } catch (parseError) {
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        alert(`❌ Failed to create session: ${errorMessage}`);
       }
     } catch (err) {
       console.error('Fire session error:', err);
