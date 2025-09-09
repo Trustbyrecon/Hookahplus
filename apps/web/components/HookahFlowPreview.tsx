@@ -421,7 +421,6 @@ export default function HookahFlowPreview() {
                   <div><span className="font-medium">Status:</span> {selected.data?.status ?? "idle"}</div>
                   <div><span className="font-medium">Session:</span> {selected.data?.session?.session_id ? "Active" : "None"}</div>
                   <div><span className="font-medium">Flavor:</span> {selected.data?.stripe_meta?.flavor_mix || "—"}</div>
-                  {selected.data?.pos_terminal && <div className="text-blue-600 font-medium">🎯 POS Terminal</div>}
                   <Button 
                     className="w-full mt-2" 
                     onClick={() => handleFireSession(selected)}
