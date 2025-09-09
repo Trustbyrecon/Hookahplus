@@ -137,7 +137,6 @@ function toFlowNodes(seatingMap: SeatingMap) {
       label: (
         <div className="text-xs">
           <div className="font-medium">{n.type}</div>
-          {n.data?.sequence && <div className="text-blue-600 font-bold">#{n.data.sequence}</div>}
           {n.data?.zone && <div className="opacity-70">{n.data.zone}</div>}
         </div>
       ),
@@ -417,7 +416,6 @@ export default function HookahFlowPreview() {
                 <div className="text-sm space-y-1">
                   <div><span className="font-medium">ID:</span> {selected.id}</div>
                   <div><span className="font-medium">Type:</span> {selected.type}</div>
-                  {selected.data?.sequence && <div><span className="font-medium">Sequence:</span> #{selected.data.sequence}</div>}
                   <div><span className="font-medium">Zone:</span> {selected.data?.zone}</div>
                   <div><span className="font-medium">Capacity:</span> {selected.data?.capacity ?? "—"}</div>
                   <div><span className="font-medium">Status:</span> {selected.data?.status ?? "idle"}</div>
