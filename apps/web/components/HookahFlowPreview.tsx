@@ -335,10 +335,13 @@ export default function HookahFlowPreview() {
       const result = await response.json();
       console.log('Customer booking created:', result.data);
 
+      // Ensure we have a valid booking ID with defensive programming
+      const bookingId = result?.data?.id || `booking_${Date.now()}`;
+
       // Also create fire session for BOH operations
       const fireSessionPayload = {
         action: 'create',
-        sessionId: result.data.id, // Use booking ID as session ID
+        sessionId: bookingId, // Use booking ID as session ID
         tableId: tableId,
         tableType: seatData.type,
         customerName: customerName,
@@ -361,7 +364,7 @@ export default function HookahFlowPreview() {
           qrCode: `checkin_${reservationId}`,
           estimatedPrepTime: 5,
           estimatedSessionTime: 60,
-          bookingId: result.data.id // Link to customer journey
+          bookingId: bookingId // Link to customer journey
         }
       };
 
@@ -391,7 +394,7 @@ export default function HookahFlowPreview() {
                   ...node.data,
                   status: 'occupied',
                   session: {
-                    session_id: result.data.id,
+                    session_id: bookingId,
                     started_at: new Date().toISOString(),
                     assigned_staff: 'staff_001'
                   }
