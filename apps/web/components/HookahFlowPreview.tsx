@@ -89,6 +89,7 @@ interface SeatingNode {
     zone: string;
     capacity?: number;
     status: string;
+    sequence?: number;
     session: {
       session_id: string | null;
       started_at: string | null;
