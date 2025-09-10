@@ -39,199 +39,105 @@ export default function FireSessionDashboard() {
   });
   const [sessionTimers, setSessionTimers] = useState<Record<string, {remaining: number, total: number, isActive: boolean}>>({});
 
-  // Generate demo sessions with 10 popular lounge personas
+  // Load real-time customer journey data instead of demo data
   useEffect(() => {
-    const demoSessions: FireSession[] = [
-      {
-        id: 'session-1',
-        tableId: 'T-001',
-        customerName: 'Alex "The Regular" Johnson',
-        flavor: 'Blue Mist + Mint',
-        amount: 3000,
-        status: 'ACTIVE',
-        currentStage: 'CUSTOMER',
-        assignedStaff: { boh: 'Mike Rodriguez', foh: 'Sarah Chen' },
-        createdAt: Date.now() - 3600000,
-        updatedAt: Date.now(),
-        sessionStartTime: Date.now() - 1800000,
-        sessionDuration: 1800000,
-        coalStatus: 'needs_refill',
-        refillStatus: 'requested',
-        notes: 'VIP customer - always orders Blue Mist with extra mint',
-        edgeCase: null
-      },
-      {
-        id: 'session-2',
-        tableId: 'T-003',
-        customerName: 'Emily "Double Apple Queen" Davis',
-        flavor: 'Double Apple',
-        amount: 3200,
-        status: 'READY_FOR_DELIVERY',
-        currentStage: 'BOH',
-        assignedStaff: { boh: 'Mike Rodriguez' },
-        createdAt: Date.now() - 900000,
-        updatedAt: Date.now(),
-        sessionDuration: 0,
-        coalStatus: 'active',
-        refillStatus: 'none',
-        notes: 'Classic Double Apple lover - knows her stuff',
-        edgeCase: null
-      },
-      {
-        id: 'session-3',
-        tableId: 'Bar-1',
-        customerName: 'Mike "Peach Wave" Rodriguez',
-        flavor: 'Peach Wave',
-        amount: 2800,
-        status: 'STAFF_HOLD',
-        currentStage: 'BOH',
-        assignedStaff: { boh: 'Sarah Chen' },
-        createdAt: Date.now() - 600000,
-        updatedAt: Date.now(),
-        sessionDuration: 0,
-        coalStatus: 'active',
-        refillStatus: 'none',
-        notes: 'Waiting for Peach Wave restock - popular flavor',
-        edgeCase: 'STOCK_BLOCKED'
-      },
-      {
-        id: 'session-4',
-        tableId: 'T-005',
-        customerName: 'Sarah "Mint Fresh" Chen',
-        flavor: 'Mint Fresh + Ice',
-        amount: 3100,
-        status: 'PREP_IN_PROGRESS',
-        currentStage: 'BOH',
-        assignedStaff: { boh: 'Alex Johnson' },
-        createdAt: Date.now() - 450000,
-        updatedAt: Date.now(),
-        sessionDuration: 0,
-        coalStatus: 'active',
-        refillStatus: 'none',
-        notes: 'Loves the cooling effect - always requests extra ice',
-        edgeCase: null
-      },
-      {
-        id: 'session-5',
-        tableId: 'T-007',
-        customerName: 'David "Strawberry Fields" Lee',
-        flavor: 'Strawberry + Vanilla',
-        amount: 3300,
-        status: 'HEAT_UP',
-        currentStage: 'BOH',
-        assignedStaff: { boh: 'Mike Rodriguez' },
-        createdAt: Date.now() - 300000,
-        updatedAt: Date.now(),
-        sessionDuration: 0,
-        coalStatus: 'active',
-        refillStatus: 'none',
-        notes: 'Sweet tooth - loves dessert flavors',
-        edgeCase: null
-      },
-      {
-        id: 'session-6',
-        tableId: 'T-009',
-        customerName: 'Maria "Grape Escape" Garcia',
-        flavor: 'Grape + Lemon',
-        amount: 2900,
-        status: 'OUT_FOR_DELIVERY',
-        currentStage: 'FOH',
-        assignedStaff: { boh: 'Chef Sarah', foh: 'Alex Johnson' },
-        createdAt: Date.now() - 180000,
-        updatedAt: Date.now(),
-        sessionDuration: 0,
-        coalStatus: 'active',
-        refillStatus: 'none',
-        notes: 'Fruity combination expert - always experimenting',
-        edgeCase: null
-      },
-      {
-        id: 'session-7',
-        tableId: 'T-011',
-        customerName: 'James "Watermelon King" Wilson',
-        flavor: 'Watermelon + Ice',
-        amount: 3000,
-        status: 'DELIVERED',
-        currentStage: 'FOH',
-        assignedStaff: { foh: 'Sarah Chen' },
-        createdAt: Date.now() - 120000,
-        updatedAt: Date.now(),
-        sessionDuration: 0,
-        coalStatus: 'active',
-        refillStatus: 'none',
-        notes: 'Summer favorite - refreshing and light',
-        edgeCase: null
-      },
-      {
-        id: 'session-8',
-        tableId: 'T-013',
-        customerName: 'Lisa "Rose Garden" Thompson',
-        flavor: 'Rose + Mint',
-        amount: 3200,
-        status: 'PAID_CONFIRMED',
-        currentStage: 'BOH',
-        assignedStaff: {},
-        createdAt: Date.now() - 60000,
-        updatedAt: Date.now(),
-        sessionDuration: 0,
-        coalStatus: 'active',
-        refillStatus: 'none',
-        notes: 'Elegant taste - loves floral combinations',
-        edgeCase: null
-      },
-      {
-        id: 'session-9',
-        tableId: 'T-015',
-        customerName: 'Carlos "Mango Tango" Martinez',
-        flavor: 'Mango + Peach',
-        amount: 3100,
-        status: 'NEW',
-        currentStage: 'BOH',
-        assignedStaff: {},
-        createdAt: Date.now() - 30000,
-        updatedAt: Date.now(),
-        sessionDuration: 0,
-        coalStatus: 'active',
-        refillStatus: 'none',
-        notes: 'Tropical paradise lover - exotic flavors only',
-        edgeCase: null
-      },
-      {
-        id: 'session-10',
-        tableId: 'T-017',
-        customerName: 'Amanda "Vanilla Dreams" Brown',
-        flavor: 'Vanilla + Caramel',
-        amount: 3000,
-        status: 'CLOSE_PENDING',
-        currentStage: 'CUSTOMER',
-        assignedStaff: { foh: 'Mike Rodriguez' },
-        createdAt: Date.now() - 7200000,
-        updatedAt: Date.now(),
-        sessionStartTime: Date.now() - 7200000,
-        sessionDuration: 7200000,
-        coalStatus: 'burnt_out',
-        refillStatus: 'delivered',
-        notes: 'Long session - loves the creamy vanilla caramel blend',
-        edgeCase: null
+    const loadRealTimeData = async () => {
+      try {
+        // Load active sessions from customer journey
+        const response = await fetch('/api/customer-journey?action=active');
+        const result = await response.json();
+        
+        if (result.success) {
+          // Convert customer journey bookings to fire session format
+          const realSessions: FireSession[] = result.data.map((booking: any) => ({
+            id: booking.id,
+            tableId: booking.tableId,
+            customerName: booking.customerName,
+            flavor: booking.flavorMix,
+            amount: Math.round(booking.totalPrice * 100), // Convert to cents
+            status: mapBookingStatusToFireSession(booking.status),
+            currentStage: mapBookingStageToFireSession(booking.currentStage),
+            assignedStaff: {
+              boh: booking.prepStaffId || 'staff_001',
+              foh: booking.deliveryStaffId || 'staff_002'
+            },
+            createdAt: new Date(booking.createdAt).getTime(),
+            updatedAt: new Date(booking.updatedAt).getTime(),
+            sessionStartTime: booking.sessionStartTime ? new Date(booking.sessionStartTime).getTime() : undefined,
+            sessionDuration: booking.actualSessionTime || 0,
+            coalStatus: 'active' as const,
+            refillStatus: 'none' as const,
+            notes: booking.customerPreferences?.notes || '',
+            edgeCase: null
+          }));
+          
+          setSessions(realSessions);
+        } else {
+          console.error('Failed to load real-time data:', result.error);
+          // Fallback to empty array instead of demo data
+          setSessions([]);
+        }
+      } catch (error) {
+        console.error('Error loading real-time data:', error);
+        setSessions([]);
       }
-    ];
-    setSessions(demoSessions);
+    };
+
+    loadRealTimeData();
     
-    // Initialize timers for active sessions
-    const initialTimers: Record<string, {remaining: number, total: number, isActive: boolean}> = {};
-    demoSessions.forEach(session => {
-      if (session.status === 'ACTIVE' && session.sessionStartTime) {
-        const elapsed = Date.now() - session.sessionStartTime;
-        const total = session.sessionDuration || 3600000; // Default 1 hour
-        initialTimers[session.id] = {
-          remaining: Math.max(0, total - elapsed),
-          total: total,
-          isActive: true
-        };
-      }
-    });
-    setSessionTimers(initialTimers);
+    // Set up real-time updates every 5 seconds
+    const interval = setInterval(loadRealTimeData, 5000);
+    
+    return () => clearInterval(interval);
   }, []);
+
+  // Helper function to map booking status to fire session status
+  const mapBookingStatusToFireSession = (status: string): FireSession['status'] => {
+    const statusMap: Record<string, FireSession['status']> = {
+      'pending': 'NEW',
+      'confirmed': 'PAID_CONFIRMED',
+      'preparing': 'PREP_IN_PROGRESS',
+      'ready': 'READY_FOR_DELIVERY',
+      'delivered': 'DELIVERED',
+      'active': 'ACTIVE',
+      'completed': 'CLOSED',
+      'cancelled': 'STAFF_HOLD'
+    };
+    return statusMap[status] || 'NEW';
+  };
+
+  // Helper function to map booking stage to fire session stage
+  const mapBookingStageToFireSession = (stage: string): FireSession['currentStage'] => {
+    const stageMap: Record<string, FireSession['currentStage']> = {
+      'booking': 'BOH',
+      'payment': 'BOH',
+      'prep': 'BOH',
+      'delivery': 'FOH',
+      'service': 'CUSTOMER',
+      'completion': 'CUSTOMER'
+    };
+    return stageMap[stage] || 'BOH';
+  };
+  // Initialize timers for active sessions
+  useEffect(() => {
+    const initializeTimers = () => {
+      const initialTimers: Record<string, {remaining: number, total: number, isActive: boolean}> = {};
+      sessions.forEach(session => {
+        if (session.status === 'ACTIVE' && session.sessionStartTime) {
+          const elapsed = Date.now() - session.sessionStartTime;
+          const total = session.sessionDuration || 3600000; // Default 1 hour
+          initialTimers[session.id] = {
+            remaining: Math.max(0, total - elapsed),
+            total: total,
+            isActive: true
+          };
+        }
+      });
+      setSessionTimers(initialTimers);
+    };
+    
+    initializeTimers();
+  }, [sessions]);
 
   // Auto-create session from Pre-Order Station
   useEffect(() => {

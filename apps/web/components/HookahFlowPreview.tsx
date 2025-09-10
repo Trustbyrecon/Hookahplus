@@ -275,24 +275,71 @@ export default function HookahFlowPreview() {
     setEdges(edgesAll); 
   }, [nodesAll, edgesAll, setNodes, setEdges]);
 
-  // Fire Session handler - creates session that syncs with dashboard
-  const handleFireSession = async (seatData: SeatingNode) => {
+  // Real-time customer booking handler - creates booking that triggers BOH operations
+  const handleCustomerBooking = async (seatData: SeatingNode) => {
     try {
-      // Generate session ID that matches dashboard format
+      // Generate reservation ID
       const tableId = seatData.id.replace('seat_', 'T-').replace('fixture_', 'F-').toUpperCase();
-      const sessionId = `session_${Date.now()}_${tableId}`;
+      const reservationId = `res_${Date.now()}_${tableId}`;
       
-      // Generate customer name (in real app, this would come from form input)
+      // In real app, this would come from a booking form
       const customerName = `Customer_${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+      const customerEmail = `${customerName.toLowerCase().replace(' ', '.')}@example.com`;
       
       // Calculate pricing based on seating type and capacity
       const basePrice = getBasePriceForSeatingType(seatData.type, seatData.data.capacity);
       const totalPrice = basePrice * seatData.data.capacity;
       
-      const payload = {
+      // Create customer booking that triggers BOH operations
+      const bookingData = {
+        reservationId: reservationId,
+        customerName: customerName,
+        customerEmail: customerEmail,
+        customerPhone: `+1-555-${Math.floor(Math.random() * 9000) + 1000}`,
+        partySize: seatData.data.capacity,
+        tableId: tableId,
+        tableType: seatData.type,
+        zone: seatData.data.zone,
+        position: {
+          x: seatData.position.x,
+          y: seatData.position.y
+        },
+        flavorMix: seatData.data.stripe_meta?.flavor_mix || 'Premium Mix',
+        basePrice: basePrice,
+        totalPrice: totalPrice,
+        metadata: {
+          source: 'layout_preview' as const,
+          ipAddress: '192.168.1.1', // In real app, get from request
+          userAgent: navigator.userAgent,
+          referrer: document.referrer,
+          campaignId: 'layout_preview_campaign'
+        }
+      };
+
+      console.log('Creating customer booking:', bookingData);
+
+      // Create booking in customer journey system
+      const response = await fetch('/api/customer-journey', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create-booking',
+          data: bookingData
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create customer booking');
+      }
+
+      const result = await response.json();
+      console.log('Customer booking created:', result.data);
+
+      // Also create fire session for BOH operations
+      const fireSessionPayload = {
         action: 'create',
-        sessionId: sessionId,
-        tableId: tableId, // Format: T-STOOL-01, T-BOOTH-DOUBLE-01, etc.
+        sessionId: result.data.id, // Use booking ID as session ID
+        tableId: tableId,
         tableType: seatData.type,
         customerName: customerName,
         flavorMix: seatData.data.stripe_meta?.flavor_mix || 'Premium Mix',
@@ -300,7 +347,7 @@ export default function HookahFlowPreview() {
         basePrice: basePrice,
         totalPrice: totalPrice,
         capacity: seatData.data.capacity,
-        status: 'preparing', // Will change to 'delivered' then 'active'
+        status: 'preparing',
         metadata: {
           zone: seatData.data.zone,
           zoneLabel: seatData.data.zone.replace('zone_', '').replace('_', ' ').toUpperCase(),
@@ -311,27 +358,28 @@ export default function HookahFlowPreview() {
             x: seatData.position.x,
             y: seatData.position.y
           },
-          qrCode: `checkin_${sessionId}`,
-          estimatedPrepTime: 5, // minutes
-          estimatedSessionTime: 60 // minutes
+          qrCode: `checkin_${reservationId}`,
+          estimatedPrepTime: 5,
+          estimatedSessionTime: 60,
+          bookingId: result.data.id // Link to customer journey
         }
       };
 
-      console.log('Creating fire session with payload:', payload);
+      console.log('Creating fire session with payload:', fireSessionPayload);
 
-      const response = await fetch('/api/fire-session', {
+      const fireSessionResponse = await fetch('/api/fire-session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(fireSessionPayload),
       });
 
-      console.log('Fire session response status:', response.status);
+      console.log('Fire session response status:', fireSessionResponse.status);
 
-      if (response.ok) {
-        const result = await response.json();
-        console.log('Fire session created successfully:', result);
+      if (fireSessionResponse.ok) {
+        const fireSessionResult = await fireSessionResponse.json();
+        console.log('Fire session created successfully:', fireSessionResult);
         
         // Update the seat status in the UI
         if (seating) {
@@ -356,36 +404,38 @@ export default function HookahFlowPreview() {
           setSeating({ ...seating, nodes: updatedNodes });
         }
         
-        // Enhanced success message with dashboard sync info
-        const successMessage = `🎉 Fire Session Created Successfully!
+        // Enhanced success message with customer journey integration
+        const successMessage = `🎉 Customer Booking Created Successfully!
         
-Session ID: ${sessionId}
+Booking ID: ${result.data.id}
+Reservation ID: ${reservationId}
 Table ID: ${tableId}
 Customer: ${customerName}
 Zone: ${seatData.data.zone.replace('zone_', '').replace('_', ' ').toUpperCase()}
 Capacity: ${seatData.data.capacity} people
 Price: $${totalPrice.toFixed(2)} ($${basePrice.toFixed(2)} × ${seatData.data.capacity})
-Status: Preparing → Delivered → Active
+Status: Pending → Confirmed → Preparing → Ready → Active
 
-✅ Session synced to Fire Session Dashboard
-✅ BOH notified for preparation
-✅ QR Code generated for check-in: ${payload.metadata.qrCode}`;
+✅ Customer journey tracking activated
+✅ BOH operations triggered automatically
+✅ Real-time dashboard updates enabled
+✅ QR Code generated for check-in: ${fireSessionPayload.metadata.qrCode}`;
         
         alert(successMessage);
         
       } else {
         let errorMessage = 'Unknown error';
         try {
-          const error = await response.json();
+          const error = await fireSessionResponse.json();
           errorMessage = error.error || error.message || 'Unknown error';
         } catch (parseError) {
-          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+          errorMessage = `HTTP ${fireSessionResponse.status}: ${fireSessionResponse.statusText}`;
         }
-        alert(`❌ Failed to create session: ${errorMessage}`);
+        alert(`❌ Failed to create booking: ${errorMessage}`);
       }
     } catch (err) {
-      console.error('Fire session error:', err);
-      alert(`❌ Error creating fire session: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      console.error('Customer booking error:', err);
+      alert(`❌ Error creating customer booking: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   };
 
@@ -743,7 +793,7 @@ Status: Preparing → Delivered → Active
                     <div className="space-y-2">
                       <Button 
                         className="w-full bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl" 
-                        onClick={() => handleFireSession(selected)}
+                        onClick={() => handleCustomerBooking(selected)}
               disabled={loading}
             >
                         {loading ? (
