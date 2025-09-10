@@ -986,15 +986,15 @@ Price: $${totalPrice.toFixed(2)} ($${basePrice.toFixed(2)} × ${seatData.data.ca
                                 y: selected.position.y
                               },
                               flavorMix: 'TBD',
-                              basePrice: 5.00,
-                              totalPrice: 5.00,
+                              basePrice: 10.00,
+                              totalPrice: 10.00,
                               status: 'pending',
                               currentStage: 'booking',
                               seatNumber: seatNumber,
                               sequence: selected.data?.sequence,
                               metadata: {
                                 source: 'reservation_hold',
-                                holdAmount: 5.00,
+                                holdAmount: 10.00,
                                 holdDuration: 15,
                                 qrCode: `reserve_${selected.id}_${Date.now()}`,
                                 timestamp: new Date().toISOString()
@@ -1013,7 +1013,7 @@ Price: $${totalPrice.toFixed(2)} ($${basePrice.toFixed(2)} × ${seatData.data.ca
                             if (response.ok) {
                               try {
                                 const result = await response.json();
-                                alert(`💳 Reservation Created Successfully!\n\nReservation ID: ${result.data.id}\nSeat: ${seatNumber}\nTable: ${tableId}\nHold Amount: $5.00\nDuration: 15 minutes\nQR Code: ${reservationData.metadata.qrCode}\n\nBOH operations triggered automatically!\nThis will flow to FOH/BOH Control Panel!`);
+                                alert(`💳 Reservation Created Successfully!\n\nReservation ID: ${result.data.id}\nSeat: ${seatNumber}\nTable: ${tableId}\nHold Amount: $10.00\nDuration: 15 minutes\nQR Code: ${reservationData.metadata.qrCode}\n\nBOH operations triggered automatically!\nThis will flow to FOH/BOH Control Panel!`);
                               } catch (jsonError) {
                                 console.error('JSON parse error:', jsonError);
                                 alert(`💳 Reservation Created (Partial Success)!\n\nTable: ${tableId}\nHold Amount: $5.00\nDuration: 15 minutes\nQR Code: ${reservationData.metadata.qrCode}\n\nBOH operations triggered automatically!\nNote: Some data may not be fully synchronized.`);
