@@ -24,9 +24,67 @@ export default function SessionsDashboard() {
   const [activeTab, setActiveTab] = useState<'active' | 'completed' | 'analytics'>('active');
   const [refillTimers, setRefillTimers] = useState<Record<string, number>>({});
 
-  // Generate demo sessions with 10 popular lounge personas (unified with Fire Session Dashboard)
+  // Load real-time sessions from customer journey
   useEffect(() => {
-    const demoSessions: Session[] = [
+    const loadRealTimeSessions = async () => {
+      try {
+        const response = await fetch('/api/customer-journey?action=active');
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          const realSessions: Session[] = result.data.map((booking: any) => ({
+            id: booking.id,
+            tableId: booking.tableId,
+            flavor: booking.flavorMix,
+            amount: Math.round(booking.totalPrice * 100), // Convert to cents
+            status: mapBookingStatusToSession(booking.status),
+            createdAt: new Date(booking.createdAt).getTime(),
+            sessionStartTime: booking.sessionStartTime ? new Date(booking.sessionStartTime).getTime() : undefined,
+            sessionDuration: booking.actualSessionTime || 0,
+            coalStatus: 'active' as const,
+            customerName: booking.customerName,
+            tableType: booking.tableType,
+            deliveryStatus: mapBookingStageToDelivery(booking.currentStage),
+            totalRevenue: Math.round(booking.totalPrice * 100)
+          }));
+          
+          setSessions(realSessions);
+        } else {
+          setSessions([]);
+        }
+      } catch (error) {
+        console.error('Failed to load real-time sessions:', error);
+        setSessions([]);
+      }
+    };
+
+    loadRealTimeSessions();
+    
+    // Set up polling for real-time updates
+    const interval = setInterval(loadRealTimeSessions, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const mapBookingStatusToSession = (status: string): 'active' | 'completed' | 'paused' => {
+    switch (status) {
+      case 'active': return 'active';
+      case 'completed': return 'completed';
+      case 'paused': return 'paused';
+      default: return 'active';
+    }
+  };
+
+  const mapBookingStageToDelivery = (stage: string): 'preparing' | 'ready' | 'delivered' => {
+    switch (stage) {
+      case 'prep': return 'preparing';
+      case 'delivery': return 'ready';
+      case 'service': return 'delivered';
+      default: return 'preparing';
+    }
+  };
+
+  // Legacy demo sessions (kept for fallback)
+  const demoSessions: Session[] = [
       {
         id: 'session-1',
         tableId: 'T-001',
@@ -178,7 +236,7 @@ export default function SessionsDashboard() {
         totalRevenue: 3000
       }
     ];
-    setSessions(demoSessions);
+    // Demo data loading removed - now using real-time data
   }, []);
 
   // Update refill timers

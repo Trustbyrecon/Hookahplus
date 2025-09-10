@@ -57,7 +57,80 @@ const Dashboard = () => {
   const [activeView, setActiveView] = useState<'overview' | 'sessions' | 'workflow' | 'agents' | 'onboarding'>('overview');
   const [unifiedSessions, setUnifiedSessions] = useState<UnifiedSession[]>([]);
 
-  // Simulate session data generation
+  // Load real-time session data from customer journey
+  const loadRealTimeData = async () => {
+    try {
+      const response = await fetch('/api/customer-journey?action=active');
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        const realSessions: UnifiedSession[] = result.data.map((booking: any) => ({
+          id: booking.id,
+          type: 'real',
+          status: mapBookingStatusToUnified(booking.status),
+          table: booking.tableId,
+          customer: booking.customerName,
+          flavor: booking.flavorMix,
+          amount: booking.totalPrice,
+          duration: 60,
+          createdAt: new Date(booking.createdAt),
+          workflow: getWorkflowFromStatus(booking.status),
+          priority: 1
+        }));
+
+        setUnifiedSessions(realSessions);
+        setDashboardState(prev => ({
+          ...prev,
+          dataStatus: 'populated',
+          nextAction: '🎉 Real-time data loaded! System is active with live customer sessions',
+          progress: 100,
+          isReady: true
+        }));
+      } else {
+        setUnifiedSessions([]);
+        setDashboardState(prev => ({
+          ...prev,
+          dataStatus: 'empty',
+          nextAction: 'No active sessions. Create a booking to get started!',
+          progress: 50,
+          isReady: true
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to load real-time data:', error);
+      setDashboardState(prev => ({
+        ...prev,
+        dataStatus: 'error',
+        nextAction: 'Failed to load data. Please try again.',
+        progress: 25,
+        isReady: false
+      }));
+    }
+  };
+
+  const mapBookingStatusToUnified = (status: string): 'active' | 'prep' | 'pending' | 'completed' => {
+    switch (status) {
+      case 'active': return 'active';
+      case 'preparing': return 'prep';
+      case 'pending': case 'confirmed': return 'pending';
+      default: return 'completed';
+    }
+  };
+
+  const getWorkflowFromStatus = (status: string): string[] => {
+    const workflows = {
+      'pending': ['Order Placed'],
+      'confirmed': ['Order Placed', 'Payment Confirmed'],
+      'preparing': ['Order Placed', 'Payment Confirmed', 'BOH Prep'],
+      'ready': ['Order Placed', 'Payment Confirmed', 'BOH Prep', 'Ready for Delivery'],
+      'delivered': ['Order Placed', 'Payment Confirmed', 'BOH Prep', 'FOH Delivery'],
+      'active': ['Order Placed', 'Payment Confirmed', 'BOH Prep', 'FOH Delivery', 'Active Session'],
+      'completed': ['Order Placed', 'Payment Confirmed', 'BOH Prep', 'FOH Delivery', 'Session Complete']
+    };
+    return workflows[status as keyof typeof workflows] || ['Order Placed'];
+  };
+
+  // Legacy demo data function (kept for fallback)
   const generateDemoData = () => {
     const demoSessions: UnifiedSession[] = [
       {
@@ -151,10 +224,10 @@ const Dashboard = () => {
             </div>
             <div className="flex gap-4">
               <button
-                onClick={generateDemoData}
+                onClick={loadRealTimeData}
                 className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg transition-colors"
               >
-                🎯 Generate Demo Data
+                🔄 Load Real-Time Data
               </button>
               <Link 
                 href="/agent-commander" 
