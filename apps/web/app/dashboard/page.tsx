@@ -11,7 +11,7 @@ import DeployedSeatingMap from "../../components/DeployedSeatingMap";
 interface DashboardState {
   currentWorkflow: 'onboarding' | 'data-generation' | 'session-management' | 'customer-journey' | 'optimization';
   activeRole: 'owner' | 'foh' | 'boh' | 'admin';
-  dataStatus: 'empty' | 'populated' | 'active' | 'flowing';
+  dataStatus: 'empty' | 'populated' | 'active' | 'flowing' | 'error';
   nextAction: string;
   progress: number;
   trustLockStatus: 'active' | 'pending' | 'verified';
