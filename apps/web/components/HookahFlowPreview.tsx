@@ -795,6 +795,15 @@ Price: $${totalPrice.toFixed(2)} ($${basePrice.toFixed(2)} × ${seatData.data.ca
                           <span className="font-bold text-blue-600">{selected.data.capacity} available</span>
                         </div>
                       )}
+                      {selected.data?.capacity && selected.data.capacity > 1 && (
+                        <div className="mt-3 p-2 bg-blue-50 rounded-lg">
+                          <div className="text-xs text-blue-600 font-medium mb-2">Multiple Sessions Available</div>
+                          <div className="text-xs text-gray-600">
+                            This seating can accommodate {selected.data.capacity} separate fire sessions. 
+                            Each session can be managed independently.
+                          </div>
+                        </div>
+                      )}
                       <div className="flex justify-between">
                         <span className="text-gray-600">Status:</span>
                         <span className={`font-medium ${selected.data?.status === 'idle' ? 'text-green-600' : 'text-orange-600'}`}>
@@ -815,8 +824,8 @@ Price: $${totalPrice.toFixed(2)} ($${basePrice.toFixed(2)} × ${seatData.data.ca
                       <Button 
                         className="w-full bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl" 
                         onClick={() => handleCustomerBooking(selected)}
-              disabled={loading}
-            >
+                        disabled={loading}
+                      >
                         {loading ? (
                           <div className="flex items-center justify-center">
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -829,20 +838,125 @@ Price: $${totalPrice.toFixed(2)} ($${basePrice.toFixed(2)} × ${seatData.data.ca
                         )}
                       </Button>
                       
+                      {selected.data?.capacity && selected.data.capacity > 1 && (
+                        <Button 
+                          className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl" 
+                          onClick={async () => {
+                            try {
+                              const tableId = selected.id.replace('seat_', 'T-').replace('fixture_', 'F-').toUpperCase();
+                              const capacity = selected.data?.capacity || 1;
+                              
+                              // Create multiple fire sessions
+                              const sessionPromises = [];
+                              for (let i = 1; i <= capacity; i++) {
+                                const sessionData = {
+                                  reservationId: `multi_${Date.now()}_${tableId}_${i}`,
+                                  customerName: `Group Member ${i}`,
+                                  customerEmail: `member${i}@hookahplus.com`,
+                                  customerPhone: `+1-555-GROUP${i}`,
+                                  partySize: 1,
+                                  tableId: `${tableId}-${i}`,
+                                  tableType: selected.type,
+                                  zone: selected.data?.zone,
+                                  position: {
+                                    x: selected.position.x + (i * 20),
+                                    y: selected.position.y + (i * 20)
+                                  },
+                                  flavorMix: 'TBD',
+                                  basePrice: 20.00,
+                                  totalPrice: 20.00,
+                                  status: 'preparing',
+                                  currentStage: 'prep',
+                                  metadata: {
+                                    source: 'multi_fire_session',
+                                    sessionNumber: i,
+                                    totalSessions: capacity,
+                                    parentTableId: tableId,
+                                    timestamp: new Date().toISOString()
+                                  }
+                                };
+                                
+                                sessionPromises.push(
+                                  fetch('/api/customer-journey', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                      action: 'create-booking',
+                                      data: sessionData
+                                    })
+                                  })
+                                );
+                              }
+                              
+                              const responses = await Promise.all(sessionPromises);
+                              const results = await Promise.all(responses.map(r => r.json()));
+                              
+                              alert(`🔥 Multiple Fire Sessions Created!\n\nTable: ${tableId}\nSessions: ${capacity}\n\nEach session can be managed independently in the FOH/BOH Control Panel!`);
+                            } catch (error) {
+                              console.error('Multi-session error:', error);
+                              alert(`❌ Error creating multiple sessions: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                            }
+                          }}
+                        >
+                          🔥🔥 Multiple Sessions ({selected.data?.capacity})
+                        </Button>
+                      )}
+                      
                       <Button 
                         variant="outline" 
                         className="w-full border-green-500 text-green-600 hover:bg-green-50 font-medium py-2 px-4 rounded-lg"
-                        onClick={() => {
-                          const reservePayload = {
-                            tableId: selected.id,
-                            zone: selected.data?.zone,
-                            capacity: selected.data?.capacity,
-                            holdAmount: 5.00,
-                            holdDuration: 15, // 15 minutes
-                            qrCode: `reserve_${selected.id}_${Date.now()}`,
-                            timestamp: new Date().toISOString()
-                          };
-                          alert(`💳 Reserve Table (QR Hold)\n\nTable: ${selected.id}\nHold Amount: $5.00\nDuration: 15 minutes\nQR Code: ${reservePayload.qrCode}\n\nScan QR to confirm reservation!`);
+                        onClick={async () => {
+                          try {
+                            const tableId = selected.id.replace('seat_', 'T-').replace('fixture_', 'F-').toUpperCase();
+                            const reservationId = `res_${Date.now()}_${tableId}`;
+                            
+                            // Create reservation booking
+                            const reservationData = {
+                              reservationId: reservationId,
+                              customerName: 'Reservation Hold',
+                              customerEmail: 'reservation@hookahplus.com',
+                              customerPhone: '+1-555-RESERVE',
+                              partySize: selected.data?.capacity || 1,
+                              tableId: tableId,
+                              tableType: selected.type,
+                              zone: selected.data?.zone,
+                              position: {
+                                x: selected.position.x,
+                                y: selected.position.y
+                              },
+                              flavorMix: 'TBD',
+                              basePrice: 5.00,
+                              totalPrice: 5.00,
+                              status: 'pending',
+                              currentStage: 'booking',
+                              metadata: {
+                                source: 'reservation_hold',
+                                holdAmount: 5.00,
+                                holdDuration: 15,
+                                qrCode: `reserve_${selected.id}_${Date.now()}`,
+                                timestamp: new Date().toISOString()
+                              }
+                            };
+
+                            const response = await fetch('/api/customer-journey', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                action: 'create-booking',
+                                data: reservationData
+                              })
+                            });
+
+                            if (response.ok) {
+                              const result = await response.json();
+                              alert(`💳 Reservation Created Successfully!\n\nReservation ID: ${result.data.id}\nTable: ${tableId}\nHold Amount: $5.00\nDuration: 15 minutes\nQR Code: ${reservationData.metadata.qrCode}\n\nThis will flow to FOH/BOH Control Panel!`);
+                            } else {
+                              throw new Error('Failed to create reservation');
+                            }
+                          } catch (error) {
+                            console.error('Reservation error:', error);
+                            alert(`❌ Error creating reservation: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                          }
                         }}
                       >
                         💳 Reserve Table ($5 Hold)
@@ -851,32 +965,59 @@ Price: $${totalPrice.toFixed(2)} ($${basePrice.toFixed(2)} × ${seatData.data.ca
                       <Button 
                         variant="outline" 
                         className="w-full border-blue-500 text-blue-600 hover:bg-blue-50 font-medium py-2 px-4 rounded-lg"
-                        onClick={() => {
-                          const qrCode = `checkin_${selected.id}_${Date.now()}`;
-                          const checkinPayload = {
-                            tableId: selected.id,
-                            tableType: selected.type,
-                            zone: selected.data?.zone,
-                            capacity: selected.data?.capacity,
-                            qrCode: qrCode,
-                            timestamp: new Date().toISOString(),
-                            historicalProfile: {
-                              hasHistory: Math.random() > 0.5, // Simulate returning guest
-                              previousSessions: Math.floor(Math.random() * 5),
-                              favoriteFlavors: ['Blue Mist', 'Mint', 'Grape'],
-                              averageSessionTime: 45 // minutes
+                        onClick={async () => {
+                          try {
+                            const tableId = selected.id.replace('seat_', 'T-').replace('fixture_', 'F-').toUpperCase();
+                            const qrCode = `checkin_${selected.id}_${Date.now()}`;
+                            
+                            // Create check-in booking
+                            const checkinData = {
+                              reservationId: `checkin_${Date.now()}_${tableId}`,
+                              customerName: 'Walk-in Customer',
+                              customerEmail: 'walkin@hookahplus.com',
+                              customerPhone: '+1-555-WALKIN',
+                              partySize: selected.data?.capacity || 1,
+                              tableId: tableId,
+                              tableType: selected.type,
+                              zone: selected.data?.zone,
+                              position: {
+                                x: selected.position.x,
+                                y: selected.position.y
+                              },
+                              flavorMix: 'TBD',
+                              basePrice: 0,
+                              totalPrice: 0,
+                              status: 'confirmed',
+                              currentStage: 'service',
+                              metadata: {
+                                source: 'qr_checkin',
+                                qrCode: qrCode,
+                                timestamp: new Date().toISOString()
+                              }
+                            };
+
+                            const response = await fetch('/api/customer-journey', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                action: 'create-booking',
+                                data: checkinData
+                              })
+                            });
+
+                            if (response.ok) {
+                              const result = await response.json();
+                              alert(`📱 QR Check-in Successful!\n\nBooking ID: ${result.data.id}\nTable: ${tableId}\nQR Code: ${qrCode}\n\nCustomer is now checked in and ready for service!`);
+                            } else {
+                              throw new Error('Failed to create check-in');
                             }
-                          };
-                          
-                          const isReturningGuest = checkinPayload.historicalProfile.hasHistory;
-                          const message = isReturningGuest 
-                            ? `📱 QR Check-In (Returning Guest)\n\nTable: ${selected.id}\nQR Code: ${qrCode}\n\nWelcome back! Loading your profile...\nPrevious Sessions: ${checkinPayload.historicalProfile.previousSessions}\nFavorite Flavors: ${checkinPayload.historicalProfile.favoriteFlavors.join(', ')}\nAvg Session Time: ${checkinPayload.historicalProfile.averageSessionTime} min\n\nScan QR to check in!`
-                            : `📱 QR Check-In (New Guest)\n\nTable: ${selected.id}\nQR Code: ${qrCode}\n\nWelcome! Please scan QR to create your profile and start your session.`;
-                          
-                          alert(message);
+                          } catch (error) {
+                            console.error('Check-in error:', error);
+                            alert(`❌ Error creating check-in: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                          }
                         }}
                       >
-                        📱 QR Check-In
+                        📱 QR Check-in
                       </Button>
                     </div>
                     
