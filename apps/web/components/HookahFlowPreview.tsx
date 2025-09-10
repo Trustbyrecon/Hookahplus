@@ -138,6 +138,11 @@ function toFlowNodes(seatingMap: SeatingMap) {
         <div className="text-xs text-center">
           <div className="font-medium">{n.type.replace('seat.', '').replace('fixture.', '')}</div>
           {n.data?.zone && <div className="opacity-70 text-xs">{n.data.zone.replace('zone_', '')}</div>}
+          {n.data?.capacity && n.data.capacity > 1 && (
+            <div className="text-xs font-bold text-blue-600 mt-1">
+              {n.data.capacity} Fire Sessions
+            </div>
+          )}
         </div>
       ),
     },
@@ -182,6 +187,8 @@ export default function HookahFlowPreview() {
   const [selected, setSelected] = useState<SeatingNode | null>(null);
   const [zoneFilter, setZoneFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   // Fetch seating map from hosted JSON
   useEffect(() => {
@@ -359,14 +366,14 @@ The session has been queued for BOH preparation.`;
         return;
       }
 
-      // Fallback to API fetch
-      const response = await fetch('/api/layouts/atl-demo-001');
-      if (response.ok) {
-        const data = await response.json();
+        // Fallback to API fetch
+        const response = await fetch('/api/layouts/atl-demo-001');
+        if (response.ok) {
+          const data = await response.json();
         setSeating(data.data.seatingMap);
-        alert("✅ Loaded layout from API!");
-      } else {
-        alert("No deployed map found. Use Visual Grounder to create one first.");
+          alert("✅ Loaded layout from API!");
+        } else {
+          alert("No deployed map found. Use Visual Grounder to create one first.");
       }
     } catch (error) {
       console.error('Load error:', error);
@@ -376,11 +383,11 @@ The session has been queued for BOH preparation.`;
     }
   };
 
-  // [cursor-agent] Auto-suggest minor seat spacing tweaks
+  // [cursor-agent] Auto-suggest minor seat spacing tweaks with execute option
   const handleSuggest = () => {
     if (!seating) return;
     
-    const suggestions = [];
+    const newSuggestions = [];
     const nodes = seating.nodes;
     
     // Check for overlapping nodes
@@ -398,7 +405,7 @@ The session has been queued for BOH preparation.`;
         );
         
         if (overlap) {
-          suggestions.push(`Move ${node1.id} and ${node2.id} apart to prevent overlap`);
+          newSuggestions.push(`Move ${node1.id} and ${node2.id} apart to prevent overlap`);
         }
       }
     }
@@ -415,15 +422,65 @@ The session has been queued for BOH preparation.`;
         );
         
         if (distance < 10 && distance > 0) {
-          suggestions.push(`Increase spacing between ${node1.id} and ${node2.id} (currently ${distance.toFixed(1)}px)`);
+          newSuggestions.push(`Increase spacing between ${node1.id} and ${node2.id} (currently ${distance.toFixed(1)}px)`);
         }
       }
     }
     
-    if (suggestions.length === 0) {
+    setSuggestions(newSuggestions);
+    setShowSuggestions(true);
+    
+    if (newSuggestions.length === 0) {
       alert("✅ Layout looks good! No spacing issues detected.");
-    } else {
-      alert(`💡 Suggestions:\n\n${suggestions.slice(0, 5).join('\n')}${suggestions.length > 5 ? '\n...and more' : ''}`);
+    }
+  };
+
+  const handleExecuteSuggestions = () => {
+    if (suggestions.length === 0) return;
+    
+    // Auto-adjust spacing for overlapping nodes
+    const updatedNodes = [...(seating?.nodes || [])];
+    
+    for (let i = 0; i < updatedNodes.length; i++) {
+      for (let j = i + 1; j < updatedNodes.length; j++) {
+        const node1 = updatedNodes[i];
+        const node2 = updatedNodes[j];
+        
+        const overlap = (
+          node1.position.x < node2.position.x + node2.size.w &&
+          node1.position.x + node1.size.w > node2.position.x &&
+          node1.position.y < node2.position.y + node2.size.h &&
+          node1.position.y + node1.size.h > node2.position.y
+        );
+        
+        if (overlap) {
+          // Move nodes apart by 20px
+          const dx = node1.position.x - node2.position.x;
+          const dy = node1.position.y - node2.position.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          if (distance > 0) {
+            const moveX = (dx / distance) * 20;
+            const moveY = (dy / distance) * 20;
+            
+            node1.position.x += moveX;
+            node1.position.y += moveY;
+          } else {
+            // If nodes are exactly on top of each other, move one randomly
+            node1.position.x += 20;
+            node1.position.y += 20;
+          }
+        }
+      }
+    }
+    
+    // Update the seating map
+    if (seating) {
+      const updatedSeating = { ...seating, nodes: updatedNodes };
+      setSeating(updatedSeating);
+      setShowSuggestions(false);
+      setSuggestions([]);
+      alert("✅ Layout suggestions executed! Nodes have been repositioned for better spacing.");
     }
   };
 
@@ -500,12 +557,18 @@ The session has been queued for BOH preparation.`;
                     <div className="text-sm space-y-1">
                       <div className="flex justify-between">
                         <span className="text-gray-600">Zone:</span>
-                        <span className="font-medium">{selected.data?.zone?.replace('zone_', '').replace('_', ' ').toUpperCase()}</span>
+                        <span className="font-medium text-gray-900">{selected.data?.zone?.replace('zone_', '').replace('_', ' ').toUpperCase()}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Capacity:</span>
-                        <span className="font-medium">{selected.data?.capacity ?? "—"} people</span>
+                        <span className="font-medium text-gray-900">{selected.data?.capacity ?? "—"} people</span>
                       </div>
+                      {selected.data?.capacity && selected.data.capacity > 1 && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Fire Sessions:</span>
+                          <span className="font-bold text-blue-600">{selected.data.capacity} available</span>
+                        </div>
+                      )}
                       <div className="flex justify-between">
                         <span className="text-gray-600">Status:</span>
                         <span className={`font-medium ${selected.data?.status === 'idle' ? 'text-green-600' : 'text-orange-600'}`}>
@@ -522,28 +585,44 @@ The session has been queued for BOH preparation.`;
                   </div>
                   
                   <div className="space-y-2">
-                    <Button 
-                      className="w-full bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl" 
-                      onClick={() => handleFireSession(selected)}
-                      disabled={loading}
-                    >
-                      {loading ? (
-                        <div className="flex items-center justify-center">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Creating Session...
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center">
-                          🔥 Fire Session
-                        </div>
-                      )}
-                    </Button>
+                    <div className="space-y-2">
+                      <Button 
+                        className="w-full bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl" 
+                        onClick={() => handleFireSession(selected)}
+                        disabled={loading}
+                      >
+                        {loading ? (
+                          <div className="flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            Creating Session...
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center">
+                            🔥 Fire Session
+                          </div>
+                        )}
+                      </Button>
+                      
+                      <Button 
+                        variant="outline" 
+                        className="w-full border-green-500 text-green-600 hover:bg-green-50 font-medium py-2 px-4 rounded-lg"
+                        onClick={() => {
+                          const reservePayload = {
+                            tableId: selected.id,
+                            zone: selected.data?.zone,
+                            capacity: selected.data?.capacity,
+                            holdAmount: 5.00,
+                            holdDuration: 15, // 15 minutes
+                            qrCode: `reserve_${selected.id}_${Date.now()}`,
+                            timestamp: new Date().toISOString()
+                          };
+                          alert(`💳 Reserve Table (QR Hold)\n\nTable: ${selected.id}\nHold Amount: $5.00\nDuration: 15 minutes\nQR Code: ${reservePayload.qrCode}\n\nScan QR to confirm reservation!`);
+                        }}
+                      >
+                        💳 Reserve Table ($5 Hold)
+                      </Button>
+                    </div>
                     
-                    {selected.data?.tags?.includes('pos_connected') && (
-                      <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded text-center">
-                        💳 Connected to POS Terminal
-                      </div>
-                    )}
                   </div>
                 </div>
               ) : (
@@ -553,11 +632,11 @@ The session has been queued for BOH preparation.`;
 
             {/* Zone Filter */}
             <div className="space-y-2">
-              <div className="text-xs uppercase tracking-wide opacity-60">Zone Filter</div>
+              <div className="text-xs uppercase tracking-wide text-gray-700 font-semibold">Zone Filter</div>
               <select 
                 value={zoneFilter} 
                 onChange={(e) => setZoneFilter(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                className="w-full p-2 border border-gray-300 rounded-md text-sm text-gray-900 bg-white"
               >
                 <option value="all">All Zones</option>
                 {seating?.zones.map(zone => (
@@ -567,14 +646,14 @@ The session has been queued for BOH preparation.`;
                 ))}
               </select>
             </div>
-
+            
             {/* Status Filter */}
             <div className="space-y-2">
-              <div className="text-xs uppercase tracking-wide opacity-60">Status Filter</div>
+              <div className="text-xs uppercase tracking-wide text-gray-700 font-semibold">Status Filter</div>
               <select 
                 value={statusFilter} 
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                className="w-full p-2 border border-gray-300 rounded-md text-sm text-gray-900 bg-white"
               >
                 <option value="all">All Status</option>
                 <option value="idle">Available</option>
@@ -585,19 +664,59 @@ The session has been queued for BOH preparation.`;
 
             {/* Zone Statistics */}
             <div className="space-y-2">
-              <div className="text-xs uppercase tracking-wide opacity-60">Zone Statistics</div>
+              <div className="text-xs uppercase tracking-wide text-gray-700 font-semibold">Zone Statistics</div>
               <div className="space-y-1 max-h-32 overflow-y-auto">
                 {Object.entries(zoneStats).map(([zone, stats]) => (
-                  <div key={zone} className="text-xs bg-gray-50 p-2 rounded">
-                    <div className="font-medium">{zone.replace('zone_', '').replace('_', ' ').toUpperCase()}</div>
-                    <div className="flex justify-between text-gray-600">
-                      <span>Available: {stats.available}</span>
-                      <span>Occupied: {stats.occupied}</span>
+                  <div key={zone} className="text-xs bg-gray-50 p-2 rounded border">
+                    <div className="font-semibold text-gray-900">{zone.replace('zone_', '').replace('_', ' ').toUpperCase()}</div>
+                    <div className="flex justify-between text-gray-700 mt-1">
+                      <span className="text-green-600 font-medium">Available: {stats.available}</span>
+                      <span className="text-orange-600 font-medium">Occupied: {stats.occupied}</span>
+                    </div>
+                    <div className="text-xs text-gray-600 mt-1">
+                      Fire Sessions: {stats.available} available, {stats.occupied} active
                     </div>
                   </div>
                 ))}
               </div>
             </div>
+
+            {/* Suggestions Panel */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-xs uppercase tracking-wide text-gray-700 font-semibold">Layout Suggestions</div>
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 max-h-32 overflow-y-auto">
+                  <div className="text-xs text-yellow-800 space-y-1">
+                    {suggestions.slice(0, 3).map((suggestion, index) => (
+                      <div key={index} className="flex items-start">
+                        <span className="text-yellow-600 mr-2">•</span>
+                        <span>{suggestion}</span>
+                      </div>
+                    ))}
+                    {suggestions.length > 3 && (
+                      <div className="text-yellow-600 font-medium">
+                        +{suggestions.length - 3} more suggestions
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex space-x-2">
+                  <Button 
+                    onClick={handleExecuteSuggestions} 
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs py-1"
+                  >
+                    Execute All
+                  </Button>
+                  <Button 
+                    onClick={() => setShowSuggestions(false)} 
+                    variant="outline" 
+                    className="flex-1 text-xs py-1"
+                  >
+                    Dismiss
+                  </Button>
+                </div>
+              </div>
+            )}
 
             <div className="pt-2 space-y-2">
               <Button onClick={handleLoadJson} variant="outline" className="w-full">
