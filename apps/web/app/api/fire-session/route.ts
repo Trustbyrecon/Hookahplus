@@ -126,22 +126,88 @@ export async function GET(req: Request) {
       // Get specific session (mock data for now)
       const session = {
         id: sessionId,
-        tableId: 'T-001',
-        flavorMix: 'Default Mix',
+        tableId: 'T-STOOL-01',
+        tableType: 'seat.stool',
+        customerName: 'Customer_001',
+        flavorMix: 'Premium Mix',
+        basePrice: 15.00,
+        totalPrice: 15.00,
+        capacity: 1,
         status: 'active',
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        qrCode: `checkin_${sessionId}`,
+        metadata: {
+          zone: 'zone_bar_A',
+          zoneLabel: 'MAIN BAR',
+          estimatedPrepTime: 5,
+          estimatedSessionTime: 60
+        }
       };
       return NextResponse.json({ session });
     }
 
-    // Get all sessions (mock data for now)
+    // Get all sessions (mock data for dashboard)
     const sessions = [
       {
         id: 'session_001',
-        tableId: 'T-001',
+        tableId: 'T-STOOL-01',
+        tableType: 'seat.stool',
+        customerName: 'Customer_001',
         flavorMix: 'Blue Mist + Mint',
+        basePrice: 15.00,
+        totalPrice: 15.00,
+        capacity: 1,
         status: 'active',
-        createdAt: new Date().toISOString()
+        createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // 30 minutes ago
+        updatedAt: new Date(Date.now() - 25 * 60 * 1000).toISOString(), // 25 minutes ago
+        qrCode: 'checkin_session_001',
+        metadata: {
+          zone: 'zone_bar_A',
+          zoneLabel: 'MAIN BAR',
+          estimatedPrepTime: 5,
+          estimatedSessionTime: 60
+        }
+      },
+      {
+        id: 'session_002',
+        tableId: 'T-BOOTH-DOUBLE-01',
+        tableType: 'seat.booth_double',
+        customerName: 'Customer_002',
+        flavorMix: 'Grape + Mint',
+        basePrice: 25.00,
+        totalPrice: 100.00,
+        capacity: 4,
+        status: 'preparing',
+        createdAt: new Date(Date.now() - 10 * 60 * 1000).toISOString(), // 10 minutes ago
+        updatedAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(), // 5 minutes ago
+        qrCode: 'checkin_session_002',
+        metadata: {
+          zone: 'zone_booths_W',
+          zoneLabel: 'WEST BOOTH WALL',
+          estimatedPrepTime: 8,
+          estimatedSessionTime: 90
+        }
+      },
+      {
+        id: 'session_003',
+        tableId: 'T-LOUNGE-CHAIR-01',
+        tableType: 'seat.lounge_chair',
+        customerName: 'Customer_003',
+        flavorMix: 'Strawberry + Vanilla',
+        basePrice: 18.00,
+        totalPrice: 18.00,
+        capacity: 1,
+        status: 'delivered',
+        createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(), // 5 minutes ago
+        updatedAt: new Date(Date.now() - 2 * 60 * 1000).toISOString(), // 2 minutes ago
+        qrCode: 'checkin_session_003',
+        metadata: {
+          zone: 'zone_lounge_NE',
+          zoneLabel: 'NORTHEAST LOUNGE',
+          estimatedPrepTime: 6,
+          estimatedSessionTime: 75
+        }
       }
     ];
     
