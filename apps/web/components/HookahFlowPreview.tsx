@@ -336,7 +336,18 @@ export default function HookahFlowPreview() {
         if (seating) {
           const updatedNodes = seating.nodes.map(node => 
             node.id === seatData.id 
-              ? { ...node, data: { ...node.data, status: 'occupied', session: { session_id: sessionId, started_at: new Date().toISOString() } }}
+              ? { 
+                  ...node, 
+                  data: { 
+                    ...node.data, 
+                    status: 'occupied', 
+                    session: { 
+                      session_id: sessionId, 
+                      started_at: new Date().toISOString(),
+                      assigned_staff: 'staff_001'
+                    } 
+                  }
+                }
               : node
           );
           setSeating({ ...seating, nodes: updatedNodes });
