@@ -334,7 +334,7 @@ export default function HookahFlowPreview() {
         
         // Update the seat status in the UI
         if (seating) {
-          const updatedNodes: SeatingNode[] = seating.nodes.map(node => 
+          const updatedNodes = seating.nodes.map(node => 
             node.id === seatData.id 
               ? { 
                   ...node, 
@@ -347,7 +347,7 @@ export default function HookahFlowPreview() {
                       assigned_staff: 'staff_001'
                     } 
                   }
-                }
+                } as SeatingNode
               : node
           );
           setSeating({ ...seating, nodes: updatedNodes });
@@ -734,15 +734,15 @@ Status: Preparing → Delivered → Active
                         </div>
                       )}
                     </div>
-                  </div>
+          </div>
                   
                   <div className="space-y-2">
                     <div className="space-y-2">
                       <Button 
                         className="w-full bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl" 
                         onClick={() => handleFireSession(selected)}
-                        disabled={loading}
-                      >
+              disabled={loading}
+            >
                         {loading ? (
                           <div className="flex items-center justify-center">
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -897,8 +897,8 @@ Status: Preparing → Delivered → Active
                   >
                     Dismiss
                   </Button>
-                </div>
-              </div>
+          </div>
+        </div>
             )}
 
             <div className="pt-2 space-y-2">
