@@ -323,11 +323,11 @@ export default function HookahFlowPreview() {
         partySize: seatData.data.capacity,
         tableId: tableId,
         tableType: seatData.type,
-        zone: seatData.data.zone,
+          zone: seatData.data.zone,
         position: {
-          x: seatData.position.x,
-          y: seatData.position.y
-        },
+            x: seatData.position.x,
+            y: seatData.position.y
+          },
         flavorMix: seatData.data.stripe_meta?.flavor_mix || 'Premium Mix',
         basePrice: basePrice,
         totalPrice: totalPrice,
@@ -346,28 +346,28 @@ export default function HookahFlowPreview() {
       const fallbackBookingId = `booking_${Date.now()}_${tableId}`;
 
       // Update UI immediately for better UX
-      if (seating) {
-        const updatedNodes = seating.nodes.map(node => {
-          if (node.id === seatData.id) {
-            const updatedNode: SeatingNode = {
-              ...node,
-              data: {
-                ...node.data,
-                status: 'occupied',
-                session: {
+        if (seating) {
+          const updatedNodes = seating.nodes.map(node => {
+            if (node.id === seatData.id) {
+              const updatedNode: SeatingNode = {
+                ...node,
+                data: {
+                  ...node.data,
+                  status: 'occupied',
+                  session: {
                   session_id: fallbackBookingId,
-                  started_at: new Date().toISOString(),
-                  assigned_staff: 'staff_001'
+                    started_at: new Date().toISOString(),
+                    assigned_staff: 'staff_001'
+                  }
                 }
-              }
-            };
-            return updatedNode;
-          }
-          return node;
-        });
-        setSeating({ ...seating, nodes: updatedNodes });
-      }
-
+              };
+              return updatedNode;
+            }
+            return node;
+          });
+          setSeating({ ...seating, nodes: updatedNodes });
+        }
+        
       // Try to create customer booking (with timeout)
       let bookingId = fallbackBookingId;
       try {
@@ -463,8 +463,8 @@ Price: $${totalPrice.toFixed(2)} ($${basePrice.toFixed(2)} × ${seatData.data.ca
 ✅ BOH operations triggered automatically
 ✅ Real-time dashboard updates enabled
 ✅ QR Code: checkin_${reservationId}`;
-      
-      alert(successMessage);
+        
+        alert(successMessage);
     } catch (err) {
       console.error('Customer booking error:', err);
       alert(`❌ Error creating customer booking: ${err instanceof Error ? err.message : 'Unknown error'}`);
@@ -796,8 +796,8 @@ Price: $${totalPrice.toFixed(2)} ($${basePrice.toFixed(2)} × ${seatData.data.ca
                   <div className="bg-gray-50 p-3 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="font-semibold text-gray-900">
-                        {selected.type.replace('seat.', '').replace('fixture.', '').replace('_', ' ').toUpperCase()}
-                      </h4>
+                      {selected.type.replace('seat.', '').replace('fixture.', '').replace('_', ' ').toUpperCase()}
+                    </h4>
                       <div className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full">
                         {getSeatNumber(selected.id, selected.data?.sequence)}
                       </div>
@@ -846,8 +846,8 @@ Price: $${totalPrice.toFixed(2)} ($${basePrice.toFixed(2)} × ${seatData.data.ca
                       <Button 
                         className="w-full bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl" 
                         onClick={() => handleCustomerBooking(selected)}
-                        disabled={loading}
-                      >
+              disabled={loading}
+            >
                         {loading ? (
                           <div className="flex items-center justify-center">
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -968,7 +968,7 @@ Price: $${totalPrice.toFixed(2)} ($${basePrice.toFixed(2)} × ${seatData.data.ca
                               partySize: selected.data?.capacity || 1,
                               tableId: tableId,
                               tableType: selected.type,
-                              zone: selected.data?.zone,
+                            zone: selected.data?.zone,
                               position: {
                                 x: selected.position.x,
                                 y: selected.position.y
@@ -984,8 +984,8 @@ Price: $${totalPrice.toFixed(2)} ($${basePrice.toFixed(2)} × ${seatData.data.ca
                                 source: 'reservation_hold',
                                 holdAmount: 10.00,
                                 holdDuration: 15,
-                                qrCode: `reserve_${selected.id}_${Date.now()}`,
-                                timestamp: new Date().toISOString()
+                            qrCode: `reserve_${selected.id}_${Date.now()}`,
+                            timestamp: new Date().toISOString()
                               }
                             };
 
@@ -1026,7 +1026,7 @@ Price: $${totalPrice.toFixed(2)} ($${basePrice.toFixed(2)} × ${seatData.data.ca
                         onClick={async () => {
                           try {
                             const tableId = selected.id.replace('seat_', 'T-').replace('fixture_', 'F-').toUpperCase();
-                            const qrCode = `checkin_${selected.id}_${Date.now()}`;
+                          const qrCode = `checkin_${selected.id}_${Date.now()}`;
                             const seatNumber = getSeatNumber(selected.id, selected.data?.sequence);
                             
                             // Create check-in booking
@@ -1037,8 +1037,8 @@ Price: $${totalPrice.toFixed(2)} ($${basePrice.toFixed(2)} × ${seatData.data.ca
                               customerPhone: '+1-555-WALKIN',
                               partySize: selected.data?.capacity || 1,
                               tableId: tableId,
-                              tableType: selected.type,
-                              zone: selected.data?.zone,
+                            tableType: selected.type,
+                            zone: selected.data?.zone,
                               position: {
                                 x: selected.position.x,
                                 y: selected.position.y
@@ -1052,7 +1052,7 @@ Price: $${totalPrice.toFixed(2)} ($${basePrice.toFixed(2)} × ${seatData.data.ca
                               sequence: selected.data?.sequence,
                               metadata: {
                                 source: 'qr_checkin',
-                                qrCode: qrCode,
+                            qrCode: qrCode,
                                 timestamp: new Date().toISOString()
                               }
                             };

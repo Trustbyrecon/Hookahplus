@@ -68,7 +68,7 @@ export default function FireSessionDashboard() {
             coalStatus: 'active' as const,
             refillStatus: 'none' as const,
             notes: booking.customerPreferences?.notes || '',
-            edgeCase: null
+        edgeCase: null
           }));
           
           setSessions(realSessions);
@@ -118,22 +118,22 @@ export default function FireSessionDashboard() {
     };
     return stageMap[stage] || 'BOH';
   };
-  // Initialize timers for active sessions
+    // Initialize timers for active sessions
   useEffect(() => {
     const initializeTimers = () => {
-      const initialTimers: Record<string, {remaining: number, total: number, isActive: boolean}> = {};
+    const initialTimers: Record<string, {remaining: number, total: number, isActive: boolean}> = {};
       sessions.forEach(session => {
-        if (session.status === 'ACTIVE' && session.sessionStartTime) {
-          const elapsed = Date.now() - session.sessionStartTime;
-          const total = session.sessionDuration || 3600000; // Default 1 hour
-          initialTimers[session.id] = {
-            remaining: Math.max(0, total - elapsed),
-            total: total,
-            isActive: true
-          };
-        }
-      });
-      setSessionTimers(initialTimers);
+      if (session.status === 'ACTIVE' && session.sessionStartTime) {
+        const elapsed = Date.now() - session.sessionStartTime;
+        const total = session.sessionDuration || 3600000; // Default 1 hour
+        initialTimers[session.id] = {
+          remaining: Math.max(0, total - elapsed),
+          total: total,
+          isActive: true
+        };
+      }
+    });
+    setSessionTimers(initialTimers);
     };
     
     initializeTimers();
