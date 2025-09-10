@@ -391,7 +391,7 @@ export default function HookahFlowPreview() {
                   ...node.data,
                   status: 'occupied',
                   session: {
-                    session_id: sessionId,
+                    session_id: result.data.id,
                     started_at: new Date().toISOString(),
                     assigned_staff: 'staff_001'
                   }
