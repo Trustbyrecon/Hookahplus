@@ -161,20 +161,7 @@ function toFlowNodes(seatingMap: SeatingMap) {
     data: {
       raw: n,
       seatNumber: getSeatNumber(n.id, n.data?.sequence),
-      label: (
-        <div className="text-xs text-center">
-          <div className="font-bold text-white bg-blue-600 rounded-full w-6 h-6 flex items-center justify-center mx-auto mb-1 text-xs">
-            {getSeatNumber(n.id, n.data?.sequence)}
-          </div>
-          <div className="font-medium text-xs">{n.type.replace('seat.', '').replace('fixture.', '')}</div>
-          {n.data?.zone && <div className="opacity-70 text-xs">{n.data.zone.replace('zone_', '')}</div>}
-          {n.data?.capacity && n.data.capacity > 1 && (
-            <div className="text-xs font-bold text-blue-600 mt-1">
-              {n.data.capacity} Fire Sessions
-            </div>
-          )}
-        </div>
-      ),
+      label: `${getSeatNumber(n.id, n.data?.sequence)} - ${n.type.replace('seat.', '').replace('fixture.', '')}`,
     },
     style: styleForType(n.type),
   }));
@@ -915,6 +902,7 @@ Price: $${totalPrice.toFixed(2)} ($${basePrice.toFixed(2)} × ${seatData.data.ca
                                   }
                                 };
                                 
+                                console.log('[LAYOUT_PREVIEW] Sending multi-session data:', sessionData);
                                 sessionPromises.push(
                                   fetch('/api/customer-journey', {
                                     method: 'POST',
@@ -1001,6 +989,7 @@ Price: $${totalPrice.toFixed(2)} ($${basePrice.toFixed(2)} × ${seatData.data.ca
                               }
                             };
 
+                            console.log('[LAYOUT_PREVIEW] Sending reservation data:', reservationData);
                             const response = await fetch('/api/customer-journey', {
                               method: 'POST',
                               headers: { 'Content-Type': 'application/json' },
@@ -1009,6 +998,7 @@ Price: $${totalPrice.toFixed(2)} ($${basePrice.toFixed(2)} × ${seatData.data.ca
                                 data: reservationData
                               })
                             });
+                            console.log('[LAYOUT_PREVIEW] Reservation response status:', response.status);
 
                             if (response.ok) {
                               try {
@@ -1016,7 +1006,7 @@ Price: $${totalPrice.toFixed(2)} ($${basePrice.toFixed(2)} × ${seatData.data.ca
                                 alert(`💳 Reservation Created Successfully!\n\nReservation ID: ${result.data.id}\nSeat: ${seatNumber}\nTable: ${tableId}\nHold Amount: $10.00\nDuration: 15 minutes\nQR Code: ${reservationData.metadata.qrCode}\n\nBOH operations triggered automatically!\nThis will flow to FOH/BOH Control Panel!`);
                               } catch (jsonError) {
                                 console.error('JSON parse error:', jsonError);
-                                alert(`💳 Reservation Created (Partial Success)!\n\nTable: ${tableId}\nHold Amount: $5.00\nDuration: 15 minutes\nQR Code: ${reservationData.metadata.qrCode}\n\nBOH operations triggered automatically!\nNote: Some data may not be fully synchronized.`);
+                                alert(`💳 Reservation Created (Partial Success)!\n\nTable: ${tableId}\nHold Amount: $10.00\nDuration: 15 minutes\nQR Code: ${reservationData.metadata.qrCode}\n\nBOH operations triggered automatically!\nNote: Some data may not be fully synchronized.`);
                               }
                             } else {
                               throw new Error(`Failed to create reservation: HTTP ${response.status}`);
