@@ -108,6 +108,8 @@ class CustomerJourneyManager {
     totalPrice: number;
     status?: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'active' | 'completed' | 'cancelled';
     currentStage?: 'booking' | 'payment' | 'prep' | 'delivery' | 'service' | 'completion';
+    seatNumber?: string;
+    sequence?: number;
     metadata: {
       source: 'layout_preview' | 'reservation_hold' | 'qr_checkin' | 'multi_fire_session';
       ipAddress?: string;
@@ -139,7 +141,11 @@ class CustomerJourneyManager {
       estimatedPrepTime: this.calculatePrepTime(data.tableType, data.partySize),
       estimatedSessionTime: this.calculateSessionTime(data.partySize),
       qrCode: `checkin_${data.reservationId}`,
-      metadata: data.metadata
+      metadata: {
+        ...data.metadata,
+        seatNumber: data.seatNumber,
+        sequence: data.sequence
+      }
     };
 
     this.state.bookings.set(booking.id, booking);

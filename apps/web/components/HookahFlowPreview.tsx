@@ -127,6 +127,31 @@ interface SeatingMap {
 }
 
 // --- HELPERS ---------------------------------------------------------------
+// Generate user-friendly seat numbers
+function getSeatNumber(seatId: string, sequence?: number): string {
+  // Extract seat type and number from ID
+  const parts = seatId.split('_');
+  const seatType = parts[0].replace('seat', '').replace('table', '');
+  const seatNum = parts[1] || sequence?.toString() || '1';
+  
+  // Create readable seat numbers
+  if (seatType.includes('stool')) {
+    return `S${seatNum.padStart(2, '0')}`;
+  } else if (seatType.includes('booth')) {
+    return `B${seatNum.padStart(2, '0')}`;
+  } else if (seatType.includes('lounge')) {
+    return `L${seatNum.padStart(2, '0')}`;
+  } else if (seatType.includes('sofa')) {
+    return `SF${seatNum.padStart(2, '0')}`;
+  } else if (seatType.includes('table')) {
+    return `T${seatNum.padStart(2, '0')}`;
+  } else if (seatType.includes('counter')) {
+    return `CTR`;
+  } else {
+    return `${seatType.toUpperCase()}${seatNum.padStart(2, '0')}`;
+  }
+}
+
 function toFlowNodes(seatingMap: SeatingMap) {
   return seatingMap.nodes.map((n) => ({
     id: n.id,
@@ -134,9 +159,13 @@ function toFlowNodes(seatingMap: SeatingMap) {
     position: { x: n.position.x, y: n.position.y },
     data: {
       raw: n,
+      seatNumber: getSeatNumber(n.id, n.data?.sequence),
       label: (
         <div className="text-xs text-center">
-          <div className="font-medium">{n.type.replace('seat.', '').replace('fixture.', '')}</div>
+          <div className="font-bold text-white bg-blue-600 rounded-full w-6 h-6 flex items-center justify-center mx-auto mb-1 text-xs">
+            {getSeatNumber(n.id, n.data?.sequence)}
+          </div>
+          <div className="font-medium text-xs">{n.type.replace('seat.', '').replace('fixture.', '')}</div>
           {n.data?.zone && <div className="opacity-70 text-xs">{n.data.zone.replace('zone_', '')}</div>}
           {n.data?.capacity && n.data.capacity > 1 && (
             <div className="text-xs font-bold text-blue-600 mt-1">
@@ -777,9 +806,14 @@ Price: $${totalPrice.toFixed(2)} ($${basePrice.toFixed(2)} × ${seatData.data.ca
               {selected ? (
                 <div className="space-y-3">
                   <div className="bg-gray-50 p-3 rounded-lg">
-                    <h4 className="font-semibold text-gray-900 mb-2">
-                      {selected.type.replace('seat.', '').replace('fixture.', '').replace('_', ' ').toUpperCase()}
-                    </h4>
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-semibold text-gray-900">
+                        {selected.type.replace('seat.', '').replace('fixture.', '').replace('_', ' ').toUpperCase()}
+                      </h4>
+                      <div className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full">
+                        {getSeatNumber(selected.id, selected.data?.sequence)}
+                      </div>
+                    </div>
                     <div className="text-sm space-y-1">
                       <div className="flex justify-between">
                         <span className="text-gray-600">Zone:</span>
@@ -845,6 +879,7 @@ Price: $${totalPrice.toFixed(2)} ($${basePrice.toFixed(2)} × ${seatData.data.ca
                             try {
                               const tableId = selected.id.replace('seat_', 'T-').replace('fixture_', 'F-').toUpperCase();
                               const capacity = selected.data?.capacity || 1;
+                              const baseSeatNumber = getSeatNumber(selected.id, selected.data?.sequence);
                               
                               // Create multiple fire sessions
                               const sessionPromises = [];
@@ -867,11 +902,14 @@ Price: $${totalPrice.toFixed(2)} ($${basePrice.toFixed(2)} × ${seatData.data.ca
                                   totalPrice: 20.00,
                                   status: 'preparing',
                                   currentStage: 'prep',
+                                  seatNumber: `${baseSeatNumber}-${i}`,
+                                  sequence: (selected.data?.sequence || 0) + i,
                                   metadata: {
                                     source: 'multi_fire_session',
                                     sessionNumber: i,
                                     totalSessions: capacity,
                                     parentTableId: tableId,
+                                    baseSeatNumber: baseSeatNumber,
                                     timestamp: new Date().toISOString()
                                   }
                                 };
@@ -909,7 +947,7 @@ Price: $${totalPrice.toFixed(2)} ($${basePrice.toFixed(2)} × ${seatData.data.ca
                               
                               const successCount = results.filter(r => r.success).length;
                               if (successCount > 0) {
-                                alert(`🔥 Multiple Fire Sessions Created!\n\nTable: ${tableId}\nSessions: ${successCount}/${capacity} created successfully\n\nBOH operations triggered automatically!\nEach session can be managed independently in the FOH/BOH Control Panel!`);
+                                alert(`🔥 Multiple Fire Sessions Created!\n\nBase Seat: ${baseSeatNumber}\nTable: ${tableId}\nSessions: ${successCount}/${capacity} created successfully\n\nBOH operations triggered automatically!\nEach session can be managed independently in the FOH/BOH Control Panel!`);
                               } else {
                                 throw new Error('All session creation attempts failed');
                               }
@@ -930,6 +968,7 @@ Price: $${totalPrice.toFixed(2)} ($${basePrice.toFixed(2)} × ${seatData.data.ca
                           try {
                             const tableId = selected.id.replace('seat_', 'T-').replace('fixture_', 'F-').toUpperCase();
                             const reservationId = `res_${Date.now()}_${tableId}`;
+                            const seatNumber = getSeatNumber(selected.id, selected.data?.sequence);
                             
                             // Create reservation booking
                             const reservationData = {
@@ -950,6 +989,8 @@ Price: $${totalPrice.toFixed(2)} ($${basePrice.toFixed(2)} × ${seatData.data.ca
                               totalPrice: 5.00,
                               status: 'pending',
                               currentStage: 'booking',
+                              seatNumber: seatNumber,
+                              sequence: selected.data?.sequence,
                               metadata: {
                                 source: 'reservation_hold',
                                 holdAmount: 5.00,
@@ -971,7 +1012,7 @@ Price: $${totalPrice.toFixed(2)} ($${basePrice.toFixed(2)} × ${seatData.data.ca
                             if (response.ok) {
                               try {
                                 const result = await response.json();
-                                alert(`💳 Reservation Created Successfully!\n\nReservation ID: ${result.data.id}\nTable: ${tableId}\nHold Amount: $5.00\nDuration: 15 minutes\nQR Code: ${reservationData.metadata.qrCode}\n\nBOH operations triggered automatically!\nThis will flow to FOH/BOH Control Panel!`);
+                                alert(`💳 Reservation Created Successfully!\n\nReservation ID: ${result.data.id}\nSeat: ${seatNumber}\nTable: ${tableId}\nHold Amount: $5.00\nDuration: 15 minutes\nQR Code: ${reservationData.metadata.qrCode}\n\nBOH operations triggered automatically!\nThis will flow to FOH/BOH Control Panel!`);
                               } catch (jsonError) {
                                 console.error('JSON parse error:', jsonError);
                                 alert(`💳 Reservation Created (Partial Success)!\n\nTable: ${tableId}\nHold Amount: $5.00\nDuration: 15 minutes\nQR Code: ${reservationData.metadata.qrCode}\n\nBOH operations triggered automatically!\nNote: Some data may not be fully synchronized.`);
@@ -995,6 +1036,7 @@ Price: $${totalPrice.toFixed(2)} ($${basePrice.toFixed(2)} × ${seatData.data.ca
                           try {
                             const tableId = selected.id.replace('seat_', 'T-').replace('fixture_', 'F-').toUpperCase();
                             const qrCode = `checkin_${selected.id}_${Date.now()}`;
+                            const seatNumber = getSeatNumber(selected.id, selected.data?.sequence);
                             
                             // Create check-in booking
                             const checkinData = {
@@ -1015,6 +1057,8 @@ Price: $${totalPrice.toFixed(2)} ($${basePrice.toFixed(2)} × ${seatData.data.ca
                               totalPrice: 0,
                               status: 'confirmed',
                               currentStage: 'service',
+                              seatNumber: seatNumber,
+                              sequence: selected.data?.sequence,
                               metadata: {
                                 source: 'qr_checkin',
                                 qrCode: qrCode,
@@ -1034,7 +1078,7 @@ Price: $${totalPrice.toFixed(2)} ($${basePrice.toFixed(2)} × ${seatData.data.ca
                             if (response.ok) {
                               try {
                                 const result = await response.json();
-                                alert(`📱 QR Check-in Successful!\n\nBooking ID: ${result.data.id}\nTable: ${tableId}\nQR Code: ${qrCode}\n\nBOH operations triggered automatically!\nCustomer is now checked in and ready for service!`);
+                                alert(`📱 QR Check-in Successful!\n\nBooking ID: ${result.data.id}\nSeat: ${seatNumber}\nTable: ${tableId}\nQR Code: ${qrCode}\n\nBOH operations triggered automatically!\nCustomer is now checked in and ready for service!`);
                               } catch (jsonError) {
                                 console.error('JSON parse error:', jsonError);
                                 alert(`📱 QR Check-in Successful (Partial)!\n\nTable: ${tableId}\nQR Code: ${qrCode}\n\nBOH operations triggered automatically!\nNote: Some data may not be fully synchronized.`);
