@@ -52,15 +52,21 @@ const GlobalNavigation: React.FC = () => {
     setActiveGroup(currentGroup || null);
   }, [pathname]);
 
-  // Fetch session data
+  // Fetch real-time session data from customer journey
   useEffect(() => {
     const fetchSessionData = async () => {
       try {
-        const response = await fetch('/api/sessions');
-        if (response.ok) {
-          const sessions = await response.json();
-          setSessionCount(sessions.length);
-          setActiveSessions(sessions.filter((s: any) => s.status === 'active').length);
+        // Get all bookings
+        const allResponse = await fetch('/api/customer-journey?action=all');
+        const allResult = await allResponse.json();
+        
+        // Get active bookings
+        const activeResponse = await fetch('/api/customer-journey?action=active');
+        const activeResult = await activeResponse.json();
+        
+        if (allResult.success && activeResult.success) {
+          setSessionCount(allResult.data.length);
+          setActiveSessions(activeResult.data.length);
         }
       } catch (error) {
         console.error('Failed to fetch session data:', error);
@@ -68,7 +74,7 @@ const GlobalNavigation: React.FC = () => {
     };
 
     fetchSessionData();
-    const interval = setInterval(fetchSessionData, 10000); // Update every 10 seconds
+    const interval = setInterval(fetchSessionData, 5000); // Update every 5 seconds
     return () => clearInterval(interval);
   }, []);
 
@@ -77,6 +83,13 @@ const GlobalNavigation: React.FC = () => {
     if (activeSessions < 5) return '🟢';
     if (activeSessions < 10) return '🟡';
     return '🔴';
+  };
+
+  const getFlowStatusText = () => {
+    if (activeSessions === 0) return 'Idle';
+    if (activeSessions < 5) return 'Normal';
+    if (activeSessions < 10) return 'Busy';
+    return 'Overloaded';
   };
 
   return (
@@ -111,7 +124,10 @@ const GlobalNavigation: React.FC = () => {
               <div className="text-sm text-zinc-400">Flow Status</div>
               <div className="flex items-center space-x-2">
                 <span className="text-2xl">{getFlowStatusIcon()}</span>
-                <span className="text-white font-medium">{activeSessions}</span>
+                <div className="flex flex-col">
+                  <span className="text-white font-medium">{activeSessions}</span>
+                  <span className="text-xs text-zinc-400">{getFlowStatusText()}</span>
+                </div>
               </div>
             </div>
           </div>
