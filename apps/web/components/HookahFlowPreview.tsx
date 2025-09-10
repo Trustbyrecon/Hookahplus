@@ -334,7 +334,7 @@ export default function HookahFlowPreview() {
         
         // Update the seat status in the UI
         if (seating) {
-          const updatedNodes = seating.nodes.map(node => 
+          const updatedNodes: SeatingNode[] = seating.nodes.map(node => 
             node.id === seatData.id 
               ? { 
                   ...node, 
@@ -349,7 +349,7 @@ export default function HookahFlowPreview() {
                   }
                 }
               : node
-          ) as SeatingNode[];
+          );
           setSeating({ ...seating, nodes: updatedNodes });
         }
         
