@@ -349,7 +349,7 @@ export default function HookahFlowPreview() {
                   }
                 }
               : node
-          );
+          ) as SeatingNode[];
           setSeating({ ...seating, nodes: updatedNodes });
         }
         
