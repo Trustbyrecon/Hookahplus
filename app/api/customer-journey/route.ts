@@ -64,12 +64,16 @@ export async function GET(req: NextRequest) {
 // POST - Create or update customer journey data
 export async function POST(req: NextRequest) {
   try {
+    console.log('[CUSTOMER_JOURNEY_API] POST request received');
     const body = await req.json();
+    console.log('[CUSTOMER_JOURNEY_API] Request body:', body);
     const { action, data } = body;
 
     switch (action) {
       case 'create-booking':
+        console.log('[CUSTOMER_JOURNEY_API] Creating booking with data:', data);
         const booking = customerJourneyManager.createBookingFromLayoutPreview(data);
+        console.log('[CUSTOMER_JOURNEY_API] Booking created:', booking);
         return NextResponse.json({ 
           success: true, 
           data: booking 

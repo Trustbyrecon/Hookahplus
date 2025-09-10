@@ -156,6 +156,8 @@ class CustomerJourneyManager {
     this.notifyListeners();
 
     console.log(`[CUSTOMER_JOURNEY] Created booking from layout preview:`, booking);
+    console.log(`[CUSTOMER_JOURNEY] Total bookings now:`, this.state.bookings.size);
+    console.log(`[CUSTOMER_JOURNEY] All bookings:`, Array.from(this.state.bookings.values()));
     return booking;
   }
 
