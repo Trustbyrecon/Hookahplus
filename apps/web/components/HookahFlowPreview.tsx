@@ -190,14 +190,22 @@ export default function HookahFlowPreview() {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  // Fetch seating map from hosted JSON
+  // Fetch seating map from API (API calls take priority over demo data)
   useEffect(() => {
     const fetchSeatingMap = async () => {
       try {
         setLoading(true);
         setError(null);
         
-        // Try to load from deployed seating map first
+        // API calls take priority - always try API first
+        const response = await fetch('/api/layouts/atl-demo-001');
+        if (response.ok) {
+          const data = await response.json();
+          setSeating(data.data.seatingMap);
+          return;
+        }
+
+        // Fallback to localStorage only if API fails
         const deployedMap = localStorage.getItem('lounge_seating_map');
         if (deployedMap) {
           const parsedMap = JSON.parse(deployedMap);
@@ -205,14 +213,7 @@ export default function HookahFlowPreview() {
           return;
         }
 
-        // Fallback to API fetch
-        const response = await fetch('/api/layouts/atl-demo-001');
-        if (response.ok) {
-          const data = await response.json();
-          setSeating(data.data.seatingMap);
-        } else {
-          throw new Error('Failed to fetch seating map');
-        }
+        throw new Error('Failed to fetch seating map from API and no cached data available');
       } catch (err) {
         console.error('Load error:', err);
         setError(err instanceof Error ? err.message : 'Failed to load seating map');
@@ -334,7 +335,7 @@ export default function HookahFlowPreview() {
         
         // Update the seat status in the UI
         if (seating) {
-          const updatedNodes = seating.nodes.map(node => 
+          const updatedNodes: SeatingNode[] = seating.nodes.map((node): SeatingNode => 
             node.id === seatData.id 
               ? { 
                   ...node, 
@@ -347,7 +348,7 @@ export default function HookahFlowPreview() {
                       assigned_staff: 'staff_001'
                     } 
                   }
-                } as SeatingNode
+                }
               : node
           );
           setSeating({ ...seating, nodes: updatedNodes });
