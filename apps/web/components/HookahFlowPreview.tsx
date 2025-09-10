@@ -278,7 +278,7 @@ export default function HookahFlowPreview() {
   // Optimized customer booking handler with performance improvements
   const handleCustomerBooking = async (seatData: SeatingNode) => {
     // Show immediate feedback to improve perceived performance
-    const button = document.querySelector(`[data-seat-id="${seatData.id}"] button`);
+    const button = document.querySelector(`[data-seat-id="${seatData.id}"] button`) as HTMLButtonElement;
     if (button) {
       button.textContent = 'Creating...';
       button.disabled = true;
