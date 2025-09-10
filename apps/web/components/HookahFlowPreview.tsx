@@ -889,9 +889,30 @@ Price: $${totalPrice.toFixed(2)} ($${basePrice.toFixed(2)} × ${seatData.data.ca
                               }
                               
                               const responses = await Promise.all(sessionPromises);
-                              const results = await Promise.all(responses.map(r => r.json()));
+                              const results = [];
                               
-                              alert(`🔥 Multiple Fire Sessions Created!\n\nTable: ${tableId}\nSessions: ${capacity}\n\nEach session can be managed independently in the FOH/BOH Control Panel!`);
+                              for (let i = 0; i < responses.length; i++) {
+                                const response = responses[i];
+                                if (response.ok) {
+                                  try {
+                                    const result = await response.json();
+                                    results.push(result);
+                                  } catch (jsonError) {
+                                    console.error(`JSON parse error for session ${i + 1}:`, jsonError);
+                                    results.push({ success: false, error: 'Invalid response format' });
+                                  }
+                                } else {
+                                  console.error(`API error for session ${i + 1}:`, response.status, response.statusText);
+                                  results.push({ success: false, error: `HTTP ${response.status}` });
+                                }
+                              }
+                              
+                              const successCount = results.filter(r => r.success).length;
+                              if (successCount > 0) {
+                                alert(`🔥 Multiple Fire Sessions Created!\n\nTable: ${tableId}\nSessions: ${successCount}/${capacity} created successfully\n\nBOH operations triggered automatically!\nEach session can be managed independently in the FOH/BOH Control Panel!`);
+                              } else {
+                                throw new Error('All session creation attempts failed');
+                              }
                             } catch (error) {
                               console.error('Multi-session error:', error);
                               alert(`❌ Error creating multiple sessions: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -948,10 +969,15 @@ Price: $${totalPrice.toFixed(2)} ($${basePrice.toFixed(2)} × ${seatData.data.ca
                             });
 
                             if (response.ok) {
-                              const result = await response.json();
-                              alert(`💳 Reservation Created Successfully!\n\nReservation ID: ${result.data.id}\nTable: ${tableId}\nHold Amount: $5.00\nDuration: 15 minutes\nQR Code: ${reservationData.metadata.qrCode}\n\nThis will flow to FOH/BOH Control Panel!`);
+                              try {
+                                const result = await response.json();
+                                alert(`💳 Reservation Created Successfully!\n\nReservation ID: ${result.data.id}\nTable: ${tableId}\nHold Amount: $5.00\nDuration: 15 minutes\nQR Code: ${reservationData.metadata.qrCode}\n\nBOH operations triggered automatically!\nThis will flow to FOH/BOH Control Panel!`);
+                              } catch (jsonError) {
+                                console.error('JSON parse error:', jsonError);
+                                alert(`💳 Reservation Created (Partial Success)!\n\nTable: ${tableId}\nHold Amount: $5.00\nDuration: 15 minutes\nQR Code: ${reservationData.metadata.qrCode}\n\nBOH operations triggered automatically!\nNote: Some data may not be fully synchronized.`);
+                              }
                             } else {
-                              throw new Error('Failed to create reservation');
+                              throw new Error(`Failed to create reservation: HTTP ${response.status}`);
                             }
                           } catch (error) {
                             console.error('Reservation error:', error);
@@ -1006,10 +1032,15 @@ Price: $${totalPrice.toFixed(2)} ($${basePrice.toFixed(2)} × ${seatData.data.ca
                             });
 
                             if (response.ok) {
-                              const result = await response.json();
-                              alert(`📱 QR Check-in Successful!\n\nBooking ID: ${result.data.id}\nTable: ${tableId}\nQR Code: ${qrCode}\n\nCustomer is now checked in and ready for service!`);
+                              try {
+                                const result = await response.json();
+                                alert(`📱 QR Check-in Successful!\n\nBooking ID: ${result.data.id}\nTable: ${tableId}\nQR Code: ${qrCode}\n\nBOH operations triggered automatically!\nCustomer is now checked in and ready for service!`);
+                              } catch (jsonError) {
+                                console.error('JSON parse error:', jsonError);
+                                alert(`📱 QR Check-in Successful (Partial)!\n\nTable: ${tableId}\nQR Code: ${qrCode}\n\nBOH operations triggered automatically!\nNote: Some data may not be fully synchronized.`);
+                              }
                             } else {
-                              throw new Error('Failed to create check-in');
+                              throw new Error(`Failed to create check-in: HTTP ${response.status}`);
                             }
                           } catch (error) {
                             console.error('Check-in error:', error);

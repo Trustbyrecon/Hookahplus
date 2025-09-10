@@ -106,12 +106,15 @@ class CustomerJourneyManager {
     flavorMix: string;
     basePrice: number;
     totalPrice: number;
+    status?: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'active' | 'completed' | 'cancelled';
+    currentStage?: 'booking' | 'payment' | 'prep' | 'delivery' | 'service' | 'completion';
     metadata: {
-      source: 'layout_preview';
+      source: 'layout_preview' | 'reservation_hold' | 'qr_checkin' | 'multi_fire_session';
       ipAddress?: string;
       userAgent?: string;
       referrer?: string;
       campaignId?: string;
+      [key: string]: any; // Allow additional metadata
     };
   }): CustomerBooking {
     const booking: CustomerBooking = {
@@ -128,8 +131,8 @@ class CustomerJourneyManager {
       flavorMix: data.flavorMix,
       basePrice: data.basePrice,
       totalPrice: data.totalPrice,
-      status: 'pending',
-      currentStage: 'booking',
+      status: data.status || 'pending',
+      currentStage: data.currentStage || 'booking',
       createdAt: new Date(),
       updatedAt: new Date(),
       paymentStatus: 'pending',
@@ -140,6 +143,10 @@ class CustomerJourneyManager {
     };
 
     this.state.bookings.set(booking.id, booking);
+    
+    // Automatically trigger BOH operations based on booking type
+    this.triggerBOHOperations(booking);
+    
     this.notifyListeners();
 
     console.log(`[CUSTOMER_JOURNEY] Created booking from layout preview:`, booking);
@@ -159,6 +166,86 @@ class CustomerJourneyManager {
     this.notifyListeners();
 
     console.log(`[CUSTOMER_JOURNEY] Updated booking ${bookingId}: ${status} - ${stage}`);
+  }
+
+  // Trigger BOH operations based on booking type
+  private triggerBOHOperations(booking: CustomerBooking) {
+    const operations: Omit<BOHOperation, 'id' | 'timestamp'>[] = [];
+
+    // Base operations for all bookings
+    operations.push({
+      bookingId: booking.id,
+      type: 'prep_notification',
+      description: `New ${booking.metadata.source} booking for ${booking.customerName}`,
+      priority: 'high',
+      status: 'pending',
+      assignedStaff: null,
+      estimatedDuration: booking.estimatedPrepTime,
+      metadata: {
+        tableId: booking.tableId,
+        zone: booking.zone,
+        partySize: booking.partySize,
+        flavorMix: booking.flavorMix
+      }
+    });
+
+    // Specific operations based on booking source
+    switch (booking.metadata.source) {
+      case 'multi_fire_session':
+        operations.push({
+          bookingId: booking.id,
+          type: 'multi_session_setup',
+          description: `Setup multiple fire sessions for table ${booking.tableId}`,
+          priority: 'high',
+          status: 'pending',
+          assignedStaff: null,
+          estimatedDuration: booking.estimatedPrepTime + 5, // Extra time for multiple sessions
+          metadata: {
+            sessionNumber: booking.metadata.sessionNumber,
+            totalSessions: booking.metadata.totalSessions,
+            parentTableId: booking.metadata.parentTableId
+          }
+        });
+        break;
+        
+      case 'reservation_hold':
+        operations.push({
+          bookingId: booking.id,
+          type: 'reservation_prep',
+          description: `Prepare table ${booking.tableId} for reservation hold`,
+          priority: 'medium',
+          status: 'pending',
+          assignedStaff: null,
+          estimatedDuration: 10, // Quick prep for reservation
+          metadata: {
+            holdAmount: booking.metadata.holdAmount,
+            holdDuration: booking.metadata.holdDuration,
+            qrCode: booking.metadata.qrCode
+          }
+        });
+        break;
+        
+      case 'qr_checkin':
+        operations.push({
+          bookingId: booking.id,
+          type: 'immediate_service',
+          description: `Immediate service for walk-in customer at table ${booking.tableId}`,
+          priority: 'urgent',
+          status: 'pending',
+          assignedStaff: null,
+          estimatedDuration: booking.estimatedPrepTime,
+          metadata: {
+            qrCode: booking.metadata.qrCode,
+            isWalkIn: true
+          }
+        });
+        break;
+    }
+
+    // Add all operations
+    operations.forEach(op => this.addBOHOperation(op));
+    
+    console.log(`[CUSTOMER_JOURNEY] Triggered ${operations.length} BOH operations for booking ${booking.id}`);
   }
 
   // Add BOH operation
