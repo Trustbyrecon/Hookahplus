@@ -1,0 +1,20 @@
+{
+  "name": "Production Environment",
+  "baseUrl": "https://hookahplus.net",
+  "stripeTestMode": false,
+  "timeout": 120000,
+  "retries": 3,
+  "browsers": ["chromium", "webkit", "firefox"],
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "testPlans": [
+    "deposit.json",
+    "package.json",
+    "terminal.json"
+  ],
+  "exclude": [
+    "webhook-test.json"
+  ]
+}

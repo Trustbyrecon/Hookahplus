@@ -1,0 +1,15 @@
+{
+  "name": "Webhook Test Flow",
+  "description": "Test webhook handling by simulating Stripe events",
+  "steps": [
+    { "action": "navigate", "url": "{BASE}/admin/webhook-test" },
+    { "action": "waitFor", "selector": "div[data-testid=webhook-test-interface]", "state": "visible" },
+    { "action": "click", "selector": "button[data-testid=test-checkout-completed]", "description": "Test checkout.session.completed" },
+    { "action": "waitFor", "selector": "div[data-testid=webhook-result]", "state": "visible" },
+    { "action": "assertText", "selector": "div[data-testid=webhook-result]", "includes": "Webhook processed successfully" },
+    { "action": "click", "selector": "button[data-testid=test-payment-intent-succeeded]", "description": "Test payment_intent.succeeded" },
+    { "action": "waitFor", "selector": "div[data-testid=webhook-result]", "state": "visible" },
+    { "action": "assertText", "selector": "div[data-testid=webhook-result]", "includes": "Payment intent processed" },
+    { "action": "screenshot", "name": "webhook-test-results" }
+  ]
+}

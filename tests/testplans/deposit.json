@@ -1,0 +1,15 @@
+{
+  "name": "Deposit Reservation",
+  "description": "User selects party size/time, hits Pay Deposit, redirects to Stripe",
+  "steps": [
+    { "action": "navigate", "url": "{BASE}/reserve" },
+    { "action": "waitFor", "selector": "form[data-testid=reservation-form]", "state": "visible" },
+    { "action": "fill", "selector": "input[name=partySize]", "value": "4" },
+    { "action": "fill", "selector": "input[name=slotStartIso]", "value": "2025-09-10T18:30" },
+    { "action": "fill", "selector": "input[name=slotEndIso]", "value": "2025-09-10T20:00" },
+    { "action": "click", "selector": "button[data-testid=pay-deposit]", "description": "Pay $10 x 4" },
+    { "action": "waitFor", "selector": "text=/redirecting to stripe/i", "state": "visible" },
+    { "action": "assertUrl", "includes": "checkout.stripe.com" },
+    { "action": "screenshot", "name": "stripe-checkout" }
+  ]
+}

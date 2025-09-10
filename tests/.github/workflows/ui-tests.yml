@@ -1,0 +1,73 @@
+name: HookahPlus UI Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  ui-tests:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18, 20]
+        browser: [chromium, webkit, firefox]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: tests/package-lock.json
+    
+    - name: Install dependencies
+      working-directory: ./tests
+      run: npm ci
+    
+    - name: Install Playwright browsers
+      working-directory: ./tests
+      run: npx playwright install --with-deps ${{ matrix.browser }}
+    
+    - name: Run UI tests
+      working-directory: ./tests
+      run: npx playwright test --project=${{ matrix.browser }}
+      env:
+        BASE_URL: ${{ secrets.BASE_URL || 'http://localhost:3000' }}
+        STRIPE_TEST_MODE: true
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: playwright-report-${{ matrix.browser }}-${{ matrix.node-version }}
+        path: tests/playwright-report/
+        retention-days: 30
+    
+    - name: Upload test artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-artifacts-${{ matrix.browser }}-${{ matrix.node-version }}
+        path: tests/test-artifacts/
+        retention-days: 7
+
+  test-summary:
+    needs: ui-tests
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Test Summary
+      run: |
+        echo "## 🧪 UI Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "| Browser | Node | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|---------|------|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Chromium | 18 | ${{ needs.ui-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Webkit | 18 | ${{ needs.ui-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Firefox | 18 | ${{ needs.ui-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
