@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
 
     switch (action) {
       case 'all':
-        const allBookings = customerJourneyManager.getAllBookings();
+        const allBookings = await customerJourneyManager.getAllBookings();
         return NextResponse.json({ 
           success: true, 
           data: allBookings,
@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
         });
 
       case 'active':
-        const activeBookings = customerJourneyManager.getActiveBookings();
+        const activeBookings = await customerJourneyManager.getActiveBookings();
         return NextResponse.json({ 
           success: true, 
           data: activeBookings,
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
     switch (action) {
       case 'create-booking':
         console.log('[CUSTOMER_JOURNEY_API] Creating booking with data:', data);
-        const booking = customerJourneyManager.createBookingFromLayoutPreview(data);
+        const booking = await customerJourneyManager.createBookingFromLayoutPreview(data);
         console.log('[CUSTOMER_JOURNEY_API] Booking created:', booking);
         return NextResponse.json({ 
           success: true, 
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
 
       case 'update-booking-status':
         const { bookingId, status, stage } = data;
-        customerJourneyManager.updateBookingStatus(bookingId, status, stage);
+        await customerJourneyManager.updateBookingStatus(bookingId, status, stage);
         return NextResponse.json({ 
           success: true, 
           message: 'Booking status updated' 

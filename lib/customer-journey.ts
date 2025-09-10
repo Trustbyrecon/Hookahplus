@@ -1,6 +1,8 @@
 // lib/customer-journey.ts
 // Real-time customer journey tracking that links layout preview to fire sessions
 
+import { saveState, loadState, hydrateDates } from './persistence';
+
 export interface CustomerBooking {
   id: string;
   reservationId: string;
@@ -81,6 +83,43 @@ class CustomerJourneyManager {
   };
 
   private listeners: Set<(state: CustomerJourneyState) => void> = new Set();
+  private isInitialized: boolean = false;
+
+  // Initialize with persisted data
+  private async initialize(): Promise<void> {
+    if (this.isInitialized) return;
+    
+    try {
+      console.log('[CUSTOMER_JOURNEY] Loading persisted data...');
+      this.state = await loadState();
+      
+      // Hydrate date objects for all bookings
+      const bookings = Array.from(this.state.bookings.values());
+      const hydratedBookings = hydrateDates(bookings);
+      
+      // Update the bookings map with hydrated data
+      this.state.bookings.clear();
+      hydratedBookings.forEach(booking => {
+        this.state.bookings.set(booking.id, booking);
+      });
+      
+      console.log(`[CUSTOMER_JOURNEY] Loaded ${this.state.bookings.size} bookings from persistence`);
+      this.isInitialized = true;
+    } catch (error) {
+      console.error('[CUSTOMER_JOURNEY] Failed to load persisted data:', error);
+      this.isInitialized = true;
+    }
+  }
+
+  // Persist current state
+  private async persistState(): Promise<void> {
+    try {
+      await saveState(this.state);
+      console.log('[CUSTOMER_JOURNEY] State persisted successfully');
+    } catch (error) {
+      console.error('[CUSTOMER_JOURNEY] Failed to persist state:', error);
+    }
+  }
 
   // Subscribe to real-time updates
   subscribe(listener: (state: CustomerJourneyState) => void) {
@@ -93,7 +132,7 @@ class CustomerJourneyManager {
   }
 
   // Create booking from layout preview
-  createBookingFromLayoutPreview(data: {
+  async createBookingFromLayoutPreview(data: {
     reservationId: string;
     customerName: string;
     customerEmail?: string;
@@ -118,7 +157,8 @@ class CustomerJourneyManager {
       campaignId?: string;
       [key: string]: any; // Allow additional metadata
     };
-  }): CustomerBooking {
+  }): Promise<CustomerBooking> {
+    await this.initialize();
     const booking: CustomerBooking = {
       id: `booking_${Date.now()}_${data.reservationId}`,
       reservationId: data.reservationId,
@@ -151,7 +191,10 @@ class CustomerJourneyManager {
     this.state.bookings.set(booking.id, booking);
     
     // Automatically trigger BOH operations based on booking type
-    this.triggerBOHOperations(booking);
+    await this.triggerBOHOperations(booking);
+    
+    // Persist the state
+    await this.persistState();
     
     this.notifyListeners();
 
@@ -162,7 +205,8 @@ class CustomerJourneyManager {
   }
 
   // Update booking status
-  updateBookingStatus(bookingId: string, status: CustomerBooking['status'], stage: CustomerBooking['currentStage']) {
+  async updateBookingStatus(bookingId: string, status: CustomerBooking['status'], stage: CustomerBooking['currentStage']) {
+    await this.initialize();
     const booking = this.state.bookings.get(bookingId);
     if (!booking) return;
 
@@ -171,13 +215,17 @@ class CustomerJourneyManager {
     booking.updatedAt = new Date();
 
     this.state.bookings.set(bookingId, booking);
+    
+    // Persist the state
+    await this.persistState();
+    
     this.notifyListeners();
 
     console.log(`[CUSTOMER_JOURNEY] Updated booking ${bookingId}: ${status} - ${stage}`);
   }
 
   // Trigger BOH operations based on booking type
-  private triggerBOHOperations(booking: CustomerBooking) {
+  private async triggerBOHOperations(booking: CustomerBooking) {
     const operations: Omit<BOHOperation, 'id' | 'timestamp'>[] = [];
 
     // Base operations for all bookings
@@ -251,13 +299,15 @@ class CustomerJourneyManager {
     }
 
     // Add all operations
-    operations.forEach(op => this.addBOHOperation(op));
+    for (const op of operations) {
+      await this.addBOHOperation(op);
+    }
     
     console.log(`[CUSTOMER_JOURNEY] Triggered ${operations.length} BOH operations for booking ${booking.id}`);
   }
 
   // Add BOH operation
-  addBOHOperation(operation: Omit<BOHOperation, 'id' | 'timestamp'>) {
+  async addBOHOperation(operation: Omit<BOHOperation, 'id' | 'timestamp'>) {
     const bohOp: BOHOperation = {
       ...operation,
       id: `boh_${Date.now()}_${operation.bookingId}`,
@@ -271,6 +321,9 @@ class CustomerJourneyManager {
 
     // Update booking status based on operation
     this.updateBookingFromBOHOperation(operation.bookingId, operation.operationType);
+
+    // Persist the state
+    await this.persistState();
 
     this.notifyListeners();
     console.log(`[CUSTOMER_JOURNEY] Added BOH operation:`, bohOp);
@@ -311,13 +364,15 @@ class CustomerJourneyManager {
   }
 
   // Get all bookings
-  getAllBookings(): CustomerBooking[] {
+  async getAllBookings(): Promise<CustomerBooking[]> {
+    await this.initialize();
     return Array.from(this.state.bookings.values());
   }
 
   // Get active bookings
-  getActiveBookings(): CustomerBooking[] {
-    return this.getAllBookings().filter(booking => 
+  async getActiveBookings(): Promise<CustomerBooking[]> {
+    const allBookings = await this.getAllBookings();
+    return allBookings.filter(booking => 
       ['pending', 'confirmed', 'preparing', 'ready', 'delivered', 'active'].includes(booking.status)
     );
   }
