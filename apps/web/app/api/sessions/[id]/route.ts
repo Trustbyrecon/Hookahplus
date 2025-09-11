@@ -1,7 +1,7 @@
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-import { prisma } from "../../../../lib/prisma";
+import { prisma } from "../../../../../lib/prisma";
 import crypto from "crypto";
 
 export async function GET(req: Request, { params }: { params: { id: string } }) {
