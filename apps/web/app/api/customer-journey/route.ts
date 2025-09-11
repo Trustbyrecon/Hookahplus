@@ -169,7 +169,7 @@ async function handleGetActiveSessions() {
       id: session.id,
       tableId: session.externalRef || 'T-001',
       customerName: session.customerPhone ? `Customer ${session.customerPhone}` : 'Anonymous',
-      flavorMix: session.flavorMix?.flavors?.join(' + ') || 'Custom Mix',
+      flavorMix: (session.flavorMix as any)?.flavors?.join(' + ') || 'Custom Mix',
       totalPrice: 30.00, // Default price
       status: 'active',
       currentStage: 'service',
