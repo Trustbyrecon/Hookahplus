@@ -1,7 +1,7 @@
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic"; // disable Next caching of this route
 
-import { prisma } from "../../../../lib/prisma";
+import { prisma } from "../../../lib/prisma";
 import crypto from "crypto";
 
 const seal = (o: unknown) =>
