@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import crypto from 'crypto';
 
 
 interface FireSession {
@@ -26,6 +27,29 @@ interface FireSession {
   edgeCase: string | null;
 }
 
+// Mapping functions for durable sessions to fire sessions
+function mapDurableSessionStateToFireSession(state: string): FireSession['status'] {
+  switch (state) {
+    case 'PENDING': return 'NEW';
+    case 'ACTIVE': return 'ACTIVE';
+    case 'PAUSED': return 'PAUSED';
+    case 'CLOSED': return 'CLOSED';
+    case 'CANCELED': return 'CLOSE_PENDING';
+    default: return 'NEW';
+  }
+}
+
+function mapDurableSessionStateToStage(state: string): FireSession['currentStage'] {
+  switch (state) {
+    case 'PENDING': return 'BOH';
+    case 'ACTIVE': return 'CUSTOMER';
+    case 'PAUSED': return 'BOH';
+    case 'CLOSED': return 'FOH';
+    case 'CANCELED': return 'BOH';
+    default: return 'BOH';
+  }
+}
+
 export default function FireSessionDashboard() {
   const [sessions, setSessions] = useState<FireSession[]>([]);
   const [activeTab, setActiveTab] = useState<'overview' | 'boh' | 'foh' | 'edge-cases'>('overview');
@@ -39,42 +63,41 @@ export default function FireSessionDashboard() {
   });
   const [sessionTimers, setSessionTimers] = useState<Record<string, {remaining: number, total: number, isActive: boolean}>>({});
 
-  // Load real-time customer journey data instead of demo data
+  // Load real-time sessions from durable sessions API
   useEffect(() => {
     const loadRealTimeData = async () => {
       try {
-        // Load active sessions from customer journey
-        const response = await fetch('/api/customer-journey?action=active');
+        // Load active sessions from durable sessions API
+        const response = await fetch('/api/sessions?state=ACTIVE');
         const result = await response.json();
         
         if (result.success) {
-          // Convert customer journey bookings to fire session format
-          const realSessions: FireSession[] = result.data.map((booking: any) => ({
-            id: booking.id,
-            tableId: booking.tableId,
-            customerName: booking.customerName,
-            flavor: booking.flavorMix,
-            amount: Math.round(booking.totalPrice * 100), // Convert to cents
-            status: mapBookingStatusToFireSession(booking.status),
-            currentStage: mapBookingStageToFireSession(booking.currentStage),
+          // Convert durable sessions to fire session format
+          const realSessions: FireSession[] = result.sessions.map((session: any) => ({
+            id: session.id,
+            tableId: session.externalRef || 'T-001', // Use externalRef as tableId
+            customerName: session.customerPhone ? `Customer ${session.customerPhone}` : 'Anonymous',
+            flavor: session.flavorMix?.flavors?.join(' + ') || 'Custom Mix',
+            amount: 3000, // Default amount for hookah session
+            status: mapDurableSessionStateToFireSession(session.state),
+            currentStage: mapDurableSessionStateToStage(session.state),
             assignedStaff: {
-              boh: booking.prepStaffId || 'staff_001',
-              foh: booking.deliveryStaffId || 'staff_002'
+              boh: 'staff_001',
+              foh: 'staff_002'
             },
-            createdAt: new Date(booking.createdAt).getTime(),
-            updatedAt: new Date(booking.updatedAt).getTime(),
-            sessionStartTime: booking.sessionStartTime ? new Date(booking.sessionStartTime).getTime() : undefined,
-            sessionDuration: booking.actualSessionTime || 0,
+            createdAt: new Date(session.createdAt).getTime(),
+            updatedAt: new Date(session.updatedAt).getTime(),
+            sessionStartTime: session.state === 'ACTIVE' ? new Date(session.createdAt).getTime() : undefined,
+            sessionDuration: session.state === 'ACTIVE' ? Date.now() - new Date(session.createdAt).getTime() : 0,
             coalStatus: 'active' as const,
             refillStatus: 'none' as const,
-            notes: booking.customerPreferences?.notes || '',
-        edgeCase: null
+            notes: `Source: ${session.source}, External Ref: ${session.externalRef}`,
+            edgeCase: session.source === 'WALK_IN' ? 'Walk-in customer' : null
           }));
           
           setSessions(realSessions);
         } else {
           console.error('Failed to load real-time data:', result.error);
-          // Fallback to empty array instead of demo data
           setSessions([]);
         }
       } catch (error) {
@@ -315,36 +338,70 @@ export default function FireSessionDashboard() {
     }
   };
 
-  const createNewSession = () => {
-    // Check for URL parameters from Pre-Order Station
-    const urlParams = new URLSearchParams(window.location.search);
-    const fromPreOrder = urlParams.get('newSession') === 'true';
-    const tableId = urlParams.get('tableId') || `T-${Math.floor(Math.random() * 20) + 1}`;
-    
-    const newSession: FireSession = {
-      id: `session-${Date.now()}`,
-      tableId: tableId,
-      customerName: fromPreOrder ? 'John Smith' : `Customer ${Math.floor(Math.random() * 100) + 1}`,
-      flavor: fromPreOrder ? 'Blue Mist + Mint' : ['Blue Mist', 'Double Apple', 'Peach Wave', 'Mint Fresh'][Math.floor(Math.random() * 4)],
-      amount: fromPreOrder ? 3200 : 2500 + Math.floor(Math.random() * 1000),
-      status: fromPreOrder ? 'PAID_CONFIRMED' : 'NEW',
-      currentStage: 'BOH',
-      assignedStaff: {},
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      sessionDuration: 0,
-      coalStatus: 'active',
-      refillStatus: 'none',
-      notes: fromPreOrder ? `Pre-order from ${tableId}: Blue Mist + Mint` : 'New session created',
-      edgeCase: null
-    };
+  const createNewSession = async () => {
+    try {
+      // Check for URL parameters from Pre-Order Station
+      const urlParams = new URLSearchParams(window.location.search);
+      const fromPreOrder = urlParams.get('newSession') === 'true';
+      const tableId = urlParams.get('tableId') || `T-${Math.floor(Math.random() * 20) + 1}`;
+      
+      // Create session using durable sessions API
+      const sessionData = {
+        loungeId: "fire-session-lounge",
+        source: fromPreOrder ? "RESERVE" : "WALK_IN",
+        externalRef: fromPreOrder ? `res:${tableId}-${Date.now()}` : `walkin:${Date.now()}`,
+        customerPhone: fromPreOrder ? "+1234567890" : undefined,
+        flavorMix: {
+          flavors: fromPreOrder ? ["Blue Mist", "Mint"] : ["Blue Mist", "Double Apple", "Peach Wave", "Mint Fresh"][Math.floor(Math.random() * 4)].split(" + "),
+          strength: "medium",
+          buildTest: false
+        }
+      };
 
-    setSessions(prev => [newSession, ...prev]);
-    setIsCreatingSession(false);
-    
-    // Clear URL parameters
-    if (fromPreOrder) {
-      window.history.replaceState({}, document.title, window.location.pathname);
+      const response = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-idempotency-key': crypto.randomUUID(),
+        },
+        body: JSON.stringify(sessionData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+      }
+
+      const { session } = await response.json();
+      
+      // Convert to FireSession format
+      const newSession: FireSession = {
+        id: session.id,
+        tableId: session.externalRef || tableId,
+        customerName: session.customerPhone ? `Customer ${session.customerPhone}` : (fromPreOrder ? 'John Smith' : `Customer ${Math.floor(Math.random() * 100) + 1}`),
+        flavor: session.flavorMix?.flavors?.join(' + ') || 'Custom Mix',
+        amount: fromPreOrder ? 3200 : 2500 + Math.floor(Math.random() * 1000),
+        status: mapDurableSessionStateToFireSession(session.state),
+        currentStage: mapDurableSessionStateToStage(session.state),
+        assignedStaff: {},
+        createdAt: new Date(session.createdAt).getTime(),
+        updatedAt: new Date(session.updatedAt).getTime(),
+        sessionDuration: 0,
+        coalStatus: 'active',
+        refillStatus: 'none',
+        notes: fromPreOrder ? `Pre-order from ${tableId}: ${session.flavorMix?.flavors?.join(' + ')}` : `New ${session.source} session created`,
+        edgeCase: session.source === 'WALK_IN' ? 'Walk-in customer' : null
+      };
+
+      setSessions(prev => [newSession, ...prev]);
+      setIsCreatingSession(false);
+      
+      // Clear URL parameters
+      if (fromPreOrder) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    } catch (error) {
+      console.error('Failed to create session:', error);
+      alert('Failed to create session. Please try again.');
     }
   };
 
