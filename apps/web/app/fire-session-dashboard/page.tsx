@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import crypto from 'crypto';
+// Use Web Crypto API instead of Node.js crypto for browser compatibility
+const generateIdempotencyKey = () => crypto.randomUUID();
 
 
 interface FireSession {
@@ -362,7 +363,7 @@ export default function FireSessionDashboard() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-idempotency-key': crypto.randomUUID(),
+          'x-idempotency-key': generateIdempotencyKey(),
         },
         body: JSON.stringify(sessionData),
       });

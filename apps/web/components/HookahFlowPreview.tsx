@@ -1017,7 +1017,7 @@ Price: $${totalPrice.toFixed(2)} ($${basePrice.toFixed(2)} × ${seatData.data.ca
                           }
                         }}
                       >
-                        💳 Reserve Table ($5 Hold)
+                        💳 Reserve Table ($10 Hold)
                       </Button>
                       
                       <Button 
