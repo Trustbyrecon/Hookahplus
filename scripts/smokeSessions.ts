@@ -5,7 +5,7 @@
  * Run with: npx ts-node scripts/smokeSessions.ts
  */
 
-import crypto from "crypto";
+import * as crypto from "crypto";
 
 const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
 
