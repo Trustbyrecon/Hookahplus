@@ -42,3 +42,47 @@ model Event {
   @@index([profileId])
   @@index([profileId, venueId])
 }
+
+model Session {
+  id           String   @id @default(cuid())
+  externalRef  String?  // qrToken | reservationId | stripeCheckoutId
+  source       SessionSource
+  trustSignature String
+  state        SessionState @default(PENDING)
+  customerPhone String?
+  flavorMix    Json?
+  loungeId     String
+  version      Int @default(1)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  events       SessionEvent[]
+
+  @@index([loungeId, state])
+  @@unique([loungeId, externalRef]) // idempotent anchor
+}
+
+model SessionEvent {
+  id          String   @id @default(cuid())
+  sessionId   String
+  type        String
+  payloadSeal String
+  data        Json
+  createdAt   DateTime @default(now())
+  session     Session  @relation(fields: [sessionId], references: [id])
+
+  @@index([sessionId])
+}
+
+enum SessionSource { 
+  QR 
+  RESERVE 
+  WALK_IN 
+}
+
+enum SessionState { 
+  PENDING 
+  ACTIVE 
+  PAUSED 
+  CLOSED 
+  CANCELED 
+}
