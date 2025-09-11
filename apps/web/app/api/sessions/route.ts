@@ -1,155 +1,97 @@
-import { NextRequest, NextResponse } from 'next/server';
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic"; // disable Next caching of this route
 
-// Mock database for demo purposes
-let sessions = [
-  {
-    id: 'session-1',
-    tableId: 'T-001',
-    flavor: 'Blue Mist + Mint',
-    amount: 3000,
-    status: 'active',
-    createdAt: Date.now() - 3600000,
-    sessionStartTime: Date.now() - 3600000,
-    sessionDuration: 3600000,
-    coalStatus: 'needs_refill',
-    customerName: 'Alex Johnson',
-    tableType: 'table',
-    deliveryStatus: 'delivered',
-    totalRevenue: 3000
-  },
-  {
-    id: 'session-2',
-    tableId: 'T-003',
-    flavor: 'Double Apple',
-    amount: 3200,
-    status: 'active',
-    createdAt: Date.now() - 1800000,
-    sessionStartTime: Date.now() - 1800000,
-    sessionDuration: 1800000,
-    coalStatus: 'active',
-    customerName: 'Sarah Chen',
-    tableType: 'booth',
-    deliveryStatus: 'delivered',
-    totalRevenue: 3200
-  }
-];
+import { prisma } from "../../../lib/prisma";
+import crypto from "crypto";
 
-export async function GET() {
+const seal = (o: unknown) =>
+  crypto.createHash("sha256").update(JSON.stringify(o)).digest("hex");
+
+export async function GET(req: Request) {
   try {
-    return NextResponse.json(sessions);
-  } catch (error) {
-    console.error('Get sessions error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch sessions' },
-      { status: 500 }
-    );
-  }
-}
+    const { searchParams } = new URL(req.url);
+    const state = searchParams.get('state');
+    const loungeId = searchParams.get('loungeId');
+    const customerPhone = searchParams.get('customerPhone');
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { tableId, flavor, amount, customerName } = body;
-
-    // Validate required fields
-    if (!tableId || !flavor || !amount) {
-      return NextResponse.json(
-        { error: 'Missing required fields: tableId, flavor, amount' },
-        { status: 400 }
-      );
+    let whereClause: any = {};
+    
+    if (state) {
+      whereClause.state = state;
+    }
+    
+    if (loungeId) {
+      whereClause.loungeId = loungeId;
+    }
+    
+    if (customerPhone) {
+      whereClause.customerPhone = customerPhone;
     }
 
-    // Create new session
-    const newSession = {
-      id: `session-${Date.now()}`,
-      tableId,
-      flavor,
-      amount,
-      status: 'active',
-      createdAt: Date.now(),
-      sessionStartTime: Date.now(),
-      sessionDuration: 0,
-      coalStatus: 'active',
-      customerName: customerName || 'Anonymous',
-      tableType: tableId.startsWith('Bar') ? 'bar' : 'table',
-      deliveryStatus: 'preparing',
-      totalRevenue: amount
-    };
+    const sessions = await prisma.session.findMany({
+      where: whereClause,
+      include: { events: true },
+      orderBy: { createdAt: 'desc' }
+    });
 
-    sessions.push(newSession);
-
-    return NextResponse.json(newSession, { status: 201 });
-  } catch (error) {
-    console.error('Create session error:', error);
-    return NextResponse.json(
-      { error: 'Failed to create session' },
-      { status: 500 }
-    );
+    return Response.json({ 
+      success: true,
+      sessions,
+      count: sessions.length
+    }, { headers: { "Cache-Control": "no-store" } });
+  } catch (error: any) {
+    return Response.json({ 
+      success: false, 
+      error: error.message 
+    }, { status: 500, headers: { "Cache-Control": "no-store" } });
   }
 }
 
-export async function PUT(request: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const body = await request.json();
-    const { id, updates } = body;
+    const idempotencyKey = req.headers.get("x-idempotency-key") ?? "";
+    const { loungeId, source, externalRef, customerPhone, flavorMix } = await req.json();
 
-    if (!id || !updates) {
-      return NextResponse.json(
-        { error: 'Missing required fields: id, updates' },
-        { status: 400 }
-      );
+    if (!loungeId || !source || !externalRef) {
+      return Response.json("Missing required fields", { status: 400 });
     }
 
-    const sessionIndex = sessions.findIndex(s => s.id === id);
-    if (sessionIndex === -1) {
-      return NextResponse.json(
-        { error: 'Session not found' },
-        { status: 404 }
-      );
-    }
+    const trustSignature = seal({ loungeId, source, externalRef, customerPhone, flavorMix });
 
-    // Update session
-    sessions[sessionIndex] = { ...sessions[sessionIndex], ...updates };
+    const session = await prisma.session.upsert({
+      where: { 
+        loungeId_externalRef: { 
+          loungeId, 
+          externalRef 
+        } 
+      },
+      update: {}, // creation is idempotent—no update on duplicate create
+      create: {
+        loungeId, 
+        source, 
+        externalRef, 
+        customerPhone, 
+        flavorMix, 
+        trustSignature,
+        events: {
+          create: {
+            type: "CREATED",
+            payloadSeal: trustSignature,
+            data: { idempotencyKey, source, customerPhone, flavorMix }
+          }
+        }
+      },
+      include: { events: true }
+    });
 
-    return NextResponse.json(sessions[sessionIndex]);
-  } catch (error) {
-    console.error('Update session error:', error);
-    return NextResponse.json(
-      { error: 'Failed to update session' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function DELETE(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-
-    if (!id) {
-      return NextResponse.json(
-        { error: 'Missing session ID' },
-        { status: 400 }
-      );
-    }
-
-    const sessionIndex = sessions.findIndex(s => s.id === id);
-    if (sessionIndex === -1) {
-      return NextResponse.json(
-        { error: 'Session not found' },
-        { status: 404 }
-      );
-    }
-
-    // Remove session
-    const deletedSession = sessions.splice(sessionIndex, 1)[0];
-
-    return NextResponse.json({ message: 'Session deleted', session: deletedSession });
-  } catch (error) {
-    console.error('Delete session error:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete session' },
-      { status: 500 }
-    );
+    return Response.json({ session }, { 
+      status: 201, 
+      headers: { "Cache-Control": "no-store" } 
+    });
+  } catch (error: any) {
+    return Response.json({ 
+      error: "Failed to create session",
+      details: error.message 
+    }, { status: 500, headers: { "Cache-Control": "no-store" } });
   }
 }
