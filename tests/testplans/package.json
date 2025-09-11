@@ -1,0 +1,13 @@
+{
+  "name": "Prepaid Package",
+  "description": "User buys Bronze package + optional add-on, redirects to Stripe",
+  "steps": [
+    { "action": "navigate", "url": "{BASE}/packages/bronze" },
+    { "action": "waitFor", "selector": "main[data-testid=package-page]", "state": "visible" },
+    { "action": "click", "selector": "input[name=addon_extra_hookah]" },
+    { "action": "click", "selector": "button[data-testid=buy-package]" },
+    { "action": "waitFor", "selector": "text=/redirecting to stripe/i", "state": "visible" },
+    { "action": "assertUrl", "includes": "checkout.stripe.com" },
+    { "action": "screenshot", "name": "stripe-checkout-package" }
+  ]
+}

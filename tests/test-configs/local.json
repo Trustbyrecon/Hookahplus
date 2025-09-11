@@ -1,0 +1,21 @@
+{
+  "name": "Local Development",
+  "baseUrl": "http://localhost:3000",
+  "stripeTestMode": true,
+  "timeout": 60000,
+  "retries": 0,
+  "browsers": ["chromium"],
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "testPlans": [
+    "deposit.json",
+    "package.json",
+    "terminal.json",
+    "webhook-test.json"
+  ],
+  "exclude": [],
+  "debug": true,
+  "headed": true
+}

@@ -1,0 +1,57 @@
+[
+  {
+    "id": "EXPLORER",
+    "label": "Explorer",
+    "scope": "network",
+    "rule": {
+      "type": "venue_count",
+      "threshold": 3,
+      "description": "Visit 3 or more different venues"
+    },
+    "active": true
+  },
+  {
+    "id": "MIX_MASTER",
+    "label": "Mix Master",
+    "scope": "lounge",
+    "rule": {
+      "type": "unique_combos",
+      "threshold": 10,
+      "description": "Order 10 unique flavor combinations"
+    },
+    "active": true
+  },
+  {
+    "id": "LOYALIST",
+    "label": "Loyalist",
+    "scope": "lounge",
+    "rule": {
+      "type": "venue_visits",
+      "threshold": 10,
+      "description": "Complete 10 sessions at the same venue"
+    },
+    "active": true
+  },
+  {
+    "id": "REGULAR",
+    "label": "Regular",
+    "scope": "lounge",
+    "rule": {
+      "type": "venue_visits",
+      "threshold": 5,
+      "description": "Complete 5 sessions at the same venue"
+    },
+    "active": true
+  },
+  {
+    "id": "FLAVOR_EXPLORER",
+    "label": "Flavor Explorer",
+    "scope": "lounge",
+    "rule": {
+      "type": "unique_combos",
+      "threshold": 5,
+      "description": "Try 5 different flavor combinations"
+    },
+    "active": true
+  }
+]

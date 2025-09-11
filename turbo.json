@@ -1,5 +1,5 @@
 {
-  "pipeline": {
+  "tasks": {
     "build": {
       "dependsOn": [
         "^build"
@@ -11,5 +11,9 @@
     "dev": {
       "cache": false
     }
-  }
+  },
+  "globalDependencies": [
+    "package.json",
+    "pnpm-workspace.yaml"
+  ]
 }

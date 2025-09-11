@@ -1,0 +1,19 @@
+{
+  "name": "Staging Environment",
+  "baseUrl": "https://staging.hookahplus.net",
+  "stripeTestMode": true,
+  "timeout": 90000,
+  "retries": 2,
+  "browsers": ["chromium", "webkit"],
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "testPlans": [
+    "deposit.json",
+    "package.json",
+    "terminal.json",
+    "webhook-test.json"
+  ],
+  "exclude": []
+}

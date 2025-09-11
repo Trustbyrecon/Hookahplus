@@ -1,0 +1,103 @@
+2025-09-08T16:32:47.733092Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\cache"), AnchoredSystemPathBuf(".turbo\\cookies\\1.cookie"), AnchoredSystemPathBuf(".turbo"), AnchoredSystemPathBuf(".turbo\\cookies")}
+2025-09-08T16:32:47.733185Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-08T16:32:47.831084Z  WARN daemon_server: turborepo_lib::commands::daemon: daemon already running
+2025-09-08T16:32:47.832028Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo"), AnchoredSystemPathBuf(".turbo\\cookies\\1.cookie"), AnchoredSystemPathBuf(".turbo\\cookies\\.turbo-cookie"), AnchoredSystemPathBuf(".turbo\\daemon"), AnchoredSystemPathBuf(".turbo\\cookies")}
+2025-09-08T16:32:47.832158Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-08T16:32:48.149092Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\aa234b8bfb543d67-turbo.log.2025-09-08")}
+2025-09-08T16:32:48.149120Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-08T16:32:52.338361Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\cookies")}
+2025-09-08T16:32:52.338453Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-08T16:32:53.131906Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\aa234b8bfb543d67-turbo.log.2025-09-08")}
+2025-09-08T16:32:53.131959Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-08T16:32:53.430810Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("turbo.json")}
+2025-09-08T16:32:53.430864Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(All)
+2025-09-08T16:32:56.843958Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\cookies\\2.cookie")}
+2025-09-08T16:32:56.843983Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-08T16:32:57.141564Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\admin\\.turbo"), AnchoredSystemPathBuf("apps\\preorder\\.turbo"), AnchoredSystemPathBuf(".turbo\\cookies\\4.cookie"), AnchoredSystemPathBuf("apps\\web"), AnchoredSystemPathBuf(".turbo\\cookies\\6.cookie"), AnchoredSystemPathBuf("apps\\dashboard"), AnchoredSystemPathBuf(".turbo\\cookies\\5.cookie"), AnchoredSystemPathBuf("apps\\admin"), AnchoredSystemPathBuf("apps\\dashboard\\.turbo"), AnchoredSystemPathBuf(".turbo\\cookies"), AnchoredSystemPathBuf("apps\\preorder"), AnchoredSystemPathBuf("apps\\web\\.turbo"), AnchoredSystemPathBuf(".turbo\\cookies\\3.cookie")}
+2025-09-08T16:32:57.141597Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }, WorkspacePackage { name: Other("@hookahplus/admin"), path: AnchoredSystemPathBuf("apps\\admin") }, WorkspacePackage { name: Other("@hookahplus/dashboard"), path: AnchoredSystemPathBuf("apps\\dashboard") }, WorkspacePackage { name: Other("@hookahplus/preorder"), path: AnchoredSystemPathBuf("apps\\preorder") }, WorkspacePackage { name: Other("@hookahplus/web"), path: AnchoredSystemPathBuf("apps\\web") }}))
+2025-09-08T16:33:02.736242Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\aa234b8bfb543d67-turbo.log.2025-09-08")}
+2025-09-08T16:33:02.736284Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-08T16:33:03.864585Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\admin\\.next"), AnchoredSystemPathBuf(".turbo\\daemon\\aa234b8bfb543d67-turbo.log.2025-09-08"), AnchoredSystemPathBuf("apps\\admin")}
+2025-09-08T16:33:03.864635Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@hookahplus/admin"), path: AnchoredSystemPathBuf("apps\\admin") }, WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-08T16:33:04.571017Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-09-08T16:33:04.571364Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\preorder"), AnchoredSystemPathBuf("apps\\admin\\.next"), AnchoredSystemPathBuf("apps\\preorder\\.next")}
+2025-09-08T16:33:04.571379Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@hookahplus/preorder"), path: AnchoredSystemPathBuf("apps\\preorder") }, WorkspacePackage { name: Other("@hookahplus/admin"), path: AnchoredSystemPathBuf("apps\\admin") }}))
+2025-09-08T16:33:04.719455Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-09-08T16:33:04.719493Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-09-08T16:33:04.719689Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\dashboard\\.next"), AnchoredSystemPathBuf("apps\\dashboard")}
+2025-09-08T16:33:04.719706Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@hookahplus/dashboard"), path: AnchoredSystemPathBuf("apps\\dashboard") }}))
+2025-09-08T16:33:05.180943Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-09-08T16:33:11.242239Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\admin\\.next")}
+2025-09-08T16:33:11.242336Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@hookahplus/admin"), path: AnchoredSystemPathBuf("apps\\admin") }}))
+2025-09-08T16:33:11.362841Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-09-08T16:33:11.363076Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\preorder\\.next")}
+2025-09-08T16:33:11.363087Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@hookahplus/preorder"), path: AnchoredSystemPathBuf("apps\\preorder") }}))
+2025-09-08T16:33:11.580822Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-09-08T16:33:12.044255Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\dashboard\\.next")}
+2025-09-08T16:33:12.044284Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@hookahplus/dashboard"), path: AnchoredSystemPathBuf("apps\\dashboard") }}))
+2025-09-08T16:33:12.141030Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-09-08T16:33:12.656891Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\aa234b8bfb543d67-turbo.log.2025-09-08")}
+2025-09-08T16:33:12.656971Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-08T16:33:12.731833Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\aa234b8bfb543d67-turbo.log.2025-09-08")}
+2025-09-08T16:33:12.731859Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-08T16:33:15.730621Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\preorder\\.next"), AnchoredSystemPathBuf("apps\\admin\\.next")}
+2025-09-08T16:33:15.730646Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@hookahplus/preorder"), path: AnchoredSystemPathBuf("apps\\preorder") }, WorkspacePackage { name: Other("@hookahplus/admin"), path: AnchoredSystemPathBuf("apps\\admin") }}))
+2025-09-08T16:33:15.957534Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-09-08T16:33:16.023088Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-09-08T16:33:16.936702Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\preorder\\.next"), AnchoredSystemPathBuf("apps\\admin\\.next")}
+2025-09-08T16:33:16.936736Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@hookahplus/admin"), path: AnchoredSystemPathBuf("apps\\admin") }, WorkspacePackage { name: Other("@hookahplus/preorder"), path: AnchoredSystemPathBuf("apps\\preorder") }}))
+2025-09-08T16:33:17.699741Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-09-08T16:33:17.704322Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-09-08T16:33:18.153663Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\dashboard\\.next")}
+2025-09-08T16:33:18.154154Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@hookahplus/dashboard"), path: AnchoredSystemPathBuf("apps\\dashboard") }}))
+2025-09-08T16:33:18.601886Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-09-08T16:33:19.340468Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\dashboard\\.next")}
+2025-09-08T16:33:19.340509Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@hookahplus/dashboard"), path: AnchoredSystemPathBuf("apps\\dashboard") }}))
+2025-09-08T16:33:19.592415Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-09-08T16:33:20.233611Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\aa234b8bfb543d67-turbo.log.2025-09-08")}
+2025-09-08T16:33:20.233677Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-08T16:33:20.531277Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\aa234b8bfb543d67-turbo.log.2025-09-08")}
+2025-09-08T16:33:20.531306Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-08T16:33:27.234883Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\admin\\.next")}
+2025-09-08T16:33:27.234997Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@hookahplus/admin"), path: AnchoredSystemPathBuf("apps\\admin") }}))
+2025-09-08T16:33:27.370222Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-09-08T16:33:28.357904Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\preorder\\.next")}
+2025-09-08T16:33:28.358056Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@hookahplus/preorder"), path: AnchoredSystemPathBuf("apps\\preorder") }}))
+2025-09-08T16:33:28.593777Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-09-08T16:33:29.630150Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\dashboard\\.next")}
+2025-09-08T16:33:29.630220Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@hookahplus/dashboard"), path: AnchoredSystemPathBuf("apps\\dashboard") }}))
+2025-09-08T16:33:30.014418Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-09-08T16:33:30.023966Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\aa234b8bfb543d67-turbo.log.2025-09-08")}
+2025-09-08T16:33:30.024062Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-08T16:33:34.230614Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\aa234b8bfb543d67-turbo.log.2025-09-08")}
+2025-09-08T16:33:34.230660Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-08T16:33:34.458639Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\aa234b8bfb543d67-turbo.log.2025-09-08")}
+2025-09-08T16:33:34.458667Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-08T16:33:36.037996Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\aa234b8bfb543d67-turbo.log.2025-09-08")}
+2025-09-08T16:33:36.038891Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-08T16:33:36.851456Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\aa234b8bfb543d67-turbo.log.2025-09-08")}
+2025-09-08T16:33:36.851495Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-08T16:33:37.131802Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\aa234b8bfb543d67-turbo.log.2025-09-08")}
+2025-09-08T16:33:37.131833Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-08T16:33:44.944256Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\aa234b8bfb543d67-turbo.log.2025-09-08")}
+2025-09-08T16:33:44.944349Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-08T16:33:45.869614Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\aa234b8bfb543d67-turbo.log.2025-09-08")}
+2025-09-08T16:33:45.869642Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-08T16:33:46.050200Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\aa234b8bfb543d67-turbo.log.2025-09-08")}
+2025-09-08T16:33:46.050281Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-08T16:33:47.545114Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\admin\\.next")}
+2025-09-08T16:33:47.545146Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@hookahplus/admin"), path: AnchoredSystemPathBuf("apps\\admin") }}))
+2025-09-08T16:33:47.653015Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-09-08T16:33:49.132717Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\preorder\\.next")}
+2025-09-08T16:33:49.132743Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@hookahplus/preorder"), path: AnchoredSystemPathBuf("apps\\preorder") }}))
+2025-09-08T16:33:49.327708Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-09-08T16:33:50.229581Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\dashboard\\.next")}
+2025-09-08T16:33:50.229610Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@hookahplus/dashboard"), path: AnchoredSystemPathBuf("apps\\dashboard") }}))
+2025-09-08T16:33:50.397662Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-09-08T16:34:04.965366Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\cookies"), AnchoredSystemPathBuf(".turbo\\cookies\\1.cookie")}
+2025-09-08T16:34:04.965444Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-08T16:34:05.282685Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo"), AnchoredSystemPathBuf(".turbo\\cookies"), AnchoredSystemPathBuf(".turbo\\cookies\\.turbo-cookie"), AnchoredSystemPathBuf(".turbo\\cookies\\1.cookie")}
+2025-09-08T16:34:05.282712Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-08T16:34:05.306292Z  WARN daemon_server: turborepo_lib::commands::daemon: daemon already running
+2025-09-08T16:34:05.554166Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\cookies\\3.cookie"), AnchoredSystemPathBuf(".turbo\\cookies"), AnchoredSystemPathBuf(".turbo\\cookies\\5.cookie"), AnchoredSystemPathBuf(".turbo\\daemon\\aa234b8bfb543d67-turbo.log.2025-09-08"), AnchoredSystemPathBuf(".turbo\\cookies\\2.cookie"), AnchoredSystemPathBuf(".turbo\\cookies\\4.cookie")}
+2025-09-08T16:34:05.554192Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))

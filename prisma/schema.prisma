@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Badge {
+  id     String  @id
+  label  String
+  scope  String  // 'lounge' | 'network'
+  rule   Json
+  active Boolean @default(true)
+  awards Award[]
+}
+
+model Award {
+  id         String   @id
+  profileId  String
+  badgeId    String
+  badge      Badge    @relation(fields: [badgeId], references: [id])
+  venueId    String?
+  progress   Int      @default(100)
+  awardedAt  DateTime @default(now())
+  awardedBy  String?
+  revoked    Boolean  @default(false)
+
+  @@index([profileId, badgeId, venueId, revoked])
+}
+
+model Event {
+  id        String   @id @default(cuid())
+  ts        DateTime @default(now())
+  type      String   // 'check_in' | 'visit_closed' | 'mix_ordered'
+  profileId String
+  venueId   String?
+  comboHash String?
+  staffId   String?
+
+  @@index([profileId])
+  @@index([profileId, venueId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  externalRef  String?  // qrToken | reservationId | stripeCheckoutId
+  source       SessionSource
+  trustSignature String
+  state        SessionState @default(PENDING)
+  customerPhone String?
+  flavorMix    Json?
+  loungeId     String
+  version      Int @default(1)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  events       SessionEvent[]
+
+  @@index([loungeId, state])
+  @@unique([loungeId, externalRef]) // idempotent anchor
+}
+
+model SessionEvent {
+  id          String   @id @default(cuid())
+  sessionId   String
+  type        String
+  payloadSeal String
+  data        Json
+  createdAt   DateTime @default(now())
+  session     Session  @relation(fields: [sessionId], references: [id])
+
+  @@index([sessionId])
+}
+
+enum SessionSource { 
+  QR 
+  RESERVE 
+  WALK_IN 
+}
+
+enum SessionState { 
+  PENDING 
+  ACTIVE 
+  PAUSED 
+  CLOSED 
+  CANCELED 
+}

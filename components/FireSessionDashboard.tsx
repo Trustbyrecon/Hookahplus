@@ -1,104 +1,112 @@
-'use client';
+import React, { useState, useEffect } from 'react';
+import ActiveSessionTimer from './ActiveSessionTimer';
 
-import { useState, useEffect } from 'react';
-import { 
-  getSession, 
-  getAllSessions, 
-  sessionCommands,
-  type Session 
-} from '@/lib/cmd';
-import { 
-  getStateDisplayName, 
-  getStateColor, 
-  getAvailableCommands,
-  type SessionState 
-} from '@/lib/sessionState';
+interface FireSession {
+  id: string;
+  tableId: string;
+  tableType: string;
+  customerName: string;
+  flavorMix: string;
+  basePrice: number;
+  totalPrice: number;
+  capacity: number;
+  status: 'preparing' | 'delivered' | 'active' | 'completed';
+  createdAt: string;
+  updatedAt: string;
+  qrCode: string;
+  metadata: {
+    zone: string;
+    zoneLabel: string;
+    estimatedPrepTime: number;
+    estimatedSessionTime: number;
+  };
+}
 
-export default function FireSessionDashboard() {
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export const FireSessionDashboard: React.FC = () => {
+  const [sessions, setSessions] = useState<FireSession[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedSession, setSelectedSession] = useState<FireSession | null>(null);
 
-  // Load sessions on mount
+  // Fetch sessions from API
   useEffect(() => {
-    loadSessions();
+    const fetchSessions = async () => {
+      try {
+        const response = await fetch('/api/fire-session');
+        if (response.ok) {
+          const data = await response.json();
+          setSessions(data.sessions || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch sessions:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSessions();
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchSessions, 30000);
+    return () => clearInterval(interval);
   }, []);
 
-  const loadSessions = async () => {
+  const handleStatusUpdate = async (sessionId: string, newStatus: string) => {
     try {
-      setLoading(true);
-      const response = await getAllSessions();
-      setSessions(response.sessions);
-      if (response.sessions.length > 0 && !selectedSession) {
-        setSelectedSession(response.sessions[0]);
+      const response = await fetch('/api/fire-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'update_status',
+          sessionId: sessionId,
+          newStatus: newStatus
+        }),
+      });
+
+      if (response.ok) {
+        // Update local state
+        setSessions(prev => prev.map(session => 
+          session.id === sessionId 
+            ? { ...session, status: newStatus as any, updatedAt: new Date().toISOString() }
+            : session
+        ));
       }
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      console.error('Failed to update status:', error);
     }
   };
 
-  const executeCommand = async (sessionId: string, command: string, data: any = {}, actor: "foh" | "boh" | "system" = "foh") => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Execute the command
-      await sessionCommands[command as keyof typeof sessionCommands](sessionId, data, actor);
-      
-      // Reload sessions to get updated state
-      await loadSessions();
-      
-      // Update selected session if it's the one we just modified
-      if (selectedSession?.id === sessionId) {
-        const updated = await getSession(sessionId);
-        setSelectedSession(updated.session);
-      }
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'preparing': return 'bg-yellow-100 text-yellow-800';
+      case 'delivered': return 'bg-blue-100 text-blue-800';
+      case 'active': return 'bg-green-100 text-green-800';
+      case 'completed': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const createNewSession = async () => {
-    try {
-      setLoading(true);
-      const table = prompt('Enter table number (e.g., T-15):') || 'T-15';
-      await sessionCommands.createSession({ table });
-      await loadSessions();
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'preparing': return '🔧';
+      case 'delivered': return '✅';
+      case 'active': return '🔥';
+      case 'completed': return '✅';
+      default: return '❓';
     }
   };
 
-  const getCommandButton = (session: Session, command: string, label: string, actor: "foh" | "boh" = "foh", color = "blue") => {
-    const isAvailable = getAvailableCommands(session.state).includes(command as any);
-    
+  const activeSessions = sessions.filter(s => s.status === 'active');
+  const preparingSessions = sessions.filter(s => s.status === 'preparing');
+  const deliveredSessions = sessions.filter(s => s.status === 'delivered');
+
+  if (loading) {
     return (
-      <button
-        key={command}
-        onClick={() => executeCommand(session.id, command, {}, actor)}
-        disabled={!isAvailable || loading}
-        className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
-          isAvailable 
-            ? `bg-${color}-500 hover:bg-${color}-600 text-white` 
-            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-        }`}
-      >
-        {label}
-      </button>
-    );
-  };
-
-  if (loading && sessions.length === 0) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-xl">Loading Fire Session Dashboard...</div>
+      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading Fire Sessions...</p>
+        </div>
       </div>
     );
   }
@@ -108,178 +116,193 @@ export default function FireSessionDashboard() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Fire Session Dashboard
-          </h1>
-          <p className="text-gray-600">
-            Manage hookah sessions with real-time state machine
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Fire Session Dashboard</h1>
+          <p className="text-gray-600">Real-time session management and monitoring</p>
         </div>
 
-        {/* Error Display */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-            {error}
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center">
+              <div className="text-2xl mr-3">🔥</div>
+              <div>
+                <div className="text-2xl font-bold text-gray-900">{activeSessions.length}</div>
+                <div className="text-sm text-gray-500">Active Sessions</div>
+              </div>
+            </div>
           </div>
-        )}
-
-        {/* Controls */}
-        <div className="mb-6 flex gap-4">
-          <button
-            onClick={createNewSession}
-            disabled={loading}
-            className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded font-medium"
-          >
-            Create New Session
-          </button>
-          <button
-            onClick={loadSessions}
-            disabled={loading}
-            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded font-medium"
-          >
-            Refresh
-          </button>
+          
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center">
+              <div className="text-2xl mr-3">🔧</div>
+              <div>
+                <div className="text-2xl font-bold text-gray-900">{preparingSessions.length}</div>
+                <div className="text-sm text-gray-500">Preparing</div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center">
+              <div className="text-2xl mr-3">✅</div>
+              <div>
+                <div className="text-2xl font-bold text-gray-900">{deliveredSessions.length}</div>
+                <div className="text-sm text-gray-500">Ready for Delivery</div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center">
+              <div className="text-2xl mr-3">💰</div>
+              <div>
+                <div className="text-2xl font-bold text-gray-900">
+                  ${sessions.reduce((sum, s) => sum + s.totalPrice, 0).toFixed(0)}
+                </div>
+                <div className="text-sm text-gray-500">Total Revenue</div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Sessions List */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold mb-4">Active Sessions</h2>
-              <div className="space-y-3">
-                {sessions.map((session) => (
-                  <div
-                    key={session.id}
-                    onClick={() => setSelectedSession(session)}
-                    className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                      selectedSession?.id === session.id
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-medium text-gray-900">
-                          {session.table}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {session.id.slice(-8)}
-                        </div>
-                      </div>
-                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${getStateColor(session.state)}`}>
-                        {getStateDisplayName(session.state)}
-                      </div>
-                    </div>
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h2 className="text-lg font-semibold text-gray-900">All Sessions</h2>
+                <p className="text-sm text-gray-500">{sessions.length} total sessions</p>
+              </div>
+              <div className="p-6">
+                {sessions.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <div className="text-4xl mb-2">🍃</div>
+                    <p>No active sessions</p>
                   </div>
-                ))}
-                {sessions.length === 0 && (
-                  <div className="text-gray-500 text-center py-8">
-                    No sessions found. Create one to get started!
+                ) : (
+                  <div className="space-y-3">
+                    {sessions.map((session) => (
+                      <div
+                        key={session.id}
+                        className={`p-4 rounded-lg border cursor-pointer transition-all hover:shadow-md ${
+                          selectedSession?.id === session.id 
+                            ? 'border-blue-500 bg-blue-50' 
+                            : 'border-gray-200 bg-white hover:border-gray-300'
+                        }`}
+                        onClick={() => setSelectedSession(session)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <span className="text-2xl">{getStatusIcon(session.status)}</span>
+                            <div>
+                              <div className="font-medium text-gray-900">
+                                Table {session.tableId}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {session.customerName} • {session.flavorMix}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(session.status)}`}>
+                              {session.status}
+                            </div>
+                            <div className="text-sm text-gray-500 mt-1">
+                              ${session.totalPrice.toFixed(2)}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-2 text-sm text-gray-600">
+                          <div>Zone: {session.metadata.zoneLabel}</div>
+                          <div>Capacity: {session.capacity} people</div>
+                          <div>QR: {session.qrCode}</div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Session Details & Controls */}
-          <div className="lg:col-span-2">
+          {/* Session Details & Timer */}
+          <div className="lg:col-span-1">
             {selectedSession ? (
-              <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900">
-                      Table {selectedSession.table}
-                    </h2>
-                    <p className="text-gray-600">Session {selectedSession.id}</p>
-                  </div>
-                  <div className={`px-4 py-2 rounded-full text-sm font-medium ${getStateColor(selectedSession.state)}`}>
-                    {getStateDisplayName(selectedSession.state)}
-                  </div>
-                </div>
-
-                {/* Session Info */}
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Payment Status
-                    </label>
-                    <div className="text-sm text-gray-900 capitalize">
-                      {selectedSession.payment.status}
+              <div className="space-y-6">
+                {/* Session Details */}
+                <div className="bg-white rounded-lg border border-gray-200 p-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Session Details</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Table ID:</span>
+                      <span className="font-medium">{selectedSession.tableId}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Customer:</span>
+                      <span className="font-medium">{selectedSession.customerName}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Flavor:</span>
+                      <span className="font-medium">{selectedSession.flavorMix}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Price:</span>
+                      <span className="font-medium">${selectedSession.totalPrice.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Zone:</span>
+                      <span className="font-medium">{selectedSession.metadata.zoneLabel}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Capacity:</span>
+                      <span className="font-medium">{selectedSession.capacity} people</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Status:</span>
+                      <span className={`font-medium ${getStatusColor(selectedSession.status)}`}>
+                        {selectedSession.status}
+                      </span>
                     </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Items
-                    </label>
-                    <div className="text-sm text-gray-900">
-                      {selectedSession.items.map(item => `${item.sku} (${item.qty})`).join(', ')}
-                    </div>
-                  </div>
                 </div>
 
-                {/* FOH Controls */}
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold mb-3 text-blue-600">Front of House (FOH)</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {getCommandButton(selectedSession, "DELIVER_NOW", "Deliver Now", "foh", "blue")}
-                    {getCommandButton(selectedSession, "MARK_DELIVERED", "Mark Delivered", "foh", "green")}
-                    {getCommandButton(selectedSession, "START_ACTIVE", "Start Active", "foh", "purple")}
-                    {getCommandButton(selectedSession, "MOVE_TABLE", "Move Table", "foh", "yellow")}
-                    {getCommandButton(selectedSession, "CLOSE_SESSION", "Close Session", "foh", "red")}
-                    {getCommandButton(selectedSession, "REMAKE", "Remake", "foh", "orange")}
-                    {getCommandButton(selectedSession, "STAFF_HOLD", "Staff Hold", "foh", "yellow")}
-                  </div>
-                </div>
+                {/* Active Session Timer */}
+                {selectedSession.status === 'active' && (
+                  <ActiveSessionTimer
+                    sessionId={selectedSession.id}
+                    startTime={selectedSession.updatedAt}
+                    isActive={true}
+                    onStatusUpdate={handleStatusUpdate}
+                  />
+                )}
 
-                {/* BOH Controls */}
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold mb-3 text-green-600">Back of House (BOH)</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {getCommandButton(selectedSession, "CLAIM_PREP", "Claim Prep", "boh", "purple")}
-                    {getCommandButton(selectedSession, "HEAT_UP", "Heat Up", "boh", "red")}
-                    {getCommandButton(selectedSession, "READY_FOR_DELIVERY", "Ready for Delivery", "boh", "green")}
-                    {getCommandButton(selectedSession, "REMAKE", "Remake", "boh", "orange")}
-                    {getCommandButton(selectedSession, "STAFF_HOLD", "Staff Hold", "boh", "yellow")}
-                  </div>
-                </div>
-
-                {/* System Controls */}
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold mb-3 text-gray-600">System</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {getCommandButton(selectedSession, "PAYMENT_CONFIRMED", "Confirm Payment", "system", "green")}
-                    {getCommandButton(selectedSession, "PAYMENT_FAILED", "Fail Payment", "system", "red")}
-                    {getCommandButton(selectedSession, "VOID", "Void Session", "system", "gray")}
-                    {getCommandButton(selectedSession, "REFUND_REQUEST", "Request Refund", "system", "orange")}
-                    {getCommandButton(selectedSession, "REFUND_COMPLETE", "Complete Refund", "system", "blue")}
-                  </div>
-                </div>
-
-                {/* Audit Trail */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Recent Activity</h3>
-                  <div className="max-h-40 overflow-y-auto space-y-2">
-                    {selectedSession.audit.slice(-5).reverse().map((event) => (
-                      <div key={event.id} className="text-sm p-2 bg-gray-50 rounded">
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium">{event.cmd || event.type}</span>
-                          <span className="text-gray-500 text-xs">
-                            {new Date(event.ts).toLocaleTimeString()}
-                          </span>
-                        </div>
-                        <div className="text-gray-600 text-xs">
-                          {event.from && event.to && `${event.from} → ${event.to}`}
-                          {event.reason && ` (${event.reason})`}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                {/* Action Buttons */}
+                <div className="space-y-2">
+                  {selectedSession.status === 'delivered' && (
+                    <button
+                      onClick={() => handleStatusUpdate(selectedSession.id, 'active')}
+                      className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-semibold"
+                    >
+                      🔥 Start Active Session
+                    </button>
+                  )}
+                  
+                  {selectedSession.status === 'preparing' && (
+                    <button
+                      onClick={() => handleStatusUpdate(selectedSession.id, 'delivered')}
+                      className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-semibold"
+                    >
+                      ✅ Mark as Delivered
+                    </button>
+                  )}
                 </div>
               </div>
             ) : (
-              <div className="bg-white rounded-lg shadow p-6">
-                <div className="text-center text-gray-500 py-12">
-                  Select a session to view details and controls
+              <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
+                <div className="text-gray-500">
+                  <div className="text-4xl mb-2">👆</div>
+                  <p>Select a session to view details</p>
                 </div>
               </div>
             )}
@@ -288,4 +311,6 @@ export default function FireSessionDashboard() {
       </div>
     </div>
   );
-}
+};
+
+export default FireSessionDashboard;

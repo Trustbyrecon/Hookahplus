@@ -215,16 +215,7 @@ const BOHPrepRoom = () => {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {/* BOH Commands */}
-                    {selectedSession.state === "PAID_CONFIRMED" && (
-                      <button
-                        onClick={() => handleCommand(selectedSession.id, "CLAIM_PREP")}
-                        disabled={loading[selectedSession.id]}
-                        className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {loading[selectedSession.id] ? "Processing..." : "Claim Prep"}
-                      </button>
-                    )}
+                    {/* BOH Commands - Moved Start Prep to bottom for better UX */}
 
                     {selectedSession.state === "PREP_IN_PROGRESS" && (
                       <button
@@ -246,35 +237,30 @@ const BOHPrepRoom = () => {
                       </button>
                     )}
 
-                    {/* Common Commands */}
-                    {["PREP_IN_PROGRESS", "HEAT_UP", "READY_FOR_DELIVERY"].includes(selectedSession.state) && (
-                      <>
-                        <button
-                          onClick={() => {
-                            const reason = prompt("Remake reason:");
-                            if (reason) {
-                              handleCommand(selectedSession.id, "REMAKE", { reason });
-                            }
-                          }}
-                          disabled={loading[selectedSession.id]}
-                          className="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          Remake Hookah
-                        </button>
+                    {/* Updated BOH Commands - Removed Hold Session and Request Refill */}
+                    {selectedSession.state === "PAID_CONFIRMED" && (
+                      <button
+                        onClick={() => handleCommand(selectedSession.id, "CLAIM_PREP")}
+                        disabled={loading[selectedSession.id]}
+                        className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
+                      >
+                        {loading[selectedSession.id] ? "Processing..." : "🚀 Start Prep"}
+                      </button>
+                    )}
 
-                        <button
-                          onClick={() => {
-                            const reason = prompt("Hold reason:");
-                            if (reason) {
-                              handleCommand(selectedSession.id, "STAFF_HOLD", { reason });
-                            }
-                          }}
-                          disabled={loading[selectedSession.id]}
-                          className="w-full bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          Staff Hold
-                        </button>
-                      </>
+                    {["PREP_IN_PROGRESS", "HEAT_UP", "READY_FOR_DELIVERY"].includes(selectedSession.state) && (
+                      <button
+                        onClick={() => {
+                          const reason = prompt("Remake reason:");
+                          if (reason) {
+                            handleCommand(selectedSession.id, "REMAKE", { reason });
+                          }
+                        }}
+                        disabled={loading[selectedSession.id]}
+                        className="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        🔄 Remake Hookah
+                      </button>
                     )}
 
                     {/* Session Info */}

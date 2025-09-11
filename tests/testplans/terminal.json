@@ -1,0 +1,17 @@
+{
+  "name": "Terminal Closeout",
+  "description": "Staff processes in-person payment via Terminal, shows success",
+  "steps": [
+    { "action": "navigate", "url": "{BASE}/terminal/closeout" },
+    { "action": "waitFor", "selector": "div[data-testid=terminal-interface]", "state": "visible" },
+    { "action": "fill", "selector": "input[name=reservationId]", "value": "r_2025_09_10_1830_07" },
+    { "action": "fill", "selector": "input[name=table]", "value": "T12" },
+    { "action": "click", "selector": "button[data-testid=add-item]", "description": "Add hookah item" },
+    { "action": "fill", "selector": "input[name=item-name]", "value": "Hookah Mint" },
+    { "action": "fill", "selector": "input[name=item-price]", "value": "30.00" },
+    { "action": "click", "selector": "button[data-testid=process-payment]", "description": "Process payment" },
+    { "action": "waitFor", "selector": "div[data-testid=payment-success]", "state": "visible" },
+    { "action": "assertText", "selector": "div[data-testid=payment-success]", "includes": "Payment successful" },
+    { "action": "screenshot", "name": "terminal-success" }
+  ]
+}
