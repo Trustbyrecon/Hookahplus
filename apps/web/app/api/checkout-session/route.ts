@@ -4,7 +4,7 @@ import { getPriceId, getSessionTierConfig } from '../../../lib/stripe-catalog';
 import { signTrust, generateClientReference } from '../../../lib/trustlock';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder', {
-  apiVersion: '2025-08-27.basil', // Updated API version for compatibility
+  apiVersion: '2024-12-18.acacia', // Current stable API version
 });
 
 // Rate limiting: 3 requests per IP per 30s
