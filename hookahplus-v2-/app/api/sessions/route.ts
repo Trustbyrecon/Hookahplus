@@ -1,85 +1,97 @@
-// app/api/sessions/route.ts
-import { NextResponse } from "next/server";
-import { getAllSessions, getSessionsByState, getSessionsByTable } from "../../../lib/sessionState";
-import { getActiveSessions, updateCoalStatus, addFlavorToSession, startSession, handleRefill, getFlavorMixLibrary, getCustomerPreviousSessions } from "../../../lib/orders";
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic"; // disable Next caching of this route
 
-export async function GET(request: Request) {
+import { prisma } from "@/lib/prisma";
+import crypto from "crypto";
+
+const seal = (o: unknown) =>
+  crypto.createHash("sha256").update(JSON.stringify(o)).digest("hex");
+
+export async function GET(req: Request) {
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(req.url);
     const state = searchParams.get('state');
-    const table = searchParams.get('table');
-    const customerId = searchParams.get('customerId');
+    const loungeId = searchParams.get('loungeId');
+    const customerPhone = searchParams.get('customerPhone');
 
-    let sessions;
+    let whereClause: any = {};
     
     if (state) {
-      sessions = getSessionsByState(state as any);
-    } else if (table) {
-      sessions = getSessionsByTable(table);
-    } else if (customerId) {
-      // Filter sessions by customer ID
-      sessions = getAllSessions().filter(s => s.meta.customerId === customerId);
-    } else {
-      sessions = getAllSessions();
+      whereClause.state = state;
+    }
+    
+    if (loungeId) {
+      whereClause.loungeId = loungeId;
+    }
+    
+    if (customerPhone) {
+      whereClause.customerPhone = customerPhone;
     }
 
-    return NextResponse.json({ 
+    const sessions = await prisma.session.findMany({
+      where: whereClause,
+      include: { events: true },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return Response.json({ 
       success: true,
       sessions,
       count: sessions.length
-    });
+    }, { headers: { "Cache-Control": "no-store" } });
   } catch (error: any) {
-    return NextResponse.json({ 
+    return Response.json({ 
       success: false, 
       error: error.message 
-    }, { status: 500 });
+    }, { status: 500, headers: { "Cache-Control": "no-store" } });
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const body = await request.json();
-    const { action, orderId, data } = body;
-    
-    switch (action) {
-      case 'start_session':
-        startSession(orderId);
-        return NextResponse.json({ success: true, message: 'Session started' });
-        
-      case 'update_coal_status':
-        updateCoalStatus(orderId, data.status);
-        return NextResponse.json({ success: true, message: 'Coal status updated' });
-        
-      case 'handle_refill':
-        const refillSuccess = handleRefill(orderId);
-        return NextResponse.json({ 
-          success: refillSuccess, 
-          message: refillSuccess ? 'Refill completed, status reset to active' : 'Refill failed or not needed' 
-        });
-        
-      case 'add_flavor':
-        addFlavorToSession(orderId, data.flavor, data.rate);
-        return NextResponse.json({ success: true, message: 'Flavor added' });
-        
-      case 'get_flavor_suggestions':
-        const flavorLibrary = getFlavorMixLibrary();
-        const customerHistory = data.customerId ? getCustomerPreviousSessions(data.customerId, orderId) : [];
-        return NextResponse.json({ 
-          success: true, 
-          flavorLibrary,
-          customerHistory
-        });
-        
-      default:
-        return NextResponse.json({ 
-          success: false, 
-          error: 'Invalid action' 
-        }, { status: 400 });
+    const idempotencyKey = req.headers.get("x-idempotency-key") ?? "";
+    const { loungeId, source, externalRef, customerPhone, flavorMix } = await req.json();
+
+    if (!loungeId || !source || !externalRef) {
+      return Response.json("Missing required fields", { status: 400 });
     }
+
+    const trustSignature = seal({ loungeId, source, externalRef, customerPhone, flavorMix });
+
+    const session = await prisma.session.upsert({
+      where: { 
+        loungeId_externalRef: { 
+          loungeId, 
+          externalRef 
+        } 
+      },
+      update: {}, // creation is idempotent—no update on duplicate create
+      create: {
+        loungeId, 
+        source, 
+        externalRef, 
+        customerPhone, 
+        flavorMix, 
+        trustSignature,
+        events: {
+          create: {
+            type: "CREATED",
+            payloadSeal: trustSignature,
+            data: { idempotencyKey, source, customerPhone, flavorMix }
+          }
+        }
+      },
+      include: { events: true }
+    });
+
+    return Response.json({ session }, { 
+      status: 201, 
+      headers: { "Cache-Control": "no-store" } 
+    });
   } catch (error: any) {
-    return NextResponse.json({ 
-      success: false, 
-      error: error.message 
-    }, { status: 500 });
+    return Response.json({ 
+      error: "Failed to create session",
+      details: error.message 
+    }, { status: 500, headers: { "Cache-Control": "no-store" } });
   }
 }

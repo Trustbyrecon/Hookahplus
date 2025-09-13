@@ -1,76 +1,92 @@
 // app/api/checkout-session/route.ts
-import { NextResponse } from "next/server";
-import Stripe from "stripe";
-import { signTrust } from "../../../lib/trustlock";
-import { addOrder } from "../../../lib/orders";
+import { NextRequest, NextResponse } from 'next/server';
+import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2023-10-16",
+  apiVersion: '2024-06-20',
 });
 
-export async function POST(req: Request) {
+export async function POST(request: NextRequest) {
   try {
-    // Rate limiting (MVP-light)
-    const clientIP = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
-    const rateLimitKey = `rate_limit:${clientIP}`;
+    console.log('Stripe Secret Key available:', !!process.env.STRIPE_SECRET_KEY);
+    console.log('Stripe Secret Key starts with:', process.env.STRIPE_SECRET_KEY?.substring(0, 7));
     
-    // Simple in-memory rate limiting (deny if >3 creates from same IP in 30s)
-    const now = Date.now();
-    const recentRequests = (global as any).rateLimitRequests || new Map();
+    const body = await request.json();
+    console.log('Request body:', body);
     
-    if (!recentRequests.has(clientIP)) {
-      recentRequests.set(clientIP, []);
+    const { lineItems, successUrl, cancelUrl, tableId, flavor, amount, sessionTier = 'base' } = body;
+
+    // Handle both old and new request formats
+    let stripeLineItems;
+    
+    if (lineItems && Array.isArray(lineItems)) {
+      // New format with lineItems
+      stripeLineItems = lineItems;
+    } else if (tableId && flavor && amount) {
+      // Old format from preorder page - create line items
+      stripeLineItems = [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: `${flavor} Hookah Session`,
+              description: `Hookah session for table ${tableId}`,
+            },
+            unit_amount: amount, // amount is in cents
+          },
+          quantity: 1,
+        }
+      ];
+    } else {
+      return NextResponse.json(
+        { error: 'Invalid request: missing lineItems or tableId/flavor/amount' },
+        { status: 400 }
+      );
     }
-    
-    const userRequests = recentRequests.get(clientIP);
-    const validRequests = userRequests.filter((timestamp: number) => now - timestamp < 30000);
-    
-    if (validRequests.length >= 3) {
-      return NextResponse.json({ error: "Rate limit exceeded. Please wait before creating another order." }, { status: 429 });
-    }
-    
-    validRequests.push(now);
-    recentRequests.set(clientIP, validRequests);
-    (global as any).rateLimitRequests = recentRequests;
 
-    const body = await req.json().catch(() => ({}));
-    const { tableId = "T-001", flavor = "Blue Mist + Mint", amount = 3000 } = body;
+    console.log('Creating Stripe session with line items:', stripeLineItems);
 
-    // Create a local order id for trust binding
-    const orderId = `ord_${Math.random().toString(36).slice(2, 10)}`;
-    const trustSig = signTrust(orderId);
-
-    // Record order (demo, ephemeral)
-    addOrder({
-      id: orderId,
-      tableId,
-      flavor,
-      amount,
-      currency: "usd",
-      status: "created",
-      createdAt: Date.now(),
-    });
-    
-    // Audit log (MVP)
-    console.log(`audit.order.created: ${new Date().toISOString()} | orderId: ${orderId} | tableId: ${tableId} | trustSig: ${trustSig}`);
-
+    // Create checkout session
     const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/checkout?success=1&order=${orderId}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/checkout?canceled=1&order=${orderId}`,
-      line_items: [
-        { price_data: { currency: "usd", product_data: { name: `Hookah Session — ${flavor}` }, unit_amount: amount }, quantity: 1 },
-      ],
+      mode: 'payment',
+      line_items: stripeLineItems,
+      success_url: successUrl || `${process.env.NEXT_PUBLIC_SITE_URL || 'https://hookahplus.net'}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: cancelUrl || `${process.env.NEXT_PUBLIC_SITE_URL || 'https://hookahplus.net'}/cancel`,
+      payment_method_types: ['card'],
+      billing_address_collection: 'auto',
+      shipping_address_collection: {
+        allowed_countries: ['US', 'CA'],
+      },
       metadata: {
-        orderId,
-        trustSig,
-        tableId,
-        flavor,
+        source: 'hookahplus-web',
+        session_type: 'hookah_session',
+        tableId: tableId || 'T-001',
+        flavor: flavor || 'Blue Mist + Mint',
+        sessionTier: sessionTier,
       },
     });
 
-    return NextResponse.json({ id: session.id, orderId });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message ?? "failed" }, { status: 500 });
+    console.log('Stripe session created successfully:', session.id);
+
+    return NextResponse.json({ 
+      id: session.id, // Changed from sessionId to id for compatibility
+      sessionId: session.id,
+      url: session.url,
+      amount: amount,
+      tableId: tableId || 'T-001',
+      flavor: flavor || 'Blue Mist + Mint',
+      sessionTier,
+      status: 'open'
+    });
+  } catch (error: any) {
+    console.error('Error creating checkout session:', error);
+    return NextResponse.json(
+      { 
+        error: 'Failed to create checkout session',
+        details: error.message,
+        stripeError: error.type || 'unknown'
+      },
+      { status: 500 }
+    );
   }
 }
