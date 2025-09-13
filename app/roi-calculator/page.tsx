@@ -1,5 +1,4 @@
 "use client";
-<<<<<<< HEAD
 import { useState, useEffect } from "react";
 import { track } from "@/lib/analytics";
 
@@ -173,10 +172,6 @@ export default function ROICalculatorPage() {
           </p>
         </div>
       </div>
-=======
-
-import React, { useMemo, useState, useEffect } from "react";
-import GlobalNavigation from "../../components/GlobalNavigation";
 
 // Hookah+ ROI Calculator Page
 // Drop this file at: app/roi-calculator/page.tsx (Next.js App Router)
@@ -535,7 +530,6 @@ export default function RoiCalculatorPage() {
           </div>
         </div>
       </section>
->>>>>>> 076f5b4944bb4d1a7c37cd5caa69740b3cb806df
     </div>
   );
 }
