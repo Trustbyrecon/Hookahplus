@@ -20,6 +20,7 @@ async function createBOHSession(orderData: any) {
         loungeId: orderData.loungeId || 'default',
         source: "LEGACY_POS",
         externalRef: orderData.externalRef,
+        trustSignature: orderData.externalRef, // Use externalRef as trust signature for legacy POS
         customerPhone: orderData.customerPhone,
         state: "PENDING",
         flavorMix: orderData.flavorMix,
