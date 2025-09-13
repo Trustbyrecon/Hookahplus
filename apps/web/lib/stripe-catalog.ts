@@ -49,9 +49,23 @@ export function getProductConfig(productKey: ProductKey) {
   const productId = getProductId(productKey);
   if (!productId) return null;
 
+  // Map product keys to their corresponding price lookup keys
+  const priceKeyMap: Record<string, string> = {
+    'hookah_session_base': 'price_hookah_session_base',
+    'hookah_session_premium': 'price_hookah_session_premium', 
+    'hookah_session_vip': 'price_hookah_session_vip',
+    'flavor_addon': 'price_flavor_addon',
+    'coal_refill': 'price_coal_refill',
+    'extended_time_20m': 'price_extended_time_20m',
+    'table_reservation_hold': 'price_table_reservation_hold'
+  };
+
+  const priceKey = priceKeyMap[productKey];
+  if (!priceKey) return null;
+
   return {
     productId,
-    priceId: getPriceId(`price_${productKey}` as PriceLookupKey),
+    priceId: getPriceId(priceKey as PriceLookupKey),
   };
 }
 

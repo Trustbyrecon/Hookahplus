@@ -59,7 +59,11 @@ export async function POST(request: NextRequest) {
     const sessionConfig = getSessionTierConfig(sessionTier as 'base' | 'premium' | 'vip');
     const priceId = sessionConfig?.priceId;
 
+    console.log('Session config:', sessionConfig);
+    console.log('Price ID:', priceId);
+
     if (!priceId) {
+      console.error('No price ID found for session tier:', sessionTier);
       return NextResponse.json(
         { error: 'Product not found. Please try again.' },
         { status: 400 }
