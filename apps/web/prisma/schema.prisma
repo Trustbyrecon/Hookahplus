@@ -77,6 +77,7 @@ enum SessionSource {
   QR 
   RESERVE 
   WALK_IN 
+  LEGACY_POS
 }
 
 enum SessionState { 
