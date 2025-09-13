@@ -1,5 +1,9 @@
 import { z } from 'zod';
-import stripeIds from '../stripe/catalog/stripe_ids.json';
+
+// Import stripe_ids.json with fallback
+import stripeIdsData from '../stripe/catalog/stripe_ids.json';
+
+const stripeIds = stripeIdsData as { products: Record<string, string>; prices: Record<string, string> };
 
 // Zod schema for Stripe metadata validation
 export const StripeMetadataSchema = z.object({
