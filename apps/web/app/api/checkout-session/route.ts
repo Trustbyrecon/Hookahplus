@@ -64,15 +64,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate Trust-Lock signature and client reference
-    const clientRef = generateClientReference();
-    const trustSignature = signTrust({
+    // Generate order ID and Trust-Lock signature
+    const orderId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const trustResult = signTrust(orderId, amount, {
       tableId,
       flavor,
-      amount,
-      sessionTier,
-      clientRef
+      sessionTier
     });
+    const clientRef = generateClientReference(orderId, trustResult.signature);
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
@@ -90,7 +89,8 @@ export async function POST(request: NextRequest) {
         tableId,
         flavor,
         sessionTier,
-        trustSignature,
+        trustSignature: trustResult.signature,
+        orderId,
         loungeId: 'default'
       },
       customer_email: undefined, // Let Stripe collect email
