@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { usePathname } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 
 interface NavigationGroup {
   id: string;
@@ -30,12 +30,18 @@ const navigationGroups: NavigationGroup[] = [
     bgColor: 'bg-purple-600/20 border-purple-500/50',
     pages: ['/staff', '/admin']
   },
-            {
-            id: 'operations',
-            label: 'Operations',
-            bgColor: 'bg-orange-600/20 border-orange-500/50',
-            pages: ['/pre-order', '/checkout', '/demo', '/pos-waitlist']
-          }
+  {
+    id: 'support',
+    label: 'Support',
+    bgColor: 'bg-green-600/20 border-green-500/50',
+    pages: ['/support', '/docs', '/api-docs']
+  },
+  {
+    id: 'operations',
+    label: 'Operations',
+    bgColor: 'bg-orange-600/20 border-orange-500/50',
+    pages: ['/admin-control', '/admin-customers', '/admin-connectors']
+  }
 ];
 
 const GlobalNavigation: React.FC = () => {
@@ -56,17 +62,11 @@ const GlobalNavigation: React.FC = () => {
   useEffect(() => {
     const fetchSessionData = async () => {
       try {
-        // Get all bookings
-        const allResponse = await fetch('/api/customer-journey?action=all');
-        const allResult = await allResponse.json();
-        
-        // Get active bookings
-        const activeResponse = await fetch('/api/customer-journey?action=active');
-        const activeResult = await activeResponse.json();
-        
-        if (allResult.success && activeResult.success) {
-          setSessionCount(allResult.data.length);
-          setActiveSessions(activeResult.data.length);
+        const response = await fetch('/api/customer-journey');
+        if (response.ok) {
+          const data = await response.json();
+          setSessionCount(data.totalSessions || 0);
+          setActiveSessions(data.activeSessions || 0);
         }
       } catch (error) {
         console.error('Failed to fetch session data:', error);
@@ -74,20 +74,20 @@ const GlobalNavigation: React.FC = () => {
     };
 
     fetchSessionData();
-    const interval = setInterval(fetchSessionData, 5000); // Update every 5 seconds
+    const interval = setInterval(fetchSessionData, 5000);
     return () => clearInterval(interval);
   }, []);
 
   const getFlowStatusIcon = () => {
-    if (activeSessions === 0) return '⚪';
-    if (activeSessions < 5) return '🟢';
-    if (activeSessions < 10) return '🟡';
-    return '🔴';
+    if (activeSessions === 0) return '😴';
+    if (activeSessions < 5) return '😊';
+    if (activeSessions < 10) return '😅';
+    return '🔥';
   };
 
   const getFlowStatusText = () => {
     if (activeSessions === 0) return 'Idle';
-    if (activeSessions < 5) return 'Normal';
+    if (activeSessions < 5) return 'Quiet';
     if (activeSessions < 10) return 'Busy';
     return 'Overloaded';
   };
@@ -177,49 +177,43 @@ const GlobalNavigation: React.FC = () => {
                   : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
               }`}
             >
-              ⚙️ Staff Mgmt
+              🧠 Staff Panel
             </Link>
             
-                                <Link
-                      href="/admin"
-                      className={`px-3 py-2 rounded-lg transition-all duration-200 ${
-                        pathname === '/admin'
-                          ? 'bg-orange-600 text-white'
-                          : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
-                      }`}
-                    >
-                      ⚙️ Admin
-                    </Link>
-
-                    <Link
-                      href="/pos-waitlist"
-                      className={`px-3 py-2 rounded-lg transition-all duration-200 ${
-                        pathname === '/pos-waitlist'
-                          ? 'bg-orange-600 text-white'
-                          : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
-                      }`}
-                    >
-                      📋 POS Waitlist
-                    </Link>
+            <Link 
+              href="/admin" 
+              className={`px-3 py-2 rounded-lg transition-all duration-200 ${
+                pathname === '/admin' 
+                  ? 'bg-blue-600 text-white' 
+                  : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
+              }`}
+            >
+              ⚙️ Admin
+            </Link>
           </div>
 
-          {/* Quick Actions and Status */}
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2 text-sm">
-              <span className="text-zinc-400">Total Sessions:</span>
-              <span className="text-white font-medium">{sessionCount}</span>
-            </div>
-            
-            <div className="flex items-center space-x-2 text-sm">
-              <span className="text-zinc-400">Active:</span>
-              <span className="text-green-400 font-medium">{activeSessions}</span>
-            </div>
+          {/* Support and Help Links */}
+          <div className="flex items-center space-x-3">
+            <Link 
+              href="/support" 
+              className={`px-3 py-2 rounded-lg transition-all duration-200 ${
+                pathname.startsWith('/support') 
+                  ? 'bg-green-600 text-white' 
+                  : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
+              }`}
+            >
+              🎫 Support
+            </Link>
             
             <Link 
-              href="/fire-session-dashboard" 
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium"
+              href="/docs" 
+              className={`px-3 py-2 rounded-lg transition-all duration-200 ${
+                pathname.startsWith('/docs') 
+                  ? 'bg-blue-600 text-white' 
+                  : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
+              }`}
             >
-              🔥 Fire Session
+              📚 Docs
             </Link>
           </div>
         </div>
