@@ -198,6 +198,34 @@ const GlobalNavigation: React.FC = () => {
       ]
     },
     {
+      label: 'Staff',
+      color: 'from-purple-500 to-indigo-500',
+      bgColor: 'bg-purple-500/10',
+      flowState: 'idle',
+      description: 'Staff operations and management',
+      aiInsight: 'AI Agent: Staff tools ready for operational management',
+      items: [
+        { 
+          label: 'Staff Ops', 
+          href: '/staff', 
+          icon: '👥', 
+          description: 'Staff operations dashboard',
+          flowState: pathname === '/staff' ? 'active' : 'idle',
+          nextAction: 'Manage staff operations',
+          aiRecommendation: 'Staff workflow management'
+        },
+        { 
+          label: 'Staff Panel', 
+          href: '/staff-panel', 
+          icon: '🧠', 
+          description: 'Behavioral memory & customer profiles',
+          flowState: pathname === '/staff-panel' ? 'active' : 'idle',
+          nextAction: 'Manage customer preferences',
+          aiRecommendation: 'Access customer behavioral data and session management'
+        }
+      ]
+    },
+    {
       label: 'Admin',
       color: 'from-blue-500 to-cyan-500',
       bgColor: 'bg-blue-500/10',
@@ -219,7 +247,7 @@ const GlobalNavigation: React.FC = () => {
           href: '/admin-customers', 
           icon: '👥', 
           description: 'Customer management',
-          flowState: 'idle',
+          flowState: pathname === '/admin-customers' ? 'active' : 'idle',
           nextAction: 'Manage customer data',
           aiRecommendation: 'Customer relationship management'
         },
@@ -228,18 +256,18 @@ const GlobalNavigation: React.FC = () => {
           href: '/admin-connectors', 
           icon: '🔗', 
           description: 'Integration management',
-          flowState: 'idle',
+          flowState: pathname === '/admin-connectors' ? 'active' : 'idle',
           nextAction: 'Configure integrations',
           aiRecommendation: 'System connectivity setup'
         },
         { 
-          label: 'Staff Panel', 
-          href: '/staff-panel', 
-          icon: '👥', 
-          description: 'Behavioral memory & customer profiles',
-          flowState: 'idle',
-          nextAction: 'Manage customer preferences',
-          aiRecommendation: 'Access customer behavioral data and session management'
+          label: 'Admin', 
+          href: '/admin', 
+          icon: '⚙️', 
+          description: 'System administration',
+          flowState: pathname === '/admin' ? 'active' : 'idle',
+          nextAction: 'System configuration',
+          aiRecommendation: 'Complete admin control center'
         }
       ]
     },
@@ -299,8 +327,10 @@ const GlobalNavigation: React.FC = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo and Brand */}
           <div className="flex items-center space-x-3">
-            <div className="text-teal-400 text-2xl animate-pulse">🍃</div>
-            <div className="text-teal-400 font-bold text-xl">HOOKAH+</div>
+            <Link href="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+              <div className="text-teal-400 text-2xl animate-pulse">🍃</div>
+              <div className="text-teal-400 font-bold text-xl">HOOKAH+</div>
+            </Link>
             {currentGroup && (
               <div className={`${currentGroup.bgColor} text-zinc-300 text-sm font-medium px-3 py-1 rounded-lg border transition-all duration-300`}>
                 {currentGroup.label.toUpperCase()}
@@ -310,15 +340,16 @@ const GlobalNavigation: React.FC = () => {
 
           {/* Current Page and Flow Status */}
           <div className="flex items-center space-x-6">
-            <div className="text-center">
-              <div className="text-sm text-zinc-400">Current Page</div>
-              <div className="text-white font-medium">
-                {pathname === '/' ? 'Home' : 
-                 pathname.split('/').filter(Boolean).map(word => 
-                   word.charAt(0).toUpperCase() + word.slice(1)
-                 ).join(' / ')}
+            {/* Current Page Info */}
+            {currentPage && (
+              <div className="text-center">
+                <div className="flex items-center justify-center space-x-2 text-white">
+                  <span className="text-lg">{currentPage.icon}</span>
+                  <span className="font-medium">{currentPage.label}</span>
+                </div>
+                <div className="text-sm text-zinc-400">{currentPage.description}</div>
               </div>
-            </div>
+            )}
             
             <div className="text-center">
               <div className="text-sm text-zinc-400">Flow Status</div>

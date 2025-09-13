@@ -28,7 +28,7 @@ const navigationGroups: NavigationGroup[] = [
     id: 'staff',
     label: 'Staff',
     bgColor: 'bg-purple-600/20 border-purple-500/50',
-    pages: ['/staff', '/admin']
+    pages: ['/staff', '/staff-panel']
   },
   {
     id: 'support',
@@ -37,10 +37,16 @@ const navigationGroups: NavigationGroup[] = [
     pages: ['/support', '/docs', '/api-docs']
   },
   {
+    id: 'admin',
+    label: 'Admin',
+    bgColor: 'bg-blue-600/20 border-blue-500/50',
+    pages: ['/admin', '/admin-control', '/admin-customers', '/admin-connectors']
+  },
+  {
     id: 'operations',
     label: 'Operations',
     bgColor: 'bg-orange-600/20 border-orange-500/50',
-    pages: ['/admin-control', '/admin-customers', '/admin-connectors']
+    pages: ['/monitoring', '/backup']
   }
 ];
 
@@ -92,6 +98,24 @@ const GlobalNavigation: React.FC = () => {
     return 'Overloaded';
   };
 
+  // Get current page info
+  const getCurrentPageInfo = () => {
+    if (pathname === '/staff') return { icon: '👥', label: 'Staff Ops', description: 'Staff operations dashboard' };
+    if (pathname === '/staff-panel') return { icon: '🧠', label: 'Staff Panel', description: 'Behavioral memory & customer profiles' };
+    if (pathname === '/admin') return { icon: '⚙️', label: 'Admin', description: 'System administration' };
+    if (pathname === '/admin-control') return { icon: '⚙️', label: 'Control Center', description: 'Admin dashboard' };
+    if (pathname === '/admin-customers') return { icon: '👥', label: 'Customers', description: 'Customer management' };
+    if (pathname === '/admin-connectors') return { icon: '🔗', label: 'Connectors', description: 'Integration management' };
+    if (pathname === '/support') return { icon: '🎫', label: 'Help Center', description: 'FAQ, contact forms, and support tickets' };
+    if (pathname === '/docs') return { icon: '📚', label: 'Documentation', description: 'User guides and API documentation' };
+    if (pathname === '/api-docs') return { icon: '🔌', label: 'API Docs', description: 'Developer API reference' };
+    if (pathname === '/dashboard') return { icon: '📊', label: 'Dashboard', description: 'Main lounge overview' };
+    if (pathname.startsWith('/sessions')) return { icon: '🔥', label: 'Sessions', description: 'Active hookah sessions' };
+    return null;
+  };
+
+  const currentPageInfo = getCurrentPageInfo();
+
   return (
     <nav className="bg-zinc-950 border-b border-zinc-800 shadow-xl sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -99,8 +123,10 @@ const GlobalNavigation: React.FC = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo and Brand */}
           <div className="flex items-center space-x-3">
-            <div className="text-teal-400 text-2xl animate-pulse">🍃</div>
-            <div className="text-teal-400 font-bold text-xl">HOOKAH+</div>
+            <Link href="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+              <div className="text-teal-400 text-2xl animate-pulse">🍃</div>
+              <div className="text-teal-400 font-bold text-xl">HOOKAH+</div>
+            </Link>
             {activeGroup && (
               <div className={`${activeGroup.bgColor} text-zinc-300 text-sm font-medium px-3 py-1 rounded-lg border transition-all duration-300`}>
                 {activeGroup.label.toUpperCase()}
@@ -110,15 +136,16 @@ const GlobalNavigation: React.FC = () => {
 
           {/* Current Page and Flow Status */}
           <div className="flex items-center space-x-6">
-            <div className="text-center">
-              <div className="text-sm text-zinc-400">Current Page</div>
-              <div className="text-white font-medium">
-                {pathname === '/' ? 'Home' : 
-                 pathname.split('/').filter(Boolean).map(word => 
-                   word.charAt(0).toUpperCase() + word.slice(1)
-                 ).join(' / ')}
+            {/* Current Page Info */}
+            {currentPageInfo && (
+              <div className="text-center">
+                <div className="flex items-center justify-center space-x-2 text-white">
+                  <span className="text-lg">{currentPageInfo.icon}</span>
+                  <span className="font-medium">{currentPageInfo.label}</span>
+                </div>
+                <div className="text-sm text-zinc-400">{currentPageInfo.description}</div>
               </div>
-            </div>
+            )}
             
             <div className="text-center">
               <div className="text-sm text-zinc-400">Flow Status</div>
@@ -183,7 +210,7 @@ const GlobalNavigation: React.FC = () => {
             <Link 
               href="/admin" 
               className={`px-3 py-2 rounded-lg transition-all duration-200 ${
-                pathname === '/admin' 
+                pathname.startsWith('/admin') 
                   ? 'bg-blue-600 text-white' 
                   : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
               }`}
