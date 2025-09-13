@@ -1,4 +1,20 @@
 {
-  "products": {},
-  "prices": {}
+  "products": {
+    "hookah_session_base": "prod_T2sqdltYlJJvD8",
+    "hookah_session_premium": "prod_T2srOT6knCqKAU",
+    "hookah_session_vip": "prod_T2sryoP0aKt0Ui",
+    "flavor_addon": "prod_T2srV5g4E4Untx",
+    "coal_refill": "prod_T2srqJwLsUjgsR",
+    "extended_time_20m": "prod_T2srqjLyafimyo",
+    "table_reservation_hold": "prod_T2sruh3SVSWYYA"
+  },
+  "prices": {
+    "price_hookah_session_base": "price_1S6n5HDuKNq0KFAAyytTO3iW",
+    "price_hookah_session_premium": "price_1S6n5IDuKNq0KFAAg7si7B5A",
+    "price_hookah_session_vip": "price_1S6n5JDuKNq0KFAAiBDhyECP",
+    "price_flavor_addon": "price_1S6n5KDuKNq0KFAA9FHHGFM5",
+    "price_coal_refill": "price_1S6n5LDuKNq0KFAAiFd8ixp6",
+    "price_extended_time_20m": "price_1S6n5LDuKNq0KFAA7kNvy4mJ",
+    "price_table_reservation_hold": "price_1S6n5MDuKNq0KFAAv1qEXjZt"
+  }
 }
