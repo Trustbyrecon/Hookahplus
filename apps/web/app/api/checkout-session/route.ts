@@ -27,11 +27,15 @@ function checkRateLimit(ip: string): boolean {
 
 export async function POST(request: NextRequest) {
   try {
-    // Get client IP for rate limiting
-    const ip = request.headers.get('x-forwarded-for') || 
-               request.headers.get('x-real-ip') || 
-               'unknown';
+    // Debug: Log environment status
+    console.log('Stripe Secret Key available:', !!process.env.STRIPE_SECRET_KEY);
+    console.log('Stripe Secret Key starts with:', process.env.STRIPE_SECRET_KEY?.substring(0, 7));
     
+    // Get client IP for rate limiting
+    const ip = request.headers.get('x-forwarded-for') ||
+               request.headers.get('x-real-ip') ||
+               'unknown';
+
     // Check rate limit
     if (!checkRateLimit(ip)) {
       return NextResponse.json(
@@ -72,6 +76,8 @@ export async function POST(request: NextRequest) {
     const clientRef = generateClientReference(orderId, trustResult.signature);
 
     // Create Stripe checkout session
+    console.log('Creating Stripe session with:', { tableId, flavor, amount, sessionTier, priceId });
+    
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       line_items: [
@@ -97,6 +103,8 @@ export async function POST(request: NextRequest) {
         allowed_countries: ['US'],
       },
     });
+    
+    console.log('Stripe session created successfully:', session.id);
 
     return NextResponse.json({
       id: session.id,
@@ -111,17 +119,31 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Checkout session error:', error);
-    
+    console.error('Error details:', {
+      type: error.type,
+      code: error.code,
+      message: error.message,
+      statusCode: error.statusCode
+    });
+
     // Handle Stripe-specific errors
     if (error.type?.startsWith('Stripe')) {
       return NextResponse.json(
-        { error: `Payment processing error: ${error.message}` },
+        { error: `Payment processing error: ${error.message} (Code: ${error.code})` },
         { status: 400 }
       );
     }
-    
+
+    // Handle network/connection errors
+    if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+      return NextResponse.json(
+        { error: 'Network error: Unable to connect to Stripe. Please check your internet connection.' },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json(
-      { error: 'Failed to create checkout session' },
+      { error: `Failed to create checkout session: ${error.message}` },
       { status: 500 }
     );
   }
