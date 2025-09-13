@@ -4,9 +4,7 @@ export const dynamic = "force-dynamic";
 import Stripe from "stripe";
 import { prisma } from "../../../../lib/prisma";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder', {
-  apiVersion: '2024-12-18.acacia', // Current stable API version
-});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder');
 
 async function readRawBody(req: Request): Promise<string> {
   return req.text();

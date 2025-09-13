@@ -3,9 +3,7 @@ import Stripe from 'stripe';
 import { getPriceId, getSessionTierConfig } from '../../../lib/stripe-catalog';
 import { signTrust, generateClientReference } from '../../../lib/trustlock';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder', {
-  apiVersion: '2024-12-18.acacia', // Current stable API version
-});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder');
 
 // Rate limiting: 3 requests per IP per 30s
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
