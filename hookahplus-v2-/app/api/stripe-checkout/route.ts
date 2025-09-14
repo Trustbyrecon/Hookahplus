@@ -75,7 +75,14 @@ export async function POST(request: NextRequest) {
           currency: 'usd',
           product_data: {
             name: 'Bundle Discount',
-            description: '10% bundle discount applied'
+            description: '10% bundle discount applied',
+            metadata: {
+              sessionId: sessionId,
+              tableId: tableId,
+              customerName: customerName,
+              flavors: JSON.stringify(flavors || []),
+              specialInstructions: specialInstructions
+            }
           },
           unit_amount: -Math.round(finalAmount * 0.1), // Negative amount for discount
         },
