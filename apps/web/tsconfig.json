@@ -22,7 +22,7 @@
     "paths": {
       "@/*": ["../../*"]
     },
-    "types": ["node", "react", "react-dom", "next"],
+    "types": ["node", "react", "next"],
     "typeRoots": ["./node_modules/@types", "../../node_modules/@types"]
   },
   "include": [
