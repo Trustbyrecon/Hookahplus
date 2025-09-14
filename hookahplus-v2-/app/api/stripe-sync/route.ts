@@ -10,13 +10,20 @@ export async function POST(request: NextRequest) {
     const results = await syncProductsToStripe();
     
     // Create flag for sync completion
-    await flagManager.createFlag('STRIPE_SYNC_COMPLETED', {
-      sessions: results.sessions.length,
-      flavors: results.flavors.length,
-      bundles: results.bundles.length,
-      memberships: results.memberships.length,
-      errors: results.errors.length,
-      severity: 'low'
+    await flagManager.createFlag({
+      sessionId: 'stripe_sync',
+      tableId: 'system',
+      flagType: 'equipment_issue',
+      severity: 'low',
+      description: `Stripe sync completed: ${results.sessions.length} sessions, ${results.flavors.length} flavors, ${results.bundles.length} bundles, ${results.memberships.length} memberships`,
+      reportedBy: 'stripe_sync',
+      metadata: {
+        sessions: results.sessions.length,
+        flavors: results.flavors.length,
+        bundles: results.bundles.length,
+        memberships: results.memberships.length,
+        errors: results.errors.length
+      }
     });
 
     return NextResponse.json({
@@ -36,9 +43,16 @@ export async function POST(request: NextRequest) {
     console.error('Stripe sync error:', error);
     
     // Create flag for sync error
-    await flagManager.createFlag('STRIPE_SYNC_ERROR', {
-      error: error.message,
-      severity: 'high'
+    await flagManager.createFlag({
+      sessionId: 'stripe_sync',
+      tableId: 'system',
+      flagType: 'equipment_issue',
+      severity: 'high',
+      description: `Stripe sync error: ${error.message}`,
+      reportedBy: 'stripe_sync',
+      metadata: {
+        error: error.message
+      }
     });
 
     return NextResponse.json(

@@ -74,23 +74,33 @@ export async function POST(request: NextRequest) {
     });
 
     // Update session status to payment pending
-    await fireSessionWorkflow.pressButton('PAYMENT_PENDING', {
+    await fireSessionWorkflow.pressButton(
       sessionId,
-      tableId,
-      customerName,
-      totalAmount: finalAmount,
-      paymentIntentId: paymentIntent.id,
-      paymentStatus: 'pending'
-    });
+      'prep_started',
+      'prep',
+      'stripe_payment',
+      {
+        tableId,
+        customerName,
+        totalAmount: finalAmount,
+        paymentIntentId: paymentIntent.id,
+        paymentStatus: 'pending'
+      }
+    );
 
     // Create flag for payment processing
-    await flagManager.createFlag('PAYMENT_PROCESSING', {
+    await flagManager.createFlag({
       sessionId,
       tableId,
-      paymentIntentId: paymentIntent.id,
-      amount: finalAmount,
-      isTestMode,
-      severity: 'medium'
+      flagType: 'payment_issue',
+      severity: 'medium',
+      description: `Payment processing for session ${sessionId}`,
+      reportedBy: 'stripe_payment',
+      metadata: {
+        paymentIntentId: paymentIntent.id,
+        amount: finalAmount,
+        isTestMode
+      }
     });
 
     return NextResponse.json({
@@ -106,11 +116,16 @@ export async function POST(request: NextRequest) {
     console.error('Payment processing error:', error);
     
     // Create flag for payment error
-    await flagManager.createFlag('PAYMENT_ERROR', {
-      error: error.message,
-      sessionId: body?.sessionId,
-      tableId: body?.tableId,
-      severity: 'high'
+    await flagManager.createFlag({
+      sessionId: 'unknown',
+      tableId: 'unknown',
+      flagType: 'payment_issue',
+      severity: 'high',
+      description: `Payment error: ${error.message}`,
+      reportedBy: 'stripe_payment',
+      metadata: {
+        error: error.message
+      }
     });
 
     return NextResponse.json(
