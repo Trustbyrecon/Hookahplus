@@ -8,6 +8,10 @@
     "module": "esnext",
     "moduleResolution": "bundler",
     "jsx": "preserve",
-    "noEmit": true
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    }
   }
 }
