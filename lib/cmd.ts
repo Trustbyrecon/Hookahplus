@@ -1,16 +1,3 @@
-<<<<<<< HEAD
-export async function sendCmd(
-  id: string, 
-  cmd: string, 
-  data: any = {}, 
-  actor: "foh" | "boh" | "system" | "agent" = "agent"
-) {
-  return fetch(`/api/sessions/${id}/command`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Idempotency-Key": `${id}:${cmd}:${Date.now()}`
-=======
 // lib/cmd.ts
 export async function sendCmd(
   sessionId: string, 
@@ -23,60 +10,9 @@ export async function sendCmd(
     headers: {
       "Content-Type": "application/json",
       "Idempotency-Key": `${sessionId}:${cmd}:${Date.now()}`
->>>>>>> 076f5b4944bb4d1a7c37cd5caa69740b3cb806df
     },
     body: JSON.stringify({ cmd, data, actor })
   }).then(r => r.json());
-}
-
-<<<<<<< HEAD
-export async function getSession(sessionId: string) {
-  const response = await fetch(`/api/sessions/${sessionId}`);
-  
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || `Failed to fetch session: ${response.status}`);
-  }
-  
-  return response.json();
-}
-
-export async function getAllSessions(params?: { state?: string; table?: string }) {
-  const searchParams = new URLSearchParams();
-  if (params?.state) searchParams.append('state', params.state);
-  if (params?.table) searchParams.append('table', params.table);
-  
-  const url = `/api/sessions${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
-  const response = await fetch(url);
-  
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || `Failed to fetch sessions: ${response.status}`);
-  }
-  
-  return response.json();
-}
-
-export async function createSession(data: { 
-  table: string; 
-  items?: Array<{ sku: string; qty: number; notes?: string }>;
-  createdBy?: string;
-  loungeId?: string;
-}) {
-  const response = await fetch('/api/sessions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(data)
-  });
-  
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || `Failed to create session: ${response.status}`);
-  }
-  
-  return response.json();
 }
 
 // Convenience functions for common commands
@@ -133,24 +69,4 @@ export const sessionCommands = {
   
   completeRefund: (sessionId: string, actor: "foh"|"system" = "foh") => 
     sendCmd(sessionId, "REFUND_COMPLETE", {}, actor),
-=======
-// Convenience functions for common commands
-export const sessionCommands = {
-  // BOH commands
-  claimPrep: (sessionId: string, data?: any) => sendCmd(sessionId, "CLAIM_PREP", data, "boh"),
-  heatUp: (sessionId: string, data?: any) => sendCmd(sessionId, "HEAT_UP", data, "boh"),
-  readyForDelivery: (sessionId: string, data?: any) => sendCmd(sessionId, "READY_FOR_DELIVERY", data, "boh"),
-  
-  // FOH commands
-  deliverNow: (sessionId: string, data?: any) => sendCmd(sessionId, "DELIVER_NOW", data, "foh"),
-  markDelivered: (sessionId: string, data?: any) => sendCmd(sessionId, "MARK_DELIVERED", data, "foh"),
-  startActive: (sessionId: string, data?: any) => sendCmd(sessionId, "START_ACTIVE", data, "foh"),
-  
-  // Common commands
-  remake: (sessionId: string, reason: string, actor: "foh"|"boh" = "foh") => 
-    sendCmd(sessionId, "REMAKE", { reason }, actor),
-  staffHold: (sessionId: string, reason: string, actor: "foh"|"boh" = "foh") => 
-    sendCmd(sessionId, "STAFF_HOLD", { reason }, actor),
-  closeSession: (sessionId: string, data?: any) => sendCmd(sessionId, "CLOSE_SESSION", data, "foh"),
->>>>>>> 076f5b4944bb4d1a7c37cd5caa69740b3cb806df
 };

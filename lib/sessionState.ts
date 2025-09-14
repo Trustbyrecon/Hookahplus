@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-=======
 // lib/sessionState.ts
->>>>>>> 076f5b4944bb4d1a7c37cd5caa69740b3cb806df
 export type SessionState =
   | "NEW"
   | "PAID_PENDING_AUTH"
@@ -34,11 +31,7 @@ export type Session = {
   payment: { status: "started" | "confirmed" | "failed"; intentId?: string };
   timers: { heatUpStart?: number; deliveredAt?: number; expiresAt?: number };
   flags: { vip?: boolean; ageVerified?: boolean; allergy?: string | null };
-<<<<<<< HEAD
-  meta: { createdBy: string; loungeId: string; trustLock?: string };
-=======
   meta: { createdBy: string; loungeId: string; trustLock?: string; customerId?: string };
->>>>>>> 076f5b4944bb4d1a7c37cd5caa69740b3cb806df
   audit: Array<SessionEvent>;
 };
 
@@ -88,25 +81,16 @@ export function putSession(s: Session) {
   return s;
 }
 
-<<<<<<< HEAD
 export function getAllSessions(): Session[] {
   return Array.from(store.values());
 }
 
 export function getSessionsByState(state: SessionState): Session[] {
   return getAllSessions().filter(s => s.state === state);
-=======
-export function getAllSessions() {
-  return Array.from(store.values());
 }
 
-export function getSessionsByState(state: SessionState) {
-  return Array.from(store.values()).filter(s => s.state === state);
-}
-
-export function getSessionsByTable(table: string) {
+export function getSessionsByTable(table: string): Session[] {
   return Array.from(store.values()).filter(s => s.table === table);
->>>>>>> 076f5b4944bb4d1a7c37cd5caa69740b3cb806df
 }
 
 // seed helper (for local testing)
@@ -127,8 +111,6 @@ export function seedSession(id = "sess_demo", table = "T-12") {
   return getSession(id)!;
 }
 
-<<<<<<< HEAD
-=======
 // Generate multiple demo sessions for testing
 export function seedMultipleSessions() {
   const tables = ["T-1", "T-2", "T-3", "T-4", "T-5", "T-6", "T-7", "T-8", "T-9", "T-10"];
@@ -197,8 +179,6 @@ export function getSessionsByStatus() {
   
   return statusCounts;
 }
-
->>>>>>> 076f5b4944bb4d1a7c37cd5caa69740b3cb806df
 // ---------------- Transition map ----------------
 const allowed: Record<SessionState, Partial<Record<Command, SessionState>>> = {
   NEW: {
@@ -306,8 +286,6 @@ export function reduce(session: Session, cmd: Command, actor: ActorRole, data: a
   if (cmd === "ADD_COAL_SWAP") {
     // you'd enqueue a coal task here
   }
-<<<<<<< HEAD
-=======
   if (cmd === "PAYMENT_CONFIRMED") {
     // Update payment status and session data
     session.payment.status = "confirmed";
@@ -320,7 +298,6 @@ export function reduce(session: Session, cmd: Command, actor: ActorRole, data: a
       session.payment.intentId = `intent_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     }
   }
->>>>>>> 076f5b4944bb4d1a7c37cd5caa69740b3cb806df
 
   session.state = to;
 
@@ -339,7 +316,6 @@ export function reduce(session: Session, cmd: Command, actor: ActorRole, data: a
 
   return session;
 }
-<<<<<<< HEAD
 
 // ---------------- Utility functions ----------------
 export function getAvailableCommands(state: SessionState): Command[] {
@@ -397,5 +373,3 @@ export function getStateColor(state: SessionState): string {
   };
   return colors[state] || "bg-gray-100 text-gray-800";
 }
-=======
->>>>>>> 076f5b4944bb4d1a7c37cd5caa69740b3cb806df
