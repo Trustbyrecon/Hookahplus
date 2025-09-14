@@ -92,7 +92,6 @@ export async function POST(request: NextRequest) {
 
     // Create checkout session
     const checkoutSession = await stripe.checkout.sessions.create({
-      payment_method_types: ['card', 'apple_pay', 'google_pay'],
       line_items: lineItems,
       mode: 'payment',
       success_url: successUrl || `${process.env.NEXT_PUBLIC_APP_URL}/fire-session-dashboard?sessionId=${sessionId}&payment=success`,
