@@ -31,3 +31,11 @@ ScreenCoder/
 # Build artifacts
 *.tsbuildinfo
 .vercel
+
+# Turbo daemon and cache files
+.turbo/
+.turbo-cache/
+**/.turbo/
+**/turbo.log*
+**/turbod.pid
+**/turbod.sock
