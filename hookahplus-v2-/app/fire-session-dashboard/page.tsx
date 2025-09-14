@@ -5,6 +5,8 @@ import type { FireSession, DeliveryZone, Action, User, TrustLevel } from "@/app/
 import { nextStateWithTrust, TrustError } from "@/app/lib/workflow";
 import { logAction } from "@/app/lib/audit";
 import { demoUsers, canPerformAction, getUserDisplayInfo } from "@/app/lib/users";
+import EnhancedCreateSession from "@/components/EnhancedCreateSession";
+import { flagManager } from "@/lib/flag-manager";
 
 // Enhanced session interface with new fields
 interface EnhancedFireSession extends FireSession {
@@ -53,11 +55,33 @@ export default function FireSessionDashboard() {
   const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [flagCount, setFlagCount] = useState(0);
+  const [edgeCaseCount, setEdgeCaseCount] = useState(0);
+  const [adminAlertCount, setAdminAlertCount] = useState(0);
 
   // Load sessions from Supabase on mount
   useEffect(() => {
     loadSessions();
+    initializeFlagManager();
   }, []);
+
+  // Initialize Flag Manager
+  const initializeFlagManager = () => {
+    flagManager.start();
+    
+    // Listen for flag events
+    flagManager.on('flag_created', () => {
+      setFlagCount(prev => prev + 1);
+    });
+    
+    flagManager.on('flag_escalated', () => {
+      setEdgeCaseCount(prev => prev + 1);
+    });
+    
+    flagManager.on('admin_alert_created', () => {
+      setAdminAlertCount(prev => prev + 1);
+    });
+  };
 
   // Load sessions from Supabase
   const loadSessions = async () => {
@@ -401,6 +425,15 @@ export default function FireSessionDashboard() {
           </div>
 
           <div className="flex gap-3">
+            <EnhancedCreateSession 
+              onSessionCreated={(sessionId) => {
+                console.log('✅ Session created:', sessionId);
+                loadSessions(); // Refresh sessions
+              }}
+              onFlagCreated={(flagId) => {
+                console.log('🚩 Flag created:', flagId);
+              }}
+            />
             <button
               onClick={() => populate()}
               className="rounded-lg border border-[#2a3570] bg-[#17204a] px-4 py-2 text-sm hover:bg-[#1b2658] transition-colors"
@@ -438,6 +471,22 @@ export default function FireSessionDashboard() {
             : "bg-amber-900/30 text-amber-300 border border-amber-700"
         }`}>
           {viewMode === "FOH" ? "🎯 Front of House View" : "🏪 Back of House View"}
+        </div>
+      </div>
+
+      {/* Flag Manager Status */}
+      <div className="mb-6 flex justify-center gap-4">
+        <div className="flex items-center gap-2 px-4 py-2 bg-red-900/20 border border-red-500 rounded-lg">
+          <span className="text-red-400">🚩</span>
+          <span className="text-sm text-red-300">Flags: {flagCount}</span>
+        </div>
+        <div className="flex items-center gap-2 px-4 py-2 bg-orange-900/20 border border-orange-500 rounded-lg">
+          <span className="text-orange-400">⚠️</span>
+          <span className="text-sm text-orange-300">Edge Cases: {edgeCaseCount}</span>
+        </div>
+        <div className="flex items-center gap-2 px-4 py-2 bg-yellow-900/20 border border-yellow-500 rounded-lg">
+          <span className="text-yellow-400">🚨</span>
+          <span className="text-sm text-yellow-300">Admin Alerts: {adminAlertCount}</span>
         </div>
       </div>
 
