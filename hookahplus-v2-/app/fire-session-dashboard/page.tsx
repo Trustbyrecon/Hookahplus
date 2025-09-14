@@ -18,6 +18,7 @@ interface EnhancedFireSession extends FireSession {
   bohState?: "WARMING_UP" | "READY_FOR_PICKUP" | "PICKED_UP" | "DELIVERED";
   sessionTimer?: number;
   guestTimerDisplay?: boolean; // New: Control guest timer visibility
+  metadata?: Record<string, any>; // Add metadata property
 }
 
 // Available flavors for selection
@@ -299,10 +300,8 @@ export default function FireSessionDashboard() {
   }
 
   function populate(count = 6) {
-    const additionalSessions = generateDemoSessions(count);
-    const allSessions = [...PRE_GENERATED_SESSIONS, ...additionalSessions];
-    setSessions(allSessions);
-    toast(`Floor populated with ${allSessions.length} sessions`);
+    // Demo sessions are now loaded from Supabase
+    toast(`Demo sessions loaded from Supabase`);
   }
 
   function resetToDefault() {

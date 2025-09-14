@@ -72,23 +72,35 @@ async function handlePaymentSuccess(paymentIntent: any) {
 
     if (sessionId) {
       // Update session status to payment confirmed
-      await fireSessionWorkflow.pressButton('PAYMENT_CONFIRMED', {
+      await fireSessionWorkflow.pressButton(
         sessionId,
-        tableId,
-        customerName,
-        totalAmount: parseInt(totalAmount),
-        paymentIntentId: paymentIntent.id,
-        paymentStatus: 'succeeded'
-      });
+        'delivered',
+        'front',
+        'stripe_webhook',
+        {
+          tableId,
+          customerName,
+          totalAmount: parseInt(totalAmount),
+          paymentIntentId: paymentIntent.id,
+          paymentStatus: 'succeeded'
+        }
+      );
 
       console.log(`Payment confirmed for session ${sessionId}`);
     }
   } catch (error) {
     console.error('Error handling payment success:', error);
-    await flagManager.createFlag('PAYMENT_PROCESSING_ERROR', {
-      error: error.message,
-      paymentIntentId: paymentIntent.id,
-      severity: 'high'
+    await flagManager.createFlag({
+      sessionId: 'unknown',
+      tableId: 'unknown',
+      flagType: 'payment_issue',
+      severity: 'high',
+      description: `Payment processing error: ${error.message}`,
+      reportedBy: 'stripe_webhook',
+      metadata: {
+        error: error.message,
+        paymentIntentId: paymentIntent.id
+      }
     });
   }
 }
@@ -102,20 +114,30 @@ async function handlePaymentFailure(paymentIntent: any) {
 
     if (sessionId) {
       // Update session status to payment failed
-      await fireSessionWorkflow.pressButton('PAYMENT_FAILED', {
+      await fireSessionWorkflow.pressButton(
         sessionId,
-        tableId,
-        paymentIntentId: paymentIntent.id,
-        paymentStatus: 'failed'
-      });
+        'cancel',
+        'front',
+        'stripe_webhook',
+        {
+          tableId,
+          paymentIntentId: paymentIntent.id,
+          paymentStatus: 'failed'
+        }
+      );
 
       // Create flag for payment failure
-      await flagManager.createFlag('PAYMENT_FAILED', {
+      await flagManager.createFlag({
         sessionId,
         tableId,
-        paymentIntentId: paymentIntent.id,
-        error: paymentIntent.last_payment_error?.message,
-        severity: 'high'
+        flagType: 'payment_issue',
+        severity: 'high',
+        description: `Payment failed for session ${sessionId}`,
+        reportedBy: 'stripe_webhook',
+        metadata: {
+          paymentIntentId: paymentIntent.id,
+          error: paymentIntent.last_payment_error?.message
+        }
       });
 
       console.log(`Payment failed for session ${sessionId}`);
