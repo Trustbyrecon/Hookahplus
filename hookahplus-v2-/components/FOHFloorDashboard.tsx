@@ -9,6 +9,8 @@ const FOHFloorDashboard = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState<Record<string, boolean>>({});
+  const [floorQueue, setFloorQueue] = useState<any[]>([]);
+  const [activeSessions, setActiveSessions] = useState<any[]>([]);
 
   // Refresh sessions
   const refreshSessions = () => {
@@ -17,6 +19,47 @@ const FOHFloorDashboard = () => {
       ["READY_FOR_DELIVERY", "OUT_FOR_DELIVERY", "DELIVERED", "ACTIVE", "CLOSE_PENDING"].includes(s.state)
     );
     setSessions(floorSessions);
+  };
+
+  // Handle Mobile QR order creation
+  const handleMobileQROrder = (order: any) => {
+    console.log('Mobile QR Order received:', order);
+    
+    // Add to floor queue
+    const queueItem = {
+      id: order.id,
+      tableId: order.tableId,
+      customerName: order.customerName,
+      partySize: order.partySize,
+      flavor: order.flavor,
+      status: 'waiting',
+      estimatedWait: order.estimatedWait,
+      priority: order.priority,
+      createdAt: new Date().toISOString(),
+      source: 'mobile_qr'
+    };
+    
+    setFloorQueue(prev => [queueItem, ...prev]);
+    
+    // Also add to active sessions for immediate processing
+    const activeSession = {
+      id: order.id,
+      tableId: order.tableId,
+      customerName: order.customerName,
+      partySize: order.partySize,
+      flavor: order.flavor,
+      status: 'prep',
+      startTime: new Date().toISOString(),
+      estimatedEndTime: new Date(Date.now() + 5400000).toISOString(), // 90 minutes
+      staffAssigned: {
+        prep: 'Alex Chen',
+        front: 'Emma Wilson',
+        hookah_room: 'Chris Taylor'
+      },
+      source: 'mobile_qr'
+    };
+    
+    setActiveSessions(prev => [activeSession, ...prev]);
   };
 
   useEffect(() => {
@@ -118,30 +161,112 @@ const FOHFloorDashboard = () => {
               <p className="text-gray-600">Front of House - Customer Delivery & Table Management</p>
             </div>
             <MobileQRGenerator 
-              onOrderCreated={(order) => {
-                console.log('Mobile QR order created:', order);
-                refreshSessions();
-              }}
+              onOrderCreated={handleMobileQROrder}
             />
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Session Queue */}
+          {/* Floor Queue */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
               <div className="px-6 py-4 border-b border-gray-200">
                 <h2 className="text-lg font-semibold text-gray-900">Floor Queue</h2>
-                <p className="text-sm text-gray-500">{sessions.length} sessions on floor</p>
+                <p className="text-sm text-gray-500">
+                  {floorQueue.length + activeSessions.length} sessions on floor
+                  {floorQueue.length > 0 && ` (${floorQueue.length} waiting, ${activeSessions.length} active)`}
+                </p>
               </div>
               <div className="p-6">
-                {sessions.length === 0 ? (
+                {floorQueue.length === 0 && activeSessions.length === 0 && sessions.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     <div className="text-4xl mb-2">🍃</div>
                     <p>No sessions on floor</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
+                    {/* Mobile QR Orders in Queue */}
+                    {floorQueue.map((queueItem) => (
+                      <div
+                        key={queueItem.id}
+                        className="p-4 rounded-lg border border-purple-200 bg-purple-50 cursor-pointer transition-all hover:shadow-md hover:border-purple-300"
+                        onClick={() => setSelectedSession({
+                          id: queueItem.id,
+                          table: queueItem.tableId,
+                          state: 'WAITING',
+                          meta: { customerId: queueItem.customerName },
+                          timers: {},
+                          source: 'mobile_qr'
+                        } as any)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <span className="text-2xl">📱</span>
+                            <div>
+                              <div className="font-medium text-gray-900">
+                                {queueItem.tableId} - {queueItem.customerName}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {queueItem.flavor} • Party of {queueItem.partySize}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              queueItem.priority === 'high' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
+                            }`}>
+                              {queueItem.priority} priority
+                            </span>
+                            <div className="text-xs text-gray-500 mt-1">
+                              Wait: {queueItem.estimatedWait}m
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Active Mobile QR Sessions */}
+                    {activeSessions.map((activeSession) => (
+                      <div
+                        key={activeSession.id}
+                        className="p-4 rounded-lg border border-green-200 bg-green-50 cursor-pointer transition-all hover:shadow-md hover:border-green-300"
+                        onClick={() => setSelectedSession({
+                          id: activeSession.id,
+                          table: activeSession.tableId,
+                          state: 'PREP',
+                          meta: { customerId: activeSession.customerName },
+                          timers: { heatUpStart: activeSession.startTime },
+                          source: 'mobile_qr'
+                        } as any)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <span className="text-2xl">🔥</span>
+                            <div>
+                              <div className="font-medium text-gray-900">
+                                {activeSession.tableId} - {activeSession.customerName}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {activeSession.flavor} • Party of {activeSession.partySize}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              {activeSession.status}
+                            </span>
+                            <div className="text-xs text-gray-500 mt-1">
+                              Started: {new Date(activeSession.startTime).toLocaleTimeString()}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="mt-2 text-xs text-gray-600">
+                          Staff: {activeSession.staffAssigned.prep} (Prep), {activeSession.staffAssigned.front} (Front)
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Regular Sessions */}
                     {sortedSessions.map((session) => (
                       <div
                         key={session.id}
@@ -214,6 +339,70 @@ const FOHFloorDashboard = () => {
                   </div>
                 ) : (
                   <div className="space-y-3">
+                    {/* Mobile QR Order Controls */}
+                    {selectedSession.source === 'mobile_qr' && (
+                      <>
+                        {selectedSession.state === "WAITING" && (
+                          <div className="space-y-3">
+                            <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                              <h3 className="font-medium text-purple-900 mb-2">Mobile QR Order</h3>
+                              <p className="text-sm text-purple-700">
+                                Ready to start preparation. This order was created via Mobile QR.
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => {
+                                // Move from queue to active
+                                setFloorQueue(prev => prev.filter(item => item.id !== selectedSession.id));
+                                setActiveSessions(prev => [...prev, {
+                                  id: selectedSession.id,
+                                  tableId: selectedSession.table,
+                                  customerName: selectedSession.meta.customerId,
+                                  status: 'prep',
+                                  startTime: new Date().toISOString(),
+                                  estimatedEndTime: new Date(Date.now() + 5400000).toISOString(),
+                                  staffAssigned: {
+                                    prep: 'Alex Chen',
+                                    front: 'Emma Wilson',
+                                    hookah_room: 'Chris Taylor'
+                                  }
+                                }]);
+                                setSelectedSession({
+                                  ...selectedSession,
+                                  state: 'PREP'
+                                });
+                              }}
+                              className="w-full bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+                            >
+                              Start Preparation
+                            </button>
+                          </div>
+                        )}
+                        
+                        {selectedSession.state === "PREP" && (
+                          <div className="space-y-3">
+                            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                              <h3 className="font-medium text-green-900 mb-2">In Preparation</h3>
+                              <p className="text-sm text-green-700">
+                                Mobile QR order is being prepared by staff.
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => {
+                                setSelectedSession({
+                                  ...selectedSession,
+                                  state: 'READY_FOR_DELIVERY'
+                                });
+                              }}
+                              className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+                            >
+                              Mark Ready for Delivery
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    )}
+
                     {/* FOH Commands */}
                     {selectedSession.state === "READY_FOR_DELIVERY" && (
                       <button
