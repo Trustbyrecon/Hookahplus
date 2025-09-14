@@ -210,7 +210,7 @@ export class FireSessionWorkflow extends EventEmitter {
     }
 
     const previousState = { ...session };
-    const event = this.processButtonPress(session, button, staffRole, staffId, metadata);
+    const event = this.processButtonPress(session, button, staffRole, staffId, metadata, previousState);
     
     if (event) {
       this.emit('workflowEvent', event);
@@ -225,7 +225,8 @@ export class FireSessionWorkflow extends EventEmitter {
     button: WorkflowButton, 
     staffRole: StaffRole, 
     staffId: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, any>,
+    previousState?: SessionState
   ): WorkflowEvent | null {
     const timestamp = new Date();
     session.updatedAt = timestamp;
@@ -426,7 +427,7 @@ export class FireSessionWorkflow extends EventEmitter {
       statusTag: session.currentStatus,
       buttonPressed: button,
       metadata,
-      previousState: previousState,
+      previousState: previousState || { ...session },
       newState: { ...session }
     };
 

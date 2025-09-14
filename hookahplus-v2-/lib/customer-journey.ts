@@ -48,11 +48,19 @@ export interface CustomerBooking {
   sessionEndTime?: Date;
   // Metadata
   metadata: {
-    source: 'layout_preview' | 'mobile_app' | 'staff_entry' | 'walk_in';
+    source: 'layout_preview' | 'mobile_app' | 'staff_entry' | 'walk_in' | 'reservation_hold' | 'qr_checkin' | 'multi_fire_session';
     ipAddress?: string;
     userAgent?: string;
     referrer?: string;
     campaignId?: string;
+    seatNumber?: string;
+    sequence?: number;
+    sessionNumber?: number;
+    totalSessions?: number;
+    parentTableId?: string;
+    holdAmount?: number;
+    holdDuration?: number;
+    qrCode?: string;
   };
 }
 
@@ -150,11 +158,19 @@ class CustomerJourneyManager {
     seatNumber?: string;
     sequence?: number;
     metadata: {
-      source: 'layout_preview' | 'reservation_hold' | 'qr_checkin' | 'multi_fire_session';
+      source: 'layout_preview' | 'reservation_hold' | 'qr_checkin' | 'multi_fire_session' | 'mobile_app' | 'staff_entry' | 'walk_in';
       ipAddress?: string;
       userAgent?: string;
       referrer?: string;
       campaignId?: string;
+      seatNumber?: string;
+      sequence?: number;
+      sessionNumber?: number;
+      totalSessions?: number;
+      parentTableId?: string;
+      holdAmount?: number;
+      holdDuration?: number;
+      qrCode?: string;
       [key: string]: any; // Allow additional metadata
     };
   }): Promise<CustomerBooking> {
@@ -226,17 +242,17 @@ class CustomerJourneyManager {
 
   // Trigger BOH operations based on booking type
   private async triggerBOHOperations(booking: CustomerBooking) {
-    const operations: Omit<BOHOperation, 'id' | 'timestamp'>[] = [];
+    const operations: BOHOperation[] = [];
 
     // Base operations for all bookings
     operations.push({
+      id: `op_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       bookingId: booking.id,
-      type: 'prep_notification',
-      description: `New ${booking.metadata.source} booking for ${booking.customerName}`,
-      priority: 'high',
-      status: 'pending',
-      assignedStaff: null,
-      estimatedDuration: booking.estimatedPrepTime,
+      operationType: 'prep_start',
+      staffId: 'system',
+      staffName: 'System',
+      timestamp: new Date(),
+      notes: `New ${booking.metadata.source} booking for ${booking.customerName}`,
       metadata: {
         tableId: booking.tableId,
         zone: booking.zone,
@@ -249,13 +265,13 @@ class CustomerJourneyManager {
     switch (booking.metadata.source) {
       case 'multi_fire_session':
         operations.push({
+          id: `op_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           bookingId: booking.id,
-          type: 'multi_session_setup',
-          description: `Setup multiple fire sessions for table ${booking.tableId}`,
-          priority: 'high',
-          status: 'pending',
-          assignedStaff: null,
-          estimatedDuration: booking.estimatedPrepTime + 5, // Extra time for multiple sessions
+          operationType: 'prep_start',
+          staffId: 'system',
+          staffName: 'System',
+          timestamp: new Date(),
+          notes: `Setup multiple fire sessions for table ${booking.tableId}`,
           metadata: {
             sessionNumber: booking.metadata.sessionNumber,
             totalSessions: booking.metadata.totalSessions,
@@ -266,13 +282,13 @@ class CustomerJourneyManager {
         
       case 'reservation_hold':
         operations.push({
+          id: `op_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           bookingId: booking.id,
-          type: 'reservation_prep',
-          description: `Prepare table ${booking.tableId} for reservation hold`,
-          priority: 'medium',
-          status: 'pending',
-          assignedStaff: null,
-          estimatedDuration: 10, // Quick prep for reservation
+          operationType: 'prep_start',
+          staffId: 'system',
+          staffName: 'System',
+          timestamp: new Date(),
+          notes: `Prepare table ${booking.tableId} for reservation hold`,
           metadata: {
             holdAmount: booking.metadata.holdAmount,
             holdDuration: booking.metadata.holdDuration,
@@ -283,13 +299,13 @@ class CustomerJourneyManager {
         
       case 'qr_checkin':
         operations.push({
+          id: `op_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           bookingId: booking.id,
-          type: 'immediate_service',
-          description: `Immediate service for walk-in customer at table ${booking.tableId}`,
-          priority: 'urgent',
-          status: 'pending',
-          assignedStaff: null,
-          estimatedDuration: booking.estimatedPrepTime,
+          operationType: 'prep_start',
+          staffId: 'system',
+          staffName: 'System',
+          timestamp: new Date(),
+          notes: `Immediate service for walk-in customer at table ${booking.tableId}`,
           metadata: {
             qrCode: booking.metadata.qrCode,
             isWalkIn: true
@@ -378,8 +394,9 @@ class CustomerJourneyManager {
   }
 
   // Get bookings by status
-  getBookingsByStatus(status: CustomerBooking['status']): CustomerBooking[] {
-    return this.getAllBookings().filter(booking => booking.status === status);
+  async getBookingsByStatus(status: CustomerBooking['status']): Promise<CustomerBooking[]> {
+    const bookings = await this.getAllBookings();
+    return bookings.filter(booking => booking.status === status);
   }
 
   // Get BOH operations for booking
@@ -409,18 +426,23 @@ class CustomerJourneyManager {
   }
 
   // Get real-time dashboard data
-  getDashboardData() {
-    const bookings = this.getAllBookings();
-    const activeSessions = this.getActiveBookings();
+  async getDashboardData() {
+    const bookings = await this.getAllBookings();
+    const activeSessions = await this.getActiveBookings();
+    const pendingBookings = await this.getBookingsByStatus('pending');
+    const preparingBookings = await this.getBookingsByStatus('preparing');
+    const readyBookings = await this.getBookingsByStatus('ready');
+    const activeBookings = await this.getBookingsByStatus('active');
+    const completedBookings = await this.getBookingsByStatus('completed');
     
     return {
       totalBookings: bookings.length,
       activeSessions: activeSessions.length,
-      pendingBookings: this.getBookingsByStatus('pending').length,
-      preparingBookings: this.getBookingsByStatus('preparing').length,
-      readyBookings: this.getBookingsByStatus('ready').length,
-      activeBookings: this.getBookingsByStatus('active').length,
-      completedBookings: this.getBookingsByStatus('completed').length,
+      pendingBookings: pendingBookings.length,
+      preparingBookings: preparingBookings.length,
+      readyBookings: readyBookings.length,
+      activeBookings: activeBookings.length,
+      completedBookings: completedBookings.length,
       totalRevenue: bookings
         .filter(b => b.paymentStatus === 'paid')
         .reduce((sum, b) => sum + b.totalPrice, 0),

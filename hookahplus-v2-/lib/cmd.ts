@@ -15,7 +15,6 @@ export async function sendCmd(
   }).then(r => r.json());
 }
 
-<<<<<<< HEAD
 export async function getSession(sessionId: string) {
   const response = await fetch(`/api/sessions/${sessionId}`);
   
@@ -119,24 +118,4 @@ export const sessionCommands = {
   
   completeRefund: (sessionId: string, actor: "foh"|"system" = "foh") => 
     sendCmd(sessionId, "REFUND_COMPLETE", {}, actor),
-=======
-// Convenience functions for common commands
-export const sessionCommands = {
-  // BOH commands
-  claimPrep: (sessionId: string, data?: any) => sendCmd(sessionId, "CLAIM_PREP", data, "boh"),
-  heatUp: (sessionId: string, data?: any) => sendCmd(sessionId, "HEAT_UP", data, "boh"),
-  readyForDelivery: (sessionId: string, data?: any) => sendCmd(sessionId, "READY_FOR_DELIVERY", data, "boh"),
-  
-  // FOH commands
-  deliverNow: (sessionId: string, data?: any) => sendCmd(sessionId, "DELIVER_NOW", data, "foh"),
-  markDelivered: (sessionId: string, data?: any) => sendCmd(sessionId, "MARK_DELIVERED", data, "foh"),
-  startActive: (sessionId: string, data?: any) => sendCmd(sessionId, "START_ACTIVE", data, "foh"),
-  
-  // Common commands
-  remake: (sessionId: string, reason: string, actor: "foh"|"boh" = "foh") => 
-    sendCmd(sessionId, "REMAKE", { reason }, actor),
-  staffHold: (sessionId: string, reason: string, actor: "foh"|"boh" = "foh") => 
-    sendCmd(sessionId, "STAFF_HOLD", { reason }, actor),
-  closeSession: (sessionId: string, data?: any) => sendCmd(sessionId, "CLOSE_SESSION", data, "foh"),
->>>>>>> 076f5b4944bb4d1a7c37cd5caa69740b3cb806df
 };
