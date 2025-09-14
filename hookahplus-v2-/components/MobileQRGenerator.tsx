@@ -24,43 +24,30 @@ export default function MobileQRGenerator({ onOrderCreated }: MobileQRGeneratorP
         createdAt: Date.now(),
         customerName: `Mobile Customer ${Math.floor(Math.random() * 100)}`,
         customerId: `cust_${Math.floor(Math.random() * 1000)}`,
-        partySize: Math.floor(Math.random() * 4) + 1
+        partySize: Math.floor(Math.random() * 4) + 1,
+        estimatedWait: Math.floor(Math.random() * 10) + 1,
+        priority: Math.floor(Math.random() * 4) + 1 > 4 ? 'high' : 'normal'
       };
 
-      // Call mobile QR API
-      const response = await fetch('/api/mobile-qr', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tableId: mobileOrder.tableId,
-          customerName: mobileOrder.customerName,
-          partySize: mobileOrder.partySize,
-          flavor: mobileOrder.flavor
-        })
-      });
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 500));
 
-      if (response.ok) {
-        const result = await response.json();
-        console.log('Mobile QR order created:', result);
-        
-        // Show success message
-        alert(`Mobile QR order created for ${mobileOrder.tableId}! Check the prep queue.`);
-        
-        // Notify parent component
-        if (onOrderCreated) {
-          onOrderCreated({
-            ...mobileOrder,
-            queueItem: result.queueItem
-          });
-        }
-      } else {
-        // Fallback: Show success message even if API fails (for demo purposes)
-        console.log('API failed, but showing demo success message');
-        alert(`Mobile QR order created for ${mobileOrder.tableId}! Check the prep queue.`);
-        
-        if (onOrderCreated) {
-          onOrderCreated(mobileOrder);
-        }
+      // Show success message
+      alert(`Mobile QR order created for ${mobileOrder.tableId}! Check the prep queue.`);
+      
+      // Log the order details
+      console.log('Mobile QR Order Created:', {
+        tableId: mobileOrder.tableId,
+        customerName: mobileOrder.customerName,
+        partySize: mobileOrder.partySize,
+        flavor: mobileOrder.flavor,
+        estimatedWait: mobileOrder.estimatedWait,
+        priority: mobileOrder.priority
+      });
+      
+      // Notify parent component
+      if (onOrderCreated) {
+        onOrderCreated(mobileOrder);
       }
     } catch (error) {
       console.error('Error creating mobile QR order:', error);
@@ -70,7 +57,9 @@ export default function MobileQRGenerator({ onOrderCreated }: MobileQRGeneratorP
         tableId: `T-${Math.floor(Math.random() * 10) + 1}`,
         flavor: 'Double Apple',
         customerName: 'Mobile Customer',
-        partySize: 2
+        partySize: 2,
+        estimatedWait: 5,
+        priority: 'normal'
       };
       
       alert(`Mobile QR order created for ${fallbackOrder.tableId}! Check the prep queue.`);
