@@ -1,156 +1,122 @@
-// app/lib/audit.ts
-import type { Action, FireSession, User, TrustLevel } from "./workflow";
+import { prisma } from "./db";
+import type { AuthContext } from "./auth";
+
+export type AuditAction = 
+  | 'badge_awarded'
+  | 'badge_revoked'
+  | 'event_created'
+  | 'profile_accessed'
+  | 'data_exported'
+  | 'cross_venue_read'
+  | 'cross_venue_write';
 
 export interface AuditLog {
   id: string;
   timestamp: number;
-  userId: string;
-  userName: string;
-  userRole: string;
-  userTrustLevel: TrustLevel;
-  action: Action;
-  sessionId: string;
-  sessionTable: string;
-  previousState: string;
-  newState: string;
+  action: AuditAction;
+  actorId?: string;
+  actorRole: string;
+  targetProfileId?: string;
+  targetVenueId?: string;
+  sourceVenueId?: string;
+  details: Record<string, any>;
   ipAddress?: string;
   userAgent?: string;
-  metadata?: Record<string, any>;
 }
 
-export interface AuditStore {
-  logs: AuditLog[];
-  addLog: (log: Omit<AuditLog, 'id' | 'timestamp'>) => void;
-  getLogs: (filters?: AuditFilters) => AuditLog[];
-  clearLogs: () => void;
-  exportLogs: () => string;
-}
+// In-memory audit store for demo mode
+const auditLogs: AuditLog[] = [];
 
-export interface AuditFilters {
-  userId?: string;
-  sessionId?: string;
-  actionType?: string;
-  trustLevel?: TrustLevel;
-  startTime?: number;
-  endTime?: number;
-}
-
-// In-memory audit store (in production, this would be a database)
-const globalAuditStore = globalThis as any;
-if (!globalAuditStore.__AUDIT_STORE__) {
-  globalAuditStore.__AUDIT_STORE__ = {
-    logs: [],
-    addLog: function(log: Omit<AuditLog, 'id' | 'timestamp'>) {
-      const fullLog: AuditLog = {
-        ...log,
-        id: generateId(),
-        timestamp: Date.now()
-      };
-      this.logs.push(fullLog);
-      
-      // Keep only last 1000 logs in memory
-      if (this.logs.length > 1000) {
-        this.logs = this.logs.slice(-1000);
-      }
-    },
-    getLogs: function(filters: AuditFilters = {}) {
-      let filtered = this.logs;
-      
-      if (filters.userId) {
-        filtered = filtered.filter(log => log.userId === filters.userId);
-      }
-      if (filters.sessionId) {
-        filtered = filtered.filter(log => log.sessionId === filters.sessionId);
-      }
-      if (filters.actionType) {
-        filtered = filtered.filter(log => log.action.type === filters.actionType);
-      }
-      if (filters.trustLevel) {
-        filtered = filtered.filter(log => log.userTrustLevel === filters.trustLevel);
-      }
-      if (filters.startTime) {
-        filtered = filtered.filter(log => log.timestamp >= filters.startTime!);
-      }
-      if (filters.endTime) {
-        filtered = filtered.filter(log => log.timestamp <= filters.endTime!);
-      }
-      
-      return filtered.sort((a, b) => b.timestamp - a.timestamp);
-    },
-    clearLogs: function() {
-      this.logs = [];
-    },
-    exportLogs: function() {
-      return JSON.stringify(this.logs, null, 2);
-    }
-  };
-}
-
-export const auditStore: AuditStore = globalAuditStore.__AUDIT_STORE__;
-
-// Helper function to generate unique IDs
-function generateId(): string {
-  return Math.random().toString(36).substring(2) + Date.now().toString(36);
-}
-
-// Main audit logging function
-export function logAction(
-  user: User,
-  action: Action,
-  previousSession: FireSession,
-  newSession: FireSession,
-  metadata?: Record<string, any>
-): void {
-  const log: Omit<AuditLog, 'id' | 'timestamp'> = {
-    userId: user.id,
-    userName: user.name,
-    userRole: user.role,
-    userTrustLevel: user.trustLevel,
+export async function logAuditEvent(
+  action: AuditAction,
+  authContext: AuthContext,
+  details: Record<string, any> = {},
+  request?: { ip?: string; userAgent?: string }
+) {
+  const auditLog: AuditLog = {
+    id: `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    timestamp: Date.now(),
     action,
-    sessionId: previousSession.id,
-    sessionTable: previousSession.table,
-    previousState: previousSession.state,
-    newState: newSession.state,
-    ipAddress: getClientIP(),
-    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
-    metadata
+    actorId: authContext.actorId,
+    actorRole: authContext.role,
+    targetProfileId: details.profileId,
+    targetVenueId: details.venueId,
+    sourceVenueId: authContext.venueId,
+    details,
+    ipAddress: request?.ip,
+    userAgent: request?.userAgent,
   };
-  
-  auditStore.addLog(log);
-  
-  // In production, also send to external compliance system
-  if (typeof window === 'undefined' && process.env.NODE_ENV === 'production') {
-    sendToComplianceAPI(log);
+
+  // Store in memory for demo mode
+  auditLogs.push(auditLog);
+
+  // If using DB mode, also store in database
+  if (process.env.BADGES_V1_USE_DB === "true") {
+    try {
+      await prisma.$executeRaw`
+        INSERT INTO audit_logs (
+          id, timestamp, action, actor_id, actor_role, 
+          target_profile_id, target_venue_id, source_venue_id, 
+          details, ip_address, user_agent
+        ) VALUES (
+          ${auditLog.id}, ${new Date(auditLog.timestamp)}, ${auditLog.action}, 
+          ${auditLog.actorId}, ${auditLog.actorRole}, ${auditLog.targetProfileId}, 
+          ${auditLog.targetVenueId}, ${auditLog.sourceVenueId}, 
+          ${JSON.stringify(auditLog.details)}, ${auditLog.ipAddress}, ${auditLog.userAgent}
+        )
+      `;
+    } catch (error) {
+      console.error('Failed to log audit event to database:', error);
+    }
+  }
+
+  // Log cross-venue operations
+  if (authContext.venueId && details.venueId && authContext.venueId !== details.venueId) {
+    console.warn(`🚨 Cross-venue operation detected:`, {
+      action,
+      sourceVenue: authContext.venueId,
+      targetVenue: details.venueId,
+      actor: authContext.actorId,
+      role: authContext.role
+    });
   }
 }
 
-// Mock function to get client IP (in real app, this would come from request headers)
-function getClientIP(): string | undefined {
-  // This is a placeholder - in a real app, you'd get this from the request
-  return undefined;
+export async function getAuditLogs(
+  profileId?: string,
+  venueId?: string,
+  action?: AuditAction,
+  limit: number = 100
+): Promise<AuditLog[]> {
+  let filtered = auditLogs;
+
+  if (profileId) {
+    filtered = filtered.filter(log => log.targetProfileId === profileId);
+  }
+  if (venueId) {
+    filtered = filtered.filter(log => 
+      log.targetVenueId === venueId || log.sourceVenueId === venueId
+    );
+  }
+  if (action) {
+    filtered = filtered.filter(log => log.action === action);
+  }
+
+  return filtered
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .slice(0, limit);
 }
 
-// Mock function to send to compliance API (in real app, this would be implemented)
-async function sendToComplianceAPI(log: Omit<AuditLog, 'id' | 'timestamp'>): Promise<void> {
-  // Placeholder for production compliance API integration
-  console.log('Sending to compliance API:', log);
-}
-
-// Utility functions for audit analysis
-export function getTrustViolations(): AuditLog[] {
-  return auditStore.getLogs().filter(log => 
-    log.metadata?.trustViolation === true
+export function isCrossVenueOperation(
+  authContext: AuthContext,
+  targetVenueId?: string
+): boolean {
+  return Boolean(
+    authContext.venueId && 
+    targetVenueId && 
+    authContext.venueId !== targetVenueId
   );
 }
 
-export function getUserActionHistory(userId: string): AuditLog[] {
-  return auditStore.getLogs({ userId });
-}
-
-export function getSessionActionHistory(sessionId: string): AuditLog[] {
-  return auditStore.getLogs({ sessionId });
-}
-
-export function getRecentActions(limit: number = 50): AuditLog[] {
-  return auditStore.getLogs().slice(0, limit);
-}
+// Alias for backward compatibility
+export const logAction = logAuditEvent;

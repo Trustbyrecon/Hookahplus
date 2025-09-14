@@ -534,6 +534,10 @@ export class FireSessionWorkflow extends EventEmitter {
     return this.sessions.get(sessionId);
   }
 
+  getAllSessions(): SessionState[] {
+    return Array.from(this.sessions.values());
+  }
+
   getSessionsByStatus(status: SessionStatus): SessionState[] {
     return Array.from(this.sessions.values()).filter(s => s.currentStatus === status);
   }
