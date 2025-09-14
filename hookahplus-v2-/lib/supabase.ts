@@ -73,6 +73,10 @@ export class SupabaseSessionManager {
     estimatedPrepTime?: number;
   }): Promise<{ success: boolean; session?: SessionRecord; error?: string }> {
     try {
+      if (!supabase) {
+        return { success: false, error: 'Supabase not configured' };
+      }
+
       const { data, error } = await supabase
         .from('sessions')
         .insert([{
@@ -133,6 +137,10 @@ export class SupabaseSessionManager {
   // Get session by ID
   static async getSession(sessionId: string): Promise<{ success: boolean; session?: SessionRecord; error?: string }> {
     try {
+      if (!supabase) {
+        return { success: false, error: 'Supabase not configured' };
+      }
+
       const { data, error } = await supabase
         .from('sessions')
         .select('*')
