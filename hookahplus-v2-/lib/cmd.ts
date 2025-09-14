@@ -1,16 +1,3 @@
-<<<<<<< HEAD
-export async function sendCmd(
-  id: string, 
-  cmd: string, 
-  data: any = {}, 
-  actor: "foh" | "boh" | "system" | "agent" = "agent"
-) {
-  return fetch(`/api/sessions/${id}/command`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Idempotency-Key": `${id}:${cmd}:${Date.now()}`
-=======
 // lib/cmd.ts
 export async function sendCmd(
   sessionId: string, 
@@ -23,7 +10,6 @@ export async function sendCmd(
     headers: {
       "Content-Type": "application/json",
       "Idempotency-Key": `${sessionId}:${cmd}:${Date.now()}`
->>>>>>> 076f5b4944bb4d1a7c37cd5caa69740b3cb806df
     },
     body: JSON.stringify({ cmd, data, actor })
   }).then(r => r.json());
