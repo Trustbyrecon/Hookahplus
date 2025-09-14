@@ -9,6 +9,7 @@ interface MobileQRGeneratorProps {
 
 export default function MobileQRGenerator({ onOrderCreated }: MobileQRGeneratorProps) {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [lastCreatedOrder, setLastCreatedOrder] = useState<string | null>(null);
 
   const generateMobileQR = async () => {
     setIsGenerating(true);
@@ -32,9 +33,6 @@ export default function MobileQRGenerator({ onOrderCreated }: MobileQRGeneratorP
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Show success message
-      alert(`Mobile QR order created for ${mobileOrder.tableId}! Check the prep queue.`);
-      
       // Log the order details
       console.log('Mobile QR Order Created:', {
         tableId: mobileOrder.tableId,
@@ -45,13 +43,17 @@ export default function MobileQRGenerator({ onOrderCreated }: MobileQRGeneratorP
         priority: mobileOrder.priority
       });
       
-      // Notify parent component
+      // Set visual feedback
+      setLastCreatedOrder(mobileOrder.tableId);
+      setTimeout(() => setLastCreatedOrder(null), 3000); // Clear after 3 seconds
+      
+      // Notify parent component (this will update the Floor Queue)
       if (onOrderCreated) {
         onOrderCreated(mobileOrder);
       }
     } catch (error) {
       console.error('Error creating mobile QR order:', error);
-      // Still show success message for demo purposes
+      // Create fallback order without modal
       const fallbackOrder = {
         id: `mobile_${Date.now()}`,
         tableId: `T-${Math.floor(Math.random() * 10) + 1}`,
@@ -62,7 +64,9 @@ export default function MobileQRGenerator({ onOrderCreated }: MobileQRGeneratorP
         priority: 'normal'
       };
       
-      alert(`Mobile QR order created for ${fallbackOrder.tableId}! Check the prep queue.`);
+      // Set visual feedback for fallback
+      setLastCreatedOrder(fallbackOrder.tableId);
+      setTimeout(() => setLastCreatedOrder(null), 3000);
       
       if (onOrderCreated) {
         onOrderCreated(fallbackOrder);
@@ -73,12 +77,23 @@ export default function MobileQRGenerator({ onOrderCreated }: MobileQRGeneratorP
   };
 
   return (
-    <button
-      onClick={generateMobileQR}
-      disabled={isGenerating}
-      className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-    >
-      {isGenerating ? '🔄 Generating...' : '📱 Generate Mobile QR'}
-    </button>
+    <div className="flex flex-col items-center space-y-2">
+      <button
+        onClick={generateMobileQR}
+        disabled={isGenerating}
+        className={`px-6 py-3 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${
+          lastCreatedOrder 
+            ? 'bg-green-600 text-white shadow-lg scale-105' 
+            : 'bg-purple-600 text-white hover:bg-purple-700'
+        }`}
+      >
+        {isGenerating ? '🔄 Generating...' : '📱 Generate Mobile QR'}
+      </button>
+      {lastCreatedOrder && (
+        <div className="text-sm text-green-600 font-medium animate-pulse">
+          ✅ Order created for {lastCreatedOrder}
+        </div>
+      )}
+    </div>
   );
 }
