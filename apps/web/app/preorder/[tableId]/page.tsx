@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import FireSessionHandler from './FireSessionHandler';
 
 interface PreOrderItem {
   id: string;
@@ -410,12 +411,18 @@ export default function PreOrderTablePage() {
             <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-6">
               <h3 className="text-lg font-semibold text-teal-300 mb-4">Quick Actions</h3>
               <div className="space-y-3">
-                <Link
-                  href="/fire-session-dashboard"
-                  className="block w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg text-center transition-colors"
-                >
-                  🔥 Fire Session
-                </Link>
+                <FireSessionHandler
+                  tableId={tableId}
+                  selectedItems={selectedItems}
+                  customerInfo={{
+                    name: tableInfo?.customerName,
+                    phone: '+1 (555) 123-4567',
+                    email: 'customer@hookahplus.com'
+                  }}
+                  onSessionCreated={(sessionId) => {
+                    console.log('Fire Session created:', sessionId);
+                  }}
+                />
                 <Link
                   href="/staff-panel"
                   className="block w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg text-center transition-colors"

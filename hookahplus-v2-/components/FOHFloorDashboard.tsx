@@ -13,11 +13,37 @@ const FOHFloorDashboard = () => {
   const [activeSessions, setActiveSessions] = useState<any[]>([]);
 
   // Refresh sessions
-  const refreshSessions = () => {
+  const refreshSessions = async () => {
+    // Get sessions from local state
     const allSessions = getAllSessions();
     const floorSessions = allSessions.filter(s => 
       ["READY_FOR_DELIVERY", "OUT_FOR_DELIVERY", "DELIVERED", "ACTIVE", "CLOSE_PENDING"].includes(s.state)
     );
+    
+    // Also fetch sessions from API (preorder flow)
+    try {
+      const response = await fetch('/api/sessions');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.sessions) {
+          const apiSessions = data.sessions.map((session: any) => ({
+            id: session.id,
+            table: session.table,
+            state: session.state,
+            meta: session.meta,
+            timers: session.timers
+          }));
+          
+          // Merge API sessions with local sessions
+          const allFloorSessions = [...floorSessions, ...apiSessions];
+          setSessions(allFloorSessions);
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch API sessions:', error);
+    }
+    
     setSessions(floorSessions);
   };
 
