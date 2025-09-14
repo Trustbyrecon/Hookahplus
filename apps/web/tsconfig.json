@@ -30,7 +30,10 @@
     ".next/types/**/*.ts",
     "**/*.ts",
     "**/*.tsx",
-    "../../lib/**/*.ts",
+    "../../lib/cmd.ts",
+    "../../lib/sessionState.ts",
+    "../../lib/eventBus.ts",
+    "../../lib/aliethiaIdentity.ts",
     "../../components/BOHPrepRoom.tsx",
     "../../components/FOHFloorDashboard.tsx"
   ],
