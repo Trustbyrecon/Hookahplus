@@ -1,8 +1,10 @@
 // lib/demoDataGenerator.ts
 // Real-time data generator for end-to-end testing and demo purposes
 
-import { SessionState, SessionStatus } from './sessionState';
+import { SessionState } from './sessionState';
 import { WorkflowButton, StaffRole } from './fire-session-workflow';
+
+export type SessionStatus = 'prep' | 'delivery' | 'service' | 'refill' | 'coals_needed' | 'completed';
 
 export interface DemoSessionData {
   id: string;
