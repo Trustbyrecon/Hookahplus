@@ -145,7 +145,34 @@ export default function FireSessionHandler({
         console.log('✅ BOH Delivery Preparation Order created:', bohOrder.orderId);
       }
 
-      // Step 3: Create Session State for BOH/FOH Integration
+      // Step 3: Create Session in Supabase for BOH/FOH Integration
+      const supabaseResponse = await fetch('/api/sessions-supabase', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          tableId,
+          customerName: sessionData.customerInfo.name,
+          customerPhone: sessionData.customerInfo.phone,
+          customerEmail: sessionData.customerInfo.email,
+          flavors: sessionData.flavors,
+          totalAmount: sessionData.totalAmount * 100, // Convert to cents
+          source: 'preorder',
+          metadata: sessionData.metadata,
+          specialInstructions: 'Pre-order station order - prioritize for delivery',
+          estimatedPrepTime: 15
+        })
+      });
+
+      if (supabaseResponse.ok) {
+        const supabaseData = await supabaseResponse.json();
+        console.log('✅ Session created in Supabase:', supabaseData.session?.id);
+      } else {
+        console.error('⚠️ Failed to create session in Supabase');
+      }
+
+      // Also create session state for backward compatibility
       await createSessionState(sessionData, sessionId);
 
       // Navigate to Fire Session Dashboard with session data

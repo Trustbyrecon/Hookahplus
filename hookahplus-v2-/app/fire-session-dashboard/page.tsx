@@ -43,7 +43,7 @@ const PRE_GENERATED_SESSIONS: EnhancedFireSession[] = [];
 // Demo data generation removed - only real sessions from API
 
 export default function FireSessionDashboard() {
-  const [sessions, setSessions] = useState<EnhancedFireSession[]>(PRE_GENERATED_SESSIONS);
+  const [sessions, setSessions] = useState<EnhancedFireSession[]>([]);
   const [busy, setBusy] = useState(false);
   const [currentUser, setCurrentUser] = useState<User>(demoUsers[0]);
   const [showUserSelector, setShowUserSelector] = useState(false);
@@ -51,6 +51,59 @@ export default function FireSessionDashboard() {
   const [showFlavorSelector, setShowFlavorSelector] = useState<string | null>(null);
   const [selectedFlavor, setSelectedFlavor] = useState<string>("");
   const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Load sessions from Supabase on mount
+  useEffect(() => {
+    loadSessions();
+  }, []);
+
+  // Load sessions from Supabase
+  const loadSessions = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch('/api/sessions-supabase');
+      if (!response.ok) {
+        throw new Error('Failed to fetch sessions');
+      }
+      
+      const data = await response.json();
+      if (data.success && data.sessions) {
+        // Convert Supabase sessions to EnhancedFireSession format
+        const enhancedSessions: EnhancedFireSession[] = data.sessions.map((session: any) => ({
+          id: session.id,
+          table: session.table_id,
+          customerLabel: session.customer_name,
+          position: `Table ${session.table_id}`,
+          durationMin: 90, // Default duration
+          etaMin: 15, // Default ETA
+          items: 1, // Default items
+          currentAmount: session.total_amount / 100, // Convert from cents
+          state: session.session_state as any,
+          zone: 'A' as any,
+          flavor: session.flavors?.join(', ') || 'Mixed',
+          addOns: [],
+          assignedStaff: session.assigned_staff,
+          sessionStartTime: session.session_start_time ? new Date(session.session_start_time).getTime() : undefined,
+          sessionTimer: session.session_timer,
+          bohState: session.boh_state as any,
+          guestTimerDisplay: session.session_state === 'ACTIVE',
+          metadata: session.metadata || {}
+        }));
+        
+        setSessions(enhancedSessions);
+        console.log('✅ Sessions loaded from Supabase:', enhancedSessions.length);
+      }
+    } catch (err: any) {
+      console.error('❌ Failed to load sessions:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Session timer effect
   useEffect(() => {
@@ -69,7 +122,13 @@ export default function FireSessionDashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  function postAction(id: string, action: Action) {
+  // Auto-refresh sessions every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(loadSessions, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  async function postAction(id: string, action: Action) {
     try {
       setBusy(true);
 
@@ -127,6 +186,37 @@ export default function FireSessionDashboard() {
           toast(`Action failed: ${e.message}`, "err");
           return;
         }
+      }
+
+      // Update session in Supabase
+      const updateData: any = {
+        session_state: updatedSession.state,
+        assigned_staff: updatedSession.assignedStaff,
+        boh_state: updatedSession.bohState,
+        session_start_time: updatedSession.sessionStartTime ? new Date(updatedSession.sessionStartTime).toISOString() : null,
+        session_timer: updatedSession.sessionTimer,
+        metadata: {
+          ...updatedSession.metadata,
+          lastAction: action.type,
+          lastActionTime: new Date().toISOString(),
+          lastActor: currentUser.name
+        }
+      };
+
+      const response = await fetch('/api/sessions-supabase', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sessionId: id,
+          updates: updateData
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update session');
       }
 
       // Log the action for audit
