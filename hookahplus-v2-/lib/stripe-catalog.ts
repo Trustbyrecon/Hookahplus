@@ -106,7 +106,7 @@ export const HOOKAH_CATALOG = {
       metadata: {
         category: 'bundle',
         targetAudience: 'couples',
-        includes: ['2_sessions', 'premium_flavors', 'dessert']
+        includes: '2_sessions,premium_flavors,dessert'
       }
     },
     {
@@ -117,7 +117,7 @@ export const HOOKAH_CATALOG = {
       metadata: {
         category: 'bundle',
         targetAudience: 'groups',
-        includes: ['4_sessions', 'variety_pack', 'appetizers']
+        includes: '4_sessions,variety_pack,appetizers'
       }
     },
     {
@@ -143,8 +143,8 @@ export const HOOKAH_CATALOG = {
       metadata: {
         category: 'membership',
         tier: 'bronze',
-        discount: 10,
-        benefits: ['10_percent_discount', 'priority_booking']
+        discount: '10',
+        benefits: '10_percent_discount,priority_booking'
       }
     },
     {
@@ -155,8 +155,8 @@ export const HOOKAH_CATALOG = {
       metadata: {
         category: 'membership',
         tier: 'silver',
-        discount: 20,
-        benefits: ['20_percent_discount', 'exclusive_flavors', 'priority_booking', 'free_refills']
+        discount: '20',
+        benefits: '20_percent_discount,exclusive_flavors,priority_booking,free_refills'
       }
     },
     {
@@ -167,8 +167,8 @@ export const HOOKAH_CATALOG = {
       metadata: {
         category: 'membership',
         tier: 'gold',
-        discount: 30,
-        benefits: ['30_percent_discount', 'exclusive_flavors', 'priority_booking', 'free_refills', 'private_booth_access']
+        discount: '30',
+        benefits: '30_percent_discount,exclusive_flavors,priority_booking,free_refills,private_booth_access'
       }
     }
   ]
@@ -363,7 +363,7 @@ export function calculateDynamicPrice(basePrice: number, context: {
   if (context.isMember && context.membershipTier) {
     const membership = HOOKAH_CATALOG.memberships.find(m => m.metadata.tier === context.membershipTier);
     if (membership) {
-      const discount = membership.metadata.discount / 100;
+      const discount = parseInt(membership.metadata.discount) / 100;
       price *= (1 - discount);
     }
   }

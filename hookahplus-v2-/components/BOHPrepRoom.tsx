@@ -165,7 +165,7 @@ const BOHPrepRoom = () => {
                         className={`p-4 rounded-lg border cursor-pointer transition-all hover:shadow-md ${
                           selectedSession?.id === session.id 
                             ? 'border-blue-500 bg-blue-50' 
-                            : session.metadata?.source === 'preorder'
+                            : session.meta?.source === 'preorder'
                             ? 'border-green-500 bg-green-50'
                             : 'border-gray-200 bg-white hover:border-gray-300'
                         }`}

@@ -25,7 +25,7 @@ const currentConfig = isLive ? stripeKeys.live : stripeKeys.test;
 
 // Initialize Stripe instance
 export const stripe = new Stripe(currentConfig.secretKey, {
-  apiVersion: '2024-06-20',
+  apiVersion: '2023-10-16',
   typescript: true,
 });
 

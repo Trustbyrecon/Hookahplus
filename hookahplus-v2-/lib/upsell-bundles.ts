@@ -215,6 +215,7 @@ export class UpsellBundles extends EventEmitter {
             days: [1, 2, 3, 4, 5] // Monday-Friday
           },
           occupancy: {
+            min: 0,
             max: 30 // Less than 30% occupancy
           }
         },
@@ -238,6 +239,7 @@ export class UpsellBundles extends EventEmitter {
             days: [0, 1, 2, 3, 4, 5, 6] // All days
           },
           occupancy: {
+            min: 0,
             max: 20 // Less than 20% occupancy
           }
         },

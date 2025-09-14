@@ -366,9 +366,9 @@ const FOHFloorDashboard = () => {
                 ) : (
                   <div className="space-y-3">
                     {/* Mobile QR Order Controls */}
-                    {selectedSession.source === 'mobile_qr' && (
+                    {selectedSession.meta?.source === 'mobile_qr' && (
                       <>
-                        {selectedSession.state === "WAITING" && (
+                        {selectedSession.state === "QUEUED_PREP" && (
                           <div className="space-y-3">
                             <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
                               <h3 className="font-medium text-purple-900 mb-2">Mobile QR Order</h3>
@@ -395,7 +395,7 @@ const FOHFloorDashboard = () => {
                                 }]);
                                 setSelectedSession({
                                   ...selectedSession,
-                                  state: 'PREP'
+                                  state: 'PREP_IN_PROGRESS'
                                 });
                               }}
                               className="w-full bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
@@ -405,7 +405,7 @@ const FOHFloorDashboard = () => {
                           </div>
                         )}
                         
-                        {selectedSession.state === "PREP" && (
+                        {selectedSession.state === "PREP_IN_PROGRESS" && (
                           <div className="space-y-3">
                             <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
                               <h3 className="font-medium text-green-900 mb-2">In Preparation</h3>

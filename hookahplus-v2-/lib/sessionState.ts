@@ -31,7 +31,17 @@ export type Session = {
   payment: { status: "started" | "confirmed" | "failed"; intentId?: string };
   timers: { heatUpStart?: number; deliveredAt?: number; expiresAt?: number };
   flags: { vip?: boolean; ageVerified?: boolean; allergy?: string | null };
-  meta: { createdBy: string; loungeId: string; trustLock?: string; customerId?: string };
+  meta: { 
+    createdBy: string; 
+    loungeId: string; 
+    trustLock?: string; 
+    customerId?: string; 
+    source?: string;
+    flavors?: string[];
+    totalAmount?: number;
+    specialInstructions?: string;
+    estimatedPrepTime?: number;
+  };
   audit: Array<SessionEvent>;
 };
 
