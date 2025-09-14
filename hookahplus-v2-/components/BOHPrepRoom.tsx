@@ -9,12 +9,50 @@ const BOHPrepRoom = () => {
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState<Record<string, boolean>>({});
 
-  // Refresh sessions
-  const refreshSessions = () => {
+  // Refresh sessions and BOH orders
+  const refreshSessions = async () => {
+    // Get local sessions
     const allSessions = getAllSessions();
     const prepSessions = allSessions.filter(s => 
       ["PAID_CONFIRMED", "QUEUED_PREP", "PREP_IN_PROGRESS", "HEAT_UP", "READY_FOR_DELIVERY"].includes(s.state)
     );
+    
+    // Also fetch BOH delivery preparation orders
+    try {
+      const response = await fetch('/api/boh-delivery-prep');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.orders) {
+          // Convert BOH orders to session format for display
+          const bohSessions = data.orders.map((order: any) => ({
+            id: order.orderId,
+            table: order.tableId,
+            state: 'PREP_QUEUED' as any,
+            meta: {
+              customerId: order.orderDetails.customerInfo.name,
+              phone: order.orderDetails.customerInfo.phone,
+              email: order.orderDetails.customerInfo.email,
+              flavors: order.orderDetails.flavors,
+              totalAmount: order.orderDetails.totalAmount,
+              source: 'preorder',
+              specialInstructions: order.orderDetails.specialInstructions,
+              estimatedPrepTime: order.orderDetails.estimatedPrepTime
+            },
+            timers: {
+              createdAt: new Date(order.orderDetails.createdAt).getTime(),
+              estimatedCompletionTime: new Date(order.orderDetails.estimatedCompletionTime).getTime()
+            }
+          }));
+          
+          // Merge with existing sessions
+          setSessions([...prepSessions, ...bohSessions]);
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch BOH orders:', error);
+    }
+    
     setSessions(prepSessions);
   };
 
@@ -127,6 +165,8 @@ const BOHPrepRoom = () => {
                         className={`p-4 rounded-lg border cursor-pointer transition-all hover:shadow-md ${
                           selectedSession?.id === session.id 
                             ? 'border-blue-500 bg-blue-50' 
+                            : session.meta?.source === 'preorder'
+                            ? 'border-green-500 bg-green-50'
                             : 'border-gray-200 bg-white hover:border-gray-300'
                         }`}
                         onClick={() => setSelectedSession(session)}
@@ -153,6 +193,30 @@ const BOHPrepRoom = () => {
                         {session.meta.customerId && (
                           <div className="mt-2 text-sm text-gray-600">
                             Customer: {session.meta.customerId}
+                            {session.meta.source === 'preorder' && (
+                              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                📱 Pre-order
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        
+                        {session.meta?.source === 'preorder' && (
+                          <div className="mt-2 space-y-1">
+                            <div className="text-sm text-gray-600">
+                              <strong>Order Details:</strong> {session.meta.flavors?.join(', ')} 
+                              {session.meta.totalAmount && ` - $${(session.meta.totalAmount / 100).toFixed(2)}`}
+                            </div>
+                            {session.meta.specialInstructions && (
+                              <div className="text-xs text-green-600">
+                                📝 {session.meta.specialInstructions}
+                              </div>
+                            )}
+                            {session.meta.estimatedPrepTime && (
+                              <div className="text-xs text-blue-600">
+                                ⏱️ Est. Prep Time: {session.meta.estimatedPrepTime} minutes
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>

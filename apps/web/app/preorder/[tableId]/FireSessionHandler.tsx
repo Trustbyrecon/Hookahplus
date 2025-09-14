@@ -79,17 +79,20 @@ export default function FireSessionHandler({
         }
       };
 
-      console.log('🔥 Creating Fire Session with data:', sessionData);
+      console.log('🔥 Creating Fire Session with Reflexive Orchestration (Hi Trust):', sessionData);
 
-      // Create the session via API
-      const response = await fetch('/api/fire-session', {
+      // REFLEXIVE ORCHESTRATION: Create comprehensive session with BOH delivery preparation
+      const sessionId = `session_${tableId}_${Date.now()}`;
+      
+      // Step 1: Create Fire Session
+      const fireSessionResponse = await fetch('/api/fire-session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           action: 'create',
-          sessionId: `session_${tableId}_${Date.now()}`,
+          sessionId,
           tableId,
           flavorMix: {
             flavors,
@@ -101,17 +104,48 @@ export default function FireSessionHandler({
         })
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
+      if (!fireSessionResponse.ok) {
+        const errorData = await fireSessionResponse.json();
         throw new Error(errorData.error || 'Failed to create Fire Session');
       }
 
-      const result = await response.json();
-      const sessionId = result.session.id;
-
+      const fireSessionResult = await fireSessionResponse.json();
       console.log('✅ Fire Session created:', sessionId);
 
-      // Also create a session in the session state system
+      // Step 2: Create BOH Delivery Preparation Order
+      const bohOrderResponse = await fetch('/api/boh-delivery-prep', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sessionId,
+          tableId,
+          orderDetails: {
+            items: sessionData.selectedItems,
+            flavors: sessionData.flavors,
+            totalAmount: sessionData.totalAmount,
+            customerInfo: sessionData.customerInfo,
+            orderTime: sessionData.metadata.orderTime,
+            priority: 'normal',
+            estimatedPrepTime: 15, // minutes
+            specialInstructions: 'Pre-order station order - prioritize for delivery'
+          },
+          deliveryInstructions: {
+            tableLocation: tableId,
+            customerName: sessionData.customerInfo.name,
+            estimatedDeliveryTime: new Date(Date.now() + 15 * 60000).toISOString(),
+            staffNotes: `Pre-order: ${sessionData.selectedItems.length} items, ${sessionData.flavors.length} hookah flavors`
+          }
+        })
+      });
+
+      if (bohOrderResponse.ok) {
+        const bohOrder = await bohOrderResponse.json();
+        console.log('✅ BOH Delivery Preparation Order created:', bohOrder.orderId);
+      }
+
+      // Step 3: Create Session State for BOH/FOH Integration
       await createSessionState(sessionData, sessionId);
 
       // Navigate to Fire Session Dashboard with session data
