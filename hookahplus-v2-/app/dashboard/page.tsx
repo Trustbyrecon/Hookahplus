@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import GlobalNavigation from "../../components/GlobalNavigation";
+import RealTimeDataLoader from "../../components/RealTimeDataLoader";
 import { designSystem, applyDesignToken } from "../../lib/designSystem";
 
 // AI Agent Collaboration Interface
@@ -315,6 +316,26 @@ const UnifiedDashboard = () => {
             </div>
           </div>
         </div>
+
+        {/* Real-Time Data Loader */}
+        <RealTimeDataLoader
+          onDataLoaded={(data) => {
+            console.log('Real-time data loaded:', data);
+            // Update dashboard state with real-time data
+            setDashboardState(prev => ({
+              ...prev,
+              dataStatus: 'flowing',
+              nextAction: `📊 Real-time data flowing: ${data.sessions.length} sessions, ${data.alerts.length} alerts`
+            }));
+          }}
+          onFireSession={(tableId, flavor) => {
+            console.log(`Fire session triggered: ${tableId} - ${flavor}`);
+            setDashboardState(prev => ({
+              ...prev,
+              nextAction: `🔥 Fire session triggered for ${tableId} - ${flavor}`
+            }));
+          }}
+        />
 
         {/* Control Actions */}
         <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-6 mb-8">
