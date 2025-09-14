@@ -22,7 +22,7 @@
     "paths": {
       "@/*": ["../../*"]
     },
-    "types": ["node", "react", "react-dom"],
+    "types": ["node", "react", "react-dom", "next"],
     "typeRoots": ["./node_modules/@types", "../../node_modules/@types"]
   },
   "include": [
@@ -31,7 +31,8 @@
     "**/*.ts",
     "**/*.tsx",
     "../../lib/**/*.ts",
-    "../../components/**/*.tsx"
+    "../../components/BOHPrepRoom.tsx",
+    "../../components/FOHFloorDashboard.tsx"
   ],
   "exclude": [
     "node_modules"
