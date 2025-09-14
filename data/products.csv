@@ -1,0 +1,12 @@
+product_type,product_name,description,price_cents,metadata,stripe_product_id,stripe_price_id
+session,30min_hookah_session,30-minute hookah session with base setup,3000,"{""duration_minutes"": 30, ""includes"": [""hookah"", ""coals"", ""base_setup""]}",,
+session,60min_hookah_session,60-minute hookah session with base setup,5000,"{""duration_minutes"": 60, ""includes"": [""hookah"", ""coals"", ""base_setup""]}",,
+session,90min_hookah_session,90-minute hookah session with base setup,7000,"{""duration_minutes"": 90, ""includes"": [""hookah"", ""coals"", ""base_setup""]}",,
+addon,flavor_addon,Additional flavor for current session,1500,"{""type"": ""flavor"", ""reusable"": true, ""max_per_session"": 5}",,
+addon,premium_coals,Premium coconut coals upgrade,500,"{""type"": ""coal_upgrade"", ""reusable"": true}",,
+addon,extra_hookah,Additional hookah for table,2000,"{""type"": ""equipment"", ""requires_table"": true}",,
+service,refill_request,Staff refill service request,0,"{""type"": ""service"", ""sla_minutes"": 5, ""tracking"": true}",,
+service,session_extension,Extend current session by 20 minutes,1000,"{""type"": ""extension"", ""duration_minutes"": 20, ""max_extensions"": 3}",,
+reservation,table_hold,Reserve table with $10 hold,1000,"{""type"": ""reservation"", ""refundable"": true, ""expires_hours"": 2}",,
+bundle,premium_session,60min session + 2 flavors + premium coals,8000,"{""type"": ""bundle"", ""includes"": [""60min_session"", ""2x_flavor"", ""premium_coals""]}",,
+bundle,vip_experience,90min session + 3 flavors + premium coals + priority service,12000,"{""type"": ""bundle"", ""includes"": [""90min_session"", ""3x_flavor"", ""premium_coals"", ""priority_service""]}",,
