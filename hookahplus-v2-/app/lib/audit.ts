@@ -8,7 +8,8 @@ export type AuditAction =
   | 'profile_accessed'
   | 'data_exported'
   | 'cross_venue_read'
-  | 'cross_venue_write';
+  | 'cross_venue_write'
+  | 'session_updated';
 
 export interface AuditLog {
   id: string;

@@ -286,7 +286,15 @@ export default function FireSessionDashboard() {
       }
 
       // Log the action for audit
-      logAction(currentUser, action, previousSession, updatedSession);
+      logAction('session_updated', {
+        actorId: currentUser.id,
+        role: currentUser.role.toLowerCase() as 'staff' | 'admin' | 'guest'
+      }, {
+        sessionId: id,
+        action: action,
+        previousState: previousSession,
+        newState: updatedSession
+      });
 
       // Update the sessions array
       const newSessions = [...sessions];

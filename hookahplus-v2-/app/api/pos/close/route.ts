@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { makePosAdapter } from "@/lib/pos/factory";
+import { ExternalTender } from "@/lib/pos/types";
 import { z } from "zod";
 
 const schema = z.object({
@@ -11,7 +12,7 @@ const schema = z.object({
     reference: z.string(),
     amount: z.number(),
     currency: z.literal("USD")
-  }).optional()
+  }).strict()
 });
 
 export async function POST(req: NextRequest) {
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
 
     // Create POS adapter and close order
     const adapter = makePosAdapter(provider, venue_id);
-    await adapter.closeOrder(pos_order_id, tender);
+    await adapter.closeOrder(pos_order_id, tender as ExternalTender);
     
     return NextResponse.json({
       success: true,

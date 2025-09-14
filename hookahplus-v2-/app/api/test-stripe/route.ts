@@ -29,8 +29,8 @@ export async function GET(request: NextRequest) {
     }
     
     // Test Stripe connection
-    const stripe = new Stripe(stripeSecretKey, {
-      apiVersion: '2024-06-20',
+    const stripe = new Stripe(stripeSecretKey, { 
+      apiVersion: '2023-10-16',
     });
     
     // Try to retrieve account info (this will test the connection)

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { makePosAdapter } from "@/lib/pos/factory";
+import { HpItem } from "@/lib/pos/types";
 import { z } from "zod";
 
 const schema = z.object({
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
 
     // Create POS adapter and upsert items
     const adapter = makePosAdapter(provider, venue_id);
-    await adapter.upsertItems(pos_order_id, items);
+    await adapter.upsertItems(pos_order_id, items as HpItem[]);
     
     return NextResponse.json({
       success: true,

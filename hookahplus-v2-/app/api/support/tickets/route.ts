@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 interface SupportTicket {
+  id?: string;
   name: string;
   email: string;
   subject: string;
