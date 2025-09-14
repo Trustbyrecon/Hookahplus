@@ -10,10 +10,22 @@ package-lock.json
 
 # Environment files
 .env
-.env.production
+.env.*
+*.env
+apps/*/.env
+apps/*/.env.*
 *.log
 /logs/
 /.env.*
+
+# secrets
+.env
+.env.*
+*.env
+apps/*/.env
+apps/*/.env.*
+*.key
+*.pem
 
 # Local Netlify folder
 .netlify
