@@ -27,12 +27,11 @@ export default function MobileQRGenerator({ onOrderCreated }: MobileQRGeneratorP
         partySize: Math.floor(Math.random() * 4) + 1
       };
 
-      // Simulate API call to floor queue
-      const response = await fetch('/api/floor-queue', {
+      // Call mobile QR API
+      const response = await fetch('/api/mobile-qr', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'add-to-queue',
           tableId: mobileOrder.tableId,
           customerName: mobileOrder.customerName,
           partySize: mobileOrder.partySize,
