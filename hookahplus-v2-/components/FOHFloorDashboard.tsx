@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { sessionCommands } from "@/lib/cmd";
 import { getSession, getAllSessions, type Session, type SessionState } from "@/lib/sessionState";
+import MobileQRGenerator from "./MobileQRGenerator";
 
 const FOHFloorDashboard = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -116,43 +117,12 @@ const FOHFloorDashboard = () => {
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Floor Dashboard</h1>
               <p className="text-gray-600">Front of House - Customer Delivery & Table Management</p>
             </div>
-            <button
-              onClick={() => {
-                // Generate mobile QR demo data
-                const mobileOrder = {
-                  id: `mobile_${Date.now()}`,
-                  tableId: `T-${Math.floor(Math.random() * 10) + 1}`,
-                  flavor: ['Double Apple', 'Mint', 'Strawberry', 'Grape'][Math.floor(Math.random() * 4)],
-                  amount: 2500 + Math.floor(Math.random() * 2000),
-                  status: 'paid',
-                  createdAt: Date.now(),
-                  customerName: `Mobile Customer ${Math.floor(Math.random() * 100)}`,
-                  customerId: `cust_${Math.floor(Math.random() * 1000)}`
-                };
-                
-                // Create a new session for this mobile order
-                const sessionId = `mobile_${mobileOrder.tableId}_${Date.now()}`;
-                fetch(`/api/sessions/${sessionId}/command`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ 
-                    cmd: "PAYMENT_CONFIRMED",
-                    data: { 
-                      table: mobileOrder.tableId,
-                      customerId: mobileOrder.customerId,
-                      flavor: mobileOrder.flavor,
-                      amount: mobileOrder.amount
-                    }
-                  })
-                }).then(() => {
-                  alert(`Mobile QR order created for ${mobileOrder.tableId}! Check the floor queue.`);
-                  refreshSessions();
-                });
+            <MobileQRGenerator 
+              onOrderCreated={(order) => {
+                console.log('Mobile QR order created:', order);
+                refreshSessions();
               }}
-              className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"
-            >
-              📱 Generate Mobile QR
-            </button>
+            />
           </div>
         </div>
 
