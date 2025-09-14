@@ -4,7 +4,7 @@
  * This script creates a test session in BOH and tests the complete workflow
  */
 
-const fetch = require('node-fetch');
+// Using built-in fetch (Node.js 18+)
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hookahplus.net';
 
