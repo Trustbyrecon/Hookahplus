@@ -50,7 +50,7 @@ const navigationGroups: NavigationGroup[] = [
   }
 ];
 
-const GlobalNavigation: React.FC = () => {
+const GlobalNavigation = () => {
   const pathname = usePathname();
   const [activeGroup, setActiveGroup] = useState<NavigationGroup | null>(null);
   const [sessionCount, setSessionCount] = useState(0);
