@@ -1,0 +1,11 @@
+lookup_key,name,description,unit_amount,currency,type,tier,duration_minutes,flavors_included,refill_included
+price_hookah_session_base,Hookah Session Base,90-minute base hookah session,2100,usd,session,base,90,1,0
+price_hookah_session_premium,Hookah Session Premium,90-minute premium hookah session with 2 flavors,2900,usd,session,premium,90,2,1
+price_hookah_session_vip,Hookah Session VIP,90-minute VIP hookah session with premium flavors,4500,usd,session,vip,90,3,2
+price_flavor_addon,Flavor Add-on,Additional flavor for existing session,300,usd,addon,,0,1,0
+price_coal_refill,Coal Refill,Refill coals for session,600,usd,service,,0,0,1
+price_extended_time_20m,Extended Time 20min,Add 20 minutes to session,1000,usd,service,,20,0,0
+price_table_reservation_hold,Table Reservation Hold,Reserve table with $10 hold,1000,usd,service,,0,0,0
+price_hp_plan_starter,Starter Plan,Basic venue management,4900,usd,subscription,,0,0,0
+price_hp_plan_pro,Pro Plan,Advanced venue management with analytics,14900,usd,subscription,,0,0,0
+price_hp_plan_business,Business Plan,Full venue management suite,39900,usd,subscription,,0,0,0

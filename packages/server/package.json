@@ -1,0 +1,14 @@
+{
+  "name": "@hookahplus/server",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.js",
+  "types": "index.d.ts",
+  "dependencies": {
+    "stripe": "^14.21.0",
+    "@supabase/supabase-js": "^2.39.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  }
+}
