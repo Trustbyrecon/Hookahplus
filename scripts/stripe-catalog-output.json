@@ -1,0 +1,46 @@
+{
+  "products": [],
+  "prices": [],
+  "errors": [
+    {
+      "product": "Hookah Session Base",
+      "error": "Invalid API Key provided: sk_test_****************9..."
+    },
+    {
+      "product": "Hookah Session Premium",
+      "error": "Invalid API Key provided: sk_test_****************9..."
+    },
+    {
+      "product": "Hookah Session VIP",
+      "error": "Invalid API Key provided: sk_test_****************9..."
+    },
+    {
+      "product": "Flavor Add-on",
+      "error": "Invalid API Key provided: sk_test_****************9..."
+    },
+    {
+      "product": "Coal Refill",
+      "error": "Invalid API Key provided: sk_test_****************9..."
+    },
+    {
+      "product": "Extended Time 20min",
+      "error": "Invalid API Key provided: sk_test_****************9..."
+    },
+    {
+      "product": "Table Reservation Hold",
+      "error": "Invalid API Key provided: sk_test_****************9..."
+    },
+    {
+      "product": "Starter Plan",
+      "error": "Invalid API Key provided: sk_test_****************9..."
+    },
+    {
+      "product": "Pro Plan",
+      "error": "Invalid API Key provided: sk_test_****************9..."
+    },
+    {
+      "product": "Business Plan",
+      "error": "Invalid API Key provided: sk_test_****************9..."
+    }
+  ]
+}
