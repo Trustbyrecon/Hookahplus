@@ -1,6 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createPaymentIntent } from '@hookahplus/server/stripe';
-import { supaAdmin } from '@hookahplus/server/supabase';
+import Stripe from 'stripe';
+import { createClient } from '@supabase/supabase-js';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { 
+  apiVersion: '2024-06-20' 
+});
+
+const supaAdmin = createClient(
+  process.env.SUPABASE_URL!, 
+  process.env.SUPABASE_ANON_KEY!, 
+  {
+    auth: { persistSession: false }
+  }
+);
+
+async function createPaymentIntent({
+  amount,
+  currency = 'usd',
+  captureMethod = 'automatic',
+  metadata
+}: {
+  amount: number;
+  currency?: string;
+  captureMethod?: 'automatic' | 'manual';
+  metadata: Record<string, string>;
+}) {
+  return await stripe.paymentIntents.create({
+    amount,
+    currency,
+    capture_method: captureMethod,
+    metadata
+  });
+}
 
 export async function POST(req: NextRequest) {
   try {

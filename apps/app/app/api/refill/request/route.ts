@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supaAdmin } from '@hookahplus/server/supabase';
+import { createClient } from '@supabase/supabase-js';
+
+const supaAdmin = createClient(
+  process.env.SUPABASE_URL!, 
+  process.env.SUPABASE_ANON_KEY!, 
+  {
+    auth: { persistSession: false }
+  }
+);
 
 export async function POST(req: NextRequest) {
   try {

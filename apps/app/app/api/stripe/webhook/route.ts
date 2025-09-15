@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { stripe } from '@hookahplus/server/stripe';
-import { supaAdmin } from '@hookahplus/server/supabase';
+import Stripe from 'stripe';
+import { createClient } from '@supabase/supabase-js';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { 
+  apiVersion: '2024-06-20' 
+});
+
+const supaAdmin = createClient(
+  process.env.SUPABASE_URL!, 
+  process.env.SUPABASE_ANON_KEY!, 
+  {
+    auth: { persistSession: false }
+  }
+);
 
 export async function POST(req: NextRequest) {
   const sig = req.headers.get('stripe-signature')!;

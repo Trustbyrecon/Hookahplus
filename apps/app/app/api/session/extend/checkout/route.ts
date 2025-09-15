@@ -1,5 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fetchPriceByLookup, createCheckoutSession } from '@hookahplus/server/stripe';
+import Stripe from 'stripe';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { 
+  apiVersion: '2024-06-20' 
+});
+
+async function fetchPriceByLookup(lookupKey: string) {
+  const r = await stripe.prices.list({ 
+    lookup_keys: [lookupKey], 
+    expand: ['data.product'], 
+    limit: 1 
+  });
+  if (!r.data[0]) throw new Error(`Price not found for ${lookupKey}`);
+  return r.data[0];
+}
+
+async function createCheckoutSession({
+  mode = 'payment',
+  lineItems,
+  metadata,
+  successUrl,
+  cancelUrl,
+  customerEmail
+}: {
+  mode?: 'payment' | 'subscription';
+  lineItems: Stripe.Checkout.SessionCreateParams.LineItem[];
+  metadata: Record<string, string>;
+  successUrl: string;
+  cancelUrl: string;
+  customerEmail?: string;
+}) {
+  return await stripe.checkout.sessions.create({
+    mode,
+    line_items: lineItems,
+    metadata,
+    success_url: successUrl,
+    cancel_url: cancelUrl,
+    customer_email: customerEmail,
+  });
+}
 
 export async function POST(req: NextRequest) {
   try {
