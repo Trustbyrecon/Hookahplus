@@ -133,10 +133,6 @@ export class AliethiaIdentity {
     return profile;
   }
 
-  private getProfile(profileId: string): Profile | undefined {
-    return this.profiles.get(profileId);
-  }
-
   private saveProfile(profile: Profile): void {
     this.profiles.set(profile.id, profile);
     // In production, this would save to database
