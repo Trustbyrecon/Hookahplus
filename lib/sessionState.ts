@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-=======
 // lib/sessionState.ts
->>>>>>> 076f5b4944bb4d1a7c37cd5caa69740b3cb806df
 export type SessionState =
   | "NEW"
   | "PAID_PENDING_AUTH"
@@ -34,11 +31,7 @@ export type Session = {
   payment: { status: "started" | "confirmed" | "failed"; intentId?: string };
   timers: { heatUpStart?: number; deliveredAt?: number; expiresAt?: number };
   flags: { vip?: boolean; ageVerified?: boolean; allergy?: string | null };
-<<<<<<< HEAD
-  meta: { createdBy: string; loungeId: string; trustLock?: string };
-=======
   meta: { createdBy: string; loungeId: string; trustLock?: string; customerId?: string };
->>>>>>> 076f5b4944bb4d1a7c37cd5caa69740b3cb806df
   audit: Array<SessionEvent>;
 };
 
@@ -88,14 +81,6 @@ export function putSession(s: Session) {
   return s;
 }
 
-<<<<<<< HEAD
-export function getAllSessions(): Session[] {
-  return Array.from(store.values());
-}
-
-export function getSessionsByState(state: SessionState): Session[] {
-  return getAllSessions().filter(s => s.state === state);
-=======
 export function getAllSessions() {
   return Array.from(store.values());
 }
@@ -106,7 +91,6 @@ export function getSessionsByState(state: SessionState) {
 
 export function getSessionsByTable(table: string) {
   return Array.from(store.values()).filter(s => s.table === table);
->>>>>>> 076f5b4944bb4d1a7c37cd5caa69740b3cb806df
 }
 
 // seed helper (for local testing)
@@ -127,8 +111,6 @@ export function seedSession(id = "sess_demo", table = "T-12") {
   return getSession(id)!;
 }
 
-<<<<<<< HEAD
-=======
 // Generate multiple demo sessions for testing
 export function seedMultipleSessions() {
   const tables = ["T-1", "T-2", "T-3", "T-4", "T-5", "T-6", "T-7", "T-8", "T-9", "T-10"];
@@ -197,8 +179,6 @@ export function getSessionsByStatus() {
   
   return statusCounts;
 }
-
->>>>>>> 076f5b4944bb4d1a7c37cd5caa69740b3cb806df
 // ---------------- Transition map ----------------
 const allowed: Record<SessionState, Partial<Record<Command, SessionState>>> = {
   NEW: {
@@ -306,8 +286,6 @@ export function reduce(session: Session, cmd: Command, actor: ActorRole, data: a
   if (cmd === "ADD_COAL_SWAP") {
     // you'd enqueue a coal task here
   }
-<<<<<<< HEAD
-=======
   if (cmd === "PAYMENT_CONFIRMED") {
     // Update payment status and session data
     session.payment.status = "confirmed";
@@ -320,7 +298,6 @@ export function reduce(session: Session, cmd: Command, actor: ActorRole, data: a
       session.payment.intentId = `intent_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     }
   }
->>>>>>> 076f5b4944bb4d1a7c37cd5caa69740b3cb806df
 
   session.state = to;
 
@@ -339,63 +316,3 @@ export function reduce(session: Session, cmd: Command, actor: ActorRole, data: a
 
   return session;
 }
-<<<<<<< HEAD
-
-// ---------------- Utility functions ----------------
-export function getAvailableCommands(state: SessionState): Command[] {
-  return Object.keys(allowed[state] || {}) as Command[];
-}
-
-export function getStateDisplayName(state: SessionState): string {
-  const names: Record<SessionState, string> = {
-    NEW: "New Session",
-    PAID_PENDING_AUTH: "Payment Pending",
-    PAID_CONFIRMED: "Payment Confirmed",
-    QUEUED_PREP: "Queued for Prep",
-    PREP_IN_PROGRESS: "Prep in Progress",
-    HEAT_UP: "Heating Up",
-    READY_FOR_DELIVERY: "Ready for Delivery",
-    OUT_FOR_DELIVERY: "Out for Delivery",
-    DELIVERED: "Delivered",
-    ACTIVE: "Active Session",
-    CLOSE_PENDING: "Closing Session",
-    CLOSED: "Session Closed",
-    FAILED_PAYMENT: "Payment Failed",
-    STOCK_BLOCKED: "Stock Blocked",
-    REMAKE_REQUESTED: "Remake Requested",
-    RELOCATE_TABLE: "Table Relocated",
-    STAFF_HOLD: "Staff Hold",
-    REFUND_REQUESTED: "Refund Requested",
-    REFUNDED: "Refunded",
-    VOIDED: "Voided",
-  };
-  return names[state] || state;
-}
-
-export function getStateColor(state: SessionState): string {
-  const colors: Record<SessionState, string> = {
-    NEW: "bg-gray-100 text-gray-800",
-    PAID_PENDING_AUTH: "bg-yellow-100 text-yellow-800",
-    PAID_CONFIRMED: "bg-blue-100 text-blue-800",
-    QUEUED_PREP: "bg-orange-100 text-orange-800",
-    PREP_IN_PROGRESS: "bg-purple-100 text-purple-800",
-    HEAT_UP: "bg-red-100 text-red-800",
-    READY_FOR_DELIVERY: "bg-green-100 text-green-800",
-    OUT_FOR_DELIVERY: "bg-indigo-100 text-indigo-800",
-    DELIVERED: "bg-emerald-100 text-emerald-800",
-    ACTIVE: "bg-teal-100 text-teal-800",
-    CLOSE_PENDING: "bg-amber-100 text-amber-800",
-    CLOSED: "bg-slate-100 text-slate-800",
-    FAILED_PAYMENT: "bg-red-100 text-red-800",
-    STOCK_BLOCKED: "bg-orange-100 text-orange-800",
-    REMAKE_REQUESTED: "bg-pink-100 text-pink-800",
-    RELOCATE_TABLE: "bg-cyan-100 text-cyan-800",
-    STAFF_HOLD: "bg-yellow-100 text-yellow-800",
-    REFUND_REQUESTED: "bg-rose-100 text-rose-800",
-    REFUNDED: "bg-gray-100 text-gray-800",
-    VOIDED: "bg-slate-100 text-slate-800",
-  };
-  return colors[state] || "bg-gray-100 text-gray-800";
-}
-=======
->>>>>>> 076f5b4944bb4d1a7c37cd5caa69740b3cb806df
