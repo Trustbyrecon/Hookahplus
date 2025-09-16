@@ -119,11 +119,7 @@ export default function Checkout() {
         });
       }
 
-      // Simulate Stripe confirmation instead of real redirect
-      await simulateStripeConfirmation();
-      
-      // Original Stripe logic (commented out for simulation)
-      /*
+      // Create real Stripe checkout session
       const res = await fetch("/api/checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -131,16 +127,17 @@ export default function Checkout() {
           tableId: tableId, 
           flavor: flavor, 
           amount: amount,
-          sessionId: sessionId 
+          sessionTier: 'base' // Default to base tier
         }),
       });
+      
       const json = await res.json();
       if (!json.id) throw new Error(json.error || "No session");
 
+      // Redirect to Stripe Checkout
       const stripe = await stripePromise;
       const { error } = await stripe!.redirectToCheckout({ sessionId: json.id });
       if (error) throw error;
-      */
       
     } catch (e: any) {
       setMsg(e.message ?? "Payment failed");

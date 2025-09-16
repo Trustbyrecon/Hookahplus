@@ -1,25 +1,27 @@
 {
   "name": "hookahplus-monorepo",
+  "version": "0.1.0",
   "private": true,
-  "packageManager": "pnpm@10.0.0",
+  "packageManager": "pnpm@9.15.9",
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
-  "dependencies": {
-    "@prisma/client": "^5.7.1"
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean",
+    "stripe:seed": "node scripts/stripe-catalog/seed.js"
   },
   "devDependencies": {
-    "@types/node": "^24.3.0",
-    "prisma": "^5.7.1",
-    "ts-node": "^10.9.2",
-    "turbo": "2.0.6"
+    "@types/node": "^20.0.0",
+    "turbo": "^2.0.6",
+    "typescript": "^5.0.0"
   },
-  "scripts": {
-    "dev": "turbo run dev --parallel",
-    "build": "turbo run build"
-  },
-  "prisma": {
-    "seed": "ts-node prisma/seed.ts"
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.3",
+    "dotenv": "^17.2.2",
+    "stripe": "^14.21.0"
   }
 }

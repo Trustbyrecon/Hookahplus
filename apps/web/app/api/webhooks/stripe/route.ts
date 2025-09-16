@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 import Stripe from "stripe";
 import { prisma } from "../../../../lib/prisma";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder');
 
 async function readRawBody(req: Request): Promise<string> {
   return req.text();
@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     let event: Stripe.Event;
 
     try {
-      event = stripe.webhooks.constructEvent(raw, sig, process.env.STRIPE_WEBHOOK_SECRET!);
+      event = stripe.webhooks.constructEvent(raw, sig, process.env.STRIPE_WEBHOOK_SECRET || 'whsec_placeholder');
     } catch (err: any) {
       return Response.json(`Webhook Error: ${err.message}`, { status: 400 });
     }

@@ -1,0 +1,90 @@
+### HookahPlus MVP API Tests
+### Base URLs - Update these with your actual Vercel preview URLs
+@base_url = https://app.hookahplus.net
+@guest_url = https://guest.hookahplus.net
+@venue_id = 550e8400-e29b-41d4-a716-446655440000
+@table_id = table_1
+
+### 1. Start a new session
+POST {{base_url}}/api/session/start
+Content-Type: application/json
+
+{
+  "venue_id": "{{venue_id}}",
+  "table_id": "{{table_id}}",
+  "tier": "base",
+  "flavors": ["mint", "apple"]
+}
+
+### 2. Extend session (staff side)
+POST {{base_url}}/api/session/extend/checkout
+Content-Type: application/json
+
+{
+  "session_id": "REPLACE_WITH_ACTUAL_SESSION_ID",
+  "extension_minutes": 20
+}
+
+### 3. Request refill
+POST {{base_url}}/api/refill/request
+Content-Type: application/json
+
+{
+  "session_id": "REPLACE_WITH_ACTUAL_SESSION_ID",
+  "venue_id": "{{venue_id}}"
+}
+
+### 4. Complete refill
+POST {{base_url}}/api/refill/complete
+Content-Type: application/json
+
+{
+  "refill_id": "REPLACE_WITH_ACTUAL_REFILL_ID"
+}
+
+### 5. Guest extend session (payment flow)
+POST {{guest_url}}/api/session/extend
+Content-Type: application/json
+
+{
+  "session_id": "REPLACE_WITH_ACTUAL_SESSION_ID",
+  "extension_minutes": 20
+}
+
+### 6. Test Stripe webhook (App)
+POST {{base_url}}/api/stripe/webhook
+Content-Type: application/json
+Stripe-Signature: t=1234567890,v1=test_signature
+
+{
+  "id": "evt_test_webhook",
+  "object": "event",
+  "type": "payment_intent.succeeded",
+  "data": {
+    "object": {
+      "id": "pi_test_123",
+      "amount": 2100,
+      "currency": "usd",
+      "status": "succeeded"
+    }
+  }
+}
+
+### 7. Test Stripe webhook (Guest)
+POST {{guest_url}}/api/stripe/webhook
+Content-Type: application/json
+Stripe-Signature: t=1234567890,v1=test_signature
+
+{
+  "id": "evt_test_webhook",
+  "object": "event",
+  "type": "payment_intent.succeeded",
+  "data": {
+    "object": {
+      "id": "pi_test_123",
+      "amount": 1000,
+      "currency": "usd",
+      "status": "succeeded"
+    }
+  }
+}

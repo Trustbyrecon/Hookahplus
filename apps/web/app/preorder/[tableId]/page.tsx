@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import FireSessionHandler from './FireSessionHandler';
 
 interface PreOrderItem {
   id: string;
@@ -33,6 +34,7 @@ export default function PreOrderTablePage() {
   const [selectedItems, setSelectedItems] = useState<PreOrderItem[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>('hookah');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [testMode, setTestMode] = useState(false);
 
   // Generate demo data
   useEffect(() => {
@@ -159,31 +161,47 @@ export default function PreOrderTablePage() {
   };
 
   const getTotalPrice = () => {
+    if (testMode) {
+      return 100; // $1.00 for testing
+    }
     return selectedItems.reduce((sum, item) => sum + item.price, 0);
   };
 
   const handleSubmitOrder = async () => {
+    if (selectedItems.length === 0) return;
+    
     setIsSubmitting(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setIsSubmitting(false);
     
-    // Create session in Fire Session Dashboard
-    const sessionData = {
-      tableId: tableId,
-      customerName: 'John Smith', // In real app, this would come from form
-      flavor: selectedItems.map(item => item.name).join(' + '),
-      amount: getTotalPrice(),
-      status: 'PAID_CONFIRMED',
-      currentStage: 'BOH',
-      notes: `Pre-order from T-${tableId}: ${selectedItems.map(item => item.name).join(', ')}`
-    };
-    
-    // In a real app, this would call an API to create the session
-    console.log('Creating Fire Session:', sessionData);
-    
-    // Redirect to Fire Session Dashboard
-    window.location.href = `/fire-session-dashboard?newSession=true&tableId=${tableId}`;
+    try {
+      // Create Stripe checkout session
+      const response = await fetch('/api/checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          tableId: tableId,
+          flavor: selectedItems.map(item => item.name).join(' + '),
+          amount: getTotalPrice(),
+          sessionTier: 'base' // Default tier for pre-orders
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      // Redirect to Stripe checkout
+      window.location.href = data.url;
+      
+    } catch (error) {
+      console.error('Checkout error:', error);
+      alert(`Payment processing error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getTableStatusColor = (status: string) => {
@@ -208,6 +226,17 @@ export default function PreOrderTablePage() {
                 <p className="text-green-300 text-sm">
                   <strong>Customer Interface:</strong> Browse menu, select items, and start your Fire Session
                 </p>
+                <div className="mt-2 flex items-center gap-2">
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={testMode}
+                      onChange={(e) => setTestMode(e.target.checked)}
+                      className="rounded"
+                    />
+                    <span className="text-yellow-300">🧪 Test Mode ($1.00)</span>
+                  </label>
+                </div>
               </div>
             </div>
             <div className="text-right">
@@ -358,7 +387,9 @@ export default function PreOrderTablePage() {
 
                   <div className="border-t border-zinc-700 pt-4">
                     <div className="flex items-center justify-between mb-4">
-                      <span className="text-lg font-semibold text-white">Total:</span>
+                      <span className="text-lg font-semibold text-white">
+                        Total: {testMode && <span className="text-yellow-300 text-sm">(Test Mode)</span>}
+                      </span>
                       <span className="text-2xl font-bold text-teal-400">
                         ${(getTotalPrice() / 100).toFixed(2)}
                       </span>
@@ -369,7 +400,7 @@ export default function PreOrderTablePage() {
                       disabled={isSubmitting || selectedItems.length === 0}
                       className="w-full bg-teal-600 hover:bg-teal-700 disabled:bg-zinc-600 text-white py-3 rounded-lg font-medium transition-colors"
                     >
-                      {isSubmitting ? 'Creating Fire Session...' : '🔥 Start Fire Session'}
+                      {isSubmitting ? 'Processing Payment...' : '💳 Pay with Stripe'}
                     </button>
                   </div>
                 </div>
@@ -380,12 +411,18 @@ export default function PreOrderTablePage() {
             <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-6">
               <h3 className="text-lg font-semibold text-teal-300 mb-4">Quick Actions</h3>
               <div className="space-y-3">
-                <Link
-                  href="/fire-session-dashboard"
-                  className="block w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg text-center transition-colors"
-                >
-                  🔥 Fire Session
-                </Link>
+                <FireSessionHandler
+                  tableId={tableId}
+                  selectedItems={selectedItems}
+                  customerInfo={{
+                    name: tableInfo?.customerName,
+                    phone: '+1 (555) 123-4567',
+                    email: 'customer@hookahplus.com'
+                  }}
+                  onSessionCreated={(sessionId) => {
+                    console.log('Fire Session created:', sessionId);
+                  }}
+                />
                 <Link
                   href="/staff-panel"
                   className="block w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg text-center transition-colors"

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import BOHPrepRoom from '@/components/BOHPrepRoom';
+import FOHFloorDashboard from '@/components/FOHFloorDashboard';
 // Use Web Crypto API instead of Node.js crypto for browser compatibility
 const generateIdempotencyKey = () => crypto.randomUUID();
 
@@ -710,6 +712,10 @@ export default function FireSessionDashboard() {
         {/* BOH Tab */}
         {activeTab === 'boh' && (
           <div className="space-y-6">
+            <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-6">
+              <h3 className="text-xl font-semibold text-blue-300 mb-4">👨‍🍳 Back of House Prep Room</h3>
+              <BOHPrepRoom />
+            </div>
             {bohSessions.map((session) => (
               <div key={session.id} className="bg-zinc-900 rounded-xl border border-zinc-800 p-6">
                 <div className="flex items-center justify-between mb-4">
@@ -937,6 +943,10 @@ export default function FireSessionDashboard() {
         {/* FOH Tab */}
         {activeTab === 'foh' && (
           <div className="space-y-6">
+            <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-6">
+              <h3 className="text-xl font-semibold text-green-300 mb-4">👥 Front of House Floor Dashboard</h3>
+              <FOHFloorDashboard />
+            </div>
             {fohSessions.map((session) => (
               <div key={session.id} className="bg-zinc-900 rounded-xl border border-zinc-800 p-6">
                 <div className="flex items-center justify-between mb-4">

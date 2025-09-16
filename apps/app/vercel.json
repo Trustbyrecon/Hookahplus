@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "buildCommand": "cd ../.. && pnpm build --filter=@hookahplus/app",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/$1"
+    }
+  ]
+}

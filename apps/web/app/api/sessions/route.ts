@@ -1,97 +1,88 @@
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic"; // disable Next caching of this route
+// apps/web/app/api/sessions/route.ts
+import { NextRequest, NextResponse } from 'next/server';
 
-import { prisma } from "../../../lib/prisma";
-import crypto from "crypto";
-
-const seal = (o: unknown) =>
-  crypto.createHash("sha256").update(JSON.stringify(o)).digest("hex");
-
-export async function GET(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const state = searchParams.get('state');
-    const loungeId = searchParams.get('loungeId');
-    const customerPhone = searchParams.get('customerPhone');
+    const body = await req.json();
+    const { sessionId, tableId, state, meta, timers } = body;
 
-    let whereClause: any = {};
-    
-    if (state) {
-      whereClause.state = state;
-    }
-    
-    if (loungeId) {
-      whereClause.loungeId = loungeId;
-    }
-    
-    if (customerPhone) {
-      whereClause.customerPhone = customerPhone;
+    console.log('📝 Creating session:', { sessionId, tableId, state, meta });
+
+    // Create session data
+    const session = {
+      id: sessionId,
+      table: tableId,
+      state: state || 'PAID_CONFIRMED',
+      meta: {
+        customerId: meta?.customerId || 'Customer',
+        phone: meta?.phone || '+1 (555) 123-4567',
+        email: meta?.email || 'customer@hookahplus.com',
+        flavors: meta?.flavors || ['Blue Mist'],
+        selectedItems: meta?.selectedItems || [],
+        totalAmount: meta?.totalAmount || 0,
+        source: meta?.source || 'preorder',
+        ...meta
+      },
+      timers: {
+        createdAt: timers?.createdAt || Date.now(),
+        paidAt: timers?.paidAt || Date.now(),
+        ...timers
+      }
+    };
+
+    // Store in session state (this would normally go to a database)
+    // For now, we'll use a simple in-memory store
+    if (typeof global !== 'undefined') {
+      if (!global.sessionStore) {
+        global.sessionStore = new Map();
+      }
+      global.sessionStore.set(sessionId, session);
     }
 
-    const sessions = await prisma.session.findMany({
-      where: whereClause,
-      include: { events: true },
-      orderBy: { createdAt: 'desc' }
+    console.log('✅ Session created and stored:', sessionId);
+
+    return NextResponse.json({ 
+      success: true, 
+      session,
+      message: 'Session created successfully'
     });
 
-    return Response.json({ 
-      success: true,
-      sessions,
-      count: sessions.length
-    }, { headers: { "Cache-Control": "no-store" } });
   } catch (error: any) {
-    return Response.json({ 
-      success: false, 
-      error: error.message 
-    }, { status: 500, headers: { "Cache-Control": "no-store" } });
+    console.error('❌ Error creating session:', error);
+    return NextResponse.json(
+      { error: error.message || 'Failed to create session' },
+      { status: 500 }
+    );
   }
 }
 
-export async function POST(req: Request) {
+export async function GET(req: NextRequest) {
   try {
-    const idempotencyKey = req.headers.get("x-idempotency-key") ?? "";
-    const { loungeId, source, externalRef, customerPhone, flavorMix } = await req.json();
+    const { searchParams } = new URL(req.url);
+    const sessionId = searchParams.get('sessionId');
 
-    if (!loungeId || !source || !externalRef) {
-      return Response.json("Missing required fields", { status: 400 });
-    }
-
-    const trustSignature = seal({ loungeId, source, externalRef, customerPhone, flavorMix });
-
-    const session = await prisma.session.upsert({
-      where: { 
-        loungeId_externalRef: { 
-          loungeId, 
-          externalRef 
-        } 
-      },
-      update: {}, // creation is idempotent—no update on duplicate create
-      create: {
-        loungeId, 
-        source, 
-        externalRef, 
-        customerPhone, 
-        flavorMix, 
-        trustSignature,
-        events: {
-          create: {
-            type: "CREATED",
-            payloadSeal: trustSignature,
-            data: { idempotencyKey, source, customerPhone, flavorMix }
-          }
+    if (sessionId) {
+      // Get specific session
+      if (typeof global !== 'undefined' && global.sessionStore) {
+        const session = global.sessionStore.get(sessionId);
+        if (session) {
+          return NextResponse.json({ success: true, session });
         }
-      },
-      include: { events: true }
-    });
-
-    return Response.json({ session }, { 
-      status: 201, 
-      headers: { "Cache-Control": "no-store" } 
-    });
+      }
+      return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+    } else {
+      // Get all sessions
+      if (typeof global !== 'undefined' && global.sessionStore) {
+        const sessions = Array.from(global.sessionStore.values());
+        return NextResponse.json({ success: true, sessions });
+      }
+      return NextResponse.json({ success: true, sessions: [] });
+    }
   } catch (error: any) {
-    return Response.json({ 
-      error: "Failed to create session",
-      details: error.message 
-    }, { status: 500, headers: { "Cache-Control": "no-store" } });
+    console.error('❌ Error fetching sessions:', error);
+    return NextResponse.json(
+      { error: error.message || 'Failed to fetch sessions' },
+      { status: 500 }
+    );
   }
 }

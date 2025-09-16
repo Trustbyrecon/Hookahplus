@@ -1,0 +1,206 @@
+{
+  "info": {
+    "name": "HookahPlus MVP API Tests",
+    "description": "API collection for testing HookahPlus MVP endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://app.hookahplus.net",
+      "type": "string"
+    },
+    {
+      "key": "guest_url", 
+      "value": "https://guest.hookahplus.net",
+      "type": "string"
+    },
+    {
+      "key": "venue_id",
+      "value": "550e8400-e29b-41d4-a716-446655440000",
+      "type": "string"
+    },
+    {
+      "key": "table_id",
+      "value": "table_1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Session Management",
+      "item": [
+        {
+          "name": "Start Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"venue_id\": \"{{venue_id}}\",\n  \"table_id\": \"{{table_id}}\",\n  \"tier\": \"base\",\n  \"flavors\": [\"mint\", \"apple\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/session/start",
+              "host": ["{{base_url}}"],
+              "path": ["api", "session", "start"]
+            }
+          }
+        },
+        {
+          "name": "Extend Session Checkout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"session_id\": \"{{session_id}}\",\n  \"extension_minutes\": 20\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/session/extend/checkout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "session", "extend", "checkout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Refill Management",
+      "item": [
+        {
+          "name": "Request Refill",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"session_id\": \"{{session_id}}\",\n  \"venue_id\": \"{{venue_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/refill/request",
+              "host": ["{{base_url}}"],
+              "path": ["api", "refill", "request"]
+            }
+          }
+        },
+        {
+          "name": "Complete Refill",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refill_id\": \"{{refill_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/refill/complete",
+              "host": ["{{base_url}}"],
+              "path": ["api", "refill", "complete"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Guest Payment Flow",
+      "item": [
+        {
+          "name": "Guest Extend Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"session_id\": \"{{session_id}}\",\n  \"extension_minutes\": 20\n}"
+            },
+            "url": {
+              "raw": "{{guest_url}}/api/session/extend",
+              "host": ["{{guest_url}}"],
+              "path": ["api", "session", "extend"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Stripe Webhooks",
+      "item": [
+        {
+          "name": "Stripe Webhook (App)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Stripe-Signature",
+                "value": "t=1234567890,v1=signature_here"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"evt_test_webhook\",\n  \"object\": \"event\",\n  \"type\": \"payment_intent.succeeded\",\n  \"data\": {\n    \"object\": {\n      \"id\": \"pi_test_123\",\n      \"amount\": 2100,\n      \"currency\": \"usd\",\n      \"status\": \"succeeded\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/stripe/webhook",
+              "host": ["{{base_url}}"],
+              "path": ["api", "stripe", "webhook"]
+            }
+          }
+        },
+        {
+          "name": "Stripe Webhook (Guest)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Stripe-Signature",
+                "value": "t=1234567890,v1=signature_here"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"evt_test_webhook\",\n  \"object\": \"event\",\n  \"type\": \"payment_intent.succeeded\",\n  \"data\": {\n    \"object\": {\n      \"id\": \"pi_test_123\",\n      \"amount\": 1000,\n      \"currency\": \"usd\",\n      \"status\": \"succeeded\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{guest_url}}/api/stripe/webhook",
+              "host": ["{{guest_url}}"],
+              "path": ["api", "stripe", "webhook"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
