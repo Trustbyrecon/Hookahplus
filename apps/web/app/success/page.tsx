@@ -6,7 +6,6 @@ import Link from 'next/link';
 
 // Disable static generation
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 function SuccessContent() {
   const [sessionId, setSessionId] = useState<string | null>(null);

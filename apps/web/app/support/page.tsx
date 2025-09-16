@@ -5,7 +5,6 @@ import Link from 'next/link';
 
 // Disable static generation
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 function SupportPageContent() {
   const [searchParams, setSearchParams] = useState<URLSearchParams | null>(null);
