@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 function SupportPageContent() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState('faq');
