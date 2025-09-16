@@ -2,13 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
 
-// Force dynamic rendering
+// Disable static generation
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 function SupportPageContent() {
-  const searchParams = useSearchParams();
+  const [searchParams, setSearchParams] = useState<URLSearchParams | null>(null);
+  
+  useEffect(() => {
+    // Get search params on client side only
+    setSearchParams(new URLSearchParams(window.location.search));
+  }, []);
   const [activeTab, setActiveTab] = useState('faq');
   const [trustLockVerified, setTrustLockVerified] = useState(true); // Basic support doesn't need Trust-Lock
   const [supportTicket, setSupportTicket] = useState({

@@ -4,12 +4,18 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-// Force dynamic rendering
+// Disable static generation
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 function SuccessContent() {
-  const searchParams = useSearchParams();
-  const sessionId = searchParams.get('sid');
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  
+  useEffect(() => {
+    // Get search params on client side only
+    const urlParams = new URLSearchParams(window.location.search);
+    setSessionId(urlParams.get('sid'));
+  }, []);
   const [orderDetails, setOrderDetails] = useState<any>(null);
 
   useEffect(() => {
