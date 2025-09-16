@@ -1,5 +1,6 @@
 // app/layout.tsx
 import './globals.css';
+import { Suspense } from 'react';
 import { SessionProvider } from '../components/SessionContext';
 import { ReflexAgentProvider } from '../components/ReflexAgentContext';
 import GlobalNavigation from '../components/GlobalNavigation';
@@ -33,7 +34,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ReflexAgentProvider>
           <SessionProvider>
             <GlobalNavigation />
-            {children}
+            <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+              {children}
+            </Suspense>
           </SessionProvider>
         </ReflexAgentProvider>
       </body>
