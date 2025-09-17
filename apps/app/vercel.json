@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "buildCommand": "cd ../.. && pnpm install --frozen-lockfile && pnpm build --filter=@hookahplus/app",
-  "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
-  "outputDirectory": ".next",
+  "buildCommand": "pnpm install --frozen-lockfile && pnpm build --filter=@hookahplus/app",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "outputDirectory": "apps/app/.next",
   "framework": "nextjs",
   "rewrites": [
     {
