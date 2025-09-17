@@ -1,24 +1,21 @@
-// apps/app/app/api/stripe/webhook/route.ts
+// apps/guest/app/api/stripe/webhook/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic"; // never cache webhooks
+export const dynamic = "force-dynamic";
 
-// --- env
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY!;
-const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET_APP!;
+const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET_GUEST!;
 const SUPABASE_URL = process.env.SUPABASE_URL!;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!; // server-only
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-// --- clients
 const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2025-05-28.basil" });
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false },
 });
 
-// Utility: idempotency insert. Returns true if event is new; false if seen.
 async function lockEventOnce(eventId: string, type: string) {
   const { data, error } = await supabaseAdmin
     .from("stripe_webhook_events")
@@ -26,40 +23,29 @@ async function lockEventOnce(eventId: string, type: string) {
     .select("id")
     .single();
 
-  // If a unique constraint violation happened, this event was processed already.
   if (error && error.code === "23505") return false;
   if (error) throw error;
   return Boolean(data?.id);
 }
 
-// Router of event handlers
 const handlers: Record<string, (evt: Stripe.Event) => Promise<void>> = {
   "checkout.session.completed": async (evt) => {
     const session = evt.data.object as Stripe.Checkout.Session;
-    // TODO: mark order/session as paid for operator flow
-    console.log("[app] checkout.session.completed ->", session.id, session.client_reference_id);
+    // TODO: mark guest-facing order/session as paid, unlock table QR flow
+    console.log("[guest] checkout.session.completed ->", session.id, session.client_reference_id);
   },
   "payment_intent.succeeded": async (evt) => {
     const pi = evt.data.object as Stripe.PaymentIntent;
-    console.log("[app] payment_intent.succeeded ->", pi.id, pi.amount_received);
+    console.log("[guest] payment_intent.succeeded ->", pi.id, pi.amount_received);
   },
   "payment_intent.payment_failed": async (evt) => {
     const pi = evt.data.object as Stripe.PaymentIntent;
-    console.warn("[app] payment_intent.payment_failed ->", pi.id, pi.last_payment_error?.message);
-  },
-  "invoice.payment_succeeded": async (evt) => {
-    const inv = evt.data.object as Stripe.Invoice;
-    console.log("[app] invoice.payment_succeeded ->", inv.id, inv.customer);
-  },
-  "customer.subscription.updated": async (evt) => {
-    const sub = evt.data.object as Stripe.Subscription;
-    console.log("[app] subscription.updated ->", sub.id, sub.status);
+    console.warn("[guest] payment_intent.payment_failed ->", pi.id, pi.last_payment_error?.message);
   },
 };
 
 export async function POST(req: NextRequest) {
   try {
-    // 1) Verify signature
     const sig = req.headers.get("stripe-signature") ?? "";
     const body = await req.text();
     let event: Stripe.Event;
@@ -67,28 +53,25 @@ export async function POST(req: NextRequest) {
     try {
       event = stripe.webhooks.constructEvent(body, sig, WEBHOOK_SECRET);
     } catch (err: any) {
-      console.error("[app] ❌ Invalid signature:", err?.message);
+      console.error("[guest] ❌ Invalid signature:", err?.message);
       return new NextResponse(`Webhook Error: ${err?.message}`, { status: 400 });
     }
 
-    // 2) Idempotency guard
     const isNew = await lockEventOnce(event.id, event.type);
     if (!isNew) {
       return NextResponse.json({ ok: true, deduped: true });
     }
 
-    // 3) Route only whitelisted events
     const handler = handlers[event.type];
     if (handler) {
       await handler(event);
     } else {
-      // ignore unlisted types (safe)
-      console.log("[app] ignored event:", event.type);
+      console.log("[guest] ignored event:", event.type);
     }
 
     return NextResponse.json({ received: true });
   } catch (err: any) {
-    console.error("[app] Webhook handler error:", err);
+    console.error("[guest] Webhook handler error:", err);
     return new NextResponse("Server error", { status: 500 });
   }
 }
