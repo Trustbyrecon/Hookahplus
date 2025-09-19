@@ -50,3 +50,34 @@ export function getWorkflowStatus(workflow: Workflow): Workflow['status'] {
   
   return 'pending';
 }
+
+// Trust-related workflow functions
+export function nextStateWithTrust(currentState: string, action: string, trustLevel: number): string {
+  if (trustLevel < 0.5) {
+    throw new TrustError('Insufficient trust level for this action');
+  }
+  
+  // Simple state machine logic
+  const stateTransitions: Record<string, Record<string, string>> = {
+    'pending': { 'start': 'in_progress', 'cancel': 'cancelled' },
+    'in_progress': { 'complete': 'completed', 'pause': 'paused' },
+    'paused': { 'resume': 'in_progress', 'cancel': 'cancelled' },
+    'completed': {},
+    'cancelled': {},
+    'failed': { 'retry': 'pending' }
+  };
+  
+  const nextState = stateTransitions[currentState]?.[action];
+  if (!nextState) {
+    throw new TrustError(`Invalid transition from ${currentState} with action ${action}`);
+  }
+  
+  return nextState;
+}
+
+export class TrustError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'TrustError';
+  }
+}

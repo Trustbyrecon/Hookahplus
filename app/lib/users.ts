@@ -69,3 +69,43 @@ export function updateUser(user: User, updates: Partial<Omit<User, 'id' | 'creat
     updatedAt: new Date(),
   };
 }
+
+// Demo data for development
+export const demoUsers: User[] = [
+  createUser({
+    name: "John Doe",
+    email: "john@example.com",
+    phone: "+1-555-0123",
+    role: "customer"
+  }),
+  createUser({
+    name: "Jane Smith",
+    email: "jane@example.com",
+    phone: "+1-555-0124",
+    role: "staff"
+  }),
+  createUser({
+    name: "Admin User",
+    email: "admin@example.com",
+    role: "admin"
+  })
+];
+
+// Permission checking
+export function canPerformAction(user: User, action: string): boolean {
+  if (user.role === 'owner' || user.role === 'admin') {
+    return true;
+  }
+  
+  if (user.role === 'staff') {
+    const staffActions = ['view_sessions', 'update_session', 'view_orders'];
+    return staffActions.includes(action);
+  }
+  
+  if (user.role === 'customer') {
+    const customerActions = ['view_own_orders', 'create_order'];
+    return customerActions.includes(action);
+  }
+  
+  return false;
+}

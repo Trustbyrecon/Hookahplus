@@ -55,7 +55,7 @@ export default function RoiCalculatorPage() {
           <div>
             <h1 className="text-4xl md:text-6xl font-semibold leading-tight tracking-tight">
               See the ROI of
-              <span className="block bg-gradient-to-br from-teal-400 to-cyan-400 bg-clip-text text-transparent"> Hookah+ in Your Lounge</span>
+              <span className="block bg-gradient-to-br from-teal-500 to-cyan-500 bg-clip-text text-transparent"> Hookah+ in Your Lounge</span>
             </h1>
             <p className="mt-5 text-zinc-300 max-w-xl">
               With Trust Core features, lounges typically see a <span className="text-teal-400 font-medium">20% revenue uplift</span> in the first month.

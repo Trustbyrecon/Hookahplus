@@ -1,20 +1,17 @@
 // lib/persistence.ts
 // File-based persistence for customer journey data in serverless environments
 
-import { promises as fs } from 'fs';
-import path from 'path';
 import { CustomerBooking, BOHOperation, CustomerJourneyState } from './customer-journey';
 
-const DATA_FILE_PATH = path.join(process.cwd(), 'data', 'customer-journey.json');
+// Mock persistence for client-side compatibility
+const mockData: any = {};
 
-// Ensure data directory exists
+// Removed file path for client-side compatibility
+
+// Mock data directory check
 async function ensureDataDir() {
-  const dataDir = path.dirname(DATA_FILE_PATH);
-  try {
-    await fs.access(dataDir);
-  } catch {
-    await fs.mkdir(dataDir, { recursive: true });
-  }
+  // No-op for client-side compatibility
+  return Promise.resolve();
 }
 
 // Convert Maps and Sets to serializable format
@@ -37,12 +34,11 @@ function deserializeState(serialized: any): CustomerJourneyState {
   };
 }
 
-// Save state to file
+// Save state to memory (client-side compatible)
 export async function saveState(state: CustomerJourneyState): Promise<void> {
   try {
-    await ensureDataDir();
     const serialized = serializeState(state);
-    await fs.writeFile(DATA_FILE_PATH, JSON.stringify(serialized, null, 2), 'utf8');
+    mockData.customerJourney = serialized;
     console.log('[PERSISTENCE] State saved successfully');
   } catch (error) {
     console.error('[PERSISTENCE] Failed to save state:', error);
@@ -50,17 +46,17 @@ export async function saveState(state: CustomerJourneyState): Promise<void> {
   }
 }
 
-// Load state from file
+// Load state from memory (client-side compatible)
 export async function loadState(): Promise<CustomerJourneyState> {
   try {
-    await ensureDataDir();
-    const data = await fs.readFile(DATA_FILE_PATH, 'utf8');
-    const serialized = JSON.parse(data);
-    console.log('[PERSISTENCE] State loaded successfully');
-    return deserializeState(serialized);
+    if (mockData.customerJourney) {
+      console.log('[PERSISTENCE] State loaded successfully');
+      return deserializeState(mockData.customerJourney);
+    }
+    throw new Error('No data found');
   } catch (error) {
     console.log('[PERSISTENCE] No existing state found, creating new state');
-    // Return empty state if file doesn't exist
+    // Return empty state if no data exists
     return {
       bookings: new Map(),
       bohOperations: new Map(),
