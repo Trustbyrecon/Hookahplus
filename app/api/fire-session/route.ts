@@ -72,7 +72,7 @@ export async function GET(req: Request) {
 
     // Get all sessions and metrics
     const metrics = fireSessionWorkflow.getSessionMetrics();
-    const allSessions = fireSessionWorkflow.getAllSessions();
+    const allSessions = Object.values(fireSessionWorkflow.sessions || {});
     
     return NextResponse.json({ 
       sessions: allSessions, 
