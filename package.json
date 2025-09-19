@@ -8,8 +8,8 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npx prisma generate --schema=./prisma/schema.prisma && next build",
-    "build:vercel": "pnpm install --no-frozen-lockfile && npx prisma generate --schema=./prisma/schema.prisma && next build",
+    "build": "npx prisma generate && next build",
+    "build:vercel": "pnpm install --no-frozen-lockfile && npx prisma generate && next build",
     "dev": "next dev",
     "start": "next start",
     "lint": "next lint",
@@ -34,5 +34,8 @@
     "@prisma/client": "^5.22.0",
     "lucide-react": "^0.263.1",
     "recharts": "^2.8.0"
+  },
+  "prisma": {
+    "schema": "prisma/schema.prisma"
   }
 }
