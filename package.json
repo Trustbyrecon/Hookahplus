@@ -8,23 +8,31 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "turbo run build",
-    "build:web": "cd apps/web && pnpm build",
-    "build:site": "cd apps/site && pnpm build",
-    "build:vercel": "pnpm install --no-frozen-lockfile && cd apps/web && npx prisma generate && pnpm build",
-    "dev": "turbo run dev",
-    "lint": "turbo run lint",
-    "clean": "turbo run clean",
+    "build": "next build",
+    "build:vercel": "pnpm install --no-frozen-lockfile && npx prisma generate && next build",
+    "dev": "next dev",
+    "start": "next start",
+    "lint": "next lint",
+    "clean": "rm -rf .next",
     "stripe:seed": "node scripts/stripe-catalog/seed.js"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
     "turbo": "^2.0.6",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "prisma": "^5.22.0"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.3",
     "dotenv": "^17.2.2",
-    "stripe": "^14.21.0"
+    "stripe": "^14.21.0",
+    "next": "14.2.7",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "@prisma/client": "^5.22.0",
+    "lucide-react": "^0.263.1",
+    "recharts": "^2.8.0"
   }
 }
