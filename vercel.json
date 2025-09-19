@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "cd apps/site && pnpm build",
+  "buildCommand": "pnpm build --filter=@hookahplus/site",
   "installCommand": "pnpm install --no-frozen-lockfile",
   "outputDirectory": "apps/site/.next"
 }
