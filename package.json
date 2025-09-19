@@ -10,6 +10,7 @@
   "scripts": {
     "build": "npx prisma generate && next build",
     "build:vercel": "pnpm install --no-frozen-lockfile && npx prisma generate && next build",
+    "build:site": "cd apps/site && pnpm install --no-frozen-lockfile && pnpm run build",
     "dev": "next dev",
     "start": "next start",
     "lint": "next lint",

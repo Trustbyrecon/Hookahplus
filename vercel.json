@@ -1,9 +1,10 @@
 {
   "version": 2,
-  "buildCommand": "cd apps/site && pnpm install --no-frozen-lockfile && pnpm build",
-  "outputDirectory": "apps/site/.next",
-  "installCommand": "cd apps/site && pnpm install --no-frozen-lockfile",
+  "buildCommand": "pnpm run build:site",
+  "outputDirectory": ".next",
+  "installCommand": "pnpm install --no-frozen-lockfile",
   "framework": "nextjs",
+  "rootDirectory": "apps/site",
   "env": {
     "NODE_ENV": "production"
   }
