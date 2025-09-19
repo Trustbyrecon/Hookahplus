@@ -1,0 +1,157 @@
+# 🕸️ HookahPlus Trust Graph
+# Reflex Agent Network Visualization
+# Last Updated: 2025-09-19
+
+agents:
+  smoke_test_agent:
+    id: "smoke_test_001"
+    type: "supervisor"
+    status: "active"
+    reflex_score: 72
+    trust_level: "medium"
+    last_activity: "2025-09-19T16:00:00Z"
+    capabilities:
+      - "deployment_validation"
+      - "endpoint_testing"
+      - "integration_verification"
+    connections:
+      - deployment_agent
+      - database_agent
+      - payment_agent
+
+  deployment_agent:
+    id: "deploy_001"
+    type: "specialist"
+    status: "escalated"
+    reflex_score: 45
+    trust_level: "low"
+    last_activity: "2025-09-19T15:45:00Z"
+    capabilities:
+      - "vercel_configuration"
+      - "build_command_optimization"
+      - "monorepo_setup"
+    connections:
+      - smoke_test_agent
+    escalation_reason: "Multiple failed Vercel config attempts"
+
+  database_agent:
+    id: "db_001"
+    type: "specialist"
+    status: "stable"
+    reflex_score: 95
+    trust_level: "high"
+    last_activity: "2025-09-19T16:00:00Z"
+    capabilities:
+      - "supabase_management"
+      - "rls_policy_enforcement"
+      - "data_validation"
+    connections:
+      - smoke_test_agent
+      - session_agent
+
+  payment_agent:
+    id: "pay_001"
+    type: "specialist"
+    status: "pending"
+    reflex_score: 0
+    trust_level: "unknown"
+    last_activity: null
+    capabilities:
+      - "stripe_integration"
+      - "webhook_processing"
+      - "payment_flow_validation"
+    connections:
+      - smoke_test_agent
+      - session_agent
+
+  session_agent:
+    id: "session_001"
+    type: "specialist"
+    status: "dormant"
+    reflex_score: 0
+    trust_level: "unknown"
+    last_activity: null
+    capabilities:
+      - "session_management"
+      - "ghostlog_tracking"
+      - "customer_interaction"
+    connections:
+      - database_agent
+      - payment_agent
+
+# Trust Relationships
+trust_relationships:
+  - from: "smoke_test_agent"
+    to: "database_agent"
+    trust_score: 95
+    relationship: "high_confidence"
+    last_verified: "2025-09-19T16:00:00Z"
+
+  - from: "smoke_test_agent"
+    to: "deployment_agent"
+    trust_score: 45
+    relationship: "escalated"
+    last_verified: "2025-09-19T15:45:00Z"
+
+  - from: "deployment_agent"
+    to: "smoke_test_agent"
+    trust_score: 60
+    relationship: "needs_guidance"
+    last_verified: "2025-09-19T15:45:00Z"
+
+# Trust Decay Signals
+trust_decay:
+  - agent: "deployment_agent"
+    signal: "[LOW_TRUST] Multiple failed attempts without learning"
+    severity: "high"
+    timestamp: "2025-09-19T15:45:00Z"
+
+  - agent: "smoke_test_agent"
+    signal: "[MEDIUM_TRUST] Stable but not improving"
+    severity: "medium"
+    timestamp: "2025-09-19T16:00:00Z"
+
+# Trust Bloom Indicators
+trust_bloom:
+  - agent: "database_agent"
+    signal: "[HIGH_TRUST] Consistent 95% success rate"
+    severity: "positive"
+    timestamp: "2025-09-19T16:00:00Z"
+
+# Agent Communication Patterns
+communication_flows:
+  - from: "smoke_test_agent"
+    to: "deployment_agent"
+    type: "escalation"
+    frequency: "high"
+    success_rate: 60
+
+  - from: "smoke_test_agent"
+    to: "database_agent"
+    type: "validation_request"
+    frequency: "medium"
+    success_rate: 95
+
+# Reflex Score Thresholds
+thresholds:
+  critical: 50
+  warning: 70
+  good: 87
+  excellent: 92
+  optimal: 95
+
+# Current System Health
+system_health:
+  overall_score: 68
+  status: "needs_attention"
+  critical_issues: 1
+  warnings: 1
+  healthy_agents: 1
+  total_agents: 5
+
+# Next Trust Actions
+next_actions:
+  - "Fix deployment agent trust decay"
+  - "Activate payment agent for testing"
+  - "Improve smoke test agent reflex score"
+  - "Establish session agent baseline"
