@@ -1,14 +1,9 @@
 {
   "version": 2,
-  "buildCommand": "pnpm install --no-frozen-lockfile && npx prisma generate --schema=prisma/schema.prisma && pnpm build",
-  "outputDirectory": ".next",
-  "installCommand": "pnpm install --no-frozen-lockfile",
+  "buildCommand": "cd apps/site && pnpm install --no-frozen-lockfile && pnpm build",
+  "outputDirectory": "apps/site/.next",
+  "installCommand": "cd apps/site && pnpm install --no-frozen-lockfile",
   "framework": "nextjs",
-  "functions": {
-    "app/api/**/*.ts": {
-      "runtime": "nodejs18.x"
-    }
-  },
   "env": {
     "NODE_ENV": "production"
   }
