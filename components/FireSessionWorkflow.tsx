@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   fireSessionWorkflow, 
-  WorkflowButton, 
+  type WorkflowButton, 
   StaffRole, 
   SessionState, 
   WorkflowEvent 

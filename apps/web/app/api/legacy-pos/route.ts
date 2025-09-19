@@ -18,7 +18,7 @@ async function createBOHSession(orderData: any) {
       },
       create: {
         loungeId: orderData.loungeId || 'default',
-        source: "LEGACY_POS",
+        source: "LEGACY_POS" as any,
         externalRef: orderData.externalRef,
         trustSignature: orderData.externalRef, // Use externalRef as trust signature for legacy POS
         customerPhone: orderData.customerPhone,
@@ -98,7 +98,7 @@ export async function GET() {
   try {
     const sessions = await prisma.session.findMany({
       where: {
-        source: 'LEGACY_POS'
+        source: 'LEGACY_POS' as any
       },
       orderBy: {
         createdAt: 'desc'
