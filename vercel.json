@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "pnpm install --no-frozen-lockfile && npx prisma generate && pnpm build",
+  "buildCommand": "pnpm install --no-frozen-lockfile && npx prisma generate --schema=./prisma/schema.prisma && pnpm build",
   "outputDirectory": ".next",
   "installCommand": "pnpm install --no-frozen-lockfile",
   "framework": "nextjs",

@@ -8,8 +8,8 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "next build",
-    "build:vercel": "pnpm install --no-frozen-lockfile && npx prisma generate && next build",
+    "build": "npx prisma generate --schema=./prisma/schema.prisma && next build",
+    "build:vercel": "pnpm install --no-frozen-lockfile && npx prisma generate --schema=./prisma/schema.prisma && next build",
     "dev": "next dev",
     "start": "next start",
     "lint": "next lint",
