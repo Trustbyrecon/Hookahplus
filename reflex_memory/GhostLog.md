@@ -57,15 +57,28 @@
 - **Score**: 85% (Systematic approach, clear methodology)
 - **Learning**: Systematic approach prevents random trial-and-error failures
 
+### **Cycle #6: Build Command Fix (ACTIVE)**
+- **Agent**: Smoke Test Agent (Supervisor)
+- **Plan**: Fix build commands in Vercel dashboard
+- **Action**: Identified build commands still use `next build` instead of `pnpm build`
+- **Score**: 90% (Install commands fixed, build commands need dashboard update)
+- **Learning**: Dashboard settings must be updated for both install AND build commands
+
 ---
 
 ## 🚨 Active Issues
 
-### **Critical: Install Command Mismatch**
-- **Problem**: Install commands still use `cd ../.. && pnpm install --frozen-lockfile`
-- **Root Cause**: Root directory is now `apps/site` but install command tries to go up
-- **Solution**: Change to `pnpm install --frozen-lockfile` (no cd command)
+### **Critical: Build Command Mismatch**
+- **Problem**: Build commands still use `next build --filter=@hookahplus/site`
+- **Root Cause**: `next build` doesn't support `--filter` option, only `pnpm build` does
+- **Solution**: Change to `pnpm build --filter=@hookahplus/site` in Vercel dashboard
 - **Priority**: HIGH - Blocking all deployments
+
+### **Resolved: Install Command Mismatch**
+- **Problem**: Install commands used `cd ../.. && pnpm install --frozen-lockfile`
+- **Root Cause**: Root directory is now `apps/site` but install command tried to go up
+- **Solution**: Changed to `pnpm install --frozen-lockfile` (no cd command)
+- **Status**: ✅ FIXED - Install commands working correctly
 
 ### **Medium: Smoke Test Failures**
 - **Problem**: All deployments returning 401 errors
