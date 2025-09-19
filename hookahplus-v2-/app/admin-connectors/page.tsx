@@ -7,7 +7,7 @@ import GlobalNavigation from "../../components/GlobalNavigation";
 export default function AdminConnectorsPage() {
   return (
     <div className="min-h-screen bg-zinc-950">
-      {GlobalNavigation as any}
+      {(GlobalNavigation as any)()}
       
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="mb-8">
