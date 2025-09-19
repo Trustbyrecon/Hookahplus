@@ -11,7 +11,7 @@ const schema = z.object({
     reference: z.string(),
     amount: z.number(),
     currency: z.literal("USD")
-  }).optional()
+  })
 });
 
 export async function POST(req: NextRequest) {
