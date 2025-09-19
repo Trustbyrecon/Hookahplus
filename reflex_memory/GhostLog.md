@@ -64,9 +64,22 @@
 - **Score**: 90% (Install commands fixed, build commands need dashboard update)
 - **Learning**: Dashboard settings must be updated for both install AND build commands
 
+### **Cycle #7: Vercel Schema Validation Fix (COMPLETED)**
+- **Agent**: Reflex Agent (Supervisor)
+- **Plan**: Fix vercel.json schema validation error
+- **Action**: Removed invalid `rootDirectory` property from vercel.json
+- **Score**: 95% (Schema validation error resolved, configuration corrected)
+- **Learning**: `rootDirectory` is not a valid property in vercel.json - must be set in dashboard
+
 ---
 
 ## 🚨 Active Issues
+
+### **Resolved: Vercel Schema Validation Error**
+- **Problem**: `vercel.json` contained invalid `rootDirectory` property
+- **Root Cause**: `rootDirectory` is not a valid property in vercel.json schema
+- **Solution**: Removed `rootDirectory` property and updated build commands
+- **Status**: ✅ FIXED - Schema validation now passes
 
 ### **Critical: Build Command Mismatch**
 - **Problem**: Build commands still use `next build --filter=@hookahplus/site`
