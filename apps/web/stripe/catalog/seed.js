@@ -19,7 +19,7 @@ if (!stripeSecret) {
   process.exit(1);
 }
 import Stripe from 'stripe';
-const stripe = new Stripe(stripeSecret, { apiVersion: '2024-06-20' });
+const stripe = new Stripe(stripeSecret, { apiVersion: '2023-10-16' });
 
 const CSV_PATH = path.join(process.cwd(), 'stripe', 'catalog', 'products.csv');
 const OUT_PATH = path.join(process.cwd(), 'stripe', 'catalog', 'stripe_ids.json');
