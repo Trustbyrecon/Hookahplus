@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import type { FireSession, User, TrustLevel, DeliveryZone } from "@/app/lib/workflow";
+import type { FireSession, TrustLevel, DeliveryZone } from "@/app/lib/workflow";
+import type { User } from "@/app/lib/users";
 import { demoUsers, canPerformAction } from "@/app/lib/users";
 
 // Enhanced session types for admin management
@@ -50,17 +51,19 @@ function generateEnhancedDemoSessions(count: number = 10): AdminSession[] {
     
     return {
       id: `admin_${Date.now()}_${i}`,
+      status: "active",
       table: `T-${Math.floor(Math.random() * 20) + 1}`,
+      tableId: `T-${Math.floor(Math.random() * 20) + 1}`,
       customerLabel: `customer_${Math.floor(Math.random() * 900) + 100}`,
       durationMin: Math.floor(Math.random() * 60) + 30,
       bufferSec: [5, 10, 15][Math.floor(Math.random() * 3)],
-      zone: zones[Math.floor(Math.random() * zones.length)] as DeliveryZone,
+      zone: zones[Math.floor(Math.random() * zones.length)] as string,
       items: Math.floor(Math.random() * 3) + 1,
       etaMin: Math.floor(Math.random() * 10) + 5,
       position: positions[Math.floor(Math.random() * positions.length)],
       state: states[Math.floor(Math.random() * states.length)] as FireSession["state"],
-      createdAt: Date.now() - Math.random() * 86400000,
-      updatedAt: Date.now(),
+      createdAt: new Date(Date.now() - Math.random() * 86400000),
+      updatedAt: new Date(),
       paymentStatus: ["pending", "confirmed", "failed"][Math.floor(Math.random() * 3)] as "pending" | "confirmed" | "failed",
       paymentMethod: paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
       flavorCombinations: flavors,
@@ -77,7 +80,7 @@ export default function AdminControlCenter() {
   const [sessions, setSessions] = useState<AdminSession[]>([]);
   const [selectedSession, setSelectedSession] = useState<AdminSession | null>(null);
   const [showSessionDetails, setShowSessionDetails] = useState(false);
-  const [currentUser] = useState(demoUsers.find(u => u.role === "MANAGER") || demoUsers[0]);
+  const [currentUser] = useState(demoUsers.find(u => u.role === "admin") || demoUsers[0]);
   const [popularFlavors, setPopularFlavors] = useState<{ flavor: string; count: number }[]>([]);
 
   // Generate popular flavors from sessions
