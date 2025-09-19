@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import type { FireSession, DeliveryZone, Action, User, TrustLevel } from "@/app/lib/workflow";
+import type { FireSession, DeliveryZone, Action, TrustLevel } from "@/app/lib/workflow";
+import type { User } from "@/app/lib/users";
 import { nextStateWithTrust, TrustError } from "@/app/lib/workflow";
 import { logAction } from "@/app/lib/audit";
 import { demoUsers, canPerformAction, getUserDisplayInfo } from "@/app/lib/users";
@@ -15,7 +16,9 @@ function toast(msg:string, kind:"ok"|"warn"|"err"="ok"){
 const PRE_GENERATED_SESSIONS: FireSession[] = [
   {
     id: "session-1",
+    status: "active",
     table: "T1",
+    tableId: "T1",
     customerLabel: "VIP Customer",
     durationMin: 45,
     bufferSec: 8,
@@ -29,7 +32,9 @@ const PRE_GENERATED_SESSIONS: FireSession[] = [
   },
   {
     id: "session-2",
+    status: "preparing",
     table: "T2",
+    tableId: "T2",
     customerLabel: "Window Seat",
     durationMin: 60,
     bufferSec: 12,
@@ -43,7 +48,9 @@ const PRE_GENERATED_SESSIONS: FireSession[] = [
   },
   {
     id: "session-3",
+    status: "delivered",
     table: "T3",
+    tableId: "T3",
     customerLabel: "Bar Regular",
     durationMin: 30,
     bufferSec: 6,
@@ -57,7 +64,9 @@ const PRE_GENERATED_SESSIONS: FireSession[] = [
   },
   {
     id: "session-4",
+    status: "active",
     table: "T4",
+    tableId: "T4",
     customerLabel: "Center Table",
     durationMin: 75,
     bufferSec: 15,
@@ -71,7 +80,9 @@ const PRE_GENERATED_SESSIONS: FireSession[] = [
   },
   {
     id: "session-5",
+    status: "closing",
     table: "T5",
+    tableId: "T5",
     customerLabel: "Corner Booth",
     durationMin: 90,
     bufferSec: 10,
@@ -85,7 +96,9 @@ const PRE_GENERATED_SESSIONS: FireSession[] = [
   },
   {
     id: "session-6",
+    status: "ready",
     table: "T6",
+    tableId: "T6",
     customerLabel: "Premium Guest",
     durationMin: 55,
     bufferSec: 9,
@@ -101,13 +114,15 @@ const PRE_GENERATED_SESSIONS: FireSession[] = [
 
 // Demo data generator for additional sessions
 function generateDemoSessions(count: number = 6): FireSession[] {
-  const zones: DeliveryZone[] = ["A", "B", "C", "D", "E"];
+  const zones: string[] = ["A", "B", "C", "D", "E"];
   const positions = ["VIP", "Window", "Bar", "Center", "Corner"];
   const states: FireSession["state"][] = ["READY", "OUT", "DELIVERED", "ACTIVE", "CLOSE"];
   
   return Array.from({ length: count }, (_, i) => ({
     id: `session-${i + 7}`,
+    status: "active",
     table: `T${i + 7}`,
+    tableId: `T${i + 7}`,
     customerLabel: `Customer ${i + 7}`,
     durationMin: Math.floor(Math.random() * 60) + 30,
     bufferSec: Math.floor(Math.random() * 15) + 5,
@@ -161,7 +176,7 @@ export default function FireSessionDashboard(){
       }
 
       // Log the action for audit
-      logAction(currentUser, action, previousSession, updatedSession);
+      logAction(action.type, currentUser.id || currentUser.name, previousSession.id, { previousSession, updatedSession });
 
       // Update the sessions array
       const newSessions = [...sessions];
@@ -194,7 +209,7 @@ export default function FireSessionDashboard(){
         <div>
           <h1 className="text-2xl font-bold">Fire Session Dashboard</h1>
           <p className="text-sm text-[#aab6ff]">
-            AI Agents: Collaborating • Workflow: Session • Trust: {currentUser.trustLevel}
+            AI Agents: Collaborating • Workflow: Session • Trust: {currentUser.role === 'admin' ? 'High' : currentUser.role === 'staff' ? 'Medium' : 'Low'}
           </p>
             </div>
             
@@ -207,11 +222,11 @@ export default function FireSessionDashboard(){
             >
               <span className="text-sm">{currentUser.name}</span>
               <span className={`text-xs px-2 py-1 rounded ${
-                currentUser.trustLevel === 'ADMIN' ? 'bg-red-900/30 text-red-300 border-red-700' :
-                currentUser.trustLevel === 'VERIFIED' ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700' :
+                currentUser.role === 'admin' ? 'bg-red-900/30 text-red-300 border-red-700' :
+                currentUser.role === 'staff' ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700' :
                 'bg-green-900/30 text-green-300 border-green-700'
               }`}>
-                {currentUser.trustLevel}
+                {currentUser.role === 'admin' ? 'ADMIN' : currentUser.role === 'staff' ? 'VERIFIED' : 'BASIC'}
               </span>
               <span className="text-xs text-[#aab6ff]">({currentUser.role})</span>
               </button>
@@ -235,12 +250,12 @@ export default function FireSessionDashboard(){
                     >
           <div className="flex items-center justify-between">
                         <span className="text-sm text-[#e9ecff]">{user.name}</span>
-                        <span className={`text-xs px-2 py-1 rounded ${
-                          user.trustLevel === 'ADMIN' ? 'bg-red-900/30 text-red-300 border-red-700' :
-                          user.trustLevel === 'VERIFIED' ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700' :
+                        <span className={`text-xs px-2 py-1 rounded ${  
+                          user.role === 'admin' ? 'bg-red-900/30 text-red-300 border-red-700' :
+                          user.role === 'staff' ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700' :
                           'bg-green-900/30 text-green-300 border-green-700'
                         }`}>
-                          {user.trustLevel}
+                          {user.role === 'admin' ? 'ADMIN' : user.role === 'staff' ? 'VERIFIED' : 'BASIC'}
                         </span>
             </div>
                       <div className="text-xs text-[#aab6ff] mt-1">{user.role}</div>
@@ -306,14 +321,26 @@ function Card({ s, postAction, user, busy }:{
   // Get trust requirement for tooltip
   const getTrustRequirement = (actionType: Action["type"]) => {
     const trustMap: Record<Action["type"], TrustLevel> = {
+      "start": "BASIC",
+      "pause": "BASIC",
+      "resume": "BASIC",
+      "complete": "BASIC",
+      "cancel": "BASIC",
       "DELIVER_NOW": "BASIC",
       "MARK_OUT": "BASIC",
       "MARK_DELIVERED": "VERIFIED",
       "START_ACTIVE": "VERIFIED",
+      "CLOSE_SESSION": "ADMIN",
       "CLOSE": "ADMIN",
       "SET_BUFFER": "BASIC",
       "SET_ZONE": "BASIC",
       "ADD_ITEM": "BASIC",
+      "REMOVE_ITEM": "BASIC",
+      "UPDATE_ETA": "BASIC",
+      "CHANGE_POSITION": "BASIC",
+      "PAUSE_SESSION": "BASIC",
+      "RESUME_SESSION": "BASIC",
+      "CANCEL_SESSION": "ADMIN",
       "EXTEND_MIN": "VERIFIED",
       "UNDO": "VERIFIED",
       "REASSIGN_RUNNER": "VERIFIED",
@@ -328,7 +355,7 @@ function Card({ s, postAction, user, busy }:{
         <div className="font-semibold">Table {s.table}</div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-[#8ff4c2]">{s.state}</span>
-          <span className="text-xs text-[#aab6ff]">• Trust: {user.trustLevel}</span>
+          <span className="text-xs text-[#aab6ff]">• Trust: {user.role === 'admin' ? 'ADMIN' : user.role === 'staff' ? 'VERIFIED' : 'BASIC'}</span>
                   </div>
                 </div>
       <div className="mt-1 grid grid-cols-2 gap-2 text-xs text-[#b8c2ff]">
@@ -349,7 +376,7 @@ function Card({ s, postAction, user, busy }:{
         {/* Primary flow */}
               <button
           disabled={disabled("DELIVER_NOW")}
-          onClick={()=>postAction(s.id,{type:"DELIVER_NOW"})}
+          onClick={()=>postAction(s.id,{type:"DELIVER_NOW", sessionId: s.id})}
           className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40"
           title={`Requires ${getTrustRequirement("DELIVER_NOW")} trust level`}
         >
@@ -357,19 +384,19 @@ function Card({ s, postAction, user, busy }:{
               </button>
               <button
           disabled={disabled("MARK_OUT")}
-          onClick={()=>postAction(s.id,{type:"MARK_OUT"})}
+          onClick={()=>postAction(s.id,{type:"MARK_OUT", sessionId: s.id})}
           className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40"
           title={`Requires ${getTrustRequirement("MARK_OUT")} trust level`}
         >
           Mark Out
               </button>
 
-        <button disabled={disabled("MARK_DELIVERED")} onClick={()=>postAction(s.id,{type:"MARK_DELIVERED"})} className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40">Mark Delivered</button>
-        <button disabled={disabled("START_ACTIVE")} onClick={()=>postAction(s.id,{type:"START_ACTIVE"})} className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40">Start Active</button>
+        <button disabled={disabled("MARK_DELIVERED")} onClick={()=>postAction(s.id,{type:"MARK_DELIVERED", sessionId: s.id})} className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40">Mark Delivered</button>
+        <button disabled={disabled("START_ACTIVE")} onClick={()=>postAction(s.id,{type:"START_ACTIVE", sessionId: s.id})} className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40">Start Active</button>
             
             <button
           disabled={disabled("CLOSE")}
-          onClick={()=>postAction(s.id,{type:"CLOSE"})}
+          onClick={()=>postAction(s.id,{type:"CLOSE", sessionId: s.id})}
           className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40"
           title={`Requires ${getTrustRequirement("CLOSE")} trust level`}
         >
@@ -377,7 +404,7 @@ function Card({ s, postAction, user, busy }:{
             </button>
             <button
           disabled={disabled("UNDO")}
-          onClick={()=>postAction(s.id,{type:"UNDO"})}
+          onClick={()=>postAction(s.id,{type:"UNDO", sessionId: s.id})}
           className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40"
           title={`Requires ${getTrustRequirement("UNDO")} trust level`}
         >
@@ -386,17 +413,17 @@ function Card({ s, postAction, user, busy }:{
             
         {/* Controls */}
         {[5,10,15].map(sec=>(
-          <button key={sec} disabled={disabled("SET_BUFFER")} onClick={()=>postAction(s.id,{type:"SET_BUFFER", value:sec})} className="rounded-md border border-[#2a3570] bg-[#0f183f] px-3 py-2 text-sm hover:bg-[#18204a] disabled:opacity-40">Buffer {sec}s</button>
+          <button key={sec} disabled={disabled("SET_BUFFER")} onClick={()=>postAction(s.id,{type:"SET_BUFFER", sessionId: s.id, data: {value:sec}})} className="rounded-md border border-[#2a3570] bg-[#0f183f] px-3 py-2 text-sm hover:bg-[#18204a] disabled:opacity-40">Buffer {sec}s</button>
         ))}
-        {(["A","B","C","D","E"] as DeliveryZone[]).map(z=>(
-          <button key={z} disabled={disabled("SET_ZONE")} onClick={()=>postAction(s.id,{type:"SET_ZONE", value:z})} className={`rounded-md border border-[#2a3570] px-3 py-2 text-sm hover:bg-[#18204a] disabled:opacity-40 ${s.zone===z ? "bg-[#1b2658]" : "bg-[#0f183f]"}`}>Zone {z}</button>
+        {(["A","B","C","D","E"] as string[]).map(z=>(
+          <button key={z} disabled={disabled("SET_ZONE")} onClick={()=>postAction(s.id,{type:"SET_ZONE", sessionId: s.id, data: {value:z}})} className={`rounded-md border border-[#2a3570] px-3 py-2 text-sm hover:bg-[#18204a] disabled:opacity-40 ${s.zone===z ? "bg-[#1b2658]" : "bg-[#0f183f]"}`}>Zone {z}</button>
         ))}
 
         {/* Secondary */}
-        <button disabled={disabled("ADD_ITEM")} onClick={()=>postAction(s.id,{type:"ADD_ITEM", value:1})} className="rounded-md border border-[#2a3570] bg-[#0f183f] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40">+ Item</button>
-        <button disabled={disabled("EXTEND_MIN")} onClick={()=>postAction(s.id,{type:"EXTEND_MIN", value:5})} className="rounded-md border border-[#2a3570] bg-[#0f183f] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40">Extend 5m</button>
-        <button disabled={disabled("REASSIGN_RUNNER")} onClick={()=>postAction(s.id,{type:"REASSIGN_RUNNER", value:"runner_2"})} className="rounded-md border border-[#2a3570] bg-[#0f183f] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40">Reassign Runner</button>
-        <button disabled={disabled("CANCEL")} onClick={()=>postAction(s.id,{type:"CANCEL"})} className="rounded-md border border-rose-800 bg-rose-900/30 px-3 py-2 text-sm hover:bg-rose-900/50 disabled:opacity-40">Cancel</button>
+        <button disabled={disabled("ADD_ITEM")} onClick={()=>postAction(s.id,{type:"ADD_ITEM", sessionId: s.id, data: {value:1}})} className="rounded-md border border-[#2a3570] bg-[#0f183f] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40">+ Item</button>
+        <button disabled={disabled("EXTEND_MIN")} onClick={()=>postAction(s.id,{type:"EXTEND_MIN", sessionId: s.id, data: {value:5}})} className="rounded-md border border-[#2a3570] bg-[#0f183f] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40">Extend 5m</button>
+        <button disabled={disabled("REASSIGN_RUNNER")} onClick={()=>postAction(s.id,{type:"REASSIGN_RUNNER", sessionId: s.id, data: {value:"runner_2"}})} className="rounded-md border border-[#2a3570] bg-[#0f183f] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40">Reassign Runner</button>
+        <button disabled={disabled("CANCEL")} onClick={()=>postAction(s.id,{type:"CANCEL", sessionId: s.id})} className="rounded-md border border-rose-800 bg-rose-900/30 px-3 py-2 text-sm hover:bg-rose-900/50 disabled:opacity-40">Cancel</button>
                         </div>
                         </div>
   );

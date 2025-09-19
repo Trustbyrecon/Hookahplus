@@ -34,7 +34,8 @@
     "@prisma/client": "^5.22.0",
     "lucide-react": "^0.263.1",
     "recharts": "^2.8.0",
-    "zod": "^3.22.4"
+    "zod": "^3.22.4",
+    "@stripe/stripe-js": "^2.4.0"
   },
   "prisma": {
     "schema": "prisma/schema.prisma"

@@ -52,7 +52,9 @@ export function getWorkflowStatus(workflow: Workflow): Workflow['status'] {
 }
 
 // Trust-related workflow functions
-export function nextStateWithTrust(currentState: string, action: string, trustLevel: number): string {
+export function nextStateWithTrust(session: FireSession, action: Action, user: any): FireSession {
+  const trustLevel = user.role === 'admin' ? 1.0 : user.role === 'staff' ? 0.8 : 0.5;
+  
   if (trustLevel < 0.5) {
     throw new TrustError('Insufficient trust level for this action');
   }
@@ -67,12 +69,16 @@ export function nextStateWithTrust(currentState: string, action: string, trustLe
     'failed': { 'retry': 'pending' }
   };
   
-  const nextState = stateTransitions[currentState]?.[action];
+  const nextState = stateTransitions[session.state]?.[action.type];
   if (!nextState) {
-    throw new TrustError(`Invalid transition from ${currentState} with action ${action}`);
+    throw new TrustError(`Invalid transition from ${session.state} with action ${action.type}`);
   }
   
-  return nextState;
+  return {
+    ...session,
+    state: nextState,
+    updatedAt: new Date()
+  };
 }
 
 export class TrustError extends Error {
@@ -81,3 +87,38 @@ export class TrustError extends Error {
     this.name = 'TrustError';
   }
 }
+
+// Additional types for fire session dashboard
+export interface FireSession {
+  id: string;
+  status: string;
+  table: string;
+  tableId: string;
+  customerLabel: string;
+  durationMin: number;
+  bufferSec: number;
+  zone: string;
+  items: number;
+  etaMin: number;
+  position: string;
+  state: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface DeliveryZone {
+  id: string;
+  name: string;
+  status: 'active' | 'inactive';
+}
+
+// Allow string literals for zones
+export type ZoneId = string;
+
+export interface Action {
+  type: 'start' | 'pause' | 'resume' | 'complete' | 'cancel' | 'DELIVER_NOW' | 'MARK_OUT' | 'MARK_DELIVERED' | 'START_ACTIVE' | 'CLOSE_SESSION' | 'CLOSE' | 'SET_BUFFER' | 'SET_ZONE' | 'ADD_ITEM' | 'REMOVE_ITEM' | 'UPDATE_ETA' | 'CHANGE_POSITION' | 'PAUSE_SESSION' | 'RESUME_SESSION' | 'CANCEL_SESSION' | 'EXTEND_MIN' | 'UNDO' | 'REASSIGN_RUNNER' | 'CANCEL';
+  sessionId: string;
+  data?: any;
+}
+
+export type TrustLevel = 'low' | 'medium' | 'high' | 'BASIC' | 'VERIFIED' | 'ADMIN';

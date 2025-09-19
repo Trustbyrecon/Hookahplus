@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
 
     // Create POS adapter and close order
     const adapter = makePosAdapter(provider, venue_id);
-    await adapter.closeOrder(pos_order_id, tender);
+    await adapter.closeOrder(pos_order_id, tender as any);
     
     return NextResponse.json({
       success: true,

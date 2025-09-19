@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
 
     // Create POS adapter and upsert items
     const adapter = makePosAdapter(provider, venue_id);
-    await adapter.upsertItems(pos_order_id, items);
+    await adapter.upsertItems(pos_order_id, items as any);
     
     return NextResponse.json({
       success: true,

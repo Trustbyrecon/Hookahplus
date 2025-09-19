@@ -109,3 +109,12 @@ export function canPerformAction(user: User, action: string): boolean {
   
   return false;
 }
+
+// Additional function for fire session dashboard
+export function getUserDisplayInfo(user: User): { name: string; role: string; avatar?: string } {
+  return {
+    name: user.name,
+    role: user.role,
+    avatar: user.email ? `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random` : undefined
+  };
+}
