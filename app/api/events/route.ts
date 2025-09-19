@@ -55,8 +55,9 @@ export async function POST(request: NextRequest) {
 
     // Log audit event
     await logAuditEvent(
-      isCrossVenueOperation(authContext, venueId) ? 'cross_venue_write' : 'event_created',
-      authContext,
+      isCrossVenueOperation(authContext.venueId || 'unknown', venueId) ? 'cross_venue_write' : 'event_created',
+      authContext.actorId || 'unknown',
+      'events_create',
       {
         eventId: eventRecord.id,
         type,
@@ -64,10 +65,6 @@ export async function POST(request: NextRequest) {
         venueId,
         comboHash,
         staffId
-      },
-      {
-        ip: request.ip,
-        userAgent: request.headers.get('user-agent') || undefined
       }
     );
 

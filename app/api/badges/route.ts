@@ -42,16 +42,13 @@ export async function GET(request: NextRequest) {
 
     // Log audit event
     await logAuditEvent(
-      isCrossVenueOperation(authContext, venueId) ? 'cross_venue_read' : 'profile_accessed',
-      authContext,
+      isCrossVenueOperation(authContext.venueId || 'unknown', venueId) ? 'cross_venue_read' : 'profile_accessed',
+      authContext.actorId || 'unknown',
+      'badges_read',
       {
         profileId,
         venueId,
         awardCount: filteredAwards.length
-      },
-      {
-        ip: request.ip,
-        userAgent: request.headers.get('user-agent') || undefined
       }
     );
 

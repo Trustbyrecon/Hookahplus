@@ -66,16 +66,13 @@ export async function GET(request: NextRequest) {
     // Log audit event
     await logAuditEvent(
       'data_exported',
-      authContext,
+      authContext.actorId || 'unknown',
+      'badges_export',
       {
         profileId,
         exportType: token ? 'token' : 'direct',
         awardCount: awards.length,
         eventCount: events.length
-      },
-      {
-        ip: request.ip,
-        userAgent: request.headers.get('user-agent') || undefined
       }
     );
 

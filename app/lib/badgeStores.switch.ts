@@ -14,3 +14,6 @@ export const listEventsAtVenue = mod.listEventsAtVenue;
 export const listAwards = mod.listAwards;
 export const alreadyAwarded = mod.alreadyAwarded;
 export const putAward = mod.putAward;
+
+// Re-export types
+export type { EventRecord } from "./badgeTypes";
