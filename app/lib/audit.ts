@@ -37,3 +37,11 @@ export function logUserAction(userId: string, action: string, resource: string, 
 export function logSystemEvent(event: string, details: any): AuditLog {
   return logAction(`system.${event}`, 'system', 'system', details);
 }
+
+// Alias for compatibility
+export const logAuditEvent = logAction;
+
+// Cross-venue operation checking
+export function isCrossVenueOperation(venueId: string, targetVenueId: string): boolean {
+  return venueId !== targetVenueId;
+}
