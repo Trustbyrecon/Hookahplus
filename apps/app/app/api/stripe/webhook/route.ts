@@ -6,7 +6,7 @@ import { createClient } from "@supabase/supabase-js";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic"; // never cache webhooks
 
-import { getStripeSecretKey, getStripeWebhookSecret, getSupabaseUrl, getSupabaseServiceRoleKey } from '../../../lib/env';
+import { getStripeSecretKey, getStripeWebhookSecret, getSupabaseUrl, getSupabaseServiceRoleKey } from '../../../../lib/env';
 
 // --- env
 const STRIPE_SECRET_KEY = getStripeSecretKey();

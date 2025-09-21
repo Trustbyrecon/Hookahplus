@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
-import { getStripeSecretKey, getSupabaseUrl, getSupabaseAnonKey } from '../../lib/env';
+import { getStripeSecretKey, getSupabaseUrl, getSupabaseAnonKey } from '../../../../lib/env';
 
 const stripe = new Stripe(getStripeSecretKey(), { 
   apiVersion: '2023-10-16' 
