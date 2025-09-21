@@ -2,14 +2,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
+import { getStripeSecretKey, getStripeWebhookSecret, getSupabaseUrl, getSupabaseServiceRoleKey } from "../../lib/env";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY!;
-const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET_GUEST!;
-const SUPABASE_URL = process.env.SUPABASE_URL!;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const STRIPE_SECRET_KEY = getStripeSecretKey();
+const WEBHOOK_SECRET = getStripeWebhookSecret();
+const SUPABASE_URL = getSupabaseUrl();
+const SUPABASE_SERVICE_ROLE_KEY = getSupabaseServiceRoleKey();
 
 const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2023-10-16" });
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {

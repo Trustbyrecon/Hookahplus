@@ -6,11 +6,13 @@ import { createClient } from "@supabase/supabase-js";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic"; // never cache webhooks
 
+import { getStripeSecretKey, getStripeWebhookSecret, getSupabaseUrl, getSupabaseServiceRoleKey } from '../../../lib/env';
+
 // --- env
-const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY!;
-const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET_APP!;
-const SUPABASE_URL = process.env.SUPABASE_URL!;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!; // server-only
+const STRIPE_SECRET_KEY = getStripeSecretKey();
+const WEBHOOK_SECRET = getStripeWebhookSecret();
+const SUPABASE_URL = getSupabaseUrl();
+const SUPABASE_SERVICE_ROLE_KEY = getSupabaseServiceRoleKey(); // server-only
 
 // --- clients
 const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2023-10-16" });
