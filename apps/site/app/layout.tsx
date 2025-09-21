@@ -1,8 +1,9 @@
 import './globals.css'
+import GlobalNavigation from '@hookahplus/design-system/src/components/GlobalNavigation'
 
 export const metadata = {
   title: 'HookahPlus - The Future of Hookah Lounge Management',
-  description: 'Automated session management, smart refills, and reservation holds for modern hookah lounges.',
+  description: 'Experience the future of lounge sessions with AI-powered personalization, secure payments, and seamless ordering.',
 }
 
 export default function RootLayout({
@@ -12,7 +13,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className="min-h-screen bg-zinc-950 text-white">
+        <GlobalNavigation />
+        {children}
+      </body>
     </html>
   )
 }
