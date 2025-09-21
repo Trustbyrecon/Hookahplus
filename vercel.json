@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "cd apps/site && pnpm install && pnpm run build",
+  "buildCommand": "pnpm build --filter=@hookahplus/site",
   "outputDirectory": "apps/site/.next",
-  "installCommand": "pnpm install",
+  "installCommand": "pnpm install --frozen-lockfile",
   "framework": "nextjs"
 }
