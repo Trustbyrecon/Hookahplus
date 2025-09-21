@@ -1,0 +1,7 @@
+{
+  "version": 2,
+  "buildCommand": "npx turbo build --filter=@hookahplus/guest",
+  "outputDirectory": ".next",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "framework": "nextjs"
+}
