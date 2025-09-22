@@ -1,7 +1,7 @@
 import React from 'react';
-import { Card } from '@hookahplus/design-system/src/components/Card';
-import { Button } from '@hookahplus/design-system/src/components/Button';
-import { Badge } from '@hookahplus/design-system/src/components/Badge';
+import Card from '@hookahplus/design-system/src/components/Card';
+import Button from '@hookahplus/design-system/src/components/Button';
+import Badge from '@hookahplus/design-system/src/components/Badge';
 import { 
   Zap, 
   Shield, 
