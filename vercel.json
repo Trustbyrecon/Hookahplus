@@ -1,7 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "npx turbo build --filter=@hookahplus/site",
+  "buildCommand": "pnpm install --no-frozen-lockfile && npx turbo build --filter=@hookahplus/site",
   "outputDirectory": "apps/site/.next",
-  "installCommand": "pnpm install --no-frozen-lockfile",
   "framework": "nextjs"
 }
