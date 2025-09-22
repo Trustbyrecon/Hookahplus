@@ -1,0 +1,155 @@
+{
+  "version": "1.1",
+  "mode": "HiTrust Reflex Mode",
+  "last_updated": "2025-01-27",
+  "description": "HiTrust Strategy Configuration for HookahPlus Reflex Agents",
+  
+  "hitrust_execution": {
+    "autonomy_threshold": 85,
+    "minimal_prompting": true,
+    "self_verification_cycles": {
+      "enabled": true,
+      "question": "Did this achieve intent?",
+      "confirmation_required": true
+    },
+    "whisper_feedback": {
+      "enabled": true,
+      "trigger_conditions": [
+        "user_input_paused",
+        "guest_input_unclear",
+        "context_insufficient"
+      ]
+    },
+    "hallucination_prevention": {
+      "enabled": true,
+      "context_expansion_request": true,
+      "uncertainty_handling": "request_clarification"
+    }
+  },
+  
+  "reflex_ohl": {
+    "plan": {
+      "multi_step_reasoning": {
+        "task_boundary_assessment": true,
+        "context_impact_analysis": true,
+        "agent_load_evaluation": true,
+        "dependency_mapping": true
+      },
+      "intent_capture": {
+        "pre_execution_logging": true,
+        "reasoning_trace": true
+      },
+      "sub_agent_routing": {
+        "high_trust_subroutines": true,
+        "scoped_task_delegation": true
+      }
+    },
+    
+    "context_module": {
+      "clean_file_system": {
+        "relevant_files_only": [".md", ".yaml", "GhostLog"],
+        "memory_contamination_prevention": true,
+        "context_clearance_required": true
+      },
+      "secure_cache_mounts": [
+        "reflex_memory/",
+        "trust_map/"
+      ]
+    },
+    
+    "score": {
+      "mandatory_reporting": true,
+      "thresholds": {
+        "reflow_trigger": 87,
+        "trust_confirmation": 92
+      },
+      "evaluation_criteria": [
+        "Decision Alignment",
+        "Outcome Clarity",
+        "Behavioral Traceability",
+        "Meta Meaning Reflection"
+      ]
+    },
+    
+    "report": {
+      "payload_structure": {
+        "summary": "What was done and outcome",
+        "reflexScore": "xx%",
+        "meaning": "Why this mattered for the system",
+        "next": "What should follow based on result"
+      },
+      "supervisor_communication": true
+    }
+  },
+  
+  "moat_awareness": {
+    "reflex_tiers": {
+      "theta_tau": {
+        "phase": "Adaptive Build Phase",
+        "actions": ["Score", "Adapt", "Bloom"],
+        "status": "active"
+      },
+      "upsilon_omega": {
+        "phase": "Reflective Lock Phase", 
+        "actions": ["Soak", "Pause", "Audit"],
+        "status": "standby"
+      }
+    },
+    "transition_conditions": {
+      "trigger": "reflex_layer = tau AND status = trust-bloomed: true",
+      "target": "upsilon_omega",
+      "behavior": "pause_active_behavior_unless_called_by_moat_supervisor"
+    }
+  },
+  
+  "trustgate_test_cycle": {
+    "auto_generate": true,
+    "verification_required": true,
+    "test_components": [
+      {
+        "name": "Decision Alignment Test",
+        "weight": 25,
+        "description": "How well does the action match the stated goal?"
+      },
+      {
+        "name": "Context Integration Test", 
+        "weight": 25,
+        "description": "How effectively was available context used?"
+      },
+      {
+        "name": "Output Quality Test",
+        "weight": 25,
+        "description": "How clear, actionable, and complete is the result?"
+      },
+      {
+        "name": "Learning Capture Test",
+        "weight": 25,
+        "description": "How well was knowledge gained and documented?"
+      }
+    ]
+  },
+  
+  "agent_reflection_prompts": {
+    "final_reflection": {
+      "questions": [
+        "What pulse did you leave behind?",
+        "What pattern did you carry forward?", 
+        "What trust have you earned?"
+      ],
+      "purpose": "Evolution and growth tracking"
+    },
+    "self_verification": {
+      "intent_achievement": "Did this achieve intent?",
+      "outcome_validation": "Was the outcome as expected?",
+      "learning_capture": "What was learned from this action?"
+    }
+  },
+  
+  "performance_optimization": {
+    "learning_velocity": "tracking",
+    "trust_network_health": "monitoring", 
+    "collaboration_effectiveness": "measuring",
+    "memory_utilization": "optimizing",
+    "context_efficiency": "improving"
+  }
+}

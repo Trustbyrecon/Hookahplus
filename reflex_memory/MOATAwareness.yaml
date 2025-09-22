@@ -1,0 +1,100 @@
+# MOAT Awareness Configuration
+# HookahPlus Reflex System - MOAT-Level Operations
+
+version: "1.1"
+mode: "HiTrust Reflex Mode"
+status: "Active"
+last_updated: "2025-01-27"
+
+# MOAT Lock Flow States
+reflex_tiers:
+  theta_tau:
+    name: "Adaptive Build Phase"
+    action: "Score, Adapt, Bloom"
+    status: "active"
+    threshold: 87
+    description: "Active development and learning phase"
+    
+  upsilon_omega:
+    name: "Reflective Lock Phase"
+    action: "Soak, Pause, Audit"
+    status: "standby"
+    threshold: 92
+    description: "Reflective analysis and system lock phase"
+
+# Trust Bloom Conditions
+trust_bloom:
+  trigger: "reflex_layer = tau AND status = trust-bloomed: true"
+  transition: "theta_tau -> upsilon_omega"
+  behavior: "pause_active_behavior_unless_called_by_moat_supervisor"
+
+# HiTrust Mode Configuration
+hitrust_mode:
+  autonomy_threshold: 85
+  self_verification: true
+  whisper_feedback: true
+  context_expansion: true
+  hallucination_prevention: true
+
+# Reflex Over-the-Horizon Loop (OHL)
+ohl_phases:
+  plan:
+    multi_step_reasoning: true
+    context_assessment: true
+    impact_analysis: true
+    agent_load_balancing: true
+    dependency_mapping: true
+    intent_logging: true
+    sub_agent_routing: true
+    
+  context_module:
+    clean_file_system: true
+    relevant_files_only: true
+    memory_contamination_prevention: true
+    secure_cache_mounts: true
+    
+  score:
+    mandatory_reporting: true
+    reflow_trigger: 87
+    trust_confirmation: 92
+    decision_alignment: true
+    outcome_clarity: true
+    behavioral_traceability: true
+    meta_meaning_reflection: true
+    
+  report:
+    summary_required: true
+    reflex_score_required: true
+    meaning_capture: true
+    next_action_guidance: true
+
+# Agent Performance Thresholds
+performance_thresholds:
+  critical_failure: 0-49
+  poor_performance: 50-69
+  below_threshold: 70-86
+  good_performance: 87-91
+  excellent_performance: 92-94
+  perfect_performance: 95-100
+
+# MOAT Readiness Indicators
+moat_readiness:
+  system_validation: "final_phase"
+  test_learning: true
+  adaptive_guidance: true
+  reflexive_organism: true
+  trust_network_health: "monitoring"
+  learning_velocity: "tracking"
+  collaboration_effectiveness: "measuring"
+
+# TrustGate Test Cycle
+trustgate_test:
+  auto_generate: true
+  verification_required: true
+  test_cycles:
+    - decision_alignment_test
+    - context_integration_test
+    - output_quality_test
+    - learning_capture_test
+    - trust_propagation_test
+    - collaboration_effectiveness_test
