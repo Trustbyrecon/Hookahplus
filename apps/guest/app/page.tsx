@@ -1,7 +1,5 @@
 import React from 'react';
-import { Card } from '@hookahplus/design-system/src/components/Card';
-import { Button } from '@hookahplus/design-system/src/components/Button';
-import { Badge } from '@hookahplus/design-system/src/components/Badge';
+import { Card, Button, Badge } from '@hookahplus/design-system';
 import { 
   Clock, 
   Plus, 
@@ -10,7 +8,9 @@ import {
   Star,
   Zap,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  UserCheck,
+  BarChart3
 } from 'lucide-react';
 
 export default function GuestPortal() {

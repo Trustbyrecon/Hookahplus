@@ -1,8 +1,5 @@
 import React from 'react';
-import { Card } from '@hookahplus/design-system/src/components/Card';
-import { Button } from '@hookahplus/design-system/src/components/Button';
-import { Badge } from '@hookahplus/design-system/src/components/Badge';
-import { MetricCard } from '@hookahplus/design-system/src/components/dashboard/MetricCard';
+import { Card, Button, Badge, MetricCard } from '@hookahplus/design-system';
 import { 
   Flame, 
   Users, 
