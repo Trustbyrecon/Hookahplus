@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Card, Button, Badge, TaskQueue, MetricCard } from '@hookahplus/design-system';
+import { Card, Button, Badge, TaskQueue, MetricCard } from '../../components';
 import { 
   Users, 
   Clock, 

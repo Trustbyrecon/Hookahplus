@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Badge, StepIndicator, FlowProgress, QRScanner, FlavorSelector, SessionTimer } from '@hookahplus/design-system';
+import { Card, Button, Badge, StepIndicator, FlowProgress, QRScanner, FlavorSelector, SessionTimer } from '../../components';
 import { 
   QrCode, 
   ShoppingCart, 
