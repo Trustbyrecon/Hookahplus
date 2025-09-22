@@ -1,5 +1,5 @@
 import './globals.css'
-import GlobalNavigation from '@hookahplus/design-system/src/components/GlobalNavigation'
+import GlobalNavigation from '../components/GlobalNavigation'
 
 export const metadata = {
   title: 'HookahPlus - The Future of Hookah Lounge Management',

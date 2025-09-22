@@ -9,7 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@hookahplus/design-system": "workspace:*",
     "@tailwindcss/postcss": "^4.1.13",
     "next": "14.2.7",
     "postcss-preset-env": "^10.3.1",

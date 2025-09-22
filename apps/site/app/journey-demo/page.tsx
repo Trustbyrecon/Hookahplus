@@ -10,7 +10,7 @@ import {
   SessionTimer,
   TaskQueue,
   Flavor
-} from '@hookahplus/design-system';
+} from '../../components';
 
 export default function JourneyDemo() {
   const [currentStep, setCurrentStep] = useState(1);
