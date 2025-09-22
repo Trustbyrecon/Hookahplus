@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '../../utils/cn';
-import { Card } from '../Card';
+import Card from '../Card';
 
 export interface MetricCardProps {
   title: string;

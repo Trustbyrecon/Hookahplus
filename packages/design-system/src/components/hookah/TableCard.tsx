@@ -1,8 +1,8 @@
 import React from 'react';
 import { cn } from '../../utils/cn';
-import { Badge } from '../Badge';
-import { Card } from '../Card';
-import { Button } from '../Button';
+import Badge from '../Badge';
+import Card from '../Card';
+import Button from '../Button';
 import { 
   Table, 
   Users, 

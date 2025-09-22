@@ -1,9 +1,9 @@
 import React from 'react';
 import { cn } from '../../utils/cn';
 import { formatRelativeTime } from '../../utils/format';
-import { Badge } from '../Badge';
-import { Card } from '../Card';
-import { Button } from '../Button';
+import Badge from '../Badge';
+import Card from '../Card';
+import Button from '../Button';
 import { 
   User, 
   Clock, 
