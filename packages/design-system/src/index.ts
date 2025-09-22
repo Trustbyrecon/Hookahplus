@@ -15,6 +15,19 @@ export { default as StaffCard } from './components/hookah/StaffCard';
 // Dashboard Components
 export { default as MetricCard } from './components/dashboard/MetricCard';
 
+// Journey Flow Components
+export { default as StepIndicator } from './components/journey/StepIndicator';
+export { default as FlowProgress } from './components/journey/FlowProgress';
+export { default as JourneyCard } from './components/journey/JourneyCard';
+
+// Customer Experience Components
+export { default as QRScanner } from './components/customer/QRScanner';
+export { default as FlavorSelector } from './components/customer/FlavorSelector';
+export { default as SessionTimer } from './components/customer/SessionTimer';
+
+// Staff Workflow Components
+export { default as TaskQueue } from './components/staff/TaskQueue';
+
 // Utility functions
 export { cn } from './utils/cn';
 export { formatCurrency, formatTime, formatDate } from './utils/format';
@@ -23,3 +36,10 @@ export { formatCurrency, formatTime, formatDate } from './utils/format';
 export type { ButtonProps } from './components/Button';
 export type { CardProps } from './components/Card';
 export type { BadgeProps } from './components/Badge';
+export type { StepIndicatorProps } from './components/journey/StepIndicator';
+export type { FlowProgressProps } from './components/journey/FlowProgress';
+export type { JourneyCardProps } from './components/journey/JourneyCard';
+export type { QRScannerProps } from './components/customer/QRScanner';
+export type { FlavorSelectorProps, Flavor } from './components/customer/FlavorSelector';
+export type { SessionTimerProps } from './components/customer/SessionTimer';
+export type { TaskQueueProps, Task } from './components/staff/TaskQueue';
