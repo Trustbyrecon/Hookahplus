@@ -36,7 +36,7 @@ export default function Home() {
                   size="lg" 
                   variant="primary" 
                   rightIcon={<ArrowRight className="w-5 h-5" />}
-                  className="bg-gradient-to-r from-primary-500 to-cyan-500 hover:from-primary-600 hover:to-cyan-600 shadow-primary"
+                       className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 shadow-lg"
                 >
                   Pre-Order Station
                 </Button>
