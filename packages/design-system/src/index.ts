@@ -15,9 +15,6 @@ export { default as SessionCard } from './components/hookah/SessionCard';
 export { default as TableCard } from './components/hookah/TableCard';
 export { default as StaffCard } from './components/hookah/StaffCard';
 
-// Dashboard Components
-export { default as MetricCard } from './components/dashboard/MetricCard';
-
 // Journey Flow Components
 export { default as StepIndicator } from './components/journey/StepIndicator';
 export { default as FlowProgress } from './components/journey/FlowProgress';
