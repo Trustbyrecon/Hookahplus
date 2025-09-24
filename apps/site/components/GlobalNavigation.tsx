@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
+// import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '../utils/cn';
 import { 
@@ -209,7 +209,7 @@ const GlobalNavigation: React.FC = () => {
                   {group.items.map((item) => {
                     const isActive = pathname === item.href;
                     return (
-                      <Link
+                      <a
                         key={item.href}
                         href={item.href}
                         className={cn(
@@ -224,7 +224,7 @@ const GlobalNavigation: React.FC = () => {
                         {item.flowState === 'active' && (
                           <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
                         )}
-                      </Link>
+                      </a>
                     );
                   })}
                 </div>
@@ -244,18 +244,18 @@ const GlobalNavigation: React.FC = () => {
 
             {/* Support and Docs */}
             <div className="flex items-center space-x-2">
-              <Link
+              <a
                 href="/support"
                 className="text-sm text-zinc-400 hover:text-white transition-colors"
               >
                 Support
-              </Link>
-              <Link
+              </a>
+              <a
                 href="/docs"
                 className="text-sm text-zinc-400 hover:text-white transition-colors"
               >
                 Docs
-              </Link>
+              </a>
             </div>
           </div>
         </div>
@@ -272,7 +272,7 @@ const GlobalNavigation: React.FC = () => {
               {group.items.map((item) => {
                 const isActive = pathname === item.href;
                 return (
-                  <Link
+                  <a
                     key={item.href}
                     href={item.href}
                     className={cn(
@@ -287,7 +287,7 @@ const GlobalNavigation: React.FC = () => {
                     {item.flowState === 'active' && (
                       <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse ml-auto" />
                     )}
-                  </Link>
+                  </a>
                 );
               })}
             </div>
