@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+// import Link from "next/link";
 
 function useReflexAgent(routeName: string) {
   useEffect(() => {
@@ -51,12 +51,12 @@ export default function PreOrder() {
           <div className="bg-zinc-900 border border-teal-500 rounded-lg p-6">
             <h3 className="text-xl font-semibold text-teal-300 mb-3">Quick Order</h3>
             <p className="text-zinc-400 mb-4">Ready to order? Head straight to checkout with our signature flavor.</p>
-            <Link 
+            <a 
               href="/checkout"
               className="inline-block w-full py-3 px-6 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-lg text-center transition-colors"
             >
               Order Blue Mist + Mint ($30.00)
-            </Link>
+            </a>
           </div>
 
           <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-6">

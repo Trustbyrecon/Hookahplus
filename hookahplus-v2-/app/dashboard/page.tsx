@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import GlobalNavigation from "../../components/GlobalNavigation";
+import { GlobalNavigation } from "../../../packages/design-system/src";
 import { designSystem, applyDesignToken } from "../../lib/designSystem";
 
 // AI Agent Collaboration Interface

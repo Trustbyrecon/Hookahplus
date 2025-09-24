@@ -95,18 +95,16 @@ export default function DemoPage() {
               </div>
             </div>
             <div className="flex gap-4">
-              <Link
-                href="/sessions"
-                className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-lg text-lg font-medium transition-colors"
-              >
-                🚀 Live Sessions
-              </Link>
-              <Link
-                href="/connector-partnership-analytics"
-                className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg text-lg font-medium transition-colors"
-              >
-                📊 Connector Partnership Analytics
-              </Link>
+              {(Link as any)({
+                href: "/sessions",
+                className: "bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-lg text-lg font-medium transition-colors",
+                children: "🚀 Live Sessions"
+              })}
+              {(Link as any)({
+                href: "/connector-partnership-analytics",
+                className: "bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg text-lg font-medium transition-colors",
+                children: "📊 Connector Partnership Analytics"
+              })}
             </div>
           </div>
         </div>
@@ -238,18 +236,16 @@ export default function DemoPage() {
             Join the Hookah+ revolution and transform your lounge operations
           </p>
           <div className="flex gap-4 justify-center">
-            <Link
-              href="/sessions"
-              className="bg-teal-600 hover:bg-teal-700 text-white px-8 py-4 rounded-lg text-xl font-bold transition-colors"
-            >
-              🚀 Launch Live Sessions
-            </Link>
-            <Link
-              href="/connector-partnership-analytics"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg text-xl font-bold transition-colors"
-            >
-              📊 View Analytics
-            </Link>
+            {(Link as any)({
+              href: "/sessions",
+              className: "bg-teal-600 hover:bg-teal-700 text-white px-8 py-4 rounded-lg text-xl font-bold transition-colors",
+              children: "🚀 Launch Live Sessions"
+            })}
+            {(Link as any)({
+              href: "/connector-partnership-analytics",
+              className: "bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg text-xl font-bold transition-colors",
+              children: "📊 View Analytics"
+            })}
           </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from 'react';
-import GlobalNavigation from "../../components/GlobalNavigation";
+import { GlobalNavigation } from "../../../packages/design-system/src";
 
 type DemoStep = 'qr-scan' | 'flavor-selection' | 'checkout' | 'confirmation' | 'dashboard';
 

@@ -48,23 +48,29 @@ export interface CustomerBooking {
   sessionEndTime?: Date;
   // Metadata
   metadata: {
-    source: 'layout_preview' | 'mobile_app' | 'staff_entry' | 'walk_in';
+    source: 'layout_preview' | 'mobile_app' | 'staff_entry' | 'walk_in' | 'reservation_hold' | 'qr_checkin' | 'multi_fire_session';
     ipAddress?: string;
     userAgent?: string;
     referrer?: string;
     campaignId?: string;
+    [key: string]: any;
   };
 }
 
 export interface BOHOperation {
   id: string;
   bookingId: string;
-  operationType: 'prep_start' | 'prep_complete' | 'delivery_start' | 'delivery_complete' | 'service_start' | 'service_end' | 'refill_request' | 'coal_swap' | 'session_pause' | 'session_resume';
-  staffId: string;
-  staffName: string;
+  operationType: 'prep_start' | 'prep_complete' | 'delivery_start' | 'delivery_complete' | 'service_start' | 'service_end' | 'refill_request' | 'coal_swap' | 'session_pause' | 'session_resume' | 'multi_session_setup' | 'reservation_prep' | 'qr_checkin_prep';
+  staffId?: string;
+  staffName?: string;
   timestamp: Date;
   notes?: string;
   metadata?: Record<string, any>;
+  description?: string;
+  priority?: 'low' | 'medium' | 'high';
+  status?: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+  assignedStaff?: string | null;
+  estimatedDuration?: number;
 }
 
 export interface CustomerJourneyState {
@@ -182,9 +188,7 @@ class CustomerJourneyManager {
       estimatedSessionTime: this.calculateSessionTime(data.partySize),
       qrCode: `checkin_${data.reservationId}`,
       metadata: {
-        ...data.metadata,
-        seatNumber: data.seatNumber,
-        sequence: data.sequence
+        ...data.metadata
       }
     };
 
@@ -231,7 +235,7 @@ class CustomerJourneyManager {
     // Base operations for all bookings
     operations.push({
       bookingId: booking.id,
-      type: 'prep_notification',
+      operationType: 'prep_start',
       description: `New ${booking.metadata.source} booking for ${booking.customerName}`,
       priority: 'high',
       status: 'pending',
@@ -250,7 +254,7 @@ class CustomerJourneyManager {
       case 'multi_fire_session':
         operations.push({
           bookingId: booking.id,
-          type: 'multi_session_setup',
+          operationType: 'multi_session_setup',
           description: `Setup multiple fire sessions for table ${booking.tableId}`,
           priority: 'high',
           status: 'pending',
@@ -267,7 +271,7 @@ class CustomerJourneyManager {
       case 'reservation_hold':
         operations.push({
           bookingId: booking.id,
-          type: 'reservation_prep',
+          operationType: 'reservation_prep',
           description: `Prepare table ${booking.tableId} for reservation hold`,
           priority: 'medium',
           status: 'pending',
@@ -284,9 +288,9 @@ class CustomerJourneyManager {
       case 'qr_checkin':
         operations.push({
           bookingId: booking.id,
-          type: 'immediate_service',
+          operationType: 'service_start',
           description: `Immediate service for walk-in customer at table ${booking.tableId}`,
-          priority: 'urgent',
+          priority: 'high',
           status: 'pending',
           assignedStaff: null,
           estimatedDuration: booking.estimatedPrepTime,
@@ -378,8 +382,9 @@ class CustomerJourneyManager {
   }
 
   // Get bookings by status
-  getBookingsByStatus(status: CustomerBooking['status']): CustomerBooking[] {
-    return this.getAllBookings().filter(booking => booking.status === status);
+  async getBookingsByStatus(status: CustomerBooking['status']): Promise<CustomerBooking[]> {
+    const allBookings = await this.getAllBookings();
+    return allBookings.filter(booking => booking.status === status);
   }
 
   // Get BOH operations for booking
@@ -409,18 +414,18 @@ class CustomerJourneyManager {
   }
 
   // Get real-time dashboard data
-  getDashboardData() {
-    const bookings = this.getAllBookings();
-    const activeSessions = this.getActiveBookings();
+  async getDashboardData() {
+    const bookings = await this.getAllBookings();
+    const activeSessions = await this.getActiveBookings();
     
     return {
       totalBookings: bookings.length,
       activeSessions: activeSessions.length,
-      pendingBookings: this.getBookingsByStatus('pending').length,
-      preparingBookings: this.getBookingsByStatus('preparing').length,
-      readyBookings: this.getBookingsByStatus('ready').length,
-      activeBookings: this.getBookingsByStatus('active').length,
-      completedBookings: this.getBookingsByStatus('completed').length,
+      pendingBookings: (await this.getBookingsByStatus('pending')).length,
+      preparingBookings: (await this.getBookingsByStatus('preparing')).length,
+      readyBookings: (await this.getBookingsByStatus('ready')).length,
+      activeBookings: (await this.getBookingsByStatus('active')).length,
+      completedBookings: (await this.getBookingsByStatus('completed')).length,
       totalRevenue: bookings
         .filter(b => b.paymentStatus === 'paid')
         .reduce((sum, b) => sum + b.totalPrice, 0),

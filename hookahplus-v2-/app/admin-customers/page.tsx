@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import CustomerProfileManager from "../../components/CustomerProfileManager";
-import GlobalNavigation from "../../components/GlobalNavigation";
+import { GlobalNavigation } from "../../../packages/design-system/src";
 
 export default function AdminCustomersPage() {
   return (

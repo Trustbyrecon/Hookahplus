@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
+// import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 // AI Agent Collaboration Interface
@@ -434,7 +434,7 @@ const GlobalNavigation: React.FC = () => {
                   {/* Navigation Items */}
                   <div className="p-2">
                     {group.items.map((item) => (
-                      <Link
+                      <a
                         key={item.href}
                         href={item.href}
                         className={`block p-3 rounded-lg transition-all duration-200 ${
@@ -469,7 +469,7 @@ const GlobalNavigation: React.FC = () => {
                             ➡️ {item.nextAction}
                           </div>
                         )}
-                      </Link>
+                      </a>
                     ))}
                   </div>
                 </div>

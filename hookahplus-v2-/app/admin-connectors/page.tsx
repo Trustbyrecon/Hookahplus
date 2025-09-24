@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import ConnectorPartnershipManager from "../../components/ConnectorPartnershipManager";
-import GlobalNavigation from "../../components/GlobalNavigation";
+import { GlobalNavigation } from "../../../packages/design-system/src";
 
 export default function AdminConnectorsPage() {
   return (

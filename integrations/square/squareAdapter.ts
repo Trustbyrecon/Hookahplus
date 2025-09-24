@@ -12,7 +12,7 @@ export class SquareAdapter implements PosAdapter {
   }
   
   async syncBill(_posId: string, _p: SessionPayload) { 
-    return { status: "OK" }; 
+    return { status: "OK" as const }; 
   }
   
   async closeBill(_posId: string) { 

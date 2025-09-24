@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
+// import Link from 'next/link';
 
 export default function LandingPage() {
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
@@ -23,13 +23,13 @@ export default function LandingPage() {
             <a href="#features" className="hover:text-white transition-colors">Features</a>
             <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
             <a href="#demo" className="hover:text-white transition-colors">Demo</a>
-            <Link
+            <a
               href="/owner-cta?form=preorder"
               className="inline-flex items-center gap-2 rounded-full border border-zinc-700 px-3 py-1 hover:border-teal-500/70 hover:text-white transition-all duration-200"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063A2 2 0 0 0 14.063 15.5l-1.582 6.135a.5.5 0 0 1-.963 0z"></path><path d="M20 3v4"></path><path d="M22 5h-4"></path><path d="M4 17v2"></path><path d="M5 18H3"></path></svg>
               Join Waitlist
-            </Link>
+            </a>
           </nav>
         </div>
       </header>
@@ -54,18 +54,18 @@ export default function LandingPage() {
             
             {/* Primary CTA */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-20">
-              <Link
+              <a
                 href="/owner-cta?form=preorder"
                 className="bg-teal-500 hover:bg-teal-400 text-zinc-950 px-8 py-4 rounded-xl text-xl font-bold transition-all duration-200 transform hover:scale-105 shadow-lg"
               >
                 🚀 Start Preorders
-              </Link>
-              <Link
+              </a>
+              <a
                 href="/demo-video"
                 className="bg-zinc-800 hover:bg-zinc-700 text-white px-8 py-4 rounded-xl text-xl font-medium transition-all duration-200 border border-zinc-700 hover:border-zinc-600"
               >
                 🎯 See Demo
-              </Link>
+              </a>
             </div>
 
             {/* Trust Indicators */}
@@ -147,18 +147,18 @@ export default function LandingPage() {
             Join the future of hookah lounge management with AI-powered personalization
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
+            <a
               href="/demo-video"
               className="bg-zinc-800 hover:bg-zinc-700 text-white px-8 py-4 rounded-xl text-xl font-medium transition-all duration-200 border border-zinc-700 hover:border-zinc-600"
             >
               🎯 Experience the Demo
-            </Link>
-            <Link
+            </a>
+            <a
               href="/owner-cta?form=preorder"
               className="bg-teal-500 hover:bg-teal-400 text-zinc-950 px-8 py-4 rounded-xl text-xl font-bold transition-all duration-200 transform hover:scale-105 shadow-lg"
             >
               🚀 Start Preorders
-            </Link>
+            </a>
           </div>
         </div>
       </section>
@@ -173,7 +173,7 @@ export default function LandingPage() {
           <div className="flex gap-6">
             <a href="#features" className="hover:text-white transition-colors">Features</a>
             <a href="#demo" className="hover:text-white transition-colors">Demo</a>
-            <Link href="/owner-cta?form=preorder" className="hover:text-white transition-colors">Join Waitlist</Link>
+            <a href="/owner-cta?form=preorder" className="hover:text-white transition-colors">Join Waitlist</a>
           </div>
           <div>© {new Date().getFullYear()} Trust by Recon</div>
         </div>

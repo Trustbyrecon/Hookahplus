@@ -210,9 +210,20 @@ export class FireSessionWorkflow extends EventEmitter {
     }
 
     const previousState = { ...session };
-    const event = this.processButtonPress(session, button, staffRole, staffId, metadata);
+    const success = this.processButtonPress(session, button, staffRole, staffId, metadata);
     
-    if (event) {
+    if (success) {
+      const event: WorkflowEvent = {
+        sessionId: session.sessionId,
+        staffRole,
+        timestamp: new Date(),
+        statusTag: session.currentStatus,
+        buttonPressed: button,
+        metadata,
+        previousState: previousState,
+        newState: { ...session }
+      };
+      
       this.emit('workflowEvent', event);
       return event;
     }
@@ -226,7 +237,7 @@ export class FireSessionWorkflow extends EventEmitter {
     staffRole: StaffRole, 
     staffId: string,
     metadata?: Record<string, any>
-  ): WorkflowEvent | null {
+  ): boolean {
     const timestamp = new Date();
     session.updatedAt = timestamp;
 
@@ -415,22 +426,10 @@ export class FireSessionWorkflow extends EventEmitter {
         break;
 
       default:
-        return null;
+        return false;
     }
 
-    // Create and return event
-    const event: WorkflowEvent = {
-      sessionId: session.sessionId,
-      staffRole,
-      timestamp,
-      statusTag: session.currentStatus,
-      buttonPressed: button,
-      metadata,
-      previousState: previousState,
-      newState: { ...session }
-    };
-
-    return event;
+    return true;
   }
 
   // 🔥 Demo Cycle Management

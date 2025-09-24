@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import GlobalNavigation from "@/components/GlobalNavigation";
+import { GlobalNavigation } from "../../../packages/design-system/src";
 import {
   Download,
   Play,

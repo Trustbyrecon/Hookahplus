@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import type { FireSession, TrustLevel, DeliveryZone } from "@/app/lib/workflow";
-import type { User } from "@/app/lib/users";
-import { demoUsers, canPerformAction } from "@/app/lib/users";
+import type { FireSession, TrustLevel, DeliveryZone, User } from "../lib/workflow";
+import { demoUsers, canPerformAction } from "../lib/users";
 
 // Enhanced session types for admin management
 interface AdminSession extends FireSession {
@@ -57,13 +56,13 @@ function generateEnhancedDemoSessions(count: number = 10): AdminSession[] {
       customerLabel: `customer_${Math.floor(Math.random() * 900) + 100}`,
       durationMin: Math.floor(Math.random() * 60) + 30,
       bufferSec: [5, 10, 15][Math.floor(Math.random() * 3)],
-      zone: zones[Math.floor(Math.random() * zones.length)] as string,
+      zone: zones[Math.floor(Math.random() * zones.length)] as DeliveryZone,
       items: Math.floor(Math.random() * 3) + 1,
       etaMin: Math.floor(Math.random() * 10) + 5,
       position: positions[Math.floor(Math.random() * positions.length)],
       state: states[Math.floor(Math.random() * states.length)] as FireSession["state"],
-      createdAt: new Date(Date.now() - Math.random() * 86400000),
-      updatedAt: new Date(),
+      createdAt: Date.now() - Math.random() * 86400000,
+      updatedAt: Date.now(),
       paymentStatus: ["pending", "confirmed", "failed"][Math.floor(Math.random() * 3)] as "pending" | "confirmed" | "failed",
       paymentMethod: paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
       flavorCombinations: flavors,
@@ -80,7 +79,7 @@ export default function AdminControlCenter() {
   const [sessions, setSessions] = useState<AdminSession[]>([]);
   const [selectedSession, setSelectedSession] = useState<AdminSession | null>(null);
   const [showSessionDetails, setShowSessionDetails] = useState(false);
-  const [currentUser] = useState(demoUsers.find(u => u.role === "admin") || demoUsers[0]);
+  const [currentUser] = useState<User>(demoUsers[3]); // Use the OWNER user directly
   const [popularFlavors, setPopularFlavors] = useState<{ flavor: string; count: number }[]>([]);
 
   // Generate popular flavors from sessions
@@ -165,7 +164,7 @@ export default function AdminControlCenter() {
           </div>
           <div className="text-right">
             <div className="text-sm text-[#8ff4c2]">Role: {currentUser.role}</div>
-            <div className="text-xs text-[#aab6ff]">Trust Level: {currentUser.trustLevel}</div>
+            <div className="text-xs text-[#aab6ff]">Trust Level: {(currentUser as any).trustLevel}</div>
           </div>
         </div>
       </header>

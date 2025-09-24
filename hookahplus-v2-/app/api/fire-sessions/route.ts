@@ -1,7 +1,7 @@
 // app/api/fire-sessions/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { allSessions, upsertSession, clearStore } from "@/app/lib/store";
-import type { DeliveryZone, FireSession } from "@/app/lib/workflow";
+import { allSessions, upsertSession, clearStore } from "../../lib/store"; 
+import type { DeliveryZone, FireSession } from "../../lib/workflow";
 
 function rnd<T>(arr: T[]) { return arr[Math.floor(Math.random()*arr.length)]; }
 function id(n=6){ return Math.random().toString(36).slice(2,2+n); }

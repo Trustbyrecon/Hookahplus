@@ -1,5 +1,5 @@
 import React from 'react';
-import GlobalNavigation from '@/components/GlobalNavigation';
+import { GlobalNavigation } from '../../../packages/design-system/src';
 
 const SquarePOSPage: React.FC = () => {
   return (

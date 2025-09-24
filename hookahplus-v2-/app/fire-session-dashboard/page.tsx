@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import type { FireSession, DeliveryZone, Action, User, TrustLevel } from "@/app/lib/workflow";
-import { nextStateWithTrust, TrustError } from "@/app/lib/workflow";
-import { logAction } from "@/app/lib/audit";
-import { demoUsers, canPerformAction, getUserDisplayInfo } from "@/app/lib/users";
+import type { FireSession, DeliveryZone, Action, User, TrustLevel } from "../lib/workflow";
+import { nextStateWithTrust, TrustError } from "../lib/workflow";
+import { logAction } from "../lib/audit";
+import { demoUsers, canPerformAction, getUserDisplayInfo } from "../lib/users";
 
 // Enhanced session interface with new fields
 interface EnhancedFireSession extends FireSession {

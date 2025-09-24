@@ -12,7 +12,7 @@ export async function performStripeLiveCheck(): Promise<LiveCheckResult> {
   try {
     // Initialize Stripe with secret key
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-      apiVersion: '2024-12-18.acacia',
+      apiVersion: '2023-10-16',
     });
 
     console.log('🔄 Performing $1 live Stripe test...');

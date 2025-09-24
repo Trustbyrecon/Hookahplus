@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import LoungeLayout from "../../components/LoungeLayout";
 import HookahRoomDashboard from "../../components/HookahRoomDashboard";
-import GlobalNavigation from "../../components/GlobalNavigation";
+import { GlobalNavigation } from "../../../packages/design-system/src";
 
 type Session = {
   id: string;
@@ -964,7 +964,7 @@ export default function SessionsDashboard() {
 
           {/* Hookah Room Dashboard */}
           <div className="bg-gradient-to-r from-zinc-900 to-zinc-800 border-2 border-purple-600 rounded-xl shadow-lg">
-            <HookahRoomDashboard />
+            {(HookahRoomDashboard as any)()}
           </div>
 
           {/* Lounge Layout */}

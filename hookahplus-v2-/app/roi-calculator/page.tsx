@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState, useEffect } from "react";
-import GlobalNavigation from "../../components/GlobalNavigation";
+import { GlobalNavigation } from "../../../packages/design-system/src";
 
 // Hookah+ ROI Calculator Page
 // Drop this file at: app/roi-calculator/page.tsx (Next.js App Router)

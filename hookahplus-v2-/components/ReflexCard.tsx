@@ -1,5 +1,5 @@
 import React from "react";
-import Link from "next/link";
+// import Link from "next/link";
 
 interface ReflexCardProps {
   title: string;
@@ -58,9 +58,9 @@ const ReflexCard: React.FC<ReflexCardProps> = ({
 
   if (href) {
     return (
-      <Link href={href} className="block">
+      <a href={href} className="block">
         <CardContent />
-      </Link>
+      </a>
     );
   }
 
