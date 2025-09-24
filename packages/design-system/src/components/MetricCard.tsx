@@ -26,8 +26,8 @@ const MetricCard = React.forwardRef<HTMLDivElement, MetricCardProps>(
     changeType = 'neutral',
     description,
     ...props 
-  }, ref) => {
-    const changeColors = {
+  }: MetricCardProps, ref: React.Ref<HTMLDivElement>) => {
+    const changeColors: Record<string, string> = {
       positive: 'text-green-400',
       negative: 'text-red-400',
       neutral: 'text-zinc-400',

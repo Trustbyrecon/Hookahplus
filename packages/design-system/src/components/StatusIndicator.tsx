@@ -12,16 +12,16 @@ export interface StatusIndicatorProps extends React.HTMLAttributes<HTMLDivElemen
 }
 
 const StatusIndicator = React.forwardRef<HTMLDivElement, StatusIndicatorProps>(
-  ({ 
-    className, 
-    status, 
-    label, 
-    value, 
+  ({
+    className,
+    status,
+    label,
+    value,
     description,
     size = 'md',
-    ...props 
-  }, ref) => {
-    const statusConfig = {
+    ...props
+  }: StatusIndicatorProps, ref: React.Ref<HTMLDivElement>) => {
+    const statusConfig: Record<string, { color: string; text: string; icon: string }> = {
       online: {
         color: 'bg-green-400',
         text: 'Online',
@@ -54,7 +54,7 @@ const StatusIndicator = React.forwardRef<HTMLDivElement, StatusIndicatorProps>(
       }
     };
 
-    const sizeClasses = {
+    const sizeClasses: Record<string, string> = {
       sm: 'text-xs',
       md: 'text-sm',
       lg: 'text-base'

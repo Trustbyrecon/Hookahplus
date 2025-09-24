@@ -8,10 +8,10 @@ export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const Card = React.forwardRef<HTMLDivElement, CardProps>(
-  ({ className, variant = 'default', padding = 'md', hover = false, children, ...props }, ref) => {
+  ({ className, variant = 'default', padding = 'md', hover = false, children, ...props }: CardProps, ref: React.Ref<HTMLDivElement>) => {
     const baseClasses = 'rounded-xl border transition-all duration-200';
     
-    const variants = {
+    const variants: Record<string, string> = {
       default: 'bg-zinc-900 border-zinc-800',
       outlined: 'bg-transparent border-zinc-700',
       elevated: 'bg-zinc-900 border-zinc-800 shadow-lg',
@@ -20,7 +20,7 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
       status: 'bg-zinc-900 border-zinc-800 hover:border-teal-500/50 hover:bg-zinc-800/50',
     };
     
-    const paddings = {
+    const paddings: Record<string, string> = {
       none: 'p-0',
       sm: 'p-4',
       md: 'p-6',

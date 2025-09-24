@@ -21,8 +21,8 @@ const TrustLock = React.forwardRef<HTMLDivElement, TrustLockProps>(
     showIcon = true,
     size = 'md',
     ...props 
-  }, ref) => {
-    const statusConfig = {
+  }: TrustLockProps, ref: React.Ref<HTMLDivElement>) => {
+    const statusConfig: Record<string, { border: string; bg: string; text: string; icon: string }> = {
       active: {
         border: 'border-teal-500',
         bg: 'bg-teal-500/10',
@@ -43,7 +43,7 @@ const TrustLock = React.forwardRef<HTMLDivElement, TrustLockProps>(
       }
     };
 
-    const sizeClasses = {
+    const sizeClasses: Record<string, string> = {
       sm: 'px-3 py-2 text-xs',
       md: 'px-4 py-3 text-sm',
       lg: 'px-6 py-4 text-base'
