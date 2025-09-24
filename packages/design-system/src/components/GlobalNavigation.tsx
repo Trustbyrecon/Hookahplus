@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { StatusIndicator, TrustLock } from './index';
+import StatusIndicator from './StatusIndicator';
+import TrustLock from './TrustLock';
 
 interface NavigationGroup {
   id: string;
