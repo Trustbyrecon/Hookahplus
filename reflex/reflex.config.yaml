@@ -1,0 +1,12 @@
+project: hookahplus
+mode: hittrust
+thresholds:
+  minimal: 0.87
+  optimal: 0.92
+logging:
+  ghostlog: enabled
+  trustgraph: enabled
+smoketest:
+  stripe: required
+  webhook: required
+  ghostlog_entry: required

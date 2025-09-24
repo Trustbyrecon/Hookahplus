@@ -15,7 +15,9 @@
     "start": "next start",
     "lint": "next lint",
     "clean": "rm -rf .next",
-    "stripe:seed": "node scripts/stripe-catalog/seed.js"
+    "stripe:seed": "node scripts/stripe-catalog/seed.js",
+    "reflex:smoke": "tsx scripts/reflex-smoke.ts",
+    "reflex:ci": "tsx scripts/reflex-smoke.ts --ci"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
