@@ -24,15 +24,16 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const baseClasses = 'inline-flex items-center justify-center rounded-xl font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
     
     const variants = {
-      primary: 'bg-primary-500 text-white hover:bg-primary-600 focus:ring-primary-500 shadow-primary',
+      primary: 'bg-gradient-to-r from-teal-500 to-blue-600 hover:from-teal-600 hover:to-blue-700 text-white focus:ring-teal-500 shadow-lg hover:shadow-teal-500/25 transition-all transform hover:scale-105',
       secondary: 'bg-secondary-600 text-white hover:bg-secondary-700 focus:ring-secondary-500',
-      outline: 'border border-zinc-700 text-zinc-300 hover:border-primary-500/70 hover:text-white focus:ring-primary-500',
+      outline: 'border border-zinc-700 text-zinc-300 hover:border-teal-500/70 hover:text-white focus:ring-teal-500 hover:bg-zinc-800/50',
       ghost: 'text-zinc-400 hover:text-white hover:bg-zinc-800 focus:ring-zinc-500',
       danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
       success: 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500',
       info: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500',
       warning: 'bg-yellow-600 text-white hover:bg-yellow-700 focus:ring-yellow-500',
       accent: 'bg-purple-600 text-white hover:bg-purple-700 focus:ring-purple-500',
+      fire: 'bg-gradient-to-r from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700 text-white focus:ring-red-500 shadow-lg hover:shadow-red-500/25 transition-all transform hover:scale-105',
     };
     
     const sizes = {

@@ -5,6 +5,9 @@
 export { default as Button } from './components/Button';
 export { default as Card } from './components/Card';
 export { default as Badge } from './components/Badge';
+export { default as MetricCard } from './components/MetricCard';
+export { default as StatusIndicator } from './components/StatusIndicator';
+export { default as TrustLock } from './components/TrustLock';
 export { default as GlobalNavigation } from './components/GlobalNavigation';
 
 // HookahPlus Specific Components

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Button, Badge, MetricCard } from '@hookahplus/design-system';
+import { Card, Button, Badge, MetricCard, StatusIndicator, TrustLock } from '@hookahplus/design-system';
 import { 
   Flame, 
   Users, 
@@ -10,7 +10,10 @@ import {
   Settings,
   ChefHat,
   UserCheck,
-  AlertTriangle
+  AlertTriangle,
+  Brain,
+  Shield,
+  CreditCard
 } from 'lucide-react';
 
 export default function Dashboard() {
@@ -78,24 +81,25 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
       {/* Header */}
-      <div className="bg-zinc-900 border-b border-zinc-800">
+      <div className="bg-zinc-950 border-b border-teal-500/50">
         <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold">Fire Session Dashboard</h1>
+              <h1 className="text-3xl font-bold">
+                Hookah<span className="text-teal-400">+</span> Dashboard
+              </h1>
               <p className="text-zinc-400 mt-1">
                 Complete BOH/FOH workflow management with edge case handling
               </p>
             </div>
             
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <div className="text-sm text-zinc-400">Flow Status</div>
-                <div className="text-lg font-semibold">0</div>
-                <div className="text-xs text-zinc-500">Idle</div>
-              </div>
+            <div className="flex items-center space-x-6">
+              <StatusIndicator status="idle" label="Flow Status" value="Normal" />
+              <StatusIndicator status="online" label="Live Sessions" value="0" />
+              <StatusIndicator status="online" label="Revenue" value="$0" />
+              <StatusIndicator status="online" label="System Health" value="EXCELLENT" />
             </div>
           </div>
         </div>
@@ -103,6 +107,11 @@ export default function Dashboard() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        {/* Trust Lock Display */}
+        <div className="mb-8 flex justify-center">
+          <TrustLock trustScore={0.87} status="active" version="TLH-v1" size="lg" />
+        </div>
+        
         {/* Metrics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {metrics.map((metric, index) => (

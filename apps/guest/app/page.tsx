@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Button, Badge } from '@hookahplus/design-system';
+import { Card, Button, Badge, StatusIndicator, TrustLock } from '@hookahplus/design-system';
 import { 
   Clock, 
   Plus, 
@@ -10,7 +10,10 @@ import {
   CheckCircle,
   AlertCircle,
   UserCheck,
-  BarChart3
+  BarChart3,
+  Brain,
+  Shield,
+  CreditCard
 } from 'lucide-react';
 
 export default function GuestPortal() {
@@ -57,20 +60,22 @@ export default function GuestPortal() {
   ];
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
       {/* Header */}
-      <div className="bg-zinc-900 border-b border-zinc-800">
+      <div className="bg-zinc-950 border-b border-teal-500/50">
         <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold">Pre-Order Station</h1>
-              <p className="text-zinc-400 mt-1">Table T-001 • Pre-order your favorites</p>
+              <h1 className="text-3xl font-bold">
+                🍃 Pre-Order Station
+              </h1>
+              <p className="text-zinc-400 mt-1">Table T-001 • QR scan - Menu browse - Flavor personalize - Start Fire Session</p>
             </div>
             
             <div className="flex items-center space-x-4">
-              <Badge variant="success" className="text-xs">
-                Customer Interface: Browse menu, select items, and start your Fire Session
-              </Badge>
+              <StatusIndicator status="online" label="QR Ready" value="Active" />
+              <StatusIndicator status="online" label="Menu" value="Loaded" />
+              <StatusIndicator status="online" label="Payment" value="Ready" />
             </div>
           </div>
         </div>
@@ -78,6 +83,11 @@ export default function GuestPortal() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        {/* Trust Lock Display */}
+        <div className="mb-8 flex justify-center">
+          <TrustLock trustScore={0.87} status="active" version="TLH-v1" size="lg" />
+        </div>
+        
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Menu Section */}
           <div className="lg:col-span-2">
@@ -203,11 +213,11 @@ export default function GuestPortal() {
                 {/* Quick Actions */}
                 <div className="mt-6 space-y-3">
                   <Button 
-                    variant="accent" 
+                    variant="fire" 
                     className="w-full"
                     leftIcon={<Zap className="w-4 h-4" />}
                   >
-                    Fire Session
+                    🔥 Fire Session
                   </Button>
                   
                   <Button 
