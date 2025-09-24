@@ -1,214 +1,193 @@
-"use client";
+'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { cn } from '../utils/cn';
-import { Home, Users, Shield, Flame, UserCheck, Crown } from 'lucide-react';
-const GlobalNavigation = () => {
+import StatusIndicator from './StatusIndicator';
+import TrustLock from './TrustLock';
+const navigationGroups = [
+    {
+        id: 'dashboard',
+        label: 'Dashboard',
+        bgColor: 'bg-blue-600/20 border-blue-500/50',
+        pages: ['/dashboard']
+    },
+    {
+        id: 'sessions',
+        label: 'Sessions',
+        bgColor: 'bg-green-600/20 border-green-500/50',
+        pages: ['/sessions', '/fire-session-dashboard']
+    },
+    {
+        id: 'staff',
+        label: 'Staff',
+        bgColor: 'bg-purple-600/20 border-purple-500/50',
+        pages: ['/staff', '/staff-panel']
+    },
+    {
+        id: 'support',
+        label: 'Support',
+        bgColor: 'bg-green-600/20 border-green-500/50',
+        pages: ['/support', '/docs', '/api-docs']
+    },
+    {
+        id: 'admin',
+        label: 'Admin',
+        bgColor: 'bg-blue-600/20 border-blue-500/50',
+        pages: ['/admin', '/admin-control', '/admin-customers', '/admin-connectors']
+    },
+    {
+        id: 'operations',
+        label: 'Operations',
+        bgColor: 'bg-orange-600/20 border-orange-500/50',
+        pages: ['/monitoring', '/backup']
+    }
+];
+const GlobalNavigation = ({ showTrustLock = true, showStatusIndicators = true, currentPage, flowStatus = 'normal', liveSessions = 0, revenue = '$0', systemHealth = 'excellent' }) => {
     const pathname = usePathname();
     const [activeGroup, setActiveGroup] = useState(null);
-    const [flowState, setFlowState] = useState({
-        currentWorkflow: 'idle',
-        activeRole: 'owner',
-        dataStatus: 'empty',
-        nextAction: 'Generate demo data to see the system in action',
-        progress: 0,
-        trustLockStatus: 'active'
-    });
-    // AI Agent Collaboration - Dynamic Flow State Management
+    // Determine current navigation group
     useEffect(() => {
-        const updateFlowState = () => {
-            // Simulate AI agent collaboration
-            const workflows = ['idle', 'data-generation', 'session-management', 'customer-journey', 'admin-setup'];
-            const roles = ['owner', 'foh', 'boh', 'admin'];
-            const dataStatuses = ['empty', 'populated', 'active', 'flowing'];
-            setFlowState(prev => ({
-                ...prev,
-                currentWorkflow: workflows[Math.floor(Math.random() * workflows.length)],
-                activeRole: roles[Math.floor(Math.random() * roles.length)],
-                dataStatus: dataStatuses[Math.floor(Math.random() * dataStatuses.length)],
-                progress: Math.floor(Math.random() * 100),
-                nextAction: 'AI agents are collaborating to optimize your workflow'
-            }));
-        };
-        const interval = setInterval(updateFlowState, 5000);
-        return () => clearInterval(interval);
-    }, []);
-    const navigationGroups = [
-        {
-            label: 'Core Operations',
-            color: 'text-cyan-300',
-            bgColor: 'bg-cyan-500/10',
-            flowState: 'active',
-            description: 'Essential workflow management',
-            aiInsight: 'AI agents are optimizing your core operations',
-            items: [
-                {
-                    label: 'Dashboard',
-                    href: '/',
-                    icon: <Home className="w-4 h-4"/>,
-                    description: 'Main control center',
-                    flowState: 'active',
-                    nextAction: 'Monitor system status',
-                    aiRecommendation: 'Check recent activity'
-                },
-                {
-                    label: 'Sessions',
-                    href: '/sessions',
-                    icon: <Flame className="w-4 h-4"/>,
-                    description: 'Fire session management',
-                    flowState: 'active',
-                    nextAction: 'Manage active sessions',
-                    aiRecommendation: 'Review session analytics'
-                }
-            ]
-        },
-        {
-            label: 'Staff Operations',
-            color: 'text-purple-300',
-            bgColor: 'bg-purple-500/10',
-            flowState: 'active',
-            description: 'Staff management and operations',
-            aiInsight: 'Staff coordination is running smoothly',
-            items: [
-                {
-                    label: 'Staff Ops',
-                    href: '/staff-ops',
-                    icon: <Users className="w-4 h-4"/>,
-                    description: 'Staff operations center',
-                    flowState: 'active',
-                    nextAction: 'Coordinate staff activities',
-                    aiRecommendation: 'Check staff assignments'
-                },
-                {
-                    label: 'Staff Panel',
-                    href: '/staff-panel',
-                    icon: <UserCheck className="w-4 h-4"/>,
-                    description: 'Staff management panel',
-                    flowState: 'active',
-                    nextAction: 'Manage staff assignments',
-                    aiRecommendation: 'Review staff performance'
-                }
-            ]
-        },
-        {
-            label: 'Administration',
-            color: 'text-red-300',
-            bgColor: 'bg-red-500/10',
-            flowState: 'idle',
-            description: 'System administration and control',
-            aiInsight: 'Admin functions are ready for use',
-            items: [
-                {
-                    label: 'Admin',
-                    href: '/admin',
-                    icon: <Crown className="w-4 h-4"/>,
-                    description: 'Administrative control center',
-                    flowState: 'idle',
-                    nextAction: 'Access admin functions',
-                    aiRecommendation: 'Review system settings'
-                }
-            ]
-        }
-    ];
-    const getFlowStatusIcon = (status) => {
-        switch (status) {
-            case 'idle': return '😴';
-            case 'active': return '⚡';
-            case 'completed': return '✅';
-            case 'required': return '🔧';
-            default: return '⚡';
-        }
+        const currentGroup = navigationGroups.find(group => group.pages.some(page => pathname.startsWith(page)));
+        setActiveGroup(currentGroup || null);
+    }, [pathname]);
+    const getFlowStatusIcon = () => {
+        if (liveSessions === 0)
+            return '😴';
+        if (liveSessions < 5)
+            return '😊';
+        if (liveSessions < 10)
+            return '😅';
+        return '🔥';
     };
-    const getFlowStatusColor = (status) => {
-        switch (status) {
-            case 'idle': return 'text-zinc-400';
-            case 'active': return 'text-green-400';
-            case 'completed': return 'text-blue-400';
-            case 'required': return 'text-yellow-400';
-            default: return 'text-zinc-400';
-        }
+    const getFlowStatusText = () => {
+        if (liveSessions === 0)
+            return 'Idle';
+        if (liveSessions < 5)
+            return 'Quiet';
+        if (liveSessions < 10)
+            return 'Busy';
+        return 'Overloaded';
     };
-    return (<nav className="bg-zinc-950 border-b border-zinc-800">
+    // Get current page info
+    const getCurrentPageInfo = () => {
+        if (pathname === '/staff')
+            return { icon: '👥', label: 'Staff Ops', description: 'Staff operations dashboard' };
+        if (pathname === '/staff-panel')
+            return { icon: '🧠', label: 'Staff Panel', description: 'Behavioral memory & customer profiles' };
+        if (pathname === '/admin')
+            return { icon: '⚙️', label: 'Admin', description: 'System administration' };
+        if (pathname === '/admin-control')
+            return { icon: '⚙️', label: 'Control Center', description: 'Admin dashboard' };
+        if (pathname === '/admin-customers')
+            return { icon: '👥', label: 'Customers', description: 'Customer management' };
+        if (pathname === '/admin-connectors')
+            return { icon: '🔗', label: 'Connectors', description: 'Integration management' };
+        if (pathname === '/support')
+            return { icon: '🎫', label: 'Help Center', description: 'FAQ, contact forms, and support tickets' };
+        if (pathname === '/docs')
+            return { icon: '📚', label: 'Documentation', description: 'User guides and API documentation' };
+        if (pathname === '/api-docs')
+            return { icon: '🔌', label: 'API Docs', description: 'Developer API reference' };
+        if (pathname === '/dashboard')
+            return { icon: '📊', label: 'Dashboard', description: 'Main lounge overview' };
+        if (pathname.startsWith('/sessions'))
+            return { icon: '🔥', label: 'Sessions', description: 'Active hookah sessions' };
+        return null;
+    };
+    const currentPageInfo = getCurrentPageInfo();
+    return (<nav className="bg-zinc-950 border-b border-zinc-800 shadow-xl sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Top Bar - Logo and Current Page */}
         <div className="flex items-center justify-between h-16">
           {/* Logo and Brand */}
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary-400 to-cyan-400 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">H+</span>
-              </div>
-              <span className="text-xl font-bold text-white">HOOKAH+</span>
-            </div>
-            
-            {/* Flow Status Indicator */}
-            <div className="hidden md:flex items-center space-x-2 ml-4">
-              <span className="text-sm text-zinc-400">Flow Status:</span>
-              <span className="text-sm text-zinc-300">{flowState.progress}%</span>
-              <span className="text-sm text-zinc-400">{getFlowStatusIcon(flowState.currentWorkflow)}</span>
-            </div>
+          <div className="flex items-center space-x-3">
+            <Link href="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+              <div className="text-teal-400 text-2xl animate-pulse">🍃</div>
+              <div className="text-teal-400 font-bold text-xl">HOOKAH+</div>
+            </Link>
+            {activeGroup && (<div className={`${activeGroup.bgColor} text-zinc-300 text-sm font-medium px-3 py-1 rounded-lg border transition-all duration-300`}>
+                {activeGroup.label.toUpperCase()}
+              </div>)}
           </div>
 
-          {/* Main Navigation */}
-          <div className="hidden md:flex items-center space-x-1">
-            {navigationGroups.map((group) => (<div key={group.label} className="relative">
-                <div className="flex items-center space-x-1">
-                  {group.items.map((item) => {
-                const isActive = pathname === item.href;
-                return (<Link key={item.href} href={item.href} className={cn('flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200', isActive
-                        ? 'bg-primary-600 text-white'
-                        : 'text-zinc-300 hover:text-white hover:bg-zinc-800')}>
-                        {item.icon}
-                        <span>{item.label}</span>
-                        {item.flowState === 'active' && (<div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"/>)}
-                      </Link>);
-            })}
+          {/* Current Page and Flow Status */}
+          <div className="flex items-center space-x-6">
+            {/* Current Page Info */}
+            {currentPageInfo && (<div className="text-center">
+                <div className="flex items-center justify-center space-x-2 text-white">
+                  <span className="text-lg">{currentPageInfo.icon}</span>
+                  <span className="font-medium">{currentPageInfo.label}</span>
                 </div>
-              </div>))}
-          </div>
-
-          {/* Right Side Actions */}
-          <div className="flex items-center space-x-4">
-            {/* Trust Lock Status */}
-            <div className="hidden lg:flex items-center space-x-2">
-              <div className="flex items-center space-x-1">
-                <Shield className="w-4 h-4 text-orange-400"/>
-                <span className="text-sm text-orange-400">Trust-Lock: TLH-v1::active</span>
-              </div>
-            </div>
-
-            {/* Support and Docs */}
-            <div className="flex items-center space-x-2">
-              <Link href="/support" className="text-sm text-zinc-400 hover:text-white transition-colors">
-                Support
-              </Link>
-              <Link href="/docs" className="text-sm text-zinc-400 hover:text-white transition-colors">
-                Docs
-              </Link>
-            </div>
+                <div className="text-sm text-zinc-400">{currentPageInfo.description}</div>
+              </div>)}
+            
+            {/* Status Indicators */}
+            {showStatusIndicators && (<>
+                <StatusIndicator status="idle" label="Current Page" value="Home"/>
+                <StatusIndicator status={flowStatus} label="Flow Status" value={getFlowStatusText()}/>
+                <StatusIndicator status="online" label="Live Sessions" value={liveSessions.toString()}/>
+                <StatusIndicator status="online" label="Revenue" value={revenue}/>
+                <StatusIndicator status="online" label="System Health" value={systemHealth.toUpperCase()}/>
+              </>)}
           </div>
         </div>
-      </div>
 
-      {/* Mobile Navigation */}
-      <div className="md:hidden border-t border-zinc-800">
-        <div className="px-4 py-2 space-y-1">
-          {navigationGroups.map((group) => (<div key={group.label} className="space-y-1">
-              <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-                {group.label}
-              </div>
-              {group.items.map((item) => {
-                const isActive = pathname === item.href;
-                return (<Link key={item.href} href={item.href} className={cn('flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200', isActive
-                        ? 'bg-primary-600 text-white'
-                        : 'text-zinc-300 hover:text-white hover:bg-zinc-800')}>
-                    {item.icon}
-                    <span>{item.label}</span>
-                    {item.flowState === 'active' && (<div className="w-2 h-2 bg-green-400 rounded-full animate-pulse ml-auto"/>)}
-                  </Link>);
-            })}
-            </div>))}
+        {/* Navigation Links */}
+        <div className="flex items-center justify-between py-3 border-t border-zinc-800/50">
+          <div className="flex items-center space-x-6">
+            <Link href="/dashboard" className={`px-3 py-2 rounded-lg transition-all duration-200 ${pathname === '/dashboard'
+            ? 'bg-teal-600 text-white'
+            : 'text-zinc-300 hover:text-white hover:bg-zinc-800'}`}>
+              📊 Dashboard
+            </Link>
+            
+            <Link href="/sessions" className={`px-3 py-2 rounded-lg transition-all duration-200 ${pathname.startsWith('/sessions')
+            ? 'bg-green-600 text-white'
+            : 'text-zinc-300 hover:text-white hover:bg-zinc-800'}`}>
+              🔥 Sessions
+            </Link>
+            
+            <Link href="/staff" className={`px-3 py-2 rounded-lg transition-all duration-200 ${pathname === '/staff'
+            ? 'bg-purple-600 text-white'
+            : 'text-zinc-300 hover:text-white hover:bg-zinc-800'}`}>
+              👥 Staff Ops
+            </Link>
+            
+            <Link href="/staff-panel" className={`px-3 py-2 rounded-lg transition-all duration-200 ${pathname === '/staff-panel'
+            ? 'bg-purple-600 text-white'
+            : 'text-zinc-300 hover:text-white hover:bg-zinc-800'}`}>
+              🧠 Staff Panel
+            </Link>
+            
+            <Link href="/admin" className={`px-3 py-2 rounded-lg transition-all duration-200 ${pathname.startsWith('/admin')
+            ? 'bg-blue-600 text-white'
+            : 'text-zinc-300 hover:text-white hover:bg-zinc-800'}`}>
+              ⚙️ Admin
+            </Link>
+          </div>
+
+          {/* Support and Help Links */}
+          <div className="flex items-center space-x-3">
+            <Link href="/support" className={`px-3 py-2 rounded-lg transition-all duration-200 ${pathname.startsWith('/support')
+            ? 'bg-green-600 text-white'
+            : 'text-zinc-300 hover:text-white hover:bg-zinc-800'}`}>
+              🎫 Support
+            </Link>
+            
+            <Link href="/docs" className={`px-3 py-2 rounded-lg transition-all duration-200 ${pathname.startsWith('/docs')
+            ? 'bg-blue-600 text-white'
+            : 'text-zinc-300 hover:text-white hover:bg-zinc-800'}`}>
+              📚 Docs
+            </Link>
+          </div>
         </div>
+
+        {/* Trust Lock Display */}
+        {showTrustLock && (<div className="py-3 border-t border-zinc-800/50">
+            <div className="flex justify-center">
+              <TrustLock trustScore={0.87} status="active" version="TLH-v1"/>
+            </div>
+          </div>)}
       </div>
     </nav>);
 };

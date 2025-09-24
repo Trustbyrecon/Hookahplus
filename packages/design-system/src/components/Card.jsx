@@ -6,7 +6,9 @@ const Card = React.forwardRef(({ className, variant = 'default', padding = 'md',
         default: 'bg-zinc-900 border-zinc-800',
         outlined: 'bg-transparent border-zinc-700',
         elevated: 'bg-zinc-900 border-zinc-800 shadow-lg',
-        highlighted: 'bg-primary-500/10 border-primary-500/50',
+        highlighted: 'bg-teal-500/10 border-teal-500/50 hover:bg-teal-500/20 hover:border-teal-500/70',
+        hero: 'bg-zinc-900/50 border-teal-500/50 hover:bg-teal-900/20 hover:border-teal-500/70',
+        status: 'bg-zinc-900 border-zinc-800 hover:border-teal-500/50 hover:bg-zinc-800/50',
     };
     const paddings = {
         none: 'p-0',
