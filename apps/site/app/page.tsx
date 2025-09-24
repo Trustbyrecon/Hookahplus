@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Button, Badge, MetricCard, StatusIndicator, TrustLock } from '../components';
+import { Card, Button, Badge, MetricCard, StatusIndicator, TrustLock } from '@hookahplus/design-system';
 import { 
   Zap, 
   Shield, 
@@ -37,151 +37,152 @@ export default function Home() {
                   size="lg" 
                   variant="primary" 
                   rightIcon={<ArrowRight className="w-5 h-5" />}
-                  className="bg-gradient-to-r from-teal-500 to-blue-600 hover:from-teal-600 hover:to-blue-700 text-white font-bold py-4 px-8 rounded-full text-xl shadow-2xl hover:shadow-teal-500/25 transition-all transform hover:scale-105"
+                  className="px-8 py-4 text-lg"
                 >
-                  🍃 Pre-Order Station
-                </Button>
-              </a>
-              <a href="/demo-flow">
-                <Button 
-                  size="lg" 
-                  variant="outline"
-                  className="border-purple-500 text-purple-300 hover:bg-purple-500/10"
-                >
-                  See Demo
-                </Button>
-              </a>
-              <a href="https://app.hookahplus.net">
-                <Button 
-                  size="lg" 
-                  variant="outline"
-                  className="border-red-500 text-red-300 hover:bg-red-500/10"
-                >
-                  Staff Dashboard
+                  Pre-Order Station
                 </Button>
               </a>
             </div>
-            
-            <div className="text-sm text-zinc-400 mb-4">
-              QR scan → Menu browse → Flavor personalize → Start Fire Session
+
+            {/* Status Indicators */}
+            <div className="flex flex-wrap justify-center gap-6 mb-12">
+              <StatusIndicator 
+                status="online" 
+                label="System" 
+                value="Online" 
+                description="All systems operational"
+              />
+              <StatusIndicator 
+                status="online" 
+                label="Agents" 
+                value="Active" 
+                description="AI agents running"
+              />
+              <StatusIndicator 
+                status="online" 
+                label="BOH/FOH" 
+                value="Ready" 
+                description="Backend & frontend ready"
+              />
             </div>
-            
-            {/* Flow Status Indicators */}
-            <div className="flex items-center justify-center space-x-6 mb-6">
-              <StatusIndicator status="online" label="System" value="Online" />
-              <StatusIndicator status="online" label="Agents" value="Active" />
-              <StatusIndicator status="online" label="BOH/FOH" value="Ready" />
-            </div>
-            
-            {/* Trust Lock Display */}
+
+            {/* Trust Lock */}
             <div className="flex justify-center mb-8">
-              <TrustLock trustScore={0.87} status="active" version="TLH-v1" />
+              <TrustLock 
+                trustScore={0.95}
+                status="active"
+                version="TLH-v1"
+                size="lg"
+              />
             </div>
           </div>
         </div>
       </div>
 
       {/* Powered by Reflex Intelligence */}
-      <div className="px-4 py-16">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12 text-teal-300">Powered by Reflex Intelligence</h2>
+      <div className="py-16 bg-zinc-900/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-white mb-4">
+              Powered by Reflex Intelligence
+            </h2>
+            <p className="text-xl text-zinc-300 max-w-3xl mx-auto">
+              Advanced AI agents working together to deliver personalized experiences and seamless operations.
+            </p>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center p-6 bg-zinc-900 border border-teal-500 rounded-xl">
-              <div className="text-4xl mb-4">🧠</div>
-              <h3 className="text-xl font-semibold mb-3 text-teal-300">Aliethia Memory</h3>
-              <p className="text-zinc-400">Learns your flavor preferences and suggests perfect pairings</p>
-              <div className="mt-4 flex items-center justify-center space-x-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                <span className="text-xs text-green-400">Trust Score: 0.87</span>
+            <Card variant="highlighted" className="p-6">
+              <div className="flex items-center mb-4">
+                <Brain className="w-8 h-8 text-teal-400 mr-3" />
+                <h3 className="text-xl font-semibold text-white">Aliethia Memory</h3>
               </div>
-            </div>
-            
-            <div className="text-center p-6 bg-zinc-900 border border-teal-500 rounded-xl">
-              <div className="text-4xl mb-4">🔒</div>
-              <h3 className="text-xl font-semibold mb-3 text-teal-300">HiTrust Sentinel</h3>
-              <p className="text-zinc-400">Cryptographic verification for every transaction</p>
-              <div className="mt-4 flex items-center justify-center space-x-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                <span className="text-xs text-green-400">Security Level: 100%</span>
+              <p className="text-zinc-300 mb-4">
+                Behavioral memory system that learns and adapts to customer preferences, creating personalized experiences.
+              </p>
+              <div className="flex items-center text-sm text-teal-400">
+                <span className="w-2 h-2 bg-teal-400 rounded-full mr-2"></span>
+                Active Learning
               </div>
-            </div>
-            
-            <div className="text-center p-6 bg-zinc-900 border border-teal-500 rounded-xl">
-              <div className="text-4xl mb-4">💳</div>
-              <h3 className="text-xl font-semibold mb-3 text-teal-300">EP Payments</h3>
-              <p className="text-zinc-400">Secure Stripe integration with real-time processing</p>
-              <div className="mt-4 flex items-center justify-center space-x-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                <span className="text-xs text-green-400">Processing Rate: 0.82</span>
+            </Card>
+
+            <Card variant="highlighted" className="p-6">
+              <div className="flex items-center mb-4">
+                <Shield className="w-8 h-8 text-teal-400 mr-3" />
+                <h3 className="text-xl font-semibold text-white">HiTrust Sentinel</h3>
               </div>
-            </div>
+              <p className="text-zinc-300 mb-4">
+                Security and trust monitoring system ensuring safe transactions and data protection.
+              </p>
+              <div className="flex items-center text-sm text-teal-400">
+                <span className="w-2 h-2 bg-teal-400 rounded-full mr-2"></span>
+                Trust Score: 0.95
+              </div>
+            </Card>
+
+            <Card variant="highlighted" className="p-6">
+              <div className="flex items-center mb-4">
+                <CreditCard className="w-8 h-8 text-teal-400 mr-3" />
+                <h3 className="text-xl font-semibold text-white">EP Payments</h3>
+              </div>
+              <p className="text-zinc-300 mb-4">
+                Intelligent payment processing with fraud detection and seamless checkout experiences.
+              </p>
+              <div className="flex items-center text-sm text-teal-400">
+                <span className="w-2 h-2 bg-teal-400 rounded-full mr-2"></span>
+                Secure Processing
+              </div>
+            </Card>
           </div>
         </div>
-        
+      </div>
+
       {/* Quick Access */}
-      <div className="px-4 py-16">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12 text-teal-300">Quick Access</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-white mb-4">
+              Quick Access
+            </h2>
+            <p className="text-xl text-zinc-300">
+              Direct access to all Hookah+ applications and services.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
-              { 
-                name: 'Dashboard', 
-                icon: '📊',
-                href: 'https://app.hookahplus.net',
-                description: '0 active'
+              {
+                icon: <Users className="w-8 h-8" />,
+                name: "Staff Dashboard",
+                href: "https://app.hookahplus.net",
+                description: "Manage sessions, staff, and operations"
               },
-              { 
-                name: 'Pre-Order', 
-                icon: '📱',
-                href: 'https://guest.hookahplus.net',
-                description: 'QR Ready'
+              {
+                icon: <Zap className="w-8 h-8" />,
+                name: "Pre-Order Station",
+                href: "https://guest.hookahplus.net",
+                description: "Customer ordering and session management"
               },
-              { 
-                name: 'Fire Session', 
-                icon: '🔥',
-                href: 'https://app.hookahplus.net/fire-session-dashboard',
-                description: '0 active'
-              },
-              { 
-                name: 'Staff Mgmt', 
-                icon: '⚙️',
-                href: 'https://app.hookahplus.net/staff-panel',
-                description: 'Staff-drive'
-              },
-              { 
-                name: 'Staff Ops', 
-                icon: '👥',
-                href: 'https://app.hookahplus.net/staff',
-                description: 'Live Data'
-              },
-              { 
-                name: 'POS Waitlist', 
-                icon: '📋',
-                href: 'https://app.hookahplus.net/pos-waitlist',
-                description: 'Analytics'
-              },
-              { 
-                name: 'Campaigns', 
-                icon: '🚀',
-                href: 'https://app.hookahplus.net/start-preorders',
-                description: 'Pre-Order'
-              },
-              { 
-                name: 'Layout Preview', 
-                icon: '🗺️',
-                href: 'https://app.hookahplus.net/layout-preview',
-                description: 'Interactive'
-              },
-            ].map((item) => (
-              <a
-                key={item.name}
-                href={item.href}
-                className="group flex flex-col items-center p-4 bg-zinc-900 border border-teal-500 rounded-lg hover:bg-teal-900/20 transition-colors"
-              >
-                <div className="text-2xl mb-2">{item.icon}</div>
-                <div className="text-sm">{item.name}</div>
-                <div className="text-xs text-zinc-500 mt-1">{item.description}</div>
-              </a>
+              {
+                icon: <Settings className="w-8 h-8" />,
+                name: "Admin Panel",
+                href: "https://admin.hookahplus.net",
+                description: "System administration and configuration"
+              }
+            ].map((item, index) => (
+              <Card key={index} variant="outlined" className="p-6 hover:border-teal-500/50 transition-colors">
+                <div className="flex items-center mb-4">
+                  <div className="text-teal-400 mr-4">{item.icon}</div>
+                  <h3 className="text-xl font-semibold text-white">{item.name}</h3>
+                </div>
+                <p className="text-zinc-300 mb-4">{item.description}</p>
+                <a 
+                  href={item.href}
+                  className="inline-flex items-center text-teal-400 hover:text-teal-300 transition-colors"
+                >
+                  Access <ArrowRight className="w-4 h-4 ml-1" />
+                </a>
+              </Card>
             ))}
           </div>
         </div>

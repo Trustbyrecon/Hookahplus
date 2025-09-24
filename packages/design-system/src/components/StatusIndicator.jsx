@@ -39,7 +39,7 @@ const StatusIndicator = React.forwardRef(({ className, status, label, value, des
         md: 'text-sm',
         lg: 'text-base'
     };
-    const config = statusConfig[status];
+    const config = statusConfig[status] || statusConfig.offline;
     return (<div className={cn('flex items-center space-x-2', sizeClasses[size], className)} ref={ref} {...props}>
         <div className={cn('w-2 h-2 rounded-full animate-pulse', config.color)}/>
         <div className="flex flex-col">

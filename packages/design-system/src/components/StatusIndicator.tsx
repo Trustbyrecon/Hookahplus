@@ -60,7 +60,7 @@ const StatusIndicator = React.forwardRef<HTMLDivElement, StatusIndicatorProps>(
       lg: 'text-base'
     };
 
-    const config = statusConfig[status];
+    const config = statusConfig[status] || statusConfig.offline;
 
     return (
       <div

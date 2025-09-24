@@ -195,6 +195,9 @@ importers:
 
   apps/site:
     dependencies:
+      '@hookahplus/design-system':
+        specifier: workspace:*
+        version: link:../../packages/design-system
       '@tailwindcss/postcss':
         specifier: ^4.1.13
         version: 4.1.13
