@@ -27,7 +27,7 @@ const SessionTimer: React.FC<SessionTimerProps> = ({
   const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
 
     if (isRunning && !isPaused && timeRemaining > 0) {
       interval = setInterval(() => {

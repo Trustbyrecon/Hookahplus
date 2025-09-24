@@ -70,7 +70,7 @@ const QRScanner: React.FC<QRScannerProps> = ({
   };
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (isScanning) {
       interval = setInterval(simulateQRDetection, 100);
     }

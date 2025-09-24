@@ -1,8 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import StatusIndicator from './StatusIndicator';
 import TrustLock from './TrustLock';
 
@@ -60,27 +58,28 @@ interface GlobalNavigationProps {
   liveSessions?: number;
   revenue?: string;
   systemHealth?: 'excellent' | 'good' | 'warning' | 'error';
+  onNavigate?: (path: string) => void;
 }
 
 const GlobalNavigation: React.FC<GlobalNavigationProps> = ({
   showTrustLock = true,
   showStatusIndicators = true,
-  currentPage,
+  currentPage = '/',
   flowStatus = 'normal',
   liveSessions = 0,
   revenue = '$0',
-  systemHealth = 'excellent'
+  systemHealth = 'excellent',
+  onNavigate
 }) => {
-  const pathname = usePathname();
   const [activeGroup, setActiveGroup] = useState<NavigationGroup | null>(null);
 
   // Determine current navigation group
   useEffect(() => {
     const currentGroup = navigationGroups.find(group => 
-      group.pages.some(page => pathname.startsWith(page))
+      group.pages.some(page => currentPage.startsWith(page))
     );
     setActiveGroup(currentGroup || null);
-  }, [pathname]);
+  }, [currentPage]);
 
   const getFlowStatusIcon = () => {
     if (liveSessions === 0) return '😴';
@@ -98,17 +97,17 @@ const GlobalNavigation: React.FC<GlobalNavigationProps> = ({
 
   // Get current page info
   const getCurrentPageInfo = () => {
-    if (pathname === '/staff') return { icon: '👥', label: 'Staff Ops', description: 'Staff operations dashboard' };
-    if (pathname === '/staff-panel') return { icon: '🧠', label: 'Staff Panel', description: 'Behavioral memory & customer profiles' };
-    if (pathname === '/admin') return { icon: '⚙️', label: 'Admin', description: 'System administration' };
-    if (pathname === '/admin-control') return { icon: '⚙️', label: 'Control Center', description: 'Admin dashboard' };
-    if (pathname === '/admin-customers') return { icon: '👥', label: 'Customers', description: 'Customer management' };
-    if (pathname === '/admin-connectors') return { icon: '🔗', label: 'Connectors', description: 'Integration management' };
-    if (pathname === '/support') return { icon: '🎫', label: 'Help Center', description: 'FAQ, contact forms, and support tickets' };
-    if (pathname === '/docs') return { icon: '📚', label: 'Documentation', description: 'User guides and API documentation' };
-    if (pathname === '/api-docs') return { icon: '🔌', label: 'API Docs', description: 'Developer API reference' };
-    if (pathname === '/dashboard') return { icon: '📊', label: 'Dashboard', description: 'Main lounge overview' };
-    if (pathname.startsWith('/sessions')) return { icon: '🔥', label: 'Sessions', description: 'Active hookah sessions' };
+    if (currentPage === '/staff') return { icon: '👥', label: 'Staff Ops', description: 'Staff operations dashboard' };
+    if (currentPage === '/staff-panel') return { icon: '🧠', label: 'Staff Panel', description: 'Behavioral memory & customer profiles' };
+    if (currentPage === '/admin') return { icon: '⚙️', label: 'Admin', description: 'System administration' };
+    if (currentPage === '/admin-control') return { icon: '⚙️', label: 'Control Center', description: 'Admin dashboard' };
+    if (currentPage === '/admin-customers') return { icon: '👥', label: 'Customers', description: 'Customer management' };
+    if (currentPage === '/admin-connectors') return { icon: '🔗', label: 'Connectors', description: 'Integration management' };
+    if (currentPage === '/support') return { icon: '🎫', label: 'Help Center', description: 'FAQ, contact forms, and support tickets' };
+    if (currentPage === '/docs') return { icon: '📚', label: 'Documentation', description: 'User guides and API documentation' };
+    if (currentPage === '/api-docs') return { icon: '🔌', label: 'API Docs', description: 'Developer API reference' };
+    if (currentPage === '/dashboard') return { icon: '📊', label: 'Dashboard', description: 'Main lounge overview' };
+    if (currentPage.startsWith('/sessions')) return { icon: '🔥', label: 'Sessions', description: 'Active hookah sessions' };
     return null;
   };
 
@@ -121,10 +120,17 @@ const GlobalNavigation: React.FC<GlobalNavigationProps> = ({
         <div className="flex items-center justify-between h-16">
           {/* Logo and Brand */}
           <div className="flex items-center space-x-3">
-            <Link href="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+            <a 
+              href="/" 
+              className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
+              onClick={(e) => {
+                e.preventDefault();
+                onNavigate?.('/');
+              }}
+            >
               <div className="text-teal-400 text-2xl animate-pulse">🍃</div>
               <div className="text-teal-400 font-bold text-xl">HOOKAH+</div>
-            </Link>
+            </a>
             {activeGroup && (
               <div className={`${activeGroup.bgColor} text-zinc-300 text-sm font-medium px-3 py-1 rounded-lg border transition-all duration-300`}>
                 {activeGroup.label.toUpperCase()}
@@ -161,85 +167,113 @@ const GlobalNavigation: React.FC<GlobalNavigationProps> = ({
         {/* Navigation Links */}
         <div className="flex items-center justify-between py-3 border-t border-zinc-800/50">
           <div className="flex items-center space-x-6">
-            <Link 
+            <a 
               href="/dashboard" 
               className={`px-3 py-2 rounded-lg transition-all duration-200 ${
-                pathname === '/dashboard' 
+                currentPage === '/dashboard' 
                   ? 'bg-teal-600 text-white' 
                   : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
               }`}
+              onClick={(e) => {
+                e.preventDefault();
+                onNavigate?.('/dashboard');
+              }}
             >
               📊 Dashboard
-            </Link>
+            </a>
             
-            <Link 
+            <a 
               href="/sessions" 
               className={`px-3 py-2 rounded-lg transition-all duration-200 ${
-                pathname.startsWith('/sessions') 
+                currentPage.startsWith('/sessions') 
                   ? 'bg-green-600 text-white' 
                   : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
               }`}
+              onClick={(e) => {
+                e.preventDefault();
+                onNavigate?.('/sessions');
+              }}
             >
               🔥 Sessions
-            </Link>
+            </a>
             
-            <Link 
+            <a 
               href="/staff" 
               className={`px-3 py-2 rounded-lg transition-all duration-200 ${
-                pathname === '/staff' 
+                currentPage === '/staff' 
                   ? 'bg-purple-600 text-white' 
                   : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
               }`}
+              onClick={(e) => {
+                e.preventDefault();
+                onNavigate?.('/staff');
+              }}
             >
               👥 Staff Ops
-            </Link>
+            </a>
             
-            <Link 
+            <a 
               href="/staff-panel" 
               className={`px-3 py-2 rounded-lg transition-all duration-200 ${
-                pathname === '/staff-panel' 
+                currentPage === '/staff-panel' 
                   ? 'bg-purple-600 text-white' 
                   : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
               }`}
+              onClick={(e) => {
+                e.preventDefault();
+                onNavigate?.('/staff-panel');
+              }}
             >
               🧠 Staff Panel
-            </Link>
+            </a>
             
-            <Link 
+            <a 
               href="/admin" 
               className={`px-3 py-2 rounded-lg transition-all duration-200 ${
-                pathname.startsWith('/admin') 
+                currentPage.startsWith('/admin') 
                   ? 'bg-blue-600 text-white' 
                   : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
               }`}
+              onClick={(e) => {
+                e.preventDefault();
+                onNavigate?.('/admin');
+              }}
             >
               ⚙️ Admin
-            </Link>
+            </a>
           </div>
 
           {/* Support and Help Links */}
           <div className="flex items-center space-x-3">
-            <Link 
+            <a 
               href="/support" 
               className={`px-3 py-2 rounded-lg transition-all duration-200 ${
-                pathname.startsWith('/support') 
+                currentPage.startsWith('/support') 
                   ? 'bg-green-600 text-white' 
                   : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
               }`}
+              onClick={(e) => {
+                e.preventDefault();
+                onNavigate?.('/support');
+              }}
             >
               🎫 Support
-            </Link>
+            </a>
             
-            <Link 
+            <a 
               href="/docs" 
               className={`px-3 py-2 rounded-lg transition-all duration-200 ${
-                pathname.startsWith('/docs') 
+                currentPage.startsWith('/docs') 
                   ? 'bg-blue-600 text-white' 
                   : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
               }`}
+              onClick={(e) => {
+                e.preventDefault();
+                onNavigate?.('/docs');
+              }}
             >
               📚 Docs
-            </Link>
+            </a>
           </div>
         </div>
 
