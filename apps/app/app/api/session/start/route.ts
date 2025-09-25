@@ -8,17 +8,25 @@ export const dynamic = 'force-dynamic';
 
 // Initialize Supabase client inside function to avoid build-time errors
 function getSupabaseClient() {
-  const SUPABASE_URL = getSupabaseUrl();
-  const SUPABASE_ANON_KEY = getSupabaseAnonKey();
-  
-  // Validate URL format
-  if (!SUPABASE_URL.startsWith('http://') && !SUPABASE_URL.startsWith('https://')) {
-    throw new Error(`Invalid Supabase URL: ${SUPABASE_URL}. Must be a valid HTTP or HTTPS URL.`);
+  try {
+    const SUPABASE_URL = getSupabaseUrl();
+    const SUPABASE_ANON_KEY = getSupabaseAnonKey();
+    
+    // Validate URL format
+    if (!SUPABASE_URL.startsWith('http://') && !SUPABASE_URL.startsWith('https://')) {
+      throw new Error(`Invalid Supabase URL: ${SUPABASE_URL}. Must be a valid HTTP or HTTPS URL.`);
+    }
+    
+    return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { persistSession: false }
+    });
+  } catch (error) {
+    // During build time, environment variables might not be available
+    if (process.env.NODE_ENV === 'production' && process.env.VERCEL === '1') {
+      throw new Error('Supabase client cannot be initialized during Vercel build without environment variables');
+    }
+    throw error;
   }
-  
-  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: { persistSession: false }
-  });
 }
 
 async function fetchPriceByLookup(lookupKey: string) {

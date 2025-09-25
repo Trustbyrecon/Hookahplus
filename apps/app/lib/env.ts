@@ -8,15 +8,27 @@ export const getEnvVar = (key: string, fallback?: string): string => {
 };
 
 export const getSupabaseUrl = (): string => {
-  return getEnvVar('SUPABASE_URL', 'https://placeholder.supabase.co');
+  const value = process.env.SUPABASE_URL;
+  if (!value) {
+    throw new Error('SUPABASE_URL is required');
+  }
+  return value;
 };
 
 export const getSupabaseAnonKey = (): string => {
-  return getEnvVar('SUPABASE_ANON_KEY', 'placeholder-anon-key');
+  const value = process.env.SUPABASE_ANON_KEY;
+  if (!value) {
+    throw new Error('SUPABASE_ANON_KEY is required');
+  }
+  return value;
 };
 
 export const getSupabaseServiceRoleKey = (): string => {
-  return getEnvVar('SUPABASE_SERVICE_ROLE_KEY', 'placeholder-service-role-key');
+  const value = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!value) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY is required');
+  }
+  return value;
 };
 
 export const getStripeSecretKey = (): string => {
