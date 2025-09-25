@@ -13,7 +13,7 @@ import { getStripeWebhookSecret, getSupabaseUrl, getSupabaseServiceRoleKey } fro
 function getSupabaseClient() {
   // Skip Supabase initialization during build time
   if (process.env.NODE_ENV === 'production' && process.env.VERCEL === '1' && !process.env.SUPABASE_URL) {
-    throw new Error('Supabase client cannot be initialized during Vercel build without environment variables');
+    return null; // Return null instead of throwing during build
   }
   
   try {
@@ -31,7 +31,7 @@ function getSupabaseClient() {
   } catch (error) {
     // During build time, environment variables might not be available
     if (process.env.NODE_ENV === 'production' && process.env.VERCEL === '1') {
-      throw new Error('Supabase client cannot be initialized during Vercel build without environment variables');
+      return null; // Return null instead of throwing during build
     }
     throw error;
   }
@@ -39,8 +39,14 @@ function getSupabaseClient() {
 
 // Utility: idempotency insert. Returns true if event is new; false if seen.
 async function lockEventOnce(eventId: string, type: string) {
+  const supabaseAdmin = getSupabaseClient();
+  if (!supabaseAdmin) {
+    // If Supabase is not available, assume event is new
+    console.warn('Supabase not available, assuming event is new');
+    return true;
+  }
+
   try {
-    const supabaseAdmin = getSupabaseClient();
     const { data, error } = await supabaseAdmin
       .from("stripe_webhook_events")
       .insert({ id: eventId, type })
