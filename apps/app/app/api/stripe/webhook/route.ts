@@ -21,6 +21,12 @@ async function getSupabaseClient() {
     return null; // Always return null during any build/CI environment
   }
   
+  // COMPLETELY SKIP SUPABASE DURING VERCEL BUILDS
+  if (process.env.VERCEL === '1') {
+    console.log('VERCEL BUILD: Completely skipping Supabase initialization');
+    return null;
+  }
+  
   try {
     // DYNAMIC IMPORT: Only import Supabase when we actually need it
     const { createClient } = await import('@supabase/supabase-js');

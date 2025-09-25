@@ -1,9 +1,19 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // output: 'standalone', // Temporarily disabled for Windows symlink issues
-  // experimental: {
-  //   appDir: true, // Deprecated in Next.js 14
-  // },
-}
+  webpack: (config, { isServer, dev }) => {
+    // During Vercel builds, replace @supabase/supabase-js with our stub
+    if (isServer && process.env.NODE_ENV === 'production' && process.env.VERCEL === '1') {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        '@supabase/supabase-js': require.resolve('./lib/supabase-stub.ts')
+      };
+    }
+    return config;
+  },
+  experimental: {
+    // Ensure dynamic imports work correctly
+    esmExternals: 'loose'
+  }
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;
