@@ -33,7 +33,7 @@ async function lockEventOnce(eventId: string, type: string) {
   }
 
   try {
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await (supabaseAdmin as any)
       .from("stripe_webhook_events")
       .insert({ id: eventId, type })
       .select("id")

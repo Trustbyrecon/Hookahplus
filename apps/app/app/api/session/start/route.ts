@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
     const supaAdmin = await getSupabaseClient();
     if (supaAdmin) {
       try {
-        const { data, error } = await supaAdmin
+        const { data, error } = await (supaAdmin as any)
           .from('sessions')
           .insert({
             venue_id: venueId, 
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
         session = data;
         
         // Log the event
-        await supaAdmin.from('ghostlog').insert({
+        await (supaAdmin as any).from('ghostlog').insert({
           venue_id: venueId, 
           session_id: session.id, 
           actor: 'system',

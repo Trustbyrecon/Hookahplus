@@ -30,7 +30,8 @@ export async function POST(req: NextRequest) {
     const supaAdmin = await getSupabaseClient();
     if (supaAdmin) {
       try {
-        const { error } = await supaAdmin
+        // TypeScript assertion: we know supaAdmin is not null here
+        const { error } = await (supaAdmin as any)
           .from('refills')
           .update({ completed_at: new Date().toISOString() })
           .eq('id', refillId)
@@ -42,7 +43,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Log the event
-        await supaAdmin.from('ghostlog').insert({
+        await (supaAdmin as any).from('ghostlog').insert({
           venue_id: venueId, 
           event: 'REFILL_COMPLETED', 
           actor: `staff_${staffId}`, 

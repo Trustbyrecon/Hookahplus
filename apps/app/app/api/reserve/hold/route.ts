@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
     const supaAdmin = await getSupabaseClient();
     if (supaAdmin) {
       try {
-        const { data, error } = await supaAdmin
+        const { data, error } = await (supaAdmin as any)
           .from('reservations')
           .insert({
             venue_id: venueId, 

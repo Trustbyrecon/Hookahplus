@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     const supaAdmin = await getSupabaseClient();
     if (supaAdmin) {
       try {
-        const { data, error } = await supaAdmin
+        const { data, error } = await (supaAdmin as any)
           .from('refills')
           .insert({ 
             venue_id: venueId, 
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Log the event
-        await supaAdmin.from('ghostlog').insert({
+        await (supaAdmin as any).from('ghostlog').insert({
           venue_id: venueId, 
           session_id: sessionId, 
           actor: 'guest', 
