@@ -1,7 +1,7 @@
 // apps/app/app/api/stripe/webhook/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "../../../../lib/stripe";
-import { createClient } from "@supabase/supabase-js";
+// DYNAMIC IMPORT: Only import Supabase when actually needed, not at module level
 import Stripe from "stripe";
 
 export const runtime = "nodejs";
@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic"; // never cache webhooks
 import { getStripeWebhookSecret, getSupabaseUrl, getSupabaseServiceRoleKey } from '../../../../lib/env';
 
 // Initialize Supabase client inside function to avoid build-time errors
-function getSupabaseClient() {
+async function getSupabaseClient() {
   // ULTIMATE NUCLEAR OPTION: Disable during ANY production build or CI environment
   if (process.env.NODE_ENV === 'production' || 
       process.env.VERCEL === '1' || 
@@ -22,6 +22,9 @@ function getSupabaseClient() {
   }
   
   try {
+    // DYNAMIC IMPORT: Only import Supabase when we actually need it
+    const { createClient } = await import('@supabase/supabase-js');
+    
     const SUPABASE_URL = getSupabaseUrl();
     const SUPABASE_SERVICE_ROLE_KEY = getSupabaseServiceRoleKey();
     
@@ -47,7 +50,7 @@ function getSupabaseClient() {
 
 // Utility: idempotency insert. Returns true if event is new; false if seen.
 async function lockEventOnce(eventId: string, type: string) {
-  const supabaseAdmin = getSupabaseClient();
+  const supabaseAdmin = await getSupabaseClient();
   if (!supabaseAdmin) {
     // If Supabase is not available, assume event is new
     console.warn('Supabase not available, assuming event is new');
