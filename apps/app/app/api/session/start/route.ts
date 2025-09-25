@@ -8,6 +8,11 @@ export const dynamic = 'force-dynamic';
 
 // Initialize Supabase client inside function to avoid build-time errors
 function getSupabaseClient() {
+  // Skip Supabase initialization during build time
+  if (process.env.NODE_ENV === 'production' && process.env.VERCEL === '1' && !process.env.SUPABASE_URL) {
+    return null; // Return null instead of throwing during build
+  }
+  
   try {
     const SUPABASE_URL = getSupabaseUrl();
     const SUPABASE_ANON_KEY = getSupabaseAnonKey();
@@ -23,7 +28,7 @@ function getSupabaseClient() {
   } catch (error) {
     // During build time, environment variables might not be available
     if (process.env.NODE_ENV === 'production' && process.env.VERCEL === '1') {
-      throw new Error('Supabase client cannot be initialized during Vercel build without environment variables');
+      return null; // Return null instead of throwing during build
     }
     throw error;
   }
@@ -77,38 +82,43 @@ export async function POST(req: NextRequest) {
 
     // Create session record - only if Supabase is available
     let session = null;
-    try {
-      const supaAdmin = getSupabaseClient();
-      const { data, error } = await supaAdmin
-        .from('sessions')
-        .insert({
-          venue_id: venueId, 
-          table_id: tableId, 
-          tier, 
-          flavors,
-          status: 'PENDING', 
-          price_lookup_key: priceLookupKey
-        })
-        .select()
-        .single();
+    const supaAdmin = getSupabaseClient();
+    if (supaAdmin) {
+      try {
+        const { data, error } = await supaAdmin
+          .from('sessions')
+          .insert({
+            venue_id: venueId, 
+            table_id: tableId, 
+            tier, 
+            flavors,
+            status: 'PENDING', 
+            price_lookup_key: priceLookupKey
+          })
+          .select()
+          .single();
+          
+        if (error) {
+          console.error('Database error:', error);
+          return NextResponse.json({ error: 'Failed to create session' }, { status: 500 });
+        }
+        session = data;
         
-      if (error) {
-        console.error('Database error:', error);
-        return NextResponse.json({ error: 'Failed to create session' }, { status: 500 });
+        // Log the event
+        await supaAdmin.from('ghostlog').insert({
+          venue_id: venueId, 
+          session_id: session.id, 
+          actor: 'system',
+          event: 'SESSION_INITIATED', 
+          meta: { tier, priceLookupKey, flavors, duration }
+        });
+      } catch (supabaseError) {
+        // If Supabase is not available, continue without database record
+        console.warn('Supabase not available, continuing without database record:', supabaseError);
+        session = { id: `temp_${Date.now()}` }; // Create a temporary session ID
       }
-      session = data;
-      
-      // Log the event
-      await supaAdmin.from('ghostlog').insert({
-        venue_id: venueId, 
-        session_id: session.id, 
-        actor: 'system',
-        event: 'SESSION_INITIATED', 
-        meta: { tier, priceLookupKey, flavors, duration }
-      });
-    } catch (supabaseError) {
-      // If Supabase is not available, continue without database record
-      console.warn('Supabase not available, continuing without database record:', supabaseError);
+    } else {
+      // Supabase not available during build or missing env vars
       session = { id: `temp_${Date.now()}` }; // Create a temporary session ID
     }
 

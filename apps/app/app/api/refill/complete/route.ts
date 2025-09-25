@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 function getSupabaseClient() {
   // Skip Supabase initialization during build time
   if (process.env.NODE_ENV === 'production' && process.env.VERCEL === '1' && !process.env.SUPABASE_URL) {
-    throw new Error('Supabase client cannot be initialized during Vercel build without environment variables');
+    return null; // Return null instead of throwing during build
   }
   
   try {
@@ -26,7 +26,7 @@ function getSupabaseClient() {
   } catch (error) {
     // During build time, environment variables might not be available
     if (process.env.NODE_ENV === 'production' && process.env.VERCEL === '1') {
-      throw new Error('Supabase client cannot be initialized during Vercel build without environment variables');
+      return null; // Return null instead of throwing during build
     }
     throw error;
   }
@@ -41,31 +41,39 @@ export async function POST(req: NextRequest) {
     }
 
     // Complete refill - only if Supabase is available
-    try {
-      const supaAdmin = getSupabaseClient();
-      const { error } = await supaAdmin
-        .from('refills')
-        .update({ completed_at: new Date().toISOString() })
-        .eq('id', refillId)
-        .eq('venue_id', venueId);
-        
-      if (error) {
-        console.error('Database error:', error);
-        return NextResponse.json({ error: 'Failed to complete refill' }, { status: 500 });
+    const supaAdmin = getSupabaseClient();
+    if (supaAdmin) {
+      try {
+        const { error } = await supaAdmin
+          .from('refills')
+          .update({ completed_at: new Date().toISOString() })
+          .eq('id', refillId)
+          .eq('venue_id', venueId);
+          
+        if (error) {
+          console.error('Database error:', error);
+          return NextResponse.json({ error: 'Failed to complete refill' }, { status: 500 });
+        }
+
+        // Log the event
+        await supaAdmin.from('ghostlog').insert({
+          venue_id: venueId, 
+          event: 'REFILL_COMPLETED', 
+          actor: `staff_${staffId}`, 
+          meta: { refillId }
+        });
+
+        return NextResponse.json({ ok: true });
+      } catch (supabaseError) {
+        // If Supabase is not available, return success anyway
+        console.warn('Supabase not available, refill completion not saved:', supabaseError);
+        return NextResponse.json({ 
+          ok: true,
+          warning: 'Database not available, refill completion not saved'
+        });
       }
-
-      // Log the event
-      await supaAdmin.from('ghostlog').insert({
-        venue_id: venueId, 
-        event: 'REFILL_COMPLETED', 
-        actor: `staff_${staffId}`, 
-        meta: { refillId }
-      });
-
-      return NextResponse.json({ ok: true });
-    } catch (supabaseError) {
-      // If Supabase is not available, return success anyway
-      console.warn('Supabase not available, refill completion not saved:', supabaseError);
+    } else {
+      // Supabase not available during build or missing env vars
       return NextResponse.json({ 
         ok: true,
         warning: 'Database not available, refill completion not saved'
