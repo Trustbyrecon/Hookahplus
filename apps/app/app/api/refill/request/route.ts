@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+// DYNAMIC IMPORT: Only import Supabase when actually needed, not at module level
 import { getSupabaseUrl, getSupabaseAnonKey } from '../../../../lib/env';
 
 export const dynamic = 'force-dynamic';
 
 // Initialize Supabase client inside function to avoid build-time errors
-function getSupabaseClient() {
+async function getSupabaseClient() {
   // ULTIMATE NUCLEAR OPTION: Disable during ANY production build or CI environment
   if (process.env.NODE_ENV === 'production' || 
       process.env.VERCEL === '1' || 
@@ -17,6 +17,9 @@ function getSupabaseClient() {
   }
   
   try {
+    // DYNAMIC IMPORT: Only import Supabase when we actually need it
+    const { createClient } = await import('@supabase/supabase-js');
+    
     const SUPABASE_URL = getSupabaseUrl();
     const SUPABASE_ANON_KEY = getSupabaseAnonKey();
     
@@ -49,7 +52,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Create refill request - only if Supabase is available
-    const supaAdmin = getSupabaseClient();
+    const supaAdmin = await getSupabaseClient();
     if (supaAdmin) {
       try {
         const { data, error } = await supaAdmin
