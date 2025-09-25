@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Button, Badge, MetricCard, StatusIndicator, TrustLock } from '@hookahplus/design-system';
+import { Card, Button, Badge, MetricCard, StatusIndicator, TrustLock } from '../components/design-system';
 import { 
   Zap, 
   Shield, 
