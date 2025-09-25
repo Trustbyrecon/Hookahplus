@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 function getSupabaseClient() {
   // Skip Supabase initialization during build time
   if (process.env.NODE_ENV === 'production' && process.env.VERCEL === '1' && !process.env.SUPABASE_URL) {
-    throw new Error('Supabase client cannot be initialized during Vercel build without environment variables');
+    return null; // Return null instead of throwing during build
   }
   
   try {
@@ -28,7 +28,7 @@ function getSupabaseClient() {
   } catch (error) {
     // During build time, environment variables might not be available
     if (process.env.NODE_ENV === 'production' && process.env.VERCEL === '1') {
-      throw new Error('Supabase client cannot be initialized during Vercel build without environment variables');
+      return null; // Return null instead of throwing during build
     }
     throw error;
   }
@@ -74,31 +74,40 @@ export async function POST(req: NextRequest) {
     });
 
     // Create reservation record - only if Supabase is available
-    try {
-      const supaAdmin = getSupabaseClient();
-      const { data, error } = await supaAdmin
-        .from('reservations')
-        .insert({
-          venue_id: venueId, 
-          table_id: tableId, 
-          payment_intent_id: pi.id, 
-          status: 'HOLD'
-        })
-        .select()
-        .single();
-        
-      if (error) {
-        console.error('Database error:', error);
-        return NextResponse.json({ error: 'Failed to create reservation' }, { status: 500 });
-      }
+    const supaAdmin = getSupabaseClient();
+    if (supaAdmin) {
+      try {
+        const { data, error } = await supaAdmin
+          .from('reservations')
+          .insert({
+            venue_id: venueId, 
+            table_id: tableId, 
+            payment_intent_id: pi.id, 
+            status: 'HOLD'
+          })
+          .select()
+          .single();
+          
+        if (error) {
+          console.error('Database error:', error);
+          return NextResponse.json({ error: 'Failed to create reservation' }, { status: 500 });
+        }
 
-      return NextResponse.json({ 
-        reservationId: data.id, 
-        clientSecret: pi.client_secret 
-      });
-    } catch (supabaseError) {
-      // If Supabase is not available, return payment intent only
-      console.warn('Supabase not available, returning payment intent only:', supabaseError);
+        return NextResponse.json({ 
+          reservationId: data.id, 
+          clientSecret: pi.client_secret 
+        });
+      } catch (supabaseError) {
+        // If Supabase is not available, return payment intent only
+        console.warn('Supabase not available, returning payment intent only:', supabaseError);
+        return NextResponse.json({ 
+          paymentIntentId: pi.id,
+          clientSecret: pi.client_secret,
+          warning: 'Database not available, reservation not saved'
+        });
+      }
+    } else {
+      // Supabase not available during build or missing env vars
       return NextResponse.json({ 
         paymentIntentId: pi.id,
         clientSecret: pi.client_secret,
