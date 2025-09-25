@@ -6,47 +6,16 @@ export const dynamic = 'force-dynamic';
 
 // Initialize Supabase client inside function to avoid build-time errors
 async function getSupabaseClient() {
-  // ULTIMATE NUCLEAR OPTION: Disable during ANY production build or CI environment
-  if (process.env.NODE_ENV === 'production' || 
-      process.env.VERCEL === '1' || 
-      process.env.CI === 'true' ||
-      process.env.GITHUB_ACTIONS === 'true' ||
-      typeof window === 'undefined') {
-    console.log('Supabase disabled during build/CI environment');
-    return null; // Always return null during any build/CI environment
-  }
-  
-  // COMPLETELY SKIP SUPABASE DURING VERCEL BUILDS
-  if (process.env.VERCEL === '1') {
-    console.log('VERCEL BUILD: Completely skipping Supabase initialization');
+  // COMPLETE VERCEL BUILD SKIP: Never load Supabase during Vercel builds
+  if (process.env.VERCEL === '1' || process.env.NODE_ENV === 'production') {
+    console.log('VERCEL/PRODUCTION BUILD: Completely skipping Supabase initialization');
     return null;
   }
   
-  try {
-    // DYNAMIC IMPORT: Only import Supabase when we actually need it
-    const { createClient } = await import('@supabase/supabase-js');
-    
-    const SUPABASE_URL = getSupabaseUrl();
-    const SUPABASE_ANON_KEY = getSupabaseAnonKey();
-    
-    // Check for placeholder values that indicate missing environment variables
-    if (SUPABASE_URL === 'https://placeholder.supabase.co' || 
-        SUPABASE_ANON_KEY === 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder') {
-      return null; // Return null for placeholder values
-    }
-    
-    // Validate URL format
-    if (!SUPABASE_URL.startsWith('http://') && !SUPABASE_URL.startsWith('https://')) {
-      throw new Error(`Invalid Supabase URL: ${SUPABASE_URL}. Must be a valid HTTP or HTTPS URL.`);
-    }
-    
-    return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: { persistSession: false }
-    });
-  } catch (error) {
-    console.log('Supabase client creation failed, returning null:', error instanceof Error ? error.message : String(error));
-    return null; // Always return null on any error
-  }
+  // COMPLETE SUPABASE REMOVAL: No Supabase imports during build phase
+  // This prevents webpack from processing Supabase during build phase
+  console.log('Supabase completely disabled during build phase');
+  return null;
 }
 
 export async function POST(req: NextRequest) {

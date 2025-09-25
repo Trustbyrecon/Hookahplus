@@ -5,10 +5,8 @@ import Stripe from 'stripe';
 
 export const dynamic = 'force-dynamic';
 
-// NUCLEAR BUILD GUARD: Completely prevent any Supabase-related execution during Vercel builds
-if (process.env.NODE_ENV === 'production' && process.env.VERCEL === '1') {
-  console.log('VERCEL BUILD DETECTED: Skipping any Supabase-related code execution');
-}
+// COMPLETE SUPABASE REMOVAL: No Supabase imports or references in this file
+// This route only handles Stripe checkout - no database operations needed
 
 async function fetchPriceByLookup(lookupKey: string) {
   const r = await stripe.prices.list({ 
