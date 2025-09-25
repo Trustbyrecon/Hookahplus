@@ -25,6 +25,12 @@ async function getSupabaseClient() {
 
 // Utility: idempotency insert. Returns true if event is new; false if seen.
 async function lockEventOnce(eventId: string, type: string) {
+  // COMPLETE SUPABASE REMOVAL: Skip all Supabase operations during Vercel builds
+  if (process.env.VERCEL === '1' || process.env.NODE_ENV === 'production') {
+    console.log('VERCEL BUILD: Skipping Supabase operations, assuming event is new');
+    return true;
+  }
+  
   const supabaseAdmin = await getSupabaseClient();
   if (!supabaseAdmin) {
     // If Supabase is not available, assume event is new

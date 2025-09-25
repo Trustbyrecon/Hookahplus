@@ -60,6 +60,16 @@ export async function POST(req: NextRequest) {
     });
 
     // Create reservation record - only if Supabase is available
+    // COMPLETE SUPABASE REMOVAL: Skip all Supabase operations during Vercel builds
+    if (process.env.VERCEL === '1' || process.env.NODE_ENV === 'production') {
+      console.log('VERCEL BUILD: Skipping Supabase operations');
+      return NextResponse.json({ 
+        paymentIntentId: pi.id,
+        clientSecret: pi.client_secret,
+        warning: 'Database not available during build, reservation not saved'
+      });
+    }
+    
     const supaAdmin = await getSupabaseClient();
     if (supaAdmin) {
       try {
