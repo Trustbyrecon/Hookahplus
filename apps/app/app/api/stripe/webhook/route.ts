@@ -20,6 +20,12 @@ function getSupabaseClient() {
     const SUPABASE_URL = getSupabaseUrl();
     const SUPABASE_SERVICE_ROLE_KEY = getSupabaseServiceRoleKey();
     
+    // Check for placeholder values that indicate missing environment variables
+    if (SUPABASE_URL === 'https://placeholder.supabase.co' || 
+        SUPABASE_SERVICE_ROLE_KEY === 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.service_placeholder') {
+      return null; // Return null for placeholder values
+    }
+    
     // Validate URL format
     if (!SUPABASE_URL.startsWith('http://') && !SUPABASE_URL.startsWith('https://')) {
       throw new Error(`Invalid Supabase URL: ${SUPABASE_URL}. Must be a valid HTTP or HTTPS URL.`);
