@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "cd apps/site && npm install && npm run build",
+  "buildCommand": "cd apps/site && pnpm run build",
   "outputDirectory": "apps/site/.next",
   "framework": "nextjs",
   "env": {

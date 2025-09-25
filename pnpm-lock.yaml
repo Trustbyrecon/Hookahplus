@@ -225,6 +225,9 @@ importers:
       react-dom:
         specifier: ^18.0.0
         version: 18.3.1(react@18.3.1)
+      stripe:
+        specifier: ^14.21.0
+        version: 14.25.0
       tailwind-merge:
         specifier: ^2.0.0
         version: 2.6.0
@@ -4657,7 +4660,7 @@ snapshots:
 
   stripe@14.25.0:
     dependencies:
-      '@types/node': 20.19.17
+      '@types/node': 24.3.0
       qs: 6.14.0
 
   stripe@18.5.0(@types/node@24.3.0):
