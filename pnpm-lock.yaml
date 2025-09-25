@@ -79,9 +79,6 @@ importers:
 
   apps/app:
     dependencies:
-      '@hookahplus/design-system':
-        specifier: workspace:*
-        version: link:../../packages/design-system
       '@supabase/supabase-js':
         specifier: ^2.39.3
         version: 2.57.4

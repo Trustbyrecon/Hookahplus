@@ -1,7 +1,9 @@
 {
   "version": 2,
-  "buildCommand": "cd .. && pnpm install --frozen-lockfile && npx turbo build --filter=@hookahplus/app",
-  "outputDirectory": "apps/app/.next",
-  "installCommand": "cd .. && pnpm install --frozen-lockfile",
-  "framework": "nextjs"
+  "buildCommand": "pnpm run build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "env": {
+    "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"
+  }
 }

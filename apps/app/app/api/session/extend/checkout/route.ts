@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
+import { stripe } from '../../../../../lib/stripe';
 import { getStripeSecretKey } from '../../../../../lib/env';
-
-const stripe = new Stripe(getStripeSecretKey(), { 
-  apiVersion: '2023-10-16' 
-});
+import Stripe from 'stripe';
 
 async function fetchPriceByLookup(lookupKey: string) {
   const r = await stripe.prices.list({ 

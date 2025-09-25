@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
+import { stripe } from '../../../../lib/stripe';
 import { createClient } from '@supabase/supabase-js';
 import { getStripeSecretKey, getSupabaseUrl, getSupabaseAnonKey } from '../../../../lib/env';
-
-const stripe = new Stripe(getStripeSecretKey(), { 
-  apiVersion: '2023-10-16' 
-});
+import Stripe from 'stripe';
 
 const supaAdmin = createClient(
   getSupabaseUrl(), 

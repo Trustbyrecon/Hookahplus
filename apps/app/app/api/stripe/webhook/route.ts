@@ -1,21 +1,20 @@
 // apps/app/app/api/stripe/webhook/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import Stripe from "stripe";
+import { stripe } from "../../../../lib/stripe";
 import { createClient } from "@supabase/supabase-js";
+import Stripe from "stripe";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic"; // never cache webhooks
 
-import { getStripeSecretKey, getStripeWebhookSecret, getSupabaseUrl, getSupabaseServiceRoleKey } from '../../../../lib/env';
+import { getStripeWebhookSecret, getSupabaseUrl, getSupabaseServiceRoleKey } from '../../../../lib/env';
 
 // --- env
-const STRIPE_SECRET_KEY = getStripeSecretKey();
 const WEBHOOK_SECRET = getStripeWebhookSecret();
 const SUPABASE_URL = getSupabaseUrl();
 const SUPABASE_SERVICE_ROLE_KEY = getSupabaseServiceRoleKey(); // server-only
 
 // --- clients
-const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2023-10-16" });
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false },
 });
