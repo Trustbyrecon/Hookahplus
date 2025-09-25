@@ -1,5 +1,9 @@
 import React from 'react';
-import { Card, Button, Badge, StatusIndicator, TrustLock } from '@hookahplus/design-system';
+import Card from '../components/Card';
+import Button from '../components/Button';
+import Badge from '../components/Badge';
+import { StatusIndicator } from '../components/StatusIndicator';
+import { TrustLock } from '../components/TrustLock';
 import { 
   Clock, 
   Plus, 

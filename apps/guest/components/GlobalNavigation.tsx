@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '../utils/cn';
 import { 
@@ -84,77 +83,30 @@ const GlobalNavigation: React.FC = () => {
 
   const navigationGroups: NavGroup[] = [
     {
-      label: 'Core Operations',
+      label: 'Guest Portal',
       color: 'text-cyan-300',
       bgColor: 'bg-cyan-500/10',
       flowState: 'active',
-      description: 'Essential workflow management',
-      aiInsight: 'AI agents are optimizing your core operations',
+      description: 'Guest experience management',
+      aiInsight: 'AI agents are optimizing your guest experience',
       items: [
         {
-          label: 'Dashboard',
+          label: 'Home',
           href: '/',
           icon: <Home className="w-4 h-4" />,
-          description: 'Main control center',
+          description: 'Main guest portal',
           flowState: 'active',
-          nextAction: 'Monitor system status',
-          aiRecommendation: 'Check recent activity'
+          nextAction: 'Manage your session',
+          aiRecommendation: 'Check session status'
         },
         {
-          label: 'Sessions',
-          href: '/sessions',
+          label: 'Extend Session',
+          href: '/extend',
           icon: <Flame className="w-4 h-4" />,
-          description: 'Fire session management',
+          description: 'Extend your hookah session',
           flowState: 'active',
-          nextAction: 'Manage active sessions',
-          aiRecommendation: 'Review session analytics'
-        }
-      ]
-    },
-    {
-      label: 'Staff Operations',
-      color: 'text-purple-300',
-      bgColor: 'bg-purple-500/10',
-      flowState: 'active',
-      description: 'Staff management and operations',
-      aiInsight: 'Staff coordination is running smoothly',
-      items: [
-        {
-          label: 'Staff Ops',
-          href: '/staff-ops',
-          icon: <Users className="w-4 h-4" />,
-          description: 'Staff operations center',
-          flowState: 'active',
-          nextAction: 'Coordinate staff activities',
-          aiRecommendation: 'Check staff assignments'
-        },
-        {
-          label: 'Staff Panel',
-          href: '/staff-panel',
-          icon: <UserCheck className="w-4 h-4" />,
-          description: 'Staff management panel',
-          flowState: 'active',
-          nextAction: 'Manage staff assignments',
-          aiRecommendation: 'Review staff performance'
-        }
-      ]
-    },
-    {
-      label: 'Administration',
-      color: 'text-red-300',
-      bgColor: 'bg-red-500/10',
-      flowState: 'idle',
-      description: 'System administration and control',
-      aiInsight: 'Admin functions are ready for use',
-      items: [
-        {
-          label: 'Admin',
-          href: '/admin',
-          icon: <Crown className="w-4 h-4" />,
-          description: 'Administrative control center',
-          flowState: 'idle',
-          nextAction: 'Access admin functions',
-          aiRecommendation: 'Review system settings'
+          nextAction: 'Extend session time',
+          aiRecommendation: 'Review extension options'
         }
       ]
     }
@@ -190,7 +142,7 @@ const GlobalNavigation: React.FC = () => {
               <div className="w-8 h-8 bg-gradient-to-br from-primary-400 to-cyan-400 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">H+</span>
               </div>
-              <span className="text-xl font-bold text-white">HOOKAH+</span>
+              <span className="text-xl font-bold text-white">HOOKAH+ GUEST</span>
             </div>
             
             {/* Flow Status Indicator */}
@@ -209,7 +161,7 @@ const GlobalNavigation: React.FC = () => {
                   {group.items.map((item) => {
                     const isActive = pathname === item.href;
                     return (
-                      <Link
+                      <a
                         key={item.href}
                         href={item.href}
                         className={cn(
@@ -224,7 +176,7 @@ const GlobalNavigation: React.FC = () => {
                         {item.flowState === 'active' && (
                           <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
                         )}
-                      </Link>
+                      </a>
                     );
                   })}
                 </div>
@@ -244,18 +196,18 @@ const GlobalNavigation: React.FC = () => {
 
             {/* Support and Docs */}
             <div className="flex items-center space-x-2">
-              <Link
+              <a
                 href="/support"
                 className="text-sm text-zinc-400 hover:text-white transition-colors"
               >
                 Support
-              </Link>
-              <Link
+              </a>
+              <a
                 href="/docs"
                 className="text-sm text-zinc-400 hover:text-white transition-colors"
               >
                 Docs
-              </Link>
+              </a>
             </div>
           </div>
         </div>
@@ -272,7 +224,7 @@ const GlobalNavigation: React.FC = () => {
               {group.items.map((item) => {
                 const isActive = pathname === item.href;
                 return (
-                  <Link
+                  <a
                     key={item.href}
                     href={item.href}
                     className={cn(
@@ -287,7 +239,7 @@ const GlobalNavigation: React.FC = () => {
                     {item.flowState === 'active' && (
                       <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse ml-auto" />
                     )}
-                  </Link>
+                  </a>
                 );
               })}
             </div>
