@@ -11,6 +11,11 @@ import { getStripeWebhookSecret, getSupabaseUrl, getSupabaseServiceRoleKey } fro
 
 // Initialize Supabase client inside function to avoid build-time errors
 function getSupabaseClient() {
+  // NUCLEAR OPTION: Completely disable Supabase during Vercel builds
+  if (process.env.VERCEL === '1') {
+    return null; // Always return null during any Vercel build
+  }
+  
   // Skip Supabase initialization during build time
   if (process.env.NODE_ENV === 'production' && process.env.VERCEL === '1' && !process.env.SUPABASE_URL) {
     return null; // Return null instead of throwing during build
