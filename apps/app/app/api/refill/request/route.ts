@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 // DYNAMIC IMPORT: Only import Supabase when actually needed, not at module level
-import { getSupabaseUrl, getSupabaseAnonKey } from '../../../../lib/env';
+// No environment imports needed for Vercel builds
 
 export const dynamic = 'force-dynamic';
 

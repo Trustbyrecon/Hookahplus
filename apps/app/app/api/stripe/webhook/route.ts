@@ -7,7 +7,7 @@ import Stripe from "stripe";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic"; // never cache webhooks
 
-import { getStripeWebhookSecret, getSupabaseUrl, getSupabaseServiceRoleKey } from '../../../../lib/env';
+import { getStripeWebhookSecret } from '../../../../lib/env';
 
 // Initialize Supabase client inside function to avoid build-time errors
 async function getSupabaseClient() {
