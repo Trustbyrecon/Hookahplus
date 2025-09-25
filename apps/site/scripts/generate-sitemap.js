@@ -33,6 +33,13 @@ ${pages.map(page => `  <url>
   </url>`).join('\n')}
 </urlset>`;
 
-const outputPath = path.join(process.cwd(), 'public/sitemap.xml');
+const outputDir = path.join(process.cwd(), 'public');
+const outputPath = path.join(outputDir, 'sitemap.xml');
+
+// Create public directory if it doesn't exist
+if (!fs.existsSync(outputDir)) {
+  fs.mkdirSync(outputDir, { recursive: true });
+}
+
 fs.writeFileSync(outputPath, sitemap);
 console.log('Sitemap generated successfully at:', outputPath);
