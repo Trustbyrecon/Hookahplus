@@ -162,8 +162,8 @@ importers:
         specifier: ^18.0.0
         version: 18.3.1(react@18.3.1)
       stripe:
-        specifier: ^14.21.0
-        version: 14.25.0
+        specifier: ^18.5.0
+        version: 18.5.0(@types/node@20.19.17)
       tailwind-merge:
         specifier: ^2.0.0
         version: 2.6.0
@@ -4656,6 +4656,12 @@ snapshots:
     dependencies:
       '@types/node': 24.3.0
       qs: 6.14.0
+
+  stripe@18.5.0(@types/node@20.19.17):
+    dependencies:
+      qs: 6.14.0
+    optionalDependencies:
+      '@types/node': 20.19.17
 
   stripe@18.5.0(@types/node@24.3.0):
     dependencies:

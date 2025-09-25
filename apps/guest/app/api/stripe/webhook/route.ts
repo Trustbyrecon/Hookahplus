@@ -7,17 +7,28 @@ import { getStripeSecretKey, getStripeWebhookSecret, getSupabaseUrl, getSupabase
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const STRIPE_SECRET_KEY = getStripeSecretKey();
-const WEBHOOK_SECRET = getStripeWebhookSecret();
-const SUPABASE_URL = getSupabaseUrl();
-const SUPABASE_SERVICE_ROLE_KEY = getSupabaseServiceRoleKey();
+// Initialize clients inside functions to avoid build-time errors
+function getStripeClient() {
+  const STRIPE_SECRET_KEY = getStripeSecretKey();
+  return new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2025-08-27.basil" });
+}
 
-const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2023-10-16" });
-const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-  auth: { persistSession: false },
-});
+function getSupabaseClient() {
+  const SUPABASE_URL = getSupabaseUrl();
+  const SUPABASE_SERVICE_ROLE_KEY = getSupabaseServiceRoleKey();
+  
+  // Validate URL format
+  if (!SUPABASE_URL.startsWith('http://') && !SUPABASE_URL.startsWith('https://')) {
+    throw new Error(`Invalid Supabase URL: ${SUPABASE_URL}. Must be a valid HTTP or HTTPS URL.`);
+  }
+  
+  return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { persistSession: false },
+  });
+}
 
 async function lockEventOnce(eventId: string, type: string) {
+  const supabaseAdmin = getSupabaseClient();
   const { data, error } = await supabaseAdmin
     .from("stripe_webhook_events")
     .insert({ id: eventId, type })
@@ -52,6 +63,8 @@ export async function POST(req: NextRequest) {
     let event: Stripe.Event;
 
     try {
+      const stripe = getStripeClient();
+      const WEBHOOK_SECRET = getStripeWebhookSecret();
       event = stripe.webhooks.constructEvent(body, sig, WEBHOOK_SECRET);
     } catch (err: any) {
       console.error("[guest] ❌ Invalid signature:", err?.message);
