@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getSupabaseUrl, getSupabaseAnonKey } from '../../../../lib/env';
 
+export const dynamic = 'force-dynamic';
+
 // Initialize Supabase client inside function to avoid build-time errors
 function getSupabaseClient() {
   const SUPABASE_URL = getSupabaseUrl();

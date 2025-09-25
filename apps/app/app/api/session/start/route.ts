@@ -4,6 +4,8 @@ import { createClient } from '@supabase/supabase-js';
 import { getStripeSecretKey, getSupabaseUrl, getSupabaseAnonKey, getAppUrl } from '../../../../lib/env';
 import Stripe from 'stripe';
 
+export const dynamic = 'force-dynamic';
+
 // Initialize Supabase client inside function to avoid build-time errors
 function getSupabaseClient() {
   const SUPABASE_URL = getSupabaseUrl();

@@ -3,6 +3,8 @@ import { stripe } from '../../../../../lib/stripe';
 import { getStripeSecretKey, getGuestUrl } from '../../../../../lib/env';
 import Stripe from 'stripe';
 
+export const dynamic = 'force-dynamic';
+
 async function fetchPriceByLookup(lookupKey: string) {
   const r = await stripe.prices.list({ 
     lookup_keys: [lookupKey], 
