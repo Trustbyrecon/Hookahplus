@@ -4,13 +4,20 @@ import { createClient } from '@supabase/supabase-js';
 import { getStripeSecretKey, getSupabaseUrl, getSupabaseAnonKey, getAppUrl } from '../../../../lib/env';
 import Stripe from 'stripe';
 
-const supaAdmin = createClient(
-  getSupabaseUrl(), 
-  getSupabaseAnonKey(), 
-  {
-    auth: { persistSession: false }
+// Initialize Supabase client inside function to avoid build-time errors
+function getSupabaseClient() {
+  const SUPABASE_URL = getSupabaseUrl();
+  const SUPABASE_ANON_KEY = getSupabaseAnonKey();
+  
+  // Validate URL format
+  if (!SUPABASE_URL.startsWith('http://') && !SUPABASE_URL.startsWith('https://')) {
+    throw new Error(`Invalid Supabase URL: ${SUPABASE_URL}. Must be a valid HTTP or HTTPS URL.`);
   }
-);
+  
+  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { persistSession: false }
+  });
+}
 
 async function fetchPriceByLookup(lookupKey: string) {
   const r = await stripe.prices.list({ 
@@ -59,6 +66,7 @@ export async function POST(req: NextRequest) {
     const duration = Number(price.metadata['hp:duration_minutes'] || 90);
 
     // Create session record
+    const supaAdmin = getSupabaseClient();
     const { data: session, error } = await supaAdmin
       .from('sessions')
       .insert({

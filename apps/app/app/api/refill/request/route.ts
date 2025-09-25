@@ -2,13 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getSupabaseUrl, getSupabaseAnonKey } from '../../../../lib/env';
 
-const supaAdmin = createClient(
-  getSupabaseUrl(), 
-  getSupabaseAnonKey(), 
-  {
-    auth: { persistSession: false }
+// Initialize Supabase client inside function to avoid build-time errors
+function getSupabaseClient() {
+  const SUPABASE_URL = getSupabaseUrl();
+  const SUPABASE_ANON_KEY = getSupabaseAnonKey();
+  
+  // Validate URL format
+  if (!SUPABASE_URL.startsWith('http://') && !SUPABASE_URL.startsWith('https://')) {
+    throw new Error(`Invalid Supabase URL: ${SUPABASE_URL}. Must be a valid HTTP or HTTPS URL.`);
   }
-);
+  
+  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { persistSession: false }
+  });
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,6 +25,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    const supaAdmin = getSupabaseClient();
     const { data, error } = await supaAdmin
       .from('refills')
       .insert({ 
