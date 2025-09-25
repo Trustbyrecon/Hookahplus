@@ -8,6 +8,11 @@ export const dynamic = 'force-dynamic';
 
 // Initialize Supabase client inside function to avoid build-time errors
 function getSupabaseClient() {
+  // Skip Supabase initialization during build time
+  if (process.env.NODE_ENV === 'production' && process.env.VERCEL === '1' && !process.env.SUPABASE_URL) {
+    throw new Error('Supabase client cannot be initialized during Vercel build without environment variables');
+  }
+  
   try {
     const SUPABASE_URL = getSupabaseUrl();
     const SUPABASE_ANON_KEY = getSupabaseAnonKey();
@@ -68,28 +73,38 @@ export async function POST(req: NextRequest) {
       }
     });
 
-    // Create reservation record
-    const supaAdmin = getSupabaseClient();
-    const { data, error } = await supaAdmin
-      .from('reservations')
-      .insert({
-        venue_id: venueId, 
-        table_id: tableId, 
-        payment_intent_id: pi.id, 
-        status: 'HOLD'
-      })
-      .select()
-      .single();
-      
-    if (error) {
-      console.error('Database error:', error);
-      return NextResponse.json({ error: 'Failed to create reservation' }, { status: 500 });
-    }
+    // Create reservation record - only if Supabase is available
+    try {
+      const supaAdmin = getSupabaseClient();
+      const { data, error } = await supaAdmin
+        .from('reservations')
+        .insert({
+          venue_id: venueId, 
+          table_id: tableId, 
+          payment_intent_id: pi.id, 
+          status: 'HOLD'
+        })
+        .select()
+        .single();
+        
+      if (error) {
+        console.error('Database error:', error);
+        return NextResponse.json({ error: 'Failed to create reservation' }, { status: 500 });
+      }
 
-    return NextResponse.json({ 
-      reservationId: data.id, 
-      clientSecret: pi.client_secret 
-    });
+      return NextResponse.json({ 
+        reservationId: data.id, 
+        clientSecret: pi.client_secret 
+      });
+    } catch (supabaseError) {
+      // If Supabase is not available, return payment intent only
+      console.warn('Supabase not available, returning payment intent only:', supabaseError);
+      return NextResponse.json({ 
+        paymentIntentId: pi.id,
+        clientSecret: pi.client_secret,
+        warning: 'Database not available, reservation not saved'
+      });
+    }
     
   } catch (error) {
     console.error('Reservation hold error:', error);

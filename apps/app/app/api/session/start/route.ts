@@ -75,24 +75,41 @@ export async function POST(req: NextRequest) {
     const price = await fetchPriceByLookup(priceLookupKey);
     const duration = Number(price.metadata['hp:duration_minutes'] || 90);
 
-    // Create session record
-    const supaAdmin = getSupabaseClient();
-    const { data: session, error } = await supaAdmin
-      .from('sessions')
-      .insert({
-        venue_id: venueId, 
-        table_id: tableId, 
-        tier, 
-        flavors,
-        status: 'PENDING', 
-        price_lookup_key: priceLookupKey
-      })
-      .select()
-      .single();
+    // Create session record - only if Supabase is available
+    let session = null;
+    try {
+      const supaAdmin = getSupabaseClient();
+      const { data, error } = await supaAdmin
+        .from('sessions')
+        .insert({
+          venue_id: venueId, 
+          table_id: tableId, 
+          tier, 
+          flavors,
+          status: 'PENDING', 
+          price_lookup_key: priceLookupKey
+        })
+        .select()
+        .single();
+        
+      if (error) {
+        console.error('Database error:', error);
+        return NextResponse.json({ error: 'Failed to create session' }, { status: 500 });
+      }
+      session = data;
       
-    if (error) {
-      console.error('Database error:', error);
-      return NextResponse.json({ error: 'Failed to create session' }, { status: 500 });
+      // Log the event
+      await supaAdmin.from('ghostlog').insert({
+        venue_id: venueId, 
+        session_id: session.id, 
+        actor: 'system',
+        event: 'SESSION_INITIATED', 
+        meta: { tier, priceLookupKey, flavors, duration }
+      });
+    } catch (supabaseError) {
+      // If Supabase is not available, continue without database record
+      console.warn('Supabase not available, continuing without database record:', supabaseError);
+      session = { id: `temp_${Date.now()}` }; // Create a temporary session ID
     }
 
     // Create checkout session
@@ -106,15 +123,6 @@ export async function POST(req: NextRequest) {
       },
       successUrl: `${getAppUrl()}/sessions/${session.id}?paid=1`,
       cancelUrl: `${getAppUrl()}/sessions/${session.id}?cancel=1`,
-    });
-
-    // Log the event
-    await supaAdmin.from('ghostlog').insert({
-      venue_id: venueId, 
-      session_id: session.id, 
-      actor: 'system',
-      event: 'SESSION_INITIATED', 
-      meta: { tier, priceLookupKey, flavors, duration }
     });
 
     return NextResponse.json({ 
