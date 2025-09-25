@@ -3,6 +3,7 @@
   "buildCommand": "pnpm run build",
   "outputDirectory": ".next",
   "framework": "nextjs",
+  "installCommand": "pnpm install --no-frozen-lockfile",
   "env": {
     "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"
   }
