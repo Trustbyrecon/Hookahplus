@@ -1,13 +1,12 @@
 // app/api/webhooks/stripe/route.ts
 import { NextResponse } from "next/server";
-import Stripe from "stripe";
+import { stripe } from "../../../../lib/stripe";
 import { markPaid } from "../../../../lib/orders";
 import { verifyTrust } from "../../../../lib/trustlock";
 
 export const runtime = "nodejs"; // ensure Netlify uses Node runtime
 
 export async function POST(req: Request) {
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2023-10-16" });
   const sig = req.headers.get("stripe-signature")!;
   const buf = Buffer.from(await req.arrayBuffer());
 

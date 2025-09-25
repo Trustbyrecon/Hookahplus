@@ -1,7 +1,10 @@
 {
   "version": 2,
   "installCommand": "pnpm install --no-frozen-lockfile",
-  "buildCommand": "cd apps/site && pnpm run build",
+  "buildCommand": "cd apps/site && pnpm install --no-frozen-lockfile && pnpm run build",
   "outputDirectory": "apps/site/.next",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "env": {
+    "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"
+  }
 }
