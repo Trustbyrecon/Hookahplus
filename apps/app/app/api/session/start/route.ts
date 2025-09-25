@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '../../../../lib/stripe';
 import { createClient } from '@supabase/supabase-js';
-import { getStripeSecretKey, getSupabaseUrl, getSupabaseAnonKey } from '../../../../lib/env';
+import { getStripeSecretKey, getSupabaseUrl, getSupabaseAnonKey, getAppUrl } from '../../../../lib/env';
 import Stripe from 'stripe';
 
 const supaAdmin = createClient(
@@ -86,8 +86,8 @@ export async function POST(req: NextRequest) {
         table_id: tableId,
         duration_minutes: duration.toString()
       },
-      successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/sessions/${session.id}?paid=1`,
-      cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/sessions/${session.id}?cancel=1`,
+      successUrl: `${getAppUrl()}/sessions/${session.id}?paid=1`,
+      cancelUrl: `${getAppUrl()}/sessions/${session.id}?cancel=1`,
     });
 
     // Log the event

@@ -24,7 +24,7 @@ export const getStripeSecretKey = (): string => {
 };
 
 export const getStripeWebhookSecret = (): string => {
-  return getEnvVar('STRIPE_WEBHOOK_SECRET_APP', 'whsec_placeholder');
+  return getEnvVar('STRIPE_WEBHOOK_SECRET', 'whsec_placeholder');
 };
 
 export const getPublicStripeKey = (): string => {
@@ -33,4 +33,12 @@ export const getPublicStripeKey = (): string => {
 
 export const getSiteUrl = (): string => {
   return getEnvVar('NEXT_PUBLIC_SITE_URL', 'https://placeholder.vercel.app');
+};
+
+export const getAppUrl = (): string => {
+  return getEnvVar('NEXT_PUBLIC_APP_URL', 'https://placeholder-app.vercel.app');
+};
+
+export const getGuestUrl = (): string => {
+  return getEnvVar('NEXT_PUBLIC_GUEST_URL', 'https://placeholder-guest.vercel.app');
 };

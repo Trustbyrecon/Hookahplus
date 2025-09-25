@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '../../../../../lib/stripe';
-import { getStripeSecretKey } from '../../../../../lib/env';
+import { getStripeSecretKey, getGuestUrl } from '../../../../../lib/env';
 import Stripe from 'stripe';
 
 async function fetchPriceByLookup(lookupKey: string) {
@@ -56,8 +56,8 @@ export async function POST(req: NextRequest) {
         session_id: sessionId, 
         extend_minutes: extendMinutes.toString()
       },
-      successUrl: `${process.env.NEXT_PUBLIC_GUEST_URL}/extend/success?sid=${sessionId}`,
-      cancelUrl: `${process.env.NEXT_PUBLIC_GUEST_URL}/extend/cancel?sid=${sessionId}`,
+      successUrl: `${getGuestUrl()}/extend/success?sid=${sessionId}`,
+      cancelUrl: `${getGuestUrl()}/extend/cancel?sid=${sessionId}`,
     });
 
     return NextResponse.json({ url: checkout.url });
