@@ -10,10 +10,6 @@ export async function POST(req: Request) {
   try {
     const admin = process.env.ADMIN_TEST_TOKEN || '';
     const appBase = process.env.NEXT_PUBLIC_APP_URL || '';
-    if (!appBase) {
-      return NextResponse.json({ ok: false, error: 'NEXT_PUBLIC_APP_URL missing' }, { status: 500 });
-    }
-
     const body = await req.json().catch(() => ({}));
     
     // Reflex Layer: Check payment operation quality
@@ -25,19 +21,27 @@ export async function POST(req: Request) {
       }, { status: 400 });
     }
     
-    const res = await fetch(`${appBase}/api/payments/live-test`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-admin-token': admin,
-      },
-      body: JSON.stringify({ ...body, source: body?.source ?? 'guests:$1-smoke' }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (res.ok) {
-      return NextResponse.json(data, { status: res.status });
+    // Try to proxy to app if URL is available
+    if (appBase) {
+      try {
+        const res = await fetch(`${appBase}/api/payments/live-test`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-token': admin,
+          },
+          body: JSON.stringify({ ...body, source: body?.source ?? 'guests:$1-smoke' }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          return NextResponse.json(data, { status: res.status });
+        }
+      } catch (proxyError) {
+        console.log('Proxy failed, falling back to local Stripe:', proxyError);
+      }
     }
-    // Fallback: run locally if Stripe secret is available (for 401, 500, etc.)
+    
+    // Fallback: run locally if Stripe secret is available
     if (process.env.STRIPE_SECRET_KEY) {
       const stripe = getStripe();
       const intent = await stripe.paymentIntents.create({
@@ -53,9 +57,18 @@ export async function POST(req: Request) {
         },
       });
       const ok = intent.status === 'succeeded' || intent.status === 'requires_capture';
-      return NextResponse.json({ ok, message: ok ? 'Stripe $1 test succeeded (fallback)' : `Stripe status: ${intent.status}` });
+      return NextResponse.json({ 
+        ok, 
+        message: ok ? 'Stripe $1 test succeeded (guests fallback)' : `Stripe status: ${intent.status}`,
+        id: intent.id,
+        status: intent.status
+      });
     }
-    return NextResponse.json({ ok: false, error: data?.error || `proxy failed with ${res.status}` }, { status: res.status });
+    
+    return NextResponse.json({ 
+      ok: false, 
+      error: 'No Stripe secret key available for fallback' 
+    }, { status: 500 });
   } catch (err: any) {
     return NextResponse.json({ ok: false, error: err?.message || 'proxy error' }, { status: 500 });
   }
