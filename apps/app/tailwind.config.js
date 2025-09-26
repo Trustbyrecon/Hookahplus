@@ -161,3 +161,4 @@ module.exports = {
     'bg-teal-500/10'
   ],
 }
+// Moodbook styling applied Fri, Sep 26, 2025  7:03:42 PM
