@@ -5,12 +5,19 @@ import { useCart } from "./CartProvider";
 
 export function CartToggle() {
   const [open, setOpen] = useState(false);
+  const { items } = useCart();
+  
+  console.log('CartToggle: items count:', items.length);
+  
   return (
     <button
-      onClick={() => setOpen((v) => !v)}
+      onClick={() => {
+        console.log('CartToggle: clicked, current open:', open);
+        setOpen((v) => !v);
+      }}
       className="fixed bottom-4 right-4 z-50 rounded-full bg-emerald-600 text-white px-4 py-2 shadow-lg"
     >
-      Cart
+      Cart ({items.length})
       {open && <CartDrawer onClose={() => setOpen(false)} />}
     </button>
   );
@@ -22,6 +29,9 @@ function cents(n: number) {
 
 export function CartDrawer({ onClose }: { onClose(): void }) {
   const { items, remove, subtotal, clear } = useCart();
+  
+  console.log('CartDrawer: items:', items);
+  
   return (
     <div className="fixed bottom-16 right-4 w-80 bg-white text-zinc-900 rounded-lg border border-zinc-200 shadow-xl p-4">
       <div className="flex justify-between items-center mb-2">

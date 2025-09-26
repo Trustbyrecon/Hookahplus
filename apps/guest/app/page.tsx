@@ -28,6 +28,7 @@ export default function GuestPortal() {
   const { add } = useCart();
   const addToCart = (item: { id: number; name: string; price: number }) => {
     add({ id: String(item.id), name: item.name, price: Math.round(item.price * 100), qty: 1 });
+    console.log('Adding to cart:', item); // Debug log
   };
   const menuItems = [
     {

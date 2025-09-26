@@ -38,14 +38,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [items]);
 
   const add = (item: CartItem) => {
+    console.log('CartProvider: Adding item:', item);
     setItems((prev) => {
       const idx = prev.findIndex((p) => p.id === item.id);
       if (idx >= 0) {
         const copy = [...prev];
         copy[idx] = { ...copy[idx], qty: copy[idx].qty + item.qty };
+        console.log('CartProvider: Updated existing item:', copy);
         return copy;
       }
-      return [...prev, item];
+      const newItems = [...prev, item];
+      console.log('CartProvider: Added new item:', newItems);
+      return newItems;
     });
   };
 
