@@ -70,3 +70,31 @@
   [31mremotes/origin/vbin75-codex/update-submodules-and-configuration-message[m
   [31mremotes/origin/wu8y3l-codex/simulate-stripe-payment-flow-testing[m
   [31mremotes/origin/yf4kb8-codex/simulate-stripe-payment-flow-testing[m
+[1mdiff --git a/apps/guest/tailwind.config.js b/apps/guest/tailwind.config.js[m
+[1mindex b492d53..886a1e4 100644[m
+[1m--- a/apps/guest/tailwind.config.js[m
+[1m+++ b/apps/guest/tailwind.config.js[m
+[36m@@ -101,6 +101,8 @@[m [mmodule.exports = {[m
+         'gradient-primary': 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',[m
+         'gradient-secondary': 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',[m
+         'gradient-accent': 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',[m
+[32m+[m[32m        'gradient-teal': 'linear-gradient(to right, #14b8a6, #0d9488)',[m
+[32m+[m[32m        'gradient-teal-blue': 'linear-gradient(to right, #14b8a6, #2563eb)',[m
+       },[m
+       boxShadow: {[m
+         'primary': '0 4px 14px 0 rgba(34, 197, 94, 0.25)',[m
+[36m@@ -111,4 +113,14 @@[m [mmodule.exports = {[m
+     },[m
+   },[m
+   plugins: [],[m
+[32m+[m[32m  safelist: [[m
+[32m+[m[32m    'from-teal-500',[m
+[32m+[m[32m    'to-teal-600',[m[41m [m
+[32m+[m[32m    'to-blue-600',[m
+[32m+[m[32m    'to-blue-700',[m
+[32m+[m[32m    'hover:from-teal-600',[m
+[32m+[m[32m    'hover:to-blue-700',[m
+[32m+[m[32m    'shadow-teal-500/25',[m
+[32m+[m[32m    'hover:shadow-teal-500/25'[m
+[32m+[m[32m  ],[m
+ }[m
