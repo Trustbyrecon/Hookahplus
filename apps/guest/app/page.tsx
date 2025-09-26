@@ -5,6 +5,7 @@ import Button from '../components/Button';
 import Badge from '../components/Badge';
 import { StatusIndicator } from '../components/StatusIndicator';
 import { TrustLock } from '../components/TrustLock';
+import { useCart } from '@/components/cart/CartProvider';
 import { 
   Clock, 
   Plus, 
@@ -22,6 +23,10 @@ import {
 } from 'lucide-react';
 
 export default function GuestPortal() {
+  const { add } = useCart();
+  const addToCart = (item: { id: number; name: string; price: number }) => {
+    add({ id: String(item.id), name: item.name, price: Math.round(item.price * 100), qty: 1 });
+  };
   const menuItems = [
     {
       id: 1,
@@ -122,7 +127,7 @@ export default function GuestPortal() {
                         <div className="text-sm text-zinc-400">{item.description}</div>
                         <div className="text-sm font-semibold text-primary-400">${item.price.toFixed(2)}</div>
                       </div>
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" onClick={() => addToCart(item)}>
                         Quick Add
                       </Button>
                     </div>
@@ -144,7 +149,7 @@ export default function GuestPortal() {
                         <div className="text-sm text-zinc-400">{item.description}</div>
                         <div className="text-sm font-semibold text-primary-400">${item.price.toFixed(2)}</div>
                       </div>
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" onClick={() => addToCart(item)}>
                         Quick Add
                       </Button>
                     </div>
@@ -185,7 +190,7 @@ export default function GuestPortal() {
                         <div className="text-lg font-semibold text-primary-400">
                           ${item.price.toFixed(2)}
                         </div>
-                        <Button size="sm" variant="primary">
+                        <Button size="sm" variant="primary" onClick={() => addToCart(item)}>
                           Add
                         </Button>
                       </div>
