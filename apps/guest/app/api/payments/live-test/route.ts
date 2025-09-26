@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "../../../../lib/stripeServer";
+import { checkPaymentOperation } from "../../../../lib/reflex-integration";
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -14,6 +15,16 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json().catch(() => ({}));
+    
+    // Reflex Layer: Check payment operation quality
+    const shouldProceed = await checkPaymentOperation(body);
+    if (!shouldProceed) {
+      return NextResponse.json({ 
+        ok: false, 
+        error: 'Payment operation failed quality check' 
+      }, { status: 400 });
+    }
+    
     const res = await fetch(`${appBase}/api/payments/live-test`, {
       method: 'POST',
       headers: {
