@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { stripe } from '../../../../lib/stripe';
+import { getStripe } from '../../../../lib/stripeServer';
 // DYNAMIC IMPORT: Only import Supabase when actually needed, not at module level
 import { getStripeSecretKey, getAppUrl } from '../../../../lib/env';
 import Stripe from 'stripe';
@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 // COMPLETE SUPABASE REMOVAL: No Supabase functions during Vercel builds
 
 async function fetchPriceByLookup(lookupKey: string) {
+  const stripe = getStripe();
   const r = await stripe.prices.list({ 
     lookup_keys: [lookupKey], 
     expand: ['data.product'], 
@@ -33,6 +34,7 @@ async function createCheckoutSession({
   cancelUrl: string;
   customerEmail?: string;
 }) {
+  const stripe = getStripe();
   return await stripe.checkout.sessions.create({
     mode,
     line_items: lineItems,

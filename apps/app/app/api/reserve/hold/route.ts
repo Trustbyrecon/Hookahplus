@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { stripe } from '../../../../lib/stripe';
+import { getStripe } from '../../../../lib/stripeServer';
 import Stripe from 'stripe';
 
 export const dynamic = 'force-dynamic';
@@ -18,6 +18,7 @@ async function createPaymentIntent({
   captureMethod?: 'automatic' | 'manual';
   metadata: Record<string, string>;
 }) {
+  const stripe = getStripe();
   return await stripe.paymentIntents.create({
     amount,
     currency,

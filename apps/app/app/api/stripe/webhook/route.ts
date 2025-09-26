@@ -1,6 +1,6 @@
 // apps/app/app/api/stripe/webhook/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { stripe } from "../../../../lib/stripe";
+import { getStripe } from "../../../../lib/stripeServer";
 // DYNAMIC IMPORT: Only import Supabase when actually needed, not at module level
 import Stripe from "stripe";
 
@@ -52,6 +52,7 @@ export async function POST(req: NextRequest) {
     let event: Stripe.Event;
 
     try {
+      const stripe = getStripe();
       const WEBHOOK_SECRET = getStripeWebhookSecret();
       event = stripe.webhooks.constructEvent(body, sig, WEBHOOK_SECRET);
     } catch (err: any) {
