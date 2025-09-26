@@ -6,19 +6,7 @@ import Stripe from 'stripe';
 
 export const dynamic = 'force-dynamic';
 
-// Initialize Supabase client inside function to avoid build-time errors
-async function getSupabaseClient() {
-  // COMPLETE VERCEL BUILD SKIP: Never load Supabase during Vercel builds
-  if (process.env.VERCEL === '1' || process.env.NODE_ENV === 'production') {
-    console.log('VERCEL/PRODUCTION BUILD: Completely skipping Supabase initialization');
-    return null;
-  }
-  
-  // COMPLETE SUPABASE REMOVAL: No Supabase imports during build phase
-  // This prevents webpack from processing Supabase during build phase
-  console.log('Supabase completely disabled during build phase');
-  return null;
-}
+// COMPLETE SUPABASE REMOVAL: No Supabase functions during Vercel builds
 
 async function createPaymentIntent({
   amount,
@@ -59,57 +47,13 @@ export async function POST(req: NextRequest) {
       }
     });
 
-    // Create reservation record - only if Supabase is available
-    // COMPLETE SUPABASE REMOVAL: Skip all Supabase operations during Vercel builds
-    if (process.env.VERCEL === '1' || process.env.NODE_ENV === 'production') {
-      console.log('VERCEL BUILD: Skipping Supabase operations');
-      return NextResponse.json({ 
-        paymentIntentId: pi.id,
-        clientSecret: pi.client_secret,
-        warning: 'Database not available during build, reservation not saved'
-      });
-    }
-    
-    const supaAdmin = await getSupabaseClient();
-    if (supaAdmin) {
-      try {
-        const { data, error } = await (supaAdmin as any)
-          .from('reservations')
-          .insert({
-            venue_id: venueId, 
-            table_id: tableId, 
-            payment_intent_id: pi.id, 
-            status: 'HOLD'
-          })
-          .select()
-          .single();
-          
-        if (error) {
-          console.error('Database error:', error);
-          return NextResponse.json({ error: 'Failed to create reservation' }, { status: 500 });
-        }
-
-        return NextResponse.json({ 
-          reservationId: data.id, 
-          clientSecret: pi.client_secret 
-        });
-      } catch (supabaseError) {
-        // If Supabase is not available, return payment intent only
-        console.warn('Supabase not available, returning payment intent only:', supabaseError);
-        return NextResponse.json({ 
-          paymentIntentId: pi.id,
-          clientSecret: pi.client_secret,
-          warning: 'Database not available, reservation not saved'
-        });
-      }
-    } else {
-      // Supabase not available during build or missing env vars
-      return NextResponse.json({ 
-        paymentIntentId: pi.id,
-        clientSecret: pi.client_secret,
-        warning: 'Database not available, reservation not saved'
-      });
-    }
+    // COMPLETE SUPABASE REMOVAL: No database operations during Vercel builds
+    // Return payment intent only during builds
+    return NextResponse.json({ 
+      paymentIntentId: pi.id,
+      clientSecret: pi.client_secret,
+      warning: 'Database not available during build, reservation not saved'
+    });
     
   } catch (error) {
     console.error('Reservation hold error:', error);

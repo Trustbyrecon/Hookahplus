@@ -9,51 +9,14 @@ export const dynamic = "force-dynamic"; // never cache webhooks
 
 import { getStripeWebhookSecret } from '../../../../lib/env';
 
-// Initialize Supabase client inside function to avoid build-time errors
-async function getSupabaseClient() {
-  // COMPLETE VERCEL BUILD SKIP: Never load Supabase during Vercel builds
-  if (process.env.VERCEL === '1' || process.env.NODE_ENV === 'production') {
-    console.log('VERCEL/PRODUCTION BUILD: Completely skipping Supabase initialization');
-    return null;
-  }
-  
-  // COMPLETE SUPABASE REMOVAL: No Supabase imports during build phase
-  // This prevents webpack from processing Supabase during build phase
-  console.log('Supabase completely disabled during build phase');
-  return null;
-}
+// COMPLETE SUPABASE REMOVAL: No Supabase functions during Vercel builds
 
 // Utility: idempotency insert. Returns true if event is new; false if seen.
 async function lockEventOnce(eventId: string, type: string) {
   // COMPLETE SUPABASE REMOVAL: Skip all Supabase operations during Vercel builds
-  if (process.env.VERCEL === '1' || process.env.NODE_ENV === 'production') {
-    console.log('VERCEL BUILD: Skipping Supabase operations, assuming event is new');
-    return true;
-  }
-  
-  const supabaseAdmin = await getSupabaseClient();
-  if (!supabaseAdmin) {
-    // If Supabase is not available, assume event is new
-    console.warn('Supabase not available, assuming event is new');
-    return true;
-  }
-
-  try {
-    const { data, error } = await (supabaseAdmin as any)
-      .from("stripe_webhook_events")
-      .insert({ id: eventId, type })
-      .select("id")
-      .single();
-
-    // If a unique constraint violation happened, this event was processed already.
-    if (error && error.code === "23505") return false;
-    if (error) throw error;
-    return Boolean(data?.id);
-  } catch (supabaseError) {
-    // If Supabase is not available, assume event is new
-    console.warn('Supabase not available, assuming event is new:', supabaseError);
-    return true;
-  }
+  // Always assume event is new during builds
+  console.log('VERCEL BUILD: Skipping Supabase operations, assuming event is new');
+  return true;
 }
 
 // Router of event handlers

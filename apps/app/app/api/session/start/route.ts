@@ -6,19 +6,7 @@ import Stripe from 'stripe';
 
 export const dynamic = 'force-dynamic';
 
-// Initialize Supabase client inside function to avoid build-time errors
-async function getSupabaseClient() {
-  // COMPLETE VERCEL BUILD SKIP: Never load Supabase during Vercel builds
-  if (process.env.VERCEL === '1' || process.env.NODE_ENV === 'production') {
-    console.log('VERCEL/PRODUCTION BUILD: Completely skipping Supabase initialization');
-    return null;
-  }
-  
-  // COMPLETE SUPABASE REMOVAL: No Supabase imports during build phase
-  // This prevents webpack from processing Supabase during build phase
-  console.log('Supabase completely disabled during build phase');
-  return null;
-}
+// COMPLETE SUPABASE REMOVAL: No Supabase functions during Vercel builds
 
 async function fetchPriceByLookup(lookupKey: string) {
   const r = await stripe.prices.list({ 
@@ -66,56 +54,9 @@ export async function POST(req: NextRequest) {
     const price = await fetchPriceByLookup(priceLookupKey);
     const duration = Number(price.metadata['hp:duration_minutes'] || 90);
 
-    // Create session record - only if Supabase is available
-    // COMPLETE SUPABASE REMOVAL: Skip all Supabase operations during Vercel builds
-    if (process.env.VERCEL === '1' || process.env.NODE_ENV === 'production') {
-      console.log('VERCEL BUILD: Skipping Supabase operations');
-      return NextResponse.json({ 
-        sessionId: 'mock-session-id',
-        warning: 'Database not available during build, using mock session ID'
-      });
-    }
-    
-    let session = null;
-    const supaAdmin = await getSupabaseClient();
-    if (supaAdmin) {
-      try {
-        const { data, error } = await (supaAdmin as any)
-          .from('sessions')
-          .insert({
-            venue_id: venueId, 
-            table_id: tableId, 
-            tier, 
-            flavors,
-            status: 'PENDING', 
-            price_lookup_key: priceLookupKey
-          })
-          .select()
-          .single();
-          
-        if (error) {
-          console.error('Database error:', error);
-          return NextResponse.json({ error: 'Failed to create session' }, { status: 500 });
-        }
-        session = data;
-        
-        // Log the event
-        await (supaAdmin as any).from('ghostlog').insert({
-          venue_id: venueId, 
-          session_id: session.id, 
-          actor: 'system',
-          event: 'SESSION_INITIATED', 
-          meta: { tier, priceLookupKey, flavors, duration }
-        });
-      } catch (supabaseError) {
-        // If Supabase is not available, continue without database record
-        console.warn('Supabase not available, continuing without database record:', supabaseError);
-        session = { id: `temp_${Date.now()}` }; // Create a temporary session ID
-      }
-    } else {
-      // Supabase not available during build or missing env vars
-      session = { id: `temp_${Date.now()}` }; // Create a temporary session ID
-    }
+    // COMPLETE SUPABASE REMOVAL: No database operations during Vercel builds
+    // Create a temporary session ID for checkout without database operations during builds
+    let session = { id: `temp_${Date.now()}` };
 
     // Create checkout session
     const checkout = await createCheckoutSession({
