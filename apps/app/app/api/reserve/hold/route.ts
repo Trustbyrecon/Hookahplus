@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '../../../../lib/stripe';
-// DYNAMIC IMPORT: Only import Supabase when actually needed, not at module level
-import { getStripeSecretKey } from '../../../../lib/env';
 import Stripe from 'stripe';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 // COMPLETE SUPABASE REMOVAL: No Supabase functions during Vercel builds
 
