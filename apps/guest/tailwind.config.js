@@ -101,6 +101,8 @@ module.exports = {
         'gradient-primary': 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
         'gradient-secondary': 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
         'gradient-accent': 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+        'gradient-teal': 'linear-gradient(to right, #14b8a6, #0d9488)',
+        'gradient-teal-blue': 'linear-gradient(to right, #14b8a6, #2563eb)',
       },
       boxShadow: {
         'primary': '0 4px 14px 0 rgba(34, 197, 94, 0.25)',
@@ -111,4 +113,14 @@ module.exports = {
     },
   },
   plugins: [],
+  safelist: [
+    'from-teal-500',
+    'to-teal-600', 
+    'to-blue-600',
+    'to-blue-700',
+    'hover:from-teal-600',
+    'hover:to-blue-700',
+    'shadow-teal-500/25',
+    'hover:shadow-teal-500/25'
+  ],
 }
