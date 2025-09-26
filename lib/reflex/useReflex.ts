@@ -1,5 +1,13 @@
 import { useState, useCallback, useRef } from 'react';
-import type { ReflexContext, EnrichmentFingerprint } from '../../types/reflex';
+import type { EnrichmentFingerprint } from '../../types/reflex';
+
+export interface ReflexContext {
+  route: string;
+  action: string;
+  domain?: string;
+  previousOutputs?: string[];
+  context?: string;
+}
 import { createReflexLayer, quickReflexCheck } from './index';
 
 interface UseReflexOptions {

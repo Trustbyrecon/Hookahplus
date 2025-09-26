@@ -53,14 +53,14 @@ export function scoreOutput(input: ScorerInput): ReflexScore {
   // Determine failure type if score is low
   let failureType: FailureType | undefined;
   if (value < 0.87) {
-    failureType = determineFailureType(outputStr, expectedType, semanticDensity, relevance, structure);
+    failureType = determineFailureType(outputStr, semanticDensity, relevance, structure, expectedType);
   }
   
   // Calculate confidence in our scoring
   const confidence = calculateScoringConfidence(semanticDensity, relevance, structure);
   
   // Estimate downstream risk
-  const downstreamRisk = calculateDownstreamRisk(value, failureType, structure);
+  const downstreamRisk = calculateDownstreamRisk(value, structure, failureType);
   
   return {
     value,
@@ -191,10 +191,10 @@ function calculateMemoryConsistency(output: string, previousOutputs?: string[]):
  */
 function determineFailureType(
   output: string, 
-  expectedType?: string, 
   semanticDensity: number, 
   relevance: number, 
-  structure: number
+  structure: number,
+  expectedType?: string
 ): FailureType {
   if (semanticDensity < 0.3) return 'vague';
   if (relevance < 0.3) return 'context_drift';
@@ -217,7 +217,7 @@ function calculateScoringConfidence(semanticDensity: number, relevance: number, 
 /**
  * Calculate downstream risk
  */
-function calculateDownstreamRisk(value: number, failureType?: FailureType, structure: number): number {
+function calculateDownstreamRisk(value: number, structure: number, failureType?: FailureType): number {
   let risk = 1 - value; // Base risk inversely related to score
   
   // Increase risk for certain failure types

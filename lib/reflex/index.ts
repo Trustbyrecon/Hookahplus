@@ -51,7 +51,7 @@ export class ReflexLayer {
     
     // Step 3: Generate fingerprint
     const fingerprint = generateFingerprint(
-      output,
+      output || '',
       this.context.domain,
       scoreResult.value
     );

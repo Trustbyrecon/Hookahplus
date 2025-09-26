@@ -54,3 +54,11 @@ export interface RepairAction {
   confidence: number;    // 0..1 how likely this will work
   rollback?: string;     // how to undo if it fails
 }
+
+export interface ScorerInput {
+  output: string | object | null;
+  expectedType?: 'text' | 'json' | 'code' | 'tool';
+  context?: string;
+  previousOutputs?: string[];
+  domain?: string;
+}
