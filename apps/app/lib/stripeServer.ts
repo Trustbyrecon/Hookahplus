@@ -8,7 +8,7 @@ export function getStripe(): Stripe {
   if (!key) {
     throw new Error("STRIPE_SECRET_KEY missing at runtime");
   }
-  _stripe = new Stripe(key, { apiVersion: "2024-06-20" });
+  _stripe = new Stripe(key, { apiVersion: "2025-08-27.basil" });
   return _stripe;
 }
 
