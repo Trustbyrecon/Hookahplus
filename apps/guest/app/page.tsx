@@ -1,5 +1,6 @@
 import React from 'react';
 import Card from '../components/Card';
+import DollarTestButton from '@/components/DollarTestButton';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
 import { StatusIndicator } from '../components/StatusIndicator';
@@ -101,6 +102,8 @@ export default function GuestPortal() {
                 <input type="checkbox" className="rounded border-zinc-600 bg-zinc-800 text-primary-500 focus:ring-primary-500" />
                 <span className="text-sm text-zinc-300">Test Mode ($1.00)</span>
               </label>
+              {/* $1 Stripe sandbox test */}
+              <DollarTestButton />
             </div>
 
             {/* Quick Order */}
