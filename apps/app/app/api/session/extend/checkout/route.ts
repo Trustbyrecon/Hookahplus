@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '../../../../../lib/stripe';
-import { getStripeSecretKey, getGuestUrl } from '../../../../../lib/env';
 import Stripe from 'stripe';
 
 export const dynamic = 'force-dynamic';
@@ -61,8 +60,8 @@ export async function POST(req: NextRequest) {
         session_id: sessionId, 
         extend_minutes: extendMinutes.toString()
       },
-      successUrl: `${getGuestUrl()}/extend/success?sid=${sessionId}`,
-      cancelUrl: `${getGuestUrl()}/extend/cancel?sid=${sessionId}`,
+      successUrl: `${getGuestUrlSafe()}/extend/success?sid=${sessionId}`,
+      cancelUrl: `${getGuestUrlSafe()}/extend/cancel?sid=${sessionId}`,
     });
 
     return NextResponse.json({ url: checkout.url });
@@ -71,4 +70,8 @@ export async function POST(req: NextRequest) {
     console.error('Extension checkout error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
+}
+
+function getGuestUrlSafe(): string {
+  return process.env.NEXT_PUBLIC_GUEST_URL || 'https://placeholder-guest.vercel.app';
 }

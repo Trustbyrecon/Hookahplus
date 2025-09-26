@@ -17,7 +17,13 @@
     "clean": "rm -rf .next",
     "stripe:seed": "node scripts/stripe-catalog/seed.js",
     "reflex:smoke": "tsx scripts/reflex-smoke.ts",
-    "reflex:ci": "tsx scripts/reflex-smoke.ts --ci"
+    "reflex:ci": "tsx scripts/reflex-smoke.ts --ci",
+    "test:smoke": "playwright test --grep @smoke",
+    "test:webhook": "playwright test tests/smoke/webhook-flow.spec.ts",
+    "test:live-dollar": "playwright test tests/smoke/checkout-flow.spec.ts",
+    "check:env-parity": "node scripts/check-env-parity.js",
+    "reflex:gate": "node scripts/reflex-gate.js",
+    "reflex:score": "node scripts/reflex-score.js"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
