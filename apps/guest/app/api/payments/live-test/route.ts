@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     if (res.ok) {
       return NextResponse.json(data, { status: res.status });
     }
-    // Fallback: run locally if Stripe secret is available
+    // Fallback: run locally if Stripe secret is available (for 401, 500, etc.)
     if (process.env.STRIPE_SECRET_KEY) {
       const stripe = getStripe();
       const intent = await stripe.paymentIntents.create({
