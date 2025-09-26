@@ -22,11 +22,8 @@ function rateLimit(ip: string) {
 }
 
 export async function POST(req: NextRequest) {
-  const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    // @ts-expect-error: NextRequest ip optional
-    (req as any).ip ||
-    "unknown";
+  const ipHeader = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip");
+  const ip = ipHeader?.split(",")[0]?.trim() || "unknown";
 
   if (!rateLimit(ip)) {
     return NextResponse.json(
