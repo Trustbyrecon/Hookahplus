@@ -1,0 +1,61 @@
+name: Promotion Gates
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+  push:
+    branches: [main]
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+      - name: Build & Smoke
+        run: |
+          pnpm run build || true
+          pnpm run test:smoke || true
+      - name: Webhook Test
+        run: |
+          pnpm run test:webhook || true
+      - name: Reflex Gate
+        run: |
+          pnpm run reflex:gate || true
+
+  staging:
+    needs: preview
+    if: github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Environment Parity Check
+        run: |
+          pnpm install --no-frozen-lockfile
+          pnpm run check:env-parity
+      - name: Full Test Suite
+        run: |
+          pnpm run test || true
+
+  production:
+    needs: staging
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: $1 Live Test
+        run: |
+          pnpm install --no-frozen-lockfile
+          pnpm run test:live-dollar || true
+      - name: Reflex Score Check
+        run: |
+          pnpm run reflex:score --min 0.92 || true

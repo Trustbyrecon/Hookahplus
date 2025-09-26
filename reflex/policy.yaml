@@ -1,0 +1,26 @@
+thresholds:
+  proceed: 0.92
+  recover: 0.87
+  deny_on_payment_routes: true
+
+emit:
+  ghostlog: true
+  trustgraph: true
+
+scorers:
+  - name: density_alignment
+    weight: 0.3
+  - name: schema_validity
+    weight: 0.3
+  - name: context_use
+    weight: 0.2
+  - name: impact_trace
+    weight: 0.2
+
+gates:
+  - name: "checkout_flow"
+    required_score: 0.92
+    routes: ["/checkout", "/api/stripe/webhook"]
+  - name: "session_management"
+    required_score: 0.87
+    routes: ["/api/session/*"]

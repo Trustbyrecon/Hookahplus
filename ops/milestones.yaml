@@ -1,0 +1,21 @@
+current_milestone: M1_Prod_Readiness
+owner: "Dwayne Clark"
+exit_criteria:
+  - "All three projects (app/site/guests) deploy successfully to Vercel"
+  - "Smoke test suite passes: preorder → checkout → success"
+  - "Webhook endpoints return 200 and are idempotent"
+  - "Reflex Score ≥ 0.92 on checkout flow"
+  - "Environment parity verified across all projects"
+
+milestones:
+  M1_Prod_Readiness:
+    status: "in_progress"
+    start_date: "2025-01-26"
+    target_completion: "2025-01-31"
+    blockers:
+      - "Supabase initialization errors during Vercel build"
+      - "Environment variable configuration across monorepo"
+    next_actions:
+      - "Complete Supabase removal and verify green builds"
+      - "Implement smoke test suite"
+      - "Set up CI gates and promotion pipeline"

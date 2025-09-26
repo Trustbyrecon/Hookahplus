@@ -48,6 +48,9 @@ importers:
       '@types/react-dom':
         specifier: ^18.0.0
         version: 18.3.7(@types/react@18.3.24)
+      js-yaml:
+        specifier: ^4.1.0
+        version: 4.1.0
       prisma:
         specifier: ^5.22.0
         version: 5.22.0

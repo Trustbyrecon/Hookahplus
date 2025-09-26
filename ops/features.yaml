@@ -1,0 +1,36 @@
+features:
+  FEAT_SmokeFlow:
+    id: "smoke_checkout_flow"
+    routes:
+      - "/preorder"
+      - "/checkout"
+      - "/checkout/success"
+      - "/checkout/cancel"
+    data_requirements:
+      - "Stripe test mode integration"
+      - "Session state management"
+    flags:
+      - "HPLUS_PRETTY_THEME"
+    status: "in_progress"
+    
+  FEAT_WebhookFlow:
+    id: "stripe_webhook_processing"
+    routes:
+      - "/api/stripe/webhook"
+    data_requirements:
+      - "Idempotency handling"
+      - "Session state updates"
+    flags: []
+    status: "in_progress"
+    
+  FEAT_SessionManagement:
+    id: "session_timer_management"
+    routes:
+      - "/api/session/start"
+      - "/api/session/extend"
+      - "/api/session/end"
+    data_requirements:
+      - "Timer state persistence"
+      - "Grace window handling"
+    flags: []
+    status: "pending"
