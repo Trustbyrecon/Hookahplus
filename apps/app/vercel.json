@@ -1,10 +1,9 @@
 {
   "version": 2,
-  "buildCommand": "cd apps/app && pnpm run build",
-  "outputDirectory": "apps/app/.next",
+  "buildCommand": "pnpm run build",
+  "outputDirectory": ".next",
   "framework": "nextjs",
   "installCommand": "pnpm install --no-frozen-lockfile",
-  "rootDirectory": "apps/app",
   "env": {
     "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"
   }
