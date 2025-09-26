@@ -4,6 +4,7 @@ import GlobalNavigation from '../components/GlobalNavigation'
 export const metadata = {
   title: 'HookahPlus Guest Portal',
   description: 'Extend your session, request refills, and manage your hookah experience.',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://placeholder.vercel.app')
 }
 
 export default function RootLayout({
