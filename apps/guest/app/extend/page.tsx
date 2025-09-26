@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import DollarTestButton from '@/components/DollarTestButton';
 
 export default function ExtendSession() {
   const [loading, setLoading] = useState(false);
@@ -61,6 +62,11 @@ export default function ExtendSession() {
           >
             {loading ? 'Processing...' : 'Extend Session - $10.00'}
           </button>
+        </div>
+
+        <div className="mt-6">
+          <h2 className="text-sm font-semibold text-gray-700 mb-2">Ops Sandbox</h2>
+          <DollarTestButton />
         </div>
       </div>
     </div>
