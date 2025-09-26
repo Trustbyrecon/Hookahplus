@@ -9,7 +9,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // HookahPlus Brand Colors
+        // HookahPlus Brand Colors (Moodbook Compliant)
         primary: {
           50: '#f0fdf4',
           100: '#dcfce7',
@@ -21,6 +21,48 @@ module.exports = {
           700: '#15803d',
           800: '#166534',
           900: '#14532d',
+        },
+        // Teal Colors (Primary Brand)
+        teal: {
+          50: '#f0fdfa',
+          100: '#ccfbf1',
+          200: '#99f6e4',
+          300: '#5eead4',
+          400: '#2dd4bf', // Primary brand color
+          500: '#14b8a6', // Primary button background
+          600: '#0d9488',
+          700: '#0f766e',
+          800: '#115e59',
+          900: '#134e4a',
+          950: '#042f2e',
+        },
+        // Cyan Colors (Secondary Brand)
+        cyan: {
+          50: '#ecfeff',
+          100: '#cffafe',
+          200: '#a5f3fc',
+          300: '#67e8f9',
+          400: '#22d3ee', // Secondary brand color
+          500: '#06b6d4',
+          600: '#0891b2', // Secondary button backgrounds
+          700: '#0e7490',
+          800: '#155e75',
+          900: '#164e63',
+          950: '#083344',
+        },
+        // Purple Colors (Special Actions)
+        purple: {
+          50: '#faf5ff',
+          100: '#f3e8ff',
+          200: '#e9d5ff',
+          300: '#d8b4fe',
+          400: '#c084fc',
+          500: '#a855f7',
+          600: '#9333ea', // Special actions (mobile QR generation)
+          700: '#7c3aed',
+          800: '#6b21a8',
+          900: '#581c87',
+          950: '#3b0764',
         },
         secondary: {
           50: '#f8fafc',
@@ -88,6 +130,9 @@ module.exports = {
         'gradient-primary': 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
         'gradient-secondary': 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
         'gradient-accent': 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+        'gradient-teal': 'linear-gradient(to right, #14b8a6, #0d9488)',
+        'gradient-teal-blue': 'linear-gradient(to right, #14b8a6, #2563eb)',
+        'gradient-teal-cyan': 'linear-gradient(to right, #2dd4bf, #22d3ee)',
       },
       boxShadow: {
         'primary': '0 4px 14px 0 rgba(34, 197, 94, 0.25)',
@@ -98,4 +143,21 @@ module.exports = {
     },
   },
   plugins: [],
+  safelist: [
+    'from-teal-500',
+    'to-teal-600', 
+    'to-blue-600',
+    'to-blue-700',
+    'hover:from-teal-600',
+    'hover:to-blue-700',
+    'shadow-teal-500/25',
+    'hover:shadow-teal-500/25',
+    'bg-gradient-to-br',
+    'from-teal-400',
+    'to-cyan-400',
+    'text-teal-400',
+    'text-teal-300',
+    'border-teal-500',
+    'bg-teal-500/10'
+  ],
 }
