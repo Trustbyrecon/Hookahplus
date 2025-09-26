@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const stripe = getStripe();
-    const intent = await stripe.paymentIntents.create({
+    const intentResp = await stripe.paymentIntents.create({
       amount: 100, // $1.00
       currency: "usd",
       description: "HookahPlus — $1 sandbox live-test",
@@ -52,13 +52,14 @@ export async function POST(req: NextRequest) {
       confirm: true,
       payment_method: "pm_card_visa", // TEST-ONLY
     });
+    const pi = (intentResp as any).data ?? intentResp; // Support both Response<T> and T
 
     return NextResponse.json({
       ok: true,
-      id: intent.id,
-      status: intent.status,
+      id: pi.id,
+      status: pi.status,
       charges:
-        intent.charges?.data?.map((c) => ({
+        pi.charges?.data?.map((c: any) => ({
           id: c.id,
           status: c.status,
           created: c.created,
