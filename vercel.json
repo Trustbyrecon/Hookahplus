@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "cd apps/site && pnpm run build",
-  "outputDirectory": "apps/site/.next",
+  "buildCommand": "cd apps/app && pnpm run build",
+  "outputDirectory": "apps/app/.next",
   "framework": "nextjs",
   "installCommand": "pnpm install --no-frozen-lockfile",
   "env": {
