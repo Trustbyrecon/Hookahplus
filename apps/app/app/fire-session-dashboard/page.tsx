@@ -74,6 +74,10 @@ export default function FireSessionDashboard() {
   useEffect(() => {
     // Check for pretty theme on client side
     setIsPrettyTheme(process.env.NEXT_PUBLIC_PRETTY_THEME === '1' || window.location.hostname.includes('vercel.app'));
+    
+    // Debug: Log theme status
+    console.log('Pretty theme enabled:', process.env.NEXT_PUBLIC_PRETTY_THEME === '1' || window.location.hostname.includes('vercel.app'));
+    console.log('Hostname:', window.location.hostname);
   }, []);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showNotesModal, setShowNotesModal] = useState(false);
@@ -362,11 +366,33 @@ export default function FireSessionDashboard() {
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center space-x-3 mb-2">
-            <Flame className="w-8 h-8 text-orange-400" />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
-              Fire Session D
-            </h1>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <Flame className="w-8 h-8 text-orange-400" />
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
+                Fire Session Dashboard
+              </h1>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Link href="/">
+                <Button className="btn-pretty-secondary">
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  Dashboard
+                </Button>
+              </Link>
+              <Link href="/preorder/T-001">
+                <Button className="btn-pretty-secondary">
+                  <QrCode className="w-4 h-4 mr-2" />
+                  Pre-Order
+                </Button>
+              </Link>
+              <Link href="/test-session">
+                <Button className="btn-pretty-secondary">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Test Page
+                </Button>
+              </Link>
+            </div>
           </div>
           <p className="text-xl text-zinc-400">
             Complete BOH/FOH workflow management with edge case handling
@@ -396,15 +422,40 @@ export default function FireSessionDashboard() {
           ))}
         </div>
 
+        {/* Debug Info */}
+        <div className="mb-4 p-4 bg-zinc-800 rounded-lg">
+          <div className="text-sm text-zinc-400">
+            <strong>Debug Info:</strong> Pretty Theme: {isPrettyTheme ? '✅ Enabled' : '❌ Disabled'} | 
+            Modal State: {showCreateModal ? '✅ Open' : '❌ Closed'} | 
+            Hostname: {typeof window !== 'undefined' ? window.location.hostname : 'N/A'}
+          </div>
+        </div>
+
         {/* Action Buttons */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center space-x-4">
             <Button 
-              onClick={() => setShowCreateModal(true)}
+              onClick={() => {
+                console.log('Create Session button clicked, showCreateModal:', showCreateModal);
+                setShowCreateModal(true);
+              }}
               className="btn-pretty-primary text-lg px-8 py-4"
             >
               <Plus className="w-5 h-5 mr-2" />
               NEW Create Session
+            </Button>
+            <Button 
+              onClick={() => {
+                console.log('Debug modal clicked, showCreateModal:', showCreateModal);
+                setShowCreateModal(true);
+                // Force a re-render
+                setTimeout(() => {
+                  console.log('Modal state after timeout:', showCreateModal);
+                }, 100);
+              }}
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg"
+            >
+              🔧 Debug Modal
             </Button>
             <Button className="btn-pretty-secondary">
               <RefreshCw className="w-4 h-4 mr-2" />

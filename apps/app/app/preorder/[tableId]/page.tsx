@@ -212,12 +212,26 @@ export default function PreOrderPage() {
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                 <span className="text-sm text-zinc-400">Live</span>
               </div>
-              <Link href="/fire-session-dashboard">
-                <Button className="btn-pretty-secondary">
-                  <BarChart3 className="w-4 h-4 mr-2" />
-                  Dashboard
-                </Button>
-              </Link>
+              <div className="flex items-center space-x-2">
+                <Link href="/">
+                  <Button className="btn-pretty-secondary">
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    Home
+                  </Button>
+                </Link>
+                <Link href="/fire-session-dashboard">
+                  <Button className="btn-pretty-secondary">
+                    <Flame className="w-4 h-4 mr-2" />
+                    Fire Dashboard
+                  </Button>
+                </Link>
+                <Link href="/test-session">
+                  <Button className="btn-pretty-secondary">
+                    <Settings className="w-4 h-4 mr-2" />
+                    Test
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
         </div>

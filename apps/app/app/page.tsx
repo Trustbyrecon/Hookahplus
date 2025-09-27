@@ -270,19 +270,25 @@ export default function LandingPage() {
               <Link href="/sessions">
                 <Button className="btn-pretty-secondary">
                   <Save className="w-4 h-4 mr-2" />
-                  Save Demo
+                  Sessions
                 </Button>
               </Link>
               <Link href="/preorder/T-001">
                 <Button className="btn-pretty-secondary">
-                  <CheckCircle className="w-4 h-4 mr-2" />
-                  Complete Pre-Order
+                  <QrCode className="w-4 h-4 mr-2" />
+                  Pre-Order Station
                 </Button>
               </Link>
               <Link href="/fire-session-dashboard">
                 <Button className="btn-pretty-secondary">
-                  <Activity className="w-4 h-4 mr-2" />
-                  Live Dashboard
+                  <Flame className="w-4 h-4 mr-2" />
+                  Fire Dashboard
+                </Button>
+              </Link>
+              <Link href="/test-session">
+                <Button className="btn-pretty-secondary">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Test Page
                 </Button>
               </Link>
             </div>
