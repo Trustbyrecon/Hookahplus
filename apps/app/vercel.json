@@ -1,10 +1,10 @@
 {
-  "version": 2,
-  "buildCommand": "pnpm run build",
-  "outputDirectory": ".next",
+  "buildCommand": "cd apps/app && pnpm install && pnpm run build",
+  "installCommand": "pnpm install",
   "framework": "nextjs",
-  "installCommand": "pnpm install --no-frozen-lockfile",
-  "env": {
-    "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"
+  "functions": {
+    "apps/app/app/api/**/*.ts": {
+      "maxDuration": 30
+    }
   }
 }
