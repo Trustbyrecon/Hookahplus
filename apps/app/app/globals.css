@@ -102,12 +102,12 @@ body {
 
 /* Metric Cards */
 .metric-card {
-  @apply card-pretty p-6 hover:shadow-xl hover:shadow-teal-500/10 transition-all duration-300 transform hover:scale-105 group;
+  @apply card-pretty p-6 hover:shadow-xl hover:shadow-teal-500/10 transition-all duration-300 transform hover:scale-105;
 }
 
 /* Session Cards */
 .session-card {
-  @apply card-pretty p-6 hover:shadow-xl hover:shadow-teal-500/10 transition-all duration-300 transform hover:scale-[1.02] group;
+  @apply card-pretty p-6 hover:shadow-xl hover:shadow-teal-500/10 transition-all duration-300 transform hover:scale-[1.02];
 }
 
 /* Responsive Design */
