@@ -18,6 +18,8 @@ import {
   ConfirmationModal
 } from '../../components/MicroInteractions';
 import { useRealtimeData } from '../../hooks/useRealtimeData';
+import { useResponsive } from '../../hooks/useResponsive';
+import { useAccessibility, useAnnouncement } from '../../hooks/useAccessibility';
 import { 
   Flame, 
   Users, 
@@ -38,7 +40,9 @@ import {
   Pause,
   Zap,
   Trash2,
-  Edit3
+  Edit3,
+  Menu,
+  X
 } from 'lucide-react';
 
 interface Toast {
@@ -51,6 +55,7 @@ export default function FireSessionDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [newSession, setNewSession] = useState({
@@ -71,9 +76,22 @@ export default function FireSessionDashboard() {
     fetchData
   } = useRealtimeData();
 
+  const {
+    isMobile,
+    isTablet,
+    isDesktop,
+    getGridCols,
+    getCardPadding,
+    getTextSize
+  } = useResponsive();
+
+  const { getFocusClasses, getAriaLabel } = useAccessibility();
+  const { announcement, announce } = useAnnouncement();
+
   const addToast = (message: string, type: Toast['type']) => {
     const id = Date.now().toString();
     setToasts(prev => [...prev, { id, message, type }]);
+    announce(message); // Announce to screen readers
   };
 
   const removeToast = (id: string) => {
@@ -138,7 +156,9 @@ export default function FireSessionDashboard() {
   const getStatusBadge = (status: string, statusColor: string, statusIcon: string) => {
     return (
       <div className="flex items-center space-x-2">
-        <span className="text-lg">{statusIcon}</span>
+        <span className="text-lg" role="img" aria-label={`Status: ${status}`}>
+          {statusIcon}
+        </span>
         <Badge className={`${statusColor} text-white text-sm font-bold px-3 py-1 animate-pulse`}>
           {status.replace(/_/g, ' ')}
         </Badge>
@@ -163,6 +183,15 @@ export default function FireSessionDashboard() {
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
+        {/* Screen Reader Announcements */}
+        <div 
+          className="sr-only" 
+          aria-live="polite" 
+          aria-atomic="true"
+        >
+          {announcement}
+        </div>
+
         {/* Toast Container */}
         <ToastContainer toasts={toasts} onRemove={removeToast} />
 
@@ -176,72 +205,168 @@ export default function FireSessionDashboard() {
                   <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-teal-500 rounded-lg flex items-center justify-center shadow-lg">
                     <span className="text-white font-bold text-sm">H+</span>
                   </div>
-                  <span className="text-2xl font-bold bg-gradient-to-r from-green-400 to-teal-400 bg-clip-text text-transparent">
+                  <span className={`font-bold bg-gradient-to-r from-green-400 to-teal-400 bg-clip-text text-transparent ${getTextSize('text-2xl')}`}>
                     HOOKAH+
                   </span>
                 </div>
-                <Button 
-                  variant="primary" 
-                  size="sm" 
-                  className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                {!isMobile && (
+                  <Button 
+                    variant="primary" 
+                    size="sm" 
+                    className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                  >
+                    SESSIONS
+                  </Button>
+                )}
+              </div>
+
+              {/* Mobile Menu Button */}
+              {isMobile && (
+                <button
+                  onClick={() => setShowMobileMenu(!showMobileMenu)}
+                  className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition-colors duration-300"
+                  aria-label={showMobileMenu ? 'Close menu' : 'Open menu'}
                 >
-                  SESSIONS
-                </Button>
-              </div>
+                  {showMobileMenu ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                </button>
+              )}
 
-              {/* Navigation Links */}
-              <div className="flex items-center space-x-6">
-                <button className="flex items-center space-x-2 text-zinc-300 hover:text-white transition-all duration-300 hover:scale-105">
-                  <BarChart3 className="w-4 h-4" />
-                  <span>Dashboard</span>
-                </button>
-                <button className="flex items-center space-x-2 text-zinc-300 hover:text-white transition-all duration-300 hover:scale-105">
-                  <Flame className="w-4 h-4" />
-                  <span>Sessions</span>
-                </button>
-                <button className="flex items-center space-x-2 text-zinc-300 hover:text-white transition-all duration-300 hover:scale-105">
-                  <Users className="w-4 h-4" />
-                  <span>Staff Ops</span>
-                </button>
-                <button className="flex items-center space-x-2 text-zinc-300 hover:text-white transition-all duration-300 hover:scale-105">
-                  <UserCheck className="w-4 h-4" />
-                  <span>Staff Panel</span>
-                </button>
-                <button className="flex items-center space-x-2 text-zinc-300 hover:text-white transition-all duration-300 hover:scale-105">
-                  <Settings className="w-4 h-4" />
-                  <span>Admin</span>
-                </button>
-              </div>
+              {/* Navigation Links - Desktop */}
+              {!isMobile && (
+                <div className="flex items-center space-x-6">
+                  <button 
+                    className={`flex items-center space-x-2 text-zinc-300 hover:text-white transition-all duration-300 hover:scale-105 ${getFocusClasses()}`}
+                    aria-label="Navigate to Dashboard"
+                  >
+                    <BarChart3 className="w-4 h-4" />
+                    <span>Dashboard</span>
+                  </button>
+                  <button 
+                    className={`flex items-center space-x-2 text-zinc-300 hover:text-white transition-all duration-300 hover:scale-105 ${getFocusClasses()}`}
+                    aria-label="Navigate to Sessions"
+                  >
+                    <Flame className="w-4 h-4" />
+                    <span>Sessions</span>
+                  </button>
+                  <button 
+                    className={`flex items-center space-x-2 text-zinc-300 hover:text-white transition-all duration-300 hover:scale-105 ${getFocusClasses()}`}
+                    aria-label="Navigate to Staff Operations"
+                  >
+                    <Users className="w-4 h-4" />
+                    <span>Staff Ops</span>
+                  </button>
+                  <button 
+                    className={`flex items-center space-x-2 text-zinc-300 hover:text-white transition-all duration-300 hover:scale-105 ${getFocusClasses()}`}
+                    aria-label="Navigate to Staff Panel"
+                  >
+                    <UserCheck className="w-4 h-4" />
+                    <span>Staff Panel</span>
+                  </button>
+                  <button 
+                    className={`flex items-center space-x-2 text-zinc-300 hover:text-white transition-all duration-300 hover:scale-105 ${getFocusClasses()}`}
+                    aria-label="Navigate to Admin"
+                  >
+                    <Settings className="w-4 h-4" />
+                    <span>Admin</span>
+                  </button>
+                </div>
+              )}
 
-              {/* Right side status and actions */}
-              <div className="flex items-center space-x-4">
-                <div className="text-right">
-                  <div className="text-sm text-zinc-400">Flow Status</div>
+              {/* Right side status and actions - Desktop */}
+              {!isMobile && (
+                <div className="flex items-center space-x-4">
+                  <div className="text-right">
+                    <div className="text-sm text-zinc-400">Flow Status</div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-lg font-semibold">{metrics.totalSessions}</span>
+                      <span className="text-sm" role="img" aria-label="Active sessions">🔥</span>
+                    </div>
+                    <MicroStatusIndicator status="online" label="Live" animated />
+                  </div>
+                  
                   <div className="flex items-center space-x-2">
-                    <span className="text-lg font-semibold">{metrics.totalSessions}</span>
-                    <span className="text-sm">🔥</span>
+                    <button 
+                      className={`flex items-center space-x-1 text-zinc-300 hover:text-white transition-all duration-300 hover:scale-105 ${getFocusClasses()}`}
+                      aria-label="Open Support"
+                    >
+                      <Folder className="w-4 h-4" />
+                      <span className="text-sm">Support</span>
+                    </button>
+                    <button 
+                      className={`flex items-center space-x-1 text-zinc-300 hover:text-white transition-all duration-300 hover:scale-105 ${getFocusClasses()}`}
+                      aria-label="Open Documentation"
+                    >
+                      <FileText className="w-4 h-4" />
+                      <span className="text-sm">Docs</span>
+                    </button>
+                  </div>
+
+                  <button 
+                    className={`flex items-center space-x-1 bg-zinc-800 hover:bg-zinc-700 px-3 py-2 rounded-lg transition-all duration-300 hover:scale-105 shadow-lg ${getFocusClasses()}`}
+                    aria-label="Open Admin Menu"
+                  >
+                    <Crown className="w-4 h-4" />
+                    <span className="text-sm">Admin</span>
+                    <span className="text-xs">▼</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Mobile Menu */}
+            {isMobile && showMobileMenu && (
+              <div className="mt-4 pt-4 border-t border-zinc-700">
+                <div className="space-y-2">
+                  <button 
+                    className={`w-full flex items-center space-x-2 text-zinc-300 hover:text-white transition-all duration-300 p-2 rounded-lg hover:bg-zinc-800 ${getFocusClasses()}`}
+                    onClick={() => setShowMobileMenu(false)}
+                  >
+                    <BarChart3 className="w-4 h-4" />
+                    <span>Dashboard</span>
+                  </button>
+                  <button 
+                    className={`w-full flex items-center space-x-2 text-zinc-300 hover:text-white transition-all duration-300 p-2 rounded-lg hover:bg-zinc-800 ${getFocusClasses()}`}
+                    onClick={() => setShowMobileMenu(false)}
+                  >
+                    <Flame className="w-4 h-4" />
+                    <span>Sessions</span>
+                  </button>
+                  <button 
+                    className={`w-full flex items-center space-x-2 text-zinc-300 hover:text-white transition-all duration-300 p-2 rounded-lg hover:bg-zinc-800 ${getFocusClasses()}`}
+                    onClick={() => setShowMobileMenu(false)}
+                  >
+                    <Users className="w-4 h-4" />
+                    <span>Staff Ops</span>
+                  </button>
+                  <button 
+                    className={`w-full flex items-center space-x-2 text-zinc-300 hover:text-white transition-all duration-300 p-2 rounded-lg hover:bg-zinc-800 ${getFocusClasses()}`}
+                    onClick={() => setShowMobileMenu(false)}
+                  >
+                    <UserCheck className="w-4 h-4" />
+                    <span>Staff Panel</span>
+                  </button>
+                  <button 
+                    className={`w-full flex items-center space-x-2 text-zinc-300 hover:text-white transition-all duration-300 p-2 rounded-lg hover:bg-zinc-800 ${getFocusClasses()}`}
+                    onClick={() => setShowMobileMenu(false)}
+                  >
+                    <Settings className="w-4 h-4" />
+                    <span>Admin</span>
+                  </button>
+                </div>
+                
+                {/* Mobile Status */}
+                <div className="mt-4 pt-4 border-t border-zinc-700">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-zinc-400">Flow Status</span>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-lg font-semibold">{metrics.totalSessions}</span>
+                      <span className="text-sm" role="img" aria-label="Active sessions">🔥</span>
+                    </div>
                   </div>
                   <MicroStatusIndicator status="online" label="Live" animated />
                 </div>
-                
-                <div className="flex items-center space-x-2">
-                  <button className="flex items-center space-x-1 text-zinc-300 hover:text-white transition-all duration-300 hover:scale-105">
-                    <Folder className="w-4 h-4" />
-                    <span className="text-sm">Support</span>
-                  </button>
-                  <button className="flex items-center space-x-1 text-zinc-300 hover:text-white transition-all duration-300 hover:scale-105">
-                    <FileText className="w-4 h-4" />
-                    <span className="text-sm">Docs</span>
-                  </button>
-                </div>
-
-                <button className="flex items-center space-x-1 bg-zinc-800 hover:bg-zinc-700 px-3 py-2 rounded-lg transition-all duration-300 hover:scale-105 shadow-lg">
-                  <Crown className="w-4 h-4" />
-                  <span className="text-sm">Admin</span>
-                  <span className="text-xs">▼</span>
-                </button>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -251,11 +376,11 @@ export default function FireSessionDashboard() {
           <div className="mb-8">
             <div className="flex items-center space-x-3 mb-2">
               <Flame className="w-8 h-8 text-orange-400 animate-pulse" />
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-green-400 to-teal-400 bg-clip-text text-transparent">
+              <h1 className={`font-bold bg-gradient-to-r from-green-400 to-teal-400 bg-clip-text text-transparent ${getTextSize('text-4xl')}`}>
                 Fire Session Dashboard
               </h1>
             </div>
-            <p className="text-xl text-zinc-400">
+            <p className={`text-zinc-400 ${getTextSize('text-xl')}`}>
               Complete BOH/FOH workflow management with edge case handling
             </p>
             <div className="flex items-center space-x-4 mt-2">
@@ -271,7 +396,7 @@ export default function FireSessionDashboard() {
           )}
 
           {/* Metrics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className={`grid grid-cols-1 ${isTablet ? 'md:grid-cols-2' : 'lg:grid-cols-4'} gap-6 mb-8`}>
             {isLoading && sessions.length === 0 ? (
               Array.from({ length: 4 }).map((_, i) => (
                 <MetricCardSkeleton key={i} />
@@ -317,21 +442,21 @@ export default function FireSessionDashboard() {
               ].map((metric, index) => (
                 <Card 
                   key={index} 
-                  className="bg-gradient-to-br from-zinc-900 to-zinc-800 border-zinc-700 p-6 hover:shadow-xl hover:shadow-teal-500/10 transition-all duration-300 transform hover:scale-105 group"
+                  className={`bg-gradient-to-br from-zinc-900 to-zinc-800 border-zinc-700 ${getCardPadding()} hover:shadow-xl hover:shadow-teal-500/10 transition-all duration-300 transform hover:scale-105 group`}
                 >
                   <div className="flex items-center justify-between mb-4">
-                    <div className="text-3xl font-bold text-white group-hover:text-teal-400 transition-colors duration-300">
+                    <div className={`font-bold text-white group-hover:text-teal-400 transition-colors duration-300 ${getTextSize('text-3xl')}`}>
                       {metric.value}
                     </div>
                     <div className="group-hover:scale-110 transition-transform duration-300">
                       {metric.icon}
                     </div>
                   </div>
-                  <div className="text-sm text-zinc-400 mb-2">{metric.title}</div>
+                  <div className={`text-zinc-400 mb-2 ${getTextSize('text-sm')}`}>{metric.title}</div>
                   <div className="mb-2">
                     <ProgressBar progress={metric.progress} color="bg-teal-500" animated />
                   </div>
-                  <div className={`text-sm font-medium flex items-center space-x-1 ${
+                  <div className={`font-medium flex items-center space-x-1 ${getTextSize('text-sm')} ${
                     metric.changeType === 'positive' ? 'text-green-400' :
                     metric.changeType === 'negative' ? 'text-red-400' : 'text-zinc-400'
                   }`}>
@@ -346,14 +471,15 @@ export default function FireSessionDashboard() {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center space-x-4">
+          <div className={`flex ${isMobile ? 'flex-col space-y-4' : 'items-center justify-between'} mb-8`}>
+            <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'items-center space-x-4'}`}>
               <Button 
                 variant="primary" 
                 size="lg"
                 onClick={() => setShowCreateModal(true)}
                 disabled={isLoading}
-                className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 relative shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 relative shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${getFocusClasses()} ${isMobile ? 'w-full' : ''}`}
+                aria-label="Create a new session"
               >
                 <span className="absolute -top-2 -left-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full animate-bounce">
                   NEW
@@ -369,34 +495,42 @@ export default function FireSessionDashboard() {
               <Button 
                 variant="outline" 
                 size="lg" 
-                className="bg-zinc-800 hover:bg-zinc-700 border-zinc-600 hover:border-teal-500 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                className={`bg-zinc-800 hover:bg-zinc-700 border-zinc-600 hover:border-teal-500 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 ${getFocusClasses()} ${isMobile ? 'w-full' : ''}`}
+                aria-label="View all sessions"
               >
                 <BarChart3 className="w-5 h-5 mr-2" />
                 View All Sessions
               </Button>
             </div>
 
-            <button className="flex items-center space-x-2 bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition-all duration-300 hover:scale-105 shadow-lg">
-              <Crown className="w-4 h-4" />
-              <span>Admin</span>
-              <span className="text-xs">▼</span>
-            </button>
+            {!isMobile && (
+              <button 
+                className={`flex items-center space-x-2 bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition-all duration-300 hover:scale-105 shadow-lg ${getFocusClasses()}`}
+                aria-label="Open Admin Menu"
+              >
+                <Crown className="w-4 h-4" />
+                <span>Admin</span>
+                <span className="text-xs">▼</span>
+              </button>
+            )}
           </div>
 
           {/* Filter Tabs */}
           {isLoading && sessions.length === 0 ? (
             <TabSkeleton />
           ) : (
-            <div className="flex space-x-2 mb-8 overflow-x-auto">
+            <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'space-x-2'} mb-8 ${isMobile ? '' : 'overflow-x-auto'}`}>
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-300 whitespace-nowrap ${
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-300 ${isMobile ? 'w-full justify-start' : 'whitespace-nowrap'} ${
                     activeTab === tab.id
                       ? 'bg-gradient-to-r from-teal-600 to-cyan-600 text-white shadow-lg shadow-teal-500/25'
                       : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white'
-                  }`}
+                  } ${getFocusClasses()}`}
+                  aria-label={`Filter by ${tab.label}`}
+                  aria-pressed={activeTab === tab.id}
                 >
                   {tab.icon}
                   <span>{tab.label}</span>
@@ -418,7 +552,7 @@ export default function FireSessionDashboard() {
           {isLoading && sessions.length === 0 ? (
             <FlowOverviewSkeleton />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className={`grid grid-cols-1 ${isTablet ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-6 mb-8`}>
               <Card className="bg-gradient-to-br from-purple-900/20 to-purple-800/20 border-purple-500/30 p-6 hover:shadow-xl hover:shadow-purple-500/10 transition-all duration-300">
                 <div className="flex items-center space-x-3 mb-2">
                   <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center">
@@ -469,7 +603,7 @@ export default function FireSessionDashboard() {
           <div className="space-y-6">
             <div className="flex items-center space-x-2 mb-6">
               <ChefHat className="w-6 h-6 text-green-400" />
-              <h2 className="text-2xl font-semibold">Recent Sessions</h2>
+              <h2 className={`font-semibold ${getTextSize('text-2xl')}`}>Recent Sessions</h2>
               <div className="ml-auto flex items-center space-x-2">
                 <PulseDot color="bg-green-400" size="sm" />
                 <span className="text-sm text-green-400">Live Updates</span>
@@ -483,9 +617,9 @@ export default function FireSessionDashboard() {
                   <SessionCardSkeleton key={i} />
                 ))
               ) : filteredSessions.length === 0 ? (
-                <Card className="bg-gradient-to-br from-zinc-900 to-zinc-800 border-zinc-700 p-12 text-center">
+                <Card className={`bg-gradient-to-br from-zinc-900 to-zinc-800 border-zinc-700 ${isMobile ? 'p-8' : 'p-12'} text-center`}>
                   <div className="text-6xl mb-4">📭</div>
-                  <h3 className="text-xl font-semibold text-zinc-400 mb-2">No sessions found</h3>
+                  <h3 className={`font-semibold text-zinc-400 mb-2 ${getTextSize('text-xl')}`}>No sessions found</h3>
                   <p className="text-zinc-500">
                     {activeTab === 'overview' 
                       ? 'No sessions available at the moment.' 
@@ -497,15 +631,15 @@ export default function FireSessionDashboard() {
                 filteredSessions.map((session, index) => (
                   <Card 
                     key={session.id} 
-                    className="bg-gradient-to-br from-zinc-900 to-zinc-800 border-zinc-700 p-6 hover:shadow-xl hover:shadow-teal-500/10 transition-all duration-300 transform hover:scale-[1.02] group"
+                    className={`bg-gradient-to-br from-zinc-900 to-zinc-800 border-zinc-700 ${getCardPadding()} hover:shadow-xl hover:shadow-teal-500/10 transition-all duration-300 transform hover:scale-[1.02] group`}
                   >
-                    <div className="flex items-start justify-between mb-6">
+                    <div className={`flex ${isMobile ? 'flex-col space-y-4' : 'items-start justify-between'} mb-6`}>
                       <div className="flex items-start space-x-4">
                         <div className="text-3xl group-hover:scale-110 transition-transform duration-300">
                           {session.team === 'BOH' ? '👨‍🍳' : session.team === 'FOH' ? '🚚' : session.team === 'CUSTOMER' ? '🟢' : '⚠️'}
                         </div>
                         <div>
-                          <h3 className="text-2xl font-bold text-blue-400 group-hover:text-teal-400 transition-colors duration-300">
+                          <h3 className={`font-bold text-blue-400 group-hover:text-teal-400 transition-colors duration-300 ${getTextSize('text-2xl')}`}>
                             Table {session.tableId}
                           </h3>
                           <p className="text-zinc-400">{session.customerName} - {session.flavor}</p>
@@ -517,29 +651,31 @@ export default function FireSessionDashboard() {
                           </div>
                         </div>
                       </div>
-                      <div className="text-right">
+                      <div className={`text-right ${isMobile ? 'w-full' : ''}`}>
                         {getStatusBadge(session.status, session.statusColor, session.statusIcon)}
-                        <div className="text-lg font-semibold text-white mt-1">
+                        <div className={`font-semibold text-white mt-1 ${getTextSize('text-lg')}`}>
                           ${session.amount.toFixed(2)}
                         </div>
                       </div>
                     </div>
 
                     {/* Session Details */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div className={`grid grid-cols-1 ${isMobile ? '' : 'md:grid-cols-3'} gap-6 mb-6`}>
                       <div>
-                        <label className="text-sm text-zinc-400 block mb-2">Assigned Staff:</label>
+                        <label className={`text-zinc-400 block mb-2 ${getTextSize('text-sm')}`}>Assigned Staff:</label>
                         <div className="flex items-center space-x-2">
                           <input
                             type="text"
                             value={session.assignedBOH}
-                            className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all duration-300"
+                            className={`flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all duration-300 ${getFocusClasses()}`}
                             readOnly
+                            aria-label="Assigned staff member"
                           />
                           <Button 
                             variant="outline" 
                             size="sm" 
                             className="bg-zinc-700 hover:bg-zinc-600 border-zinc-600 hover:border-teal-500 transition-all duration-300"
+                            aria-label="Assign staff member"
                           >
                             Assign
                             <span className="ml-1">▼</span>
@@ -548,8 +684,11 @@ export default function FireSessionDashboard() {
                       </div>
 
                       <div>
-                        <label className="text-sm text-zinc-400 block mb-2">Session Notes:</label>
-                        <button className="text-teal-400 text-sm hover:text-teal-300 mb-2 transition-colors duration-300">
+                        <label className={`text-zinc-400 block mb-2 ${getTextSize('text-sm')}`}>Session Notes:</label>
+                        <button 
+                          className="text-teal-400 text-sm hover:text-teal-300 mb-2 transition-colors duration-300"
+                          aria-label="Add session note"
+                        >
                           Add Note
                         </button>
                         <div className="bg-zinc-800 rounded-lg p-3 text-sm text-zinc-300 border border-zinc-700 hover:border-teal-500/50 transition-colors duration-300">
@@ -558,18 +697,19 @@ export default function FireSessionDashboard() {
                       </div>
 
                       <div>
-                        <label className="text-sm text-zinc-400 block mb-2">Created:</label>
+                        <label className={`text-zinc-400 block mb-2 ${getTextSize('text-sm')}`}>Created:</label>
                         <div className="text-zinc-300">{session.created}</div>
                       </div>
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex flex-wrap gap-3">
+                    <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'flex-wrap'} gap-3`}>
                       <Button 
                         variant="warning" 
                         size="sm" 
                         onClick={() => handleSessionAction(session.id, 'HEAT_UP')}
-                        className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                        className={`bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 ${getFocusClasses()} ${isMobile ? 'w-full' : ''}`}
+                        aria-label="Heat up session"
                       >
                         <Zap className="w-4 h-4 mr-2" />
                         Heat Up
@@ -579,7 +719,8 @@ export default function FireSessionDashboard() {
                         variant="success" 
                         size="sm" 
                         onClick={() => handleSessionAction(session.id, 'RESTART_PREP')}
-                        className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 border-green-400 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                        className={`bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 border-green-400 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 ${getFocusClasses()} ${isMobile ? 'w-full' : ''}`}
+                        aria-label="Restart prep for session"
                       >
                         <RefreshCw className="w-4 h-4 mr-2" />
                         Restart Prep
@@ -589,7 +730,8 @@ export default function FireSessionDashboard() {
                         variant="info" 
                         size="sm" 
                         onClick={() => handleSessionAction(session.id, 'RESOLVE_ISSUE')}
-                        className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                        className={`bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 ${getFocusClasses()} ${isMobile ? 'w-full' : ''}`}
+                        aria-label="Resolve issue for session"
                       >
                         <CheckCircle className="w-4 h-4 mr-2" />
                         Resolve Issue
@@ -599,7 +741,8 @@ export default function FireSessionDashboard() {
                         variant="danger" 
                         size="sm" 
                         onClick={() => handleSessionAction(session.id, 'FLAG_MANAGER')}
-                        className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                        className={`bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 ${getFocusClasses()} ${isMobile ? 'w-full' : ''}`}
+                        aria-label="Flag session for manager"
                       >
                         <Flag className="w-4 h-4 mr-2" />
                         Flag Manager
@@ -609,7 +752,8 @@ export default function FireSessionDashboard() {
                         variant="warning" 
                         size="sm" 
                         onClick={() => handleSessionAction(session.id, 'HOLD_SESSION')}
-                        className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                        className={`bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 ${getFocusClasses()} ${isMobile ? 'w-full' : ''}`}
+                        aria-label="Hold session"
                       >
                         <Pause className="w-4 h-4 mr-2" />
                         Hold Session
@@ -619,7 +763,8 @@ export default function FireSessionDashboard() {
                         variant="accent" 
                         size="sm" 
                         onClick={() => handleSessionAction(session.id, 'REQUEST_REFILL')}
-                        className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                        className={`bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 ${getFocusClasses()} ${isMobile ? 'w-full' : ''}`}
+                        aria-label="Request refill for session"
                       >
                         <Zap className="w-4 h-4 mr-2" />
                         Request Refill
@@ -632,7 +777,8 @@ export default function FireSessionDashboard() {
                           setSelectedSession(session.id);
                           setShowDeleteModal(true);
                         }}
-                        className="bg-zinc-700 hover:bg-red-600 border-zinc-600 hover:border-red-500 text-zinc-300 hover:text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                        className={`bg-zinc-700 hover:bg-red-600 border-zinc-600 hover:border-red-500 text-zinc-300 hover:text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 ${getFocusClasses()} ${isMobile ? 'w-full' : ''}`}
+                        aria-label="Delete session"
                       >
                         <Trash2 className="w-4 h-4 mr-2" />
                         Delete
@@ -645,13 +791,15 @@ export default function FireSessionDashboard() {
           </div>
         </div>
 
-        {/* Floating Action Button */}
-        <FloatingActionButton
-          onClick={() => setShowCreateModal(true)}
-          icon={<Plus className="w-6 h-6" />}
-          label="Create New Session"
-          position="bottom-right"
-        />
+        {/* Floating Action Button - Only on mobile */}
+        {isMobile && (
+          <FloatingActionButton
+            onClick={() => setShowCreateModal(true)}
+            icon={<Plus className="w-6 h-6" />}
+            label="Create New Session"
+            position="bottom-right"
+          />
+        )}
 
         {/* Create Session Modal */}
         <ConfirmationModal
