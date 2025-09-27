@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "cd apps/app && pnpm run build",
+  "buildCommand": "pnpm run build:app",
   "outputDirectory": "apps/app/.next",
   "framework": "nextjs",
   "installCommand": "pnpm install --no-frozen-lockfile",
