@@ -79,6 +79,9 @@ importers:
 
   apps/app:
     dependencies:
+      '@prisma/client':
+        specifier: ^5.22.0
+        version: 5.22.0(prisma@5.22.0)
       '@types/node':
         specifier: ^20.0.0
         version: 20.19.17
@@ -97,6 +100,9 @@ importers:
       next:
         specifier: 14.2.7
         version: 14.2.7(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      prisma:
+        specifier: ^5.22.0
+        version: 5.22.0
       react:
         specifier: ^18.0.0
         version: 18.3.1
