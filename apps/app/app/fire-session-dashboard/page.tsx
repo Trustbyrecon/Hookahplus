@@ -69,7 +69,12 @@ import {
 import { Session, SessionStatus, SessionTeam, SessionNotes } from '../../types/session';
 
 export default function FireSessionDashboard() {
-  const [isPrettyTheme] = useState(process.env.NEXT_PUBLIC_PRETTY_THEME === '1');
+  const [isPrettyTheme, setIsPrettyTheme] = useState(false);
+
+  useEffect(() => {
+    // Check for pretty theme on client side
+    setIsPrettyTheme(process.env.NEXT_PUBLIC_PRETTY_THEME === '1' || window.location.hostname.includes('vercel.app'));
+  }, []);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);

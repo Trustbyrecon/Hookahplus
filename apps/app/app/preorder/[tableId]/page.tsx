@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card, Button, Badge } from '../../../components';
@@ -67,7 +67,12 @@ import {
 export default function PreOrderPage() {
   const params = useParams();
   const tableId = params.tableId as string;
-  const [isPrettyTheme] = useState(process.env.NEXT_PUBLIC_PRETTY_THEME === '1');
+  const [isPrettyTheme, setIsPrettyTheme] = useState(false);
+
+  useEffect(() => {
+    // Check for pretty theme on client side
+    setIsPrettyTheme(process.env.NEXT_PUBLIC_PRETTY_THEME === '1' || window.location.hostname.includes('vercel.app'));
+  }, []);
   const [showTestMode, setShowTestMode] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
 
