@@ -9,6 +9,14 @@ import {
   TabSkeleton, 
   FlowOverviewSkeleton 
 } from '../../components/LoadingSkeleton';
+import { 
+  ToastContainer, 
+  PulseDot, 
+  ProgressBar, 
+  StatusIndicator as MicroStatusIndicator,
+  FloatingActionButton,
+  ConfirmationModal
+} from '../../components/MicroInteractions';
 import { useRealtimeData } from '../../hooks/useRealtimeData';
 import { 
   Flame, 
@@ -28,12 +36,23 @@ import {
   CheckCircle,
   Flag,
   Pause,
-  Zap
+  Zap,
+  Trash2,
+  Edit3
 } from 'lucide-react';
+
+interface Toast {
+  id: string;
+  message: string;
+  type: 'success' | 'error' | 'warning' | 'info';
+}
 
 export default function FireSessionDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<string | null>(null);
+  const [toasts, setToasts] = useState<Toast[]>([]);
   const [newSession, setNewSession] = useState({
     tableId: 'T-001',
     customerName: '',
@@ -51,6 +70,15 @@ export default function FireSessionDashboard() {
     updateSession,
     fetchData
   } = useRealtimeData();
+
+  const addToast = (message: string, type: Toast['type']) => {
+    const id = Date.now().toString();
+    setToasts(prev => [...prev, { id, message, type }]);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id));
+  };
 
   const tabs = [
     { id: 'overview', label: `Overview (${metrics.totalSessions})`, icon: <BarChart3 className="w-4 h-4" />, count: metrics.totalSessions },
@@ -76,8 +104,34 @@ export default function FireSessionDashboard() {
         flavor: 'Blue Mist',
         amount: 3000
       });
+      addToast('Session created successfully!', 'success');
     } catch (err) {
-      console.error('Failed to create session:', err);
+      addToast('Failed to create session', 'error');
+    }
+  };
+
+  const handleSessionAction = async (sessionId: string, action: string) => {
+    try {
+      await updateSession(sessionId, { 
+        status: action,
+        lastUpdated: Date.now()
+      });
+      addToast(`Session ${action.toLowerCase()} completed`, 'success');
+    } catch (err) {
+      addToast(`Failed to ${action.toLowerCase()} session`, 'error');
+    }
+  };
+
+  const handleDeleteSession = async () => {
+    if (!selectedSession) return;
+    
+    try {
+      // In a real app, you'd call a delete API
+      addToast('Session deleted successfully', 'success');
+      setShowDeleteModal(false);
+      setSelectedSession(null);
+    } catch (err) {
+      addToast('Failed to delete session', 'error');
     }
   };
 
@@ -109,6 +163,9 @@ export default function FireSessionDashboard() {
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
+        {/* Toast Container */}
+        <ToastContainer toasts={toasts} onRemove={removeToast} />
+
         {/* Top Navigation */}
         <div className="bg-zinc-900/95 backdrop-blur-sm border-b border-teal-500/20 shadow-lg">
           <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
@@ -164,7 +221,7 @@ export default function FireSessionDashboard() {
                     <span className="text-lg font-semibold">{metrics.totalSessions}</span>
                     <span className="text-sm">🔥</span>
                   </div>
-                  <div className="text-xs text-green-400">Active</div>
+                  <MicroStatusIndicator status="online" label="Live" animated />
                 </div>
                 
                 <div className="flex items-center space-x-2">
@@ -203,7 +260,7 @@ export default function FireSessionDashboard() {
             </p>
             <div className="flex items-center space-x-4 mt-2">
               <span className="text-sm text-zinc-500">Last updated: {lastUpdated.toLocaleTimeString()}</span>
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <PulseDot color="bg-green-400" size="sm" />
               <span className="text-sm text-green-400">Live</span>
             </div>
           </div>
@@ -227,7 +284,8 @@ export default function FireSessionDashboard() {
                   icon: <Flame className="w-8 h-8 text-orange-400" />,
                   change: '+12%',
                   changeType: 'positive' as const,
-                  trend: 'up'
+                  trend: 'up',
+                  progress: (metrics.totalSessions / 10) * 100
                 },
                 {
                   title: 'BOH Active',
@@ -235,7 +293,8 @@ export default function FireSessionDashboard() {
                   icon: <ChefHat className="w-8 h-8 text-purple-400" />,
                   change: '+5%',
                   changeType: 'positive' as const,
-                  trend: 'up'
+                  trend: 'up',
+                  progress: (metrics.bohActive / 5) * 100
                 },
                 {
                   title: 'FOH Active',
@@ -243,7 +302,8 @@ export default function FireSessionDashboard() {
                   icon: <Users className="w-8 h-8 text-purple-400" />,
                   change: '-2%',
                   changeType: 'negative' as const,
-                  trend: 'down'
+                  trend: 'down',
+                  progress: (metrics.fohActive / 5) * 100
                 },
                 {
                   title: 'Edge Cases',
@@ -251,7 +311,8 @@ export default function FireSessionDashboard() {
                   icon: <AlertTriangle className="w-8 h-8 text-yellow-400" />,
                   change: '0%',
                   changeType: 'neutral' as const,
-                  trend: 'stable'
+                  trend: 'stable',
+                  progress: (metrics.edgeCases / 3) * 100
                 }
               ].map((metric, index) => (
                 <Card 
@@ -267,6 +328,9 @@ export default function FireSessionDashboard() {
                     </div>
                   </div>
                   <div className="text-sm text-zinc-400 mb-2">{metric.title}</div>
+                  <div className="mb-2">
+                    <ProgressBar progress={metric.progress} color="bg-teal-500" animated />
+                  </div>
                   <div className={`text-sm font-medium flex items-center space-x-1 ${
                     metric.changeType === 'positive' ? 'text-green-400' :
                     metric.changeType === 'negative' ? 'text-red-400' : 'text-zinc-400'
@@ -365,7 +429,8 @@ export default function FireSessionDashboard() {
                     <div className="text-sm text-zinc-400">Back of House</div>
                   </div>
                 </div>
-                <div className="text-sm text-zinc-300">Prep & Assembly</div>
+                <div className="text-sm text-zinc-300 mb-2">Prep & Assembly</div>
+                <ProgressBar progress={(metrics.bohActive / 5) * 100} color="bg-purple-500" />
               </Card>
 
               <Card className="bg-gradient-to-br from-blue-900/20 to-blue-800/20 border-blue-500/30 p-6 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300">
@@ -378,7 +443,8 @@ export default function FireSessionDashboard() {
                     <div className="text-sm text-zinc-400">Front of House</div>
                   </div>
                 </div>
-                <div className="text-sm text-zinc-300">Delivery & Service</div>
+                <div className="text-sm text-zinc-300 mb-2">Delivery & Service</div>
+                <ProgressBar progress={(metrics.fohActive / 5) * 100} color="bg-blue-500" />
               </Card>
 
               <Card className="bg-gradient-to-br from-pink-900/20 to-pink-800/20 border-pink-500/30 p-6 hover:shadow-xl hover:shadow-pink-500/10 transition-all duration-300">
@@ -393,7 +459,8 @@ export default function FireSessionDashboard() {
                     <div className="text-sm text-zinc-400">Active Customers</div>
                   </div>
                 </div>
-                <div className="text-sm text-zinc-300">Live Sessions</div>
+                <div className="text-sm text-zinc-300 mb-2">Live Sessions</div>
+                <ProgressBar progress={(sessions.filter(s => s.team === 'CUSTOMER').length / 5) * 100} color="bg-pink-500" />
               </Card>
             </div>
           )}
@@ -404,7 +471,7 @@ export default function FireSessionDashboard() {
               <ChefHat className="w-6 h-6 text-green-400" />
               <h2 className="text-2xl font-semibold">Recent Sessions</h2>
               <div className="ml-auto flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <PulseDot color="bg-green-400" size="sm" />
                 <span className="text-sm text-green-400">Live Updates</span>
               </div>
             </div>
@@ -501,6 +568,7 @@ export default function FireSessionDashboard() {
                       <Button 
                         variant="warning" 
                         size="sm" 
+                        onClick={() => handleSessionAction(session.id, 'HEAT_UP')}
                         className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                       >
                         <Zap className="w-4 h-4 mr-2" />
@@ -510,6 +578,7 @@ export default function FireSessionDashboard() {
                       <Button 
                         variant="success" 
                         size="sm" 
+                        onClick={() => handleSessionAction(session.id, 'RESTART_PREP')}
                         className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 border-green-400 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                       >
                         <RefreshCw className="w-4 h-4 mr-2" />
@@ -519,6 +588,7 @@ export default function FireSessionDashboard() {
                       <Button 
                         variant="info" 
                         size="sm" 
+                        onClick={() => handleSessionAction(session.id, 'RESOLVE_ISSUE')}
                         className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                       >
                         <CheckCircle className="w-4 h-4 mr-2" />
@@ -528,6 +598,7 @@ export default function FireSessionDashboard() {
                       <Button 
                         variant="danger" 
                         size="sm" 
+                        onClick={() => handleSessionAction(session.id, 'FLAG_MANAGER')}
                         className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                       >
                         <Flag className="w-4 h-4 mr-2" />
@@ -537,6 +608,7 @@ export default function FireSessionDashboard() {
                       <Button 
                         variant="warning" 
                         size="sm" 
+                        onClick={() => handleSessionAction(session.id, 'HOLD_SESSION')}
                         className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                       >
                         <Pause className="w-4 h-4 mr-2" />
@@ -546,10 +618,24 @@ export default function FireSessionDashboard() {
                       <Button 
                         variant="accent" 
                         size="sm" 
+                        onClick={() => handleSessionAction(session.id, 'REQUEST_REFILL')}
                         className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                       >
                         <Zap className="w-4 h-4 mr-2" />
                         Request Refill
+                      </Button>
+
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => {
+                          setSelectedSession(session.id);
+                          setShowDeleteModal(true);
+                        }}
+                        className="bg-zinc-700 hover:bg-red-600 border-zinc-600 hover:border-red-500 text-zinc-300 hover:text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete
                       </Button>
                     </div>
                   </Card>
@@ -558,6 +644,41 @@ export default function FireSessionDashboard() {
             </div>
           </div>
         </div>
+
+        {/* Floating Action Button */}
+        <FloatingActionButton
+          onClick={() => setShowCreateModal(true)}
+          icon={<Plus className="w-6 h-6" />}
+          label="Create New Session"
+          position="bottom-right"
+        />
+
+        {/* Create Session Modal */}
+        <ConfirmationModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onConfirm={handleCreateSession}
+          title="Create New Session"
+          message="Are you sure you want to create a new session?"
+          confirmText="Create"
+          cancelText="Cancel"
+          type="info"
+        />
+
+        {/* Delete Session Modal */}
+        <ConfirmationModal
+          isOpen={showDeleteModal}
+          onClose={() => {
+            setShowDeleteModal(false);
+            setSelectedSession(null);
+          }}
+          onConfirm={handleDeleteSession}
+          title="Delete Session"
+          message="Are you sure you want to delete this session? This action cannot be undone."
+          confirmText="Delete"
+          cancelText="Cancel"
+          type="danger"
+        />
       </div>
     </ErrorBoundary>
   );
