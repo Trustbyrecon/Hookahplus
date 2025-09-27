@@ -18,21 +18,22 @@ export default function TestSessionPage() {
     const newSession: Session = {
       id: `session_${sessionData.tableId}_${Date.now()}`,
       tableId: sessionData.tableId,
-      customerName: sessionData.customerName,
-      customerPhone: sessionData.customerPhone,
-      sessionType: sessionData.sessionType,
+      customerRef: sessionData.customerName,
       flavor: sessionData.flavor,
-      amount: sessionData.amount,
-      status: 'CREATED',
+      priceCents: Math.round(sessionData.amount * 100),
+      state: 'NEW',
+      assignedBOHId: sessionData.bohStaff,
+      assignedFOHId: sessionData.fohStaff,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      // UI computed fields
       statusColor: 'bg-blue-500',
       statusIcon: '🆕',
       assignedBOH: sessionData.bohStaff,
       assignedFOH: sessionData.fohStaff,
       notes: sessionData.notes,
       created: new Date().toLocaleTimeString(),
-      team: 'BOH',
-      createdAt: new Date(),
-      updatedAt: new Date()
+      team: 'BOH'
     };
     setSessions(prev => [newSession, ...prev]);
     console.log('Session created:', newSession);
@@ -91,10 +92,10 @@ export default function TestSessionPage() {
                   <div className="flex items-start justify-between">
                     <div>
                       <h3 className={`font-semibold ${isPrettyTheme ? 'text-blue-400' : 'text-blue-600'}`}>
-                        Table {session.tableId} - {session.customerName}
+                        Table {session.tableId} - {session.customerRef}
                       </h3>
                       <p className={isPrettyTheme ? 'text-zinc-400 text-sm' : 'text-gray-600 text-sm'}>
-                        {session.flavor} • ${session.amount} • {session.sessionType}
+                        {session.flavor} • ${(session.priceCents / 100).toFixed(2)} • {session.state}
                       </p>
                       <p className={isPrettyTheme ? 'text-zinc-500 text-xs mt-1' : 'text-gray-500 text-xs mt-1'}>
                         BOH: {session.assignedBOH} | FOH: {session.assignedFOH}
@@ -109,7 +110,7 @@ export default function TestSessionPage() {
                       <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
                         isPrettyTheme ? 'bg-blue-500 text-white' : 'bg-blue-100 text-blue-800'
                       }`}>
-                        {session.status}
+                        {session.state}
                       </span>
                       <p className={isPrettyTheme ? 'text-zinc-500 text-xs mt-1' : 'text-gray-500 text-xs mt-1'}>
                         {session.created}

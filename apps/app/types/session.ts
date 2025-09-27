@@ -1,53 +1,51 @@
 export type SessionStatus = 
-  | 'CREATED'
+  | 'NEW'
   | 'PREP_IN_PROGRESS'
-  | 'HEAT_UP'
   | 'READY_FOR_DELIVERY'
-  | 'FOH_DELIVERED'
-  | 'SESSION_ACTIVE'
-  | 'REQUEST_REFILL'
+  | 'OUT_FOR_DELIVERY'
+  | 'ACTIVE'
   | 'PAUSED'
   | 'COMPLETED'
-  | 'CANCELLED'
-  | 'STAFF_HOLD'
-  | 'EQUIPMENT_ISSUE'
-  | 'CUSTOMER_ISSUE';
+  | 'CANCELLED';
 
-export type SessionTeam = 'BOH' | 'FOH' | 'EDGE' | 'MANAGEMENT';
+export type SessionTeam = 'BOH' | 'FOH' | 'MANAGER' | 'ADMIN';
+
+export type EdgeCase = 
+  | 'EQUIPMENT_ISSUE'
+  | 'CUSTOMER_NOT_FOUND'
+  | 'PAYMENT_FAILED'
+  | 'HEALTH_SAFETY'
+  | 'OTHER';
 
 export type SessionType = 'walk-in' | 'reservation' | 'vip';
 
 export interface Session {
   id: string;
   tableId: string;
-  customerName: string;
-  customerPhone: string;
-  sessionType: SessionType;
-  flavor: string;
-  amount: number;
-  status: SessionStatus;
-  statusColor: string;
-  statusIcon: string;
-  assignedBOH: string;
-  assignedFOH: string;
-  notes: string;
-  created: string;
-  team: SessionTeam;
+  customerRef?: string;
+  flavor?: string;
+  priceCents: number;
+  state: SessionStatus;
+  edgeCase?: EdgeCase;
+  edgeNote?: string;
+  assignedBOHId?: string;
+  assignedFOHId?: string;
+  startedAt?: Date;
+  endedAt?: Date;
+  durationSecs?: number;
+  paymentIntent?: string;
+  paymentStatus?: string;
   createdAt: Date;
   updatedAt: Date;
-  // Session lifecycle timestamps
-  prepStartedAt?: Date;
-  heatUpStartedAt?: Date;
-  readyForDeliveryAt?: Date;
-  deliveredAt?: Date;
-  sessionStartedAt?: Date;
-  completedAt?: Date;
-  // Session duration tracking
-  prepDuration?: number; // minutes
-  heatUpDuration?: number; // minutes
-  deliveryDuration?: number; // minutes
-  sessionDuration?: number; // minutes
-  totalDuration?: number; // minutes
+  
+  // UI-specific fields (computed)
+  statusColor?: string;
+  statusIcon?: string;
+  assignedBOH?: string;
+  assignedFOH?: string;
+  notes?: string;
+  created?: string;
+  team?: SessionTeam;
 }
 
 export interface SessionAction {

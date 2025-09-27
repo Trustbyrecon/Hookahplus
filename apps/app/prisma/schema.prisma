@@ -1,0 +1,76 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Session {
+  id             String      @id @default(cuid())
+  tableId        String
+  customerRef    String?
+  flavor         String?
+  priceCents     Int
+  state          SessionState @default(NEW)
+  edgeCase       EdgeCase?
+  edgeNote       String?
+  assignedBOHId  String?
+  assignedFOHId  String?
+  startedAt      DateTime?   // set when state -> ACTIVE
+  endedAt        DateTime?   // set when state -> COMPLETED/CANCELLED
+  durationSecs   Int?        // compute on complete
+  paymentIntent  String?     // Stripe PI id
+  paymentStatus  String?     // requires "succeeded" to complete
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@map("sessions")
+}
+
+enum SessionState {
+  NEW
+  PREP_IN_PROGRESS
+  READY_FOR_DELIVERY
+  OUT_FOR_DELIVERY
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+enum EdgeCase {
+  EQUIPMENT_ISSUE
+  CUSTOMER_NOT_FOUND
+  PAYMENT_FAILED
+  HEALTH_SAFETY
+  OTHER
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  roles     String[] // ["BOH", "FOH", "MANAGER", "ADMIN"]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model SessionTransition {
+  id          String   @id @default(cuid())
+  sessionId   String
+  fromState   String
+  toState     String
+  transition  String
+  userId      String
+  note        String?
+  createdAt   DateTime @default(now())
+
+  @@map("session_transitions")
+}

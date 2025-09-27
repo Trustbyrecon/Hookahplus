@@ -6,6 +6,7 @@ import { Card, Button, Badge } from '../../components';
 import CreateSessionModal from '../../components/CreateSessionModal';
 import SessionActionButtons from '../../components/SessionActionButtons';
 import SessionNotesModal from '../../components/SessionNotesModal';
+import { BOHActions, FOHActions, ManagerActions } from '../../components/SessionActions';
 import { 
   Flame, 
   Users, 
@@ -85,66 +86,73 @@ export default function FireSessionDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [sessions, setSessions] = useState<Session[]>([]);
   const [sessionNotes, setSessionNotes] = useState<SessionNotes[]>([]);
+  const [userRoles] = useState<string[]>(['BOH', 'FOH', 'MANAGER', 'ADMIN']); // Mock user roles
 
-  // Initialize with mock data
+  // Initialize with mock data using new state machine
   useEffect(() => {
     const mockSessions: Session[] = [
       {
         id: 'session_T-007_1758552685415',
         tableId: 'T-007',
-        customerName: '15551234556',
-        customerPhone: '+1 (555) 123-4556',
-        sessionType: 'walk-in',
+        customerRef: '15551234556',
         flavor: 'Watermelon + Mint',
-        amount: 35.00,
-        status: 'PREP_IN_PROGRESS',
+        priceCents: 3500,
+        state: 'PREP_IN_PROGRESS',
+        assignedBOHId: 'boh-1',
+        assignedFOHId: 'foh-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        // UI computed fields
         statusColor: 'bg-green-500',
         statusIcon: '🔄',
         assignedBOH: 'Mike Rodriguez',
         assignedFOH: 'John Smith',
         notes: 'Source: WALK IN, External Ref: T-007',
         created: '1:39:07 PM',
-        team: 'BOH',
-        createdAt: new Date(),
-        updatedAt: new Date()
+        team: 'BOH'
       },
       {
         id: 'session_T-008_1758552685416',
         tableId: 'T-008',
-        customerName: '15551234557',
-        customerPhone: '+1 (555) 123-4557',
-        sessionType: 'reservation',
+        customerRef: '15551234557',
         flavor: 'Blue Mist',
-        amount: 30.00,
-        status: 'HEAT_UP',
-        statusColor: 'bg-orange-500',
-        statusIcon: '🔥',
+        priceCents: 3000,
+        state: 'READY_FOR_DELIVERY',
+        assignedBOHId: 'boh-1',
+        assignedFOHId: 'foh-2',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        // UI computed fields
+        statusColor: 'bg-blue-500',
+        statusIcon: '✅',
         assignedBOH: 'Mike Rodriguez',
         assignedFOH: 'Emily Davis',
         notes: 'Source: RESERVE, External Ref: T-008',
         created: '1:34:07 PM',
-        team: 'BOH',
-        createdAt: new Date(),
-        updatedAt: new Date()
+        team: 'BOH'
       },
       {
         id: 'session_T-011_1758552685417',
         tableId: 'T-011',
-        customerName: '15551234560',
-        customerPhone: '+1 (555) 123-4560',
-        sessionType: 'vip',
+        customerRef: '15551234560',
         flavor: 'Custom Mix',
-        amount: 45.00,
-        status: 'STAFF_HOLD',
-        statusColor: 'bg-yellow-500',
+        priceCents: 4500,
+        state: 'ACTIVE',
+        edgeCase: 'EQUIPMENT_ISSUE',
+        edgeNote: 'Equipment malfunction - hookah base cracked',
+        assignedBOHId: 'boh-2',
+        assignedFOHId: 'foh-3',
+        startedAt: new Date(Date.now() - 15 * 60 * 1000), // 15 minutes ago
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        // UI computed fields
+        statusColor: 'bg-orange-500',
         statusIcon: '⚠️',
         assignedBOH: 'Sarah Chen',
         assignedFOH: 'David Wilson',
         notes: 'Source: WALK IN, External Ref: T-011. Edge Case: Equipment malfunction - hookah base cracked',
         created: '1:19:07 PM',
-        team: 'EDGE',
-        createdAt: new Date(),
-        updatedAt: new Date()
+        team: 'FOH'
       }
     ];
     setSessions(mockSessions);
@@ -229,21 +237,22 @@ export default function FireSessionDashboard() {
     const newSession: Session = {
       id: `session_${sessionData.tableId}_${Date.now()}`,
       tableId: sessionData.tableId,
-      customerName: sessionData.customerName,
-      customerPhone: sessionData.customerPhone,
-      sessionType: sessionData.sessionType,
+      customerRef: sessionData.customerName,
       flavor: sessionData.flavor,
-      amount: sessionData.amount,
-      status: 'CREATED',
+      priceCents: Math.round(sessionData.amount * 100),
+      state: 'NEW',
+      assignedBOHId: sessionData.bohStaff,
+      assignedFOHId: sessionData.fohStaff,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      // UI computed fields
       statusColor: 'bg-blue-500',
       statusIcon: '🆕',
       assignedBOH: sessionData.bohStaff,
       assignedFOH: sessionData.fohStaff,
       notes: sessionData.notes,
       created: new Date().toLocaleTimeString(),
-      team: 'BOH',
-      createdAt: new Date(),
-      updatedAt: new Date()
+      team: 'BOH'
     };
     setSessions(prev => [newSession, ...prev]);
   };
@@ -298,9 +307,9 @@ export default function FireSessionDashboard() {
 
   const filteredSessions = sessions.filter(session => {
     switch (activeTab) {
-      case 'boh': return session.team === 'BOH';
-      case 'foh': return session.team === 'FOH';
-      case 'edge': return session.team === 'EDGE';
+      case 'boh': return session.state === 'NEW' || session.state === 'PREP_IN_PROGRESS' || session.state === 'READY_FOR_DELIVERY';
+      case 'foh': return session.state === 'OUT_FOR_DELIVERY' || session.state === 'ACTIVE' || session.state === 'PAUSED';
+      case 'edge': return session.edgeCase !== undefined;
       default: return true;
     }
   });
@@ -505,7 +514,7 @@ export default function FireSessionDashboard() {
                     <h3 className="text-xl font-bold text-blue-400">
                       Table {session.tableId}
                     </h3>
-                    <p className="text-zinc-400">{session.customerName} - {session.flavor}</p>
+                    <p className="text-zinc-400">{session.customerRef} - {session.flavor}</p>
                     <div className="flex items-center space-x-2 mt-1">
                       <span className="text-xs px-2 py-1 bg-zinc-700 rounded-full text-zinc-300">
                         {session.team}
@@ -515,9 +524,9 @@ export default function FireSessionDashboard() {
                   </div>
                 </div>
                 <div className="text-right">
-                  {getStatusBadge(session.status, session.statusColor, session.statusIcon)}
+                  {getStatusBadge(session.state, session.statusColor || 'bg-gray-500', session.statusIcon || '❓')}
                   <div className="text-lg font-semibold text-white mt-1">
-                    ${session.amount.toFixed(2)}
+                    ${(session.priceCents / 100).toFixed(2)}
                   </div>
                 </div>
               </div>
@@ -538,19 +547,50 @@ export default function FireSessionDashboard() {
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <SessionActionButtons
-                session={session}
-                onAction={handleAction}
-                onStatusChange={handleStatusChange}
-                onAddNote={(sessionId) => {
-                  setSelectedSessionId(sessionId);
-                  setShowNotesModal(true);
-                }}
-                onViewDetails={handleViewDetails}
-                onEditSession={handleEditSession}
-                onDeleteSession={handleDeleteSession}
-              />
+              {/* Action Buttons - Role-based */}
+              <div className="space-y-4">
+                {/* BOH Actions */}
+                <div>
+                  <h4 className="text-sm font-medium text-zinc-400 mb-2">BOH Actions</h4>
+                  <BOHActions
+                    sessionId={session.id}
+                    state={session.state}
+                    userRoles={userRoles}
+                    onStateChange={() => {
+                      // Refresh sessions data
+                      console.log('Session state changed, refreshing...');
+                    }}
+                  />
+                </div>
+
+                {/* FOH Actions */}
+                <div>
+                  <h4 className="text-sm font-medium text-zinc-400 mb-2">FOH Actions</h4>
+                  <FOHActions
+                    sessionId={session.id}
+                    state={session.state}
+                    userRoles={userRoles}
+                    onStateChange={() => {
+                      // Refresh sessions data
+                      console.log('Session state changed, refreshing...');
+                    }}
+                  />
+                </div>
+
+                {/* Manager Actions */}
+                <div>
+                  <h4 className="text-sm font-medium text-zinc-400 mb-2">Manager Actions</h4>
+                  <ManagerActions
+                    sessionId={session.id}
+                    state={session.state}
+                    userRoles={userRoles}
+                    onStateChange={() => {
+                      // Refresh sessions data
+                      console.log('Session state changed, refreshing...');
+                    }}
+                  />
+                </div>
+              </div>
             </div>
           ))}
         </div>

@@ -92,9 +92,9 @@ export default function SessionActionButtons({
       bgColor: 'bg-blue-500/20',
       borderColor: 'border-blue-500/30',
       hoverColor: 'hover:bg-blue-500/30',
-      enabled: session.status === 'CREATED' && session.team === 'BOH',
+      enabled: session.state === 'NEW' && session.team === 'BOH',
       team: ['BOH'],
-      status: ['CREATED'],
+      status: ['NEW'],
       description: 'Begin preparation of hookah',
       action: () => onStatusChange(session.id, 'PREP_IN_PROGRESS')
     },
@@ -106,11 +106,11 @@ export default function SessionActionButtons({
       bgColor: 'bg-orange-500/20',
       borderColor: 'border-orange-500/30',
       hoverColor: 'hover:bg-orange-500/30',
-      enabled: session.status === 'PREP_IN_PROGRESS' && session.team === 'BOH',
+      enabled: session.state === 'PREP_IN_PROGRESS' && session.team === 'BOH',
       team: ['BOH'],
       status: ['PREP_IN_PROGRESS'],
       description: 'Heat up the hookah coals',
-      action: () => onStatusChange(session.id, 'HEAT_UP')
+      action: () => onStatusChange(session.id, 'READY_FOR_DELIVERY')
     },
     {
       id: 'ready_for_delivery',
@@ -120,9 +120,9 @@ export default function SessionActionButtons({
       bgColor: 'bg-green-500/20',
       borderColor: 'border-green-500/30',
       hoverColor: 'hover:bg-green-500/30',
-      enabled: session.status === 'HEAT_UP' && session.team === 'BOH',
+      enabled: session.state === 'READY_FOR_DELIVERY' && session.team === 'BOH',
       team: ['BOH'],
-      status: ['HEAT_UP'],
+      status: ['READY_FOR_DELIVERY'],
       description: 'Hookah is ready for FOH delivery',
       action: () => onStatusChange(session.id, 'READY_FOR_DELIVERY')
     },
@@ -134,11 +134,11 @@ export default function SessionActionButtons({
       bgColor: 'bg-cyan-500/20',
       borderColor: 'border-cyan-500/30',
       hoverColor: 'hover:bg-cyan-500/30',
-      enabled: ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(session.status) && session.team === 'BOH',
+      enabled: ['PREP_IN_PROGRESS', 'READY_FOR_DELIVERY'].includes(session.state) && session.team === 'BOH',
       team: ['BOH'],
-      status: ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'],
+      status: ['PREP_IN_PROGRESS', 'READY_FOR_DELIVERY'],
       description: 'Restart the preparation process',
-      action: () => onStatusChange(session.id, 'CREATED')
+      action: () => onStatusChange(session.id, 'NEW')
     },
     
     // FOH Actions
@@ -150,11 +150,11 @@ export default function SessionActionButtons({
       bgColor: 'bg-purple-500/20',
       borderColor: 'border-purple-500/30',
       hoverColor: 'hover:bg-purple-500/30',
-      enabled: session.status === 'READY_FOR_DELIVERY' && session.team === 'FOH',
+      enabled: session.state === 'READY_FOR_DELIVERY' && session.team === 'FOH',
       team: ['FOH'],
       status: ['READY_FOR_DELIVERY'],
       description: 'Deliver hookah to table and start session timer',
-      action: () => onStatusChange(session.id, 'SESSION_ACTIVE')
+      action: () => onStatusChange(session.id, 'ACTIVE')
     },
     {
       id: 'request_refill',
@@ -164,11 +164,11 @@ export default function SessionActionButtons({
       bgColor: 'bg-yellow-500/20',
       borderColor: 'border-yellow-500/30',
       hoverColor: 'hover:bg-yellow-500/30',
-      enabled: session.status === 'SESSION_ACTIVE' && session.team === 'FOH',
+      enabled: session.state === 'ACTIVE' && session.team === 'FOH',
       team: ['FOH'],
-      status: ['SESSION_ACTIVE'],
+      status: ['ACTIVE'],
       description: 'Request flavor refill from BOH',
-      action: () => onStatusChange(session.id, 'REQUEST_REFILL')
+      action: () => onStatusChange(session.id, 'PAUSED')
     },
     
     // Universal Actions
@@ -180,9 +180,9 @@ export default function SessionActionButtons({
       bgColor: 'bg-yellow-500/20',
       borderColor: 'border-yellow-500/30',
       hoverColor: 'hover:bg-yellow-500/30',
-      enabled: ['SESSION_ACTIVE', 'REQUEST_REFILL'].includes(session.status),
-      team: ['BOH', 'FOH', 'MANAGEMENT'],
-      status: ['SESSION_ACTIVE', 'REQUEST_REFILL'],
+      enabled: ['ACTIVE', 'PAUSED'].includes(session.state),
+      team: ['BOH', 'FOH', 'MANAGER'],
+      status: ['ACTIVE', 'PAUSED'],
       description: 'Pause the current session',
       action: () => onStatusChange(session.id, 'PAUSED')
     },
@@ -194,11 +194,11 @@ export default function SessionActionButtons({
       bgColor: 'bg-green-500/20',
       borderColor: 'border-green-500/30',
       hoverColor: 'hover:bg-green-500/30',
-      enabled: session.status === 'PAUSED',
-      team: ['BOH', 'FOH', 'MANAGEMENT'],
+      enabled: session.state === 'PAUSED',
+      team: ['BOH', 'FOH', 'MANAGER'],
       status: ['PAUSED'],
       description: 'Resume the paused session',
-      action: () => onStatusChange(session.id, 'SESSION_ACTIVE')
+      action: () => onStatusChange(session.id, 'ACTIVE')
     },
     {
       id: 'complete_session',
@@ -208,9 +208,9 @@ export default function SessionActionButtons({
       bgColor: 'bg-green-500/20',
       borderColor: 'border-green-500/30',
       hoverColor: 'hover:bg-green-500/30',
-      enabled: ['SESSION_ACTIVE', 'REQUEST_REFILL', 'PAUSED'].includes(session.status),
-      team: ['BOH', 'FOH', 'MANAGEMENT'],
-      status: ['SESSION_ACTIVE', 'REQUEST_REFILL', 'PAUSED'],
+      enabled: ['ACTIVE', 'PAUSED'].includes(session.state),
+      team: ['BOH', 'FOH', 'MANAGER'],
+      status: ['ACTIVE', 'PAUSED'],
       description: 'Mark session as completed',
       action: () => onStatusChange(session.id, 'COMPLETED')
     },
@@ -225,8 +225,8 @@ export default function SessionActionButtons({
       borderColor: 'border-red-500/30',
       hoverColor: 'hover:bg-red-500/30',
       enabled: true, // Always available for edge cases
-      team: ['BOH', 'FOH', 'EDGE'],
-      status: ['STAFF_HOLD', 'EQUIPMENT_ISSUE', 'CUSTOMER_ISSUE'],
+      team: ['BOH', 'FOH', 'MANAGER'],
+      status: ['PAUSED'],
       description: 'Flag this session for manager attention',
       action: () => onAction('flag_manager', session.id)
     },
@@ -238,11 +238,11 @@ export default function SessionActionButtons({
       bgColor: 'bg-teal-500/20',
       borderColor: 'border-teal-500/30',
       hoverColor: 'hover:bg-teal-500/30',
-      enabled: ['STAFF_HOLD', 'EQUIPMENT_ISSUE', 'CUSTOMER_ISSUE'].includes(session.status),
-      team: ['BOH', 'FOH', 'MANAGEMENT'],
-      status: ['STAFF_HOLD', 'EQUIPMENT_ISSUE', 'CUSTOMER_ISSUE'],
+      enabled: ['STAFF_HOLD', 'EQUIPMENT_ISSUE', 'CUSTOMER_ISSUE'].includes(session.state),
+      team: ['BOH', 'FOH', 'MANAGER'],
+      status: ['PAUSED'],
       description: 'Mark issue as resolved',
-      action: () => onStatusChange(session.id, 'SESSION_ACTIVE')
+      action: () => onStatusChange(session.id, 'ACTIVE')
     },
     {
       id: 'hold_session',
@@ -252,19 +252,19 @@ export default function SessionActionButtons({
       bgColor: 'bg-yellow-500/20',
       borderColor: 'border-yellow-500/30',
       hoverColor: 'hover:bg-yellow-500/30',
-      enabled: !['PAUSED', 'COMPLETED', 'CANCELLED'].includes(session.status),
-      team: ['BOH', 'FOH', 'MANAGEMENT'],
-      status: ['CREATED', 'PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY', 'SESSION_ACTIVE', 'REQUEST_REFILL'],
+      enabled: !['PAUSED', 'COMPLETED', 'CANCELLED'].includes(session.state),
+      team: ['BOH', 'FOH', 'MANAGER'],
+      status: ['NEW', 'PREP_IN_PROGRESS', 'READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'ACTIVE', 'PAUSED'],
       description: 'Put session on hold',
-      action: () => onStatusChange(session.id, 'STAFF_HOLD')
+      action: () => onStatusChange(session.id, 'PAUSED')
     }
   ];
 
   // Filter actions based on current session state
-  const availableActions = allActions.filter(action => 
-    action.enabled && 
-    action.team.includes(session.team) && 
-    action.status.includes(session.status)
+  const availableActions = allActions.filter(action =>
+    action.enabled &&
+    action.team.includes(session.team || 'BOH') &&
+    action.status.includes(session.state)
   );
 
   // More button actions (always available)
