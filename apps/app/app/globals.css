@@ -2,8 +2,153 @@
 @tailwind components;
 @tailwind utilities;
 
-/* HookahPlus Moodbook Styling */
+/* HookahPlus Pretty Theme Design System */
+:root {
+  /* Design Tokens */
+  --color-panel: #1a1a1a;
+  --color-foam: #e5e7eb;
+  --color-surface: #111827;
+  --color-border: #374151;
+  --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-card: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --radius-card: 0.75rem;
+  --radius-button: 0.5rem;
+  --radius-pill: 9999px;
+}
+
+/* Pretty Theme Wrapper */
+.pretty-theme {
+  --color-panel: #1a1a1a;
+  --color-foam: #e5e7eb;
+  --color-surface: #111827;
+  --color-border: #374151;
+}
+
+/* Base Styles */
 body {
-  background-color: #09090b; /* zinc-950 */
-  color: #ffffff; /* white */
+  @apply bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white;
+  font-feature-settings: 'rlig' 1, 'calt' 1;
+}
+
+/* Pretty Theme Specific Styles */
+.pretty-theme body {
+  @apply bg-gradient-to-br from-zinc-950 via-zinc-900 to-black;
+}
+
+/* Card System */
+.card-pretty {
+  @apply bg-zinc-900/80 backdrop-blur-sm border border-zinc-800/50 rounded-xl shadow-card;
+  background: linear-gradient(135deg, rgba(17, 24, 39, 0.8) 0%, rgba(31, 41, 55, 0.6) 100%);
+}
+
+.card-pretty:hover {
+  @apply border-teal-500/30 shadow-teal-500/10;
+  transform: translateY(-2px);
+  transition: all 0.3s ease;
+}
+
+/* Status Bar */
+.status-bar {
+  @apply bg-zinc-900/95 backdrop-blur-sm border-b border-teal-500/20;
+}
+
+/* Quick Access Grid */
+.quick-access-grid {
+  @apply grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4;
+}
+
+.quick-access-card {
+  @apply w-[200px] h-[120px] card-pretty p-4 flex flex-col justify-between hover:scale-105 transition-all duration-300;
+}
+
+/* Powered by Reflex Cards */
+.reflex-card {
+  @apply w-[344px] h-[180px] card-pretty p-6 flex flex-col justify-between;
+}
+
+/* Button System */
+.btn-pretty {
+  @apply px-4 py-2 rounded-lg font-medium transition-all duration-300 transform hover:scale-105;
+}
+
+.btn-pretty-primary {
+  @apply btn-pretty bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white shadow-lg hover:shadow-xl;
+}
+
+.btn-pretty-secondary {
+  @apply btn-pretty bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 hover:border-teal-500 text-zinc-300 hover:text-white;
+}
+
+.btn-pretty-pill {
+  @apply px-6 py-2 rounded-full font-medium transition-all duration-300;
+}
+
+/* Badge System */
+.badge-pretty {
+  @apply px-3 py-1 rounded-full text-xs font-semibold;
+}
+
+.badge-pretty-active {
+  @apply badge-pretty bg-teal-500/20 text-teal-400 border border-teal-500/30;
+}
+
+.badge-pretty-success {
+  @apply badge-pretty bg-green-500/20 text-green-400 border border-green-500/30;
+}
+
+.badge-pretty-warning {
+  @apply badge-pretty bg-yellow-500/20 text-yellow-400 border border-yellow-500/30;
+}
+
+/* Metric Cards */
+.metric-card {
+  @apply card-pretty p-6 hover:shadow-xl hover:shadow-teal-500/10 transition-all duration-300 transform hover:scale-105 group;
+}
+
+/* Session Cards */
+.session-card {
+  @apply card-pretty p-6 hover:shadow-xl hover:shadow-teal-500/10 transition-all duration-300 transform hover:scale-[1.02] group;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .quick-access-grid {
+    @apply grid-cols-2 gap-3;
+  }
+  
+  .quick-access-card {
+    @apply w-full h-[100px];
+  }
+  
+  .reflex-card {
+    @apply w-full h-[160px];
+  }
+}
+
+/* Animation Classes */
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 5px rgba(20, 184, 166, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(20, 184, 166, 0.6); }
 }

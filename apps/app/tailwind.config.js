@@ -89,6 +89,11 @@ module.exports = {
           900: '#18181b',
           950: '#09090b',
         },
+        // Pretty Theme Colors
+        panel: '#1a1a1a',
+        foam: '#e5e7eb',
+        surface: '#111827',
+        border: '#374151',
         // Status Colors
         success: '#22c55e',
         warning: '#f59e0b',
@@ -104,11 +109,17 @@ module.exports = {
         '88': '22rem',
         '128': '32rem',
       },
+      borderRadius: {
+        'card': '0.75rem',
+        'button': '0.5rem',
+        'pill': '9999px',
+      },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',
         'slide-up': 'slideUp 0.3s ease-out',
         'slide-down': 'slideDown 0.3s ease-out',
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'pulse-glow': 'pulseGlow 2s ease-in-out infinite',
       },
       keyframes: {
         fadeIn: {
@@ -123,6 +134,10 @@ module.exports = {
           '0%': { transform: 'translateY(-10px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
         },
+        pulseGlow: {
+          '0%, 100%': { boxShadow: '0 0 5px rgba(20, 184, 166, 0.3)' },
+          '50%': { boxShadow: '0 0 20px rgba(20, 184, 166, 0.6)' },
+        },
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
@@ -133,12 +148,16 @@ module.exports = {
         'gradient-teal': 'linear-gradient(to right, #14b8a6, #0d9488)',
         'gradient-teal-blue': 'linear-gradient(to right, #14b8a6, #2563eb)',
         'gradient-teal-cyan': 'linear-gradient(to right, #2dd4bf, #22d3ee)',
+        'gradient-pretty': 'linear-gradient(135deg, rgba(17, 24, 39, 0.8) 0%, rgba(31, 41, 55, 0.6) 100%)',
       },
       boxShadow: {
         'primary': '0 4px 14px 0 rgba(34, 197, 94, 0.25)',
         'secondary': '0 4px 14px 0 rgba(59, 130, 246, 0.25)',
         'accent': '0 4px 14px 0 rgba(139, 92, 246, 0.25)',
         'glow': '0 0 20px rgba(34, 197, 94, 0.3)',
+        'soft': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        'card': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+        'teal-glow': '0 0 20px rgba(20, 184, 166, 0.3)',
       },
     },
   },
@@ -158,7 +177,21 @@ module.exports = {
     'text-teal-400',
     'text-teal-300',
     'border-teal-500',
-    'bg-teal-500/10'
+    'bg-teal-500/10',
+    'card-pretty',
+    'btn-pretty',
+    'btn-pretty-primary',
+    'btn-pretty-secondary',
+    'btn-pretty-pill',
+    'badge-pretty',
+    'badge-pretty-active',
+    'badge-pretty-success',
+    'badge-pretty-warning',
+    'metric-card',
+    'session-card',
+    'quick-access-card',
+    'reflex-card',
+    'status-bar',
+    'pretty-theme'
   ],
 }
-// Moodbook styling applied Fri, Sep 26, 2025  7:03:42 PM
