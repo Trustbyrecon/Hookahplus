@@ -1,25 +1,11 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Card, Button, Badge } from '../../components';
-import { ErrorBoundary, ErrorMessage } from '../../components/ErrorBoundary';
-import { 
-  MetricCardSkeleton, 
-  SessionCardSkeleton, 
-  TabSkeleton, 
-  FlowOverviewSkeleton 
-} from '../../components/LoadingSkeleton';
-import { 
-  ToastContainer, 
-  PulseDot, 
-  ProgressBar, 
-  StatusIndicator as MicroStatusIndicator,
-  FloatingActionButton,
-  ConfirmationModal
-} from '../../components/MicroInteractions';
-import { useRealtimeData } from '../../hooks/useRealtimeData';
-import { useResponsive } from '../../hooks/useResponsive';
-import { useAccessibility, useAnnouncement } from '../../hooks/useAccessibility';
+import CreateSessionModal from '../../components/CreateSessionModal';
+import SessionActionButtons from '../../components/SessionActionButtons';
+import SessionNotesModal from '../../components/SessionNotesModal';
 import { 
   Flame, 
   Users, 
@@ -42,124 +28,259 @@ import {
   Trash2,
   Edit3,
   Menu,
-  X
+  X,
+  DollarSign,
+  Activity,
+  TrendingDown,
+  Star,
+  Shield,
+  AlertCircle,
+  CheckCircle2,
+  Clock3,
+  User,
+  Phone,
+  MapPin,
+  Calendar,
+  Filter,
+  Search,
+  MoreHorizontal,
+  ArrowUp,
+  ArrowDown,
+  Minus,
+  Target,
+  Zap as Lightning,
+  Heart,
+  Coffee,
+  Wind,
+  Sparkles,
+  Brain,
+  Lock,
+  CreditCard,
+  Smartphone,
+  QrCode,
+  Play,
+  Save,
+  Eye,
+  EyeOff,
+  ShoppingCart,
+  Star as StarIcon,
+  MessageSquare
 } from 'lucide-react';
-
-interface Toast {
-  id: string;
-  message: string;
-  type: 'success' | 'error' | 'warning' | 'info';
-}
+import { Session, SessionStatus, SessionTeam, SessionNotes } from '../../types/session';
 
 export default function FireSessionDashboard() {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [isPrettyTheme] = useState(process.env.NEXT_PUBLIC_PRETTY_THEME === '1');
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [selectedSession, setSelectedSession] = useState<string | null>(null);
-  const [toasts, setToasts] = useState<Toast[]>([]);
-  const [newSession, setNewSession] = useState({
-    tableId: 'T-001',
-    customerName: '',
-    flavor: 'Blue Mist',
-    amount: 3000
-  });
+  const [showNotesModal, setShowNotesModal] = useState(false);
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [sessionNotes, setSessionNotes] = useState<SessionNotes[]>([]);
 
-  const {
-    sessions,
-    metrics,
-    isLoading,
-    error,
-    lastUpdated,
-    createSession,
-    updateSession,
-    fetchData
-  } = useRealtimeData();
+  // Initialize with mock data
+  useEffect(() => {
+    const mockSessions: Session[] = [
+      {
+        id: 'session_T-007_1758552685415',
+        tableId: 'T-007',
+        customerName: '15551234556',
+        customerPhone: '+1 (555) 123-4556',
+        sessionType: 'walk-in',
+        flavor: 'Watermelon + Mint',
+        amount: 35.00,
+        status: 'PREP_IN_PROGRESS',
+        statusColor: 'bg-green-500',
+        statusIcon: '🔄',
+        assignedBOH: 'Mike Rodriguez',
+        assignedFOH: 'John Smith',
+        notes: 'Source: WALK IN, External Ref: T-007',
+        created: '1:39:07 PM',
+        team: 'BOH',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        id: 'session_T-008_1758552685416',
+        tableId: 'T-008',
+        customerName: '15551234557',
+        customerPhone: '+1 (555) 123-4557',
+        sessionType: 'reservation',
+        flavor: 'Blue Mist',
+        amount: 30.00,
+        status: 'HEAT_UP',
+        statusColor: 'bg-orange-500',
+        statusIcon: '🔥',
+        assignedBOH: 'Mike Rodriguez',
+        assignedFOH: 'Emily Davis',
+        notes: 'Source: RESERVE, External Ref: T-008',
+        created: '1:34:07 PM',
+        team: 'BOH',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        id: 'session_T-011_1758552685417',
+        tableId: 'T-011',
+        customerName: '15551234560',
+        customerPhone: '+1 (555) 123-4560',
+        sessionType: 'vip',
+        flavor: 'Custom Mix',
+        amount: 45.00,
+        status: 'STAFF_HOLD',
+        statusColor: 'bg-yellow-500',
+        statusIcon: '⚠️',
+        assignedBOH: 'Sarah Chen',
+        assignedFOH: 'David Wilson',
+        notes: 'Source: WALK IN, External Ref: T-011. Edge Case: Equipment malfunction - hookah base cracked',
+        created: '1:19:07 PM',
+        team: 'EDGE',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    ];
+    setSessions(mockSessions);
+  }, []);
 
-  const {
-    isMobile,
-    isTablet,
-    isDesktop,
-    getGridCols,
-    getCardPadding,
-    getTextSize
-  } = useResponsive();
+  // Mock session notes
+  useEffect(() => {
+    const mockNotes: SessionNotes[] = [
+      {
+        id: 'note_1',
+        sessionId: 'session_T-007_1758552685415',
+        note: 'Customer requested extra mint in the mix',
+        author: 'Mike Rodriguez',
+        timestamp: new Date(),
+        type: 'customer_request'
+      },
+      {
+        id: 'note_2',
+        sessionId: 'session_T-011_1758552685417',
+        note: 'Equipment issue: Hookah base cracked during setup. Need replacement.',
+        author: 'Sarah Chen',
+        timestamp: new Date(),
+        type: 'issue'
+      }
+    ];
+    setSessionNotes(mockNotes);
+  }, []);
 
-  const { getFocusClasses, getAriaLabel } = useAccessibility();
-  const { announcement, announce } = useAnnouncement();
-
-  const addToast = (message: string, type: Toast['type']) => {
-    const id = Date.now().toString();
-    setToasts(prev => [...prev, { id, message, type }]);
-    announce(message); // Announce to screen readers
-  };
-
-  const removeToast = (id: string) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id));
-  };
-
-  const tabs = [
-    { id: 'overview', label: `Overview (${metrics.totalSessions})`, icon: <BarChart3 className="w-4 h-4" />, count: metrics.totalSessions },
-    { id: 'boh', label: `BOH (${metrics.bohActive})`, icon: <ChefHat className="w-4 h-4" />, count: metrics.bohActive },
-    { id: 'foh', label: `FOH (${metrics.fohActive})`, icon: <Users className="w-4 h-4" />, count: metrics.fohActive },
-    { id: 'edge', label: `Edge Cases (${metrics.edgeCases})`, icon: <AlertTriangle className="w-4 h-4" />, count: metrics.edgeCases },
-    { id: 'analytics', label: `Analytics (${metrics.totalSessions})`, icon: <TrendingUp className="w-4 h-4" />, count: metrics.totalSessions },
-    { id: 'more', label: 'More', icon: <Settings className="w-4 h-4" />, count: 0 }
+  const metrics = [
+    {
+      title: 'Active Sessions',
+      value: '3',
+      icon: <Flame className="w-6 h-6 text-orange-400" />,
+      change: '+12%',
+      changeType: 'positive' as const
+    },
+    {
+      title: 'Revenue',
+      value: '$110',
+      icon: <DollarSign className="w-6 h-6 text-green-400" />,
+      change: '+8%',
+      changeType: 'positive' as const
+    },
+    {
+      title: 'Avg Duration',
+      value: '45min',
+      icon: <Clock className="w-6 h-6 text-blue-400" />,
+      change: '-5%',
+      changeType: 'negative' as const
+    },
+    {
+      title: 'Alerts',
+      value: '1',
+      icon: <AlertTriangle className="w-6 h-6 text-yellow-400" />,
+      change: '0%',
+      changeType: 'neutral' as const
+    },
+    {
+      title: 'Staff Assigned',
+      value: '2',
+      icon: <Users className="w-6 h-6 text-purple-400" />,
+      change: '+2%',
+      changeType: 'positive' as const
+    },
+    {
+      title: 'Total Sessions',
+      value: '7',
+      icon: <BarChart3 className="w-6 h-6 text-cyan-400" />,
+      change: '+15%',
+      changeType: 'positive' as const
+    }
   ];
 
-  const handleCreateSession = async () => {
-    try {
-      await createSession({
-        tableId: newSession.tableId,
-        customerName: newSession.customerName,
-        flavor: newSession.flavor,
-        amount: newSession.amount / 100 // Convert cents to dollars
-      });
-      setShowCreateModal(false);
-      setNewSession({
-        tableId: 'T-001',
-        customerName: '',
-        flavor: 'Blue Mist',
-        amount: 3000
-      });
-      addToast('Session created successfully!', 'success');
-    } catch (err) {
-      addToast('Failed to create session', 'error');
-    }
+  const tabs = [
+    { id: 'overview', label: 'Overview (7)', count: 7 },
+    { id: 'boh', label: 'BOH (3)', count: 3 },
+    { id: 'foh', label: 'FOH (0)', count: 0 },
+    { id: 'edge', label: 'Edge Cases (1)', count: 1 }
+  ];
+
+  const handleCreateSession = (sessionData: any) => {
+    const newSession: Session = {
+      id: `session_${sessionData.tableId}_${Date.now()}`,
+      tableId: sessionData.tableId,
+      customerName: sessionData.customerName,
+      customerPhone: sessionData.customerPhone,
+      sessionType: sessionData.sessionType,
+      flavor: sessionData.flavor,
+      amount: sessionData.amount,
+      status: 'CREATED',
+      statusColor: 'bg-blue-500',
+      statusIcon: '🆕',
+      assignedBOH: sessionData.bohStaff,
+      assignedFOH: sessionData.fohStaff,
+      notes: sessionData.notes,
+      created: new Date().toLocaleTimeString(),
+      team: 'BOH',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    setSessions(prev => [newSession, ...prev]);
   };
 
-  const handleSessionAction = async (sessionId: string, action: string) => {
-    try {
-      await updateSession(sessionId, { 
-        status: action,
-        lastUpdated: Date.now()
-      });
-      addToast(`Session ${action.toLowerCase()} completed`, 'success');
-    } catch (err) {
-      addToast(`Failed to ${action.toLowerCase()} session`, 'error');
-    }
+  const handleStatusChange = (sessionId: string, newStatus: SessionStatus) => {
+    setSessions(prev => prev.map(session => 
+      session.id === sessionId 
+        ? { ...session, status: newStatus, updatedAt: new Date() }
+        : session
+    ));
   };
 
-  const handleDeleteSession = async () => {
-    if (!selectedSession) return;
-    
-    try {
-      // In a real app, you'd call a delete API
-      addToast('Session deleted successfully', 'success');
-      setShowDeleteModal(false);
-      setSelectedSession(null);
-    } catch (err) {
-      addToast('Failed to delete session', 'error');
-    }
+  const handleAction = (actionId: string, sessionId: string) => {
+    console.log(`Action ${actionId} triggered for session ${sessionId}`);
+    // Handle specific actions here
+  };
+
+  const handleAddNote = (sessionId: string, note: string, type: SessionNotes['type']) => {
+    const newNote: SessionNotes = {
+      id: `note_${Date.now()}`,
+      sessionId,
+      note,
+      author: 'Current User',
+      timestamp: new Date(),
+      type
+    };
+    setSessionNotes(prev => [newNote, ...prev]);
+  };
+
+  const handleViewDetails = (sessionId: string) => {
+    console.log(`View details for session ${sessionId}`);
+  };
+
+  const handleEditSession = (sessionId: string) => {
+    console.log(`Edit session ${sessionId}`);
+  };
+
+  const handleDeleteSession = (sessionId: string) => {
+    setSessions(prev => prev.filter(session => session.id !== sessionId));
   };
 
   const getStatusBadge = (status: string, statusColor: string, statusIcon: string) => {
     return (
       <div className="flex items-center space-x-2">
-        <span className="text-lg" role="img" aria-label={`Status: ${status}`}>
-          {statusIcon}
-        </span>
-        <Badge className={`${statusColor} text-white text-sm font-bold px-3 py-1 animate-pulse`}>
+        <span className="text-lg">{statusIcon}</span>
+        <Badge className={`${statusColor} text-white text-sm font-bold px-3 py-1`}>
           {status.replace(/_/g, ' ')}
         </Badge>
       </div>
@@ -168,666 +289,231 @@ export default function FireSessionDashboard() {
 
   const filteredSessions = sessions.filter(session => {
     switch (activeTab) {
-      case 'boh':
-        return session.team === 'BOH';
-      case 'foh':
-        return session.team === 'FOH';
-      case 'edge':
-        return session.team === 'EDGE';
-      case 'overview':
-      default:
-        return true;
+      case 'boh': return session.team === 'BOH';
+      case 'foh': return session.team === 'FOH';
+      case 'edge': return session.team === 'EDGE';
+      default: return true;
     }
   });
 
-  return (
-    <ErrorBoundary>
+  if (!isPrettyTheme) {
+    // Fallback to original solid design
+    return (
       <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
-        {/* Screen Reader Announcements */}
-        <div 
-          className="sr-only" 
-          aria-live="polite" 
-          aria-atomic="true"
-        >
-          {announcement}
-        </div>
-
-        {/* Toast Container */}
-        <ToastContainer toasts={toasts} onRemove={removeToast} />
-
-        {/* Top Navigation */}
-        <div className="bg-zinc-900/95 backdrop-blur-sm border-b border-teal-500/20 shadow-lg">
-          <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between">
-              {/* Logo and SESSIONS button */}
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-teal-500 rounded-lg flex items-center justify-center shadow-lg">
-                    <span className="text-white font-bold text-sm">H+</span>
-                  </div>
-                  <span className={`font-bold bg-gradient-to-r from-green-400 to-teal-400 bg-clip-text text-transparent ${getTextSize('text-2xl')}`}>
-                    HOOKAH+
-                  </span>
-                </div>
-                {!isMobile && (
-                  <Button 
-                    variant="primary" 
-                    size="sm" 
-                    className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                  >
-                    SESSIONS
-                  </Button>
-                )}
-              </div>
-
-              {/* Mobile Menu Button */}
-              {isMobile && (
-                <button
-                  onClick={() => setShowMobileMenu(!showMobileMenu)}
-                  className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition-colors duration-300"
-                  aria-label={showMobileMenu ? 'Close menu' : 'Open menu'}
-                >
-                  {showMobileMenu ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-                </button>
-              )}
-
-              {/* Navigation Links - Desktop */}
-              {!isMobile && (
-                <div className="flex items-center space-x-6">
-                  <button 
-                    className={`flex items-center space-x-2 text-zinc-300 hover:text-white transition-all duration-300 hover:scale-105 ${getFocusClasses()}`}
-                    aria-label="Navigate to Dashboard"
-                  >
-                    <BarChart3 className="w-4 h-4" />
-                    <span>Dashboard</span>
-                  </button>
-                  <button 
-                    className={`flex items-center space-x-2 text-zinc-300 hover:text-white transition-all duration-300 hover:scale-105 ${getFocusClasses()}`}
-                    aria-label="Navigate to Sessions"
-                  >
-                    <Flame className="w-4 h-4" />
-                    <span>Sessions</span>
-                  </button>
-                  <button 
-                    className={`flex items-center space-x-2 text-zinc-300 hover:text-white transition-all duration-300 hover:scale-105 ${getFocusClasses()}`}
-                    aria-label="Navigate to Staff Operations"
-                  >
-                    <Users className="w-4 h-4" />
-                    <span>Staff Ops</span>
-                  </button>
-                  <button 
-                    className={`flex items-center space-x-2 text-zinc-300 hover:text-white transition-all duration-300 hover:scale-105 ${getFocusClasses()}`}
-                    aria-label="Navigate to Staff Panel"
-                  >
-                    <UserCheck className="w-4 h-4" />
-                    <span>Staff Panel</span>
-                  </button>
-                  <button 
-                    className={`flex items-center space-x-2 text-zinc-300 hover:text-white transition-all duration-300 hover:scale-105 ${getFocusClasses()}`}
-                    aria-label="Navigate to Admin"
-                  >
-                    <Settings className="w-4 h-4" />
-                    <span>Admin</span>
-                  </button>
-                </div>
-              )}
-
-              {/* Right side status and actions - Desktop */}
-              {!isMobile && (
-                <div className="flex items-center space-x-4">
-                  <div className="text-right">
-                    <div className="text-sm text-zinc-400">Flow Status</div>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-lg font-semibold">{metrics.totalSessions}</span>
-                      <span className="text-sm" role="img" aria-label="Active sessions">🔥</span>
-                    </div>
-                    <MicroStatusIndicator status="online" label="Live" animated />
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <button 
-                      className={`flex items-center space-x-1 text-zinc-300 hover:text-white transition-all duration-300 hover:scale-105 ${getFocusClasses()}`}
-                      aria-label="Open Support"
-                    >
-                      <Folder className="w-4 h-4" />
-                      <span className="text-sm">Support</span>
-                    </button>
-                    <button 
-                      className={`flex items-center space-x-1 text-zinc-300 hover:text-white transition-all duration-300 hover:scale-105 ${getFocusClasses()}`}
-                      aria-label="Open Documentation"
-                    >
-                      <FileText className="w-4 h-4" />
-                      <span className="text-sm">Docs</span>
-                    </button>
-                  </div>
-
-                  <button 
-                    className={`flex items-center space-x-1 bg-zinc-800 hover:bg-zinc-700 px-3 py-2 rounded-lg transition-all duration-300 hover:scale-105 shadow-lg ${getFocusClasses()}`}
-                    aria-label="Open Admin Menu"
-                  >
-                    <Crown className="w-4 h-4" />
-                    <span className="text-sm">Admin</span>
-                    <span className="text-xs">▼</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Mobile Menu */}
-            {isMobile && showMobileMenu && (
-              <div className="mt-4 pt-4 border-t border-zinc-700">
-                <div className="space-y-2">
-                  <button 
-                    className={`w-full flex items-center space-x-2 text-zinc-300 hover:text-white transition-all duration-300 p-2 rounded-lg hover:bg-zinc-800 ${getFocusClasses()}`}
-                    onClick={() => setShowMobileMenu(false)}
-                  >
-                    <BarChart3 className="w-4 h-4" />
-                    <span>Dashboard</span>
-                  </button>
-                  <button 
-                    className={`w-full flex items-center space-x-2 text-zinc-300 hover:text-white transition-all duration-300 p-2 rounded-lg hover:bg-zinc-800 ${getFocusClasses()}`}
-                    onClick={() => setShowMobileMenu(false)}
-                  >
-                    <Flame className="w-4 h-4" />
-                    <span>Sessions</span>
-                  </button>
-                  <button 
-                    className={`w-full flex items-center space-x-2 text-zinc-300 hover:text-white transition-all duration-300 p-2 rounded-lg hover:bg-zinc-800 ${getFocusClasses()}`}
-                    onClick={() => setShowMobileMenu(false)}
-                  >
-                    <Users className="w-4 h-4" />
-                    <span>Staff Ops</span>
-                  </button>
-                  <button 
-                    className={`w-full flex items-center space-x-2 text-zinc-300 hover:text-white transition-all duration-300 p-2 rounded-lg hover:bg-zinc-800 ${getFocusClasses()}`}
-                    onClick={() => setShowMobileMenu(false)}
-                  >
-                    <UserCheck className="w-4 h-4" />
-                    <span>Staff Panel</span>
-                  </button>
-                  <button 
-                    className={`w-full flex items-center space-x-2 text-zinc-300 hover:text-white transition-all duration-300 p-2 rounded-lg hover:bg-zinc-800 ${getFocusClasses()}`}
-                    onClick={() => setShowMobileMenu(false)}
-                  >
-                    <Settings className="w-4 h-4" />
-                    <span>Admin</span>
-                  </button>
-                </div>
-                
-                {/* Mobile Status */}
-                <div className="mt-4 pt-4 border-t border-zinc-700">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-zinc-400">Flow Status</span>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-lg font-semibold">{metrics.totalSessions}</span>
-                      <span className="text-sm" role="img" aria-label="Active sessions">🔥</span>
-                    </div>
-                  </div>
-                  <MicroStatusIndicator status="online" label="Live" animated />
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Main Content */}
         <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="mb-8">
-            <div className="flex items-center space-x-3 mb-2">
-              <Flame className="w-8 h-8 text-orange-400 animate-pulse" />
-              <h1 className={`font-bold bg-gradient-to-r from-green-400 to-teal-400 bg-clip-text text-transparent ${getTextSize('text-4xl')}`}>
-                Fire Session Dashboard
-              </h1>
-            </div>
-            <p className={`text-zinc-400 ${getTextSize('text-xl')}`}>
-              Complete BOH/FOH workflow management with edge case handling
-            </p>
-            <div className="flex items-center space-x-4 mt-2">
-              <span className="text-sm text-zinc-500">Last updated: {lastUpdated.toLocaleTimeString()}</span>
-              <PulseDot color="bg-green-400" size="sm" />
-              <span className="text-sm text-green-400">Live</span>
-            </div>
-          </div>
-
-          {/* Error Display */}
-          {error && (
-            <ErrorMessage error={error} onRetry={fetchData} />
-          )}
-
-          {/* Metrics Cards */}
-          <div className={`grid grid-cols-1 ${isTablet ? 'md:grid-cols-2' : 'lg:grid-cols-4'} gap-6 mb-8`}>
-            {isLoading && sessions.length === 0 ? (
-              Array.from({ length: 4 }).map((_, i) => (
-                <MetricCardSkeleton key={i} />
-              ))
-            ) : (
-              [
-                {
-                  title: 'Total Sessions',
-                  value: metrics.totalSessions.toString(),
-                  icon: <Flame className="w-8 h-8 text-orange-400" />,
-                  change: '+12%',
-                  changeType: 'positive' as const,
-                  trend: 'up',
-                  progress: (metrics.totalSessions / 10) * 100
-                },
-                {
-                  title: 'BOH Active',
-                  value: metrics.bohActive.toString(),
-                  icon: <ChefHat className="w-8 h-8 text-purple-400" />,
-                  change: '+5%',
-                  changeType: 'positive' as const,
-                  trend: 'up',
-                  progress: (metrics.bohActive / 5) * 100
-                },
-                {
-                  title: 'FOH Active',
-                  value: metrics.fohActive.toString(),
-                  icon: <Users className="w-8 h-8 text-purple-400" />,
-                  change: '-2%',
-                  changeType: 'negative' as const,
-                  trend: 'down',
-                  progress: (metrics.fohActive / 5) * 100
-                },
-                {
-                  title: 'Edge Cases',
-                  value: metrics.edgeCases.toString(),
-                  icon: <AlertTriangle className="w-8 h-8 text-yellow-400" />,
-                  change: '0%',
-                  changeType: 'neutral' as const,
-                  trend: 'stable',
-                  progress: (metrics.edgeCases / 3) * 100
-                }
-              ].map((metric, index) => (
-                <Card 
-                  key={index} 
-                  className={`bg-gradient-to-br from-zinc-900 to-zinc-800 border-zinc-700 ${getCardPadding()} hover:shadow-xl hover:shadow-teal-500/10 transition-all duration-300 transform hover:scale-105 group`}
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className={`font-bold text-white group-hover:text-teal-400 transition-colors duration-300 ${getTextSize('text-3xl')}`}>
-                      {metric.value}
-                    </div>
-                    <div className="group-hover:scale-110 transition-transform duration-300">
-                      {metric.icon}
-                    </div>
-                  </div>
-                  <div className={`text-zinc-400 mb-2 ${getTextSize('text-sm')}`}>{metric.title}</div>
-                  <div className="mb-2">
-                    <ProgressBar progress={metric.progress} color="bg-teal-500" animated />
-                  </div>
-                  <div className={`font-medium flex items-center space-x-1 ${getTextSize('text-sm')} ${
-                    metric.changeType === 'positive' ? 'text-green-400' :
-                    metric.changeType === 'negative' ? 'text-red-400' : 'text-zinc-400'
-                  }`}>
-                    <span className={`${metric.trend === 'up' ? 'text-green-400' : metric.trend === 'down' ? 'text-red-400' : 'text-zinc-400'}`}>
-                      {metric.trend === 'up' ? '↗' : metric.trend === 'down' ? '↘' : '→'}
-                    </span>
-                    <span>{metric.change}</span>
-                  </div>
-                </Card>
-              ))
-            )}
-          </div>
-
-          {/* Action Buttons */}
-          <div className={`flex ${isMobile ? 'flex-col space-y-4' : 'items-center justify-between'} mb-8`}>
-            <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'items-center space-x-4'}`}>
+          <div className="text-center">
+            <h1 className="text-3xl font-bold mb-4">Fire Session Dashboard</h1>
+            <p className="text-zinc-400 mb-8">Manage your hookah sessions</p>
+            <div className="flex justify-center space-x-4">
               <Button 
+                onClick={() => setShowCreateModal(true)}
                 variant="primary" 
                 size="lg"
-                onClick={() => setShowCreateModal(true)}
-                disabled={isLoading}
-                className={`bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 relative shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${getFocusClasses()} ${isMobile ? 'w-full' : ''}`}
-                aria-label="Create a new session"
               >
-                <span className="absolute -top-2 -left-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full animate-bounce">
-                  NEW
-                </span>
-                {isLoading ? (
-                  <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
-                ) : (
-                  <Plus className="w-5 h-5 mr-2" />
-                )}
-                {isLoading ? 'Creating...' : 'Create Session'}
+                Create New Session
               </Button>
-              
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className={`bg-zinc-800 hover:bg-zinc-700 border-zinc-600 hover:border-teal-500 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 ${getFocusClasses()} ${isMobile ? 'w-full' : ''}`}
-                aria-label="View all sessions"
-              >
-                <BarChart3 className="w-5 h-5 mr-2" />
-                View All Sessions
-              </Button>
-            </div>
-
-            {!isMobile && (
-              <button 
-                className={`flex items-center space-x-2 bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition-all duration-300 hover:scale-105 shadow-lg ${getFocusClasses()}`}
-                aria-label="Open Admin Menu"
-              >
-                <Crown className="w-4 h-4" />
-                <span>Admin</span>
-                <span className="text-xs">▼</span>
-              </button>
-            )}
-          </div>
-
-          {/* Filter Tabs */}
-          {isLoading && sessions.length === 0 ? (
-            <TabSkeleton />
-          ) : (
-            <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'space-x-2'} mb-8 ${isMobile ? '' : 'overflow-x-auto'}`}>
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-300 ${isMobile ? 'w-full justify-start' : 'whitespace-nowrap'} ${
-                    activeTab === tab.id
-                      ? 'bg-gradient-to-r from-teal-600 to-cyan-600 text-white shadow-lg shadow-teal-500/25'
-                      : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white'
-                  } ${getFocusClasses()}`}
-                  aria-label={`Filter by ${tab.label}`}
-                  aria-pressed={activeTab === tab.id}
-                >
-                  {tab.icon}
-                  <span>{tab.label}</span>
-                  {tab.count > 0 && (
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      activeTab === tab.id 
-                        ? 'bg-white/20 text-white' 
-                        : 'bg-zinc-600 text-white'
-                    }`}>
-                      {tab.count}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Session Flow Overview */}
-          {isLoading && sessions.length === 0 ? (
-            <FlowOverviewSkeleton />
-          ) : (
-            <div className={`grid grid-cols-1 ${isTablet ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-6 mb-8`}>
-              <Card className="bg-gradient-to-br from-purple-900/20 to-purple-800/20 border-purple-500/30 p-6 hover:shadow-xl hover:shadow-purple-500/10 transition-all duration-300">
-                <div className="flex items-center space-x-3 mb-2">
-                  <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center">
-                    <ChefHat className="w-6 h-6 text-purple-400" />
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-purple-400">{metrics.bohActive}</div>
-                    <div className="text-sm text-zinc-400">Back of House</div>
-                  </div>
-                </div>
-                <div className="text-sm text-zinc-300 mb-2">Prep & Assembly</div>
-                <ProgressBar progress={(metrics.bohActive / 5) * 100} color="bg-purple-500" />
-              </Card>
-
-              <Card className="bg-gradient-to-br from-blue-900/20 to-blue-800/20 border-blue-500/30 p-6 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300">
-                <div className="flex items-center space-x-3 mb-2">
-                  <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                    <Users className="w-6 h-6 text-blue-400" />
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-blue-400">{metrics.fohActive}</div>
-                    <div className="text-sm text-zinc-400">Front of House</div>
-                  </div>
-                </div>
-                <div className="text-sm text-zinc-300 mb-2">Delivery & Service</div>
-                <ProgressBar progress={(metrics.fohActive / 5) * 100} color="bg-blue-500" />
-              </Card>
-
-              <Card className="bg-gradient-to-br from-pink-900/20 to-pink-800/20 border-pink-500/30 p-6 hover:shadow-xl hover:shadow-pink-500/10 transition-all duration-300">
-                <div className="flex items-center space-x-3 mb-2">
-                  <div className="w-12 h-12 bg-pink-500/20 rounded-lg flex items-center justify-center">
-                    <Users className="w-6 h-6 text-pink-400" />
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-pink-400">
-                      {sessions.filter(s => s.team === 'CUSTOMER').length}
-                    </div>
-                    <div className="text-sm text-zinc-400">Active Customers</div>
-                  </div>
-                </div>
-                <div className="text-sm text-zinc-300 mb-2">Live Sessions</div>
-                <ProgressBar progress={(sessions.filter(s => s.team === 'CUSTOMER').length / 5) * 100} color="bg-pink-500" />
-              </Card>
-            </div>
-          )}
-
-          {/* Content Section */}
-          <div className="space-y-6">
-            <div className="flex items-center space-x-2 mb-6">
-              <ChefHat className="w-6 h-6 text-green-400" />
-              <h2 className={`font-semibold ${getTextSize('text-2xl')}`}>Recent Sessions</h2>
-              <div className="ml-auto flex items-center space-x-2">
-                <PulseDot color="bg-green-400" size="sm" />
-                <span className="text-sm text-green-400">Live Updates</span>
-              </div>
-            </div>
-
-            {/* Session Cards */}
-            <div className="space-y-4">
-              {isLoading && sessions.length === 0 ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <SessionCardSkeleton key={i} />
-                ))
-              ) : filteredSessions.length === 0 ? (
-                <Card className={`bg-gradient-to-br from-zinc-900 to-zinc-800 border-zinc-700 ${isMobile ? 'p-8' : 'p-12'} text-center`}>
-                  <div className="text-6xl mb-4">📭</div>
-                  <h3 className={`font-semibold text-zinc-400 mb-2 ${getTextSize('text-xl')}`}>No sessions found</h3>
-                  <p className="text-zinc-500">
-                    {activeTab === 'overview' 
-                      ? 'No sessions available at the moment.' 
-                      : `No ${activeTab.toUpperCase()} sessions found.`
-                    }
-                  </p>
-                </Card>
-              ) : (
-                filteredSessions.map((session, index) => (
-                  <Card 
-                    key={session.id} 
-                    className={`bg-gradient-to-br from-zinc-900 to-zinc-800 border-zinc-700 ${getCardPadding()} hover:shadow-xl hover:shadow-teal-500/10 transition-all duration-300 transform hover:scale-[1.02] group`}
-                  >
-                    <div className={`flex ${isMobile ? 'flex-col space-y-4' : 'items-start justify-between'} mb-6`}>
-                      <div className="flex items-start space-x-4">
-                        <div className="text-3xl group-hover:scale-110 transition-transform duration-300">
-                          {session.team === 'BOH' ? '👨‍🍳' : session.team === 'FOH' ? '🚚' : session.team === 'CUSTOMER' ? '🟢' : '⚠️'}
-                        </div>
-                        <div>
-                          <h3 className={`font-bold text-blue-400 group-hover:text-teal-400 transition-colors duration-300 ${getTextSize('text-2xl')}`}>
-                            Table {session.tableId}
-                          </h3>
-                          <p className="text-zinc-400">{session.customerName} - {session.flavor}</p>
-                          <div className="flex items-center space-x-2 mt-1">
-                            <span className="text-xs px-2 py-1 bg-zinc-700 rounded-full text-zinc-300">
-                              {session.team}
-                            </span>
-                            <span className="text-xs text-zinc-500">{session.created}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className={`text-right ${isMobile ? 'w-full' : ''}`}>
-                        {getStatusBadge(session.status, session.statusColor, session.statusIcon)}
-                        <div className={`font-semibold text-white mt-1 ${getTextSize('text-lg')}`}>
-                          ${session.amount.toFixed(2)}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Session Details */}
-                    <div className={`grid grid-cols-1 ${isMobile ? '' : 'md:grid-cols-3'} gap-6 mb-6`}>
-                      <div>
-                        <label className={`text-zinc-400 block mb-2 ${getTextSize('text-sm')}`}>Assigned Staff:</label>
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="text"
-                            value={session.assignedBOH}
-                            className={`flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all duration-300 ${getFocusClasses()}`}
-                            readOnly
-                            aria-label="Assigned staff member"
-                          />
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="bg-zinc-700 hover:bg-zinc-600 border-zinc-600 hover:border-teal-500 transition-all duration-300"
-                            aria-label="Assign staff member"
-                          >
-                            Assign
-                            <span className="ml-1">▼</span>
-                          </Button>
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className={`text-zinc-400 block mb-2 ${getTextSize('text-sm')}`}>Session Notes:</label>
-                        <button 
-                          className="text-teal-400 text-sm hover:text-teal-300 mb-2 transition-colors duration-300"
-                          aria-label="Add session note"
-                        >
-                          Add Note
-                        </button>
-                        <div className="bg-zinc-800 rounded-lg p-3 text-sm text-zinc-300 border border-zinc-700 hover:border-teal-500/50 transition-colors duration-300">
-                          {session.notes}
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className={`text-zinc-400 block mb-2 ${getTextSize('text-sm')}`}>Created:</label>
-                        <div className="text-zinc-300">{session.created}</div>
-                      </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'flex-wrap'} gap-3`}>
-                      <Button 
-                        variant="warning" 
-                        size="sm" 
-                        onClick={() => handleSessionAction(session.id, 'HEAT_UP')}
-                        className={`bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 ${getFocusClasses()} ${isMobile ? 'w-full' : ''}`}
-                        aria-label="Heat up session"
-                      >
-                        <Zap className="w-4 h-4 mr-2" />
-                        Heat Up
-                      </Button>
-                      
-                      <Button 
-                        variant="success" 
-                        size="sm" 
-                        onClick={() => handleSessionAction(session.id, 'RESTART_PREP')}
-                        className={`bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 border-green-400 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 ${getFocusClasses()} ${isMobile ? 'w-full' : ''}`}
-                        aria-label="Restart prep for session"
-                      >
-                        <RefreshCw className="w-4 h-4 mr-2" />
-                        Restart Prep
-                      </Button>
-                      
-                      <Button 
-                        variant="info" 
-                        size="sm" 
-                        onClick={() => handleSessionAction(session.id, 'RESOLVE_ISSUE')}
-                        className={`bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 ${getFocusClasses()} ${isMobile ? 'w-full' : ''}`}
-                        aria-label="Resolve issue for session"
-                      >
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                        Resolve Issue
-                      </Button>
-                      
-                      <Button 
-                        variant="danger" 
-                        size="sm" 
-                        onClick={() => handleSessionAction(session.id, 'FLAG_MANAGER')}
-                        className={`bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 ${getFocusClasses()} ${isMobile ? 'w-full' : ''}`}
-                        aria-label="Flag session for manager"
-                      >
-                        <Flag className="w-4 h-4 mr-2" />
-                        Flag Manager
-                      </Button>
-                      
-                      <Button 
-                        variant="warning" 
-                        size="sm" 
-                        onClick={() => handleSessionAction(session.id, 'HOLD_SESSION')}
-                        className={`bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 ${getFocusClasses()} ${isMobile ? 'w-full' : ''}`}
-                        aria-label="Hold session"
-                      >
-                        <Pause className="w-4 h-4 mr-2" />
-                        Hold Session
-                      </Button>
-                      
-                      <Button 
-                        variant="accent" 
-                        size="sm" 
-                        onClick={() => handleSessionAction(session.id, 'REQUEST_REFILL')}
-                        className={`bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 ${getFocusClasses()} ${isMobile ? 'w-full' : ''}`}
-                        aria-label="Request refill for session"
-                      >
-                        <Zap className="w-4 h-4 mr-2" />
-                        Request Refill
-                      </Button>
-
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => {
-                          setSelectedSession(session.id);
-                          setShowDeleteModal(true);
-                        }}
-                        className={`bg-zinc-700 hover:bg-red-600 border-zinc-600 hover:border-red-500 text-zinc-300 hover:text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 ${getFocusClasses()} ${isMobile ? 'w-full' : ''}`}
-                        aria-label="Delete session"
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Delete
-                      </Button>
-                    </div>
-                  </Card>
-                ))
-              )}
             </div>
           </div>
         </div>
-
-        {/* Floating Action Button - Only on mobile */}
-        {isMobile && (
-          <FloatingActionButton
-            onClick={() => setShowCreateModal(true)}
-            icon={<Plus className="w-6 h-6" />}
-            label="Create New Session"
-            position="bottom-right"
-          />
-        )}
-
-        {/* Create Session Modal */}
-        <ConfirmationModal
-          isOpen={showCreateModal}
-          onClose={() => setShowCreateModal(false)}
-          onConfirm={handleCreateSession}
-          title="Create New Session"
-          message="Are you sure you want to create a new session?"
-          confirmText="Create"
-          cancelText="Cancel"
-          type="info"
-        />
-
-        {/* Delete Session Modal */}
-        <ConfirmationModal
-          isOpen={showDeleteModal}
-          onClose={() => {
-            setShowDeleteModal(false);
-            setSelectedSession(null);
-          }}
-          onConfirm={handleDeleteSession}
-          title="Delete Session"
-          message="Are you sure you want to delete this session? This action cannot be undone."
-          confirmText="Delete"
-          cancelText="Cancel"
-          type="danger"
-        />
       </div>
-    </ErrorBoundary>
+    );
+  }
+
+  // Pretty Theme Design
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
+      {/* Header */}
+      <div className="status-bar">
+        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-gradient-to-br from-teal-400 to-cyan-500 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">H+</span>
+                </div>
+                <span className="text-xl font-bold bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
+                  HOOKAH+
+                </span>
+              </div>
+              <div className="text-sm text-zinc-400">
+                Fire Session Dashboard
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <span className="text-sm text-zinc-400">Live</span>
+              </div>
+              <div className="text-sm text-zinc-400">
+                Total Sessions: {sessions.length}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center space-x-3 mb-2">
+            <Flame className="w-8 h-8 text-orange-400" />
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
+              Fire Session D
+            </h1>
+          </div>
+          <p className="text-xl text-zinc-400">
+            Complete BOH/FOH workflow management with edge case handling
+          </p>
+        </div>
+
+        {/* Metrics Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+          {metrics.map((metric, index) => (
+            <div key={index} className="metric-card">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-2xl font-bold text-white">
+                  {metric.value}
+                </div>
+                <div className="text-zinc-400">
+                  {metric.icon}
+                </div>
+              </div>
+              <div className="text-sm text-zinc-400 mb-1">{metric.title}</div>
+              <div className={`text-xs font-medium ${
+                metric.changeType === 'positive' ? 'text-green-400' :
+                metric.changeType === 'negative' ? 'text-red-400' : 'text-zinc-400'
+              }`}>
+                {metric.change}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center space-x-4">
+            <Button 
+              onClick={() => setShowCreateModal(true)}
+              className="btn-pretty-primary text-lg px-8 py-4"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              NEW Create Session
+            </Button>
+            <Button className="btn-pretty-secondary">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Button className="btn-pretty-secondary">
+              <Filter className="w-4 h-4 mr-2" />
+              Filter
+            </Button>
+            <Button className="btn-pretty-secondary">
+              <Search className="w-4 h-4 mr-2" />
+              Search
+            </Button>
+          </div>
+        </div>
+
+        {/* Filter Tabs */}
+        <div className="flex space-x-2 mb-8">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                activeTab === tab.id
+                  ? 'bg-teal-600 text-white'
+                  : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Sessions List */}
+        <div className="space-y-4">
+          {filteredSessions.map((session, index) => (
+            <div key={session.id} className="session-card">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-start space-x-4">
+                  <div className="text-3xl">
+                    {session.team === 'BOH' ? '👨‍🍳' : session.team === 'FOH' ? '🚚' : '⚠️'}
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-blue-400">
+                      Table {session.tableId}
+                    </h3>
+                    <p className="text-zinc-400">{session.customerName} - {session.flavor}</p>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <span className="text-xs px-2 py-1 bg-zinc-700 rounded-full text-zinc-300">
+                        {session.team}
+                      </span>
+                      <span className="text-xs text-zinc-500">{session.created}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  {getStatusBadge(session.status, session.statusColor, session.statusIcon)}
+                  <div className="text-lg font-semibold text-white mt-1">
+                    ${session.amount.toFixed(2)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Session Details */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                  <label className="text-sm text-zinc-400 block mb-1">Assigned BOH:</label>
+                  <div className="text-sm text-zinc-300">{session.assignedBOH}</div>
+                </div>
+                <div>
+                  <label className="text-sm text-zinc-400 block mb-1">Assigned FOH:</label>
+                  <div className="text-sm text-zinc-300">{session.assignedFOH}</div>
+                </div>
+                <div>
+                  <label className="text-sm text-zinc-400 block mb-1">Notes:</label>
+                  <div className="text-sm text-zinc-300">{session.notes}</div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <SessionActionButtons
+                session={session}
+                onAction={handleAction}
+                onStatusChange={handleStatusChange}
+                onAddNote={(sessionId) => {
+                  setSelectedSessionId(sessionId);
+                  setShowNotesModal(true);
+                }}
+                onViewDetails={handleViewDetails}
+                onEditSession={handleEditSession}
+                onDeleteSession={handleDeleteSession}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Modals */}
+      <CreateSessionModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onCreateSession={handleCreateSession}
+      />
+
+      <SessionNotesModal
+        isOpen={showNotesModal}
+        onClose={() => setShowNotesModal(false)}
+        sessionId={selectedSessionId || ''}
+        sessionNotes={sessionNotes.filter(note => note.sessionId === selectedSessionId)}
+        onAddNote={handleAddNote}
+      />
+    </div>
   );
 }

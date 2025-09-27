@@ -1,7 +1,7 @@
 import './globals.css'
 import GlobalNavigation from '../components/GlobalNavigation'
-import { CartProvider } from '@/components/cart/CartProvider'
-import { CartToggle } from '@/components/cart/CartUI'
+import { CartProvider } from '../components/cart/CartProvider'
+import { CartToggle } from '../components/cart/CartUI'
 
 export const metadata = {
   title: 'HookahPlus Guest Portal',
