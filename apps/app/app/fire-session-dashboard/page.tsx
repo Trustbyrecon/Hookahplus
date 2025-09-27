@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Button, Badge, MetricCard } from '../../components';
 import { 
   Flame, 
@@ -26,6 +26,8 @@ import {
 export default function FireSessionDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
   const [newSession, setNewSession] = useState({
     tableId: 'T-001',
     customerName: '',
@@ -33,59 +35,167 @@ export default function FireSessionDashboard() {
     amount: 3000
   });
 
+  // Real-time updates simulation
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLastUpdated(new Date());
+    }, 5000); // Update every 5 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
   const metrics = [
     {
       title: 'Total Sessions',
-      value: '1',
+      value: '7',
       icon: <Flame className="w-8 h-8 text-orange-400" />,
       change: '+12%',
-      changeType: 'positive' as const
+      changeType: 'positive' as const,
+      trend: 'up'
     },
     {
       title: 'BOH Active',
-      value: '1',
-      icon: <ChefHat className="w-8 h-8 text-green-400" />,
+      value: '3',
+      icon: <ChefHat className="w-8 h-8 text-purple-400" />,
       change: '+5%',
-      changeType: 'positive' as const
+      changeType: 'positive' as const,
+      trend: 'up'
     },
     {
       title: 'FOH Active',
-      value: '0',
+      value: '2',
       icon: <Users className="w-8 h-8 text-purple-400" />,
       change: '-2%',
-      changeType: 'negative' as const
+      changeType: 'negative' as const,
+      trend: 'down'
     },
     {
       title: 'Edge Cases',
-      value: '0',
+      value: '1',
       icon: <AlertTriangle className="w-8 h-8 text-yellow-400" />,
       change: '0%',
-      changeType: 'neutral' as const
+      changeType: 'neutral' as const,
+      trend: 'stable'
     }
   ];
 
   const tabs = [
-    { id: 'overview', label: 'Overview (1)', icon: <BarChart3 className="w-4 h-4" />, count: 1 },
-    { id: 'boh', label: 'BOH (1)', icon: <ChefHat className="w-4 h-4" />, count: 1 },
-    { id: 'foh', label: 'FOH', icon: <Users className="w-4 h-4" />, count: 0 },
-    { id: 'edge', label: '▲ Edge Cases', icon: <AlertTriangle className="w-4 h-4" />, count: 0 }
+    { id: 'overview', label: 'Overview (7)', icon: <BarChart3 className="w-4 h-4" />, count: 7 },
+    { id: 'boh', label: 'BOH (3)', icon: <ChefHat className="w-4 h-4" />, count: 3 },
+    { id: 'foh', label: 'FOH (2)', icon: <Users className="w-4 h-4" />, count: 2 },
+    { id: 'edge', label: 'Edge Cases (1)', icon: <AlertTriangle className="w-4 h-4" />, count: 1 },
+    { id: 'analytics', label: 'Analytics (7)', icon: <TrendingUp className="w-4 h-4" />, count: 7 },
+    { id: 'more', label: 'More', icon: <Settings className="w-4 h-4" />, count: 0 }
   ];
 
-  const sampleSession = {
-    id: 'session_T-001_1758552685415',
-    tableId: 'T-001',
-    customerName: 'Anonymous',
-    flavor: 'Custom Mix',
-    status: 'PREP_IN_PROGRESS',
-    amount: 30.00,
-    assignedBOH: 'staff_001',
-    notes: 'Source: undefined, External Ref: undefined [10:52:39 AM] Prep restarted by BOH staff',
-    created: 'Invalid Date'
-  };
+  const sampleSessions = [
+    {
+      id: 'session_T-007_1758552685415',
+      tableId: 'T-007',
+      customerName: '15551234556',
+      flavor: 'Watermelon + Mint',
+      status: 'PREP_IN_PROGRESS',
+      statusColor: 'bg-green-500',
+      statusIcon: '🔄',
+      amount: 35.00,
+      assignedBOH: 'Mike Rodriguez',
+      notes: 'Prep in progress - heating coals',
+      created: '10:45 AM',
+      team: 'BOH'
+    },
+    {
+      id: 'session_T-003_1758552685416',
+      tableId: 'T-003',
+      customerName: '+1234567890',
+      flavor: 'Blue Mist',
+      status: 'HEAT_UP',
+      statusColor: 'bg-orange-500',
+      statusIcon: '🔥',
+      amount: 30.00,
+      assignedBOH: 'Sarah Chen',
+      notes: 'Ready for heat up phase',
+      created: '10:30 AM',
+      team: 'BOH'
+    },
+    {
+      id: 'session_T-005_1758552685417',
+      tableId: 'T-005',
+      customerName: 'Anonymous',
+      flavor: 'Double Apple + Mint',
+      status: 'READY_FOR_DELIVERY',
+      statusColor: 'bg-blue-500',
+      statusIcon: '✅',
+      amount: 35.00,
+      assignedBOH: 'Alex Johnson',
+      notes: 'Ready for FOH pickup',
+      created: '10:15 AM',
+      team: 'FOH'
+    },
+    {
+      id: 'session_T-002_1758552685418',
+      tableId: 'T-002',
+      customerName: 'VIP Customer',
+      flavor: 'Peach Wave',
+      status: 'OUT_FOR_DELIVERY',
+      statusColor: 'bg-red-500',
+      statusIcon: '🚚',
+      amount: 40.00,
+      assignedBOH: 'Maria Garcia',
+      notes: 'Out for delivery to table',
+      created: '10:00 AM',
+      team: 'FOH'
+    },
+    {
+      id: 'session_T-004_1758552685419',
+      tableId: 'T-004',
+      customerName: 'Custom Order',
+      flavor: 'Custom Mix',
+      status: 'EDGE_CASE',
+      statusColor: 'bg-yellow-500',
+      statusIcon: '⚠️',
+      amount: 45.00,
+      assignedBOH: 'Manager Review',
+      notes: 'Special dietary requirements - needs manager approval',
+      created: '9:45 AM',
+      team: 'EDGE'
+    },
+    {
+      id: 'session_T-006_1758552685420',
+      tableId: 'T-006',
+      customerName: 'Regular Customer',
+      flavor: 'Mint + Blueberry',
+      status: 'ACTIVE',
+      statusColor: 'bg-green-500',
+      statusIcon: '🟢',
+      amount: 35.00,
+      assignedBOH: 'Active Session',
+      notes: 'Customer enjoying session',
+      created: '9:30 AM',
+      team: 'CUSTOMER'
+    },
+    {
+      id: 'session_T-008_1758552685421',
+      tableId: 'T-008',
+      customerName: 'New Customer',
+      flavor: 'Mint + Spearmint',
+      status: 'ACTIVE',
+      statusColor: 'bg-green-500',
+      statusIcon: '🟢',
+      amount: 35.00,
+      assignedBOH: 'Active Session',
+      notes: 'First time customer - great experience',
+      created: '9:15 AM',
+      team: 'CUSTOMER'
+    }
+  ];
 
-  const handleCreateSession = () => {
+  const handleCreateSession = async () => {
+    setIsLoading(true);
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
     console.log('Creating session:', newSession);
     setShowCreateModal(false);
+    setIsLoading(false);
     // Reset form
     setNewSession({
       tableId: 'T-001',
@@ -95,44 +205,61 @@ export default function FireSessionDashboard() {
     });
   };
 
+  const getStatusBadge = (status: string, statusColor: string, statusIcon: string) => {
+    return (
+      <div className="flex items-center space-x-2">
+        <span className="text-lg">{statusIcon}</span>
+        <Badge className={`${statusColor} text-white text-sm font-bold px-3 py-1 animate-pulse`}>
+          {status.replace(/_/g, ' ')}
+        </Badge>
+      </div>
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-zinc-950 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
       {/* Top Navigation */}
-      <div className="bg-zinc-900 border-b border-zinc-800">
+      <div className="bg-zinc-900/95 backdrop-blur-sm border-b border-teal-500/20 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             {/* Logo and SESSIONS button */}
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-teal-500 rounded-lg flex items-center justify-center shadow-lg">
                   <span className="text-white font-bold text-sm">H+</span>
                 </div>
-                <span className="text-2xl font-bold text-green-400">HOOKAH+</span>
+                <span className="text-2xl font-bold bg-gradient-to-r from-green-400 to-teal-400 bg-clip-text text-transparent">
+                  HOOKAH+
+                </span>
               </div>
-              <Button variant="primary" size="sm" className="bg-green-600 hover:bg-green-700">
+              <Button 
+                variant="primary" 
+                size="sm" 
+                className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+              >
                 SESSIONS
               </Button>
             </div>
 
             {/* Navigation Links */}
             <div className="flex items-center space-x-6">
-              <button className="flex items-center space-x-2 text-zinc-300 hover:text-white transition-colors">
+              <button className="flex items-center space-x-2 text-zinc-300 hover:text-white transition-all duration-300 hover:scale-105">
                 <BarChart3 className="w-4 h-4" />
                 <span>Dashboard</span>
               </button>
-              <button className="flex items-center space-x-2 text-zinc-300 hover:text-white transition-colors">
+              <button className="flex items-center space-x-2 text-zinc-300 hover:text-white transition-all duration-300 hover:scale-105">
                 <Flame className="w-4 h-4" />
                 <span>Sessions</span>
               </button>
-              <button className="flex items-center space-x-2 text-zinc-300 hover:text-white transition-colors">
+              <button className="flex items-center space-x-2 text-zinc-300 hover:text-white transition-all duration-300 hover:scale-105">
                 <Users className="w-4 h-4" />
                 <span>Staff Ops</span>
               </button>
-              <button className="flex items-center space-x-2 text-zinc-300 hover:text-white transition-colors">
+              <button className="flex items-center space-x-2 text-zinc-300 hover:text-white transition-all duration-300 hover:scale-105">
                 <UserCheck className="w-4 h-4" />
                 <span>Staff Panel</span>
               </button>
-              <button className="flex items-center space-x-2 text-zinc-300 hover:text-white transition-colors">
+              <button className="flex items-center space-x-2 text-zinc-300 hover:text-white transition-all duration-300 hover:scale-105">
                 <Settings className="w-4 h-4" />
                 <span>Admin</span>
               </button>
@@ -143,24 +270,24 @@ export default function FireSessionDashboard() {
               <div className="text-right">
                 <div className="text-sm text-zinc-400">Flow Status</div>
                 <div className="flex items-center space-x-2">
-                  <span className="text-lg font-semibold">0</span>
-                  <span className="text-sm">😴</span>
+                  <span className="text-lg font-semibold">7</span>
+                  <span className="text-sm">🔥</span>
                 </div>
-                <div className="text-xs text-zinc-500">Idle</div>
+                <div className="text-xs text-green-400">Active</div>
               </div>
               
               <div className="flex items-center space-x-2">
-                <button className="flex items-center space-x-1 text-zinc-300 hover:text-white transition-colors">
+                <button className="flex items-center space-x-1 text-zinc-300 hover:text-white transition-all duration-300 hover:scale-105">
                   <Folder className="w-4 h-4" />
                   <span className="text-sm">Support</span>
                 </button>
-                <button className="flex items-center space-x-1 text-zinc-300 hover:text-white transition-colors">
+                <button className="flex items-center space-x-1 text-zinc-300 hover:text-white transition-all duration-300 hover:scale-105">
                   <FileText className="w-4 h-4" />
                   <span className="text-sm">Docs</span>
                 </button>
               </div>
 
-              <button className="flex items-center space-x-1 bg-zinc-800 hover:bg-zinc-700 px-3 py-2 rounded-lg transition-colors">
+              <button className="flex items-center space-x-1 bg-zinc-800 hover:bg-zinc-700 px-3 py-2 rounded-lg transition-all duration-300 hover:scale-105 shadow-lg">
                 <Crown className="w-4 h-4" />
                 <span className="text-sm">Admin</span>
                 <span className="text-xs">▼</span>
@@ -175,28 +302,45 @@ export default function FireSessionDashboard() {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center space-x-3 mb-2">
-            <Flame className="w-8 h-8 text-orange-400" />
-            <h1 className="text-4xl font-bold text-green-400">Fire Session Dashboard</h1>
+            <Flame className="w-8 h-8 text-orange-400 animate-pulse" />
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-green-400 to-teal-400 bg-clip-text text-transparent">
+              Fire Session Dashboard
+            </h1>
           </div>
           <p className="text-xl text-zinc-400">
             Complete BOH/FOH workflow management with edge case handling
           </p>
+          <div className="flex items-center space-x-4 mt-2">
+            <span className="text-sm text-zinc-500">Last updated: {lastUpdated.toLocaleTimeString()}</span>
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            <span className="text-sm text-green-400">Live</span>
+          </div>
         </div>
 
         {/* Metrics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {metrics.map((metric, index) => (
-            <Card key={index} className="bg-zinc-900 border-zinc-800 p-6">
+            <Card 
+              key={index} 
+              className="bg-gradient-to-br from-zinc-900 to-zinc-800 border-zinc-700 p-6 hover:shadow-xl hover:shadow-teal-500/10 transition-all duration-300 transform hover:scale-105 group"
+            >
               <div className="flex items-center justify-between mb-4">
-                <div className="text-3xl font-bold text-white">{metric.value}</div>
-                {metric.icon}
+                <div className="text-3xl font-bold text-white group-hover:text-teal-400 transition-colors duration-300">
+                  {metric.value}
+                </div>
+                <div className="group-hover:scale-110 transition-transform duration-300">
+                  {metric.icon}
+                </div>
               </div>
               <div className="text-sm text-zinc-400 mb-2">{metric.title}</div>
-              <div className={`text-sm font-medium ${
+              <div className={`text-sm font-medium flex items-center space-x-1 ${
                 metric.changeType === 'positive' ? 'text-green-400' :
                 metric.changeType === 'negative' ? 'text-red-400' : 'text-zinc-400'
               }`}>
-                {metric.change}
+                <span className={`${metric.trend === 'up' ? 'text-green-400' : metric.trend === 'down' ? 'text-red-400' : 'text-zinc-400'}`}>
+                  {metric.trend === 'up' ? '↗' : metric.trend === 'down' ? '↘' : '→'}
+                </span>
+                <span>{metric.change}</span>
               </div>
             </Card>
           ))}
@@ -209,22 +353,31 @@ export default function FireSessionDashboard() {
               variant="primary" 
               size="lg"
               onClick={() => setShowCreateModal(true)}
-              className="bg-green-600 hover:bg-green-700 relative"
+              disabled={isLoading}
+              className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 relative shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <span className="absolute -top-2 -left-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full">
+              <span className="absolute -top-2 -left-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full animate-bounce">
                 NEW
               </span>
-              <Plus className="w-5 h-5 mr-2" />
-              Create Session
+              {isLoading ? (
+                <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
+              ) : (
+                <Plus className="w-5 h-5 mr-2" />
+              )}
+              {isLoading ? 'Creating...' : 'Create Session'}
             </Button>
             
-            <Button variant="outline" size="lg" className="bg-zinc-800 hover:bg-zinc-700">
+            <Button 
+              variant="outline" 
+              size="lg" 
+              className="bg-zinc-800 hover:bg-zinc-700 border-zinc-600 hover:border-teal-500 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+            >
               <BarChart3 className="w-5 h-5 mr-2" />
               View All Sessions
             </Button>
           </div>
 
-          <button className="flex items-center space-x-2 bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition-colors">
+          <button className="flex items-center space-x-2 bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition-all duration-300 hover:scale-105 shadow-lg">
             <Crown className="w-4 h-4" />
             <span>Admin</span>
             <span className="text-xs">▼</span>
@@ -232,21 +385,25 @@ export default function FireSessionDashboard() {
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex space-x-2 mb-8">
+        <div className="flex space-x-2 mb-8 overflow-x-auto">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-300 whitespace-nowrap ${
                 activeTab === tab.id
-                  ? 'bg-teal-600 text-white'
-                  : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                  ? 'bg-gradient-to-r from-teal-600 to-cyan-600 text-white shadow-lg shadow-teal-500/25'
+                  : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white'
               }`}
             >
               {tab.icon}
               <span>{tab.label}</span>
               {tab.count > 0 && (
-                <span className="bg-zinc-600 text-white text-xs px-2 py-1 rounded-full">
+                <span className={`text-xs px-2 py-1 rounded-full ${
+                  activeTab === tab.id 
+                    ? 'bg-white/20 text-white' 
+                    : 'bg-zinc-600 text-white'
+                }`}>
                   {tab.count}
                 </span>
               )}
@@ -254,174 +411,191 @@ export default function FireSessionDashboard() {
           ))}
         </div>
 
+        {/* Session Flow Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card className="bg-gradient-to-br from-purple-900/20 to-purple-800/20 border-purple-500/30 p-6 hover:shadow-xl hover:shadow-purple-500/10 transition-all duration-300">
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                <ChefHat className="w-6 h-6 text-purple-400" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-purple-400">3</div>
+                <div className="text-sm text-zinc-400">Back of House</div>
+              </div>
+            </div>
+            <div className="text-sm text-zinc-300">Prep & Assembly</div>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-blue-900/20 to-blue-800/20 border-blue-500/30 p-6 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300">
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                <Users className="w-6 h-6 text-blue-400" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-blue-400">2</div>
+                <div className="text-sm text-zinc-400">Front of House</div>
+              </div>
+            </div>
+            <div className="text-sm text-zinc-300">Delivery & Service</div>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-pink-900/20 to-pink-800/20 border-pink-500/30 p-6 hover:shadow-xl hover:shadow-pink-500/10 transition-all duration-300">
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="w-12 h-12 bg-pink-500/20 rounded-lg flex items-center justify-center">
+                <Users className="w-6 h-6 text-pink-400" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-pink-400">2</div>
+                <div className="text-sm text-zinc-400">Active Customers</div>
+              </div>
+            </div>
+            <div className="text-sm text-zinc-300">Live Sessions</div>
+          </Card>
+        </div>
+
         {/* Content Section */}
         <div className="space-y-6">
           <div className="flex items-center space-x-2 mb-6">
             <ChefHat className="w-6 h-6 text-green-400" />
-            <h2 className="text-2xl font-semibold">Back of House Prep Room</h2>
+            <h2 className="text-2xl font-semibold">Recent Sessions</h2>
+            <div className="ml-auto flex items-center space-x-2">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <span className="text-sm text-green-400">Live Updates</span>
+            </div>
           </div>
 
-          {/* Session Card */}
-          <Card className="bg-zinc-900 border-zinc-800 p-6">
-            <div className="flex items-start justify-between mb-6">
-              <div className="flex items-start space-x-4">
-                <div className="text-3xl">👨‍🍳</div>
-                <div>
-                  <h3 className="text-2xl font-bold text-blue-400">Table {sampleSession.tableId}</h3>
-                  <p className="text-zinc-400">{sampleSession.customerName} - {sampleSession.flavor}</p>
+          {/* Session Cards */}
+          <div className="space-y-4">
+            {sampleSessions.map((session, index) => (
+              <Card 
+                key={session.id} 
+                className="bg-gradient-to-br from-zinc-900 to-zinc-800 border-zinc-700 p-6 hover:shadow-xl hover:shadow-teal-500/10 transition-all duration-300 transform hover:scale-[1.02] group"
+              >
+                <div className="flex items-start justify-between mb-6">
+                  <div className="flex items-start space-x-4">
+                    <div className="text-3xl group-hover:scale-110 transition-transform duration-300">
+                      {session.team === 'BOH' ? '👨‍🍳' : session.team === 'FOH' ? '🚚' : session.team === 'CUSTOMER' ? '🟢' : '⚠️'}
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-blue-400 group-hover:text-teal-400 transition-colors duration-300">
+                        Table {session.tableId}
+                      </h3>
+                      <p className="text-zinc-400">{session.customerName} - {session.flavor}</p>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <span className="text-xs px-2 py-1 bg-zinc-700 rounded-full text-zinc-300">
+                          {session.team}
+                        </span>
+                        <span className="text-xs text-zinc-500">{session.created}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    {getStatusBadge(session.status, session.statusColor, session.statusIcon)}
+                    <div className="text-lg font-semibold text-white mt-1">
+                      ${session.amount.toFixed(2)}
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="text-right">
-                <Badge className="bg-yellow-500 text-white text-sm font-bold px-3 py-1">
-                  {sampleSession.status.replace(/_/g, ' ')}
-                </Badge>
-                <div className="text-lg font-semibold text-white mt-1">
-                  ${sampleSession.amount.toFixed(2)}
-                </div>
-              </div>
-            </div>
 
-            {/* Session Details */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-              <div>
-                <label className="text-sm text-zinc-400 block mb-2">Assigned BOH Staff:</label>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="text"
-                    value={sampleSession.assignedBOH}
-                    className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white"
-                    readOnly
-                  />
-                  <Button variant="outline" size="sm" className="bg-zinc-700 hover:bg-zinc-600">
-                    Assign BOH
-                    <span className="ml-1">▼</span>
+                {/* Session Details */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                  <div>
+                    <label className="text-sm text-zinc-400 block mb-2">Assigned Staff:</label>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="text"
+                        value={session.assignedBOH}
+                        className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all duration-300"
+                        readOnly
+                      />
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="bg-zinc-700 hover:bg-zinc-600 border-zinc-600 hover:border-teal-500 transition-all duration-300"
+                      >
+                        Assign
+                        <span className="ml-1">▼</span>
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-sm text-zinc-400 block mb-2">Session Notes:</label>
+                    <button className="text-teal-400 text-sm hover:text-teal-300 mb-2 transition-colors duration-300">
+                      Add Note
+                    </button>
+                    <div className="bg-zinc-800 rounded-lg p-3 text-sm text-zinc-300 border border-zinc-700 hover:border-teal-500/50 transition-colors duration-300">
+                      {session.notes}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-sm text-zinc-400 block mb-2">Created:</label>
+                    <div className="text-zinc-300">{session.created}</div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-wrap gap-3">
+                  <Button 
+                    variant="warning" 
+                    size="sm" 
+                    className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                  >
+                    <Zap className="w-4 h-4 mr-2" />
+                    Heat Up
+                  </Button>
+                  
+                  <Button 
+                    variant="success" 
+                    size="sm" 
+                    className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 border-green-400 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Restart Prep
+                  </Button>
+                  
+                  <Button 
+                    variant="info" 
+                    size="sm" 
+                    className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Resolve Issue
+                  </Button>
+                  
+                  <Button 
+                    variant="danger" 
+                    size="sm" 
+                    className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                  >
+                    <Flag className="w-4 h-4 mr-2" />
+                    Flag Manager
+                  </Button>
+                  
+                  <Button 
+                    variant="warning" 
+                    size="sm" 
+                    className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                  >
+                    <Pause className="w-4 h-4 mr-2" />
+                    Hold Session
+                  </Button>
+                  
+                  <Button 
+                    variant="accent" 
+                    size="sm" 
+                    className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                  >
+                    <Zap className="w-4 h-4 mr-2" />
+                    Request Refill
                   </Button>
                 </div>
-              </div>
-
-              <div>
-                <label className="text-sm text-zinc-400 block mb-2">Session Notes:</label>
-                <button className="text-teal-400 text-sm hover:text-teal-300 mb-2">Add Note</button>
-                <div className="bg-zinc-800 rounded-lg p-3 text-sm text-zinc-300">
-                  {sampleSession.notes}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm text-zinc-400 block mb-2">Created:</label>
-                <div className="text-zinc-300">{sampleSession.created}</div>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-wrap gap-3">
-              <Button variant="warning" size="sm" className="bg-orange-500 hover:bg-orange-600">
-                <Zap className="w-4 h-4 mr-2" />
-                Heat Up
-              </Button>
-              
-              <Button variant="success" size="sm" className="bg-green-500 hover:bg-green-600 border-green-400">
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Restart Prep
-              </Button>
-              
-              <Button variant="info" size="sm" className="bg-teal-500 hover:bg-teal-600">
-                <CheckCircle className="w-4 h-4 mr-2" />
-                Resolve Issue
-              </Button>
-              
-              <Button variant="danger" size="sm" className="bg-red-500 hover:bg-red-600">
-                <Flag className="w-4 h-4 mr-2" />
-                Flag Manager
-              </Button>
-              
-              <Button variant="warning" size="sm" className="bg-yellow-500 hover:bg-yellow-600">
-                <Pause className="w-4 h-4 mr-2" />
-                Hold Session
-              </Button>
-              
-              <Button variant="accent" size="sm" className="bg-purple-500 hover:bg-purple-600">
-                <Zap className="w-4 h-4 mr-2" />
-                Request Refill
-              </Button>
-            </div>
-          </Card>
+              </Card>
+            ))}
+          </div>
         </div>
       </div>
-
-      {/* Create Session Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <Card className="bg-zinc-900 border-zinc-800 p-8 w-full max-w-md mx-4">
-            <h3 className="text-2xl font-bold text-green-400 mb-6">Create New Session</h3>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm text-zinc-400 block mb-2">Table ID:</label>
-                <input
-                  type="text"
-                  value={newSession.tableId}
-                  onChange={(e) => setNewSession({...newSession, tableId: e.target.value})}
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white"
-                />
-              </div>
-              
-              <div>
-                <label className="text-sm text-zinc-400 block mb-2">Customer Name:</label>
-                <input
-                  type="text"
-                  placeholder="Customer Name"
-                  value={newSession.customerName}
-                  onChange={(e) => setNewSession({...newSession, customerName: e.target.value})}
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white"
-                />
-              </div>
-              
-              <div>
-                <label className="text-sm text-zinc-400 block mb-2">Flavor:</label>
-                <select
-                  value={newSession.flavor}
-                  onChange={(e) => setNewSession({...newSession, flavor: e.target.value})}
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white"
-                >
-                  <option value="Blue Mist">Blue Mist</option>
-                  <option value="Double Apple">Double Apple</option>
-                  <option value="Mint">Mint</option>
-                  <option value="Grape">Grape</option>
-                  <option value="Custom Mix">Custom Mix</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="text-sm text-zinc-400 block mb-2">Amount (cents):</label>
-                <input
-                  type="number"
-                  value={newSession.amount}
-                  onChange={(e) => setNewSession({...newSession, amount: parseInt(e.target.value)})}
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white"
-                />
-              </div>
-            </div>
-            
-            <div className="flex space-x-4 mt-8">
-              <Button 
-                variant="outline" 
-                className="flex-1 bg-zinc-800 hover:bg-zinc-700"
-                onClick={() => setShowCreateModal(false)}
-              >
-                Cancel
-              </Button>
-              <Button 
-                variant="primary" 
-                className="flex-1 bg-green-600 hover:bg-green-700"
-                onClick={handleCreateSession}
-              >
-                Create Session
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
     </div>
   );
 }
