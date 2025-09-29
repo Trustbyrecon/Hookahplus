@@ -295,12 +295,26 @@ export default function FireSessionDashboard() {
   };
 
   const filteredSessions = sessions.filter(session => {
+    // First filter by active tab
+    let tabMatch = true;
     switch (activeTab) {
-      case 'boh': return session.state === 'NEW' || session.state === 'PREP_IN_PROGRESS' || session.state === 'READY_FOR_DELIVERY';
-      case 'foh': return session.state === 'OUT_FOR_DELIVERY' || session.state === 'ACTIVE' || session.state === 'PAUSED';
-      case 'edge': return session.edgeCase !== undefined;
-      default: return true;
+      case 'boh': tabMatch = session.state === 'NEW' || session.state === 'PREP_IN_PROGRESS' || session.state === 'READY_FOR_DELIVERY'; break;
+      case 'foh': tabMatch = session.state === 'OUT_FOR_DELIVERY' || session.state === 'ACTIVE' || session.state === 'PAUSED'; break;
+      case 'edge': tabMatch = session.edgeCase !== undefined; break;
+      default: tabMatch = true;
     }
+    
+    // Then filter by user role
+    let roleMatch = true;
+    switch (userRole) {
+      case 'BOH': roleMatch = session.team === 'BOH' || session.state === 'NEW' || session.state === 'PREP_IN_PROGRESS' || session.state === 'READY_FOR_DELIVERY'; break;
+      case 'FOH': roleMatch = session.team === 'FOH' || session.state === 'OUT_FOR_DELIVERY' || session.state === 'ACTIVE' || session.state === 'PAUSED'; break;
+      case 'MANAGER': roleMatch = true; break; // Managers see all sessions
+      case 'ADMIN': roleMatch = true; break; // Admins see all sessions
+      default: roleMatch = true;
+    }
+    
+    return tabMatch && roleMatch;
   });
 
   if (!isPrettyTheme) {

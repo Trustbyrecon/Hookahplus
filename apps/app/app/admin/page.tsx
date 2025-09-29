@@ -1,296 +1,399 @@
 "use client";
-import React, { useEffect, useState } from 'react';
-import Card from '../../components/Card';
-import Button from '../../components/Button';
-import { StatusIndicator } from '../../components/StatusIndicator';
-import { TrustLock } from '../../components/TrustLock';
-import { 
-  Brain, 
-  Shield, 
-  CreditCard, 
-  RefreshCw,
-  Play,
-  Square,
-  BarChart3,
-  Settings
-} from 'lucide-react';
 
-interface AgentScore {
-  name: string;
-  score: number;
-  status: 'calibrating' | 'stable' | 'ready';
-  lastUpdate: number;
-  drift: number;
+import React, { useState } from 'react';
+import Link from 'next/link';
+import { 
+  Settings, 
+  Users, 
+  BarChart3, 
+  Shield, 
+  Database, 
+  Zap,
+  Clock,
+  AlertTriangle,
+  CheckCircle,
+  Building2,
+  Target,
+  Eye,
+  Activity,
+  TrendingUp,
+  Server,
+  Key,
+  Globe,
+  FileText,
+  Mail,
+  Phone,
+  Calendar,
+  Star,
+  ChevronRight,
+  ChevronDown,
+  Plus,
+  Edit,
+  Trash2,
+  RefreshCw
+} from 'lucide-react';
+import Button from '../../components/Button';
+import GlobalNavigation from '../../components/GlobalNavigation';
+
+interface SystemMetric {
+  id: string;
+  title: string;
+  value: string;
+  change: string;
+  trend: 'up' | 'down' | 'neutral';
+  icon: React.ReactNode;
+  color: string;
 }
 
-interface ReflexCycle {
-  id: number;
-  status: 'calibrating' | 'stable' | 'ready';
-  consensus: number;
-  calibrationRounds: number;
-  mvpTriggered: boolean;
+interface AdminAction {
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  href: string;
+  color: string;
+  status: 'active' | 'pending' | 'maintenance';
 }
 
 export default function AdminControlCenter() {
-  const [cycleStatus, setCycleStatus] = useState<ReflexCycle | null>(null);
-  const [agentScores, setAgentScores] = useState<Record<string, AgentScore>>({});
-  const [consensus, setConsensus] = useState(0);
-  const [isMVPReady, setIsMVPReady] = useState(false);
-  const [isCalibrating, setIsCalibrating] = useState(false);
+  const [activeSection, setActiveSection] = useState('overview');
+  const [showDebugInfo, setShowDebugInfo] = useState(true);
 
-  async function fetchReflexStatus() {
-    try {
-      const res = await fetch("/api/reflex-monitoring", { 
-        cache: "no-store",
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      });
-      const json = await res.json();
-      if (json.success) {
-        setCycleStatus(json.cycle);
-        setAgentScores(json.agents);
-        setConsensus(json.consensus);
-        setIsMVPReady(json.isMVPReady);
-      }
-    } catch (error) {
-      console.error('Error fetching Reflex status:', error);
+  const systemMetrics: SystemMetric[] = [
+    {
+      id: 'sessions',
+      title: 'Total Sessions',
+      value: '7',
+      change: '+2 from yesterday',
+      trend: 'up',
+      icon: <Activity className="w-5 h-5" />,
+      color: 'text-blue-400'
+    },
+    {
+      id: 'active',
+      title: 'Active Sessions',
+      value: '2',
+      change: '+1 from yesterday',
+      trend: 'up',
+      icon: <Zap className="w-5 h-5" />,
+      color: 'text-green-400'
+    },
+    {
+      id: 'users',
+      title: 'Active Users',
+      value: '12',
+      change: '+3 from yesterday',
+      trend: 'up',
+      icon: <Users className="w-5 h-5" />,
+      color: 'text-purple-400'
+    },
+    {
+      id: 'revenue',
+      title: 'Today\'s Revenue',
+      value: '$1,247',
+      change: '+15% from yesterday',
+      trend: 'up',
+      icon: <TrendingUp className="w-5 h-5" />,
+      color: 'text-green-400'
+    },
+    {
+      id: 'waitlist',
+      title: 'POS Waitlist',
+      value: '3',
+      change: '+1 this week',
+      trend: 'up',
+      icon: <Building2 className="w-5 h-5" />,
+      color: 'text-orange-400'
+    },
+    {
+      id: 'uptime',
+      title: 'System Uptime',
+      value: '99.9%',
+      change: 'Last 30 days',
+      trend: 'neutral',
+      icon: <Server className="w-5 h-5" />,
+      color: 'text-green-400'
     }
-  }
+  ];
 
-  async function startCalibration() {
-    try {
-      const res = await fetch('/api/reflex-monitoring', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'start_calibration' })
-      });
-      if (res.ok) {
-        setIsCalibrating(true);
-        console.log('🚀 Calibration loop started');
-      }
-    } catch (error) {
-      console.error('Error starting calibration:', error);
+  const adminActions: AdminAction[] = [
+    {
+      id: 'pos-waitlist',
+      title: 'POS Waitlist',
+      description: 'Manage business waitlist and queue',
+      icon: <Building2 className="w-6 h-6" />,
+      href: '/admin/pos-waitlist',
+      color: 'text-orange-400',
+      status: 'active'
+    },
+    {
+      id: 'user-management',
+      title: 'User Management',
+      description: 'Manage staff accounts and permissions',
+      icon: <Users className="w-6 h-6" />,
+      href: '/admin/users',
+      color: 'text-blue-400',
+      status: 'active'
+    },
+    {
+      id: 'system-settings',
+      title: 'System Settings',
+      description: 'Configure system preferences',
+      icon: <Settings className="w-6 h-6" />,
+      href: '/admin/settings',
+      color: 'text-purple-400',
+      status: 'active'
+    },
+    {
+      id: 'analytics',
+      title: 'Analytics',
+      description: 'View detailed system analytics',
+      icon: <BarChart3 className="w-6 h-6" />,
+      href: '/admin/analytics',
+      color: 'text-green-400',
+      status: 'active'
+    },
+    {
+      id: 'security',
+      title: 'Security',
+      description: 'Manage security settings and logs',
+      icon: <Shield className="w-6 h-6" />,
+      href: '/admin/security',
+      color: 'text-red-400',
+      status: 'active'
+    },
+    {
+      id: 'database',
+      title: 'Database',
+      description: 'Database management and backups',
+      icon: <Database className="w-6 h-6" />,
+      href: '/admin/database',
+      color: 'text-cyan-400',
+      status: 'maintenance'
     }
-  }
+  ];
 
-  async function stopCalibration() {
-    try {
-      const res = await fetch('/api/reflex-monitoring', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'stop_calibration' })
-      });
-      if (res.ok) {
-        setIsCalibrating(false);
-        console.log('🛑 Calibration loop stopped');
-      }
-    } catch (error) {
-      console.error('Error stopping calibration:', error);
+  const recentActivity = [
+    {
+      id: '1',
+      action: 'New waitlist entry added',
+      user: 'Admin',
+      time: '2 minutes ago',
+      icon: <Plus className="w-4 h-4" />,
+      color: 'text-green-400'
+    },
+    {
+      id: '2',
+      action: 'Session completed',
+      user: 'System',
+      time: '5 minutes ago',
+      icon: <CheckCircle className="w-4 h-4" />,
+      color: 'text-blue-400'
+    },
+    {
+      id: '3',
+      action: 'User role updated',
+      user: 'Admin',
+      time: '10 minutes ago',
+      icon: <Edit className="w-4 h-4" />,
+      color: 'text-purple-400'
+    },
+    {
+      id: '4',
+      action: 'System backup completed',
+      user: 'System',
+      time: '1 hour ago',
+      icon: <Database className="w-4 h-4" />,
+      color: 'text-cyan-400'
     }
-  }
+  ];
 
-  function getStatusColor(status: string) {
+  const getTrendColor = (trend: SystemMetric['trend']) => {
+    switch (trend) {
+      case 'up': return 'text-green-400';
+      case 'down': return 'text-red-400';
+      case 'neutral': return 'text-zinc-400';
+    }
+  };
+
+  const getStatusColor = (status: AdminAction['status']) => {
     switch (status) {
-      case 'ready': return 'text-green-400';
-      case 'stable': return 'text-blue-400';
-      case 'calibrating': return 'text-yellow-400';
-      default: return 'text-zinc-400';
+      case 'active': return 'text-green-400 bg-green-500/20';
+      case 'pending': return 'text-yellow-400 bg-yellow-500/20';
+      case 'maintenance': return 'text-orange-400 bg-orange-500/20';
     }
-  }
-
-  useEffect(() => {
-    fetchReflexStatus();
-    const interval = setInterval(fetchReflexStatus, 5000); // Update every 5 seconds
-    return () => clearInterval(interval);
-  }, []);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
-      {/* Header */}
-      <div className="bg-zinc-950 border-b border-teal-500/50">
-        <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold">
-                Admin <span className="text-teal-400">Control Center</span>
-              </h1>
-              <p className="text-zinc-400 mt-1">
-                System administration and Reflex Agent monitoring
-              </p>
+      <GlobalNavigation />
+      
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-4">
+              <div className="p-3 bg-purple-500/20 rounded-lg">
+                <Settings className="w-8 h-8 text-purple-400" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold">Admin Control Center</h1>
+                <p className="text-zinc-400">System administration and management</p>
+              </div>
             </div>
             <div className="flex items-center space-x-4">
-              <StatusIndicator status="online" label="System" value="Operational" />
-              <StatusIndicator status="online" label="Agents" value="Running" />
+              <Button
+                variant="outline"
+                onClick={() => setShowDebugInfo(!showDebugInfo)}
+                className="text-zinc-400 border-zinc-600 hover:bg-zinc-700"
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                {showDebugInfo ? 'Hide' : 'Show'} Debug
+              </Button>
+              <Button className="bg-red-500 hover:bg-red-600">
+                <AlertTriangle className="w-4 h-4 mr-2" />
+                Fire Session
+              </Button>
+            </div>
+          </div>
+
+          {/* Debug Info Bar */}
+          {showDebugInfo && (
+            <div className="bg-zinc-800/50 rounded-lg p-3 border border-zinc-700 mb-6">
+              <div className="flex items-center space-x-6 text-sm">
+                <div className="flex items-center space-x-2">
+                  <span className="text-zinc-400">Debug Info:</span>
+                  <span className="text-green-400">Pretty Theme: ✅ Enabled</span>
+                </div>
+                <div className="text-zinc-400">|</div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-zinc-400">Sessions Loaded:</span>
+                  <span className="text-white">3</span>
+                </div>
+                <div className="text-zinc-400">|</div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-zinc-400">Loading:</span>
+                  <span className="text-green-400">✅ Complete</span>
+                </div>
+                <div className="text-zinc-400">|</div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-zinc-400">API Status:</span>
+                  <span className="text-green-400">Connected</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Live Status Bar */}
+          <div className="bg-zinc-800/50 rounded-lg p-4 border border-zinc-700 mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-6">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <span className="text-sm font-medium">Live</span>
+                </div>
+                <div className="text-sm text-zinc-400">
+                  Total Sessions: <span className="text-white font-semibold">7</span>
+                </div>
+                <div className="text-sm text-zinc-400">
+                  Active: <span className="text-green-400 font-semibold">2</span>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-zinc-400">Flow Status:</span>
+                <span className="text-green-400 font-semibold">2 Normal</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {/* Trust Lock Display */}
-        <div className="mb-8 flex justify-center">
-          <TrustLock trustScore={0.87} status="active" version="TLH-v1" size="lg" />
-        </div>
-
-        {/* Reflex Agent Monitoring */}
-        <Card className="mb-8">
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-2xl font-bold text-teal-400 flex items-center gap-2">
-                  <Brain className="w-6 h-6" />
-                  Reflex Agent Monitoring
-                </h2>
-                <p className="text-zinc-400">Cycle 09 — Full MVP-Ready Run</p>
-              </div>
-              <div className="flex items-center gap-4">
-                {!isCalibrating ? (
-                  <Button
-                    onClick={startCalibration}
-                    variant="primary"
-                    leftIcon={<Play className="w-4 h-4" />}
-                  >
-                    Start Calibration
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={stopCalibration}
-                    variant="outline"
-                    leftIcon={<Square className="w-4 h-4" />}
-                  >
-                    Stop Calibration
-                  </Button>
-                )}
-                <Button
-                  onClick={fetchReflexStatus}
-                  variant="outline"
-                  leftIcon={<RefreshCw className="w-4 h-4" />}
-                >
-                  Refresh
-                </Button>
-              </div>
-            </div>
-
-            {/* Cycle Status */}
-            {cycleStatus && (
-              <div className="mb-6 p-4 bg-zinc-800 rounded-lg">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div>
-                    <div className="text-sm text-zinc-400">Cycle ID</div>
-                    <div className="text-lg font-semibold">{cycleStatus.id}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-zinc-400">Status</div>
-                    <div className={`text-lg font-semibold ${getStatusColor(cycleStatus.status)}`}>
-                      {cycleStatus.status.toUpperCase()}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-zinc-400">Consensus</div>
-                    <div className="text-lg font-semibold text-teal-400">
-                      {(cycleStatus.consensus * 100).toFixed(1)}%
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-zinc-400">MVP Ready</div>
-                    <div className={`text-lg font-semibold ${cycleStatus.mvpTriggered ? 'text-green-400' : 'text-yellow-400'}`}>
-                      {cycleStatus.mvpTriggered ? 'YES' : 'NO'}
-                    </div>
-                  </div>
+        {/* System Metrics */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+          {systemMetrics.map(metric => (
+            <div key={metric.id} className="bg-zinc-800/50 rounded-lg p-4 border border-zinc-700">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-2xl font-bold text-white">
+                  {metric.value}
+                </div>
+                <div className={metric.color}>
+                  {metric.icon}
                 </div>
               </div>
-            )}
+              <div className="text-sm text-zinc-400 mb-1">{metric.title}</div>
+              <div className={`text-xs font-medium ${getTrendColor(metric.trend)}`}>
+                {metric.change}
+              </div>
+            </div>
+          ))}
+        </div>
 
-            {/* Agent Scores */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {Object.entries(agentScores).map(([name, agent]) => (
-                <div key={name} className="p-4 bg-zinc-800 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="font-semibold">{agent.name}</div>
-                    <div className={`text-sm ${getStatusColor(agent.status)}`}>
-                      {agent.status.toUpperCase()}
+        {/* Admin Actions Grid */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold mb-4">Administration</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {adminActions.map(action => (
+              <Link key={action.id} href={action.href}>
+                <div className="bg-zinc-800/50 rounded-lg p-6 border border-zinc-700 hover:bg-zinc-700/50 transition-colors">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className={`${action.color}`}>
+                      {action.icon}
                     </div>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(action.status)}`}>
+                      {action.status.toUpperCase()}
+                    </span>
                   </div>
-                  <div className="text-2xl font-bold text-teal-400 mb-1">
-                    {agent.score.toFixed(2)}
+                  <h3 className="font-medium text-white mb-2">{action.title}</h3>
+                  <p className="text-sm text-zinc-400 mb-4">{action.description}</p>
+                  <div className="flex items-center text-sm text-zinc-500">
+                    <span>Access</span>
+                    <ChevronRight className="w-4 h-4 ml-1" />
                   </div>
-                  <div className="text-xs text-zinc-400">
-                    Drift: {agent.drift.toFixed(3)}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Recent Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="bg-zinc-800/50 rounded-lg p-6 border border-zinc-700">
+            <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
+            <div className="space-y-4">
+              {recentActivity.map(activity => (
+                <div key={activity.id} className="flex items-center space-x-3">
+                  <div className={`${activity.color}`}>
+                    {activity.icon}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-white">{activity.action}</p>
+                    <p className="text-xs text-zinc-500">{activity.user} • {activity.time}</p>
                   </div>
                 </div>
               ))}
             </div>
+          </div>
 
-            {/* System Health */}
-            <div className="mt-6 p-4 bg-zinc-800 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-sm text-zinc-400">System Health</div>
-                  <div className="text-lg font-semibold text-green-400">EXCELLENT</div>
-                </div>
-                <div>
-                  <div className="text-sm text-zinc-400">Last Updated</div>
-                  <div className="text-lg font-semibold">
-                    {new Date().toLocaleTimeString()}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-zinc-400">HiTrust</div>
-                  <div className="text-lg font-semibold text-teal-400">TLH-v1::active</div>
-                </div>
-              </div>
+          <div className="bg-zinc-800/50 rounded-lg p-6 border border-zinc-700">
+            <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
+            <div className="space-y-3">
+              <Button className="w-full justify-start bg-blue-500 hover:bg-blue-600">
+                <Users className="w-4 h-4 mr-2" />
+                Add New User
+              </Button>
+              <Button className="w-full justify-start bg-green-500 hover:bg-green-600">
+                <Database className="w-4 h-4 mr-2" />
+                Run System Backup
+              </Button>
+              <Button className="w-full justify-start bg-purple-500 hover:bg-purple-600">
+                <Settings className="w-4 h-4 mr-2" />
+                Update System Settings
+              </Button>
+              <Button className="w-full justify-start bg-orange-500 hover:bg-orange-600">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Refresh System Status
+              </Button>
             </div>
           </div>
-        </Card>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
-            <div className="p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <BarChart3 className="w-6 h-6 text-teal-400" />
-                <h3 className="text-lg font-semibold">Analytics</h3>
-              </div>
-              <p className="text-zinc-400 text-sm mb-4">
-                View system performance and agent metrics
-              </p>
-              <Button variant="outline" size="sm">
-                View Analytics
-              </Button>
-            </div>
-          </Card>
-
-          <Card>
-            <div className="p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <Settings className="w-6 h-6 text-teal-400" />
-                <h3 className="text-lg font-semibold">Configuration</h3>
-              </div>
-              <p className="text-zinc-400 text-sm mb-4">
-                Manage system settings and agent parameters
-              </p>
-              <Button variant="outline" size="sm">
-                Configure
-              </Button>
-            </div>
-          </Card>
-
-          <Card>
-            <div className="p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <Shield className="w-6 h-6 text-teal-400" />
-                <h3 className="text-lg font-semibold">Security</h3>
-              </div>
-              <p className="text-zinc-400 text-sm mb-4">
-                Monitor security status and access controls
-              </p>
-              <Button variant="outline" size="sm">
-                Security Panel
-              </Button>
-            </div>
-          </Card>
         </div>
       </div>
     </div>

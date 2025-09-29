@@ -243,11 +243,14 @@ const GlobalNavigation: React.FC = () => {
 
           {/* Right Side Actions */}
           <div className="flex items-center space-x-4">
-            {/* Trust Lock Status */}
+            {/* Live Status */}
             <div className="hidden lg:flex items-center space-x-2">
               <div className="flex items-center space-x-1">
-                <Shield className="w-4 h-4 text-orange-400" />
-                <span className="text-sm text-orange-400">Trust-Lock: TLH-v1::active</span>
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <span className="text-sm text-green-400">Live</span>
+              </div>
+              <div className="text-sm text-zinc-400">
+                Total Sessions: <span className="text-white font-semibold">7</span>
               </div>
             </div>
 
