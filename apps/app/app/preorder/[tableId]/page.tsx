@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card, Button, Badge } from '../../../components';
+import { CartProvider, useCart } from '../../../components/cart/CartProvider';
+import { CartDisplay } from '../../../components/cart/CartDisplay';
 import { 
   Flame, 
   Users, 
@@ -64,10 +66,11 @@ import {
   Star as StarIcon
 } from 'lucide-react';
 
-export default function PreOrderPage() {
+function PreOrderPageContent() {
   const params = useParams();
   const tableId = params.tableId as string;
   const [isPrettyTheme, setIsPrettyTheme] = useState(false);
+  const { add } = useCart();
 
   useEffect(() => {
     // Check for pretty theme on client side
@@ -277,7 +280,17 @@ export default function PreOrderPage() {
                       <div className="text-sm text-zinc-400">{item.description}</div>
                       <div className="text-sm font-semibold text-teal-400">${item.price.toFixed(2)}</div>
                     </div>
-                    <Button className="btn-pretty-pill bg-teal-500/20 text-teal-400 border border-teal-500/30 hover:bg-teal-500/30">
+                    <Button 
+                      className="btn-pretty-pill bg-teal-500/20 text-teal-400 border border-teal-500/30 hover:bg-teal-500/30"
+                      onClick={() => add({
+                        id: item.id.toString(),
+                        name: item.name,
+                        price: Math.round(item.price * 100), // Convert to cents
+                        qty: 1,
+                        description: item.description,
+                        icon: item.icon
+                      })}
+                    >
                       <Plus className="w-4 h-4 mr-2" />
                       Quick Add
                     </Button>
@@ -298,7 +311,17 @@ export default function PreOrderPage() {
                       <div className="text-sm text-zinc-400">{item.description}</div>
                       <div className="text-sm font-semibold text-teal-400">${item.price.toFixed(2)}</div>
                     </div>
-                    <Button className="btn-pretty-pill bg-teal-500/20 text-teal-400 border border-teal-500/30 hover:bg-teal-500/30">
+                    <Button 
+                      className="btn-pretty-pill bg-teal-500/20 text-teal-400 border border-teal-500/30 hover:bg-teal-500/30"
+                      onClick={() => add({
+                        id: item.id.toString(),
+                        name: item.name,
+                        price: Math.round(item.price * 100), // Convert to cents
+                        qty: 1,
+                        description: item.description,
+                        icon: item.icon
+                      })}
+                    >
                       <Plus className="w-4 h-4 mr-2" />
                       Quick Add
                     </Button>
@@ -354,10 +377,7 @@ export default function PreOrderPage() {
             {/* Your Order */}
             <div className="card-pretty p-6">
               <h3 className="text-lg font-semibold mb-4">Your Order</h3>
-              <div className="text-center py-8">
-                <ShoppingCart className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-                <p className="text-zinc-400">Your cart is empty. Add items to get started.</p>
-              </div>
+              <CartDisplay />
             </div>
 
             {/* Live Session Status */}
@@ -416,5 +436,13 @@ export default function PreOrderPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PreOrderPage() {
+  return (
+    <CartProvider>
+      <PreOrderPageContent />
+    </CartProvider>
   );
 }
