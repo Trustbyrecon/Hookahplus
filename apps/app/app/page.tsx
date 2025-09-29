@@ -151,7 +151,7 @@ export default function LandingPage() {
       title: 'HiTrust Sentinel',
       description: 'Advanced Security & Trust Management',
       icon: <Shield className="w-8 h-8 text-blue-400" />,
-      status: 'Monitoring',
+      status: 'Active',
       color: 'from-blue-500/20 to-indigo-500/20',
       borderColor: 'border-blue-500/30'
     },
@@ -249,14 +249,6 @@ export default function LandingPage() {
 
             {/* Primary CTA Group */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-12">
-              <div className="flex items-center space-x-3">
-                <div className="badge-pretty-active">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-teal-400 rounded-full animate-pulse"></div>
-                    <span>HiTrust TU+</span>
-                  </div>
-                </div>
-              </div>
               <Link href="/preorder/T-001">
                 <Button className="btn-pretty-primary text-lg px-8 py-4">
                   <QrCode className="w-5 h-5 mr-2" />
@@ -283,12 +275,6 @@ export default function LandingPage() {
                 <Button className="btn-pretty-secondary">
                   <Flame className="w-4 h-4 mr-2" />
                   Fire Dashboard
-                </Button>
-              </Link>
-              <Link href="/test-session">
-                <Button className="btn-pretty-secondary">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Test Page
                 </Button>
               </Link>
             </div>

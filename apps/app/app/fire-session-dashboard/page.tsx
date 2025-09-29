@@ -8,6 +8,7 @@ import SessionActionButtons from '../../components/SessionActionButtons';
 import SessionNotesModal from '../../components/SessionNotesModal';
 import { BOHActions, FOHActions, ManagerActions } from '../../components/SessionActions';
 import GlobalNavigation from '../../components/GlobalNavigation';
+import { FOHBOHToggle } from '../../components/FOHBOHToggle';
 import { 
   Flame, 
   Users, 
@@ -90,6 +91,7 @@ export default function FireSessionDashboard() {
   const [sessionNotes, setSessionNotes] = useState<SessionNotes[]>([]);
   const [userRoles] = useState<string[]>(['BOH', 'FOH', 'MANAGER', 'ADMIN']); // Mock user roles
   const [loading, setLoading] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<'FOH' | 'BOH'>('FOH');
 
   // Load sessions from API
   const loadSessions = useCallback(async () => {
@@ -349,6 +351,10 @@ export default function FireSessionDashboard() {
               </h1>
             </div>
             <div className="flex items-center space-x-4">
+              <FOHBOHToggle 
+                selectedRole={selectedRole} 
+                onRoleChange={setSelectedRole} 
+              />
               <Link href="/">
                 <Button className="btn-pretty-secondary">
                   <BarChart3 className="w-4 h-4 mr-2" />

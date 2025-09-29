@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useCart } from "./CartProvider";
-import { ShoppingCart, Minus, Plus, Trash2 } from "lucide-react";
+import { ShoppingCart, Minus, Plus, Trash2, CreditCard } from "lucide-react";
 import Button from "../Button";
 
 function cents(n: number) {
@@ -11,6 +11,71 @@ function cents(n: number) {
 
 export function CartDisplay() {
   const { items, remove, subtotal, itemCount } = useCart();
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleCheckout = async () => {
+    if (items.length === 0) return;
+    
+    setIsProcessing(true);
+    try {
+      // Create Stripe Payment Intent
+      const response = await fetch('/api/payments/create-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: subtotal,
+          currency: 'usd',
+          items: items.map(item => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: item.qty
+          }))
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create payment intent');
+      }
+      
+      const { clientSecret } = await response.json();
+      
+      // Redirect to Stripe Checkout or handle payment
+      // For now, simulate successful payment and create session
+      await createFireSession(items);
+      
+    } catch (error) {
+      console.error('Checkout error:', error);
+      alert('Payment failed. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const createFireSession = async (cartItems: any[]) => {
+    try {
+      const response = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tableId: 'T-001', // Default table
+          customerRef: 'Customer',
+          flavor: cartItems.map(item => item.name).join(', '),
+          priceCents: subtotal,
+          state: 'NEW',
+          assignedBOHId: 'boh-staff-1',
+          assignedFOHId: 'foh-staff-1'
+        })
+      });
+      
+      if (response.ok) {
+        // Redirect to Fire Session Dashboard
+        window.location.href = '/fire-session-dashboard';
+      }
+    } catch (error) {
+      console.error('Session creation error:', error);
+    }
+  };
 
   if (items.length === 0) {
     return (
@@ -75,9 +140,23 @@ export function CartDisplay() {
         
         {/* Action Buttons */}
         <div className="space-y-2">
-          <Button className="w-full btn-pretty-primary">
-            <ShoppingCart className="w-4 h-4 mr-2" />
-            Proceed to Checkout
+          <Button 
+            className="w-full btn-pretty-primary"
+            onClick={handleCheckout}
+            disabled={isProcessing || items.length === 0}
+            loading={isProcessing}
+          >
+            {isProcessing ? (
+              <>
+                <CreditCard className="w-4 h-4 mr-2" />
+                Processing Payment...
+              </>
+            ) : (
+              <>
+                <ShoppingCart className="w-4 h-4 mr-2" />
+                Proceed to Checkout
+              </>
+            )}
           </Button>
         </div>
       </div>
