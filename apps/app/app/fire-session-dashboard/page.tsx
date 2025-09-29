@@ -17,6 +17,7 @@ import { ResolutionNotes } from '../../components/ResolutionNotes';
 import { SessionQueueManager } from '../../components/SessionQueueManager';
 import { SessionMonitor } from '../../components/SessionMonitor';
 import { StaffWorkflowAssistant } from '../../components/StaffWorkflowAssistant';
+import { OptimizedSessionCard } from '../../components/OptimizedSessionCard';
 import { 
   Flame, 
   Users, 
@@ -97,6 +98,7 @@ export default function FireSessionDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [sessions, setSessions] = useState<Session[]>([]);
   const [sessionNotes, setSessionNotes] = useState<SessionNote[]>([]);
+  const [sessionFlags, setSessionFlags] = useState<any[]>([]);
   const [userRoles] = useState<string[]>(['BOH', 'FOH', 'MANAGER', 'ADMIN']); // Mock user roles
   const [loading, setLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'FOH' | 'BOH'>('FOH');
@@ -267,10 +269,10 @@ export default function FireSessionDashboard() {
     setSessionNotes(prev => [note, ...prev]);
   };
 
-  const handleUpdateNote = (noteId: string, content: string) => {
+  const handleUpdateNote = (noteId: string, updates: Partial<SessionNote>) => {
     setSessionNotes(prev => prev.map(note => 
       note.id === noteId 
-        ? { ...note, content, updatedAt: new Date() }
+        ? { ...note, ...updates, updatedAt: new Date() }
         : note
     ));
   };
@@ -669,89 +671,40 @@ export default function FireSessionDashboard() {
           )}
           
           {filteredSessions.map((session, index) => (
-            <div key={session.id} className="session-card">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-start space-x-4">
-                  <div className="text-3xl">
-                    {session.team === 'BOH' ? '👨‍🍳' : session.team === 'FOH' ? '🚚' : '⚠️'}
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-blue-400">
-                      Table {session.tableId}
-                    </h3>
-                    <p className="text-zinc-400">{session.customerRef} - {session.flavor}</p>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <span className="text-xs px-2 py-1 bg-zinc-700 rounded-full text-zinc-300">
-                        {session.team}
-                      </span>
-                      <span className="text-xs text-zinc-500">{session.created}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  {getStatusBadge(session.state, session.statusColor || 'bg-gray-500', session.statusIcon || '❓')}
-                  <div className="text-lg font-semibold text-white mt-1">
-                    ${(session.priceCents / 100).toFixed(2)}
-                  </div>
-                </div>
-              </div>
-
-              {/* Session Details */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div>
-                  <label className="text-sm text-zinc-400 block mb-1">Assigned BOH:</label>
-                  <div className="text-sm text-zinc-300">{session.assignedBOH}</div>
-                </div>
-                <div>
-                  <label className="text-sm text-zinc-400 block mb-1">Assigned FOH:</label>
-                  <div className="text-sm text-zinc-300">{session.assignedFOH}</div>
-                </div>
-                <div>
-                  <label className="text-sm text-zinc-400 block mb-1">Notes:</label>
-                  <div className="text-sm text-zinc-300">{session.notes}</div>
-                </div>
-              </div>
-
-              {/* Session Notes */}
-              <div className="mb-4">
-                <SessionNotesComponent
-                  sessionId={session.id}
-                  notes={sessionNotes.filter(note => note.sessionId === session.id)}
-                  onNoteAdded={handleAddNote}
-                  onNoteUpdated={handleUpdateNote}
-                  onNoteDeleted={handleDeleteNote}
-                />
-              </div>
-
-              {/* Flag Manager */}
-              <div className="mb-4">
-                <FlagManager
-                  sessionId={session.id}
-                  onFlagCreated={(flag) => console.log('Flag created:', flag)}
-                  onFlagResolved={(flagId) => console.log('Flag resolved:', flagId)}
-                />
-              </div>
-
-              {/* Resolution Notes */}
-              <div className="mb-4">
-                <ResolutionNotes
-                  sessionId={session.id}
-                  sessionState={session.state}
-                  onResolutionAdded={(resolution) => console.log('Resolution added:', resolution)}
-                  onResumeSession={() => {
-                    // Resume session logic
-                    console.log('Resuming session:', session.id);
-                  }}
-                />
-              </div>
-
-              {/* Role-Based Actions */}
-              <RoleBasedActions
-                session={session}
-                userRole={userRole}
-                onStateChange={handleStateChange}
-              />
-            </div>
+            <OptimizedSessionCard
+              key={session.id}
+              session={session}
+              userRole={userRole}
+              sessionNotes={sessionNotes}
+              sessionFlags={sessionFlags}
+              onStateChange={handleStateChange}
+              onAddNote={handleAddNote}
+              onUpdateNote={handleUpdateNote}
+              onDeleteNote={handleDeleteNote}
+              onFlagIssue={(type, severity, description) => {
+                const newFlag = {
+                  id: `flag_${Date.now()}`,
+                  sessionId: session.id,
+                  type,
+                  severity,
+                  description,
+                  reportedBy: userRole,
+                  status: 'open',
+                  createdAt: new Date()
+                };
+                setSessionFlags(prev => [...prev, newFlag]);
+              }}
+              onResolveFlag={(flagId, resolution, customerCompensation) => {
+                const resolvedFlag = {
+                  ...sessionFlags.find(f => f.id === flagId)!,
+                  status: 'resolved',
+                  resolution,
+                  resolvedAt: new Date(),
+                  customerCompensation
+                };
+                setSessionFlags(prev => prev.map(f => f.id === flagId ? resolvedFlag : f));
+              }}
+            />
           ))}
         </div>
       </div>

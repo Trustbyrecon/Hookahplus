@@ -22,6 +22,10 @@ interface SessionActionsProps {
   onStateChange: () => void;
 }
 
+interface ManagerActionsProps extends SessionActionsProps {
+  onFlagIssue?: (type: string, severity: string, description: string) => void;
+}
+
 export function BOHActions({ sessionId, state, userRoles, onStateChange }: SessionActionsProps) {
   const [busy, setBusy] = useState(false);
   
@@ -200,7 +204,7 @@ export function FOHActions({ sessionId, state, userRoles, onStateChange }: Sessi
   );
 }
 
-export function ManagerActions({ sessionId, state, userRoles, onStateChange }: SessionActionsProps) {
+export function ManagerActions({ sessionId, state, userRoles, onStateChange, onFlagIssue }: ManagerActionsProps) {
   const [busy, setBusy] = useState(false);
   
   const can = (role: string) => userRoles.includes(role) || userRoles.includes("ADMIN");

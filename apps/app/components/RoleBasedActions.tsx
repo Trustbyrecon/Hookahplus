@@ -7,10 +7,11 @@ import { Session } from "../types/session";
 interface RoleBasedActionsProps {
   session: Session;
   userRole: 'BOH' | 'FOH' | 'MANAGER' | 'ADMIN';
-  onStateChange?: () => void;
+  onStateChange?: (sessionId: string, transition: string, note?: string, edge?: string) => void;
+  onFlagIssue?: (type: string, severity: string, description: string) => void;
 }
 
-export function RoleBasedActions({ session, userRole, onStateChange }: RoleBasedActionsProps) {
+export function RoleBasedActions({ session, userRole, onStateChange, onFlagIssue }: RoleBasedActionsProps) {
   // Define which actions are visible for each role
   const getVisibleActions = () => {
     switch (userRole) {
@@ -20,7 +21,7 @@ export function RoleBasedActions({ session, userRole, onStateChange }: RoleBased
             sessionId={session.id}
             state={session.state}
             userRoles={['BOH', 'FOH', 'MANAGER', 'ADMIN']}
-            onStateChange={onStateChange || (() => {})}
+            onStateChange={() => onStateChange?.(session.id, 'START_PREP')}
           />
         );
       
@@ -30,12 +31,11 @@ export function RoleBasedActions({ session, userRole, onStateChange }: RoleBased
             sessionId={session.id}
             state={session.state}
             userRoles={['BOH', 'FOH', 'MANAGER', 'ADMIN']}
-            onStateChange={onStateChange || (() => {})}
+            onStateChange={() => onStateChange?.(session.id, 'TAKE_DELIVERY')}
           />
         );
       
       case 'MANAGER':
-      case 'ADMIN':
         return (
           <div className="space-y-2">
             <div className="text-xs text-zinc-400 mb-2">Manager Actions:</div>
@@ -43,8 +43,46 @@ export function RoleBasedActions({ session, userRole, onStateChange }: RoleBased
               sessionId={session.id}
               state={session.state}
               userRoles={['BOH', 'FOH', 'MANAGER', 'ADMIN']}
-              onStateChange={onStateChange || (() => {})}
+              onStateChange={() => onStateChange?.(session.id, 'COMPLETE')}
+              onFlagIssue={onFlagIssue}
             />
+          </div>
+        );
+      
+      case 'ADMIN':
+        return (
+          <div className="space-y-2">
+            <div className="text-xs text-zinc-400 mb-2">Admin Actions (All Permissions):</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div>
+                <div className="text-xs text-orange-400 mb-1">BOH Actions:</div>
+                <BOHActions
+                  sessionId={session.id}
+                  state={session.state}
+                  userRoles={['BOH', 'FOH', 'MANAGER', 'ADMIN']}
+                  onStateChange={() => onStateChange?.(session.id, 'START_PREP')}
+                />
+              </div>
+              <div>
+                <div className="text-xs text-blue-400 mb-1">FOH Actions:</div>
+                <FOHActions
+                  sessionId={session.id}
+                  state={session.state}
+                  userRoles={['BOH', 'FOH', 'MANAGER', 'ADMIN']}
+                  onStateChange={() => onStateChange?.(session.id, 'TAKE_DELIVERY')}
+                />
+              </div>
+            </div>
+            <div className="mt-2">
+              <div className="text-xs text-purple-400 mb-1">Manager Actions:</div>
+              <ManagerActions
+                sessionId={session.id}
+                state={session.state}
+                userRoles={['BOH', 'FOH', 'MANAGER', 'ADMIN']}
+                onStateChange={() => onStateChange?.(session.id, 'COMPLETE')}
+                onFlagIssue={onFlagIssue}
+              />
+            </div>
           </div>
         );
       
