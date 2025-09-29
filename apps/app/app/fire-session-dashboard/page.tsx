@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Card, Button, Badge } from '../../components';
 import CreateSessionModal from '../../components/CreateSessionModal';
@@ -80,6 +80,7 @@ export default function FireSessionDashboard() {
     console.log('Pretty theme enabled:', process.env.NEXT_PUBLIC_PRETTY_THEME === '1' || window.location.hostname.includes('vercel.app'));
     console.log('Hostname:', window.location.hostname);
   }, []);
+  
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
@@ -87,76 +88,32 @@ export default function FireSessionDashboard() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [sessionNotes, setSessionNotes] = useState<SessionNotes[]>([]);
   const [userRoles] = useState<string[]>(['BOH', 'FOH', 'MANAGER', 'ADMIN']); // Mock user roles
+  const [loading, setLoading] = useState(false);
 
-  // Initialize with mock data using new state machine
-  useEffect(() => {
-    const mockSessions: Session[] = [
-      {
-        id: 'session_T-007_1758552685415',
-        tableId: 'T-007',
-        customerRef: '15551234556',
-        flavor: 'Watermelon + Mint',
-        priceCents: 3500,
-        state: 'PREP_IN_PROGRESS',
-        assignedBOHId: 'boh-1',
-        assignedFOHId: 'foh-1',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        // UI computed fields
-        statusColor: 'bg-green-500',
-        statusIcon: '🔄',
-        assignedBOH: 'Mike Rodriguez',
-        assignedFOH: 'John Smith',
-        notes: 'Source: WALK IN, External Ref: T-007',
-        created: '1:39:07 PM',
-        team: 'BOH'
-      },
-      {
-        id: 'session_T-008_1758552685416',
-        tableId: 'T-008',
-        customerRef: '15551234557',
-        flavor: 'Blue Mist',
-        priceCents: 3000,
-        state: 'READY_FOR_DELIVERY',
-        assignedBOHId: 'boh-1',
-        assignedFOHId: 'foh-2',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        // UI computed fields
-        statusColor: 'bg-blue-500',
-        statusIcon: '✅',
-        assignedBOH: 'Mike Rodriguez',
-        assignedFOH: 'Emily Davis',
-        notes: 'Source: RESERVE, External Ref: T-008',
-        created: '1:34:07 PM',
-        team: 'BOH'
-      },
-      {
-        id: 'session_T-011_1758552685417',
-        tableId: 'T-011',
-        customerRef: '15551234560',
-        flavor: 'Custom Mix',
-        priceCents: 4500,
-        state: 'ACTIVE',
-        edgeCase: 'EQUIPMENT_ISSUE',
-        edgeNote: 'Equipment malfunction - hookah base cracked',
-        assignedBOHId: 'boh-2',
-        assignedFOHId: 'foh-3',
-        startedAt: new Date(Date.now() - 15 * 60 * 1000), // 15 minutes ago
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        // UI computed fields
-        statusColor: 'bg-orange-500',
-        statusIcon: '⚠️',
-        assignedBOH: 'Sarah Chen',
-        assignedFOH: 'David Wilson',
-        notes: 'Source: WALK IN, External Ref: T-011. Edge Case: Equipment malfunction - hookah base cracked',
-        created: '1:19:07 PM',
-        team: 'FOH'
+  // Load sessions from API
+  const loadSessions = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/sessions');
+      const data = await response.json();
+      
+      if (data.ok && data.sessions) {
+        setSessions(data.sessions);
+        console.log('✅ Loaded sessions from API:', data.sessions.length);
+      } else {
+        console.error('❌ Failed to load sessions:', data.error);
       }
-    ];
-    setSessions(mockSessions);
+    } catch (error) {
+      console.error('❌ Error loading sessions:', error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  // Load sessions on mount
+  useEffect(() => {
+    loadSessions();
+  }, [loadSessions]);
 
   // Mock session notes
   useEffect(() => {
@@ -184,14 +141,14 @@ export default function FireSessionDashboard() {
   const metrics = [
     {
       title: 'Active Sessions',
-      value: '3',
+      value: sessions.filter(s => ['ACTIVE', 'PAUSED'].includes(s.state)).length.toString(),
       icon: <Flame className="w-6 h-6 text-orange-400" />,
       change: '+12%',
       changeType: 'positive' as const
     },
     {
       title: 'Revenue',
-      value: '$110',
+      value: `$${(sessions.reduce((sum, s) => sum + s.priceCents, 0) / 100).toFixed(0)}`,
       icon: <DollarSign className="w-6 h-6 text-green-400" />,
       change: '+8%',
       changeType: 'positive' as const
@@ -205,7 +162,7 @@ export default function FireSessionDashboard() {
     },
     {
       title: 'Alerts',
-      value: '1',
+      value: sessions.filter(s => s.edgeCase).length.toString(),
       icon: <AlertTriangle className="w-6 h-6 text-yellow-400" />,
       change: '0%',
       changeType: 'neutral' as const
@@ -219,7 +176,7 @@ export default function FireSessionDashboard() {
     },
     {
       title: 'Total Sessions',
-      value: '7',
+      value: sessions.length.toString(),
       icon: <BarChart3 className="w-6 h-6 text-cyan-400" />,
       change: '+15%',
       changeType: 'positive' as const
@@ -227,42 +184,48 @@ export default function FireSessionDashboard() {
   ];
 
   const tabs = [
-    { id: 'overview', label: 'Overview (7)', count: 7 },
-    { id: 'boh', label: 'BOH (3)', count: 3 },
-    { id: 'foh', label: 'FOH (0)', count: 0 },
-    { id: 'edge', label: 'Edge Cases (1)', count: 1 }
+    { id: 'overview', label: `Overview (${sessions.length})`, count: sessions.length },
+    { id: 'boh', label: `BOH (${sessions.filter(s => ['NEW', 'PREP_IN_PROGRESS', 'READY_FOR_DELIVERY'].includes(s.state)).length})`, count: sessions.filter(s => ['NEW', 'PREP_IN_PROGRESS', 'READY_FOR_DELIVERY'].includes(s.state)).length },
+    { id: 'foh', label: `FOH (${sessions.filter(s => ['OUT_FOR_DELIVERY', 'ACTIVE', 'PAUSED'].includes(s.state)).length})`, count: sessions.filter(s => ['OUT_FOR_DELIVERY', 'ACTIVE', 'PAUSED'].includes(s.state)).length },
+    { id: 'edge', label: `Edge Cases (${sessions.filter(s => s.edgeCase).length})`, count: sessions.filter(s => s.edgeCase).length }
   ];
 
-  const handleCreateSession = (sessionData: any) => {
-    const newSession: Session = {
-      id: `session_${sessionData.tableId}_${Date.now()}`,
-      tableId: sessionData.tableId,
-      customerRef: sessionData.customerName,
-      flavor: sessionData.flavor,
-      priceCents: Math.round(sessionData.amount * 100),
-      state: 'NEW',
-      assignedBOHId: sessionData.bohStaff,
-      assignedFOHId: sessionData.fohStaff,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      // UI computed fields
-      statusColor: 'bg-blue-500',
-      statusIcon: '🆕',
-      assignedBOH: sessionData.bohStaff,
-      assignedFOH: sessionData.fohStaff,
-      notes: sessionData.notes,
-      created: new Date().toLocaleTimeString(),
-      team: 'BOH'
-    };
-    setSessions(prev => [newSession, ...prev]);
+  const handleCreateSession = async (sessionData: any) => {
+    try {
+      const response = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(sessionData),
+      });
+      
+      const data = await response.json();
+      
+      if (data.ok && data.session) {
+        console.log('✅ Session created:', data.session);
+        // Reload sessions to get updated list
+        await loadSessions();
+      } else {
+        console.error('❌ Failed to create session:', data.error);
+        alert(`Error creating session: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('❌ Error creating session:', error);
+      alert('Failed to create session');
+    }
   };
 
   const handleStatusChange = (sessionId: string, newStatus: SessionStatus) => {
     setSessions(prev => prev.map(session => 
       session.id === sessionId 
-        ? { ...session, status: newStatus, updatedAt: new Date() }
+        ? { ...session, state: newStatus, updatedAt: new Date() }
         : session
     ));
+  };
+
+  const handleStateChange = async () => {
+    // Reload sessions when state changes
+    console.log('🔄 Session state changed, reloading...');
+    await loadSessions();
   };
 
   const handleAction = (actionId: string, sessionId: string) => {
@@ -404,7 +367,7 @@ export default function FireSessionDashboard() {
             </div>
           </div>
           <p className="text-xl text-zinc-400">
-            Complete BOH/FOH workflow management with edge case handling
+            Complete BOH/FOH workflow management with production-ready buttons
           </p>
         </div>
 
@@ -435,8 +398,9 @@ export default function FireSessionDashboard() {
         <div className="mb-4 p-4 bg-zinc-800 rounded-lg">
           <div className="text-sm text-zinc-400">
             <strong>Debug Info:</strong> Pretty Theme: {isPrettyTheme ? '✅ Enabled' : '❌ Disabled'} | 
-            Modal State: {showCreateModal ? '✅ Open' : '❌ Closed'} | 
-            Hostname: {typeof window !== 'undefined' ? window.location.hostname : 'N/A'}
+            Sessions Loaded: {sessions.length} | 
+            Loading: {loading ? '🔄' : '✅'} | 
+            API Status: Connected
           </div>
         </div>
 
@@ -445,30 +409,22 @@ export default function FireSessionDashboard() {
           <div className="flex items-center space-x-4">
             <Button 
               onClick={() => {
-                console.log('Create Session button clicked, showCreateModal:', showCreateModal);
+                console.log('Create Session button clicked');
                 setShowCreateModal(true);
               }}
               className="btn-pretty-primary text-lg px-8 py-4"
+              disabled={loading}
             >
               <Plus className="w-5 h-5 mr-2" />
               NEW Create Session
             </Button>
             <Button 
-              onClick={() => {
-                console.log('Debug modal clicked, showCreateModal:', showCreateModal);
-                setShowCreateModal(true);
-                // Force a re-render
-                setTimeout(() => {
-                  console.log('Modal state after timeout:', showCreateModal);
-                }, 100);
-              }}
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg"
+              onClick={loadSessions}
+              className="btn-pretty-secondary"
+              disabled={loading}
             >
-              🔧 Debug Modal
-            </Button>
-            <Button className="btn-pretty-secondary">
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh
+              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              {loading ? 'Loading...' : 'Refresh'}
             </Button>
           </div>
 
@@ -503,6 +459,20 @@ export default function FireSessionDashboard() {
 
         {/* Sessions List */}
         <div className="space-y-4">
+          {loading && sessions.length === 0 && (
+            <div className="text-center py-8">
+              <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-teal-400" />
+              <p className="text-zinc-400">Loading sessions...</p>
+            </div>
+          )}
+          
+          {!loading && filteredSessions.length === 0 && (
+            <div className="text-center py-8">
+              <Flame className="w-12 h-12 mx-auto mb-4 text-zinc-600" />
+              <p className="text-zinc-400">No sessions found for this filter</p>
+            </div>
+          )}
+          
           {filteredSessions.map((session, index) => (
             <div key={session.id} className="session-card">
               <div className="flex items-start justify-between mb-4">
@@ -556,10 +526,7 @@ export default function FireSessionDashboard() {
                     sessionId={session.id}
                     state={session.state}
                     userRoles={userRoles}
-                    onStateChange={() => {
-                      // Refresh sessions data
-                      console.log('Session state changed, refreshing...');
-                    }}
+                    onStateChange={handleStateChange}
                   />
                 </div>
 
@@ -570,10 +537,7 @@ export default function FireSessionDashboard() {
                     sessionId={session.id}
                     state={session.state}
                     userRoles={userRoles}
-                    onStateChange={() => {
-                      // Refresh sessions data
-                      console.log('Session state changed, refreshing...');
-                    }}
+                    onStateChange={handleStateChange}
                   />
                 </div>
 
@@ -584,10 +548,7 @@ export default function FireSessionDashboard() {
                     sessionId={session.id}
                     state={session.state}
                     userRoles={userRoles}
-                    onStateChange={() => {
-                      // Refresh sessions data
-                      console.log('Session state changed, refreshing...');
-                    }}
+                    onStateChange={handleStateChange}
                   />
                 </div>
               </div>
