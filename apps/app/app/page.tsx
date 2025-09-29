@@ -75,7 +75,7 @@ export default function LandingPage() {
       title: 'Dashboard',
       description: 'Overview & Analytics',
       icon: <BarChart3 className="w-6 h-6 text-teal-400" />,
-      href: '/',
+      href: '/fire-session-dashboard',
       color: 'from-teal-500/20 to-cyan-500/20',
       borderColor: 'border-teal-500/30'
     },
@@ -99,7 +99,7 @@ export default function LandingPage() {
       title: 'Staff Ops',
       description: 'Operations',
       icon: <Users className="w-6 h-6 text-purple-400" />,
-      href: '/staff-dashboard',
+      href: '/staff-ops',
       color: 'from-purple-500/20 to-pink-500/20',
       borderColor: 'border-purple-500/30'
     },

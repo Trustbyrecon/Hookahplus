@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { Card, Button, Badge } from '../../components';
+import GlobalNavigation from '../../components/GlobalNavigation';
 import { 
   Flame, 
   Users, 
@@ -200,6 +201,9 @@ export default function SessionsPage() {
   // Pretty Theme Design
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
+      {/* Global Navigation */}
+      <GlobalNavigation />
+      
       {/* Header */}
       <div className="status-bar">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
@@ -244,9 +248,23 @@ export default function SessionsPage() {
               Sessions
             </h1>
           </div>
-          <p className="text-xl text-zinc-400">
-            Manage and monitor all active hookah sessions
+          <p className="text-xl text-zinc-400 mb-4">
+            Comprehensive session management and analytics dashboard
           </p>
+          <div className="flex items-center space-x-4">
+            <Link href="/fire-session-dashboard">
+              <Button className="btn-pretty-primary text-lg px-6 py-3">
+                <BarChart3 className="w-5 h-5 mr-2" />
+                View Live Dashboard
+              </Button>
+            </Link>
+            <Link href="/preorder/T-001">
+              <Button className="btn-pretty-secondary text-lg px-6 py-3">
+                <Plus className="w-5 h-5 mr-2" />
+                Create New Session
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Metrics Grid */}
@@ -272,29 +290,66 @@ export default function SessionsPage() {
           ))}
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
-            <Link href="/preorder/T-001">
-              <Button className="btn-pretty-primary">
-                <Plus className="w-4 h-4 mr-2" />
-                Create Session
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="card-pretty p-6">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
+                <Flame className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">Live Sessions</h3>
+                <p className="text-sm text-zinc-400">Real-time monitoring</p>
+              </div>
+            </div>
+            <p className="text-zinc-300 text-sm mb-4">
+              Monitor active hookah sessions, track progress, and manage staff assignments in real-time.
+            </p>
+            <Link href="/fire-session-dashboard">
+              <Button className="btn-pretty-primary w-full">
+                <BarChart3 className="w-4 h-4 mr-2" />
+                View Dashboard
               </Button>
             </Link>
-            <Button className="btn-pretty-secondary">
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh
-            </Button>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <Button className="btn-pretty-secondary">
-              <Filter className="w-4 h-4 mr-2" />
-              Filter
-            </Button>
-            <Button className="btn-pretty-secondary">
-              <Search className="w-4 h-4 mr-2" />
-              Search
+          <div className="card-pretty p-6">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-lg flex items-center justify-center">
+                <Plus className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">Create Session</h3>
+                <p className="text-sm text-zinc-400">Start new hookah session</p>
+              </div>
+            </div>
+            <p className="text-zinc-300 text-sm mb-4">
+              Create new hookah sessions, assign staff, and track customer orders from start to finish.
+            </p>
+            <Link href="/preorder/T-001">
+              <Button className="btn-pretty-secondary w-full">
+                <Plus className="w-4 h-4 mr-2" />
+                New Session
+              </Button>
+            </Link>
+          </div>
+
+          <div className="card-pretty p-6">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                <BarChart3 className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">Analytics</h3>
+                <p className="text-sm text-zinc-400">Session insights</p>
+              </div>
+            </div>
+            <p className="text-zinc-300 text-sm mb-4">
+              View detailed analytics, revenue tracking, and performance metrics for all sessions.
+            </p>
+            <Button className="btn-pretty-outline w-full">
+              <TrendingUp className="w-4 h-4 mr-2" />
+              View Analytics
             </Button>
           </div>
         </div>

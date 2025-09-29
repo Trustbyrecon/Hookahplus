@@ -7,6 +7,7 @@ import { Card, Button, Badge } from '../../../components';
 import { CartProvider, useCart } from '../../../components/cart/CartProvider';
 import { CartDisplay } from '../../../components/cart/CartDisplay';
 import { TestSessionButton } from '../../../components/TestSessionButton';
+import GlobalNavigation from '../../../components/GlobalNavigation';
 import { 
   Flame, 
   Users, 
@@ -193,6 +194,9 @@ function PreOrderPageContent() {
   // Pretty Theme Design
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
+      {/* Global Navigation */}
+      <GlobalNavigation />
+      
       {/* Header */}
       <div className="status-bar">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
