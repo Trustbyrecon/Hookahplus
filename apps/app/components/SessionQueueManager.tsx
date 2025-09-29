@@ -69,7 +69,7 @@ export function SessionQueueManager({ sessions, userRole, onBulkAction }: Sessio
       
       switch (sortBy) {
         case 'priority':
-          const priorityOrder = { 'urgent': 4, 'high': 3, 'medium': 2, 'low': 1 };
+          const priorityOrder: { [key: string]: number } = { 'urgent': 4, 'high': 3, 'medium': 2, 'low': 1 };
           aValue = priorityOrder[a.priority] || 0;
           bValue = priorityOrder[b.priority] || 0;
           break;
@@ -82,7 +82,7 @@ export function SessionQueueManager({ sessions, userRole, onBulkAction }: Sessio
           bValue = parseInt(b.tableId.replace('T-', ''));
           break;
         case 'status':
-          const statusOrder = { 'NEW': 1, 'PREP_IN_PROGRESS': 2, 'READY_FOR_DELIVERY': 3, 'OUT_FOR_DELIVERY': 4, 'ACTIVE': 5, 'PAUSED': 6, 'COMPLETED': 7, 'CANCELLED': 8 };
+          const statusOrder: { [key: string]: number } = { 'NEW': 1, 'PREP_IN_PROGRESS': 2, 'READY_FOR_DELIVERY': 3, 'OUT_FOR_DELIVERY': 4, 'ACTIVE': 5, 'PAUSED': 6, 'COMPLETED': 7, 'CANCELLED': 8 };
           aValue = statusOrder[a.state] || 0;
           bValue = statusOrder[b.state] || 0;
           break;
@@ -151,7 +151,7 @@ export function SessionQueueManager({ sessions, userRole, onBulkAction }: Sessio
   };
 
   const getStatusStats = () => {
-    const stats = {
+    const stats: { [key: string]: number } = {
       NEW: 0,
       PREP_IN_PROGRESS: 0,
       READY_FOR_DELIVERY: 0,
@@ -192,14 +192,14 @@ export function SessionQueueManager({ sessions, userRole, onBulkAction }: Sessio
           <div className="flex items-center space-x-2">
             <Button
               size="sm"
-              variant={viewMode === 'grid' ? 'default' : 'outline'}
+              variant={viewMode === 'grid' ? 'primary' : 'outline'}
               onClick={() => setViewMode('grid')}
             >
               <Grid className="w-4 h-4" />
             </Button>
             <Button
               size="sm"
-              variant={viewMode === 'list' ? 'default' : 'outline'}
+              variant={viewMode === 'list' ? 'primary' : 'outline'}
               onClick={() => setViewMode('list')}
             >
               <List className="w-4 h-4" />

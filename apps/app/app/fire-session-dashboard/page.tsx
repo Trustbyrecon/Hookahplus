@@ -14,6 +14,9 @@ import { SessionFilters, FilterOptions } from '../../components/SessionFilters';
 import { SessionNotes as SessionNotesComponent, SessionNote } from '../../components/SessionNotes';
 import { RoleBasedActions, RoleSelector } from '../../components/RoleBasedActions';
 import { ResolutionNotes } from '../../components/ResolutionNotes';
+import { SessionQueueManager } from '../../components/SessionQueueManager';
+import { SessionMonitor } from '../../components/SessionMonitor';
+import { StaffWorkflowAssistant } from '../../components/StaffWorkflowAssistant';
 import { 
   Flame, 
   Users, 
@@ -105,6 +108,17 @@ export default function FireSessionDashboard() {
     timeRange: 'all',
     severity: []
   });
+  
+  // Advanced management features
+  const [showAdvancedManagement, setShowAdvancedManagement] = useState(false);
+  const [managementView, setManagementView] = useState<'queue' | 'monitor' | 'workflow'>('queue');
+  const [staffMembers] = useState([
+    { id: 'boh-1', name: 'Mike Rodriguez', role: 'BOH', status: 'available' },
+    { id: 'boh-2', name: 'Sarah Chen', role: 'BOH', status: 'busy' },
+    { id: 'foh-1', name: 'John Smith', role: 'FOH', status: 'available' },
+    { id: 'foh-2', name: 'Emily Davis', role: 'FOH', status: 'busy' },
+    { id: 'manager-1', name: 'Alex Johnson', role: 'MANAGER', status: 'available' }
+  ]);
 
   // Load sessions from API
   const loadSessions = useCallback(async () => {
@@ -294,6 +308,57 @@ export default function FireSessionDashboard() {
     );
   };
 
+  // Bulk action handlers
+  const handleBulkAction = async (action: string, sessionIds: string[]) => {
+    try {
+      const promises = sessionIds.map(sessionId => {
+        let transition = '';
+        switch (action) {
+          case 'start_prep': transition = 'START_PREP'; break;
+          case 'mark_ready': transition = 'MARK_READY'; break;
+          case 'take_delivery': transition = 'TAKE_DELIVERY'; break;
+          case 'start_active': transition = 'START_ACTIVE'; break;
+          case 'pause': transition = 'PAUSE'; break;
+          case 'resume': transition = 'RESUME'; break;
+          case 'complete': transition = 'COMPLETE'; break;
+          case 'cancel': transition = 'CANCEL'; break;
+          default: return Promise.resolve();
+        }
+        
+        return fetch(`/api/sessions/${sessionId}/transition`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ transition, note: `Bulk action: ${action}` })
+        });
+      });
+      
+      await Promise.all(promises);
+      await loadSessions(); // Reload sessions
+      console.log(`✅ Bulk action '${action}' completed for ${sessionIds.length} sessions`);
+    } catch (error) {
+      console.error('❌ Error in bulk action:', error);
+    }
+  };
+
+  const handleAssignStaff = async (sessionId: string, staffId: string, role: 'BOH' | 'FOH') => {
+    try {
+      const updates = role === 'BOH' 
+        ? { assignedBOHId: staffId }
+        : { assignedFOHId: staffId };
+      
+      // Update session with staff assignment
+      setSessions(prev => prev.map(session => 
+        session.id === sessionId 
+          ? { ...session, ...updates }
+          : session
+      ));
+      
+      console.log(`✅ Assigned ${role} staff ${staffId} to session ${sessionId}`);
+    } catch (error) {
+      console.error('❌ Error assigning staff:', error);
+    }
+  };
+
   const filteredSessions = sessions.filter(session => {
     // First filter by active tab
     let tabMatch = true;
@@ -427,6 +492,26 @@ export default function FireSessionDashboard() {
             onFiltersChange={handleFiltersChange}
             availableStaff={['BOH Staff 1', 'BOH Staff 2', 'FOH Staff 1', 'FOH Staff 2', 'Manager']}
           />
+          
+          {/* Advanced Management Toggle */}
+          <div className="flex items-center justify-between bg-zinc-800/50 rounded-lg p-4 border border-zinc-700">
+            <div className="flex items-center space-x-4">
+              <h3 className="text-lg font-semibold">Advanced Management</h3>
+              <span className="text-sm text-zinc-400">
+                {sessions.length >= 10 ? 'Recommended for 10+ sessions' : 'Available for all session counts'}
+              </span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant={showAdvancedManagement ? 'primary' : 'outline'}
+                onClick={() => setShowAdvancedManagement(!showAdvancedManagement)}
+                className="bg-purple-500 hover:bg-purple-600"
+              >
+                <Zap className="w-4 h-4 mr-2" />
+                {showAdvancedManagement ? 'Hide' : 'Show'} Advanced
+              </Button>
+            </div>
+          </div>
         </div>
 
         {/* Metrics Grid */}
@@ -461,6 +546,58 @@ export default function FireSessionDashboard() {
             API Status: Connected
           </div>
         </div>
+
+        {/* Advanced Management Components */}
+        {showAdvancedManagement && (
+          <div className="space-y-6 mb-8">
+            {/* Management View Toggle */}
+            <div className="flex items-center justify-center space-x-2 bg-zinc-800/50 rounded-lg p-2 border border-zinc-700">
+              {[
+                { id: 'queue', label: 'Queue Manager', icon: <Users className="w-4 h-4" /> },
+                { id: 'monitor', label: 'Live Monitor', icon: <Activity className="w-4 h-4" /> },
+                { id: 'workflow', label: 'Workflow Assistant', icon: <Zap className="w-4 h-4" /> }
+              ].map(view => (
+                <Button
+                  key={view.id}
+                  size="sm"
+                  variant={managementView === view.id ? 'primary' : 'outline'}
+                  onClick={() => setManagementView(view.id as any)}
+                  className="flex-1"
+                >
+                  {view.icon}
+                  {view.label}
+                </Button>
+              ))}
+            </div>
+
+            {/* Management Components */}
+            {managementView === 'queue' && (
+              <SessionQueueManager
+                sessions={sessions}
+                userRole={userRole}
+                onBulkAction={handleBulkAction}
+              />
+            )}
+            
+            {managementView === 'monitor' && (
+              <SessionMonitor
+                sessions={sessions}
+                userRole={userRole}
+                onRefresh={loadSessions}
+              />
+            )}
+            
+            {managementView === 'workflow' && (
+              <StaffWorkflowAssistant
+                sessions={sessions}
+                userRole={userRole}
+                staffMembers={staffMembers}
+                onAssignStaff={handleAssignStaff}
+                onBulkAction={handleBulkAction}
+              />
+            )}
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="flex items-center justify-between mb-8">
