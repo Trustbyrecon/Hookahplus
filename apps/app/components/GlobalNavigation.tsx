@@ -104,10 +104,19 @@ const GlobalNavigation: React.FC = () => {
           label: 'Sessions',
           href: '/sessions',
           icon: <Flame className="w-4 h-4" />,
-          description: 'Fire session management',
+          description: 'Session overview',
           flowState: 'active',
-          nextAction: 'Manage active sessions',
-          aiRecommendation: 'Review session analytics'
+          nextAction: 'View session list',
+          aiRecommendation: 'Check session status'
+        },
+        {
+          label: 'Fire Sessions',
+          href: '/fire-session-dashboard',
+          icon: <Flame className="w-4 h-4" />,
+          description: 'Live session management',
+          flowState: 'active',
+          nextAction: 'Manage active fire sessions',
+          aiRecommendation: 'Monitor live sessions'
         }
       ]
     },

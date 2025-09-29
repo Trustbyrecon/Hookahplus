@@ -7,6 +7,7 @@ import CreateSessionModal from '../../components/CreateSessionModal';
 import SessionActionButtons from '../../components/SessionActionButtons';
 import SessionNotesModal from '../../components/SessionNotesModal';
 import { BOHActions, FOHActions, ManagerActions } from '../../components/SessionActions';
+import GlobalNavigation from '../../components/GlobalNavigation';
 import { 
   Flame, 
   Users, 
@@ -303,6 +304,8 @@ export default function FireSessionDashboard() {
   // Pretty Theme Design
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
+      {/* Global Navigation */}
+      <GlobalNavigation />
       {/* Header */}
       <div className="status-bar">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
@@ -358,10 +361,10 @@ export default function FireSessionDashboard() {
                   Pre-Order
                 </Button>
               </Link>
-              <Link href="/test-session">
-                <Button className="btn-pretty-secondary">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Test Page
+              <Link href="/fire-session-dashboard">
+                <Button className="btn-pretty-primary">
+                  <Flame className="w-4 h-4 mr-2" />
+                  Fire Sessions
                 </Button>
               </Link>
             </div>

@@ -203,7 +203,7 @@ export default function PreOrderPage() {
                 </span>
               </div>
               <div className="text-sm text-zinc-400">
-                Table {tableId} • Pre-Order Station
+                Pre-Order Station
               </div>
             </div>
             
@@ -223,12 +223,6 @@ export default function PreOrderPage() {
                   <Button className="btn-pretty-secondary">
                     <Flame className="w-4 h-4 mr-2" />
                     Fire Dashboard
-                  </Button>
-                </Link>
-                <Link href="/test-session">
-                  <Button className="btn-pretty-secondary">
-                    <Settings className="w-4 h-4 mr-2" />
-                    Test
                   </Button>
                 </Link>
               </div>
