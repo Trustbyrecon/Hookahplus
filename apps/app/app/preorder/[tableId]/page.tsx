@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Card, Button, Badge } from '../../../components';
 import { CartProvider, useCart } from '../../../components/cart/CartProvider';
 import { CartDisplay } from '../../../components/cart/CartDisplay';
+import { TestSessionButton } from '../../../components/TestSessionButton';
 import { 
   Flame, 
   Users, 
@@ -378,6 +379,18 @@ function PreOrderPageContent() {
             <div className="card-pretty p-6">
               <h3 className="text-lg font-semibold mb-4">Your Order</h3>
               <CartDisplay />
+            </div>
+
+            {/* $1 Test Session */}
+            <div className="card-pretty p-6 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/30">
+              <h3 className="text-lg font-semibold mb-4 flex items-center">
+                <Zap className="w-5 h-5 mr-2 text-green-400" />
+                Test Session
+              </h3>
+              <p className="text-sm text-zinc-400 mb-4">
+                Test the complete hookah session flow with a $1 payment
+              </p>
+              <TestSessionButton tableId={tableId} />
             </div>
 
             {/* Live Session Status */}

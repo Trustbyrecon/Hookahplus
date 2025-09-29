@@ -13,6 +13,7 @@ import { FlagManager } from '../../components/FlagManager';
 import { SessionFilters, FilterOptions } from '../../components/SessionFilters';
 import { SessionNotes as SessionNotesComponent, SessionNote } from '../../components/SessionNotes';
 import { RoleBasedActions, RoleSelector } from '../../components/RoleBasedActions';
+import { ResolutionNotes } from '../../components/ResolutionNotes';
 import { 
   Flame, 
   Users, 
@@ -577,6 +578,19 @@ export default function FireSessionDashboard() {
                   sessionId={session.id}
                   onFlagCreated={(flag) => console.log('Flag created:', flag)}
                   onFlagResolved={(flagId) => console.log('Flag resolved:', flagId)}
+                />
+              </div>
+
+              {/* Resolution Notes */}
+              <div className="mb-4">
+                <ResolutionNotes
+                  sessionId={session.id}
+                  sessionState={session.state}
+                  onResolutionAdded={(resolution) => console.log('Resolution added:', resolution)}
+                  onResumeSession={() => {
+                    // Resume session logic
+                    console.log('Resuming session:', session.id);
+                  }}
                 />
               </div>
 
