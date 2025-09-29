@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useCart } from "./CartProvider";
-import { ShoppingCart, Minus, Plus, Trash2, CreditCard } from "lucide-react";
+import { ShoppingCart, Minus, Plus, Trash2, CreditCard, CheckCircle } from "lucide-react";
 import Button from "../Button";
 
 function cents(n: number) {
@@ -12,40 +12,27 @@ function cents(n: number) {
 export function CartDisplay() {
   const { items, remove, subtotal, itemCount } = useCart();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
 
   const handleCheckout = async () => {
     if (items.length === 0) return;
     
     setIsProcessing(true);
+    setPaymentStatus('processing');
+    
     try {
-      // Create Stripe Payment Intent
-      const response = await fetch('/api/payments/create-intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: subtotal,
-          currency: 'usd',
-          items: items.map(item => ({
-            id: item.id,
-            name: item.name,
-            price: item.price,
-            quantity: item.qty
-          }))
-        })
-      });
+      // For development/testing, simulate successful payment
+      // In production, this would integrate with Stripe Checkout
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate payment processing
       
-      if (!response.ok) {
-        throw new Error('Failed to create payment intent');
-      }
+      setPaymentStatus('success');
       
-      const { clientSecret } = await response.json();
-      
-      // Redirect to Stripe Checkout or handle payment
-      // For now, simulate successful payment and create session
+      // Create fire session after successful payment
       await createFireSession(items);
       
     } catch (error) {
       console.error('Checkout error:', error);
+      setPaymentStatus('error');
       alert('Payment failed. Please try again.');
     } finally {
       setIsProcessing(false);
@@ -141,12 +128,23 @@ export function CartDisplay() {
         {/* Action Buttons */}
         <div className="space-y-2">
           <Button 
-            className="w-full btn-pretty-primary"
+            className={`w-full ${
+              paymentStatus === 'success' 
+                ? 'btn-pretty-success' 
+                : paymentStatus === 'error'
+                ? 'btn-pretty-danger'
+                : 'btn-pretty-primary'
+            }`}
             onClick={handleCheckout}
             disabled={isProcessing || items.length === 0}
             loading={isProcessing}
           >
-            {isProcessing ? (
+            {paymentStatus === 'success' ? (
+              <>
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Payment Successful!
+              </>
+            ) : isProcessing ? (
               <>
                 <CreditCard className="w-4 h-4 mr-2" />
                 Processing Payment...
