@@ -9,6 +9,10 @@ import SessionNotesModal from '../../components/SessionNotesModal';
 import { BOHActions, FOHActions, ManagerActions } from '../../components/SessionActions';
 import GlobalNavigation from '../../components/GlobalNavigation';
 import { FOHBOHToggle } from '../../components/FOHBOHToggle';
+import { FlagManager } from '../../components/FlagManager';
+import { SessionFilters, FilterOptions } from '../../components/SessionFilters';
+import { SessionNotes as SessionNotesComponent, SessionNote } from '../../components/SessionNotes';
+import { RoleBasedActions, RoleSelector } from '../../components/RoleBasedActions';
 import { 
   Flame, 
   Users, 
@@ -88,10 +92,18 @@ export default function FireSessionDashboard() {
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [sessionNotes, setSessionNotes] = useState<SessionNotes[]>([]);
+  const [sessionNotes, setSessionNotes] = useState<SessionNote[]>([]);
   const [userRoles] = useState<string[]>(['BOH', 'FOH', 'MANAGER', 'ADMIN']); // Mock user roles
   const [loading, setLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'FOH' | 'BOH'>('FOH');
+  const [userRole, setUserRole] = useState<'BOH' | 'FOH' | 'MANAGER' | 'ADMIN'>('MANAGER');
+  const [filters, setFilters] = useState<FilterOptions>({
+    search: '',
+    status: [],
+    staff: [],
+    timeRange: 'all',
+    severity: []
+  });
 
   // Load sessions from API
   const loadSessions = useCallback(async () => {
@@ -120,22 +132,22 @@ export default function FireSessionDashboard() {
 
   // Mock session notes
   useEffect(() => {
-    const mockNotes: SessionNotes[] = [
+    const mockNotes: SessionNote[] = [
       {
         id: 'note_1',
         sessionId: 'session_T-007_1758552685415',
-        note: 'Customer requested extra mint in the mix',
+        content: 'Customer requested extra mint in the mix',
         author: 'Mike Rodriguez',
-        timestamp: new Date(),
-        type: 'customer_request'
+        createdAt: new Date(),
+        type: 'customer'
       },
       {
         id: 'note_2',
         sessionId: 'session_T-011_1758552685417',
-        note: 'Equipment issue: Hookah base cracked during setup. Need replacement.',
+        content: 'Equipment issue: Hookah base cracked during setup. Need replacement.',
         author: 'Sarah Chen',
-        timestamp: new Date(),
-        type: 'issue'
+        createdAt: new Date(),
+        type: 'equipment'
       }
     ];
     setSessionNotes(mockNotes);
@@ -236,16 +248,26 @@ export default function FireSessionDashboard() {
     // Handle specific actions here
   };
 
-  const handleAddNote = (sessionId: string, note: string, type: SessionNotes['type']) => {
-    const newNote: SessionNotes = {
-      id: `note_${Date.now()}`,
-      sessionId,
-      note,
-      author: 'Current User',
-      timestamp: new Date(),
-      type
-    };
-    setSessionNotes(prev => [newNote, ...prev]);
+  const handleAddNote = (note: SessionNote) => {
+    setSessionNotes(prev => [note, ...prev]);
+  };
+
+  const handleUpdateNote = (noteId: string, content: string) => {
+    setSessionNotes(prev => prev.map(note => 
+      note.id === noteId 
+        ? { ...note, content, updatedAt: new Date() }
+        : note
+    ));
+  };
+
+  const handleDeleteNote = (noteId: string) => {
+    setSessionNotes(prev => prev.filter(note => note.id !== noteId));
+  };
+
+  const handleFiltersChange = (newFilters: FilterOptions) => {
+    setFilters(newFilters);
+    // In a real app, this would filter the sessions
+    console.log('Filters changed:', newFilters);
   };
 
   const handleViewDetails = (sessionId: string) => {
@@ -378,6 +400,18 @@ export default function FireSessionDashboard() {
           <p className="text-xl text-zinc-400">
             Complete BOH/FOH workflow management with production-ready buttons
           </p>
+        </div>
+
+        {/* Role Selector and Filters */}
+        <div className="mb-6 space-y-4">
+          <RoleSelector 
+            currentRole={userRole} 
+            onRoleChange={setUserRole} 
+          />
+          <SessionFilters 
+            onFiltersChange={handleFiltersChange}
+            availableStaff={['BOH Staff 1', 'BOH Staff 2', 'FOH Staff 1', 'FOH Staff 2', 'Manager']}
+          />
         </div>
 
         {/* Metrics Grid */}
@@ -526,41 +560,32 @@ export default function FireSessionDashboard() {
                 </div>
               </div>
 
-              {/* Action Buttons - Role-based */}
-              <div className="space-y-4">
-                {/* BOH Actions */}
-                <div>
-                  <h4 className="text-sm font-medium text-zinc-400 mb-2">BOH Actions</h4>
-                  <BOHActions
-                    sessionId={session.id}
-                    state={session.state}
-                    userRoles={userRoles}
-                    onStateChange={handleStateChange}
-                  />
-                </div>
-
-                {/* FOH Actions */}
-                <div>
-                  <h4 className="text-sm font-medium text-zinc-400 mb-2">FOH Actions</h4>
-                  <FOHActions
-                    sessionId={session.id}
-                    state={session.state}
-                    userRoles={userRoles}
-                    onStateChange={handleStateChange}
-                  />
-                </div>
-
-                {/* Manager Actions */}
-                <div>
-                  <h4 className="text-sm font-medium text-zinc-400 mb-2">Manager Actions</h4>
-                  <ManagerActions
-                    sessionId={session.id}
-                    state={session.state}
-                    userRoles={userRoles}
-                    onStateChange={handleStateChange}
-                  />
-                </div>
+              {/* Session Notes */}
+              <div className="mb-4">
+                <SessionNotesComponent
+                  sessionId={session.id}
+                  notes={sessionNotes.filter(note => note.sessionId === session.id)}
+                  onNoteAdded={handleAddNote}
+                  onNoteUpdated={handleUpdateNote}
+                  onNoteDeleted={handleDeleteNote}
+                />
               </div>
+
+              {/* Flag Manager */}
+              <div className="mb-4">
+                <FlagManager
+                  sessionId={session.id}
+                  onFlagCreated={(flag) => console.log('Flag created:', flag)}
+                  onFlagResolved={(flagId) => console.log('Flag resolved:', flagId)}
+                />
+              </div>
+
+              {/* Role-Based Actions */}
+              <RoleBasedActions
+                session={session}
+                userRole={userRole}
+                onStateChange={handleStateChange}
+              />
             </div>
           ))}
         </div>
@@ -573,13 +598,6 @@ export default function FireSessionDashboard() {
         onCreateSession={handleCreateSession}
       />
 
-      <SessionNotesModal
-        isOpen={showNotesModal}
-        onClose={() => setShowNotesModal(false)}
-        sessionId={selectedSessionId || ''}
-        sessionNotes={sessionNotes.filter(note => note.sessionId === selectedSessionId)}
-        onAddNote={handleAddNote}
-      />
     </div>
   );
 }
