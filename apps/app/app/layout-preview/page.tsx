@@ -36,9 +36,8 @@ export default function LayoutPreviewPage() {
   const [isLocked, setIsLocked] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(100);
   const [lastUpdated, setLastUpdated] = useState(new Date());
-
-  // Mock layout data
-  const layoutData = {
+  // Mock layout data - moved to state
+  const initialLayoutData = {
     name: 'Grove Park Demo Lounge',
     address: '123 Main Street, City, State',
     totalCapacity: 50,
@@ -93,6 +92,10 @@ export default function LayoutPreviewPage() {
     totalRevenue: 0
   };
 
+  const [isLoading, setIsLoading] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [layoutData, setLayoutData] = useState(initialLayoutData);
+
   const posIntegrations = [
     {
       name: 'Clover Integration',
@@ -144,6 +147,48 @@ export default function LayoutPreviewPage() {
     }, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // Auto-refresh functionality
+  useEffect(() => {
+    if (autoRefresh) {
+      const interval = setInterval(() => {
+        handleLoadData();
+      }, 30000); // Refresh every 30 seconds
+      return () => clearInterval(interval);
+    }
+  }, [autoRefresh]);
+
+  const handleLoadData = async () => {
+    setIsLoading(true);
+    try {
+      // Simulate API call to load fresh data
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Update layout data with fresh information
+      setLayoutData(prev => ({
+        ...prev,
+        totalSessions: Math.floor(Math.random() * 20),
+        activeSessions: Math.floor(Math.random() * 10),
+        totalRevenue: Math.floor(Math.random() * 5000),
+        zones: prev.zones.map(zone => ({
+          ...zone,
+          occupied: Math.floor(Math.random() * zone.capacity),
+          available: zone.capacity - Math.floor(Math.random() * zone.capacity),
+          sessions: Math.floor(Math.random() * 5)
+        }))
+      }));
+      
+      setLastUpdated(new Date());
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAutoRefreshToggle = () => {
+    setAutoRefresh(!autoRefresh);
+  };
 
   const handleZoomIn = () => {
     setZoomLevel(prev => Math.min(prev + 25, 200));
@@ -198,21 +243,29 @@ export default function LayoutPreviewPage() {
                 <p className="text-zinc-400">Real-time layout management with live session tracking</p>
               </div>
               <div className="flex items-center space-x-4">
-                <button className="btn-pretty-primary">
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Load Data
+                <button 
+                  onClick={handleLoadData}
+                  disabled={isLoading}
+                  className="btn-pretty-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Load Data
+                    </>
+                  )}
                 </button>
-                <button className="btn-pretty-secondary">
+                <button 
+                  onClick={handleAutoRefreshToggle}
+                  className={`btn-pretty-secondary ${autoRefresh ? 'bg-green-600 hover:bg-green-700' : ''}`}
+                >
                   <Activity className="w-4 h-4 mr-2" />
-                  Auto-refresh
-                </button>
-                <button className="btn-pretty-danger">
-                  <Zap className="w-4 h-4 mr-2" />
-                  Fire Session
-                </button>
-                <button className="btn-pretty-outline">
-                  <BarChart3 className="w-4 h-4 mr-2" />
-                  Dashboard
+                  {autoRefresh ? 'Auto-refresh ON' : 'Auto-refresh'}
                 </button>
               </div>
             </div>
@@ -272,7 +325,9 @@ export default function LayoutPreviewPage() {
               {layoutData.zones.map((zone) => (
                 <div
                   key={zone.id}
-                  className={`absolute ${getZoneColor(zone.color)} opacity-80 hover:opacity-100 cursor-pointer transition-opacity`}
+                  className={`absolute ${getZoneColor(zone.color)} opacity-80 hover:opacity-100 cursor-pointer transition-opacity ${
+                    selectedTable === zone.id ? 'ring-2 ring-blue-500' : ''
+                  }`}
                   style={{
                     left: zone.coordinates.x,
                     top: zone.coordinates.y,
@@ -286,8 +341,13 @@ export default function LayoutPreviewPage() {
                     {zone.name}
                   </div>
                   <div className="absolute bottom-1 left-2 text-xs text-white">
-                    {zone.available}/{zone.capacity}
+                    {zone.occupied}/{zone.capacity}
                   </div>
+                  {zone.sessions > 0 && (
+                    <div className="absolute top-1 right-1 bg-red-500 text-white text-xs px-1 rounded">
+                      {zone.sessions}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -353,17 +413,31 @@ export default function LayoutPreviewPage() {
           <div className="mb-6">
             <h4 className="text-md font-semibold text-white mb-3">MASTER SEATING TYPES</h4>
             <div className="space-y-3">
-              {Object.entries(masterSeatingTypes).map(([type, stats], index) => (
-                <div key={index} className="p-3 bg-zinc-800/50 rounded-lg">
-                  <div className="text-sm font-medium text-white mb-1">{type.replace('-', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}</div>
-                  <div className="grid grid-cols-2 gap-2 text-xs text-zinc-400">
-                    <div>Available: {stats.available}</div>
-                    <div>Occupied: {stats.occupied}</div>
-                    <div>Capacity: {stats.capacity}</div>
-                    <div>Hookah Sessions: {stats.sessions}</div>
+              {Object.entries(masterSeatingTypes).map(([type, stats], index) => {
+                // Calculate real-time stats from layout data
+                const realStats = layoutData.zones.reduce((acc, zone) => {
+                  if (zone.type.toLowerCase().includes(type.toLowerCase()) || 
+                      type.toLowerCase().includes(zone.type.toLowerCase())) {
+                    acc.available += zone.available;
+                    acc.occupied += zone.occupied;
+                    acc.capacity += zone.capacity;
+                    acc.sessions += zone.sessions;
+                  }
+                  return acc;
+                }, { available: 0, occupied: 0, capacity: 0, sessions: 0 });
+                
+                return (
+                  <div key={index} className="p-3 bg-zinc-800/50 rounded-lg">
+                    <div className="text-sm font-medium text-white mb-1">{type.replace('-', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}</div>
+                    <div className="grid grid-cols-2 gap-2 text-xs text-zinc-400">
+                      <div>Available: {realStats.available}</div>
+                      <div>Occupied: {realStats.occupied}</div>
+                      <div>Capacity: {realStats.capacity}</div>
+                      <div>Hookah Sessions: {realStats.sessions}</div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -401,9 +475,11 @@ export default function LayoutPreviewPage() {
           <div className="mb-6">
             <h4 className="text-md font-semibold text-white mb-3">LIVE ZONE STATISTICS</h4>
             <div className="space-y-3">
-              {zoneStats.map((zone, index) => (
-                <div key={index} className="p-3 bg-zinc-800/50 rounded-lg">
-                  <div className="text-sm font-medium text-white mb-1">{zone.zone?.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}</div>
+              {layoutData.zones.map((zone) => (
+                <div key={zone.id} className={`p-3 bg-zinc-800/50 rounded-lg ${
+                  selectedTable === zone.id ? 'ring-2 ring-teal-500 bg-teal-900/20' : ''
+                }`}>
+                  <div className="text-sm font-medium text-white mb-1">{zone.name}</div>
                   <div className="text-xs text-zinc-400">
                     Available: {zone.available} • Occupied: {zone.occupied} • Fire Sessions: {zone.sessions} active
                   </div>
