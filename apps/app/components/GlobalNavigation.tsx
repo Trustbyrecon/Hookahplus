@@ -15,7 +15,9 @@ import {
   Flame,
   ChefHat,
   UserCheck,
-  Crown
+  Crown,
+  MapPin,
+  Eye
 } from 'lucide-react';
 
 // AI Agent Collaboration Interface
@@ -145,6 +147,34 @@ const GlobalNavigation: React.FC = () => {
           flowState: 'active',
           nextAction: 'Manage staff assignments',
           aiRecommendation: 'Review staff performance'
+        }
+      ]
+    },
+    {
+      label: 'Visual Grounder',
+      color: 'text-teal-300',
+      bgColor: 'bg-teal-500/10',
+      flowState: 'active',
+      description: 'AI-powered lounge layout generation',
+      aiInsight: 'Create seating maps from photos',
+      items: [
+        {
+          label: 'Visual Grounder',
+          href: '/visual-grounder',
+          icon: <MapPin className="w-4 h-4" />,
+          description: 'Upload photos to generate seating map',
+          flowState: 'active',
+          nextAction: 'Start visual grounder process',
+          aiRecommendation: 'Upload 3-6 photos for best results'
+        },
+        {
+          label: 'Layout Preview',
+          href: '/layout-preview',
+          icon: <Eye className="w-4 h-4" />,
+          description: 'Real-time layout management',
+          flowState: 'idle',
+          nextAction: 'View generated layout',
+          aiRecommendation: 'Deploy layout to dashboard'
         }
       ]
     },
