@@ -16,13 +16,39 @@ import {
   Calendar,
   Phone,
   Mail,
-  MapPin
+  MapPin,
+  X,
+  Save,
+  User,
+  Shield,
+  Crown
 } from 'lucide-react';
+
+interface StaffMember {
+  id: string;
+  name: string;
+  role: 'BOH' | 'FOH' | 'MANAGER' | 'ADMIN';
+  status: 'available' | 'busy' | 'offline';
+  email: string;
+  phone: string;
+  hireDate: string;
+  performance: number;
+  sessionsCompleted: number;
+  lastActive: string;
+}
 
 export default function StaffPanelPage() {
   const [activeTab, setActiveTab] = useState('overview');
+  const [showAddStaffModal, setShowAddStaffModal] = useState(false);
+  const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
+  const [newStaff, setNewStaff] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    role: 'FOH' as 'BOH' | 'FOH' | 'MANAGER' | 'ADMIN'
+  });
   
-  const staffMembers = [
+  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([
     {
       id: 'staff-001',
       name: 'Mike Rodriguez',
@@ -71,7 +97,7 @@ export default function StaffPanelPage() {
       sessionsCompleted: 89,
       lastActive: '2 hours ago'
     }
-  ];
+  ]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -90,6 +116,79 @@ export default function StaffPanelPage() {
       case 'ADMIN': return 'bg-red-500';
       default: return 'bg-gray-500';
     }
+  };
+
+  const getRoleIcon = (role: string) => {
+    switch (role) {
+      case 'BOH': return <Shield className="w-4 h-4" />;
+      case 'FOH': return <User className="w-4 h-4" />;
+      case 'MANAGER': return <Crown className="w-4 h-4" />;
+      case 'ADMIN': return <Shield className="w-4 h-4" />;
+      default: return <User className="w-4 h-4" />;
+    }
+  };
+
+  const handleAddStaff = () => {
+    if (newStaff.name && newStaff.email && newStaff.phone) {
+      const staff: StaffMember = {
+        id: `staff-${Date.now()}`,
+        name: newStaff.name,
+        role: newStaff.role,
+        status: 'available',
+        email: newStaff.email,
+        phone: newStaff.phone,
+        hireDate: new Date().toISOString().split('T')[0],
+        performance: 5.0,
+        sessionsCompleted: 0,
+        lastActive: 'Just now'
+      };
+      
+      setStaffMembers([...staffMembers, staff]);
+      setNewStaff({ name: '', email: '', phone: '', role: 'FOH' });
+      setShowAddStaffModal(false);
+    }
+  };
+
+  const handleEditStaff = (staff: StaffMember) => {
+    setEditingStaff(staff);
+    setNewStaff({
+      name: staff.name,
+      email: staff.email,
+      phone: staff.phone,
+      role: staff.role
+    });
+    setShowAddStaffModal(true);
+  };
+
+  const handleUpdateStaff = () => {
+    if (editingStaff && newStaff.name && newStaff.email && newStaff.phone) {
+      setStaffMembers(staffMembers.map(staff => 
+        staff.id === editingStaff.id 
+          ? { ...staff, name: newStaff.name, email: newStaff.email, phone: newStaff.phone, role: newStaff.role }
+          : staff
+      ));
+      setEditingStaff(null);
+      setNewStaff({ name: '', email: '', phone: '', role: 'FOH' });
+      setShowAddStaffModal(false);
+    }
+  };
+
+  const handleDeleteStaff = (staffId: string) => {
+    if (confirm('Are you sure you want to delete this staff member?')) {
+      setStaffMembers(staffMembers.filter(staff => staff.id !== staffId));
+    }
+  };
+
+  const handleToggleStatus = (staffId: string) => {
+    setStaffMembers(staffMembers.map(staff => 
+      staff.id === staffId 
+        ? { 
+            ...staff, 
+            status: staff.status === 'available' ? 'busy' : 
+                   staff.status === 'busy' ? 'offline' : 'available'
+          }
+        : staff
+    ));
   };
 
   return (
@@ -121,7 +220,7 @@ export default function StaffPanelPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors btn-tablet ${
                 activeTab === tab.id
                   ? 'bg-blue-600 text-white'
                   : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
@@ -136,7 +235,7 @@ export default function StaffPanelPage() {
         {/* Content */}
         {activeTab === 'overview' && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card className="p-6">
+            <Card className="card-tablet">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-white">Total Staff</h3>
                 <Users className="w-6 h-6 text-blue-400" />
@@ -145,7 +244,7 @@ export default function StaffPanelPage() {
               <div className="text-sm text-zinc-400">Active team members</div>
             </Card>
 
-            <Card className="p-6">
+            <Card className="card-tablet">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-white">Available</h3>
                 <CheckCircle className="w-6 h-6 text-green-400" />
@@ -156,7 +255,7 @@ export default function StaffPanelPage() {
               <div className="text-sm text-zinc-400">Ready to work</div>
             </Card>
 
-            <Card className="p-6">
+            <Card className="card-tablet">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-white">Avg Performance</h3>
                 <Star className="w-6 h-6 text-yellow-400" />
@@ -173,7 +272,14 @@ export default function StaffPanelPage() {
           <div className="space-y-4">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-white">Staff Members</h2>
-              <Button className="btn-pretty-primary">
+              <Button 
+                className="btn-pretty-primary btn-tablet"
+                onClick={() => {
+                  setEditingStaff(null);
+                  setNewStaff({ name: '', email: '', phone: '', role: 'FOH' });
+                  setShowAddStaffModal(true);
+                }}
+              >
                 <UserPlus className="w-4 h-4 mr-2" />
                 Add Staff
               </Button>
@@ -181,7 +287,7 @@ export default function StaffPanelPage() {
 
             <div className="grid grid-cols-1 gap-4">
               {staffMembers.map((staff) => (
-                <Card key={staff.id} className="p-6">
+                <Card key={staff.id} className="card-tablet">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                       <div className="w-12 h-12 bg-zinc-800 rounded-full flex items-center justify-center">
@@ -192,8 +298,9 @@ export default function StaffPanelPage() {
                       <div>
                         <h3 className="text-lg font-semibold text-white">{staff.name}</h3>
                         <div className="flex items-center space-x-2">
-                          <Badge className={`${getRoleColor(staff.role)} text-white`}>
-                            {staff.role}
+                          <Badge className={`${getRoleColor(staff.role)} text-white flex items-center space-x-1`}>
+                            {getRoleIcon(staff.role)}
+                            <span>{staff.role}</span>
                           </Badge>
                           <div className="flex items-center space-x-1">
                             <div className={`w-2 h-2 rounded-full ${getStatusColor(staff.status)}`}></div>
@@ -216,10 +323,22 @@ export default function StaffPanelPage() {
                         <div className="text-white font-semibold">{staff.sessionsCompleted}</div>
                       </div>
                       <div className="flex space-x-2">
-                        <Button className="btn-pretty-outline" size="sm">
+                        <Button 
+                          className="btn-pretty-outline btn-tablet-sm"
+                          onClick={() => handleEditStaff(staff)}
+                        >
                           <Edit3 className="w-4 h-4" />
                         </Button>
-                        <Button className="btn-pretty-outline" size="sm">
+                        <Button 
+                          className="btn-pretty-outline btn-tablet-sm"
+                          onClick={() => handleToggleStatus(staff.id)}
+                        >
+                          <Clock className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          className="btn-pretty-outline btn-tablet-sm"
+                          onClick={() => handleDeleteStaff(staff.id)}
+                        >
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
@@ -264,6 +383,98 @@ export default function StaffPanelPage() {
           </div>
         )}
       </div>
+
+      {/* Add/Edit Staff Modal */}
+      {showAddStaffModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <Card className="modal-tablet w-full max-w-md">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-white">
+                {editingStaff ? 'Edit Staff Member' : 'Add New Staff Member'}
+              </h3>
+              <Button 
+                className="btn-pretty-outline btn-tablet-sm"
+                onClick={() => {
+                  setShowAddStaffModal(false);
+                  setEditingStaff(null);
+                  setNewStaff({ name: '', email: '', phone: '', role: 'FOH' });
+                }}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">Name</label>
+                <input
+                  type="text"
+                  value={newStaff.name}
+                  onChange={(e) => setNewStaff({ ...newStaff, name: e.target.value })}
+                  className="input-tablet w-full bg-zinc-800 border border-zinc-700 text-white"
+                  placeholder="Enter staff name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">Email</label>
+                <input
+                  type="email"
+                  value={newStaff.email}
+                  onChange={(e) => setNewStaff({ ...newStaff, email: e.target.value })}
+                  className="input-tablet w-full bg-zinc-800 border border-zinc-700 text-white"
+                  placeholder="Enter email address"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">Phone</label>
+                <input
+                  type="tel"
+                  value={newStaff.phone}
+                  onChange={(e) => setNewStaff({ ...newStaff, phone: e.target.value })}
+                  className="input-tablet w-full bg-zinc-800 border border-zinc-700 text-white"
+                  placeholder="Enter phone number"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">Role</label>
+                <select
+                  value={newStaff.role}
+                  onChange={(e) => setNewStaff({ ...newStaff, role: e.target.value as 'BOH' | 'FOH' | 'MANAGER' | 'ADMIN' })}
+                  className="input-tablet w-full bg-zinc-800 border border-zinc-700 text-white"
+                >
+                  <option value="FOH">FOH (Front of House)</option>
+                  <option value="BOH">BOH (Back of House)</option>
+                  <option value="MANAGER">Manager</option>
+                  <option value="ADMIN">Admin</option>
+                </select>
+              </div>
+
+              <div className="flex space-x-3 pt-4">
+                <Button 
+                  className="btn-pretty-primary btn-tablet flex-1"
+                  onClick={editingStaff ? handleUpdateStaff : handleAddStaff}
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {editingStaff ? 'Update Staff' : 'Add Staff'}
+                </Button>
+                <Button 
+                  className="btn-pretty-outline btn-tablet flex-1"
+                  onClick={() => {
+                    setShowAddStaffModal(false);
+                    setEditingStaff(null);
+                    setNewStaff({ name: '', email: '', phone: '', role: 'FOH' });
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
