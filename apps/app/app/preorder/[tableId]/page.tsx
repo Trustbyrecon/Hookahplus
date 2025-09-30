@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Card, Button, Badge } from '../../../components';
 import { CartProvider, useCart } from '../../../components/cart/CartProvider';
 import { CartDisplay } from '../../../components/cart/CartDisplay';
-import { TestSessionButton } from '../../../components/TestSessionButton';
+import { StripeTestSession } from '../../../components/StripeTestSession';
 import GlobalNavigation from '../../../components/GlobalNavigation';
 import { 
   Flame, 
@@ -394,7 +394,7 @@ function PreOrderPageContent() {
               <p className="text-sm text-zinc-400 mb-4">
                 Test the complete hookah session flow with a $1 payment
               </p>
-              <TestSessionButton tableId={tableId} />
+              <StripeTestSession tableId={tableId} />
             </div>
 
             {/* Live Session Status */}
