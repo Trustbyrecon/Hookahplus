@@ -349,7 +349,7 @@ export default function LandingPage() {
               </span>
             </div>
             <p className="text-zinc-400 text-sm">
-              © 2024 HookahPlus. All rights reserved. Built with Reflex Intelligence.
+              © 2025 HookahPlus. All rights reserved. Built with Reflex Intelligence.
             </p>
           </div>
         </div>

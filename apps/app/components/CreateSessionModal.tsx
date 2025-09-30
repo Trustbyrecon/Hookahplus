@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState } from 'react';
-import { X, User, Phone, Clock, Flame, DollarSign, Users, FileText } from 'lucide-react';
+import { X, User, Phone, Clock, Flame, DollarSign, Users, FileText, MapPin } from 'lucide-react';
+import { TableSelector } from './TableSelector';
+import { TableType } from '../lib/tableTypes';
 
 interface CreateSessionModalProps {
   isOpen: boolean;
@@ -11,6 +13,7 @@ interface CreateSessionModalProps {
 
 interface SessionData {
   tableId: string;
+  tableType: TableType;
   customerName: string;
   customerPhone: string;
   sessionType: string;
@@ -53,7 +56,8 @@ const fohStaff = [
 
 export default function CreateSessionModal({ isOpen, onClose, onCreateSession }: CreateSessionModalProps) {
   const [formData, setFormData] = useState<SessionData>({
-    tableId: 'T-015',
+    tableId: 'table-001',
+    tableType: {} as TableType,
     customerName: 'John Smith',
     customerPhone: '+1 (555) 123-4567',
     sessionType: 'walk-in',
@@ -64,6 +68,9 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
     notes: ''
   });
 
+  const [selectedTable, setSelectedTable] = useState<TableType | null>(null);
+  const [showTableSelector, setShowTableSelector] = useState(false);
+
   const [errors, setErrors] = useState<Partial<Record<keyof SessionData, string>>>({});
 
   const handleInputChange = (field: keyof SessionData, value: string | number) => {
@@ -72,6 +79,17 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
     }
+  };
+
+  const handleTableSelect = (table: TableType) => {
+    setSelectedTable(table);
+    setFormData(prev => ({
+      ...prev,
+      tableId: table.id,
+      tableType: table,
+      amount: 30 * table.priceMultiplier // Adjust price based on table type
+    }));
+    setShowTableSelector(false);
   };
 
   const validateForm = (): boolean => {
@@ -119,20 +137,64 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             {/* Left Column */}
             <div className="space-y-4">
-              {/* Table ID */}
+              {/* Table Selection */}
               <div>
                 <label className="block text-sm font-medium text-zinc-300 mb-2">
-                  Table ID *
+                  Table Selection *
                 </label>
-                <input
-                  type="text"
-                  value={formData.tableId}
-                  onChange={(e) => handleInputChange('tableId', e.target.value)}
-                  className={`w-full px-4 py-3 bg-zinc-800 border rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-teal-500 ${
-                    errors.tableId ? 'border-red-500' : 'border-zinc-600'
-                  }`}
-                  placeholder="Enter table ID"
-                />
+                <div className="space-y-2">
+                  {selectedTable ? (
+                    <div className="p-3 bg-zinc-800 border border-zinc-600 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <span className="text-2xl">{selectedTable.icon}</span>
+                          <div>
+                            <div className="text-white font-medium">{selectedTable.name}</div>
+                            <div className="text-sm text-zinc-400 capitalize">{selectedTable.type} • {selectedTable.capacity} people • {selectedTable.location}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            selectedTable.availability === 'available' ? 'text-green-400 bg-green-500/20' : 'text-red-400 bg-red-500/20'
+                          }`}>
+                            {selectedTable.availability}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setShowTableSelector(!showTableSelector)}
+                            className="text-teal-400 hover:text-teal-300"
+                          >
+                            <MapPin className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setShowTableSelector(true)}
+                      className="w-full p-3 bg-zinc-800 border border-zinc-600 rounded-lg text-zinc-400 hover:text-white hover:border-zinc-500 transition-colors text-left"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <MapPin className="w-4 h-4" />
+                        <span>Select a table...</span>
+                      </div>
+                    </button>
+                  )}
+                  
+                  {showTableSelector && (
+                    <div className="max-h-96 overflow-y-auto">
+                      <TableSelector
+                        selectedTableId={selectedTable?.id}
+                        onTableSelect={handleTableSelect}
+                        showAvailability={true}
+                        showCapacity={true}
+                        showPricing={true}
+                        className="p-4 bg-zinc-800/50 rounded-lg border border-zinc-700"
+                      />
+                    </div>
+                  )}
+                </div>
                 {errors.tableId && (
                   <p className="text-red-400 text-sm mt-1">{errors.tableId}</p>
                 )}

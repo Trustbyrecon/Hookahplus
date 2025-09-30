@@ -613,7 +613,7 @@ export default function FireSessionDashboard() {
               disabled={loading}
             >
               <Plus className="w-5 h-5 mr-2" />
-              NEW Create Session
+              Create Session
             </Button>
             <Button 
               onClick={loadSessions}
