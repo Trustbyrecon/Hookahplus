@@ -26,6 +26,17 @@ export default function UsersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [showManageRolesModal, setShowManageRolesModal] = useState(false);
+  const [showEditUserModal, setShowEditUserModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [newUser, setNewUser] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    role: 'BOH',
+    password: ''
+  });
 
   // Mock user data
   const users = [
@@ -124,6 +135,37 @@ export default function UsersPage() {
     }
   };
 
+  const handleAddUser = () => {
+    console.log('Adding new user:', newUser);
+    // Here you would typically make an API call to add the user
+    alert(`User ${newUser.name} added successfully!`);
+    setShowAddUserModal(false);
+    setNewUser({ name: '', email: '', phone: '', role: 'BOH', password: '' });
+  };
+
+  const handleEditUser = (user: any) => {
+    setSelectedUser(user);
+    setShowEditUserModal(true);
+  };
+
+  const handleDeleteUser = (userId: number) => {
+    if (confirm('Are you sure you want to delete this user?')) {
+      console.log('Deleting user:', userId);
+      // Here you would typically make an API call to delete the user
+      alert('User deleted successfully!');
+    }
+  };
+
+  const handleManageRoles = () => {
+    setShowManageRolesModal(true);
+  };
+
+  const handleRoleChange = (userId: number, newRole: string) => {
+    console.log(`Changing user ${userId} role to ${newRole}`);
+    // Here you would typically make an API call to update the user role
+    alert(`User role changed to ${newRole}!`);
+  };
+
   const stats = {
     total: users.length,
     active: users.filter(u => u.status === 'active').length,
@@ -212,11 +254,11 @@ export default function UsersPage() {
         {/* Actions */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
-            <button className="btn-pretty-primary">
+            <button onClick={() => setShowAddUserModal(true)} className="btn-pretty-primary">
               <Plus className="w-4 h-4 mr-2" />
               Add User
             </button>
-            <button className="btn-pretty-secondary">
+            <button onClick={handleManageRoles} className="btn-pretty-secondary">
               <Shield className="w-4 h-4 mr-2" />
               Manage Roles
             </button>
@@ -314,13 +356,13 @@ export default function UsersPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center space-x-2">
-                        <button className="text-blue-400 hover:text-blue-300" title="Edit User">
+                        <button onClick={() => handleEditUser(user)} className="text-blue-400 hover:text-blue-300" title="Edit User">
                           <Edit3 className="w-4 h-4" />
                         </button>
-                        <button className="text-red-400 hover:text-red-300" title="Delete User">
+                        <button onClick={() => handleDeleteUser(user.id)} className="text-red-400 hover:text-red-300" title="Delete User">
                           <Trash2 className="w-4 h-4" />
                         </button>
-                        <button className="text-green-400 hover:text-green-300" title="View Details">
+                        <button onClick={() => handleRoleChange(user.id, user.role === 'Admin' ? 'Manager' : 'Admin')} className="text-green-400 hover:text-green-300" title="Change Role">
                           <User className="w-4 h-4" />
                         </button>
                       </div>
@@ -332,6 +374,129 @@ export default function UsersPage() {
           </div>
         </div>
       </div>
+
+      {/* Add User Modal */}
+      {showAddUserModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 w-full max-w-md">
+            <h3 className="text-xl font-semibold text-white mb-4">Add New User</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">Name</label>
+                <input
+                  type="text"
+                  value={newUser.name}
+                  onChange={(e) => setNewUser({...newUser, name: e.target.value})}
+                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  placeholder="Enter full name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">Email</label>
+                <input
+                  type="email"
+                  value={newUser.email}
+                  onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  placeholder="Enter email address"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">Phone</label>
+                <input
+                  type="tel"
+                  value={newUser.phone}
+                  onChange={(e) => setNewUser({...newUser, phone: e.target.value})}
+                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  placeholder="Enter phone number"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">Role</label>
+                <select
+                  value={newUser.role}
+                  onChange={(e) => setNewUser({...newUser, role: e.target.value})}
+                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                >
+                  <option value="BOH">BOH</option>
+                  <option value="FOH">FOH</option>
+                  <option value="Manager">Manager</option>
+                  <option value="Admin">Admin</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">Password</label>
+                <input
+                  type="password"
+                  value={newUser.password}
+                  onChange={(e) => setNewUser({...newUser, password: e.target.value})}
+                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  placeholder="Enter password"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => setShowAddUserModal(false)}
+                className="px-4 py-2 bg-zinc-700 text-white rounded-lg hover:bg-zinc-600 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddUser}
+                className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
+              >
+                Add User
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manage Roles Modal */}
+      {showManageRolesModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 w-full max-w-2xl">
+            <h3 className="text-xl font-semibold text-white mb-4">Manage User Roles</h3>
+            <div className="space-y-3">
+              {users.map((user) => (
+                <div key={user.id} className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="text-2xl">{user.avatar}</div>
+                    <div>
+                      <div className="text-white font-medium">{user.name}</div>
+                      <div className="text-sm text-zinc-400">{user.email}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getRoleColor(user.role)}`}>
+                      {user.role}
+                    </span>
+                    <select
+                      value={user.role}
+                      onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                      className="px-2 py-1 bg-zinc-700 border border-zinc-600 rounded text-white text-sm"
+                    >
+                      <option value="BOH">BOH</option>
+                      <option value="FOH">FOH</option>
+                      <option value="Manager">Manager</option>
+                      <option value="Admin">Admin</option>
+                    </select>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={() => setShowManageRolesModal(false)}
+                className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

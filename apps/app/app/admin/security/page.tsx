@@ -29,6 +29,9 @@ export default function SecurityPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
+  const [showEventDetails, setShowEventDetails] = useState<number | null>(null);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [isEnabling2FA, setIsEnabling2FA] = useState(false);
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: <Shield className="w-4 h-4" /> },
@@ -167,6 +170,41 @@ export default function SecurityPage() {
       case 'medium': return 'text-yellow-400';
       case 'high': return 'text-red-400';
       default: return 'text-zinc-400';
+    }
+  };
+
+  const handleViewEventDetails = (eventId: number) => {
+    setShowEventDetails(eventId);
+    console.log('Viewing event details for:', eventId);
+  };
+
+  const handleResetPassword = async (userId: number) => {
+    setIsResettingPassword(true);
+    try {
+      // Simulate password reset
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log('Resetting password for user:', userId);
+      alert('Password reset email sent successfully!');
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      alert('Error resetting password. Please try again.');
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
+  const handleEnable2FA = async (userId: number) => {
+    setIsEnabling2FA(true);
+    try {
+      // Simulate 2FA setup
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      console.log('Enabling 2FA for user:', userId);
+      alert('2FA setup instructions sent to user!');
+    } catch (error) {
+      console.error('Error enabling 2FA:', error);
+      alert('Error enabling 2FA. Please try again.');
+    } finally {
+      setIsEnabling2FA(false);
     }
   };
 
@@ -358,16 +396,34 @@ export default function SecurityPage() {
                       {user.riskLevel}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center space-x-2">
-                      <button className="text-blue-400 hover:text-blue-300" title="Reset Password">
-                        <Key className="w-4 h-4" />
-                      </button>
-                      <button className="text-green-400 hover:text-green-300" title="Enable 2FA">
-                        <Shield className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center space-x-2">
+                        <button 
+                          onClick={() => handleResetPassword(user.id)}
+                          disabled={isResettingPassword}
+                          className="text-blue-400 hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed" 
+                          title="Reset Password"
+                        >
+                          {isResettingPassword ? (
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Key className="w-4 h-4" />
+                          )}
+                        </button>
+                        <button 
+                          onClick={() => handleEnable2FA(user.id)}
+                          disabled={isEnabling2FA}
+                          className="text-green-400 hover:text-green-300 disabled:opacity-50 disabled:cursor-not-allowed" 
+                          title="Enable 2FA"
+                        >
+                          {isEnabling2FA ? (
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Shield className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                    </td>
                 </tr>
               ))}
             </tbody>
@@ -445,7 +501,11 @@ export default function SecurityPage() {
                     User: {event.user} | IP: {event.ip} | Location: {event.location}
                   </div>
                 </div>
-                <button className="text-zinc-400 hover:text-white">
+                <button 
+                  onClick={() => handleViewEventDetails(event.id)}
+                  className="text-zinc-400 hover:text-white"
+                  title="View Event Details"
+                >
                   <Eye className="w-4 h-4" />
                 </button>
               </div>

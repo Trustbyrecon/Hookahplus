@@ -26,6 +26,10 @@ import GlobalNavigation from '../../../components/GlobalNavigation';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('general');
+  const [isSaving, setIsSaving] = useState(false);
+  const [isBackingUp, setIsBackingUp] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [settings, setSettings] = useState({
     appName: 'HookahPLUS',
     appVersion: '1.2.3',
@@ -53,6 +57,66 @@ export default function SettingsPage() {
 
   const handleSettingChange = (key: string, value: any) => {
     setSettings(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleSaveSettings = async () => {
+    setIsSaving(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log('Saving settings:', settings);
+      alert('Settings saved successfully!');
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      alert('Error saving settings. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCreateBackup = async () => {
+    setIsBackingUp(true);
+    try {
+      // Simulate backup creation
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      console.log('Creating backup...');
+      alert('Backup created successfully!');
+    } catch (error) {
+      console.error('Error creating backup:', error);
+      alert('Error creating backup. Please try again.');
+    } finally {
+      setIsBackingUp(false);
+    }
+  };
+
+  const handleRestoreBackup = async () => {
+    setIsRestoring(true);
+    try {
+      // Simulate backup restore
+      await new Promise(resolve => setTimeout(resolve, 4000));
+      console.log('Restoring backup...');
+      alert('Backup restored successfully!');
+    } catch (error) {
+      console.error('Error restoring backup:', error);
+      alert('Error restoring backup. Please try again.');
+    } finally {
+      setIsRestoring(false);
+    }
+  };
+
+  const handleDownloadBackup = async () => {
+    setIsDownloading(true);
+    try {
+      // Simulate backup download
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log('Downloading backup...');
+      alert('Backup download started!');
+    } catch (error) {
+      console.error('Error downloading backup:', error);
+      alert('Error downloading backup. Please try again.');
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const renderGeneralSettings = () => (
@@ -295,17 +359,56 @@ export default function SettingsPage() {
       <div className="card-pretty p-6">
         <h3 className="text-lg font-semibold text-white mb-4">Backup Actions</h3>
         <div className="flex space-x-4">
-          <button className="btn-pretty-primary">
-            <Database className="w-4 h-4 mr-2" />
-            Create Backup
+          <button 
+            onClick={handleCreateBackup}
+            disabled={isBackingUp}
+            className="btn-pretty-primary disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isBackingUp ? (
+              <>
+                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              <>
+                <Database className="w-4 h-4 mr-2" />
+                Create Backup
+              </>
+            )}
           </button>
-          <button className="btn-pretty-secondary">
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Restore Backup
+          <button 
+            onClick={handleRestoreBackup}
+            disabled={isRestoring}
+            className="btn-pretty-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isRestoring ? (
+              <>
+                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                Restoring...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Restore Backup
+              </>
+            )}
           </button>
-          <button className="btn-pretty-outline">
-            <HardDrive className="w-4 h-4 mr-2" />
-            Download Backup
+          <button 
+            onClick={handleDownloadBackup}
+            disabled={isDownloading}
+            className="btn-pretty-outline disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isDownloading ? (
+              <>
+                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                Downloading...
+              </>
+            ) : (
+              <>
+                <HardDrive className="w-4 h-4 mr-2" />
+                Download Backup
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -364,9 +467,22 @@ export default function SettingsPage() {
 
         {/* Save Button */}
         <div className="mt-8 flex justify-end">
-          <button className="btn-pretty-primary text-lg px-8 py-3">
-            <Save className="w-5 h-5 mr-2" />
-            Save Settings
+          <button 
+            onClick={handleSaveSettings}
+            disabled={isSaving}
+            className="btn-pretty-primary text-lg px-8 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSaving ? (
+              <>
+                <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="w-5 h-5 mr-2" />
+                Save Settings
+              </>
+            )}
           </button>
         </div>
       </div>
