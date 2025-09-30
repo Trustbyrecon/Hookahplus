@@ -438,16 +438,8 @@ export default function FireSessionDashboard() {
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-teal-400 to-cyan-500 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">H+</span>
-                </div>
-                <span className="text-xl font-bold bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
-                  HOOKAH+
-                </span>
-              </div>
               <div className="text-sm text-zinc-400">
-                Fire Session Dashboard
+                Session Management
               </div>
             </div>
             

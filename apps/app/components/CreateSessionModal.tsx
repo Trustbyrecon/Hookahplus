@@ -119,14 +119,14 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-zinc-800">
+        <div className="flex items-center justify-between p-6 border-b border-zinc-700 bg-zinc-800/50">
           <h2 className="text-2xl font-bold text-white flex items-center">
             <Flame className="w-6 h-6 mr-2 text-orange-400" />
-            NEW Create New Session
+            Create New Session
           </h2>
           <button
             onClick={onClose}
-            className="text-zinc-400 hover:text-white transition-colors"
+            className="text-zinc-300 hover:text-white transition-colors p-1 rounded-lg hover:bg-zinc-700"
           >
             <X className="w-6 h-6" />
           </button>
@@ -139,12 +139,12 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
             <div className="space-y-4">
               {/* Table Selection */}
               <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                <label className="block text-sm font-semibold text-white mb-2">
                   Table Selection *
                 </label>
                 <div className="space-y-2">
                   {selectedTable ? (
-                    <div className="p-3 bg-zinc-800 border border-zinc-600 rounded-lg">
+                    <div className="p-3 bg-zinc-800/80 border border-zinc-500 rounded-lg">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
                           <span className="text-2xl">{selectedTable.icon}</span>
@@ -173,7 +173,7 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
                     <button
                       type="button"
                       onClick={() => setShowTableSelector(true)}
-                      className="w-full p-3 bg-zinc-800 border border-zinc-600 rounded-lg text-zinc-400 hover:text-white hover:border-zinc-500 transition-colors text-left"
+                      className="w-full p-3 bg-zinc-800/80 border border-zinc-500 rounded-lg text-zinc-400 hover:text-white hover:border-zinc-500 transition-colors text-left"
                     >
                       <div className="flex items-center space-x-2">
                         <MapPin className="w-4 h-4" />
@@ -202,15 +202,15 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
 
               {/* Customer Name */}
               <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                <label className="block text-sm font-medium text-white mb-2 font-semibold">
                   Customer Name *
                 </label>
                 <input
                   type="text"
                   value={formData.customerName}
                   onChange={(e) => handleInputChange('customerName', e.target.value)}
-                  className={`w-full px-4 py-3 bg-zinc-800 border rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-teal-500 ${
-                    errors.customerName ? 'border-red-500' : 'border-zinc-600'
+                  className={`w-full px-4 py-3 bg-zinc-800/80 border rounded-lg text-white placeholder-zinc-300 focus:outline-none focus:ring-2 focus:ring-teal-500 ${
+                    errors.customerName ? 'border-red-500' : 'border-zinc-500'
                   }`}
                   placeholder="Enter customer name"
                 />
@@ -221,7 +221,7 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
 
               {/* Customer Phone */}
               <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                <label className="block text-sm font-medium text-white mb-2 font-semibold">
                   Customer Phone
                 </label>
                 <div className="relative">
@@ -230,7 +230,7 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
                     type="tel"
                     value={formData.customerPhone}
                     onChange={(e) => handleInputChange('customerPhone', e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-full pl-10 pr-4 py-3 bg-zinc-800/80 border border-zinc-500 rounded-lg text-white placeholder-zinc-300 focus:outline-none focus:ring-2 focus:ring-teal-500"
                     placeholder="Enter phone number"
                   />
                 </div>
@@ -238,14 +238,14 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
 
               {/* Session Type */}
               <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                <label className="block text-sm font-medium text-white mb-2 font-semibold">
                   Session Type *
                 </label>
                 <select
                   value={formData.sessionType}
                   onChange={(e) => handleInputChange('sessionType', e.target.value)}
-                  className={`w-full px-4 py-3 bg-zinc-800 border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500 ${
-                    errors.sessionType ? 'border-red-500' : 'border-zinc-600'
+                  className={`w-full px-4 py-3 bg-zinc-800/80 border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500 ${
+                    errors.sessionType ? 'border-red-500' : 'border-zinc-500'
                   }`}
                 >
                   {sessionTypes.map((type) => (
@@ -264,14 +264,14 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
             <div className="space-y-4">
               {/* Flavor */}
               <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                <label className="block text-sm font-medium text-white mb-2 font-semibold">
                   Flavor *
                 </label>
                 <select
                   value={formData.flavor}
                   onChange={(e) => handleInputChange('flavor', e.target.value)}
                   className={`w-full px-4 py-3 bg-zinc-800 border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500 ${
-                    errors.flavor ? 'border-red-500' : 'border-zinc-600'
+                    errors.flavor ? 'border-red-500' : 'border-zinc-500'
                   }`}
                 >
                   {flavors.map((flavor) => (
@@ -287,7 +287,7 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
 
               {/* Amount */}
               <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                <label className="block text-sm font-medium text-white mb-2 font-semibold">
                   Amount *
                 </label>
                 <div className="relative">
@@ -298,8 +298,8 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
                     min="0"
                     value={formData.amount}
                     onChange={(e) => handleInputChange('amount', parseFloat(e.target.value) || 0)}
-                    className={`w-full pl-10 pr-4 py-3 bg-zinc-800 border rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-teal-500 ${
-                      errors.amount ? 'border-red-500' : 'border-zinc-600'
+                    className={`w-full pl-10 pr-4 py-3 bg-zinc-800 border rounded-lg text-white placeholder-zinc-300 focus:outline-none focus:ring-2 focus:ring-teal-500 ${
+                      errors.amount ? 'border-red-500' : 'border-zinc-500'
                     }`}
                     placeholder="0.00"
                   />
@@ -311,13 +311,13 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
 
               {/* Assign BOH Staff */}
               <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                <label className="block text-sm font-medium text-white mb-2 font-semibold">
                   Assign BOH Staff
                 </label>
                 <select
                   value={formData.bohStaff}
                   onChange={(e) => handleInputChange('bohStaff', e.target.value)}
-                  className="w-full px-4 py-3 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="w-full px-4 py-3 bg-zinc-800/80 border border-zinc-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <option value="">Select BOH Staff</option>
                   {bohStaff.map((staff) => (
@@ -330,13 +330,13 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
 
               {/* Assign FOH Staff */}
               <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                <label className="block text-sm font-medium text-white mb-2 font-semibold">
                   Assign FOH Staff
                 </label>
                 <select
                   value={formData.fohStaff}
                   onChange={(e) => handleInputChange('fohStaff', e.target.value)}
-                  className="w-full px-4 py-3 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="w-full px-4 py-3 bg-zinc-800/80 border border-zinc-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <option value="">Select FOH Staff</option>
                   {fohStaff.map((staff) => (
@@ -351,7 +351,7 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
 
           {/* Session Notes - Full Width */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-zinc-300 mb-2">
+            <label className="block text-sm font-medium text-white mb-2 font-semibold">
               <FileText className="w-4 h-4 inline mr-2" />
               Session Notes
             </label>
@@ -359,7 +359,7 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
               value={formData.notes}
               onChange={(e) => handleInputChange('notes', e.target.value)}
               rows={4}
-              className="w-full px-4 py-3 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+              className="w-full px-4 py-3 bg-zinc-800/80 border border-zinc-500 rounded-lg text-white placeholder-zinc-300 focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
               placeholder="Add any special instructions or notes for this session..."
             />
           </div>

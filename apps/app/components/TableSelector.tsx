@@ -121,22 +121,22 @@ export function TableSelector({
 
       {/* Stats */}
       {showAvailability && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-zinc-800/50 rounded-lg">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-zinc-800/80 rounded-lg border border-zinc-700">
           <div className="text-center">
             <div className="text-2xl font-bold text-white">{availabilityStats.total}</div>
-            <div className="text-sm text-zinc-400">Total Tables</div>
+            <div className="text-sm text-zinc-200 font-medium">Total Tables</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-green-400">{availabilityStats.available}</div>
-            <div className="text-sm text-zinc-400">Available</div>
+            <div className="text-sm text-zinc-200 font-medium">Available</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-red-400">{availabilityStats.occupied}</div>
-            <div className="text-sm text-zinc-400">Occupied</div>
+            <div className="text-sm text-zinc-200 font-medium">Occupied</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-yellow-400">{availabilityStats.occupancyRate}%</div>
-            <div className="text-sm text-zinc-400">Occupancy</div>
+            <div className="text-sm text-zinc-200 font-medium">Occupancy</div>
           </div>
         </div>
       )}
@@ -149,16 +149,16 @@ export function TableSelector({
             onClick={() => onTableSelect(table)}
             className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 hover:scale-105 ${
               selectedTableId === table.id
-                ? 'border-teal-500 bg-teal-500/10 ring-2 ring-teal-500/20'
-                : 'border-zinc-700 bg-zinc-800/50 hover:border-zinc-600 hover:bg-zinc-800/70'
+                ? 'border-teal-500 bg-teal-500/20 ring-2 ring-teal-500/20 shadow-lg'
+                : 'border-zinc-600 bg-zinc-800/80 hover:border-zinc-500 hover:bg-zinc-800/90 shadow-md hover:shadow-lg'
             }`}
           >
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center space-x-2">
                 <span className="text-2xl">{getTypeIcon(table.type)}</span>
                 <div>
-                  <h3 className="text-lg font-semibold text-white">{table.name}</h3>
-                  <p className="text-sm text-zinc-400 capitalize">{table.type}</p>
+                  <h3 className="text-lg font-bold text-white">{table.name}</h3>
+                  <p className="text-sm text-zinc-200 capitalize font-medium">{table.type}</p>
                 </div>
               </div>
               <div className={`px-2 py-1 rounded-full text-xs font-medium border ${getAvailabilityColor(table.availability)}`}>
@@ -167,26 +167,26 @@ export function TableSelector({
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center space-x-2 text-sm text-zinc-300">
-                <MapPin className="w-4 h-4" />
-                <span>{table.location}</span>
+              <div className="flex items-center space-x-2 text-sm text-white">
+                <MapPin className="w-4 h-4 text-blue-400" />
+                <span className="font-medium">{table.location}</span>
               </div>
               
               {showCapacity && (
-                <div className="flex items-center space-x-2 text-sm text-zinc-300">
-                  <Users className="w-4 h-4" />
-                  <span>Capacity: {table.capacity} people</span>
+                <div className="flex items-center space-x-2 text-sm text-white">
+                  <Users className="w-4 h-4 text-green-400" />
+                  <span className="font-medium">Capacity: {table.capacity} people</span>
                 </div>
               )}
 
               {showPricing && (
-                <div className="flex items-center space-x-2 text-sm text-zinc-300">
-                  <Star className="w-4 h-4" />
-                  <span>Price: {table.priceMultiplier}x base rate</span>
+                <div className="flex items-center space-x-2 text-sm text-white">
+                  <Star className="w-4 h-4 text-yellow-400" />
+                  <span className="font-medium">Price: {table.priceMultiplier}x base rate</span>
                 </div>
               )}
 
-              <p className="text-xs text-zinc-400 mt-2">{table.description}</p>
+              <p className="text-sm text-zinc-200 mt-2 leading-relaxed">{table.description}</p>
             </div>
           </div>
         ))}
