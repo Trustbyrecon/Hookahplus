@@ -280,7 +280,7 @@ const GlobalNavigation: React.FC = () => {
                 <span className="text-sm text-green-400">Live</span>
               </div>
               <div className="text-sm text-zinc-400">
-                Total Sessions: <span className="text-white font-semibold">7</span>
+                Total Sessions: <span className="text-white font-semibold">{flowState.progress}</span>
               </div>
             </div>
 

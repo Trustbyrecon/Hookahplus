@@ -101,8 +101,22 @@ export default function FireSessionDashboard() {
   const [sessionFlags, setSessionFlags] = useState<any[]>([]);
   const [userRoles] = useState<string[]>(['BOH', 'FOH', 'MANAGER', 'ADMIN']); // Mock user roles
   const [loading, setLoading] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<'FOH' | 'BOH'>('FOH');
   const [userRole, setUserRole] = useState<'BOH' | 'FOH' | 'MANAGER' | 'ADMIN'>('MANAGER');
+  
+  // Role-based view determination
+  const getViewFromRole = (role: string) => {
+    switch (role) {
+      case 'BOH': return 'BOH';
+      case 'FOH': return 'FOH';
+      case 'MANAGER': return 'FOH'; // Manager sees FOH view by default
+      case 'ADMIN': return 'FOH'; // Admin sees FOH view by default
+      default: return 'FOH';
+    }
+  };
+  
+  const [selectedRole, setSelectedRole] = useState<'FOH' | 'BOH'>(getViewFromRole('MANAGER'));
+  const [totalSessions, setTotalSessions] = useState(0);
+  const [activeSessions, setActiveSessions] = useState(0);
   const [filters, setFilters] = useState<FilterOptions>({
     search: '',
     status: [],
@@ -131,6 +145,8 @@ export default function FireSessionDashboard() {
       
       if (data.ok && data.sessions) {
         setSessions(data.sessions);
+        setTotalSessions(data.sessions.length);
+        setActiveSessions(data.sessions.filter((s: Session) => s.state === 'ACTIVE').length);
         console.log('✅ Loaded sessions from API:', data.sessions.length);
       } else {
         console.error('❌ Failed to load sessions:', data.error);
@@ -286,6 +302,11 @@ export default function FireSessionDashboard() {
     // In a real app, this would filter the sessions
     console.log('Filters changed:', newFilters);
   };
+  
+  const handleRoleChange = (newRole: 'BOH' | 'FOH' | 'MANAGER' | 'ADMIN') => {
+    setUserRole(newRole);
+    setSelectedRole(getViewFromRole(newRole));
+  };
 
   const handleViewDetails = (sessionId: string) => {
     console.log(`View details for session ${sessionId}`);
@@ -436,7 +457,7 @@ export default function FireSessionDashboard() {
                 <span className="text-sm text-zinc-400">Live</span>
               </div>
               <div className="text-sm text-zinc-400">
-                Total Sessions: {sessions.length}
+                Total Sessions: {totalSessions}
               </div>
             </div>
           </div>
@@ -455,10 +476,12 @@ export default function FireSessionDashboard() {
               </h1>
             </div>
             <div className="flex items-center space-x-4">
-              <FOHBOHToggle 
-                selectedRole={selectedRole} 
-                onRoleChange={setSelectedRole} 
-              />
+              {/* View is now determined by role - no toggle needed */}
+              <div className="flex items-center space-x-2 px-3 py-2 bg-zinc-800 rounded-lg">
+                <span className="text-sm text-zinc-400">View:</span>
+                <span className="text-sm font-medium text-white">{selectedRole}</span>
+                <span className="text-xs text-zinc-500">({userRole})</span>
+              </div>
               <Link href="/">
                 <Button className="btn-pretty-secondary">
                   <BarChart3 className="w-4 h-4 mr-2" />
@@ -488,7 +511,7 @@ export default function FireSessionDashboard() {
         <div className="mb-6 space-y-4">
           <RoleSelector 
             currentRole={userRole} 
-            onRoleChange={setUserRole} 
+            onRoleChange={handleRoleChange} 
           />
           <SessionFilters 
             onFiltersChange={handleFiltersChange}

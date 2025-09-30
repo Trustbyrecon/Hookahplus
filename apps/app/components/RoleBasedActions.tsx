@@ -37,15 +37,42 @@ export function RoleBasedActions({ session, userRole, onStateChange, onFlagIssue
       
       case 'MANAGER':
         return (
-          <div className="space-y-2">
-            <div className="text-xs text-zinc-400 mb-2">Manager Actions:</div>
-            <ManagerActions
-              sessionId={session.id}
-              state={session.state}
-              userRoles={['BOH', 'FOH', 'MANAGER', 'ADMIN']}
-              onStateChange={() => onStateChange?.(session.id, 'COMPLETE')}
-              onFlagIssue={onFlagIssue}
-            />
+          <div className="space-y-3">
+            <div className="text-xs text-zinc-400 mb-2">Manager - Full Customer Journey Control:</div>
+            
+            {/* BOH Actions */}
+            <div className="space-y-1">
+              <div className="text-xs text-zinc-500">BOH Actions:</div>
+              <BOHActions
+                sessionId={session.id}
+                state={session.state}
+                userRoles={['BOH', 'FOH', 'MANAGER', 'ADMIN']}
+                onStateChange={() => onStateChange?.(session.id, 'START_PREP')}
+              />
+            </div>
+            
+            {/* FOH Actions */}
+            <div className="space-y-1">
+              <div className="text-xs text-zinc-500">FOH Actions:</div>
+              <FOHActions
+                sessionId={session.id}
+                state={session.state}
+                userRoles={['BOH', 'FOH', 'MANAGER', 'ADMIN']}
+                onStateChange={() => onStateChange?.(session.id, 'TAKE_DELIVERY')}
+              />
+            </div>
+            
+            {/* Manager Actions */}
+            <div className="space-y-1">
+              <div className="text-xs text-zinc-500">Manager Actions:</div>
+              <ManagerActions
+                sessionId={session.id}
+                state={session.state}
+                userRoles={['BOH', 'FOH', 'MANAGER', 'ADMIN']}
+                onStateChange={() => onStateChange?.(session.id, 'COMPLETE')}
+                onFlagIssue={onFlagIssue}
+              />
+            </div>
           </div>
         );
       

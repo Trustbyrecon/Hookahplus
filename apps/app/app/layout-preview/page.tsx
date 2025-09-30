@@ -95,6 +95,7 @@ export default function LayoutPreviewPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [layoutData, setLayoutData] = useState(initialLayoutData);
+  const [sessionsData, setSessionsData] = useState<any[]>([]);
 
   const posIntegrations = [
     {
@@ -148,6 +149,11 @@ export default function LayoutPreviewPage() {
     return () => clearInterval(interval);
   }, []);
 
+  // Load initial data
+  useEffect(() => {
+    handleLoadData();
+  }, []);
+
   // Auto-refresh functionality
   useEffect(() => {
     if (autoRefresh) {
@@ -161,22 +167,53 @@ export default function LayoutPreviewPage() {
   const handleLoadData = async () => {
     setIsLoading(true);
     try {
-      // Simulate API call to load fresh data
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Load sessions from Fire Session Dashboard API
+      const sessionsResponse = await fetch('/api/sessions');
+      const sessionsData = await sessionsResponse.json();
       
-      // Update layout data with fresh information
-      setLayoutData(prev => ({
-        ...prev,
-        totalSessions: Math.floor(Math.random() * 20),
-        activeSessions: Math.floor(Math.random() * 10),
-        totalRevenue: Math.floor(Math.random() * 5000),
-        zones: prev.zones.map(zone => ({
-          ...zone,
-          occupied: Math.floor(Math.random() * zone.capacity),
-          available: zone.capacity - Math.floor(Math.random() * zone.capacity),
-          sessions: Math.floor(Math.random() * 5)
-        }))
-      }));
+      if (sessionsData.ok && sessionsData.sessions) {
+        setSessionsData(sessionsData.sessions);
+        
+        // Calculate real statistics from sessions
+        const totalSessions = sessionsData.sessions.length;
+        const activeSessions = sessionsData.sessions.filter((s: any) => s.state === 'ACTIVE').length;
+        const totalRevenue = sessionsData.sessions.reduce((sum: number, s: any) => sum + (s.priceCents || 0), 0) / 100;
+        
+        // Update layout data with real information
+        setLayoutData(prev => ({
+          ...prev,
+          totalSessions,
+          activeSessions,
+          totalRevenue,
+          zones: prev.zones.map(zone => {
+            // Count sessions for this zone
+            const zoneSessions = sessionsData.sessions.filter((s: any) => s.tableId === zone.id);
+            const occupied = zoneSessions.length;
+            const sessions = zoneSessions.filter((s: any) => s.state === 'ACTIVE').length;
+            
+            return {
+              ...zone,
+              occupied,
+              available: zone.capacity - occupied,
+              sessions
+            };
+          })
+        }));
+      } else {
+        // Fallback to simulated data if API fails
+        setLayoutData(prev => ({
+          ...prev,
+          totalSessions: Math.floor(Math.random() * 20),
+          activeSessions: Math.floor(Math.random() * 10),
+          totalRevenue: Math.floor(Math.random() * 5000),
+          zones: prev.zones.map(zone => ({
+            ...zone,
+            occupied: Math.floor(Math.random() * zone.capacity),
+            available: zone.capacity - Math.floor(Math.random() * zone.capacity),
+            sessions: Math.floor(Math.random() * 5)
+          }))
+        }));
+      }
       
       setLastUpdated(new Date());
     } catch (error) {
