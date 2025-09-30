@@ -202,16 +202,8 @@ function PreOrderPageContent() {
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-teal-400 to-cyan-500 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">H+</span>
-                </div>
-                <span className="text-xl font-bold bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
-                  HOOKAH+
-                </span>
-              </div>
               <div className="text-sm text-zinc-400">
-                Pre-Order Station
+                Order Management
               </div>
             </div>
             
@@ -240,13 +232,13 @@ function PreOrderPageContent() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Left Column - Menu */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4">
             {/* Test Mode Banner */}
             {process.env.NODE_ENV === 'development' && (
-              <div className="card-pretty p-4 bg-yellow-500/10 border-yellow-500/30">
+              <div className="card-pretty p-3 bg-yellow-500/10 border-yellow-500/30">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
@@ -271,12 +263,12 @@ function PreOrderPageContent() {
             )}
 
             {/* Quick Order */}
-            <div className="card-pretty p-6">
-              <h3 className="text-lg font-semibold mb-4">Quick Order</h3>
+            <div className="card-pretty p-4">
+              <h3 className="text-base font-semibold mb-3">Quick Order</h3>
               <p className="text-zinc-400 text-sm mb-4">
                 Select popular flavors to build your quick order
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {menuItems.filter(item => item.popular).map((item) => (
                   <div key={item.id} className="flex items-center space-x-3 p-4 bg-zinc-800/50 rounded-lg hover:bg-zinc-700/50 transition-colors duration-300">
                     <div className="text-2xl">{item.icon}</div>
@@ -305,9 +297,9 @@ function PreOrderPageContent() {
             </div>
 
             {/* Popular This Week */}
-            <div className="card-pretty p-6">
-              <h3 className="text-lg font-semibold mb-4">Popular This Week</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="card-pretty p-4">
+              <h3 className="text-base font-semibold mb-3">Popular This Week</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {menuItems.filter(item => item.popular).map((item) => (
                   <div key={item.id} className="flex items-center space-x-3 p-4 bg-zinc-800/50 rounded-lg hover:bg-zinc-700/50 transition-colors duration-300">
                     <div className="text-2xl">{item.icon}</div>
@@ -336,7 +328,7 @@ function PreOrderPageContent() {
             </div>
 
             {/* Menu Categories */}
-            <div className="card-pretty p-6">
+            <div className="card-pretty p-4">
               <div className="flex space-x-1 mb-6">
                 {categories.map((category, index) => (
                   <button
@@ -378,10 +370,10 @@ function PreOrderPageContent() {
           </div>
 
           {/* Right Column - Order Summary & Actions */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="lg:col-span-1 space-y-4">
             {/* Your Order */}
-            <div className="card-pretty p-6">
-              <h3 className="text-lg font-semibold mb-4">Your Order</h3>
+            <div className="card-pretty p-4">
+              <h3 className="text-base font-semibold mb-3">Your Order</h3>
               <CartDisplay />
             </div>
 
@@ -420,8 +412,8 @@ function PreOrderPageContent() {
             </div>
 
             {/* Quick Actions */}
-            <div className="card-pretty p-6">
-              <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
+            <div className="card-pretty p-4">
+              <h3 className="text-base font-semibold mb-3">Quick Actions</h3>
               <div className="space-y-3">
                 <Link href="/fire-session-dashboard">
                   <Button className="w-full btn-pretty-primary">
