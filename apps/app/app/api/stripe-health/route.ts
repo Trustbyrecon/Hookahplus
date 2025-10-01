@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
           available: balance.available[0].amount,
           currency: balance.available[0].currency,
         },
-        livemode: account.livemode,
+        livemode: balance.livemode,
         country: account.country,
       },
       environment: {
