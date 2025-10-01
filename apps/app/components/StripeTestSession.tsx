@@ -20,6 +20,7 @@ export function StripeTestSession({ tableId }: StripeTestSessionProps) {
 
     try {
       console.log('[RWO:$1-smoke] 🚀 Starting $1 smoke test...');
+      console.log('[RWO:$1-smoke] 🌐 Making request to:', window.location.origin + '/api/payments/live-test');
       
       // Call the live test API
       const response = await fetch('/api/payments/live-test', {
@@ -33,7 +34,11 @@ export function StripeTestSession({ tableId }: StripeTestSessionProps) {
         }),
       });
 
+      console.log('[RWO:$1-smoke] 📡 Response status:', response.status);
+      console.log('[RWO:$1-smoke] 📡 Response headers:', response.headers);
+      
       const data = await response.json();
+      console.log('[RWO:$1-smoke] 📦 Response data:', data);
 
       if (data.ok) {
         console.log('[RWO:$1-smoke] ✅ Payment successful:', data.intentId);
@@ -50,7 +55,15 @@ export function StripeTestSession({ tableId }: StripeTestSessionProps) {
     } catch (err: any) {
       console.error('[RWO:$1-smoke] ❌ Payment error:', err);
       setStatus('error');
-      setError(err.message || 'Payment failed. Please try again.');
+      
+      // More specific error messages
+      if (err.name === 'TypeError' && err.message.includes('fetch')) {
+        setError('Network error: Unable to connect to payment service. Please check your connection.');
+      } else if (err.message.includes('Stripe')) {
+        setError(`Stripe error: ${err.message}`);
+      } else {
+        setError(err.message || 'Payment failed. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }

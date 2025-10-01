@@ -71,7 +71,11 @@ import {
 function PreOrderPageContent() {
   const params = useParams();
   const tableId = params.tableId as string;
-  const [isPrettyTheme, setIsPrettyTheme] = useState(false);
+  const [isPrettyTheme, setIsPrettyTheme] = useState(
+    typeof window !== 'undefined' 
+      ? (process.env.NEXT_PUBLIC_PRETTY_THEME === '1' || window.location.hostname.includes('vercel.app'))
+      : process.env.NEXT_PUBLIC_PRETTY_THEME === '1'
+  );
   const { add } = useCart();
 
   useEffect(() => {
