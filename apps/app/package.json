@@ -9,7 +9,9 @@
     "build": "prisma generate && next build && node scripts/generate-sitemap.js",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "deploy:production": "node scripts/deploy-production.js",
+    "health": "curl -s http://localhost:3002/api/health | jq"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

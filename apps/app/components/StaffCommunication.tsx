@@ -132,7 +132,8 @@ export default function StaffCommunication({
         timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000),
         priority: 'medium',
         type: 'question',
-        status: 'delivered'
+        status: 'delivered',
+        isPinned: false
       },
       {
         id: 'msg-3',
@@ -144,7 +145,8 @@ export default function StaffCommunication({
         timestamp: new Date(Date.now() - 30 * 60 * 1000),
         priority: 'high',
         type: 'update',
-        status: 'read'
+        status: 'read',
+        isPinned: false
       }
     ];
 
@@ -247,7 +249,8 @@ export default function StaffCommunication({
       subject: newMessage.subject,
       content: newMessage.content,
       priority: newMessage.priority,
-      type: newMessage.type
+      type: newMessage.type,
+      isPinned: false
     };
 
     onMessageSend(message);

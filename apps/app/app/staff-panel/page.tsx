@@ -28,8 +28,7 @@ import {
   Crown,
   MessageSquare,
   Bell,
-  BarChart3,
-  Shield
+  BarChart3
 } from 'lucide-react';
 
 interface StaffMember {
@@ -274,7 +273,32 @@ export default function StaffPanelPage() {
         hireDate: new Date().toISOString().split('T')[0],
         performance: 5.0,
         sessionsCompleted: 0,
-        lastActive: 'Just now'
+        lastActive: 'Just now',
+        metrics: {
+          sessionsCompleted: 0,
+          averageRating: 5.0,
+          onTimeDelivery: 100,
+          customerSatisfaction: 100,
+          efficiency: 100,
+          attendance: 100
+        },
+        trends: {
+          sessionsCompleted: 0,
+          averageRating: 0,
+          onTimeDelivery: 0
+        },
+        achievements: [],
+        availability: {
+          monday: [{ start: '09:00', end: '17:00', available: true }],
+          tuesday: [{ start: '09:00', end: '17:00', available: true }],
+          wednesday: [{ start: '09:00', end: '17:00', available: true }],
+          thursday: [{ start: '09:00', end: '17:00', available: true }],
+          friday: [{ start: '09:00', end: '17:00', available: true }],
+          saturday: [{ start: '10:00', end: '18:00', available: true }],
+          sunday: [{ start: '10:00', end: '18:00', available: true }]
+        },
+        maxHoursPerWeek: 40,
+        currentHoursThisWeek: 0
       };
       
       setStaffMembers([...staffMembers, staff]);
@@ -532,7 +556,13 @@ export default function StaffPanelPage() {
         {activeTab === 'communication' && (
           <StaffCommunication
             currentUserId="staff-003" // Current user (Alex Johnson - Manager)
-            staffMembers={staffMembers}
+            staffMembers={staffMembers.map(staff => ({
+              id: staff.id,
+              name: staff.name,
+              role: staff.role,
+              status: staff.status === 'available' ? 'online' : staff.status === 'busy' ? 'busy' : 'offline',
+              lastSeen: new Date()
+            }))}
             onMessageSend={(message) => {
               // Handle message sending
               console.log('Sending message:', message);
