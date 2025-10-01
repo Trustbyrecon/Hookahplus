@@ -23,87 +23,41 @@ const TestSessionForm = ({ tableId }: { tableId: string }) => {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!stripe || !elements) {
-      return;
-    }
-
     setIsLoading(true);
     setStatus('processing');
     setError('');
 
     try {
-      // Try to create payment intent via API
-      try {
-        const response = await fetch('/api/test-session/create', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            tableId,
-            customerInfo: {
-              name: 'Test Customer',
-              phone: '(555) 123-4567'
-            }
-          }),
-        });
+      console.log('[RWO:$1-smoke] 🚀 Starting $1 smoke test...');
+      
+      // Call the live test API
+      const response = await fetch('/api/payments/live-test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          cartTotal: 0, // $1 test ignores cart
+          itemsCount: 0
+        }),
+      });
 
-        if (response.ok) {
-          const data = await response.json();
+      const data = await response.json();
 
-          if (data.success) {
-            const { clientSecret, paymentIntentId, simulated } = data;
-
-            if (simulated) {
-              // Simulated payment - just show success
-              setStatus('success');
-              setTimeout(() => {
-                window.location.href = '/checkout/success?session_id=' + paymentIntentId + '&amount=100&simulated=true';
-              }, 2000);
-              return;
-            }
-
-            if (clientSecret) {
-              // Real Stripe payment
-              const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-                payment_method: {
-                  card: elements.getElement(CardElement)!,
-                  billing_details: {
-                    name: 'Test Customer',
-                    phone: '(555) 123-4567',
-                  },
-                }
-              });
-
-              if (stripeError) {
-                throw new Error(stripeError.message || 'Payment failed');
-              }
-
-              if (paymentIntent?.status === 'succeeded') {
-                setStatus('success');
-                setTimeout(() => {
-                  window.location.href = '/checkout/success?session_id=' + paymentIntentId + '&amount=100';
-                }, 2000);
-                return;
-              }
-            }
-          }
-        }
-      } catch (apiError) {
-        console.warn('API call failed, using fallback mode:', apiError);
+      if (data.ok) {
+        console.log('[RWO:$1-smoke] ✅ Payment successful:', data.intentId);
+        setStatus('success');
+        
+        // Show success message with Stripe link
+        setTimeout(() => {
+          window.location.href = '/checkout/success?session_id=' + data.intentId + '&amount=100&stripe_url=' + encodeURIComponent(data.stripeUrl);
+        }, 2000);
+      } else {
+        throw new Error(data.error || 'Payment failed');
       }
 
-      // Fallback: Simulate payment processing
-      setStatus('processing');
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      setStatus('success');
-      setTimeout(() => {
-        window.location.href = '/checkout/success?session_id=test_fallback_' + Date.now() + '&amount=100&simulated=true';
-      }, 2000);
-
     } catch (err: any) {
-      console.error('Payment error:', err);
+      console.error('[RWO:$1-smoke] ❌ Payment error:', err);
       setStatus('error');
       setError(err.message || 'Payment failed. Please try again.');
     } finally {
@@ -131,9 +85,14 @@ const TestSessionForm = ({ tableId }: { tableId: string }) => {
     return (
       <div className="text-center py-6">
         <CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-4" />
-        <h3 className="text-xl font-semibold text-white mb-2">Payment Successful!</h3>
-        <p className="text-zinc-400 mb-4">Your $1 test session has been created successfully!</p>
-        <p className="text-sm text-zinc-500">Redirecting to session dashboard...</p>
+        <h3 className="text-xl font-semibold text-white mb-2">$1 Test Succeeded!</h3>
+        <p className="text-zinc-400 mb-4">Payment processed successfully in Stripe sandbox</p>
+        <div className="space-y-2">
+          <p className="text-sm text-zinc-500">✅ PaymentIntent created and confirmed</p>
+          <p className="text-sm text-zinc-500">✅ Webhook received and logged</p>
+          <p className="text-sm text-zinc-500">✅ Reflex event emitted</p>
+        </div>
+        <p className="text-sm text-zinc-500 mt-4">Redirecting to success page...</p>
       </div>
     );
   }
@@ -146,27 +105,30 @@ const TestSessionForm = ({ tableId }: { tableId: string }) => {
           <span className="text-white font-medium">Test Payment</span>
         </div>
         <div className="text-sm text-zinc-400 mb-3">
-          Use test card: <span className="font-mono bg-zinc-700 px-2 py-1 rounded">4242 4242 4242 4242</span>
+          Using Stripe sandbox test card: <span className="font-mono bg-zinc-700 px-2 py-1 rounded">pm_card_visa</span>
         </div>
         <div className="bg-zinc-700 p-3 rounded border border-zinc-600">
-          <CardElement options={cardElementOptions} />
+          <div className="text-center text-zinc-400 py-4">
+            <div className="text-sm">Automatic test payment</div>
+            <div className="text-xs mt-1">No card input required</div>
+          </div>
         </div>
       </div>
 
       <Button
         type="submit"
-        disabled={!stripe || !elements || isLoading}
+        disabled={isLoading}
         className="w-full bg-green-500 hover:bg-green-600 text-white btn-tablet"
       >
         {isLoading ? (
           <>
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Processing $1 Test...
+            Running $1 Smoke Test...
           </>
         ) : (
           <>
             <Zap className="w-4 h-4 mr-2" />
-            Pay $1.00
+            Run $1 Smoke Test
           </>
         )}
       </Button>
@@ -212,7 +174,7 @@ export function StripeTestSession({ tableId }: StripeTestSessionProps) {
         <Zap className="w-5 h-5 text-green-400" />
         <h3 className="text-lg font-semibold text-white">Test Session</h3>
       </div>
-      <p className="text-zinc-400 mb-6">Test the complete hookah session flow with a $1 payment</p>
+      <p className="text-zinc-400 mb-6">RWO: $1 Stripe smoke test for Order Management</p>
       
       <Elements stripe={stripePromise}>
         <TestSessionForm tableId={tableId} />

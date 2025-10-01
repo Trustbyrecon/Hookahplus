@@ -6,11 +6,25 @@ import { useSearchParams } from 'next/navigation';
 function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [amount, setAmount] = useState<string | null>(null);
+  const [stripeUrl, setStripeUrl] = useState<string | null>(null);
+  const [isSmokeTest, setIsSmokeTest] = useState(false);
 
   useEffect(() => {
     const order = searchParams.get('order');
-    if (order) {
-      setOrderId(order);
+    const session = searchParams.get('session_id');
+    const amt = searchParams.get('amount');
+    const stripe = searchParams.get('stripe_url');
+    
+    if (order) setOrderId(order);
+    if (session) setSessionId(session);
+    if (amt) setAmount(amt);
+    if (stripe) setStripeUrl(decodeURIComponent(stripe));
+    
+    // Check if this is a smoke test
+    if (session && session.includes('test') || amt === '100') {
+      setIsSmokeTest(true);
     }
   }, [searchParams]);
 
@@ -22,11 +36,31 @@ function CheckoutSuccessContent() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h1 className="text-2xl font-bold mb-4">Payment Successful!</h1>
+        <h1 className="text-2xl font-bold mb-4">
+          {isSmokeTest ? '$1 Smoke Test Succeeded!' : 'Payment Successful!'}
+        </h1>
         <p className="text-zinc-300 mb-6">
-          Your hookah session has been confirmed. Order ID: {orderId || 'N/A'}
+          {isSmokeTest ? (
+            <>
+              RWO smoke test completed successfully!<br/>
+              Session ID: {sessionId || 'N/A'}<br/>
+              Amount: ${amount ? (parseInt(amount) / 100).toFixed(2) : '1.00'}
+            </>
+          ) : (
+            `Your hookah session has been confirmed. Order ID: ${orderId || 'N/A'}`
+          )}
         </p>
         <div className="space-y-4">
+          {isSmokeTest && stripeUrl && (
+            <a
+              href={stripeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors mr-4"
+            >
+              View in Stripe Dashboard
+            </a>
+          )}
           <a
             href="/"
             className="inline-block bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors"

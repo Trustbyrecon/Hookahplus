@@ -1,81 +1,111 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getStripe } from "../../../../lib/stripeServer";
+import { NextRequest, NextResponse } from 'next/server';
+import Stripe from 'stripe';
 
-export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
+// Initialize Stripe
+let stripe: Stripe | null = null;
 
-// Tiny in-memory rate limit (best-effort per lambda instance)
-const hits = new Map<string, { count: number; ts: number }>();
-const WINDOW_MS = 30_000; // 30s
-const MAX_HITS = 3;
-
-function rateLimit(ip: string) {
-  const now = Date.now();
-  const curr = hits.get(ip);
-  if (!curr || now - curr.ts > WINDOW_MS) {
-    hits.set(ip, { count: 1, ts: now });
-    return true;
+try {
+  if (process.env.STRIPE_SECRET_KEY) {
+    stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2025-08-27.basil',
+    });
+    console.log('[RWO:$1-smoke] ✅ Stripe initialized successfully');
+  } else {
+    console.warn('[RWO:$1-smoke] ⚠️ STRIPE_SECRET_KEY not found');
   }
-  if (curr.count >= MAX_HITS) return false;
-  curr.count += 1;
-  return true;
+} catch (error) {
+  console.error('[RWO:$1-smoke] ❌ Stripe initialization error:', error);
 }
 
 export async function POST(req: NextRequest) {
-  const ipHeader = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip");
-  const ip = ipHeader?.split(",")[0]?.trim() || "unknown";
-
-  if (!rateLimit(ip)) {
-    return NextResponse.json(
-      { ok: false, error: "Rate limit exceeded" },
-      { status: 429 }
-    );
-  }
-
-  const adminToken = process.env.ADMIN_TEST_TOKEN;
-  const provided = req.headers.get("x-admin-token");
-  if (!adminToken || !provided || provided !== adminToken) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
-  }
+  const startTime = Date.now();
+  console.log('[RWO:$1-smoke] 🚀 Starting $1 smoke test...');
 
   try {
-    const stripe = getStripe();
-    const intentResp = await stripe.paymentIntents.create({
-      amount: 100, // $1.00
-      currency: "usd",
-      description: "HookahPlus — $1 sandbox live-test",
-      metadata: {
-        source: "live-test",
-        env: process.env.VERCEL_ENV || process.env.NODE_ENV || "unknown",
-      },
-      automatic_payment_methods: { enabled: true },
+    if (!stripe) {
+      return NextResponse.json({
+        ok: false,
+        error: 'Stripe not configured. Please check STRIPE_SECRET_KEY environment variable.'
+      }, { status: 500 });
+    }
+
+    const { cartTotal = 0, itemsCount = 0 } = await req.json();
+
+    // Create PaymentIntent with $1.00 (100 cents)
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: 100, // $1.00 in cents
+      currency: 'usd',
       confirm: true,
-      payment_method: "pm_card_visa", // TEST-ONLY
+      payment_method: 'pm_card_visa', // Sandbox test card
+      metadata: {
+        source: 'order-mgmt:$1-smoke',
+        env: 'preview',
+        cartTotal: cartTotal.toString(),
+        itemsCount: itemsCount.toString(),
+        timestamp: new Date().toISOString()
+      },
+      description: 'Hookah+ $1 Smoke Test - Order Management',
+      automatic_payment_methods: {
+        enabled: false, // Using specific test payment method
+      },
     });
-    const pi = (intentResp as any).data ?? intentResp; // Support both Response<T> and T
+
+    const duration = Date.now() - startTime;
+    console.log(`[RWO:$1-smoke] ✅ PaymentIntent created: ${paymentIntent.id} (${duration}ms)`);
+
+    // Log to GhostLog
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/ghost-log`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          timestamp: new Date().toISOString(),
+          kind: 'stripe_smoke_test',
+          intentId: paymentIntent.id,
+          amount: 100,
+          source: 'order-mgmt:$1-smoke',
+          status: paymentIntent.status,
+          duration: duration
+        })
+      });
+    } catch (logError) {
+      console.warn('[RWO:$1-smoke] ⚠️ GhostLog write failed:', logError);
+    }
 
     return NextResponse.json({
       ok: true,
-      id: pi.id,
-      status: pi.status,
-      charges:
-        pi.charges?.data?.map((c: any) => ({
-          id: c.id,
-          status: c.status,
-          created: c.created,
-        })) ?? [],
+      intentId: paymentIntent.id,
+      status: paymentIntent.status,
+      amount: 100,
+      currency: 'usd',
+      stripeUrl: `https://dashboard.stripe.com/test/payments/${paymentIntent.id}`,
+      duration: duration
     });
-  } catch (err: any) {
-    console.error("[live-test] error", err);
-    return NextResponse.json(
-      { ok: false, error: err?.message ?? "Stripe error" },
-      { status: 400 }
-    );
+
+  } catch (error: any) {
+    const duration = Date.now() - startTime;
+    console.error('[RWO:$1-smoke] ❌ PaymentIntent creation failed:', error);
+
+    // Log error to GhostLog
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/ghost-log`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          timestamp: new Date().toISOString(),
+          kind: 'stripe_smoke_error',
+          error: error.message,
+          duration: duration
+        })
+      });
+    } catch (logError) {
+      console.warn('[RWO:$1-smoke] ⚠️ GhostLog error write failed:', logError);
+    }
+
+    return NextResponse.json({
+      ok: false,
+      error: error.message || 'Failed to create payment intent',
+      duration: duration
+    }, { status: 500 });
   }
 }
-
-export async function GET() {
-  return NextResponse.json({ ok: true, route: "payments/live-test" });
-}
-
-

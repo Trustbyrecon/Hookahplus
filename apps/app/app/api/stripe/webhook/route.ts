@@ -29,6 +29,44 @@ const handlers: Record<string, (evt: Stripe.Event) => Promise<void>> = {
   "payment_intent.succeeded": async (evt) => {
     const pi = evt.data.object as Stripe.PaymentIntent;
     console.log("[app] payment_intent.succeeded ->", pi.id, pi.amount_received);
+    
+    // RWO: Handle $1 smoke test payments
+    if (pi.metadata?.source === 'order-mgmt:$1-smoke') {
+      console.log('[RWO:$1-smoke] 🎉 Payment succeeded for smoke test:', pi.id);
+      
+      try {
+        // Log to GhostLog
+        await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/ghost-log`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            timestamp: new Date().toISOString(),
+            kind: 'stripe_smoke_ok',
+            intentId: pi.id,
+            amount: pi.amount_received,
+            source: pi.metadata.source,
+            env: pi.metadata.env,
+            cartTotal: pi.metadata.cartTotal,
+            itemsCount: pi.metadata.itemsCount
+          })
+        });
+        
+        // Emit Reflex event
+        console.log('[RWO:$1-smoke] 📡 Emitting reflex event: stripe_smoke_ok');
+        // TODO: Implement actual Reflex event emission
+        // reflex.emit('stripe_smoke_ok', { score: 0.95, intentId: pi.id });
+        
+        // Optional: Mark session as ready for delivery
+        if (pi.metadata.cartTotal && parseInt(pi.metadata.cartTotal) > 0) {
+          console.log('[RWO:$1-smoke] 📦 Marking session as ready for delivery');
+          // TODO: Implement session management
+          // Sessions.markReadyForDelivery(pi.id);
+        }
+        
+      } catch (error) {
+        console.error('[RWO:$1-smoke] ❌ Post-payment processing failed:', error);
+      }
+    }
   },
   "payment_intent.payment_failed": async (evt) => {
     const pi = evt.data.object as Stripe.PaymentIntent;

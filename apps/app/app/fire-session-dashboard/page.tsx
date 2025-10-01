@@ -321,13 +321,13 @@ export default function FireSessionDashboard() {
   };
 
   const getStatusBadge = (status: string, statusColor: string, statusIcon: string) => {
-    return (
-      <div className="flex items-center space-x-2">
+  return (
+              <div className="flex items-center space-x-2">
         <span className="text-lg">{statusIcon}</span>
         <Badge className={`${statusColor} text-white text-sm font-bold px-3 py-1`}>
           {status.replace(/_/g, ' ')}
         </Badge>
-      </div>
+                </div>
     );
   };
 
@@ -424,7 +424,7 @@ export default function FireSessionDashboard() {
             </div>
           </div>
         </div>
-      </div>
+            </div>
     );
   }
 
@@ -440,9 +440,9 @@ export default function FireSessionDashboard() {
             <div className="flex items-center space-x-4">
               <div className="text-sm text-zinc-400">
                 Session Management
+                </div>
               </div>
-            </div>
-            
+              
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
@@ -462,7 +462,7 @@ export default function FireSessionDashboard() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
-              <Flame className="w-8 h-8 text-orange-400" />
+            <Flame className="w-8 h-8 text-orange-400" />
               <h1 className="text-4xl font-bold bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
                 Fire Session Dashboard
               </h1>
@@ -540,8 +540,8 @@ export default function FireSessionDashboard() {
                   {metric.value}
                 </div>
                 <div className="text-zinc-400">
-                  {metric.icon}
-                </div>
+                {metric.icon}
+              </div>
               </div>
               <div className="text-sm text-zinc-400 mb-1">{metric.title}</div>
               <div className={`text-xs font-medium ${
@@ -584,8 +584,8 @@ export default function FireSessionDashboard() {
                   {view.icon}
                   {view.label}
                 </Button>
-              ))}
-            </div>
+          ))}
+        </div>
 
             {/* Management Components */}
             {managementView === 'queue' && (
@@ -675,14 +675,14 @@ export default function FireSessionDashboard() {
             <div className="text-center py-8">
               <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-teal-400" />
               <p className="text-zinc-400">Loading sessions...</p>
-            </div>
+          </div>
           )}
           
           {!loading && filteredSessions.length === 0 && (
             <div className="text-center py-8">
               <Flame className="w-12 h-12 mx-auto mb-4 text-zinc-600" />
               <p className="text-zinc-400">No sessions found for this filter</p>
-            </div>
+                </div>
           )}
           
           {filteredSessions.map((session, index) => (
@@ -721,8 +721,8 @@ export default function FireSessionDashboard() {
               }}
             />
           ))}
-        </div>
-      </div>
+                </div>
+              </div>
 
       {/* Modals */}
       <CreateSessionModal
