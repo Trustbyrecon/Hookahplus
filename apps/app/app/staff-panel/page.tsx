@@ -3,6 +3,10 @@
 import React, { useState } from 'react';
 import GlobalNavigation from '../../components/GlobalNavigation';
 import { Card, Button, Badge } from '../../components';
+import StaffPerformanceAnalytics from '../../components/StaffPerformanceAnalytics';
+import StaffScheduling from '../../components/StaffScheduling';
+import StaffCommunication from '../../components/StaffCommunication';
+import RoleBasedPermissions from '../../components/RoleBasedPermissions';
 import { 
   Users, 
   UserPlus, 
@@ -21,7 +25,11 @@ import {
   Save,
   User,
   Shield,
-  Crown
+  Crown,
+  MessageSquare,
+  Bell,
+  BarChart3,
+  Shield
 } from 'lucide-react';
 
 interface StaffMember {
@@ -35,12 +43,38 @@ interface StaffMember {
   performance: number;
   sessionsCompleted: number;
   lastActive: string;
+  metrics: {
+    sessionsCompleted: number;
+    averageRating: number;
+    onTimeDelivery: number;
+    customerSatisfaction: number;
+    efficiency: number;
+    attendance: number;
+  };
+  trends: {
+    sessionsCompleted: number;
+    averageRating: number;
+    onTimeDelivery: number;
+  };
+  achievements: string[];
+  availability: {
+    monday: { start: string; end: string; available: boolean }[];
+    tuesday: { start: string; end: string; available: boolean }[];
+    wednesday: { start: string; end: string; available: boolean }[];
+    thursday: { start: string; end: string; available: boolean }[];
+    friday: { start: string; end: string; available: boolean }[];
+    saturday: { start: string; end: string; available: boolean }[];
+    sunday: { start: string; end: string; available: boolean }[];
+  };
+  maxHoursPerWeek: number;
+  currentHoursThisWeek: number;
 }
 
 export default function StaffPanelPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [showAddStaffModal, setShowAddStaffModal] = useState(false);
   const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
+  const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month' | 'quarter'>('week');
   const [newStaff, setNewStaff] = useState({
     name: '',
     email: '',
@@ -59,7 +93,32 @@ export default function StaffPanelPage() {
       hireDate: '2024-01-15',
       performance: 4.8,
       sessionsCompleted: 156,
-      lastActive: '2 minutes ago'
+      lastActive: '2 minutes ago',
+      metrics: {
+        sessionsCompleted: 156,
+        averageRating: 4.8,
+        onTimeDelivery: 94.2,
+        customerSatisfaction: 92.5,
+        efficiency: 88.7,
+        attendance: 96.8
+      },
+      trends: {
+        sessionsCompleted: 12.5,
+        averageRating: 0.3,
+        onTimeDelivery: 2.1
+      },
+      achievements: ['Top Performer Q1', 'Perfect Attendance'],
+      availability: {
+        monday: [{ start: '09:00', end: '17:00', available: true }],
+        tuesday: [{ start: '09:00', end: '17:00', available: true }],
+        wednesday: [{ start: '09:00', end: '17:00', available: true }],
+        thursday: [{ start: '09:00', end: '17:00', available: true }],
+        friday: [{ start: '09:00', end: '17:00', available: true }],
+        saturday: [{ start: '10:00', end: '18:00', available: true }],
+        sunday: [{ start: '10:00', end: '18:00', available: true }]
+      },
+      maxHoursPerWeek: 40,
+      currentHoursThisWeek: 32
     },
     {
       id: 'staff-002', 
@@ -71,7 +130,32 @@ export default function StaffPanelPage() {
       hireDate: '2024-02-01',
       performance: 4.9,
       sessionsCompleted: 203,
-      lastActive: '5 minutes ago'
+      lastActive: '5 minutes ago',
+      metrics: {
+        sessionsCompleted: 203,
+        averageRating: 4.9,
+        onTimeDelivery: 96.8,
+        customerSatisfaction: 95.2,
+        efficiency: 91.3,
+        attendance: 98.1
+      },
+      trends: {
+        sessionsCompleted: 18.2,
+        averageRating: 0.5,
+        onTimeDelivery: 3.2
+      },
+      achievements: ['Customer Favorite', 'Efficiency Expert'],
+      availability: {
+        monday: [{ start: '12:00', end: '20:00', available: true }],
+        tuesday: [{ start: '12:00', end: '20:00', available: true }],
+        wednesday: [{ start: '12:00', end: '20:00', available: true }],
+        thursday: [{ start: '12:00', end: '20:00', available: true }],
+        friday: [{ start: '12:00', end: '20:00', available: true }],
+        saturday: [{ start: '14:00', end: '22:00', available: true }],
+        sunday: [{ start: '14:00', end: '22:00', available: true }]
+      },
+      maxHoursPerWeek: 40,
+      currentHoursThisWeek: 28
     },
     {
       id: 'staff-003',
@@ -83,7 +167,32 @@ export default function StaffPanelPage() {
       hireDate: '2023-11-20',
       performance: 4.9,
       sessionsCompleted: 312,
-      lastActive: '1 minute ago'
+      lastActive: '1 minute ago',
+      metrics: {
+        sessionsCompleted: 312,
+        averageRating: 4.9,
+        onTimeDelivery: 97.5,
+        customerSatisfaction: 96.8,
+        efficiency: 93.2,
+        attendance: 99.2
+      },
+      trends: {
+        sessionsCompleted: 8.7,
+        averageRating: 0.2,
+        onTimeDelivery: 1.8
+      },
+      achievements: ['Manager of the Year', 'Team Leader'],
+      availability: {
+        monday: [{ start: '08:00', end: '18:00', available: true }],
+        tuesday: [{ start: '08:00', end: '18:00', available: true }],
+        wednesday: [{ start: '08:00', end: '18:00', available: true }],
+        thursday: [{ start: '08:00', end: '18:00', available: true }],
+        friday: [{ start: '08:00', end: '18:00', available: true }],
+        saturday: [{ start: '10:00', end: '20:00', available: true }],
+        sunday: [{ start: '10:00', end: '20:00', available: true }]
+      },
+      maxHoursPerWeek: 50,
+      currentHoursThisWeek: 42
     },
     {
       id: 'staff-004',
@@ -95,7 +204,32 @@ export default function StaffPanelPage() {
       hireDate: '2024-03-10',
       performance: 4.7,
       sessionsCompleted: 89,
-      lastActive: '2 hours ago'
+      lastActive: '2 hours ago',
+      metrics: {
+        sessionsCompleted: 89,
+        averageRating: 4.7,
+        onTimeDelivery: 91.5,
+        customerSatisfaction: 89.3,
+        efficiency: 85.6,
+        attendance: 92.4
+      },
+      trends: {
+        sessionsCompleted: 5.2,
+        averageRating: 0.1,
+        onTimeDelivery: 1.2
+      },
+      achievements: ['Rising Star'],
+      availability: {
+        monday: [{ start: '16:00', end: '24:00', available: true }],
+        tuesday: [{ start: '16:00', end: '24:00', available: true }],
+        wednesday: [{ start: '16:00', end: '24:00', available: true }],
+        thursday: [{ start: '16:00', end: '24:00', available: true }],
+        friday: [{ start: '16:00', end: '24:00', available: true }],
+        saturday: [{ start: '18:00', end: '02:00', available: true }],
+        sunday: [{ start: '18:00', end: '02:00', available: true }]
+      },
+      maxHoursPerWeek: 35,
+      currentHoursThisWeek: 24
     }
   ]);
 
@@ -210,17 +344,19 @@ export default function StaffPanelPage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex space-x-1 mb-6">
+        <div className="flex space-x-1 mb-6 overflow-x-auto">
           {[
             { id: 'overview', label: 'Overview', icon: <TrendingUp className="w-4 h-4" /> },
             { id: 'staff', label: 'Staff Management', icon: <Users className="w-4 h-4" /> },
-            { id: 'performance', label: 'Performance', icon: <Star className="w-4 h-4" /> },
-            { id: 'schedule', label: 'Schedule', icon: <Calendar className="w-4 h-4" /> }
+            { id: 'performance', label: 'Performance', icon: <BarChart3 className="w-4 h-4" /> },
+            { id: 'schedule', label: 'Schedule', icon: <Calendar className="w-4 h-4" /> },
+            { id: 'communication', label: 'Communication', icon: <MessageSquare className="w-4 h-4" /> },
+            { id: 'permissions', label: 'Permissions', icon: <Shield className="w-4 h-4" /> }
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors btn-tablet ${
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors btn-tablet whitespace-nowrap ${
                 activeTab === tab.id
                   ? 'bg-blue-600 text-white'
                   : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
@@ -368,19 +504,58 @@ export default function StaffPanelPage() {
         )}
 
         {activeTab === 'performance' && (
-          <div className="text-center py-12">
-            <Star className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-white mb-2">Performance Analytics</h3>
-            <p className="text-zinc-400">Detailed performance metrics coming soon</p>
-          </div>
+          <StaffPerformanceAnalytics
+            staffMembers={staffMembers}
+            timeRange={timeRange}
+            onTimeRangeChange={setTimeRange}
+          />
         )}
 
         {activeTab === 'schedule' && (
-          <div className="text-center py-12">
-            <Calendar className="w-16 h-16 text-blue-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-white mb-2">Staff Scheduling</h3>
-            <p className="text-zinc-400">Schedule management coming soon</p>
-          </div>
+          <StaffScheduling
+            staffMembers={staffMembers}
+            onShiftCreate={(shift) => {
+              // Handle shift creation
+              console.log('Creating shift:', shift);
+            }}
+            onShiftUpdate={(shiftId, updates) => {
+              // Handle shift update
+              console.log('Updating shift:', shiftId, updates);
+            }}
+            onShiftDelete={(shiftId) => {
+              // Handle shift deletion
+              console.log('Deleting shift:', shiftId);
+            }}
+          />
+        )}
+
+        {activeTab === 'communication' && (
+          <StaffCommunication
+            currentUserId="staff-003" // Current user (Alex Johnson - Manager)
+            staffMembers={staffMembers}
+            onMessageSend={(message) => {
+              // Handle message sending
+              console.log('Sending message:', message);
+            }}
+            onNotificationMarkRead={(notificationId) => {
+              // Handle notification read
+              console.log('Marking notification as read:', notificationId);
+            }}
+          />
+        )}
+
+        {activeTab === 'permissions' && (
+          <RoleBasedPermissions
+            currentUserRole="manager"
+            onPermissionChange={(userId, permissions) => {
+              // Handle permission changes
+              console.log('Updating permissions for user:', userId, permissions);
+            }}
+            onRoleAssign={(userId, roleId) => {
+              // Handle role assignment
+              console.log('Assigning role to user:', userId, roleId);
+            }}
+          />
         )}
       </div>
 
