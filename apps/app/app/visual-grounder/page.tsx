@@ -36,6 +36,10 @@ export default function VisualGrounderPage() {
   const [isDeploying, setIsDeploying] = useState(false);
   const [generatedLayout, setGeneratedLayout] = useState<any>(null);
   const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ [key: number]: number }>({});
+  const [uploadErrors, setUploadErrors] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const steps = [
@@ -76,16 +80,121 @@ export default function VisualGrounderPage() {
     'Lounge Chairs'
   ];
 
+  const validateFile = (file: File): string | null => {
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      return `${file.name} is not a valid image file`;
+    }
+    
+    // Check file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      return `${file.name} is too large (max 10MB)`;
+    }
+    
+    // Check image dimensions (basic validation)
+    return null;
+  };
+
+  const processFiles = async (files: File[]) => {
+    const validFiles: File[] = [];
+    const errors: string[] = [];
+    
+    for (const file of files) {
+      const error = validateFile(file);
+      if (error) {
+        errors.push(error);
+      } else {
+        validFiles.push(file);
+      }
+    }
+    
+    if (errors.length > 0) {
+      setUploadErrors(errors);
+      setTimeout(() => setUploadErrors([]), 5000);
+    }
+    
+    if (validFiles.length > 0) {
+      setIsUploading(true);
+      
+      try {
+        // Create FormData for API upload
+        const formData = new FormData();
+        validFiles.forEach(file => {
+          formData.append('photos', file);
+        });
+
+        // Upload to API
+        const response = await fetch('/api/visual-grounder/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          // Simulate progress for each file
+          for (let i = 0; i < validFiles.length; i++) {
+            const fileIndex = uploadedPhotos.length + i;
+            for (let progress = 0; progress <= 100; progress += 20) {
+              setUploadProgress(prev => ({ ...prev, [fileIndex]: progress }));
+              await new Promise(resolve => setTimeout(resolve, 100));
+            }
+          }
+          
+          // Add to uploaded photos
+          const newPhotos = [...uploadedPhotos, ...validFiles].slice(0, 6);
+          setUploadedPhotos(newPhotos);
+          
+          console.log(`[Visual Grounder] ✅ Uploaded ${validFiles.length} photos successfully`);
+        } else {
+          setUploadErrors(result.errors || ['Upload failed']);
+          setTimeout(() => setUploadErrors([]), 5000);
+        }
+      } catch (error) {
+        console.error('[Visual Grounder] ❌ Upload error:', error);
+        setUploadErrors(['Failed to upload photos. Please try again.']);
+        setTimeout(() => setUploadErrors([]), 5000);
+      } finally {
+        setIsUploading(false);
+        setUploadProgress({});
+      }
+    }
+  };
+
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     if (files.length > 0) {
-      const newPhotos = [...uploadedPhotos, ...files].slice(0, 6);
-      setUploadedPhotos(newPhotos);
+      processFiles(files);
+    }
+  };
+
+  const handleDragOver = (event: React.DragEvent) => {
+    event.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (event: React.DragEvent) => {
+    event.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (event: React.DragEvent) => {
+    event.preventDefault();
+    setIsDragOver(false);
+    
+    const files = Array.from(event.dataTransfer.files);
+    if (files.length > 0) {
+      processFiles(files);
     }
   };
 
   const handleRemovePhoto = (index: number) => {
     setUploadedPhotos(prev => prev.filter((_, i) => i !== index));
+    setUploadProgress(prev => {
+      const newProgress = { ...prev };
+      delete newProgress[index];
+      return newProgress;
+    });
   };
 
   const handleNext = () => {
@@ -182,11 +291,37 @@ export default function VisualGrounderPage() {
       <div className="text-center">
         <h2 className="text-2xl font-bold text-teal-400 mb-2">Upload Lounge Photos</h2>
         <p className="text-zinc-400">Take 3-6 photos from different angles to capture your seating layout</p>
+        <div className="mt-2 text-sm text-zinc-500">
+          {uploadedPhotos.length}/6 photos uploaded
+        </div>
       </div>
 
+      {/* Error Messages */}
+      {uploadErrors.length > 0 && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+          <div className="flex items-center space-x-2 mb-2">
+            <AlertCircle className="w-5 h-5 text-red-400" />
+            <span className="text-red-400 font-semibold">Upload Errors</span>
+          </div>
+          <ul className="space-y-1 text-sm text-red-300">
+            {uploadErrors.map((error, index) => (
+              <li key={index}>• {error}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Drag and Drop Area */}
       <div 
-        className="border-2 border-dashed border-zinc-600 rounded-lg p-8 text-center hover:border-teal-500 transition-colors cursor-pointer"
-        onClick={() => fileInputRef.current?.click()}
+        className={`border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 cursor-pointer ${
+          isDragOver 
+            ? 'border-teal-500 bg-teal-500/10' 
+            : 'border-zinc-600 hover:border-teal-500'
+        } ${isUploading ? 'pointer-events-none opacity-50' : ''}`}
+        onClick={() => !isUploading && fileInputRef.current?.click()}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
       >
         <input
           ref={fileInputRef}
@@ -195,49 +330,97 @@ export default function VisualGrounderPage() {
           accept="image/*"
           onChange={handlePhotoUpload}
           className="hidden"
+          disabled={isUploading}
         />
-        <Camera className="w-16 h-16 text-zinc-400 mx-auto mb-4" />
-        <p className="text-xl text-zinc-300 mb-2">Add Photo</p>
-        <p className="text-sm text-zinc-500 mb-4">Click to upload or drag and drop</p>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            fileInputRef.current?.click();
-          }}
-          className="btn-pretty-primary"
-        >
-          <Upload className="w-4 h-4 mr-2" />
-          Upload Photos
-        </button>
+        
+        {isUploading ? (
+          <div className="space-y-4">
+            <RefreshCw className="w-16 h-16 text-teal-400 mx-auto animate-spin" />
+            <p className="text-xl text-teal-400">Uploading Photos...</p>
+            <p className="text-sm text-zinc-500">Please wait while we process your images</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <Camera className="w-16 h-16 text-zinc-400 mx-auto" />
+            <div>
+              <p className="text-xl text-zinc-300 mb-2">
+                {isDragOver ? 'Drop photos here' : 'Add Photos'}
+              </p>
+              <p className="text-sm text-zinc-500 mb-4">
+                Click to upload or drag and drop images
+              </p>
+            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                fileInputRef.current?.click();
+              }}
+              className="btn-pretty-primary"
+              disabled={isUploading}
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              Choose Photos
+            </button>
+          </div>
+        )}
       </div>
 
+      {/* Photo Gallery */}
       {uploadedPhotos.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {uploadedPhotos.map((photo, index) => (
-            <div key={index} className="relative group">
-              <img
-                src={URL.createObjectURL(photo)}
-                alt={`Upload ${index + 1}`}
-                className="w-full h-32 object-cover rounded-lg"
-              />
-              <button
-                onClick={() => handleRemovePhoto(index)}
-                className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <X className="w-4 h-4" />
-              </button>
-              <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
-                Photo {index + 1}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-white flex items-center">
+            <ImageIcon className="w-5 h-5 mr-2 text-teal-400" />
+            Uploaded Photos ({uploadedPhotos.length}/6)
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {uploadedPhotos.map((photo, index) => (
+              <div key={index} className="relative group">
+                <div className="relative">
+                  <img
+                    src={URL.createObjectURL(photo)}
+                    alt={`Upload ${index + 1}`}
+                    className="w-full h-32 object-cover rounded-lg"
+                  />
+                  
+                  {/* Upload Progress */}
+                  {uploadProgress[index] !== undefined && (
+                    <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="w-8 h-8 border-2 border-teal-400 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                        <p className="text-xs text-white">{uploadProgress[index]}%</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Remove Button */}
+                  <button
+                    onClick={() => handleRemovePhoto(index)}
+                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                  
+                  {/* Photo Info */}
+                  <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                    Photo {index + 1}
+                  </div>
+                  
+                  {/* File Size */}
+                  <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                    {(photo.size / 1024 / 1024).toFixed(1)}MB
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
 
+      {/* Photo Tips */}
       <div className="bg-zinc-800/50 rounded-lg p-4">
         <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
           <Lightbulb className="w-5 h-5 mr-2 text-yellow-400" />
-          Photo Tips
+          Photo Tips for Best Results
         </h3>
         <ul className="space-y-2 text-sm text-zinc-300">
           <li className="flex items-start">
@@ -255,6 +438,10 @@ export default function VisualGrounderPage() {
           <li className="flex items-start">
             <CheckCircle className="w-4 h-4 mr-2 text-green-400 mt-0.5 flex-shrink-0" />
             Avoid photos with customers for privacy
+          </li>
+          <li className="flex items-start">
+            <CheckCircle className="w-4 h-4 mr-2 text-green-400 mt-0.5 flex-shrink-0" />
+            Supported formats: JPG, PNG, WebP (max 10MB each)
           </li>
         </ul>
       </div>
