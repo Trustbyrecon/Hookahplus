@@ -100,6 +100,11 @@ export function StripeDiagnostic() {
             <span className="text-white">{diagnostics.stripe?.secretKeyLength} chars</span>
           </div>
         )}
+        
+        <div className="flex justify-between">
+          <span className="text-gray-400">Account ID:</span>
+          <span className="text-white font-mono text-xs">{diagnostics.stripe?.accountId || 'unknown'}</span>
+        </div>
       </div>
     </div>
   );

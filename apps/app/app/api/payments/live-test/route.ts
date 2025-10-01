@@ -64,6 +64,16 @@ export async function POST(req: NextRequest) {
     const duration = Date.now() - startTime;
     console.log(`[RWO:$1-smoke] ✅ PaymentIntent created: ${paymentIntent.id} (${duration}ms)`);
 
+    // Get Stripe account ID for proper dashboard URL
+    let stripeAccountId = 'acct_default';
+    try {
+      const account = await stripe.accounts.retrieve();
+      stripeAccountId = account.id;
+      console.log(`[RWO:$1-smoke] 📊 Stripe account: ${stripeAccountId}`);
+    } catch (accountError) {
+      console.warn('[RWO:$1-smoke] ⚠️ Could not retrieve account ID:', accountError);
+    }
+
     // Log to GhostLog
     try {
       await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/api/ghost-log`, {
@@ -76,7 +86,8 @@ export async function POST(req: NextRequest) {
           amount: 100,
           source: 'order-mgmt:$1-smoke',
           status: paymentIntent.status,
-          duration: duration
+          duration: duration,
+          stripeAccountId: stripeAccountId
         })
       });
     } catch (logError) {
@@ -89,7 +100,7 @@ export async function POST(req: NextRequest) {
       status: paymentIntent.status,
       amount: 100,
       currency: 'usd',
-      stripeUrl: `https://dashboard.stripe.com/test/payments/${paymentIntent.id}`,
+      stripeUrl: `https://dashboard.stripe.com/${stripeAccountId}/test/payments/${paymentIntent.id}`,
       duration: duration
     });
 
