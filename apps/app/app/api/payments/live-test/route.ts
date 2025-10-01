@@ -1,22 +1,55 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import https from 'https';
 
-// Initialize Stripe
+// Enhanced Stripe Configuration for Production
 let stripe: Stripe | null = null;
 
 try {
   if (process.env.STRIPE_SECRET_KEY) {
+    // Production-optimized Stripe configuration
     stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
       apiVersion: '2025-08-27.basil',
-      timeout: 30000, // 30 seconds
-      maxNetworkRetries: 3,
+      timeout: 45000, // 45 seconds for production
+      maxNetworkRetries: 5, // Increased retries
+      telemetry: false, // Disable telemetry for better performance
+      httpAgent: new https.Agent({
+        keepAlive: true,
+        maxSockets: 10,
+        timeout: 45000,
+        keepAliveMsecs: 30000,
+      }),
     });
-    console.log('[RWO:$1-smoke] ✅ Stripe initialized successfully');
+    console.log('[RWO:$1-smoke] ✅ Enhanced Stripe initialized for production');
   } else {
     console.warn('[RWO:$1-smoke] ⚠️ STRIPE_SECRET_KEY not found');
   }
 } catch (error) {
   console.error('[RWO:$1-smoke] ❌ Stripe initialization error:', error);
+}
+
+// Retry logic with exponential backoff for production reliability
+async function createPaymentWithRetry(params: any, maxRetries = 3): Promise<Stripe.PaymentIntent> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`[RWO:$1-smoke] 💳 Payment attempt ${attempt}/${maxRetries}...`);
+      const paymentIntent = await stripe!.paymentIntents.create(params);
+      console.log(`[RWO:$1-smoke] ✅ PaymentIntent created on attempt ${attempt}: ${paymentIntent.id}`);
+      return paymentIntent;
+    } catch (error: any) {
+      console.error(`[RWO:$1-smoke] ❌ Attempt ${attempt} failed:`, error.message);
+      
+      if (attempt === maxRetries) {
+        throw error;
+      }
+      
+      // Exponential backoff: 1s, 2s, 4s
+      const delay = Math.pow(2, attempt) * 1000;
+      console.log(`[RWO:$1-smoke] ⏳ Retrying in ${delay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  throw new Error('All retry attempts failed');
 }
 
 export async function POST(req: NextRequest) {
@@ -44,16 +77,20 @@ export async function POST(req: NextRequest) {
 
     const { cartTotal = 0, itemsCount = 0 } = await req.json();
 
-    console.log('[RWO:$1-smoke] 💳 Creating PaymentIntent...');
+    console.log('[RWO:$1-smoke] 💳 Creating PaymentIntent with retry logic...');
     
-    // Create PaymentIntent with $1.00 (100 cents) - simplified approach
-    const paymentIntent = await stripe.paymentIntents.create({
+    // Create PaymentIntent with retry logic and enhanced metadata
+    const paymentIntent = await createPaymentWithRetry({
       amount: 100,
       currency: 'usd',
       confirm: true,
       payment_method: 'pm_card_visa',
       metadata: {
-        source: 'order-mgmt:$1-smoke'
+        source: 'order-mgmt:$1-smoke',
+        env: process.env.NODE_ENV,
+        region: process.env.VERCEL_REGION || 'unknown',
+        timestamp: new Date().toISOString(),
+        rwo: 'RWO-STRIPE-001'
       }
     });
 
