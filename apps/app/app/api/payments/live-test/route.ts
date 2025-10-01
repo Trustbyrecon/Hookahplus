@@ -69,11 +69,11 @@ export async function POST(req: NextRequest) {
     try {
       // Try to retrieve account with timeout
       const accountPromise = stripe.accounts.retrieve();
-      const timeoutPromise = new Promise((_, reject) => 
+      const timeoutPromise = new Promise<never>((_, reject) => 
         setTimeout(() => reject(new Error('Timeout')), 5000)
       );
       
-      const account = await Promise.race([accountPromise, timeoutPromise]);
+      const account = await Promise.race([accountPromise, timeoutPromise]) as any;
       stripeAccountId = account.id;
       console.log(`[RWO:$1-smoke] 📊 Stripe account: ${stripeAccountId}`);
     } catch (accountError: any) {

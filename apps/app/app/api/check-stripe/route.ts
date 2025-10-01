@@ -13,11 +13,11 @@ export async function GET(req: NextRequest) {
       
       // Try to retrieve account with timeout
       const accountPromise = stripe.accounts.retrieve();
-      const timeoutPromise = new Promise((_, reject) => 
+      const timeoutPromise = new Promise<never>((_, reject) => 
         setTimeout(() => reject(new Error('Timeout')), 5000)
       );
       
-      const account = await Promise.race([accountPromise, timeoutPromise]);
+      const account = await Promise.race([accountPromise, timeoutPromise]) as any;
       stripeAccountId = account.id;
     } catch (error: any) {
       console.error('Stripe account retrieval error:', error.message);
