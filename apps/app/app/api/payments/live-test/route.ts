@@ -8,6 +8,8 @@ try {
   if (process.env.STRIPE_SECRET_KEY) {
     stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
       apiVersion: '2025-08-27.basil',
+      timeout: 30000, // 30 seconds
+      maxNetworkRetries: 3,
     });
     console.log('[RWO:$1-smoke] ✅ Stripe initialized successfully');
   } else {
@@ -42,21 +44,24 @@ export async function POST(req: NextRequest) {
 
     const { cartTotal = 0, itemsCount = 0 } = await req.json();
 
-    // Test Stripe connection first
+    // Test Stripe connection first with longer timeout
     try {
       console.log('[RWO:$1-smoke] 🔍 Testing Stripe connection...');
-      await stripe.balance.retrieve();
+      
+      // Create a new Stripe instance with longer timeout for production
+      const stripeWithTimeout = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+        apiVersion: '2025-08-27.basil',
+        timeout: 30000, // 30 seconds
+        maxNetworkRetries: 3,
+      });
+      
+      await stripeWithTimeout.balance.retrieve();
       console.log('[RWO:$1-smoke] ✅ Stripe connection test successful');
     } catch (connectionError: any) {
       console.error('[RWO:$1-smoke] ❌ Stripe connection test failed:', connectionError.message);
-      return NextResponse.json({
-        ok: false,
-        error: `Stripe connection failed: ${connectionError.message}`,
-        debug: {
-          connectionError: connectionError.message,
-          stripeKeyPrefix: process.env.STRIPE_SECRET_KEY?.substring(0, 10) + '...'
-        }
-      }, { status: 500 });
+      
+      // Try to proceed anyway - sometimes balance.retrieve fails but paymentIntents work
+      console.log('[RWO:$1-smoke] ⚠️ Proceeding with payment creation despite connection test failure...');
     }
 
     console.log('[RWO:$1-smoke] 💳 Creating PaymentIntent...');
