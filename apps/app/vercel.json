@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "regions": ["iad1", "sfo1", "lhr1"],
+  "functions": {
+    "app/api/payments/live-test/route.ts": {
+      "regions": ["sfo1", "lhr1"],
+      "maxDuration": 30
+    },
+    "app/api/stripe-health/route.ts": {
+      "regions": ["sfo1", "lhr1"],
+      "maxDuration": 15
+    }
+  },
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "build": {
+    "env": {
+      "NEXT_PUBLIC_APP_URL": "@next_public_app_url"
+    }
+  }
+}
