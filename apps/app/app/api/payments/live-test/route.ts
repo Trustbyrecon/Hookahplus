@@ -20,17 +20,30 @@ try {
 export async function POST(req: NextRequest) {
   const startTime = Date.now();
   console.log('[RWO:$1-smoke] 🚀 Starting $1 smoke test...');
+  console.log('[RWO:$1-smoke] 🔍 Environment check:', {
+    hasStripeKey: !!process.env.STRIPE_SECRET_KEY,
+    stripeKeyPrefix: process.env.STRIPE_SECRET_KEY?.substring(0, 10) + '...',
+    nodeEnv: process.env.NODE_ENV,
+    vercel: process.env.VERCEL
+  });
 
   try {
     if (!stripe) {
+      console.error('[RWO:$1-smoke] ❌ Stripe not initialized');
       return NextResponse.json({
         ok: false,
-        error: 'Stripe not configured. Please check STRIPE_SECRET_KEY environment variable.'
+        error: 'Stripe not configured. Please check STRIPE_SECRET_KEY environment variable.',
+        debug: {
+          hasStripeKey: !!process.env.STRIPE_SECRET_KEY,
+          nodeEnv: process.env.NODE_ENV
+        }
       }, { status: 500 });
     }
 
     const { cartTotal = 0, itemsCount = 0 } = await req.json();
 
+    console.log('[RWO:$1-smoke] 💳 Creating PaymentIntent...');
+    
     // Create PaymentIntent with $1.00 (100 cents)
     const paymentIntent = await stripe.paymentIntents.create({
       amount: 100, // $1.00 in cents
@@ -83,6 +96,13 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     const duration = Date.now() - startTime;
     console.error('[RWO:$1-smoke] ❌ PaymentIntent creation failed:', error);
+    console.error('[RWO:$1-smoke] 🔍 Error details:', {
+      name: error.name,
+      message: error.message,
+      code: error.code,
+      type: error.type,
+      statusCode: error.statusCode
+    });
 
     // Log error to GhostLog
     try {
@@ -93,6 +113,8 @@ export async function POST(req: NextRequest) {
           timestamp: new Date().toISOString(),
           kind: 'stripe_smoke_error',
           error: error.message,
+          errorCode: error.code,
+          errorType: error.type,
           duration: duration
         })
       });
@@ -100,9 +122,26 @@ export async function POST(req: NextRequest) {
       console.warn('[RWO:$1-smoke] ⚠️ GhostLog error write failed:', logError);
     }
 
+    // Provide more specific error messages
+    let userMessage = error.message || 'Failed to create payment intent';
+    if (error.code === 'api_key_expired') {
+      userMessage = 'Stripe API key has expired. Please contact support.';
+    } else if (error.code === 'invalid_api_key') {
+      userMessage = 'Invalid Stripe API key. Please contact support.';
+    } else if (error.code === 'rate_limit') {
+      userMessage = 'Rate limit exceeded. Please try again in a moment.';
+    } else if (error.message?.includes('connection')) {
+      userMessage = 'Connection error with Stripe. Please try again.';
+    }
+
     return NextResponse.json({
       ok: false,
-      error: error.message || 'Failed to create payment intent',
+      error: userMessage,
+      debug: {
+        originalError: error.message,
+        code: error.code,
+        type: error.type
+      },
       duration: duration
     }, { status: 500 });
   }
