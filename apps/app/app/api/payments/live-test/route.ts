@@ -42,6 +42,23 @@ export async function POST(req: NextRequest) {
 
     const { cartTotal = 0, itemsCount = 0 } = await req.json();
 
+    // Test Stripe connection first
+    try {
+      console.log('[RWO:$1-smoke] 🔍 Testing Stripe connection...');
+      await stripe.balance.retrieve();
+      console.log('[RWO:$1-smoke] ✅ Stripe connection test successful');
+    } catch (connectionError: any) {
+      console.error('[RWO:$1-smoke] ❌ Stripe connection test failed:', connectionError.message);
+      return NextResponse.json({
+        ok: false,
+        error: `Stripe connection failed: ${connectionError.message}`,
+        debug: {
+          connectionError: connectionError.message,
+          stripeKeyPrefix: process.env.STRIPE_SECRET_KEY?.substring(0, 10) + '...'
+        }
+      }, { status: 500 });
+    }
+
     console.log('[RWO:$1-smoke] 💳 Creating PaymentIntent...');
     
     // Create PaymentIntent with $1.00 (100 cents)
