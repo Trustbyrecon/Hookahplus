@@ -44,25 +44,8 @@ export async function POST(req: NextRequest) {
 
     const { cartTotal = 0, itemsCount = 0 } = await req.json();
 
-    // Test Stripe connection first with longer timeout
-    try {
-      console.log('[RWO:$1-smoke] 🔍 Testing Stripe connection...');
-      
-      // Create a new Stripe instance with longer timeout for production
-      const stripeWithTimeout = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-        apiVersion: '2025-08-27.basil',
-        timeout: 30000, // 30 seconds
-        maxNetworkRetries: 3,
-      });
-      
-      await stripeWithTimeout.balance.retrieve();
-      console.log('[RWO:$1-smoke] ✅ Stripe connection test successful');
-    } catch (connectionError: any) {
-      console.error('[RWO:$1-smoke] ❌ Stripe connection test failed:', connectionError.message);
-      
-      // Try to proceed anyway - sometimes balance.retrieve fails but paymentIntents work
-      console.log('[RWO:$1-smoke] ⚠️ Proceeding with payment creation despite connection test failure...');
-    }
+    // Skip connection test in production - go straight to PaymentIntent creation
+    console.log('[RWO:$1-smoke] 🚀 Skipping connection test, proceeding directly to PaymentIntent creation...');
 
     console.log('[RWO:$1-smoke] 💳 Creating PaymentIntent...');
     
