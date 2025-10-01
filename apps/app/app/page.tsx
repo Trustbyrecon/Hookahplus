@@ -65,8 +65,9 @@ export default function LandingPage() {
   const [isPrettyTheme, setIsPrettyTheme] = useState(false);
 
   useEffect(() => {
-    // Check for pretty theme on client side
-    setIsPrettyTheme(process.env.NEXT_PUBLIC_PRETTY_THEME === '1' || window.location.hostname.includes('vercel.app'));
+    // Check for pretty theme on client side - simplified to prevent hydration mismatch
+    const isVercel = typeof window !== 'undefined' && window.location.hostname.includes('vercel.app');
+    setIsPrettyTheme(process.env.NEXT_PUBLIC_PRETTY_THEME === '1' || isVercel);
   }, []);
 
   // Quick Access Cards

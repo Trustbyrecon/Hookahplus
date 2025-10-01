@@ -8,6 +8,7 @@ import { CartProvider, useCart } from '../../../components/cart/CartProvider';
 import { CartDisplay } from '../../../components/cart/CartDisplay';
 import { StripeTestSession } from '../../../components/StripeTestSession';
 import { NewSmokeTest } from '../../../components/NewSmokeTest';
+import { StripeDiagnostic } from '../../../components/StripeDiagnostic';
 import GlobalNavigation from '../../../components/GlobalNavigation';
 import { 
   Flame, 
@@ -72,16 +73,13 @@ import {
 function PreOrderPageContent() {
   const params = useParams();
   const tableId = params.tableId as string;
-  const [isPrettyTheme, setIsPrettyTheme] = useState(
-    typeof window !== 'undefined' 
-      ? (process.env.NEXT_PUBLIC_PRETTY_THEME === '1' || window.location.hostname.includes('vercel.app'))
-      : process.env.NEXT_PUBLIC_PRETTY_THEME === '1'
-  );
+  const [isPrettyTheme, setIsPrettyTheme] = useState(false);
   const { add } = useCart();
 
   useEffect(() => {
-    // Check for pretty theme on client side
-    setIsPrettyTheme(process.env.NEXT_PUBLIC_PRETTY_THEME === '1' || window.location.hostname.includes('vercel.app'));
+    // Check for pretty theme on client side - simplified to prevent hydration mismatch
+    const isVercel = typeof window !== 'undefined' && window.location.hostname.includes('vercel.app');
+    setIsPrettyTheme(process.env.NEXT_PUBLIC_PRETTY_THEME === '1' || isVercel);
   }, []);
   const [showTestMode, setShowTestMode] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
@@ -385,6 +383,11 @@ function PreOrderPageContent() {
             {/* New $1 Smoke Test */}
             <div className="card-pretty p-6 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/30">
               <NewSmokeTest />
+            </div>
+
+            {/* Stripe Diagnostic */}
+            <div className="card-pretty p-4 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/30">
+              <StripeDiagnostic />
             </div>
 
             {/* Live Session Status */}
