@@ -556,7 +556,13 @@ export default function StaffPanelPage() {
         {activeTab === 'communication' && (
           <StaffCommunication
             currentUserId="staff-003" // Current user (Alex Johnson - Manager)
-            staffMembers={staffMembers}
+            staffMembers={staffMembers.map(staff => ({
+              id: staff.id,
+              name: staff.name,
+              role: staff.role,
+              status: staff.status === 'available' ? 'online' : staff.status === 'busy' ? 'busy' : 'offline',
+              lastSeen: new Date()
+            }))}
             onMessageSend={(message) => {
               // Handle message sending
               console.log('Sending message:', message);
