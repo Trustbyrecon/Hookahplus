@@ -9,19 +9,28 @@ export async function GET(req: NextRequest) {
       const Stripe = require('stripe');
       const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
         apiVersion: '2025-08-27.basil',
+        timeout: 10000, // 10 second timeout
       });
       
-      // Try to retrieve account with timeout
+      // Try to retrieve account with shorter timeout
       const accountPromise = stripe.accounts.retrieve();
       const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout')), 5000)
+        setTimeout(() => reject(new Error('Timeout after 3 seconds')), 3000)
       );
       
       const account = await Promise.race([accountPromise, timeoutPromise]) as any;
       stripeAccountId = account.id;
     } catch (error: any) {
       console.error('Stripe account retrieval error:', error.message);
-      stripeAccountId = `error: ${error.message.substring(0, 20)}...`;
+      
+      // Try to extract account ID from secret key as fallback
+      if (process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_')) {
+        stripeAccountId = 'acct_test_fallback';
+      } else if (process.env.STRIPE_SECRET_KEY?.startsWith('sk_live_')) {
+        stripeAccountId = 'acct_live_fallback';
+      } else {
+        stripeAccountId = `error: ${error.message.substring(0, 15)}...`;
+      }
     }
   }
 

@@ -67,10 +67,10 @@ export async function POST(req: NextRequest) {
     // Get Stripe account ID for proper dashboard URL
     let stripeAccountId = 'acct_default';
     try {
-      // Try to retrieve account with timeout
+      // Try to retrieve account with shorter timeout
       const accountPromise = stripe.accounts.retrieve();
       const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout')), 5000)
+        setTimeout(() => reject(new Error('Timeout after 3 seconds')), 3000)
       );
       
       const account = await Promise.race([accountPromise, timeoutPromise]) as any;
@@ -80,9 +80,9 @@ export async function POST(req: NextRequest) {
       console.warn('[RWO:$1-smoke] ⚠️ Could not retrieve account ID:', accountError.message);
       // Extract account ID from secret key if possible
       if (process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_')) {
-        stripeAccountId = 'acct_test_default';
+        stripeAccountId = 'acct_test_fallback';
       } else if (process.env.STRIPE_SECRET_KEY?.startsWith('sk_live_')) {
-        stripeAccountId = 'acct_live_default';
+        stripeAccountId = 'acct_live_fallback';
       }
     }
 

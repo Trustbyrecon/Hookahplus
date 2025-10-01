@@ -13,36 +13,54 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
 
   useEffect(() => {
     // Check for pretty theme setting on client side only
-    const savedTheme = localStorage.getItem('hookahplus-pretty-theme');
-    const envTheme = process.env.NEXT_PUBLIC_PRETTY_THEME === '1';
-    const isVercel = typeof window !== 'undefined' && window.location.hostname.includes('vercel.app');
+    let shouldUsePrettyTheme = false;
     
-    // Use saved preference, then environment, then Vercel detection
-    const shouldUsePrettyTheme = savedTheme !== null 
-      ? savedTheme === 'true' 
-      : envTheme || isVercel;
+    try {
+      const savedTheme = localStorage.getItem('hookahplus-pretty-theme');
+      const envTheme = process.env.NEXT_PUBLIC_PRETTY_THEME === '1';
+      const isVercel = typeof window !== 'undefined' && window.location.hostname.includes('vercel.app');
+      
+      // Use saved preference, then environment, then Vercel detection
+      shouldUsePrettyTheme = savedTheme !== null 
+        ? savedTheme === 'true' 
+        : envTheme || isVercel;
+    } catch (error) {
+      // Fallback if localStorage fails
+      const envTheme = process.env.NEXT_PUBLIC_PRETTY_THEME === '1';
+      const isVercel = typeof window !== 'undefined' && window.location.hostname.includes('vercel.app');
+      shouldUsePrettyTheme = envTheme || isVercel;
+    }
     
     setIsPrettyTheme(shouldUsePrettyTheme);
     setIsLoading(false);
     
-    // Apply theme to document
-    if (shouldUsePrettyTheme) {
-      document.documentElement.classList.add('pretty-theme');
-    } else {
-      document.documentElement.classList.remove('pretty-theme');
+    // Apply theme to document immediately
+    if (typeof document !== 'undefined') {
+      if (shouldUsePrettyTheme) {
+        document.documentElement.classList.add('pretty-theme');
+      } else {
+        document.documentElement.classList.remove('pretty-theme');
+      }
     }
   }, []);
 
   const handleToggle = () => {
     const newTheme = !isPrettyTheme;
     setIsPrettyTheme(newTheme);
-    localStorage.setItem('hookahplus-pretty-theme', newTheme.toString());
     
-    // Apply theme to document
-    if (newTheme) {
-      document.documentElement.classList.add('pretty-theme');
-    } else {
-      document.documentElement.classList.remove('pretty-theme');
+    try {
+      localStorage.setItem('hookahplus-pretty-theme', newTheme.toString());
+    } catch (error) {
+      console.warn('Failed to save theme preference:', error);
+    }
+    
+    // Apply theme to document immediately
+    if (typeof document !== 'undefined') {
+      if (newTheme) {
+        document.documentElement.classList.add('pretty-theme');
+      } else {
+        document.documentElement.classList.remove('pretty-theme');
+      }
     }
   };
 
