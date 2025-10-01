@@ -282,12 +282,6 @@ export default function LandingPage() {
                   Sessions
                 </Button>
               </Link>
-              <Link href="/preorder/T-001">
-                <Button className="btn-pretty-secondary">
-                  <QrCode className="w-4 h-4 mr-2" />
-                  Pre-Order Station
-                </Button>
-              </Link>
               <Link href="/fire-session-dashboard">
                 <Button className="btn-pretty-secondary">
                   <Flame className="w-4 h-4 mr-2" />
