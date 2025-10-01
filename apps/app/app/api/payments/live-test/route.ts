@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
       currency: 'usd',
       confirm: true,
       payment_method: 'pm_card_visa', // Sandbox test card
+      payment_method_types: ['card'], // Specify payment method types
       metadata: {
         source: 'order-mgmt:$1-smoke',
         env: 'preview',
@@ -45,9 +46,6 @@ export async function POST(req: NextRequest) {
         timestamp: new Date().toISOString()
       },
       description: 'Hookah+ $1 Smoke Test - Order Management',
-      automatic_payment_methods: {
-        enabled: false, // Using specific test payment method
-      },
     });
 
     const duration = Date.now() - startTime;
@@ -55,7 +53,7 @@ export async function POST(req: NextRequest) {
 
     // Log to GhostLog
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/ghost-log`, {
+      await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/api/ghost-log`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -88,7 +86,7 @@ export async function POST(req: NextRequest) {
 
     // Log error to GhostLog
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/ghost-log`, {
+      await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/api/ghost-log`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
