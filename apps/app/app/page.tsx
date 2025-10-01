@@ -62,29 +62,8 @@ import {
 } from 'lucide-react';
 
 export default function LandingPage() {
-  const [isPrettyTheme, setIsPrettyTheme] = useState(false);
-
-  useEffect(() => {
-    // Check if pretty theme is active by looking at document class
-    const checkTheme = () => {
-      if (typeof document !== 'undefined') {
-        setIsPrettyTheme(document.documentElement.classList.contains('pretty-theme'));
-      }
-    };
-    
-    checkTheme();
-    
-    // Listen for theme changes from ThemeToggle
-    const observer = new MutationObserver(checkTheme);
-    if (typeof document !== 'undefined') {
-      observer.observe(document.documentElement, {
-        attributes: true,
-        attributeFilter: ['class']
-      });
-    }
-    
-    return () => observer.disconnect();
-  }, []);
+  // Theme is now managed entirely by ThemeToggle component
+  // No local state needed to prevent hydration mismatch
 
   // Quick Access Cards
   const quickAccessCards = [
@@ -182,67 +161,7 @@ export default function LandingPage() {
     }
   ];
 
-  if (!isPrettyTheme) {
-    // Fallback to original solid design
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
-        {/* Header */}
-        <div className="bg-zinc-950 border-b border-teal-500/50">
-          <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold">
-                  Hookah<span className="text-teal-400">+</span> Dashboard
-                </h1>
-                <p className="text-zinc-400 mt-1">
-                  Complete BOH/FOH workflow management with edge case handling
-                </p>
-              </div>
-              
-              <div className="flex items-center space-x-6">
-                <div className="text-right">
-                  <div className="text-sm text-zinc-400">Flow Status</div>
-                  <div className="text-lg font-semibold">Normal</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm text-zinc-400">Live Sessions</div>
-                  <div className="text-lg font-semibold">0</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm text-zinc-400">Revenue</div>
-                  <div className="text-lg font-semibold">$0</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm text-zinc-400">System Health</div>
-                  <div className="text-lg font-semibold text-green-400">EXCELLENT</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold mb-4">Welcome to Hookah+</h2>
-            <p className="text-zinc-400 mb-8">Your hookah lounge management system</p>
-            <div className="flex justify-center space-x-4">
-              <Link href="/preorder/T-001">
-                <Button variant="primary" size="lg">
-                  Start Pre-Order
-                </Button>
-              </Link>
-              <Link href="/fire-session-dashboard">
-                <Button variant="outline" size="lg">
-                  View Dashboard
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Always use pretty theme - ThemeToggle component manages the actual theme switching
 
   // Pretty Theme Design
   return (

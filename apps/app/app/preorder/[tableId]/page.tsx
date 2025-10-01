@@ -73,30 +73,8 @@ import {
 function PreOrderPageContent() {
   const params = useParams();
   const tableId = params.tableId as string;
-  const [isPrettyTheme, setIsPrettyTheme] = useState(false);
   const { add } = useCart();
-
-  useEffect(() => {
-    // Check if pretty theme is active by looking at document class
-    const checkTheme = () => {
-      if (typeof document !== 'undefined') {
-        setIsPrettyTheme(document.documentElement.classList.contains('pretty-theme'));
-      }
-    };
-    
-    checkTheme();
-    
-    // Listen for theme changes from ThemeToggle
-    const observer = new MutationObserver(checkTheme);
-    if (typeof document !== 'undefined') {
-      observer.observe(document.documentElement, {
-        attributes: true,
-        attributeFilter: ['class']
-      });
-    }
-    
-    return () => observer.disconnect();
-  }, []);
+  // Theme is now managed entirely by ThemeToggle component
   const [showTestMode, setShowTestMode] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
 
@@ -189,26 +167,7 @@ function PreOrderPageContent() {
     }
   };
 
-  if (!isPrettyTheme) {
-    // Fallback to original solid design
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
-        <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold mb-4">Pre-Order Station - Table {tableId}</h1>
-            <p className="text-zinc-400 mb-8">Select your hookah flavors and place your order</p>
-            <div className="flex justify-center space-x-4">
-              <Link href="/fire-session-dashboard">
-                <Button variant="primary" size="lg">
-                  Start Fire Session
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Always use pretty theme - ThemeToggle component manages the actual theme switching
 
   // Pretty Theme Design
   return (
