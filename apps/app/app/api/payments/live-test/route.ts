@@ -44,52 +44,26 @@ export async function POST(req: NextRequest) {
 
     const { cartTotal = 0, itemsCount = 0 } = await req.json();
 
-    // Skip connection test in production - go straight to PaymentIntent creation
-    console.log('[RWO:$1-smoke] 🚀 Skipping connection test, proceeding directly to PaymentIntent creation...');
-
     console.log('[RWO:$1-smoke] 💳 Creating PaymentIntent...');
     
-    // Create PaymentIntent with $1.00 (100 cents)
+    // Create PaymentIntent with $1.00 (100 cents) - simplified approach
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: 100, // $1.00 in cents
+      amount: 100,
       currency: 'usd',
       confirm: true,
-      payment_method: 'pm_card_visa', // Sandbox test card
-      payment_method_types: ['card'], // Specify payment method types
+      payment_method: 'pm_card_visa',
       metadata: {
-        source: 'order-mgmt:$1-smoke',
-        env: 'preview',
-        cartTotal: cartTotal.toString(),
-        itemsCount: itemsCount.toString(),
-        timestamp: new Date().toISOString()
-      },
-      description: 'Hookah+ $1 Smoke Test - Order Management',
+        source: 'order-mgmt:$1-smoke'
+      }
     });
 
     const duration = Date.now() - startTime;
     console.log(`[RWO:$1-smoke] ✅ PaymentIntent created: ${paymentIntent.id} (${duration}ms)`);
 
-    // Get Stripe account ID for proper dashboard URL
-    let stripeAccountId = 'acct_default';
-    try {
-      // Try to retrieve account with shorter timeout
-      const accountPromise = stripe.accounts.retrieve();
-      const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout after 3 seconds')), 3000)
-      );
-      
-      const account = await Promise.race([accountPromise, timeoutPromise]) as any;
-      stripeAccountId = account.id;
-      console.log(`[RWO:$1-smoke] 📊 Stripe account: ${stripeAccountId}`);
-    } catch (accountError: any) {
-      console.warn('[RWO:$1-smoke] ⚠️ Could not retrieve account ID:', accountError.message);
-      // Extract account ID from secret key if possible
-      if (process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_')) {
-        stripeAccountId = 'acct_test_fallback';
-      } else if (process.env.STRIPE_SECRET_KEY?.startsWith('sk_live_')) {
-        stripeAccountId = 'acct_live_fallback';
-      }
-    }
+    // Use fallback account ID for dashboard URL
+    const stripeAccountId = process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_') 
+      ? 'acct_test_fallback' 
+      : 'acct_live_fallback';
 
     // Log to GhostLog
     try {
