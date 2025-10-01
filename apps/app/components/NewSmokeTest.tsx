@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from './Button';
+import Button from './Button';
 import { CheckCircle, XCircle, Loader2, Zap, ExternalLink } from 'lucide-react';
 
 interface NewSmokeTestProps {
