@@ -19,6 +19,7 @@ import {
   MapPin,
   Eye
 } from 'lucide-react';
+import { ThemeToggle } from './ThemeToggle';
 
 // AI Agent Collaboration Interface
 interface FlowState {
@@ -290,6 +291,9 @@ const GlobalNavigation: React.FC = () => {
                 Active Sessions: <span className="text-white font-semibold">{sessionCount}</span>
               </div>
             </div>
+
+            {/* Theme Toggle */}
+            <ThemeToggle className="mr-2" />
 
             {/* Support and Docs */}
             <div className="flex items-center space-x-2">

@@ -65,9 +65,24 @@ export default function LandingPage() {
   const [isPrettyTheme, setIsPrettyTheme] = useState(false);
 
   useEffect(() => {
-    // Check for pretty theme on client side - simplified to prevent hydration mismatch
+    // Check for pretty theme setting on client side only
+    const savedTheme = localStorage.getItem('hookahplus-pretty-theme');
+    const envTheme = process.env.NEXT_PUBLIC_PRETTY_THEME === '1';
     const isVercel = typeof window !== 'undefined' && window.location.hostname.includes('vercel.app');
-    setIsPrettyTheme(process.env.NEXT_PUBLIC_PRETTY_THEME === '1' || isVercel);
+    
+    // Use saved preference, then environment, then Vercel detection
+    const shouldUsePrettyTheme = savedTheme !== null 
+      ? savedTheme === 'true' 
+      : envTheme || isVercel;
+    
+    setIsPrettyTheme(shouldUsePrettyTheme);
+    
+    // Apply theme to document
+    if (shouldUsePrettyTheme) {
+      document.documentElement.classList.add('pretty-theme');
+    } else {
+      document.documentElement.classList.remove('pretty-theme');
+    }
   }, []);
 
   // Quick Access Cards

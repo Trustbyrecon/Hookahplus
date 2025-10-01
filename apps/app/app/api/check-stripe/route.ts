@@ -10,10 +10,18 @@ export async function GET(req: NextRequest) {
       const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
         apiVersion: '2025-08-27.basil',
       });
-      const account = await stripe.accounts.retrieve();
+      
+      // Try to retrieve account with timeout
+      const accountPromise = stripe.accounts.retrieve();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout')), 5000)
+      );
+      
+      const account = await Promise.race([accountPromise, timeoutPromise]);
       stripeAccountId = account.id;
-    } catch (error) {
-      stripeAccountId = 'error_retrieving';
+    } catch (error: any) {
+      console.error('Stripe account retrieval error:', error.message);
+      stripeAccountId = `error: ${error.message.substring(0, 20)}...`;
     }
   }
 

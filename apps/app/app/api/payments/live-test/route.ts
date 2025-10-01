@@ -67,11 +67,23 @@ export async function POST(req: NextRequest) {
     // Get Stripe account ID for proper dashboard URL
     let stripeAccountId = 'acct_default';
     try {
-      const account = await stripe.accounts.retrieve();
+      // Try to retrieve account with timeout
+      const accountPromise = stripe.accounts.retrieve();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout')), 5000)
+      );
+      
+      const account = await Promise.race([accountPromise, timeoutPromise]);
       stripeAccountId = account.id;
       console.log(`[RWO:$1-smoke] 📊 Stripe account: ${stripeAccountId}`);
-    } catch (accountError) {
-      console.warn('[RWO:$1-smoke] ⚠️ Could not retrieve account ID:', accountError);
+    } catch (accountError: any) {
+      console.warn('[RWO:$1-smoke] ⚠️ Could not retrieve account ID:', accountError.message);
+      // Extract account ID from secret key if possible
+      if (process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_')) {
+        stripeAccountId = 'acct_test_default';
+      } else if (process.env.STRIPE_SECRET_KEY?.startsWith('sk_live_')) {
+        stripeAccountId = 'acct_live_default';
+      }
     }
 
     // Log to GhostLog
