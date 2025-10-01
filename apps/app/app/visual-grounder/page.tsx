@@ -19,9 +19,14 @@ import {
   Target,
   BarChart3,
   X,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Edit3,
+  Users
 } from 'lucide-react';
 import GlobalNavigation from '../../components/GlobalNavigation';
+import { InteractiveLayoutEditor } from '../../components/InteractiveLayoutEditor';
+import { StaffTrainingWorkflow } from '../../components/StaffTrainingWorkflow';
+import { VisualGrounderAnalytics } from '../../components/VisualGrounderAnalytics';
 
 export default function VisualGrounderPage() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -36,10 +41,13 @@ export default function VisualGrounderPage() {
   const [isDeploying, setIsDeploying] = useState(false);
   const [generatedLayout, setGeneratedLayout] = useState<any>(null);
   const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [currentAnalysisStep, setCurrentAnalysisStep] = useState('');
+  const [aiAnalysis, setAiAnalysis] = useState<any>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{ [key: number]: number }>({});
   const [uploadErrors, setUploadErrors] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const steps = [
@@ -63,9 +71,21 @@ export default function VisualGrounderPage() {
     },
     {
       id: 4,
-      title: 'Review & Deploy',
-      description: 'Review seating map and deploy to dashboard',
-      icon: <Target className="w-5 h-5" />
+      title: 'Edit Layout',
+      description: 'Customize and perfect your AI-generated layout',
+      icon: <Edit3 className="w-5 h-5" />
+    },
+    {
+      id: 5,
+      title: 'Staff Training',
+      description: 'Train your team on the new layout system',
+      icon: <Users className="w-5 h-5" />
+    },
+    {
+      id: 6,
+      title: 'Analytics',
+      description: 'Monitor performance and optimize your layout',
+      icon: <BarChart3 className="w-5 h-5" />
     }
   ];
 
@@ -198,7 +218,7 @@ export default function VisualGrounderPage() {
   };
 
   const handleNext = () => {
-    if (currentStep < 4) {
+    if (currentStep < 6) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -211,21 +231,24 @@ export default function VisualGrounderPage() {
 
   const simulateAnalysis = async () => {
     const steps = [
-      { progress: 25, step: 'Analyzing photos...' },
-      { progress: 50, step: 'Detecting seating areas...' },
-      { progress: 75, step: 'Optimizing layout...' },
-      { progress: 100, step: 'Generating map...' }
+      { progress: 20, step: 'Analyzing photo composition...' },
+      { progress: 40, step: 'Detecting architectural features...' },
+      { progress: 60, step: 'Identifying seating areas...' },
+      { progress: 80, step: 'Calculating optimal table placement...' },
+      { progress: 100, step: 'Generating AI recommendations...' }
     ];
 
     for (const { progress, step } of steps) {
       setAnalysisProgress(progress);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      setCurrentAnalysisStep(step);
+      await new Promise(resolve => setTimeout(resolve, 1200));
     }
   };
 
   const handleGenerateLayout = async () => {
     setIsGenerating(true);
     setAnalysisProgress(0);
+    setCurrentAnalysisStep('');
     
     try {
       await simulateAnalysis();
@@ -248,11 +271,64 @@ export default function VisualGrounderPage() {
       
       const data = await response.json();
       setGeneratedLayout(data.layout);
+      setAiAnalysis(data.analysis);
+      
+      console.log('[Visual Grounder AI] ✅ Layout generated with AI analysis:', data.analysis);
     } catch (error) {
-      console.error('Error generating layout:', error);
+      console.error('[Visual Grounder AI] ❌ Error generating layout:', error);
       alert('Failed to generate layout. Please try again.');
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleLayoutChange = (updatedLayout: any) => {
+    setGeneratedLayout(updatedLayout);
+    console.log('[Visual Grounder] 📝 Layout updated:', updatedLayout);
+  };
+
+  const handleSaveLayout = async () => {
+    try {
+      // Call API to save layout
+      const response = await fetch('/api/visual-grounder/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          layoutId: generatedLayout?.id,
+          layoutData: generatedLayout
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to save layout');
+      }
+      
+      console.log('[Visual Grounder] 💾 Layout saved successfully');
+      alert('Layout saved successfully!');
+    } catch (error) {
+      console.error('[Visual Grounder] ❌ Error saving layout:', error);
+      alert('Failed to save layout. Please try again.');
+    }
+  };
+
+  const handleExportLayout = () => {
+    try {
+      const dataStr = JSON.stringify(generatedLayout, null, 2);
+      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+      
+      const exportFileDefaultName = `layout_${generatedLayout?.name || 'export'}_${new Date().toISOString().split('T')[0]}.json`;
+      
+      const linkElement = document.createElement('a');
+      linkElement.setAttribute('href', dataUri);
+      linkElement.setAttribute('download', exportFileDefaultName);
+      linkElement.click();
+      
+      console.log('[Visual Grounder] 📤 Layout exported successfully');
+    } catch (error) {
+      console.error('[Visual Grounder] ❌ Error exporting layout:', error);
+      alert('Failed to export layout. Please try again.');
     }
   };
 
@@ -516,46 +592,60 @@ export default function VisualGrounderPage() {
   const renderStep3 = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-teal-400 mb-2">Generate Seating Map</h2>
-        <p className="text-zinc-400">AI will analyze your photos and create an optimized seating layout</p>
+        <h2 className="text-2xl font-bold text-teal-400 mb-2">AI Layout Generation</h2>
+        <p className="text-zinc-400">Advanced AI analyzes your photos and creates an optimized seating layout</p>
       </div>
 
       <div className="bg-zinc-800/50 rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-white">Analysis Progress</h3>
+          <h3 className="text-lg font-semibold text-white flex items-center">
+            <Zap className="w-5 h-5 mr-2 text-teal-400" />
+            AI Analysis Progress
+          </h3>
           <span className="text-sm text-zinc-400">{uploadedPhotos.length} photos uploaded</span>
         </div>
         
+        {/* AI Analysis Steps */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-zinc-300">Photo Analysis</span>
+            <span className="text-zinc-300">Photo Composition Analysis</span>
             <span className="text-green-400">✓ Complete</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-zinc-300">Layout Detection</span>
+            <span className="text-zinc-300">Architectural Feature Detection</span>
             <span className="text-green-400">✓ Complete</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-zinc-300">Seating Optimization</span>
+            <span className="text-zinc-300">Seating Area Identification</span>
             <span className="text-green-400">✓ Complete</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-zinc-300">Map Generation</span>
+            <span className="text-zinc-300">Optimal Table Placement</span>
+            <span className="text-green-400">✓ Complete</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-zinc-300">AI Recommendations</span>
             <span className={isGenerating ? "text-yellow-400" : "text-green-400"}>
               {isGenerating ? "In Progress..." : "Complete"}
             </span>
           </div>
         </div>
 
-        {isGenerating && (
-          <div className="mt-4">
-            <div className="w-full bg-zinc-700 rounded-full h-2">
+        {/* Current AI Step */}
+        {isGenerating && currentAnalysisStep && (
+          <div className="mt-4 p-4 bg-zinc-700/50 rounded-lg">
+            <div className="flex items-center space-x-3 mb-3">
+              <div className="w-2 h-2 bg-teal-400 rounded-full animate-pulse"></div>
+              <span className="text-teal-400 font-medium">AI Processing</span>
+            </div>
+            <p className="text-sm text-zinc-300">{currentAnalysisStep}</p>
+            <div className="w-full bg-zinc-600 rounded-full h-2 mt-3">
               <div 
-                className="bg-teal-500 h-2 rounded-full transition-all duration-500"
+                className="bg-gradient-to-r from-teal-400 to-cyan-400 h-2 rounded-full transition-all duration-500"
                 style={{ width: `${analysisProgress}%` }}
               ></div>
             </div>
-            <p className="text-sm text-zinc-400 mt-2 text-center">{analysisProgress}% Complete</p>
+            <p className="text-xs text-zinc-400 mt-2 text-center">{analysisProgress}% Complete</p>
           </div>
         )}
 
@@ -568,18 +658,66 @@ export default function VisualGrounderPage() {
             {isGenerating ? (
               <>
                 <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                Generating Layout...
+                AI Analyzing...
               </>
             ) : (
               <>
                 <Zap className="w-4 h-4 mr-2" />
-                Generate Seating Map
+                Generate AI Layout
               </>
             )}
           </button>
         </div>
       </div>
 
+      {/* AI Analysis Results */}
+      {aiAnalysis && (
+        <div className="bg-gradient-to-r from-teal-500/10 to-cyan-500/10 border border-teal-500/30 rounded-lg p-6">
+          <div className="flex items-center space-x-2 mb-4">
+            <CheckCircle className="w-6 h-6 text-teal-400" />
+            <span className="text-teal-400 font-semibold text-lg">AI Analysis Complete!</span>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h4 className="text-white font-semibold mb-3">Analysis Results</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-zinc-300">Confidence Score:</span>
+                  <span className="text-teal-400 font-semibold">{(aiAnalysis.confidence * 100).toFixed(1)}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-300">Processing Time:</span>
+                  <span className="text-zinc-400">{aiAnalysis.processingTime}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-300">Features Detected:</span>
+                  <span className="text-zinc-400">{aiAnalysis.featuresDetected?.length || 0}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div>
+              <h4 className="text-white font-semibold mb-3">Detected Features</h4>
+              <div className="space-y-1">
+                {aiAnalysis.featuresDetected?.slice(0, 4).map((feature: string, index: number) => (
+                  <div key={index} className="flex items-center space-x-2 text-sm">
+                    <div className="w-1.5 h-1.5 bg-teal-400 rounded-full"></div>
+                    <span className="text-zinc-300">{feature}</span>
+                  </div>
+                ))}
+                {aiAnalysis.featuresDetected?.length > 4 && (
+                  <div className="text-xs text-zinc-500">
+                    +{aiAnalysis.featuresDetected.length - 4} more features
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Layout Generation Success */}
       {generatedLayout && (
         <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
           <div className="flex items-center space-x-2 mb-2">
@@ -587,7 +725,8 @@ export default function VisualGrounderPage() {
             <span className="text-green-400 font-semibold">Layout Generated Successfully!</span>
           </div>
           <p className="text-sm text-zinc-300">
-            Your seating map has been created with {generatedLayout.zones.length} zones and optimized for your lounge layout.
+            AI created {generatedLayout.zones.length} zones with {generatedLayout.totalCapacity} total capacity, 
+            optimized for your lounge layout with {aiAnalysis?.confidence ? (aiAnalysis.confidence * 100).toFixed(1) : '92'}% confidence.
           </p>
         </div>
       )}
@@ -597,29 +736,69 @@ export default function VisualGrounderPage() {
   const renderStep4 = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-teal-400 mb-2">Review & Deploy</h2>
-        <p className="text-zinc-400">Review your generated seating map and deploy to your dashboard</p>
+        <h2 className="text-2xl font-bold text-teal-400 mb-2">Interactive Layout Editor</h2>
+        <p className="text-zinc-400">Edit, customize, and perfect your AI-generated seating layout</p>
       </div>
 
       {generatedLayout ? (
         <div className="space-y-6">
-          <div className="bg-zinc-800/50 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-white mb-4">Generated Layout Preview</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {generatedLayout.zones.map((zone: any) => (
-                <div key={zone.id} className="p-4 bg-zinc-700/50 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-white">{zone.name}</span>
-                    <span className="text-sm text-zinc-400">{zone.type}</span>
+          {/* AI Recommendations */}
+          {aiAnalysis?.recommendations && (
+            <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                <Lightbulb className="w-5 h-5 mr-2 text-blue-400" />
+                AI Recommendations
+              </h3>
+              <div className="space-y-2">
+                {aiAnalysis.recommendations.map((rec: string, index: number) => (
+                  <div key={index} className="flex items-start space-x-2 text-sm">
+                    <div className="w-1.5 h-1.5 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
+                    <span className="text-zinc-300">{rec}</span>
                   </div>
-                  <div className="text-sm text-zinc-300">
-                    Capacity: {zone.capacity} • Occupied: {zone.occupied}
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Layout Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center p-3 bg-zinc-700/50 rounded-lg">
+              <div className="text-2xl font-bold text-teal-400">{generatedLayout.zones.length}</div>
+              <div className="text-xs text-zinc-400">Zones</div>
+            </div>
+            <div className="text-center p-3 bg-zinc-700/50 rounded-lg">
+              <div className="text-2xl font-bold text-green-400">{generatedLayout.totalCapacity}</div>
+              <div className="text-xs text-zinc-400">Total Capacity</div>
+            </div>
+            <div className="text-center p-3 bg-zinc-700/50 rounded-lg">
+              <div className="text-2xl font-bold text-blue-400">{aiAnalysis?.confidence ? (aiAnalysis.confidence * 100).toFixed(0) : '92'}%</div>
+              <div className="text-xs text-zinc-400">AI Confidence</div>
+            </div>
+            <div className="text-center p-3 bg-zinc-700/50 rounded-lg">
+              <div className="text-2xl font-bold text-purple-400">{aiAnalysis?.featuresDetected?.length || 0}</div>
+              <div className="text-xs text-zinc-400">Features</div>
             </div>
           </div>
 
+          {/* Interactive Layout Editor */}
+          <div className="bg-zinc-800/50 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+              <Edit3 className="w-5 h-5 mr-2 text-teal-400" />
+              Interactive Layout Editor
+            </h3>
+            <p className="text-sm text-zinc-400 mb-4">
+              Drag zones to reposition, resize, lock, duplicate, or delete. Click on zones to see detailed options.
+            </p>
+            
+            <InteractiveLayoutEditor
+              layout={generatedLayout}
+              onLayoutChange={handleLayoutChange}
+              onSave={handleSaveLayout}
+              onExport={handleExportLayout}
+            />
+          </div>
+
+          {/* Action Buttons */}
           <div className="flex space-x-4">
             <button
               onClick={handleDeployLayout}
@@ -634,13 +813,16 @@ export default function VisualGrounderPage() {
               ) : (
                 <>
                   <Target className="w-4 h-4 mr-2" />
-                  Deploy to Dashboard
+                  Deploy Final Layout
                 </>
               )}
             </button>
-            <button className="btn-pretty-secondary">
+            <button 
+              onClick={handleExportLayout}
+              className="btn-pretty-secondary"
+            >
               <Download className="w-4 h-4 mr-2" />
-              Download Layout
+              Export JSON
             </button>
           </div>
         </div>
@@ -653,12 +835,49 @@ export default function VisualGrounderPage() {
     </div>
   );
 
+  const getZoneColor = (color: string) => {
+    const colors: { [key: string]: string } = {
+      orange: '#f97316',
+      blue: '#3b82f6',
+      green: '#10b981',
+      purple: '#8b5cf6',
+      gray: '#6b7280'
+    };
+    return colors[color] || '#6b7280';
+  };
+
+  const renderStep5 = () => (
+    <div className="space-y-6">
+      <StaffTrainingWorkflow
+        layout={generatedLayout}
+        onComplete={() => {
+          console.log('[Visual Grounder] ✅ Staff training completed');
+          setCurrentStep(6);
+        }}
+      />
+    </div>
+  );
+
+  const renderStep6 = () => (
+    <div className="space-y-6">
+      <VisualGrounderAnalytics
+        layoutId={generatedLayout?.id || 'unknown'}
+        onExport={(data) => {
+          console.log('[Visual Grounder] 📊 Analytics exported:', data);
+          // Handle export
+        }}
+      />
+    </div>
+  );
+
   const renderCurrentStep = () => {
     switch (currentStep) {
       case 1: return renderStep1();
       case 2: return renderStep2();
       case 3: return renderStep3();
       case 4: return renderStep4();
+      case 5: return renderStep5();
+      case 6: return renderStep6();
       default: return renderStep1();
     }
   };
@@ -736,10 +955,10 @@ export default function VisualGrounderPage() {
             </button>
             <button
               onClick={handleNext}
-              disabled={currentStep === 4 || (currentStep === 1 && uploadedPhotos.length < 3)}
+              disabled={currentStep === 6 || (currentStep === 1 && uploadedPhotos.length < 3)}
               className="btn-pretty-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Next
+              {currentStep === 6 ? 'Complete' : 'Next'}
               <ArrowRight className="w-4 h-4 ml-2" />
             </button>
           </div>
