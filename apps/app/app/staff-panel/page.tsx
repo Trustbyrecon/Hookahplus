@@ -28,8 +28,7 @@ import {
   Crown,
   MessageSquare,
   Bell,
-  BarChart3,
-  Shield
+  BarChart3
 } from 'lucide-react';
 
 interface StaffMember {
