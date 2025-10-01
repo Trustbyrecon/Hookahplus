@@ -49,3 +49,5 @@ build/
 # Temporary folders
 tmp/
 temp/
+
+.vercel
