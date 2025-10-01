@@ -62,25 +62,32 @@ const GlobalNavigation: React.FC = () => {
     trustLockStatus: 'active'
   });
 
-  // AI Agent Collaboration - Dynamic Flow State Management
+  const [sessionCount, setSessionCount] = useState(0);
+
+  // System Status Management
   useEffect(() => {
-    const updateFlowState = () => {
-      // Simulate AI agent collaboration
+    const updateSystemStatus = () => {
+      // Simulate realistic system status
       const workflows = ['idle', 'data-generation', 'session-management', 'customer-journey', 'admin-setup'];
       const roles = ['owner', 'foh', 'boh', 'admin'];
       const dataStatuses = ['empty', 'populated', 'active', 'flowing'];
+      
+      // Simulate session count (more realistic range)
+      const newSessionCount = Math.floor(Math.random() * 25) + 5; // 5-30 sessions
       
       setFlowState(prev => ({
         ...prev,
         currentWorkflow: workflows[Math.floor(Math.random() * workflows.length)] as any,
         activeRole: roles[Math.floor(Math.random() * roles.length)] as any,
         dataStatus: dataStatuses[Math.floor(Math.random() * dataStatuses.length)] as any,
-        progress: Math.floor(Math.random() * 100),
-        nextAction: 'AI agents are collaborating to optimize your workflow'
+        progress: Math.floor(Math.random() * 20) + 40, // 40-60% (more realistic)
+        nextAction: 'System monitoring active sessions and workflow optimization'
       }));
+      
+      setSessionCount(newSessionCount);
     };
 
-    const interval = setInterval(updateFlowState, 5000);
+    const interval = setInterval(updateSystemStatus, 10000); // Update every 10 seconds
     return () => clearInterval(interval);
   }, []);
 
@@ -232,9 +239,9 @@ const GlobalNavigation: React.FC = () => {
               <span className="text-xl font-bold text-white">HOOKAH+</span>
             </div>
             
-            {/* Flow Status Indicator */}
+            {/* System Status Indicator */}
             <div className="hidden md:flex items-center space-x-2 ml-4">
-              <span className="text-sm text-zinc-400">Flow Status:</span>
+              <span className="text-sm text-zinc-400">System:</span>
               <span className="text-sm text-zinc-300">{flowState.progress}%</span>
               <span className="text-sm text-zinc-400">{getFlowStatusIcon(flowState.currentWorkflow)}</span>
             </div>
@@ -280,7 +287,7 @@ const GlobalNavigation: React.FC = () => {
                 <span className="text-sm text-green-400">Live</span>
               </div>
               <div className="text-sm text-zinc-400">
-                Total Sessions: <span className="text-white font-semibold">{flowState.progress}</span>
+                Active Sessions: <span className="text-white font-semibold">{sessionCount}</span>
               </div>
             </div>
 

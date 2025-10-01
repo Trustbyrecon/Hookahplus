@@ -390,27 +390,6 @@ function PreOrderPageContent() {
               <StripeDiagnostic />
             </div>
 
-            {/* Live Session Status */}
-            <div className="card-pretty p-6 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/30">
-              <h3 className="text-lg font-semibold mb-4 flex items-center">
-                <Activity className="w-5 h-5 mr-2 text-blue-400" />
-                Live Session Status
-              </h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-zinc-400">Active Sessions</span>
-                  <span className="text-sm font-semibold text-blue-400">0</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-zinc-400">System Health</span>
-                  <span className="text-sm font-semibold text-green-400">EXCELLENT</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-zinc-400">Trust Score</span>
-                  <span className="text-sm font-semibold text-teal-400">87%</span>
-                </div>
-              </div>
-            </div>
 
             {/* Quick Actions */}
             <div className="card-pretty p-4">
