@@ -2,6 +2,7 @@
   "version": 2,
   "buildCommand": "pnpm install --no-frozen-lockfile && pnpm --filter @hookahplus/app run build",
   "installCommand": "pnpm install --no-frozen-lockfile",
+  "outputDirectory": "apps/app/.next",
   "builds": [
     {
       "src": "apps/app/package.json",
