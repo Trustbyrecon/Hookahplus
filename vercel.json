@@ -2,14 +2,5 @@
   "version": 2,
   "buildCommand": "pnpm install --no-frozen-lockfile && cd apps/app && pnpm run build",
   "installCommand": "pnpm install --no-frozen-lockfile",
-  "outputDirectory": "apps/app/.next",
-  "functions": {
-    "apps/app/app/api/payments/live-test/route.ts": {
-      "maxDuration": 30
-    },
-    "apps/app/app/api/stripe-health/route.ts": {
-      "maxDuration": 15
-    }
-  },
-  "regions": ["iad1"]
+  "outputDirectory": "apps/app/.next"
 }
