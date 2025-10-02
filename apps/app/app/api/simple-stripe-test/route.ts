@@ -26,6 +26,7 @@ export async function GET(req: NextRequest) {
       currency: 'usd',
       confirm: true,
       payment_method: 'pm_card_visa',
+      return_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/checkout/success`,
       metadata: {
         test: 'simple-stripe-test'
       }
