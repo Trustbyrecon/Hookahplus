@@ -12,9 +12,20 @@ export async function GET(req: NextRequest) {
       }, { status: 500 });
     }
 
+    // Clean the Stripe key to remove any invalid characters
+    const cleanStripeKey = process.env.STRIPE_SECRET_KEY.trim().replace(/[^\x20-\x7E]/g, '');
+    
+    if (!cleanStripeKey.startsWith('sk_test_') && !cleanStripeKey.startsWith('sk_live_')) {
+      return NextResponse.json({
+        ok: false,
+        error: 'Invalid Stripe key format',
+        timestamp: new Date().toISOString()
+      }, { status: 500 });
+    }
+
     // Just try to import and create Stripe instance
     const Stripe = require('stripe');
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    const stripe = new Stripe(cleanStripeKey, {
       apiVersion: '2025-08-27.basil',
     });
 
@@ -23,7 +34,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       message: 'Stripe initialization successful',
-      stripeKeyPrefix: process.env.STRIPE_SECRET_KEY.substring(0, 10) + '...',
+      stripeKeyPrefix: cleanStripeKey.substring(0, 10) + '...',
       timestamp: new Date().toISOString()
     });
 

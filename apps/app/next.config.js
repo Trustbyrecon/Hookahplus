@@ -5,10 +5,6 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  // Simple configuration for Vercel deployment
-  experimental: {
-    appDir: true,
-  },
 };
 
 module.exports = nextConfig;

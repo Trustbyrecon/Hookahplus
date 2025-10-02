@@ -13,8 +13,11 @@ export async function GET(req: NextRequest) {
       }, { status: 500 });
     }
 
+    // Clean the Stripe key to remove any invalid characters
+    const cleanStripeKey = process.env.STRIPE_SECRET_KEY.trim().replace(/[^\x20-\x7E]/g, '');
+    
     // Create Stripe instance with minimal config
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    const stripe = new Stripe(cleanStripeKey, {
       apiVersion: '2025-08-27.basil',
     });
 

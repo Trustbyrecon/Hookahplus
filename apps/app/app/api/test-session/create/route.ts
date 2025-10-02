@@ -6,7 +6,10 @@ let stripe: Stripe | null = null;
 
 try {
   if (process.env.STRIPE_SECRET_KEY) {
-    stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    // Clean the Stripe key to remove any invalid characters
+    const cleanStripeKey = process.env.STRIPE_SECRET_KEY.trim().replace(/[^\x20-\x7E]/g, '');
+    
+    stripe = new Stripe(cleanStripeKey, {
       apiVersion: '2025-08-27.basil', // Use current API version
     });
     console.log('✅ Stripe initialized successfully');
