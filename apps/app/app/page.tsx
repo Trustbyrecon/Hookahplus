@@ -1,6 +1,4 @@
-"use client";
-
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { Card, Button, Badge } from '../components';
 import { 
@@ -62,8 +60,6 @@ import {
 } from 'lucide-react';
 
 export default function LandingPage() {
-  // Theme is now managed entirely by ThemeToggle component
-  // No local state needed to prevent hydration mismatch
 
   // Quick Access Cards
   const quickAccessCards = [
@@ -161,9 +157,7 @@ export default function LandingPage() {
     }
   ];
 
-  // Always use pretty theme - ThemeToggle component manages the actual theme switching
-
-  // Pretty Theme Design
+  // Simple, clean design
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
       {/* Hero Section */}
