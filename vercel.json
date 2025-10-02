@@ -10,5 +10,6 @@
     "apps/app/app/api/stripe-health/route.ts": {
       "maxDuration": 15
     }
-  }
+  },
+  "regions": ["iad1"]
 }
