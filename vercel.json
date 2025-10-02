@@ -2,7 +2,18 @@
   "version": 2,
   "buildCommand": "pnpm -w run build:app",
   "installCommand": "pnpm install --no-frozen-lockfile",
-  "outputDirectory": "apps/app/.next",
+  "builds": [
+    {
+      "src": "apps/app/package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "apps/app/$1"
+    }
+  ],
   "functions": {
     "apps/app/app/api/payments/live-test/route.ts": {
       "maxDuration": 30
