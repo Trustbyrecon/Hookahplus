@@ -24,12 +24,15 @@ export async function GET(req: NextRequest) {
     console.log('[Simple Stripe Test] 💳 Creating simple PaymentIntent...');
     
     // Create a simple PaymentIntent
+    const returnUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://hookahplus.vercel.app';
+    const validReturnUrl = returnUrl.startsWith('http') ? `${returnUrl}/checkout/success` : 'https://hookahplus.vercel.app/checkout/success';
+    
     const paymentIntent = await stripe.paymentIntents.create({
       amount: 100,
       currency: 'usd',
       confirm: true,
       payment_method: 'pm_card_visa',
-      return_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/checkout/success`,
+      return_url: validReturnUrl,
       metadata: {
         test: 'simple-stripe-test'
       }
