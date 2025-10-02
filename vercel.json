@@ -1,11 +1,14 @@
 {
   "version": 2,
-  "buildCommand": "pnpm -w run build:app",
+  "buildCommand": "cd apps/app && pnpm install --no-frozen-lockfile && pnpm run build",
   "installCommand": "pnpm install --no-frozen-lockfile",
   "builds": [
     {
       "src": "apps/app/package.json",
-      "use": "@vercel/next"
+      "use": "@vercel/next",
+      "config": {
+        "distDir": ".next"
+      }
     }
   ],
   "routes": [
