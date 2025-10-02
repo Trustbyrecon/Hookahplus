@@ -1,22 +1,8 @@
 {
   "version": 2,
-  "buildCommand": "cd apps/app && pnpm install --no-frozen-lockfile && pnpm run build",
+  "buildCommand": "pnpm install --no-frozen-lockfile && cd apps/app && pnpm run build",
   "installCommand": "pnpm install --no-frozen-lockfile",
-  "builds": [
-    {
-      "src": "apps/app/package.json",
-      "use": "@vercel/next",
-      "config": {
-        "distDir": ".next"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "apps/app/$1"
-    }
-  ],
+  "outputDirectory": "apps/app/.next",
   "functions": {
     "apps/app/app/api/payments/live-test/route.ts": {
       "maxDuration": 30
@@ -25,8 +11,5 @@
       "maxDuration": 15
     }
   },
-  "regions": ["iad1"],
-  "env": {
-    "FORCE_REBUILD": "true"
-  }
+  "regions": ["iad1"]
 }
