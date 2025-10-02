@@ -1,7 +1,7 @@
 {
   "version": 2,
   "regions": ["iad1", "sfo1", "lhr1"],
-  "buildCommand": "pnpm run build:app",
+  "buildCommand": "pnpm -w run build:app",
   "outputDirectory": "apps/app/.next",
   "installCommand": "pnpm install --no-frozen-lockfile",
   "functions": {
