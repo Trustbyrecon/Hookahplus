@@ -98,10 +98,21 @@ export async function POST(req: NextRequest) {
     const duration = Date.now() - startTime;
     console.log(`[RWO:$1-smoke] ✅ PaymentIntent created: ${paymentIntent.id} (${duration}ms)`);
 
-    // Use fallback account ID for dashboard URL
-    const stripeAccountId = process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_') 
-      ? 'acct_test_fallback' 
-      : 'acct_live_fallback';
+    // Get actual Stripe account ID for dashboard URL
+    let stripeAccountId = 'acct_unknown';
+    try {
+      const account = await stripe.accounts.retrieve();
+      stripeAccountId = account.id;
+      console.log(`[RWO:$1-smoke] ✅ Retrieved Stripe account ID: ${stripeAccountId}`);
+    } catch (accountError: any) {
+      console.warn(`[RWO:$1-smoke] ⚠️ Failed to retrieve account ID: ${accountError.message}`);
+      // Fallback to extracting from secret key
+      if (process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_')) {
+        stripeAccountId = 'acct_test_fallback';
+      } else if (process.env.STRIPE_SECRET_KEY?.startsWith('sk_live_')) {
+        stripeAccountId = 'acct_live_fallback';
+      }
+    }
 
     // Log to GhostLog
     try {
