@@ -25,5 +25,8 @@
       "maxDuration": 15
     }
   },
-  "regions": ["iad1"]
+  "regions": ["iad1"],
+  "env": {
+    "FORCE_REBUILD": "true"
+  }
 }
