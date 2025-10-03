@@ -1,7 +1,7 @@
 {
   "version": 2,
   "buildCommand": "node build-app.js",
-  "installCommand": "pnpm install --no-frozen-lockfile",
+  "installCommand": "npm install",
   "framework": "nextjs",
   "builds": [
     {
