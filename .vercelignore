@@ -4,3 +4,6 @@ node_modules
 *.log
 .env.local
 .env.*.local
+apps/site
+packages/*
+!apps/app
