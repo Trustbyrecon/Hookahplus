@@ -1,16 +1,12 @@
 {
   "version": 2,
-  "buildCommand": "pnpm install --no-frozen-lockfile && pnpm --filter @hookahplus/app run build",
+  "buildCommand": "cd apps/app && pnpm install --no-frozen-lockfile && pnpm run build",
   "installCommand": "pnpm install --no-frozen-lockfile",
   "framework": "nextjs",
   "builds": [
     {
       "src": "apps/app/package.json",
-      "use": "@vercel/next",
-      "config": {
-        "distDir": ".next"
-      }
+      "use": "@vercel/next"
     }
-  ],
-  "outputDirectory": "apps/app/.next"
+  ]
 }
