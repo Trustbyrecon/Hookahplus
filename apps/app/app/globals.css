@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Tailwind CSS disabled - using inline styles for now */
 
 /* Tablet Optimization - Touch-Friendly Interface */
 @layer base {
