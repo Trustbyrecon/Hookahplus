@@ -1,4 +1,4 @@
-// import './globals.css' // Temporarily disabled
+import './globals.css'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
