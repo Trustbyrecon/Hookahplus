@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "yarn install && yarn workspace @hookahplus/app run vercel-build",
+  "buildCommand": "./build-app.sh",
   "installCommand": "yarn install",
   "framework": "nextjs",
   "builds": [
