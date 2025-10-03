@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "node build-app.js",
+  "buildCommand": "npm install --legacy-peer-deps && cd apps/app && npm install --legacy-peer-deps && npm run vercel-build",
   "installCommand": "npm install --legacy-peer-deps",
   "framework": "nextjs",
   "builds": [
