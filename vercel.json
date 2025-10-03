@@ -6,7 +6,7 @@
   "builds": [
     {
       "src": "app/package.json",
-      "use": "@vercel/next",
+      "use": "@vercel/next@latest",
       "config": {
         "distDir": ".next"
       }
