@@ -4,10 +4,11 @@ export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const session = await prisma.session.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { events: true }
     });
 
@@ -26,8 +27,9 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   }
 }
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const { expectedVersion, state, flavorMix, note } = await req.json();
 
     if (expectedVersion === undefined) {
@@ -35,7 +37,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     }
 
     const current = await prisma.session.findUnique({ 
-      where: { id: params.id } 
+      where: { id } 
     });
     
     if (!current) {
@@ -51,7 +53,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       .digest("hex");
 
     const updated = await prisma.session.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(state ? { state } : {}),
         ...(flavorMix ? { flavorMix } : {}),
