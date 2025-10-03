@@ -1,8 +1,5 @@
-import './globals.css'
+// import './globals.css' // Temporarily disabled
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
-
-const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'Hookah+ - The Future of Hookah Lounge Management',
@@ -17,7 +14,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body>
         {children}
       </body>
     </html>
