@@ -190,7 +190,7 @@ const AdminControlCenter = () => {
   const handleSeedMultipleSessions = () => {
     setLoading(true);
     try {
-      seedMultipleSessions();
+      seedMultipleSessions(5);
       refreshData();
     } finally {
       setLoading(false);
@@ -200,7 +200,7 @@ const AdminControlCenter = () => {
   const handleSeedSingleSession = () => {
     setLoading(true);
     try {
-      seedSession(`admin_${Date.now()}`, "T-ADMIN");
+      seedSession(`admin_${Date.now()}`);
       refreshData();
     } finally {
       setLoading(false);
