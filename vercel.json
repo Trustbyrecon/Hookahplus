@@ -1,24 +1,13 @@
 {
   "version": 2,
-  "buildCommand": "npm install --legacy-peer-deps && cd app && npm install --legacy-peer-deps && npm run build",
-  "installCommand": "npm install --legacy-peer-deps",
+  "buildCommand": "cd apps/app && npm install && npm run build",
+  "installCommand": "npm install",
   "framework": "nextjs",
   "builds": [
     {
-      "src": "app/package.json",
-      "use": "@vercel/next@latest",
-      "config": {
-        "distDir": ".next"
-      }
+      "src": "apps/app/package.json",
+      "use": "@vercel/next"
     }
   ],
-  "outputDirectory": "app/.next",
-  "functions": {
-    "app/app/api/**/*.ts": {
-      "runtime": "nodejs18.x"
-    }
-  },
-  "env": {
-    "NODE_VERSION": "18"
-  }
+  "outputDirectory": "apps/app/.next"
 }
