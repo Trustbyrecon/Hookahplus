@@ -248,10 +248,10 @@ export async function POST() {
       orders.push(order);
       
       // Add to the orders system
-      addOrder(order);
+      addOrder(order as any);
       
       // Set table mapping for ScreenCoder integration
-      setTableMapping(orderId, tableConfig.type, tableConfig.position);
+      setTableMapping(tableConfig.id, orderId);
       
       console.log(`Added order ${index + 1}:`, orderId, order.status, order.flavor, customerProfile?.name || 'Staff Customer', `at ${tableConfig.id}`);
       
@@ -267,14 +267,14 @@ export async function POST() {
           // Simulate coal status changes over time
           setTimeout(() => {
             if (Math.random() > 0.6) {
-              updateCoalStatus(orderId, "needs_refill");
+              updateCoalStatus(orderId, "needs_replacement");
             }
           }, Math.random() * 30000 + 10000); // 10-40 seconds later
           
           // Simulate some orders getting burnt out
           setTimeout(() => {
             if (Math.random() > 0.7) {
-              updateCoalStatus(orderId, "burnt_out");
+              updateCoalStatus(orderId, "needs_replacement");
             }
           }, Math.random() * 60000 + 30000); // 30-90 seconds later
           
@@ -282,7 +282,7 @@ export async function POST() {
           if (hasAddOns) {
             setTimeout(() => {
               const addOnFlavor = flavors[Math.floor(Math.random() * flavors.length)];
-              addFlavorToSession(orderId, addOnFlavor, 500);
+              addFlavorToSession(orderId, addOnFlavor);
             }, Math.random() * 20000 + 15000); // 15-35 seconds later
           }
         }

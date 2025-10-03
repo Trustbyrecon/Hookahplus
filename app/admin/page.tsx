@@ -704,7 +704,7 @@ function KPI({ icon, label, value }: { icon: React.ReactNode; label: string; val
   );
 }
 
-function StatusPill({ label, value, intent = "neutral" as "ok" | "warn" | "error" | "neutral" }) {
+function StatusPill({ label, value, intent = "neutral" }: { label: string; value: string | number; intent?: "ok" | "warn" | "error" | "neutral" }) {
   const map = {
     ok: "bg-emerald-500/15 text-emerald-300 border-emerald-700/30",
     warn: "bg-amber-500/15 text-amber-300 border-amber-700/30",
