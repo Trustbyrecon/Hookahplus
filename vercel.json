@@ -6,13 +6,15 @@
   "builds": [
     {
       "src": "apps/app/package.json",
-      "use": "@vercel/next",
-      "config": {
-        "distDir": ".next"
-      }
+      "use": "@vercel/next"
     }
   ],
-  "outputDirectory": "apps/app/.next",
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/apps/app/$1"
+    }
+  ],
   "functions": {
     "apps/app/app/api/**/*.ts": {
       "runtime": "nodejs18.x"
