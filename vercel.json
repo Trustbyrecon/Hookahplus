@@ -3,9 +3,10 @@
   "buildCommand": "pnpm install --no-frozen-lockfile && pnpm --filter @hookahplus/app run build",
   "installCommand": "pnpm install --no-frozen-lockfile",
   "framework": "nextjs",
-  "functions": {
-    "apps/app/app/api/**/*.ts": {
-      "runtime": "nodejs18.x"
+  "builds": [
+    {
+      "src": "apps/app/package.json",
+      "use": "@vercel/next"
     }
-  }
+  ]
 }
