@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "./build-app.sh",
-  "installCommand": "yarn install",
+  "buildCommand": "node build-app.js",
+  "installCommand": "pnpm install --no-frozen-lockfile",
   "framework": "nextjs",
   "builds": [
     {
