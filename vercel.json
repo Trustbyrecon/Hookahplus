@@ -1,7 +1,7 @@
 {
   "version": 2,
   "buildCommand": "node build-app.js",
-  "installCommand": "npm install",
+  "installCommand": "npm install --legacy-peer-deps",
   "framework": "nextjs",
   "builds": [
     {

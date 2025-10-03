@@ -8,7 +8,7 @@ console.log('Starting Hookah+ build process...');
 try {
   // Install root dependencies
   console.log('Installing root dependencies...');
-  execSync('npm install', { stdio: 'inherit' });
+  execSync('npm install --legacy-peer-deps', { stdio: 'inherit' });
 
   // Navigate to app directory
   console.log('Navigating to apps/app...');
@@ -16,7 +16,7 @@ try {
 
   // Install app dependencies
   console.log('Installing app dependencies...');
-  execSync('npm install', { stdio: 'inherit' });
+  execSync('npm install --legacy-peer-deps', { stdio: 'inherit' });
 
   // Run the build
   console.log('Running vercel-build...');
