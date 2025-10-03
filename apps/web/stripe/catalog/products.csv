@@ -1,8 +1,0 @@
-product_key,name,description,hp:type,hp:tier,hp:duration_minutes,hp:flavors_included,hp:refill_included,unit_amount,currency,active,price_lookup_key,tax_behavior
-hookah_session_base,Hookah Session — Base,"90-minute session, base flavor, standard coals",session,base,90,1,0,2100,usd,true,price_hookah_session_base,exclusive
-hookah_session_premium,Hookah Session — Premium,"90-minute session, premium flavors, faster service",session,premium,90,2,0,2900,usd,true,price_hookah_session_premium,exclusive
-hookah_session_vip,Hookah Session — VIP,"90-minute session, VIP seating, premium coals, 1 refill included",session,vip,90,2,1,4500,usd,true,price_hookah_session_vip,exclusive
-flavor_addon,Flavor Add-on,"Add an extra flavor to your session",addon,,0,0,0,300,usd,true,price_flavor_addon,exclusive
-coal_refill,Coal Refill,"Fresh coals during your session",addon,,0,0,0,600,usd,true,price_coal_refill,exclusive
-extended_time_20m,Extended Time — 20 min,"Extend your session by 20 minutes",addon,,20,0,0,1000,usd,true,price_extended_time_20m,exclusive
-table_reservation_hold,Table Reservation Hold,"$10 hold; capture on no-show, cancel on arrival (auth-only recommended)",service,,0,0,0,1000,usd,true,price_table_reservation_hold,exclusive

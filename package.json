@@ -1,27 +1,24 @@
 {
-  "name": "hookahplus-monorepo",
+  "name": "@hookahplus/app",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "pnpm@9.15.9",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
   "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev",
-    "lint": "turbo run lint",
-    "clean": "turbo run clean",
-    "stripe:seed": "node scripts/stripe-catalog/seed.js"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "14.2.7",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "stripe": "^14.21.0",
+    "@supabase/supabase-js": "^2.39.3"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
-    "turbo": "^2.0.6",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
     "typescript": "^5.0.0"
-  },
-  "dependencies": {
-    "@supabase/supabase-js": "^2.39.3",
-    "dotenv": "^17.2.2",
-    "stripe": "^14.21.0"
   }
 }
