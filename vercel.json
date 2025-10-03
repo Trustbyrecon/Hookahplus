@@ -12,9 +12,5 @@
       }
     }
   ],
-  "functions": {
-    "apps/app/app/api/**/*.ts": {
-      "runtime": "nodejs18.x"
-    }
-  }
+  "outputDirectory": "apps/app/.next"
 }
