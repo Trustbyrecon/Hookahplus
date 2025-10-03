@@ -1,0 +1,10 @@
+{
+  "name": "@tailwindcss/postcss",
+  "version": "0.0.2",
+  "description": "Dummy package to satisfy Next.js 13.5.11 hardcoded dependency",
+  "main": "index.js",
+  "files": ["index.js"],
+  "keywords": ["postcss", "tailwind", "dummy"],
+  "author": "RWO Fix",
+  "license": "MIT"
+}
