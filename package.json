@@ -12,6 +12,7 @@
     "build:vercel": "pnpm install --no-frozen-lockfile && npx prisma generate && next build",
     "build:site": "cd apps/site && pnpm install --no-frozen-lockfile && pnpm run build",
     "build:app": "pnpm --filter @hookahplus/app run build",
+    "vercel-build": "pnpm install --no-frozen-lockfile && pnpm --filter @hookahplus/app run build",
     "dev": "next dev",
     "start": "next start",
     "lint": "next lint",
