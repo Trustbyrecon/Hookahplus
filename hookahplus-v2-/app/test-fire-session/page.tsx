@@ -33,7 +33,9 @@ const TestFireSession = () => {
       if (response.ok) {
         // Refresh session data
         const updatedSession = getSession(session.id);
-        setSession(updatedSession);
+        if (updatedSession) {
+          setSession(updatedSession);
+        }
       } else {
         alert(`Command failed: ${response.error}`);
       }
