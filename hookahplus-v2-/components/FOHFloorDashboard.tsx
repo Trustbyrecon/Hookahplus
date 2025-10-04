@@ -57,7 +57,10 @@ const FOHFloorDashboard = () => {
         refreshSessions();
         // Update selected session if it's the one we just modified
         if (selectedSession?.id === sessionId) {
-          setSelectedSession(getSession(sessionId));
+          const updatedSession = getSession(sessionId);
+          if (updatedSession) {
+            setSelectedSession(updatedSession);
+          }
         }
       } else {
         console.error("Command failed:", result.error);
