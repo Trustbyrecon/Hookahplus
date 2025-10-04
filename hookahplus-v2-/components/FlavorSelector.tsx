@@ -14,7 +14,7 @@ const FlavorSelector = ({ session, setSession, onFlavorChange }: FlavorSelectorP
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newFlavor = e.target.value;
-    setSession(prev => ({ ...prev, flavor: newFlavor }));
+    setSession((prev: any) => ({ ...prev, flavor: newFlavor }));
     logFlavorChange(newFlavor);
   };
 
