@@ -2,13 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { 
+import { getEnvVar } from '../../../lib/env';
+
+const stripe = new Stripe(getEnvVar('STRIPE_SECRET_KEY'), { 
   apiVersion: '2023-10-16' 
 });
 
 const supaAdmin = createClient(
-  process.env.SUPABASE_URL!, 
-  process.env.SUPABASE_ANON_KEY!, 
+  getEnvVar('SUPABASE_URL'), 
+  getEnvVar('SUPABASE_ANON_KEY'), 
   {
     auth: { persistSession: false }
   }

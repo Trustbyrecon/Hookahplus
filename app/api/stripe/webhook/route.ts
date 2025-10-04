@@ -7,10 +7,12 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic"; // never cache webhooks
 
 // --- env
-const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY!;
-const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET_APP!;
-const SUPABASE_URL = process.env.SUPABASE_URL!;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!; // server-only
+import { getEnvVar } from '../../../lib/env';
+
+const STRIPE_SECRET_KEY = getEnvVar('STRIPE_SECRET_KEY');
+const WEBHOOK_SECRET = getEnvVar('STRIPE_WEBHOOK_SECRET_APP');
+const SUPABASE_URL = getEnvVar('SUPABASE_URL');
+const SUPABASE_SERVICE_ROLE_KEY = getEnvVar('SUPABASE_SERVICE_ROLE_KEY');
 
 // --- clients
 const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2023-10-16" });
