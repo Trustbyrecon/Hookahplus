@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 
-const FlavorSelector = ({ session, setSession, onFlavorChange }) => {
+interface FlavorSelectorProps {
+  session: any;
+  setSession: (prev: any) => void;
+  onFlavorChange?: (flavor: string) => void;
+}
+
+const FlavorSelector = ({ session, setSession, onFlavorChange }: FlavorSelectorProps) => {
   const [selectedFlavor, setSelectedFlavor] = useState(session?.flavor || '');
   const flavors = ['Mint', 'Watermelon', 'Blueberry', 'Peach', 'Double Apple'];
 
