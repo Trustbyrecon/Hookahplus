@@ -2,16 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { sessionCommands } from "@/lib/cmd";
-import { getSession, seedSession, type Session } from "@/lib/sessionState";
+import { getSession, seedSession, type SessionState } from "@/lib/sessionState";
 
 const TestFireSession = () => {
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<SessionState | null>(null);
   const [loading, setLoading] = useState(false);
   const [lastCommand, setLastCommand] = useState<string>("");
 
   useEffect(() => {
     // Seed a demo session on component mount
-    const demoSession = seedSession("test_session", "T-99");
+    const demoSession = seedSession("test_session");
     setSession(demoSession);
   }, []);
 
@@ -46,7 +46,7 @@ const TestFireSession = () => {
   };
 
   const resetSession = () => {
-    const demoSession = seedSession("test_session", "T-99");
+    const demoSession = seedSession("test_session");
     setSession(demoSession);
     setLastCommand("");
   };
