@@ -171,20 +171,35 @@ export const validateUserSession = async (sessionToken: string): Promise<User | 
 export const demoUsers: User[] = [
   {
     id: 'demo-foh-001',
+    email: 'mike@hookahplus.com',
     name: 'Mike Front',
     role: 'foh',
+    status: 'active',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    permissions: ['foh:read', 'foh:write'],
     trustLevel: 'high'
   },
   {
     id: 'demo-boh-001',
+    email: 'lisa@hookahplus.com',
     name: 'Lisa Back',
     role: 'boh',
+    status: 'active',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    permissions: ['boh:read', 'boh:write'],
     trustLevel: 'high'
   },
   {
     id: 'demo-admin-001',
+    email: 'sarah@hookahplus.com',
     name: 'Sarah Admin',
     role: 'admin',
+    status: 'active',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    permissions: ['admin:read', 'admin:write', 'admin:delete'],
     trustLevel: 'high'
   }
 ];

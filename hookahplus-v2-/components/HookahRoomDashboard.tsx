@@ -27,7 +27,7 @@ interface StaffMember {
   status: 'available' | 'busy' | 'offline';
 }
 
-const HookahRoomDashboard: React.FC = () => {
+const HookahRoomDashboard = () => {
   const [orders, setOrders] = useState<HookahOrder[]>([]);
   const [staff, setStaff] = useState<StaffMember[]>([
     { id: '1', name: 'John D.', role: 'preparer', currentOrders: [], status: 'available' },

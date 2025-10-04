@@ -289,7 +289,7 @@ export class ReflexEngine {
     
     // Badge-specific accuracy checks
     if ('badgeOperation' in context) {
-      const badgeContext = context as BadgeReflexContext;
+      const badgeContext = context as unknown as BadgeReflexContext;
       if (badgeContext.operationType === "evaluate") {
         return this.validateBadgeEvaluation(result) ? 0.9 : 0.3;
       }

@@ -48,7 +48,7 @@ export interface CustomerBooking {
   sessionEndTime?: Date;
   // Metadata
   metadata: {
-    source: 'layout_preview' | 'mobile_app' | 'staff_entry' | 'walk_in';
+    source: 'layout_preview' | 'mobile_app' | 'staff_entry' | 'walk_in' | 'reservation_hold' | 'qr_checkin' | 'multi_fire_session';
     ipAddress?: string;
     userAgent?: string;
     referrer?: string;
@@ -91,7 +91,7 @@ class CustomerJourneyManager {
     
     try {
       console.log('[CUSTOMER_JOURNEY] Loading persisted data...');
-      this.state = await loadState();
+      this.state = await loadState('customer-journey-state.json');
       
       // Hydrate date objects for all bookings
       const bookings = Array.from(this.state.bookings.values());
@@ -99,7 +99,7 @@ class CustomerJourneyManager {
       
       // Update the bookings map with hydrated data
       this.state.bookings.clear();
-      hydratedBookings.forEach(booking => {
+      hydratedBookings.forEach((booking: any) => {
         this.state.bookings.set(booking.id, booking);
       });
       
@@ -114,7 +114,7 @@ class CustomerJourneyManager {
   // Persist current state
   private async persistState(): Promise<void> {
     try {
-      await saveState(this.state);
+      await saveState('customer-journey-state.json', this.state);
       console.log('[CUSTOMER_JOURNEY] State persisted successfully');
     } catch (error) {
       console.error('[CUSTOMER_JOURNEY] Failed to persist state:', error);
@@ -182,9 +182,7 @@ class CustomerJourneyManager {
       estimatedSessionTime: this.calculateSessionTime(data.partySize),
       qrCode: `checkin_${data.reservationId}`,
       metadata: {
-        ...data.metadata,
-        seatNumber: data.seatNumber,
-        sequence: data.sequence
+        ...data.metadata
       }
     };
 
@@ -231,12 +229,10 @@ class CustomerJourneyManager {
     // Base operations for all bookings
     operations.push({
       bookingId: booking.id,
-      type: 'prep_notification',
-      description: `New ${booking.metadata.source} booking for ${booking.customerName}`,
-      priority: 'high',
-      status: 'pending',
-      assignedStaff: null,
-      estimatedDuration: booking.estimatedPrepTime,
+      operationType: 'prep_start',
+      staffId: 'system',
+      staffName: 'System',
+      notes: `New ${booking.metadata.source} booking for ${booking.customerName}`,
       metadata: {
         tableId: booking.tableId,
         zone: booking.zone,
@@ -250,16 +246,12 @@ class CustomerJourneyManager {
       case 'multi_fire_session':
         operations.push({
           bookingId: booking.id,
-          type: 'multi_session_setup',
-          description: `Setup multiple fire sessions for table ${booking.tableId}`,
-          priority: 'high',
-          status: 'pending',
-          assignedStaff: null,
-          estimatedDuration: booking.estimatedPrepTime + 5, // Extra time for multiple sessions
+          operationType: 'prep_start',
+          staffId: 'system',
+          staffName: 'System',
+          notes: `Setup multiple fire sessions for table ${booking.tableId}`,
           metadata: {
-            sessionNumber: booking.metadata.sessionNumber,
-            totalSessions: booking.metadata.totalSessions,
-            parentTableId: booking.metadata.parentTableId
+            source: booking.metadata.source
           }
         });
         break;
@@ -267,16 +259,12 @@ class CustomerJourneyManager {
       case 'reservation_hold':
         operations.push({
           bookingId: booking.id,
-          type: 'reservation_prep',
-          description: `Prepare table ${booking.tableId} for reservation hold`,
-          priority: 'medium',
-          status: 'pending',
-          assignedStaff: null,
-          estimatedDuration: 10, // Quick prep for reservation
+          operationType: 'prep_start',
+          staffId: 'system',
+          staffName: 'System',
+          notes: `Prepare table ${booking.tableId} for reservation hold`,
           metadata: {
-            holdAmount: booking.metadata.holdAmount,
-            holdDuration: booking.metadata.holdDuration,
-            qrCode: booking.metadata.qrCode
+            source: booking.metadata.source
           }
         });
         break;
@@ -284,15 +272,12 @@ class CustomerJourneyManager {
       case 'qr_checkin':
         operations.push({
           bookingId: booking.id,
-          type: 'immediate_service',
-          description: `Immediate service for walk-in customer at table ${booking.tableId}`,
-          priority: 'urgent',
-          status: 'pending',
-          assignedStaff: null,
-          estimatedDuration: booking.estimatedPrepTime,
+          operationType: 'prep_start',
+          staffId: 'system',
+          staffName: 'System',
+          notes: `Immediate service for walk-in customer at table ${booking.tableId}`,
           metadata: {
-            qrCode: booking.metadata.qrCode,
-            isWalkIn: true
+            source: booking.metadata.source
           }
         });
         break;
@@ -378,8 +363,9 @@ class CustomerJourneyManager {
   }
 
   // Get bookings by status
-  getBookingsByStatus(status: CustomerBooking['status']): CustomerBooking[] {
-    return this.getAllBookings().filter(booking => booking.status === status);
+  async getBookingsByStatus(status: CustomerBooking['status']): Promise<CustomerBooking[]> {
+    const bookings = await this.getAllBookings();
+    return bookings.filter(booking => booking.status === status);
   }
 
   // Get BOH operations for booking
@@ -409,18 +395,18 @@ class CustomerJourneyManager {
   }
 
   // Get real-time dashboard data
-  getDashboardData() {
-    const bookings = this.getAllBookings();
-    const activeSessions = this.getActiveBookings();
+  async getDashboardData() {
+    const bookings = await this.getAllBookings();
+    const activeSessions = await this.getActiveBookings();
     
     return {
       totalBookings: bookings.length,
       activeSessions: activeSessions.length,
-      pendingBookings: this.getBookingsByStatus('pending').length,
-      preparingBookings: this.getBookingsByStatus('preparing').length,
-      readyBookings: this.getBookingsByStatus('ready').length,
-      activeBookings: this.getBookingsByStatus('active').length,
-      completedBookings: this.getBookingsByStatus('completed').length,
+      pendingBookings: (await this.getBookingsByStatus('pending')).length,
+      preparingBookings: (await this.getBookingsByStatus('preparing')).length,
+      readyBookings: (await this.getBookingsByStatus('ready')).length,
+      activeBookings: (await this.getBookingsByStatus('active')).length,
+      completedBookings: (await this.getBookingsByStatus('completed')).length,
       totalRevenue: bookings
         .filter(b => b.paymentStatus === 'paid')
         .reduce((sum, b) => sum + b.totalPrice, 0),
