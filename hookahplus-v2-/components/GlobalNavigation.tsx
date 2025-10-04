@@ -34,7 +34,7 @@ interface NavItem {
   aiRecommendation?: string;
 }
 
-const GlobalNavigation: React.FC = () => {
+const GlobalNavigation = () => {
   const pathname = usePathname();
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
   const [flowState, setFlowState] = useState<FlowState>({

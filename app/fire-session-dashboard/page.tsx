@@ -299,6 +299,15 @@ function Card({ s, postAction, user, busy }:{
     return !stateAllowed || !userCanPerform || busy;
   };
 
+  const createAction = (type: Action["type"], value?: any) => ({
+    id: `action-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    type,
+    sessionId: s.id,
+    userId: user.id,
+    timestamp: new Date(),
+    details: value ? { value } : {}
+  });
+
   function allowed(state:FireSession["state"]): Action["type"][] {
     const map:any = {
       READY: ["DELIVER_NOW","MARK_OUT","SET_BUFFER","SET_ZONE","CANCEL","ADD_ITEM"],
@@ -356,14 +365,7 @@ function Card({ s, postAction, user, busy }:{
         {/* Primary flow */}
               <button
           disabled={disabled("DELIVER_NOW")}
-          onClick={()=>postAction(s.id,{
-            id: `action-${Date.now()}`,
-            type: "DELIVER_NOW",
-            sessionId: s.id,
-            userId: user.id,
-            timestamp: new Date(),
-            details: {}
-          })}
+          onClick={()=>postAction(s.id, createAction("DELIVER_NOW"))}
           className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40"
           title={`Requires ${getTrustRequirement("DELIVER_NOW")} trust level`}
         >
@@ -371,19 +373,19 @@ function Card({ s, postAction, user, busy }:{
               </button>
               <button
           disabled={disabled("MARK_OUT")}
-          onClick={()=>postAction(s.id,{type:"MARK_OUT"})}
+          onClick={()=>postAction(s.id, createAction("MARK_OUT"))}
           className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40"
           title={`Requires ${getTrustRequirement("MARK_OUT")} trust level`}
         >
           Mark Out
               </button>
 
-        <button disabled={disabled("MARK_DELIVERED")} onClick={()=>postAction(s.id,{type:"MARK_DELIVERED"})} className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40">Mark Delivered</button>
-        <button disabled={disabled("START_ACTIVE")} onClick={()=>postAction(s.id,{type:"START_ACTIVE"})} className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40">Start Active</button>
+        <button disabled={disabled("MARK_DELIVERED")} onClick={()=>postAction(s.id, createAction("MARK_DELIVERED"))} className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40">Mark Delivered</button>
+        <button disabled={disabled("START_ACTIVE")} onClick={()=>postAction(s.id, createAction("START_ACTIVE"))} className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40">Start Active</button>
             
             <button
           disabled={disabled("CLOSE")}
-          onClick={()=>postAction(s.id,{type:"CLOSE"})}
+          onClick={()=>postAction(s.id, createAction("CLOSE"))}
           className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40"
           title={`Requires ${getTrustRequirement("CLOSE")} trust level`}
         >
@@ -391,7 +393,7 @@ function Card({ s, postAction, user, busy }:{
             </button>
             <button
           disabled={disabled("UNDO")}
-          onClick={()=>postAction(s.id,{type:"UNDO"})}
+          onClick={()=>postAction(s.id, createAction("UNDO"))}
           className="rounded-md border border-[#2a3570] bg-[#17204a] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40"
           title={`Requires ${getTrustRequirement("UNDO")} trust level`}
         >
@@ -400,17 +402,17 @@ function Card({ s, postAction, user, busy }:{
             
         {/* Controls */}
         {[5,10,15].map(sec=>(
-          <button key={sec} disabled={disabled("SET_BUFFER")} onClick={()=>postAction(s.id,{type:"SET_BUFFER", value:sec})} className="rounded-md border border-[#2a3570] bg-[#0f183f] px-3 py-2 text-sm hover:bg-[#18204a] disabled:opacity-40">Buffer {sec}s</button>
+          <button key={sec} disabled={disabled("SET_BUFFER")} onClick={()=>postAction(s.id, createAction("SET_BUFFER", sec))} className="rounded-md border border-[#2a3570] bg-[#0f183f] px-3 py-2 text-sm hover:bg-[#18204a] disabled:opacity-40">Buffer {sec}s</button>
         ))}
-        {(["A","B","C","D","E"] as DeliveryZone[]).map(z=>(
-          <button key={z} disabled={disabled("SET_ZONE")} onClick={()=>postAction(s.id,{type:"SET_ZONE", value:z})} className={`rounded-md border border-[#2a3570] px-3 py-2 text-sm hover:bg-[#18204a] disabled:opacity-40 ${s.zone===z ? "bg-[#1b2658]" : "bg-[#0f183f]"}`}>Zone {z}</button>
+        {(["A","B","C","D","E"] as unknown as DeliveryZone[]).map(z=>(
+          <button key={z as unknown as string} disabled={disabled("SET_ZONE")} onClick={()=>postAction(s.id, createAction("SET_ZONE", z))} className={`rounded-md border border-[#2a3570] px-3 py-2 text-sm hover:bg-[#18204a] disabled:opacity-40 ${s.zone===(z as unknown as string) ? "bg-[#1b2658]" : "bg-[#0f183f]"}`}>Zone {z as unknown as string}</button>
         ))}
 
         {/* Secondary */}
-        <button disabled={disabled("ADD_ITEM")} onClick={()=>postAction(s.id,{type:"ADD_ITEM", value:1})} className="rounded-md border border-[#2a3570] bg-[#0f183f] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40">+ Item</button>
-        <button disabled={disabled("EXTEND_MIN")} onClick={()=>postAction(s.id,{type:"EXTEND_MIN", value:5})} className="rounded-md border border-[#2a3570] bg-[#0f183f] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40">Extend 5m</button>
-        <button disabled={disabled("REASSIGN_RUNNER")} onClick={()=>postAction(s.id,{type:"REASSIGN_RUNNER", value:"runner_2"})} className="rounded-md border border-[#2a3570] bg-[#0f183f] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40">Reassign Runner</button>
-        <button disabled={disabled("CANCEL")} onClick={()=>postAction(s.id,{type:"CANCEL"})} className="rounded-md border border-rose-800 bg-rose-900/30 px-3 py-2 text-sm hover:bg-rose-900/50 disabled:opacity-40">Cancel</button>
+        <button disabled={disabled("ADD_ITEM")} onClick={()=>postAction(s.id, createAction("ADD_ITEM", 1))} className="rounded-md border border-[#2a3570] bg-[#0f183f] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40">+ Item</button>
+        <button disabled={disabled("EXTEND_MIN")} onClick={()=>postAction(s.id, createAction("EXTEND_MIN", 5))} className="rounded-md border border-[#2a3570] bg-[#0f183f] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40">Extend 5m</button>
+        <button disabled={disabled("REASSIGN_RUNNER")} onClick={()=>postAction(s.id, createAction("REASSIGN_RUNNER", "runner_2"))} className="rounded-md border border-[#2a3570] bg-[#0f183f] px-3 py-2 text-sm hover:bg-[#1b2658] disabled:opacity-40">Reassign Runner</button>
+        <button disabled={disabled("CANCEL")} onClick={()=>postAction(s.id, createAction("CANCEL"))} className="rounded-md border border-rose-800 bg-rose-900/30 px-3 py-2 text-sm hover:bg-rose-900/50 disabled:opacity-40">Cancel</button>
                         </div>
                         </div>
   );

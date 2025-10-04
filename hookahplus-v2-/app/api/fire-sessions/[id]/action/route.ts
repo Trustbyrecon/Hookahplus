@@ -1,8 +1,39 @@
 // app/api/fire-sessions/[id]/action/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { getSession, upsertSession } from "@/app/lib/store";
-import type { Action } from "@/app/lib/workflow";
-import { nextState, assertAllowed, FSMError } from "@/app/lib/workflow";
+import { getSession, upsertSession } from "../../../../lib/store";
+import type { Action } from "@/lib/workflow";
+
+// Simple state machine implementation
+class FSMError extends Error {
+  constructor(public code: string, message: string) {
+    super(message);
+    this.name = 'FSMError';
+  }
+}
+
+function assertAllowed(currentState: string, actionType: string): void {
+  // Simple state transitions - allow most transitions for now
+  const allowedTransitions: Record<string, string[]> = {
+    'NEW': ['PAID_CONFIRMED'],
+    'PAID_CONFIRMED': ['PREP_IN_PROGRESS'],
+    'PREP_IN_PROGRESS': ['ACTIVE'],
+    'ACTIVE': ['CLOSED'],
+    'CLOSED': []
+  };
+  
+  if (!allowedTransitions[currentState]?.includes(actionType)) {
+    throw new FSMError('ACTION_NOT_ALLOWED', `Cannot transition from ${currentState} to ${actionType}`);
+  }
+}
+
+function nextState(current: any, action: Action): any {
+  // Simple state update
+  return {
+    ...current,
+    state: action.type,
+    updatedAt: new Date()
+  };
+}
 
 // Required for static export - generate all possible session IDs
 export async function generateStaticParams() {

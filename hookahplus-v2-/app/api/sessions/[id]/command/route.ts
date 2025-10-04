@@ -37,7 +37,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     // publish to per-session & role topics
     publishSessionEvent(sessionId, { session: s1, cmd, data });
 
-    return NextResponse.json({ ok: true, new_state: s1.state, session: s1 });
+    return NextResponse.json({ ok: true, new_state: s1.status, session: s1 });
   } catch (e: any) {
     const code = typeof e?.code === "number" ? e.code : 500;
     return NextResponse.json({ error: e?.message || "Command failed" }, { status: code });

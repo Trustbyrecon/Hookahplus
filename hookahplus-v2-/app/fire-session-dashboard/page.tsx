@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import type { FireSession, DeliveryZone, Action, User, TrustLevel } from "@/app/lib/workflow";
-import { nextStateWithTrust, TrustError } from "@/app/lib/workflow";
-import { logAction } from "@/app/lib/audit";
-import { demoUsers, canPerformAction, getUserDisplayInfo } from "@/app/lib/users";
+import type { FireSession, DeliveryZone, Action, User, TrustLevel } from "../lib/workflow";
+import { nextStateWithTrust, TrustError } from "../lib/workflow";
+import { logAction } from "../lib/audit";
+import { demoUsers, canPerformAction, getUserDisplayInfo } from "../lib/users";
 
 // Enhanced session interface with new fields
 interface EnhancedFireSession extends FireSession {
@@ -356,8 +356,8 @@ export default function FireSessionDashboard() {
   }
 
   // Check if BOH should be displayed (only show for qualified statuses)
-  const shouldShowBOH = (session: EnhancedFireSession) => {
-    return session.bohState && ["WARMING_UP", "READY_FOR_PICKUP", "PICKED_UP"].includes(session.bohState);
+  const shouldShowBOH = (session: EnhancedFireSession): boolean => {
+    return Boolean(session.bohState && ["WARMING_UP", "READY_FOR_PICKUP", "PICKED_UP"].includes(session.bohState));
   };
 
   return (

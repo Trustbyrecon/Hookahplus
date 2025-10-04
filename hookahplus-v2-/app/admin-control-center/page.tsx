@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import type { FireSession, User, TrustLevel, DeliveryZone } from "@/app/lib/workflow";
-import { demoUsers, canPerformAction } from "@/app/lib/users";
+import type { FireSession, User, TrustLevel, DeliveryZone } from "@/lib/workflow";
+import { demoUsers, canPerformAction } from "@/lib/users";
 
 // Enhanced session types for admin management
 interface AdminSession extends FireSession {
@@ -34,7 +34,7 @@ const FLAVOR_COMBINATIONS = [
 function generateEnhancedDemoSessions(count: number = 10): AdminSession[] {
   const zones = ["A", "B", "C", "D", "E"];
   const positions = ["VIP", "Window", "Bar", "Center", "Corner", "Patio"];
-  const states = ["READY", "OUT", "DELIVERED", "ACTIVE", "CLOSE"];
+  const states = ["NEW", "PAID_CONFIRMED", "PREP_IN_PROGRESS", "ACTIVE", "CLOSED"];
   const priorities = ["low", "medium", "high", "urgent"];
   const paymentMethods = ["card", "cash", "mobile"];
   
@@ -54,13 +54,13 @@ function generateEnhancedDemoSessions(count: number = 10): AdminSession[] {
       customerLabel: `customer_${Math.floor(Math.random() * 900) + 100}`,
       durationMin: Math.floor(Math.random() * 60) + 30,
       bufferSec: [5, 10, 15][Math.floor(Math.random() * 3)],
-      zone: zones[Math.floor(Math.random() * zones.length)] as DeliveryZone,
+      zone: zones[Math.floor(Math.random() * zones.length)],
       items: Math.floor(Math.random() * 3) + 1,
       etaMin: Math.floor(Math.random() * 10) + 5,
       position: positions[Math.floor(Math.random() * positions.length)],
       state: states[Math.floor(Math.random() * states.length)] as FireSession["state"],
-      createdAt: Date.now() - Math.random() * 86400000,
-      updatedAt: Date.now(),
+      createdAt: new Date(Date.now() - Math.random() * 86400000),
+      updatedAt: new Date(),
       paymentStatus: ["pending", "confirmed", "failed"][Math.floor(Math.random() * 3)] as "pending" | "confirmed" | "failed",
       paymentMethod: paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
       flavorCombinations: flavors,
@@ -77,7 +77,7 @@ export default function AdminControlCenter() {
   const [sessions, setSessions] = useState<AdminSession[]>([]);
   const [selectedSession, setSelectedSession] = useState<AdminSession | null>(null);
   const [showSessionDetails, setShowSessionDetails] = useState(false);
-  const [currentUser] = useState(demoUsers.find(u => u.role === "MANAGER") || demoUsers[0]);
+  const [currentUser] = useState(demoUsers.find(u => u.role === "admin") || demoUsers[0]);
   const [popularFlavors, setPopularFlavors] = useState<{ flavor: string; count: number }[]>([]);
 
   // Generate popular flavors from sessions
@@ -120,27 +120,27 @@ export default function AdminControlCenter() {
   }
 
   function updateSessionStatus(sessionId: string, newState: string) {
-    setSessions(prev => prev.map(s => 
-      s.id === sessionId ? { ...s, state: newState as any, updatedAt: Date.now() } : s
+    setSessions(prev => prev.map(s =>
+      s.id === sessionId ? { ...s, state: newState as any, updatedAt: new Date() } : s
     ));
   }
 
   function assignRunner(sessionId: string, runnerId: string) {
     setSessions(prev => prev.map(s => 
-      s.id === sessionId ? { ...s, runnerId, updatedAt: Date.now() } : s
+      s.id === sessionId ? { ...s, runnerId, updatedAt: new Date() } : s
     ));
   }
 
   function updatePriority(sessionId: string, priority: string) {
     setSessions(prev => prev.map(s => 
-      s.id === sessionId ? { ...s, priority: priority as any, updatedAt: Date.now() } : s
+      s.id === sessionId ? { ...s, priority: priority as any, updatedAt: new Date() } : s
     ));
   }
 
   // Calculate session statistics
   const sessionStats = {
     total: sessions.length,
-    live: sessions.filter(s => s.state !== "CLOSE").length,
+    live: sessions.filter(s => s.state !== "CLOSED").length,
     totalOrders: sessions.filter(s => s.paymentStatus === "confirmed").length,
     revenue: sessions.filter(s => s.paymentStatus === "confirmed").length * 25.99 // Mock price
   };
@@ -383,8 +383,8 @@ export default function AdminControlCenter() {
                                          <td className="px-4 py-3">
                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
                          session.state === "ACTIVE" ? "bg-blue-900/30 text-blue-300" :
-                         session.state === "CLOSE" ? "bg-gray-900/30 text-gray-300" :
-                         session.state === "DELIVERED" ? "bg-green-900/30 text-green-300" :
+                         session.state === "CLOSED" ? "bg-gray-900/30 text-gray-300" :
+                         session.state === "PREP_IN_PROGRESS" ? "bg-green-900/30 text-green-300" :
                          "bg-yellow-900/30 text-yellow-300"
                        }`}>
                          {session.state}
@@ -506,11 +506,11 @@ export default function AdminControlCenter() {
                    onChange={(e) => updateSessionStatus(selectedSession.id, e.target.value)}
                    className="bg-[#1b2658] border border-[#2a3570] rounded px-3 py-2 text-sm text-[#e9ecff]"
                  >
-                   <option value="READY">Ready</option>
-                   <option value="OUT">Out</option>
-                   <option value="DELIVERED">Delivered</option>
+                   <option value="NEW">New</option>
+                   <option value="PAID_CONFIRMED">Paid Confirmed</option>
+                   <option value="PREP_IN_PROGRESS">Prep In Progress</option>
                    <option value="ACTIVE">Active</option>
-                   <option value="CLOSE">Close</option>
+                   <option value="CLOSED">Closed</option>
                  </select>
                 <select
                   value={selectedSession.priority}

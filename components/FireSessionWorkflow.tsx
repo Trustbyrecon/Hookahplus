@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   fireSessionWorkflow, 
-  WorkflowButton, 
+  WorkflowButton as WorkflowButtonType, 
   StaffRole, 
   SessionState, 
   WorkflowEvent 
@@ -49,7 +49,7 @@ export default function FireSessionWorkflow({
 
   // 🔑 Button press handler
   const handleButtonPress = useCallback(async (
-    button: WorkflowButton, 
+    button: WorkflowButtonType,
     metadata?: Record<string, any>
   ) => {
     if (!session) return;
@@ -458,7 +458,7 @@ export default function FireSessionWorkflow({
 
 // 🔘 Individual Workflow Button Component
 interface WorkflowButtonProps {
-  button: WorkflowButton;
+  button: WorkflowButtonType;
   label: string;
   description: string;
   disabled: boolean;

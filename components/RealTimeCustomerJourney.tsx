@@ -56,7 +56,11 @@ export default function RealTimeCustomerJourney() {
 
     loadData();
 
-    return unsubscribe;
+    return () => {
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    };
   }, []);
 
   // Load BOH operations for selected booking

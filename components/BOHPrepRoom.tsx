@@ -2,18 +2,18 @@
 
 import { useState, useEffect } from "react";
 import { sessionCommands } from "@/lib/cmd";
-import { getSession, getAllSessions, type Session, type SessionState } from "@/lib/sessionState";
+import { getSession, getAllSessions, type SessionState } from "@/lib/sessionState";
 
 const BOHPrepRoom = () => {
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+  const [sessions, setSessions] = useState<SessionState[]>([]);
+  const [selectedSession, setSelectedSession] = useState<SessionState | null>(null);
   const [loading, setLoading] = useState<Record<string, boolean>>({});
 
   // Refresh sessions
   const refreshSessions = () => {
     const allSessions = getAllSessions();
     const prepSessions = allSessions.filter(s => 
-      ["PAID_CONFIRMED", "QUEUED_PREP", "PREP_IN_PROGRESS", "HEAT_UP", "READY_FOR_DELIVERY"].includes(s.state)
+      ["PAID_CONFIRMED", "PREP_IN_PROGRESS"].includes(s.status)
     );
     setSessions(prepSessions);
   };
@@ -52,9 +52,12 @@ const BOHPrepRoom = () => {
       
       if (result.ok) {
         refreshSessions();
-        // Update selected session if it's the one we just modified
+        // Update selected session if it's the one we just modified      
         if (selectedSession?.id === sessionId) {
-          setSelectedSession(getSession(sessionId));
+          const updatedSession = getSession(sessionId);
+          if (updatedSession) {
+            setSelectedSession(updatedSession);
+          }
         }
       } else {
         console.error("Command failed:", result.error);
@@ -68,7 +71,7 @@ const BOHPrepRoom = () => {
     }
   };
 
-  const getStateColor = (state: SessionState) => {
+  const getStateColor = (state: string) => {
     switch (state) {
       case "PAID_CONFIRMED": return "bg-blue-100 text-blue-800";
       case "QUEUED_PREP": return "bg-yellow-100 text-yellow-800";
@@ -79,7 +82,7 @@ const BOHPrepRoom = () => {
     }
   };
 
-  const getStateIcon = (state: SessionState) => {
+  const getStateIcon = (state: string) => {
     switch (state) {
       case "PAID_CONFIRMED": return "💰";
       case "QUEUED_PREP": return "⏳";
@@ -167,10 +170,10 @@ const BOHPrepRoom = () => {
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
-                            <span className="text-2xl">{getStateIcon(session.state)}</span>
+                            <span className="text-2xl">{getStateIcon(session.status)}</span>
                             <div>
                               <div className="font-medium text-gray-900">
-                                Table {session.table}
+                                Table {session.tableNumber}
                               </div>
                               <div className="text-sm text-gray-500">
                                 Session {session.id.slice(-6)}
@@ -178,17 +181,15 @@ const BOHPrepRoom = () => {
                             </div>
                           </div>
                           <div className="text-right">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStateColor(session.state)}`}>
-                              {session.state.replace(/_/g, ' ')}
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStateColor(session.status)}`}>
+                              {session.status.replace(/_/g, ' ')}
                             </span>
                           </div>
                         </div>
                         
-                        {session.meta.customerId && (
-                          <div className="mt-2 text-sm text-gray-600">
-                            Customer: {session.meta.customerId}
-                          </div>
-                        )}
+                        <div className="mt-2 text-sm text-gray-600">  
+                          Customer: {session.customerName}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -204,7 +205,7 @@ const BOHPrepRoom = () => {
                 <h2 className="text-lg font-semibold text-gray-900">Session Controls</h2>
                 {selectedSession && (
                   <p className="text-sm text-gray-500">
-                    Table {selectedSession.table} - {selectedSession.state.replace(/_/g, ' ')}
+                    Table {selectedSession.tableNumber} - {selectedSession.status.replace(/_/g, ' ')}
                   </p>
                 )}
               </div>
@@ -217,7 +218,7 @@ const BOHPrepRoom = () => {
                   <div className="space-y-3">
                     {/* BOH Commands - Moved Start Prep to bottom for better UX */}
 
-                    {selectedSession.state === "PREP_IN_PROGRESS" && (
+                    {selectedSession.status === "PREP_IN_PROGRESS" && (
                       <button
                         onClick={() => handleCommand(selectedSession.id, "HEAT_UP")}
                         disabled={loading[selectedSession.id]}
@@ -227,7 +228,7 @@ const BOHPrepRoom = () => {
                       </button>
                     )}
 
-                    {selectedSession.state === "HEAT_UP" && (
+                    {selectedSession.status === "PREP_IN_PROGRESS" && (
                       <button
                         onClick={() => handleCommand(selectedSession.id, "READY_FOR_DELIVERY")}
                         disabled={loading[selectedSession.id]}
@@ -238,7 +239,7 @@ const BOHPrepRoom = () => {
                     )}
 
                     {/* Updated BOH Commands - Removed Hold Session and Request Refill */}
-                    {selectedSession.state === "PAID_CONFIRMED" && (
+                    {selectedSession.status === "PAID_CONFIRMED" && (
                       <button
                         onClick={() => handleCommand(selectedSession.id, "CLAIM_PREP")}
                         disabled={loading[selectedSession.id]}
@@ -248,7 +249,7 @@ const BOHPrepRoom = () => {
                       </button>
                     )}
 
-                    {["PREP_IN_PROGRESS", "HEAT_UP", "READY_FOR_DELIVERY"].includes(selectedSession.state) && (
+                    {["PREP_IN_PROGRESS"].includes(selectedSession.status) && (
                       <button
                         onClick={() => {
                           const reason = prompt("Remake reason:");
@@ -268,12 +269,10 @@ const BOHPrepRoom = () => {
                       <h3 className="font-medium text-gray-900 mb-2">Session Details</h3>
                       <div className="space-y-1 text-sm text-gray-600">
                         <div>ID: {selectedSession.id}</div>
-                        <div>Table: {selectedSession.table}</div>
-                        <div>State: {selectedSession.state}</div>
+                        <div>Table: {selectedSession.tableNumber}</div>
+                        <div>State: {selectedSession.status}</div>      
                         <div>Items: {selectedSession.items.length}</div>
-                        {selectedSession.timers.heatUpStart && (
-                          <div>Heat Start: {new Date(selectedSession.timers.heatUpStart).toLocaleTimeString()}</div>
-                        )}
+                        <div>Customer: {selectedSession.customerName}</div>
                       </div>
                     </div>
                   </div>
