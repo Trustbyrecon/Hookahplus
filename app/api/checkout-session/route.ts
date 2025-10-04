@@ -1,8 +1,9 @@
 // app/api/checkout-session/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { getEnvVar } from '../../lib/env';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+const stripe = new Stripe(getEnvVar('STRIPE_SECRET_KEY'), {
   apiVersion: '2023-10-16',
 });
 

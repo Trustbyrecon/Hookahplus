@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { getEnvVar } from '../../../lib/env';
 
 const supaAdmin = createClient(
-  process.env.SUPABASE_URL!, 
-  process.env.SUPABASE_ANON_KEY!, 
+  getEnvVar('SUPABASE_URL'), 
+  getEnvVar('SUPABASE_ANON_KEY'), 
   {
     auth: { persistSession: false }
   }
