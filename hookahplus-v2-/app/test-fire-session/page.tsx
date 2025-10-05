@@ -2,16 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { sessionCommands } from "@/lib/cmd";
-import { getSession, seedSession, type Session } from "@/lib/sessionState";
+import { getSession, seedSession, type SessionState } from "@/lib/sessionState";
 
 const TestFireSession = () => {
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<SessionState | null>(null);
   const [loading, setLoading] = useState(false);
   const [lastCommand, setLastCommand] = useState<string>("");
 
   useEffect(() => {
     // Seed a demo session on component mount
-    const demoSession = seedSession("test_session", "T-99");
+    const demoSession = seedSession("test_session");
     setSession(demoSession);
   }, []);
 
@@ -33,7 +33,9 @@ const TestFireSession = () => {
       if (response.ok) {
         // Refresh session data
         const updatedSession = getSession(session.id);
-        setSession(updatedSession);
+        if (updatedSession) {
+          setSession(updatedSession);
+        }
       } else {
         alert(`Command failed: ${response.error}`);
       }
@@ -46,7 +48,7 @@ const TestFireSession = () => {
   };
 
   const resetSession = () => {
-    const demoSession = seedSession("test_session", "T-99");
+    const demoSession = seedSession("test_session");
     setSession(demoSession);
     setLastCommand("");
   };
@@ -73,17 +75,17 @@ const TestFireSession = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Table</label>
-              <p className="text-sm text-gray-900">{session.table}</p>
+              <p className="text-sm text-gray-900">{session.tableNumber}</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Current State</label>
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                {session.state.replace(/_/g, ' ')}
+                {session.status.replace(/_/g, ' ')}
               </span>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Payment Status</label>
-              <p className="text-sm text-gray-900">{session.payment.status}</p>
+              <label className="block text-sm font-medium text-gray-700">Customer</label>
+              <p className="text-sm text-gray-900">{session.customerName}</p>
             </div>
           </div>
           
@@ -106,14 +108,14 @@ const TestFireSession = () => {
               <h3 className="font-medium text-gray-700 text-sm">Payment</h3>
               <button
                 onClick={() => handleCommand("PAYMENT_CONFIRMED")}
-                disabled={loading || session.state !== "NEW"}
+                disabled={loading || session.status !== "NEW"}
                 className="w-full bg-green-600 text-white px-3 py-2 rounded text-sm hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Confirm Payment
               </button>
               <button
                 onClick={() => handleCommand("PAYMENT_FAILED")}
-                disabled={loading || session.state !== "NEW"}
+                disabled={loading || session.status !== "NEW"}
                 className="w-full bg-red-600 text-white px-3 py-2 rounded text-sm hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Payment Failed
@@ -125,24 +127,17 @@ const TestFireSession = () => {
               <h3 className="font-medium text-gray-700 text-sm">Back of House</h3>
               <button
                 onClick={() => handleCommand("CLAIM_PREP")}
-                disabled={loading || session.state !== "PAID_CONFIRMED"}
+                disabled={loading || session.status !== "PAID_CONFIRMED"}
                 className="w-full bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Claim Prep
               </button>
               <button
-                onClick={() => handleCommand("HEAT_UP")}
-                disabled={loading || session.state !== "PREP_IN_PROGRESS"}
+                onClick={() => handleCommand("START_PREP")}
+                disabled={loading || session.status !== "PAID_CONFIRMED"}
                 className="w-full bg-orange-600 text-white px-3 py-2 rounded text-sm hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Start Heating
-              </button>
-              <button
-                onClick={() => handleCommand("READY_FOR_DELIVERY")}
-                disabled={loading || session.state !== "HEAT_UP"}
-                className="w-full bg-green-600 text-white px-3 py-2 rounded text-sm hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Ready for Delivery
+                Start Prep
               </button>
             </div>
 
@@ -150,22 +145,8 @@ const TestFireSession = () => {
             <div className="space-y-2">
               <h3 className="font-medium text-gray-700 text-sm">Front of House</h3>
               <button
-                onClick={() => handleCommand("DELIVER_NOW")}
-                disabled={loading || session.state !== "READY_FOR_DELIVERY"}
-                className="w-full bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Start Delivery
-              </button>
-              <button
-                onClick={() => handleCommand("MARK_DELIVERED")}
-                disabled={loading || session.state !== "OUT_FOR_DELIVERY"}
-                className="w-full bg-green-600 text-white px-3 py-2 rounded text-sm hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Mark Delivered
-              </button>
-              <button
                 onClick={() => handleCommand("START_ACTIVE")}
-                disabled={loading || session.state !== "DELIVERED"}
+                disabled={loading || session.status !== "PREP_IN_PROGRESS"}
                 className="w-full bg-emerald-600 text-white px-3 py-2 rounded text-sm hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Start Active Session
@@ -177,56 +158,36 @@ const TestFireSession = () => {
               <h3 className="font-medium text-gray-700 text-sm">Session Management</h3>
               <button
                 onClick={() => handleCommand("CLOSE_SESSION")}
-                disabled={loading || session.state !== "ACTIVE"}
+                disabled={loading || session.status !== "ACTIVE"}
                 className="w-full bg-yellow-600 text-white px-3 py-2 rounded text-sm hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Close Session
               </button>
               <button
                 onClick={() => handleCommand("REMAKE", { reason: "Test remake" })}
-                disabled={loading || !["PREP_IN_PROGRESS", "HEAT_UP", "READY_FOR_DELIVERY", "DELIVERED", "ACTIVE"].includes(session.state)}
+                disabled={loading || !["PREP_IN_PROGRESS", "ACTIVE"].includes(session.status)}
                 className="w-full bg-red-600 text-white px-3 py-2 rounded text-sm hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Remake
-              </button>
-              <button
-                onClick={() => handleCommand("STAFF_HOLD", { reason: "Test hold" })}
-                disabled={loading || !["PREP_IN_PROGRESS", "HEAT_UP", "READY_FOR_DELIVERY", "OUT_FOR_DELIVERY", "DELIVERED", "ACTIVE"].includes(session.state)}
-                className="w-full bg-yellow-600 text-white px-3 py-2 rounded text-sm hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Staff Hold
               </button>
             </div>
           </div>
         </div>
 
-        {/* Session Audit */}
+        {/* Session Info */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Session Audit Trail</h2>
-          <div className="space-y-2 max-h-64 overflow-y-auto">
-            {session.audit.length === 0 ? (
-              <p className="text-gray-500 text-sm">No audit events yet</p>
-            ) : (
-              session.audit.map((event, index) => (
-                <div key={event.id} className="p-3 bg-gray-50 rounded border-l-4 border-blue-500">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {event.cmd || event.type}
-                      </p>
-                      <p className="text-xs text-gray-600">
-                        {event.from && event.to ? `${event.from} → ${event.to}` : event.type}
-                      </p>
-                      {event.reason && (
-                        <p className="text-xs text-gray-500 mt-1">Reason: {event.reason}</p>
-                      )}
-                    </div>
-                    <span className="text-xs text-gray-500">
-                      {new Date(event.ts).toLocaleTimeString()}
-                    </span>
-                  </div>
-                </div>
-              ))
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Session Information</h2>
+          <div className="space-y-2">
+            <p className="text-sm text-gray-600">
+              <strong>Total Amount:</strong> ${session.totalAmount.toFixed(2)}
+            </p>
+            <p className="text-sm text-gray-600">
+              <strong>Items:</strong> {session.items.length} item(s)
+            </p>
+            {session.notes && (
+              <p className="text-sm text-gray-600">
+                <strong>Notes:</strong> {session.notes}
+              </p>
             )}
           </div>
         </div>

@@ -2,18 +2,18 @@
 
 import { useState, useEffect } from "react";
 import { sessionCommands } from "@/lib/cmd";
-import { getSession, getAllSessions, type Session, type SessionState } from "@/lib/sessionState";
+import { getSession, getAllSessions, type SessionState } from "@/lib/sessionState";
 
 const FOHFloorDashboard = () => {
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+  const [sessions, setSessions] = useState<SessionState[]>([]);
+  const [selectedSession, setSelectedSession] = useState<SessionState | null>(null);
   const [loading, setLoading] = useState<Record<string, boolean>>({});
 
   // Refresh sessions
   const refreshSessions = () => {
     const allSessions = getAllSessions();
     const floorSessions = allSessions.filter(s => 
-      ["READY_FOR_DELIVERY", "OUT_FOR_DELIVERY", "DELIVERED", "ACTIVE", "CLOSE_PENDING"].includes(s.state)
+      ["ACTIVE"].includes(s.status)
     );
     setSessions(floorSessions);
   };
@@ -55,9 +55,12 @@ const FOHFloorDashboard = () => {
       
       if (result.ok) {
         refreshSessions();
-        // Update selected session if it's the one we just modified
+        // Update selected session if it's the one we just modified      
         if (selectedSession?.id === sessionId) {
-          setSelectedSession(getSession(sessionId));
+          const updatedSession = getSession(sessionId);
+          if (updatedSession) {
+            setSelectedSession(updatedSession);
+          }
         }
       } else {
         console.error("Command failed:", result.error);
@@ -71,37 +74,37 @@ const FOHFloorDashboard = () => {
     }
   };
 
-  const getStateColor = (state: SessionState) => {
+  const getStateColor = (state: string) => {
     switch (state) {
-      case "READY_FOR_DELIVERY": return "bg-green-100 text-green-800";
-      case "OUT_FOR_DELIVERY": return "bg-blue-100 text-blue-800";
-      case "DELIVERED": return "bg-purple-100 text-purple-800";
       case "ACTIVE": return "bg-emerald-100 text-emerald-800";
-      case "CLOSE_PENDING": return "bg-yellow-100 text-yellow-800";
+      case "PREP_IN_PROGRESS": return "bg-blue-100 text-blue-800";
+      case "PAID_CONFIRMED": return "bg-green-100 text-green-800";
+      case "NEW": return "bg-yellow-100 text-yellow-800";
+      case "CLOSED": return "bg-gray-100 text-gray-800";
       default: return "bg-gray-100 text-gray-800";
     }
   };
 
-  const getStateIcon = (state: SessionState) => {
+  const getStateIcon = (state: string) => {
     switch (state) {
-      case "READY_FOR_DELIVERY": return "✅";
-      case "OUT_FOR_DELIVERY": return "🚚";
-      case "DELIVERED": return "🎯";
       case "ACTIVE": return "🍃";
-      case "CLOSE_PENDING": return "⏰";
+      case "PREP_IN_PROGRESS": return "🔧";
+      case "PAID_CONFIRMED": return "✅";
+      case "NEW": return "🆕";
+      case "CLOSED": return "🔒";
       default: return "❓";
     }
   };
 
-  const getPriorityScore = (session: Session) => {
+  const getPriorityScore = (session: SessionState) => {
     // Higher score = higher priority
-    switch (session.state) {
-      case "READY_FOR_DELIVERY": return 100;
-      case "OUT_FOR_DELIVERY": return 90;
-      case "DELIVERED": return 80;
-      case "ACTIVE": return 70;
-      case "CLOSE_PENDING": return 60;
-      default: return 0;
+    switch (session.status) {
+      case "ACTIVE": return 100;
+      case "PREP_IN_PROGRESS": return 90;
+      case "PAID_CONFIRMED": return 80;
+      case "NEW": return 70;
+      case "CLOSED": return 60;
+      default: return 50;
     }
   };
 
@@ -184,10 +187,10 @@ const FOHFloorDashboard = () => {
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
-                            <span className="text-2xl">{getStateIcon(session.state)}</span>
+                            <span className="text-2xl">{getStateIcon(session.status)}</span>
                             <div>
                               <div className="font-medium text-gray-900">
-                                Table {session.table}
+                                Table {session.tableNumber}
                               </div>
                               <div className="text-sm text-gray-500">
                                 Session {session.id.slice(-6)}
@@ -195,29 +198,13 @@ const FOHFloorDashboard = () => {
                             </div>
                           </div>
                           <div className="text-right">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStateColor(session.state)}`}>
-                              {session.state.replace(/_/g, ' ')}
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStateColor(session.status)}`}>
+                              {session.status.replace(/_/g, ' ')}
                             </span>
                           </div>
                         </div>
                         
-                        {session.meta.customerId && (
-                          <div className="mt-2 text-sm text-gray-600">
-                            Customer: {session.meta.customerId}
-                          </div>
-                        )}
 
-                        {/* Timer info */}
-                        {session.timers.heatUpStart && (
-                          <div className="mt-2 text-xs text-gray-500">
-                            Heat started: {new Date(session.timers.heatUpStart).toLocaleTimeString()}
-                          </div>
-                        )}
-                        {session.timers.deliveredAt && (
-                          <div className="mt-1 text-xs text-gray-500">
-                            Delivered: {new Date(session.timers.deliveredAt).toLocaleTimeString()}
-                          </div>
-                        )}
                       </div>
                     ))}
                   </div>
@@ -233,7 +220,7 @@ const FOHFloorDashboard = () => {
                 <h2 className="text-lg font-semibold text-gray-900">Session Controls</h2>
                 {selectedSession && (
                   <p className="text-sm text-gray-500">
-                    Table {selectedSession.table} - {selectedSession.state.replace(/_/g, ' ')}
+                    Table {selectedSession.tableNumber} - {selectedSession.status.replace(/_/g, ' ')}
                   </p>
                 )}
               </div>
@@ -245,7 +232,7 @@ const FOHFloorDashboard = () => {
                 ) : (
                   <div className="space-y-3">
                     {/* FOH Commands */}
-                    {selectedSession.state === "READY_FOR_DELIVERY" && (
+                    {selectedSession.status === "ACTIVE" && (
                       <button
                         onClick={() => handleCommand(selectedSession.id, "DELIVER_NOW")}
                         disabled={loading[selectedSession.id]}
@@ -255,7 +242,7 @@ const FOHFloorDashboard = () => {
                       </button>
                     )}
 
-                    {selectedSession.state === "OUT_FOR_DELIVERY" && (
+                    {selectedSession.status === "PREP_IN_PROGRESS" && (
                       <button
                         onClick={() => handleCommand(selectedSession.id, "MARK_DELIVERED")}
                         disabled={loading[selectedSession.id]}
@@ -265,7 +252,7 @@ const FOHFloorDashboard = () => {
                       </button>
                     )}
 
-                    {selectedSession.state === "DELIVERED" && (
+                    {selectedSession.status === "CLOSED" && (
                       <button
                         onClick={() => handleCommand(selectedSession.id, "START_ACTIVE")}
                         disabled={loading[selectedSession.id]}
@@ -275,7 +262,7 @@ const FOHFloorDashboard = () => {
                       </button>
                     )}
 
-                    {selectedSession.state === "ACTIVE" && (
+                    {selectedSession.status === "ACTIVE" && (
                       <button
                         onClick={() => handleCommand(selectedSession.id, "CLOSE_SESSION")}
                         disabled={loading[selectedSession.id]}
@@ -286,7 +273,7 @@ const FOHFloorDashboard = () => {
                     )}
 
                     {/* Common Commands */}
-                    {["READY_FOR_DELIVERY", "OUT_FOR_DELIVERY", "DELIVERED", "ACTIVE"].includes(selectedSession.state) && (
+                    {["READY_FOR_DELIVERY", "OUT_FOR_DELIVERY", "DELIVERED", "ACTIVE"].includes(selectedSession.status) && (
                       <>
                         <button
                           onClick={() => {
@@ -321,15 +308,9 @@ const FOHFloorDashboard = () => {
                       <h3 className="font-medium text-gray-900 mb-2">Session Details</h3>
                       <div className="space-y-1 text-sm text-gray-600">
                         <div>ID: {selectedSession.id}</div>
-                        <div>Table: {selectedSession.table}</div>
-                        <div>State: {selectedSession.state}</div>
+                        <div>Table: {selectedSession.tableNumber}</div>
+                        <div>State: {selectedSession.status}</div>
                         <div>Items: {selectedSession.items.length}</div>
-                        {selectedSession.timers.heatUpStart && (
-                          <div>Heat Start: {new Date(selectedSession.timers.heatUpStart).toLocaleTimeString()}</div>
-                        )}
-                        {selectedSession.timers.deliveredAt && (
-                          <div>Delivered: {new Date(selectedSession.timers.deliveredAt).toLocaleTimeString()}</div>
-                        )}
                       </div>
                     </div>
                   </div>

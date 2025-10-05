@@ -38,11 +38,13 @@ export async function POST(request: NextRequest) {
     });
 
     // Clean up expired tokens
-    for (const [key, value] of exportTokens.entries()) {
+    const keysToDelete: string[] = [];
+    exportTokens.forEach((value, key) => {
       if (value.expiresAt < Date.now()) {
-        exportTokens.delete(key);
+        keysToDelete.push(key);
       }
-    }
+    });
+    keysToDelete.forEach(key => exportTokens.delete(key));
 
     return NextResponse.json({
       success: true,

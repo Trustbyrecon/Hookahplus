@@ -27,10 +27,11 @@ export default function RealTimeCustomerJourney() {
 
   // Subscribe to real-time updates
   useEffect(() => {
-    const unsubscribe = customerJourneyManager.subscribe((state) => {
+    const unsubscribe = customerJourneyManager.subscribe(async (state) => {
       const allBookings = Array.from(state.bookings.values());
       setBookings(allBookings);
-      setDashboardData(customerJourneyManager.getDashboardData());
+      const dashboardData = await customerJourneyManager.getDashboardData();
+      setDashboardData(dashboardData);
     });
 
     // Initial load
@@ -56,7 +57,11 @@ export default function RealTimeCustomerJourney() {
 
     loadData();
 
-    return unsubscribe;
+    return () => {
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    };
   }, []);
 
   // Load BOH operations for selected booking

@@ -1,14 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-export default function PreOrderTable({ params }: { params: { tableId: string } }) {
+export default function PreOrderTable({ params }: { params: Promise<{ tableId: string }> }) {
   const [flavor, setFlavor] = useState("Blue Mist + Mint");
   const [amount, setAmount] = useState(3000);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  const [tableId, setTableId] = useState<string>("");
   const router = useRouter();
+
+  useEffect(() => {
+    params.then(({ tableId }) => {
+      setTableId(tableId);
+    });
+  }, [params]);
 
   const flavors = [
     "Blue Mist + Mint",
@@ -32,7 +39,7 @@ export default function PreOrderTable({ params }: { params: { tableId: string } 
       if (typeof window !== 'undefined' && (window as any).gtag) {
         (window as any).gtag('event', 'Preorder_Submit', {
           event_category: 'Ecommerce',
-          event_label: params.tableId,
+          event_label: tableId,
           value: amount / 100,
         });
       }
@@ -41,7 +48,7 @@ export default function PreOrderTable({ params }: { params: { tableId: string } 
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          tableId: params.tableId, 
+          tableId, 
           flavor, 
           amount 
         }),
@@ -63,7 +70,7 @@ export default function PreOrderTable({ params }: { params: { tableId: string } 
     <main className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white p-8">
       <div className="mx-auto max-w-2xl space-y-6">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-teal-400 mb-2">Table {params.tableId}</h1>
+          <h1 className="text-4xl font-bold text-teal-400 mb-2">Table {tableId}</h1>
           <p className="text-xl text-zinc-300">Pre-order your Hookah+ session</p>
         </div>
 
@@ -123,7 +130,7 @@ export default function PreOrderTable({ params }: { params: { tableId: string } 
           <div className="space-y-3 mb-6">
             <div className="flex justify-between">
               <span>Table:</span>
-              <span className="text-teal-400">{params.tableId}</span>
+              <span className="text-teal-400">{tableId}</span>
             </div>
             <div className="flex justify-between">
               <span>Flavor:</span>

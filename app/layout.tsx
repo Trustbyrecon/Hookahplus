@@ -1,40 +1,18 @@
-// app/layout.tsx
-import './globals.css';
-import { SessionProvider } from '../components/SessionContext';
-import { ReflexAgentProvider } from '../components/ReflexAgentContext';
+import './globals.css'
 
 export const metadata = {
-  title: 'Hookah+ Dashboard',
-  description: 'POS System for Hookah Lounge',
-};
+  title: 'HookahPlus Operator Dashboard',
+  description: 'Manage sessions, refills, and reservations for your hookah lounge.',
+}
 
-export default function RootLayout({ children }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   return (
     <html lang="en">
-      <head>
-        {/* Google Analytics */}
-        <script
-          async
-          src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
-        />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}');
-            `,
-          }}
-        />
-      </head>
-      <body>
-        <ReflexAgentProvider>
-          <SessionProvider>
-            {children}
-          </SessionProvider>
-        </ReflexAgentProvider>
-      </body>
+      <body>{children}</body>
     </html>
-  );
+  )
 }

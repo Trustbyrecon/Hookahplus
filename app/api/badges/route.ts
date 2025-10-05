@@ -37,12 +37,12 @@ export async function GET(request: NextRequest) {
     
     // Filter by venue if specified
     const filteredAwards = venueId 
-      ? awards.filter(a => a.venueId === venueId)
+      ? awards.filter((a: any) => a.venueId === venueId)
       : awards;
 
     // Log audit event
     await logAuditEvent(
-      isCrossVenueOperation(authContext, venueId) ? 'cross_venue_read' : 'profile_accessed',
+      isCrossVenueOperation(authContext, venueId || undefined) ? 'cross_venue_read' : 'profile_accessed',
       authContext,
       {
         profileId,
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
         awardCount: filteredAwards.length
       },
       {
-        ip: request.ip,
+        ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
         userAgent: request.headers.get('user-agent') || undefined
       }
     );

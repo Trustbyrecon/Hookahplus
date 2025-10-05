@@ -39,7 +39,7 @@ export class BadgeEngine {
 
     const newAwards: Award[] = [];
 
-    for (const [badgeId, config] of this.badgeConfigs) {
+    for (const [badgeId, config] of Array.from(this.badgeConfigs.entries())) {
       if (!config.active) continue;
 
       // Check if already awarded
@@ -61,7 +61,7 @@ export class BadgeEngine {
           revoked: false
         };
 
-        await putAward(award);
+        await putAward({ award });
         newAwards.push(award);
         
         console.log(`🏆 Badge awarded: ${config.label} to ${profileId}${venueId ? ` at ${venueId}` : ''}`);
@@ -112,24 +112,24 @@ export class BadgeEngine {
 
     switch (config.rule.type) {
       case 'venue_count':
-        const uniqueVenues = new Set(events.map(e => e.venueId).filter(Boolean));
+        const uniqueVenues = new Set(events.map((e: any) => e.venueId).filter(Boolean));
         current = uniqueVenues.size;
         break;
 
       case 'unique_combos':
         const uniqueCombos = new Set(events
-          .filter(e => e.type === 'mix_ordered' && e.comboHash)
-          .map(e => e.comboHash)
+          .filter((e: any) => e.type === 'mix_ordered' && e.comboHash)
+          .map((e: any) => e.comboHash)
         );
         current = uniqueCombos.size;
         break;
 
       case 'venue_visits':
-        current = events.filter(e => e.venueId === venueId).length;
+        current = events.filter((e: any) => e.venueId === venueId).length;
         break;
 
       case 'check_ins':
-        current = events.filter(e => e.type === 'check_in').length;
+        current = events.filter((e: any) => e.type === 'check_in').length;
         break;
     }
 

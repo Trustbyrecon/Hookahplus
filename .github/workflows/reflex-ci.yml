@@ -1,0 +1,129 @@
+# .github/workflows/reflex-ci.yml
+# CI workflow for Reflex System validation
+
+name: Reflex System CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  reflex-validation:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Type check
+      run: npx tsc --noEmit
+    
+    - name: Lint code
+      run: npx eslint . --ext .ts,.tsx --max-warnings 0
+    
+    - name: Run unit tests
+      run: npm test -- --coverage
+    
+    - name: Run reflex-specific tests
+      run: npm run test:reflex
+    
+    - name: Validate reflex score gates
+      run: node scripts/validate-reflex-gates.js
+    
+    - name: Check for reflective UI on payment routes
+      run: npx playwright test tests/reflex.spec.ts --project=chromium
+    
+    - name: Generate reflex report
+      run: node scripts/generate-reflex-report.js
+    
+    - name: Upload reflex artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: reflex-report
+        path: reflex-report.json
+
+  reflex-score-validation:
+    runs-on: ubuntu-latest
+    needs: reflex-validation
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Download reflex artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: reflex-report
+        path: ./reflex-report
+    
+    - name: Validate reflex scores
+      run: |
+        node scripts/validate-reflex-scores.js ./reflex-report/reflex-report.json
+        if [ $? -ne 0 ]; then
+          echo "❌ Reflex score validation failed"
+          exit 1
+        fi
+        echo "✅ Reflex score validation passed"
+    
+    - name: Check trust graph health
+      run: |
+        node scripts/check-trust-graph.js ./reflex-report/reflex-report.json
+        if [ $? -ne 0 ]; then
+          echo "❌ Trust graph health check failed"
+          exit 1
+        fi
+        echo "✅ Trust graph health check passed"
+
+  reflex-deployment-check:
+    runs-on: ubuntu-latest
+    needs: [reflex-validation, reflex-score-validation]
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build application
+      run: npm run build
+    
+    - name: Run production reflex tests
+      run: |
+        npm run test:reflex:production
+        if [ $? -ne 0 ]; then
+          echo "❌ Production reflex tests failed"
+          exit 1
+        fi
+        echo "✅ Production reflex tests passed"
+    
+    - name: Validate production readiness
+      run: |
+        node scripts/validate-production-readiness.js
+        if [ $? -ne 0 ]; then
+          echo "❌ Production readiness validation failed"
+          exit 1
+        fi
+        echo "✅ Production readiness validation passed"

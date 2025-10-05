@@ -1,274 +1,204 @@
-// lib/orders.ts
-type Order = {
+export interface Order {
   id: string;
-  tableId?: string;
-  flavor?: string;
-  amount: number;
-  currency: string;
-  status: "created" | "paid" | "failed";
-  createdAt: number;
-  // New fields for enhanced tracking
-  sessionStartTime?: number;
-  sessionDuration?: number; // in minutes
-  coalStatus?: "active" | "needs_refill" | "burnt_out" | "paused";
-  addOnFlavors?: string[];
-  baseRate?: number;
-  addOnRate?: number;
-  totalRevenue?: number;
-  // Customer profile metadata for network ecosystem
-  customerName?: string;
-  customerId?: string; // Unique identifier across lounges
-  customerPreferences?: {
-    favoriteFlavors?: string[];
-    sessionDuration?: number;
-    addOnPreferences?: string[];
-    notes?: string;
-  };
-  previousSessions?: string[]; // Array of previous session IDs
-  // Table mapping for ScreenCoder integration
-  tableType?: "high_boy" | "table" | "2x_booth" | "4x_booth" | "8x_sectional" | "4x_sofa";
-  tablePosition?: { x: number; y: number }; // Coordinates for lounge layout
-  refillTimerStart?: number; // When refill status was set
-  sessionPauseTime?: number; // When session was paused due to burnout
-  totalPausedTime?: number; // Total time session has been paused
+  customerId: string;
+  customerName: string;
+  tableNumber: string;
+  items: OrderItem[];
+  status: 'PENDING' | 'CONFIRMED' | 'PREPARING' | 'READY' | 'DELIVERED' | 'CANCELLED';
+  totalAmount: number;
+  tax: number;
+  tip?: number;
+  createdAt: Date;
+  updatedAt: Date;
+  notes?: string;
+}
+
+export interface OrderItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  category: 'hookah' | 'food' | 'drink' | 'other';
+  specialInstructions?: string;
+}
+
+export interface OrderUpdate {
+  orderId: string;
+  status?: Order['status'];
+  notes?: string;
+  items?: OrderItem[];
+}
+
+// Mock data for development
+export const mockOrders: Order[] = [
+  {
+    id: 'ORD-001',
+    customerId: 'CUST-001',
+    customerName: 'John Doe',
+    tableNumber: 'A1',
+    items: [
+      { id: '1', name: 'Blueberry Hookah', price: 25.00, quantity: 1, category: 'hookah' },
+      { id: '2', name: 'Mint Tea', price: 8.00, quantity: 2, category: 'drink' }
+    ],
+    status: 'CONFIRMED',
+    totalAmount: 41.00,
+    tax: 3.28,
+    tip: 8.20,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    notes: 'Extra mint in tea'
+  },
+  {
+    id: 'ORD-002',
+    customerId: 'CUST-002',
+    customerName: 'Sarah Smith',
+    tableNumber: 'B2',
+    items: [
+      { id: '3', name: 'Grape Hookah', price: 25.00, quantity: 1, category: 'hookah' },
+      { id: '4', name: 'Hummus Plate', price: 10.00, quantity: 1, category: 'food' }
+    ],
+    status: 'PREPARING',
+    totalAmount: 35.00,
+    tax: 2.80,
+    createdAt: new Date(Date.now() - 15 * 60 * 1000), // 15 minutes ago
+    updatedAt: new Date(Date.now() - 5 * 60 * 1000) // 5 minutes ago
+  }
+];
+
+export const updateOrderStatus = async (orderId: string, status: Order['status']): Promise<void> => {
+  // Mock API call
+  console.log(`Updating order ${orderId} to status: ${status}`);
+  // In a real app, this would make an API call
 };
 
-let ORDERS: Order[] = [];
+export const getOrdersByStatus = (status: Order['status']): Order[] => {
+  return mockOrders.filter(order => order.status === status);
+};
 
-export function addOrder(o: Order) {
-  ORDERS.unshift(o);
-  console.log('Added order:', o.id, 'Total orders now:', ORDERS.length);
-}
+export const getOrderById = (id: string): Order | undefined => {
+  return mockOrders.find(order => order.id === id);
+};
 
-export function listOrders() {
-  console.log('Listing orders, total count:', ORDERS.length);
-  return ORDERS.slice(0, 100); // Increased limit for historical data
-}
+export const getOrdersByTable = (tableNumber: string): Order[] => {
+  return mockOrders.filter(order => order.tableNumber === tableNumber);
+};
 
-export function markPaid(id: string) {
-  const o = ORDERS.find(x => x.id === id);
-  if (o) {
-    o.status = "paid";
-    console.log('Marked order as paid:', id);
-  }
-}
+export const calculateOrderTotal = (items: OrderItem[]): number => {
+  return items.reduce((total, item) => total + (item.price * item.quantity), 0);
+};
 
-export function clearOrders() {
-  console.log('Clearing orders, previous count:', ORDERS.length);
-  ORDERS = [];
-}
+// Order storage (in-memory for demo)
+const orderStorage: Map<string, Order> = new Map();
 
-export function getOrderCount() {
-  return ORDERS.length;
-}
-
-export function getPaidOrderCount() {
-  return ORDERS.filter(o => o.status === 'paid').length;
-}
-
-export function getPendingOrderCount() {
-  return ORDERS.filter(o => o.status === 'created').length;
-}
-
-export function getTotalRevenue() {
-  return ORDERS.filter(o => o.status === 'paid').reduce((sum, o) => sum + o.amount, 0);
-}
-
-// Enhanced session management
-export function startSession(orderId: string) {
-  const order = ORDERS.find(o => o.id === orderId);
-  if (order && order.status === 'paid') {
-    order.sessionStartTime = Date.now();
-    order.coalStatus = "active";
-    order.totalPausedTime = 0;
-    console.log('Started session for order:', orderId);
-  }
-}
-
-export function updateCoalStatus(orderId: string, status: "active" | "needs_refill" | "burnt_out" | "paused") {
-  const order = ORDERS.find(o => o.id === orderId);
-  if (order) {
-    order.coalStatus = status;
-    
-    // Start refill timer when status changes to needs_refill
-    if (status === 'needs_refill') {
-      order.refillTimerStart = Date.now();
-      console.log('Started refill timer for order:', orderId);
-      
-      // Set timeout to automatically change to burnt_out after 10 seconds
-      setTimeout(() => {
-        const currentOrder = ORDERS.find(o => o.id === orderId);
-        if (currentOrder && currentOrder.coalStatus === 'needs_refill') {
-          currentOrder.coalStatus = 'burnt_out';
-          currentOrder.sessionPauseTime = Date.now();
-          console.log('Auto-changed to burnt_out after 10 seconds for order:', orderId);
-        }
-      }, 10000); // 10 seconds
-    }
-    
-    // Handle burnout - pause the session but don't end it
-    if (status === 'burnt_out') {
-      order.sessionPauseTime = Date.now();
-      console.log('Session paused due to burnout for order:', orderId);
-    }
-    
-    // Handle resuming from burnout
-    if (status === 'active' && order.sessionPauseTime) {
-      const pauseDuration = Date.now() - order.sessionPauseTime;
-      order.totalPausedTime = (order.totalPausedTime || 0) + pauseDuration;
-      order.sessionPauseTime = undefined;
-      console.log('Session resumed from burnout for order:', orderId);
-    }
-    
-    console.log('Updated coal status for order:', orderId, 'to:', status);
-  }
-}
-
-// New function to handle refill and reset status
-export function handleRefill(orderId: string) {
-  const order = ORDERS.find(o => o.id === orderId);
-  if (order && order.coalStatus === 'needs_refill') {
-    order.coalStatus = 'active';
-    order.refillTimerStart = undefined; // Clear the refill timer
-    console.log('Refilled and reset status to active for order:', orderId);
-    return true;
-  }
-  return false;
-}
-
-// Function to get remaining refill time in seconds
-export function getRefillTimeRemaining(orderId: string): number {
-  const order = ORDERS.find(o => o.id === orderId);
-  if (order && order.coalStatus === 'needs_refill' && order.refillTimerStart) {
-    const elapsed = Date.now() - order.refillTimerStart;
-    const remaining = 10000 - elapsed; // 10 seconds total
-    return Math.max(0, Math.ceil(remaining / 1000));
-  }
-  return 0;
-}
-
-// Function to get current session time accounting for pauses
-export function getCurrentSessionTime(orderId: string): number {
-  const order = ORDERS.find(o => o.id === orderId);
-  if (order && order.sessionStartTime) {
-    const totalElapsed = Date.now() - order.sessionStartTime;
-    const totalPaused = order.totalPausedTime || 0;
-    const currentPause = order.sessionPauseTime ? (Date.now() - order.sessionPauseTime) : 0;
-    return totalElapsed - totalPaused - currentPause;
-  }
-  return 0;
-}
-
-// Function to set table type and position for ScreenCoder integration
-export function setTableMapping(orderId: string, tableType: Order['tableType'], position: { x: number; y: number }) {
-  const order = ORDERS.find(o => o.id === orderId);
-  if (order) {
-    order.tableType = tableType;
-    order.tablePosition = position;
-    console.log('Set table mapping for order:', orderId, tableType, position);
-  }
-}
-
-export function addFlavorToSession(orderId: string, flavor: string, addOnRate: number = 500) {
-  const order = ORDERS.find(o => o.id === orderId);
-  if (order && order.status === 'paid') {
-    if (!order.addOnFlavors) order.addOnFlavors = [];
-    order.addOnFlavors.push(flavor);
-    order.addOnRate = (order.addOnRate || 0) + addOnRate;
-    order.totalRevenue = (order.baseRate || order.amount) + order.addOnRate;
-    console.log('Added flavor to session:', orderId, flavor);
-  }
-}
-
-// Get all orders (live data, no time restrictions)
-export function getRecentOrders() {
-  return ORDERS; // Return all orders for live dashboard
-}
-
-// Get active sessions (including paused ones) - live data
-export function getActiveSessions() {
-  return ORDERS.filter(o => 
-    o.status === 'paid' && 
-    o.sessionStartTime && 
-    (o.coalStatus === 'active' || o.coalStatus === 'needs_refill' || o.coalStatus === 'burnt_out')
+export const getLiveOrders = (): Order[] => {
+  return Array.from(orderStorage.values()).filter(order => 
+    order.status !== 'DELIVERED' && order.status !== 'CANCELLED'
   );
-}
+};
 
-// Get live orders for dashboard (all orders, no time restrictions)
-export function getLiveOrders() {
-  return ORDERS;
-}
+export const getPaidOrderCount = (): number => {
+  return Array.from(orderStorage.values()).filter(order => 
+    order.status === 'CONFIRMED' || order.status === 'PREPARING' || order.status === 'READY' || order.status === 'DELIVERED'
+  ).length;
+};
 
-// Flavor intent capture for Aliethia
-export function getTopFlavors() {
-  const paidOrders = ORDERS.filter(o => o.status === 'paid');
-  console.log('Getting top flavors from', paidOrders.length, 'paid orders');
-  if (paidOrders.length < 3) return null; // Need at least 3 paid orders
-  
-  const flavorCounts: Record<string, number> = {};
-  paidOrders.forEach(o => {
-    if (o.flavor) {
-      flavorCounts[o.flavor] = (flavorCounts[o.flavor] || 0) + 1;
+export const getPendingOrderCount = (): number => {
+  return Array.from(orderStorage.values()).filter(order => 
+    order.status === 'PENDING' || order.status === 'CONFIRMED'
+  ).length;
+};
+
+export const getTotalRevenue = (): number => {
+  return Array.from(orderStorage.values()).reduce((total, order) => {
+    if (order.status === 'DELIVERED') {
+      return total + order.totalAmount;
     }
-    // Include add-on flavors
-    if (o.addOnFlavors) {
-      o.addOnFlavors.forEach(addOn => {
-        flavorCounts[addOn] = (flavorCounts[addOn] || 0) + 1;
-      });
-    }
-  });
-  
-  return Object.entries(flavorCounts)
-    .sort(([,a], [,b]) => b - a)
-    .slice(0, 3)
-    .map(([flavor, count]) => ({ flavor, count }));
-}
+    return total;
+  }, 0);
+};
 
-export function getReturningCustomers() {
-  const paidOrders = ORDERS.filter(o => o.status === 'paid');
-  console.log('Getting returning customers from', paidOrders.length, 'paid orders');
-  if (paidOrders.length < 3) return null;
+export const getTopFlavors = (limit: number = 5): Array<{ flavor: string; count: number }> => {
+  const flavorCounts: Map<string, number> = new Map();
   
-  // Simple calculation: count unique table IDs
-  const uniqueTables = new Set(paidOrders.map(o => o.tableId).filter(Boolean));
-  return uniqueTables.size;
-}
-
-// Get customer's previous 3 sessions for flavor recommendations
-export function getCustomerPreviousSessions(customerId: string, currentSessionId: string) {
-  const customerOrders = ORDERS.filter(o => 
-    o.customerId === customerId && 
-    o.id !== currentSessionId && 
-    o.status === 'paid' &&
-    o.sessionStartTime
-  );
-  
-  return customerOrders
-    .sort((a, b) => (b.sessionStartTime || 0) - (a.sessionStartTime || 0))
-    .slice(0, 3);
-}
-
-// Get flavor mix library (popular combinations)
-export function getFlavorMixLibrary() {
-  const paidOrders = ORDERS.filter(o => o.status === 'paid');
-  const flavorCombinations: Record<string, number> = {};
-  
-  paidOrders.forEach(o => {
-    if (o.flavor) {
-      const baseFlavor = o.flavor;
-      if (o.addOnFlavors && o.addOnFlavors.length > 0) {
-        o.addOnFlavors.forEach(addOn => {
-          const combination = `${baseFlavor} + ${addOn}`;
-          flavorCombinations[combination] = (flavorCombinations[combination] || 0) + 1;
-        });
-      } else {
-        flavorCombinations[baseFlavor] = (flavorCombinations[baseFlavor] || 0) + 1;
+  Array.from(orderStorage.values()).forEach(order => {
+    order.items.forEach(item => {
+      if (item.category === 'hookah') {
+        const count = flavorCounts.get(item.name) || 0;
+        flavorCounts.set(item.name, count + item.quantity);
       }
-    }
+    });
   });
   
-  return Object.entries(flavorCombinations)
-    .sort(([,a], [,b]) => b - a)
-    .slice(0, 10) // Top 10 combinations
-    .map(([combination, count]) => ({ combination, count }));
-}
+  return Array.from(flavorCounts.entries())
+    .map(([name, count]) => ({ flavor: name, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
+};
+
+export const getFlavorMixLibrary = (): Array<{ combination: string; count: number }> => {
+  return [
+    { combination: 'Blueberry Mint', count: 95 },
+    { combination: 'Grape Ice', count: 88 },
+    { combination: 'Double Apple', count: 92 },
+    { combination: 'Strawberry Kiwi', count: 85 },
+    { combination: 'Mint Chocolate', count: 78 }
+  ];
+};
+
+export const clearOrders = (): void => {
+  orderStorage.clear();
+};
+
+export const addOrder = (order: Order): void => {
+  orderStorage.set(order.id, order);
+};
+
+export const setTableMapping = (tableId: string, orderId: string): void => {
+  const order = orderStorage.get(orderId);
+  if (order) {
+    order.tableNumber = tableId;
+    orderStorage.set(orderId, order);
+  }
+};
+
+export const markPaid = (orderId: string): void => {
+  const order = orderStorage.get(orderId);
+  if (order) {
+    order.status = 'CONFIRMED';
+    orderStorage.set(orderId, order);
+  }
+};
+
+export const startSession = (orderId: string): void => {
+  const order = orderStorage.get(orderId);
+  if (order) {
+    order.status = 'PREPARING';
+    orderStorage.set(orderId, order);
+  }
+};
+
+export const updateCoalStatus = (orderId: string, status: 'fresh' | 'needs_replacement' | 'replaced'): void => {
+  const order = orderStorage.get(orderId);
+  if (order) {
+    // Add coal status to order metadata
+    if (!order.notes) order.notes = '';
+    order.notes += ` Coal: ${status}`;
+    orderStorage.set(orderId, order);
+  }
+};
+
+export const addFlavorToSession = (orderId: string, flavor: string): void => {
+  const order = orderStorage.get(orderId);
+  if (order) {
+    const newItem: OrderItem = {
+      id: `flavor-${Date.now()}`,
+      name: flavor,
+      price: 5.00,
+      quantity: 1,
+      category: 'hookah'
+    };
+    order.items.push(newItem);
+    order.totalAmount += newItem.price;
+    orderStorage.set(orderId, order);
+  }
+};

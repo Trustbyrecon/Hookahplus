@@ -9,9 +9,9 @@ export default function FlavorSelector() {
 
   const flavors = ['Mint', 'Watermelon', 'Blueberry', 'Peach', 'Double Apple'];
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newFlavor = e.target.value;
-    setSession(prev => ({ ...prev, flavor: newFlavor }));
+    setSession((prev: any) => ({ ...prev, flavor: newFlavor }));
     logFlavorChange(newFlavor);
   };
 

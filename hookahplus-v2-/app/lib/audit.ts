@@ -57,25 +57,25 @@ if (!globalAuditStore.__AUDIT_STORE__) {
       let filtered = this.logs;
       
       if (filters.userId) {
-        filtered = filtered.filter(log => log.userId === filters.userId);
+        filtered = filtered.filter((log: AuditLog) => log.userId === filters.userId);
       }
       if (filters.sessionId) {
-        filtered = filtered.filter(log => log.sessionId === filters.sessionId);
+        filtered = filtered.filter((log: AuditLog) => log.sessionId === filters.sessionId);
       }
       if (filters.actionType) {
-        filtered = filtered.filter(log => log.action.type === filters.actionType);
+        filtered = filtered.filter((log: AuditLog) => log.action.type === filters.actionType);
       }
       if (filters.trustLevel) {
-        filtered = filtered.filter(log => log.userTrustLevel === filters.trustLevel);
+        filtered = filtered.filter((log: AuditLog) => log.userTrustLevel === filters.trustLevel);
       }
       if (filters.startTime) {
-        filtered = filtered.filter(log => log.timestamp >= filters.startTime!);
+        filtered = filtered.filter((log: AuditLog) => log.timestamp >= filters.startTime!);
       }
       if (filters.endTime) {
-        filtered = filtered.filter(log => log.timestamp <= filters.endTime!);
+        filtered = filtered.filter((log: AuditLog) => log.timestamp <= filters.endTime!);
       }
       
-      return filtered.sort((a, b) => b.timestamp - a.timestamp);
+      return filtered.sort((a: AuditLog, b: AuditLog) => b.timestamp - a.timestamp);
     },
     clearLogs: function() {
       this.logs = [];

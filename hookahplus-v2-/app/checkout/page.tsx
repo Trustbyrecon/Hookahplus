@@ -54,9 +54,12 @@ export default function Checkout() {
       const json = await res.json();
       if (!json.id) throw new Error(json.error || "No session");
 
-      const stripe = await stripePromise;
-      const { error } = await stripe!.redirectToCheckout({ sessionId: json.id });
-      if (error) throw error;
+      // Redirect to Stripe Checkout using the session URL
+      if (json.url) {
+        window.location.href = json.url;
+      } else {
+        throw new Error("No checkout URL provided");
+      }
     } catch (e: any) {
       setMsg(e.message ?? "Payment failed");
     } finally {

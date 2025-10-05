@@ -1,51 +1,117 @@
-// lib/eventBus.ts
-type Handler = (payload: any) => void;
+export interface SessionEvent {
+  session: any;
+  cmd: string;
+  data: any;
+  actor?: string;
+  timestamp?: number;
+}
 
-const channels = new Map<string, Set<Handler>>();
+export interface FloorEvent {
+  session: any;
+  cmd: string;
+  data: any;
+  actor?: string;
+  timestamp?: number;
+}
 
-export function publish(topic: string, payload: any) {
-  const subs = channels.get(topic);
-  if (!subs) return;
-  for (const h of subs) {
-    try { h(payload); } catch { /* noop */ }
+export interface PrepEvent {
+  session: any;
+  cmd: string;
+  data: any;
+  actor?: string;
+  timestamp?: number;
+}
+
+// Mock event bus implementation
+const eventSubscribers: Map<string, Set<(event: any) => void>> = new Map();
+
+export const publishSessionEvent = (sessionId: string, event: SessionEvent): void => {
+  console.log(`[EventBus] Session ${sessionId}:`, event);
+  
+  const subscribers = eventSubscribers.get(`session:${sessionId}`) || new Set();
+  subscribers.forEach(callback => {
+    try {
+      callback(event);
+    } catch (error) {
+      console.error('Error in session event subscriber:', error);
+    }
+  });
+};
+
+export const publishFloorEvent = (event: FloorEvent): void => {
+  console.log('[EventBus] Floor Event:', event);
+  
+  const subscribers = eventSubscribers.get('floor') || new Set();
+  subscribers.forEach(callback => {
+    try {
+      callback(event);
+    } catch (error) {
+      console.error('Error in floor event subscriber:', error);
+    }
+  });
+};
+
+export const publishPrepEvent = (event: PrepEvent): void => {
+  console.log('[EventBus] Prep Event:', event);
+  
+  const subscribers = eventSubscribers.get('prep') || new Set();
+  subscribers.forEach(callback => {
+    try {
+      callback(event);
+    } catch (error) {
+      console.error('Error in prep event subscriber:', error);
+    }
+  });
+};
+
+export const subscribeToSession = (sessionId: string, callback: (event: SessionEvent) => void): () => void => {
+  const key = `session:${sessionId}`;
+  if (!eventSubscribers.has(key)) {
+    eventSubscribers.set(key, new Set());
   }
-}
+  
+  const subscribers = eventSubscribers.get(key)!;
+  subscribers.add(callback);
+  
+  // Return unsubscribe function
+  return () => {
+    subscribers.delete(callback);
+    if (subscribers.size === 0) {
+      eventSubscribers.delete(key);
+    }
+  };
+};
 
-export function subscribe(topic: string, handler: Handler) {
-  if (!channels.has(topic)) channels.set(topic, new Set());
-  channels.get(topic)!.add(handler);
-  return () => channels.get(topic)!.delete(handler);
-}
-
-export function unsubscribe(topic: string, handler: Handler) {
-  const subs = channels.get(topic);
-  if (subs) {
-    subs.delete(handler);
+export const subscribeToFloor = (callback: (event: FloorEvent) => void): () => void => {
+  if (!eventSubscribers.has('floor')) {
+    eventSubscribers.set('floor', new Set());
   }
-}
+  
+  const subscribers = eventSubscribers.get('floor')!;
+  subscribers.add(callback);
+  
+  // Return unsubscribe function
+  return () => {
+    subscribers.delete(callback);
+    if (subscribers.size === 0) {
+      eventSubscribers.delete('floor');
+    }
+  };
+};
 
-export function getSubscriberCount(topic: string): number {
-  return channels.get(topic)?.size || 0;
-}
-
-export function getActiveTopics(): string[] {
-  return Array.from(channels.keys());
-}
-
-// Convenience methods for common session events
-export function publishSessionEvent(sessionId: string, event: any) {
-  publish(`sessions.${sessionId}`, event);
-  publish(`sessions.all`, event);
-}
-
-export function publishFloorEvent(event: any) {
-  publish(`sessions.floor`, event);
-}
-
-export function publishPrepEvent(event: any) {
-  publish(`sessions.prep`, event);
-}
-
-export function publishSystemEvent(event: any) {
-  publish(`system`, event);
-}
+export const subscribeToPrep = (callback: (event: PrepEvent) => void): () => void => {
+  if (!eventSubscribers.has('prep')) {
+    eventSubscribers.set('prep', new Set());
+  }
+  
+  const subscribers = eventSubscribers.get('prep')!;
+  subscribers.add(callback);
+  
+  // Return unsubscribe function
+  return () => {
+    subscribers.delete(callback);
+    if (subscribers.size === 0) {
+      eventSubscribers.delete('prep');
+    }
+  };
+};

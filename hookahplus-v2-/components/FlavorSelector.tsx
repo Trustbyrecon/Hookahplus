@@ -1,29 +1,43 @@
-// components/FlavorSelector.jsx
-import React from 'react';
-import { useSession } from './SessionContext';
-import { useReflexAgent } from './ReflexAgentContext';
+"use client";
 
-export default function FlavorSelector() {
-  const { session, setSession } = useSession();
-  const { logFlavorChange } = useReflexAgent();
+import { useState } from "react";
 
+interface FlavorSelectorProps {
+  session: any;
+  setSession: (prev: any) => void;
+  onFlavorChange?: (flavor: string) => void;
+}
+
+const FlavorSelector = ({ session, setSession, onFlavorChange }: FlavorSelectorProps) => {
+  const [selectedFlavor, setSelectedFlavor] = useState(session?.flavor || '');
   const flavors = ['Mint', 'Watermelon', 'Blueberry', 'Peach', 'Double Apple'];
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newFlavor = e.target.value;
-    setSession(prev => ({ ...prev, flavor: newFlavor }));
+    setSession((prev: any) => ({ ...prev, flavor: newFlavor }));
     logFlavorChange(newFlavor);
+  };
+
+  const logFlavorChange = (flavor: string) => {
+    console.log(`Flavor changed to: ${flavor}`);
+    if (onFlavorChange) {
+      onFlavorChange(flavor);
+    }
   };
 
   return (
     <div className="mb-4">
-      <label className="block mb-1 font-semibold">Flavor:</label>
+      <label htmlFor="flavor" className="block text-sm font-medium text-gray-700 mb-2">
+        Select Hookah Flavor
+      </label>
       <select
-        value={session.flavor}
+        id="flavor"
+        value={selectedFlavor}
         onChange={handleChange}
-        className="p-2 bg-gray-800 text-white rounded w-full"
+        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
       >
-        {flavors.map((flavor) => (
+        <option value="">Choose a flavor...</option>
+        {flavors.map(flavor => (
           <option key={flavor} value={flavor}>
             {flavor}
           </option>
@@ -31,4 +45,6 @@ export default function FlavorSelector() {
       </select>
     </div>
   );
-}
+};
+
+export default FlavorSelector;

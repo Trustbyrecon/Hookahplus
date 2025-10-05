@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { addEvent, EventRecord } from "@/app/lib/badgeStores.switch";
+import { addEvent } from "@/app/lib/badgeStores.switch";
 import { getAuthContext, requireRole, canAccessProfile, canAccessVenue } from "@/app/lib/auth";
 import { logAuditEvent, isCrossVenueOperation } from "@/app/lib/audit";
 
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const eventRecord: EventRecord = {
+    const eventRecord: any = {
       id: `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       ts: Date.now(),
       type,
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
         staffId
       },
       {
-        ip: request.ip,
+        ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
         userAgent: request.headers.get('user-agent') || undefined
       }
     );

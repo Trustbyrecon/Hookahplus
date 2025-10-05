@@ -30,7 +30,7 @@ export async function listEvents(profileId: string) {
     where: { profileId },
     orderBy: { ts: "asc" },
   });
-  return rows.map((r) => ({
+  return rows.map((r: any) => ({
     id: r.id,
     ts: r.ts.getTime(),
     type: r.type as EventType,
@@ -46,7 +46,7 @@ export async function listEventsAtVenue(profileId: string, venueId?: string | nu
     where: { profileId, venueId: venueId ?? null },
     orderBy: { ts: "asc" },
   });
-  return rows.map((r) => ({
+  return rows.map((r: any) => ({
     id: r.id,
     ts: r.ts.getTime(),
     type: r.type as EventType,
@@ -62,7 +62,7 @@ export async function listAwards(profileId: string) {
     where: { profileId, revoked: false },
     orderBy: { awardedAt: "desc" },
   });
-  return rows.map((r) => ({
+  return rows.map((r: any) => ({
     id: r.id,
     profileId: r.profileId,
     badgeId: r.badgeId,

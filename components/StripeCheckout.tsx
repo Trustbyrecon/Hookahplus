@@ -1,16 +1,9 @@
 'use client';
 
-<<<<<<< HEAD
 import { useState, useEffect } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
-
-// Initialize Stripe
-=======
-import { useState } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
+import { loadStripe, Stripe } from '@stripe/stripe-js';
 
 // Initialize Stripe with environment variable
->>>>>>> stripe-integration-clean
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY!);
 
 interface Product {
@@ -38,21 +31,13 @@ export default function StripeCheckout({
   const defaultProducts: Product[] = [
     {
       name: "Hookah Session",
-<<<<<<< HEAD
-      priceId: "price_placeholder", // Replace with actual price ID after seeding
-=======
       priceId: "price_1RyCtSDuKNq0KFAAihtnSInq", // Real Stripe Price ID
->>>>>>> stripe-integration-clean
       amount: 15.00,
       currency: "usd"
     },
     {
       name: "Flavor Add-On",
-<<<<<<< HEAD
-      priceId: "price_placeholder", // Replace with actual price ID after seeding
-=======
       priceId: "price_1RyCtTDuKNq0KFAAP6sAbA2z", // Real Stripe Price ID
->>>>>>> stripe-integration-clean
       amount: 2.00,
       currency: "usd"
     }
@@ -90,15 +75,13 @@ export default function StripeCheckout({
         throw new Error('Failed to create checkout session');
       }
 
-      const { sessionId } = await response.json();
+      const { sessionId, url } = await response.json();
       
       // Redirect to Stripe Checkout
-      const { error: stripeError } = await stripe.redirectToCheckout({
-        sessionId,
-      });
-
-      if (stripeError) {
-        throw new Error(stripeError.message);
+      if (url) {
+        window.location.href = url;
+      } else {
+        throw new Error('No checkout URL provided');
       }
 
     } catch (err) {

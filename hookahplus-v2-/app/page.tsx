@@ -45,27 +45,30 @@ export default function Home() {
         
         {/* Main CTA - "Start preorders" */}
         <div className="mb-12">
-          <Link href="/preorder/T-001">
-            <button 
-              className="bg-gradient-to-r from-teal-500 to-blue-600 hover:from-teal-600 hover:to-blue-700 text-white font-bold py-4 px-8 rounded-full text-xl shadow-2xl hover:shadow-teal-500/25 transition-all transform hover:scale-105"
-              onClick={() => {
-                if (typeof window !== 'undefined' && (window as any).gtag) {
-                  (window as any).gtag('event', 'Hero_StartPreorders', {
-                    event_category: 'Navigation',
-                    event_label: 'T-001',
-                  });
-                }
-              }}
-            >
-              🚀 Start Preorders
-            </button>
-          </Link>
+          {(Link as any)({
+            href: "/preorder/T-001",
+            children: (
+              <button 
+                className="bg-gradient-to-r from-teal-500 to-blue-600 hover:from-teal-600 hover:to-blue-700 text-white font-bold py-4 px-8 rounded-full text-xl shadow-2xl hover:shadow-teal-500/25 transition-all transform hover:scale-105"
+                onClick={() => {
+                  if (typeof window !== 'undefined' && (window as any).gtag) {
+                    (window as any).gtag('event', 'Hero_StartPreorders', {
+                      event_category: 'Navigation',
+                      event_label: 'T-001',
+                    });
+                  }
+                }}
+              >
+                🚀 Start Preorders
+              </button>
+            )
+          })}
           <p className="text-zinc-400 text-sm mt-3">QR scan → Menu browse → Flavor personalize → Pay securely</p>
         </div>
 
         {/* Secondary CTAs */}
         <div className="flex flex-col sm:flex-row gap-4 mb-8">
-          <Link href="/demo">
+          <a href="/demo">
             <button 
               className="bg-zinc-700 hover:bg-zinc-600 text-white font-medium py-3 px-6 rounded-lg transition-colors"
               onClick={() => {
@@ -79,8 +82,8 @@ export default function Home() {
             >
               🎬 See Demo
             </button>
-          </Link>
-          <Link href="/onboarding#waitlist">
+          </a>
+          <a href="/onboarding#waitlist">
             <button 
               className="bg-zinc-700 hover:bg-zinc-600 text-white font-medium py-3 px-6 rounded-lg transition-colors"
               onClick={() => {
@@ -94,7 +97,7 @@ export default function Home() {
             >
               📋 POS Waitlist
             </button>
-          </Link>
+          </a>
         </div>
 
         {/* Trust Lock Display */}
@@ -160,36 +163,36 @@ export default function Home() {
         <div className="max-w-4xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12 text-teal-300">Quick Access</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Link href="/dashboard">
+            <a href="/dashboard">
               <div className="bg-zinc-900 border border-teal-500 rounded-lg p-4 text-center hover:bg-teal-900/20 transition-colors">
                 <div className="text-2xl mb-2">📊</div>
                 <div className="text-sm">Dashboard</div>
               </div>
-            </Link>
-            <Link href="/pre-order">
+            </a>
+            <a href="/pre-order">
               <div className="bg-zinc-900 border border-teal-500 rounded-lg p-4 text-center hover:bg-teal-900/20 transition-colors">
                 <div className="text-2xl mb-2">📱</div>
                 <div className="text-sm">Pre-Order</div>
               </div>
-            </Link>
-            <Link href="/checkout">
+            </a>
+            <a href="/checkout">
               <div className="bg-zinc-900 border border-teal-500 rounded-lg p-4 text-center hover:bg-teal-900/20 transition-colors">
                 <div className="text-2xl mb-2">💳</div>
                 <div className="text-sm">Checkout</div>
               </div>
-            </Link>
-            <Link href="/admin">
+            </a>
+            <a href="/admin">
               <div className="bg-zinc-900 border border-teal-500 rounded-lg p-4 text-center hover:bg-teal-900/20 transition-colors">
                 <div className="text-2xl mb-2">⚙️</div>
                 <div className="text-sm">Admin</div>
               </div>
-            </Link>
-            <Link href="/staff-panel">
+            </a>
+            <a href="/staff-panel">
               <div className="bg-zinc-900 border border-teal-500 rounded-lg p-4 text-center hover:bg-teal-900/20 transition-colors">
                 <div className="text-2xl mb-2">👥</div>
                 <div className="text-sm">Staff Panel</div>
               </div>
-            </Link>
+            </a>
           </div>
         </div>
       </div>

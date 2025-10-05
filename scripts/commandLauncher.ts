@@ -46,8 +46,8 @@ export const commands = {
 
 // Allow command line execution for testing
 const cmd = process.argv[2];
-if (commands[cmd]) {
-  commands[cmd]();
+if (cmd && cmd in commands) {
+  (commands as any)[cmd]();
 } else {
   console.log("❓ Unknown command:", cmd);
 }

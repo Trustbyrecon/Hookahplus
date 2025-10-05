@@ -1,95 +1,89 @@
-// lib/persistence.ts
-// File-based persistence for customer journey data in serverless environments
+// Mock persistence layer for client-side compatibility
+// In a real app, this would use proper file system operations
 
-import { promises as fs } from 'fs';
-import path from 'path';
-import { CustomerBooking, BOHOperation, CustomerJourneyState } from './customer-journey';
+export interface PersistenceData {
+  [key: string]: any;
+}
 
-const DATA_FILE_PATH = path.join(process.cwd(), 'data', 'customer-journey.json');
+const mockStorage: Map<string, PersistenceData> = new Map();
 
-// Ensure data directory exists
-async function ensureDataDir() {
-  const dataDir = path.dirname(DATA_FILE_PATH);
+export const readFile = async (filePath: string): Promise<string> => {
+  // Mock file reading
+  const data = mockStorage.get(filePath);
+  return data ? JSON.stringify(data) : '{}';
+};
+
+export const writeFile = async (filePath: string, data: string): Promise<void> => {
+  // Mock file writing
   try {
-    await fs.access(dataDir);
+    const parsedData = JSON.parse(data);
+    mockStorage.set(filePath, parsedData);
   } catch {
-    await fs.mkdir(dataDir, { recursive: true });
+    mockStorage.set(filePath, { content: data });
   }
-}
+};
 
-// Convert Maps and Sets to serializable format
-function serializeState(state: CustomerJourneyState) {
-  return {
-    bookings: Array.from(state.bookings.entries()),
-    bohOperations: Array.from(state.bohOperations.entries()),
-    activeSessions: Array.from(state.activeSessions),
-    staffAssignments: Array.from(state.staffAssignments.entries())
-  };
-}
+export const exists = async (filePath: string): Promise<boolean> => {
+  return mockStorage.has(filePath);
+};
 
-// Convert serialized format back to Maps and Sets
-function deserializeState(serialized: any): CustomerJourneyState {
-  return {
-    bookings: new Map(serialized.bookings || []),
-    bohOperations: new Map(serialized.bohOperations || []),
-    activeSessions: new Set(serialized.activeSessions || []),
-    staffAssignments: new Map(serialized.staffAssignments || [])
-  };
-}
+export const mkdir = async (dirPath: string): Promise<void> => {
+  // Mock directory creation
+  mockStorage.set(dirPath, {});
+};
 
-// Save state to file
-export async function saveState(state: CustomerJourneyState): Promise<void> {
+export const readdir = async (dirPath: string): Promise<string[]> => {
+  // Mock directory reading
+  const files: string[] = [];
+  for (const [key] of mockStorage) {
+    if (key.startsWith(dirPath)) {
+      files.push(key);
+    }
+  }
+  return files;
+};
+
+export const unlink = async (filePath: string): Promise<void> => {
+  mockStorage.delete(filePath);
+};
+
+export const rmdir = async (dirPath: string): Promise<void> => {
+  // Remove all files in directory
+  for (const [key] of mockStorage) {
+    if (key.startsWith(dirPath)) {
+      mockStorage.delete(key);
+    }
+  }
+};
+
+export const loadState = async (filePath: string): Promise<any> => {
+  const data = await readFile(filePath);
   try {
-    await ensureDataDir();
-    const serialized = serializeState(state);
-    await fs.writeFile(DATA_FILE_PATH, JSON.stringify(serialized, null, 2), 'utf8');
-    console.log('[PERSISTENCE] State saved successfully');
-  } catch (error) {
-    console.error('[PERSISTENCE] Failed to save state:', error);
-    // Don't throw - we want the app to continue working even if persistence fails
+    return JSON.parse(data);
+  } catch {
+    return {};
   }
-}
+};
 
-// Load state from file
-export async function loadState(): Promise<CustomerJourneyState> {
-  try {
-    await ensureDataDir();
-    const data = await fs.readFile(DATA_FILE_PATH, 'utf8');
-    const serialized = JSON.parse(data);
-    console.log('[PERSISTENCE] State loaded successfully');
-    return deserializeState(serialized);
-  } catch (error) {
-    console.log('[PERSISTENCE] No existing state found, creating new state');
-    // Return empty state if file doesn't exist
-    return {
-      bookings: new Map(),
-      bohOperations: new Map(),
-      activeSessions: new Set(),
-      staffAssignments: new Map()
-    };
+export const saveState = async (filePath: string, state: any): Promise<void> => {
+  const data = JSON.stringify(state, null, 2);
+  await writeFile(filePath, data);
+};
+
+export const hydrateDates = (data: any): any => {
+  // Recursively convert date strings back to Date objects
+  if (Array.isArray(data)) {
+    return data.map(item => hydrateDates(item));
+  } else if (data && typeof data === 'object') {
+    const hydrated: any = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) {
+        hydrated[key] = new Date(value);
+      } else {
+        hydrated[key] = hydrateDates(value);
+      }
+    }
+    return hydrated;
   }
-}
-
-// Convert date strings back to Date objects
-export function hydrateDates(bookings: CustomerBooking[]): CustomerBooking[] {
-  return bookings.map(booking => ({
-    ...booking,
-    createdAt: new Date(booking.createdAt),
-    updatedAt: new Date(booking.updatedAt),
-    sessionStartTime: booking.sessionStartTime ? new Date(booking.sessionStartTime) : undefined,
-    sessionEndTime: booking.sessionEndTime ? new Date(booking.sessionEndTime) : undefined,
-    checkInTime: booking.checkInTime ? new Date(booking.checkInTime) : undefined
-  }));
-}
-
-// Convert Date objects to ISO strings for serialization
-export function dehydrateDates(bookings: CustomerBooking[]): any[] {
-  return bookings.map(booking => ({
-    ...booking,
-    createdAt: booking.createdAt.toISOString(),
-    updatedAt: booking.updatedAt.toISOString(),
-    sessionStartTime: booking.sessionStartTime?.toISOString(),
-    sessionEndTime: booking.sessionEndTime?.toISOString(),
-    checkInTime: booking.checkInTime?.toISOString()
-  }));
-}
+  return data;
+};

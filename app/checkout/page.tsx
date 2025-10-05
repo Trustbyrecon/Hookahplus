@@ -55,8 +55,12 @@ export default function Checkout() {
       if (!json.id) throw new Error(json.error || "No session");
 
       const stripe = await stripePromise;
-      const { error } = await stripe!.redirectToCheckout({ sessionId: json.id });
-      if (error) throw error;
+      if (stripe) {
+        const { error } = await (stripe as any).redirectToCheckout({ sessionId: json.id });
+        if (error) throw error;
+      } else {
+        throw new Error("Stripe failed to load");
+      }
     } catch (e: any) {
       setMsg(e.message ?? "Payment failed");
     } finally {

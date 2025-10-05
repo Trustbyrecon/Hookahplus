@@ -3,8 +3,9 @@ export const dynamic = "force-dynamic";
 
 import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
+import { getEnvVar } from "../../../lib/env";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+const stripe = new Stripe(getEnvVar('STRIPE_SECRET_KEY'));
 
 async function readRawBody(req: Request): Promise<string> {
   return req.text();

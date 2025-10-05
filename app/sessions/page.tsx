@@ -964,7 +964,7 @@ export default function SessionsDashboard() {
 
           {/* Hookah Room Dashboard */}
           <div className="bg-gradient-to-r from-zinc-900 to-zinc-800 border-2 border-purple-600 rounded-xl shadow-lg">
-            <HookahRoomDashboard />
+            <HookahRoomDashboard staffId="demo_staff" />
           </div>
 
           {/* Lounge Layout */}

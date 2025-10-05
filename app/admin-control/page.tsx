@@ -153,7 +153,13 @@ const AdminControlCenter = () => {
     const allSessions = getAllSessions();
     const liveSessions = getLiveSessions();
     const allOrders = getLiveOrders();
-    const statusCounts = getSessionsByStatus();
+    const statusCounts = {
+      NEW: getSessionsByStatus('NEW').length,
+      PAID_CONFIRMED: getSessionsByStatus('PAID_CONFIRMED').length,
+      PREP_IN_PROGRESS: getSessionsByStatus('PREP_IN_PROGRESS').length,
+      ACTIVE: getSessionsByStatus('ACTIVE').length,
+      CLOSED: getSessionsByStatus('CLOSED').length
+    };
     
     setSessions(allSessions);
     setOrders(allOrders);
@@ -184,7 +190,7 @@ const AdminControlCenter = () => {
   const handleSeedMultipleSessions = () => {
     setLoading(true);
     try {
-      seedMultipleSessions();
+      seedMultipleSessions(5);
       refreshData();
     } finally {
       setLoading(false);
@@ -194,7 +200,7 @@ const AdminControlCenter = () => {
   const handleSeedSingleSession = () => {
     setLoading(true);
     try {
-      seedSession(`admin_${Date.now()}`, "T-ADMIN");
+      seedSession(`admin_${Date.now()}`);
       refreshData();
     } finally {
       setLoading(false);

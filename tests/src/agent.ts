@@ -29,7 +29,7 @@ export class Agent {
   async run() {
     for (let i = 0; i < this.plan.steps.length; i++) {
       const step = this.plan.steps[i];
-      test.info().step(`${i + 1}. ${step.action}`);
+      console.log(`Step ${i + 1}: ${step.action}`);
       switch (step.action) {
         case 'navigate': await navigate(this.page, step.url); break;
         case 'click': await click(this.page, step.selector, step.description); break;
