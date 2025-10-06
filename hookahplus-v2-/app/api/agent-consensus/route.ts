@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import agentConsensus from '../../lib/agentConsensus';
+import agentConsensus from '@/lib/agentConsensus';
 
 export async function GET(request: NextRequest) {
   try {
