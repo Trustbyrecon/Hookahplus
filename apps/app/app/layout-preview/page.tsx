@@ -390,31 +390,31 @@ export default function LayoutPreviewPage() {
             </div>
 
             {/* Layout Controls */}
-            <div className="absolute bottom-4 left-4 flex items-center space-x-2">
+            <div className="absolute bottom-4 left-4 flex items-center space-x-1">
               <button
                 onClick={handleZoomOut}
-                className="p-2 bg-zinc-800 text-white rounded hover:bg-zinc-700"
+                className="p-1.5 bg-zinc-800 text-white rounded hover:bg-zinc-700"
               >
-                <Minus className="w-4 h-4" />
+                <Minus className="w-3 h-3" />
               </button>
-              <span className="text-sm text-zinc-400 px-2">{zoomLevel}%</span>
+              <span className="text-xs text-zinc-400 px-1.5">{zoomLevel}%</span>
               <button
                 onClick={handleZoomIn}
-                className="p-2 bg-zinc-800 text-white rounded hover:bg-zinc-700"
+                className="p-1.5 bg-zinc-800 text-white rounded hover:bg-zinc-700"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-3 h-3" />
               </button>
               <button
                 onClick={handleResetView}
-                className="p-2 bg-zinc-800 text-white rounded hover:bg-zinc-700"
+                className="p-1.5 bg-zinc-800 text-white rounded hover:bg-zinc-700"
               >
-                <RotateCcw className="w-4 h-4" />
+                <RotateCcw className="w-3 h-3" />
               </button>
               <button
                 onClick={() => setIsLocked(!isLocked)}
-                className="p-2 bg-zinc-800 text-white rounded hover:bg-zinc-700"
+                className="p-1.5 bg-zinc-800 text-white rounded hover:bg-zinc-700"
               >
-                {isLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+                {isLocked ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
               </button>
             </div>
 
