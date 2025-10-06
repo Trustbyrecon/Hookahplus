@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { markPaid } from "@/lib/orders";
 import { verifyTrust } from "@/lib/trustlock";
+import Stripe from "stripe";
 
 export const runtime = "nodejs"; // ensure Netlify uses Node runtime
 
