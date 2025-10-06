@@ -2,8 +2,9 @@ name: reflex-ci
 on:
   pull_request:
     branches: [ main ]
-  push:
-    branches: [ feat/*, fix/*, chore/* ]
+  # Temporarily disabled for feat/guests-cart deployment
+  # push:
+  #   branches: [ feat/*, fix/*, chore/* ]
 
 jobs:
   reflex:
