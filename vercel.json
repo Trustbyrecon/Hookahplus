@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "cd apps/app && npm install && npm run build",
-  "installCommand": "cd apps/app && npm install",
+  "buildCommand": "cd apps/app && pnpm install && pnpm run build",
+  "installCommand": "cd apps/app && pnpm install",
   "functions": {
     "apps/app/app/api/payments/live-test/route.ts": {
       "maxDuration": 30
