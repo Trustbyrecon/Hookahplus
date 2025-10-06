@@ -58,7 +58,8 @@ import {
   Play,
   Save,
   Eye,
-  EyeOff
+  EyeOff,
+  HelpCircle
 } from 'lucide-react';
 
 export default function LandingPage() {
@@ -130,6 +131,30 @@ export default function LandingPage() {
       href: '/layout-preview',
       color: 'from-indigo-500/20 to-purple-500/20',
       borderColor: 'border-indigo-500/30'
+    },
+    {
+      title: 'Analytics',
+      description: 'Reports & Insights',
+      icon: <TrendingUp className="w-6 h-6 text-emerald-400" />,
+      href: '/analytics',
+      color: 'from-emerald-500/20 to-green-500/20',
+      borderColor: 'border-emerald-500/30'
+    },
+    {
+      title: 'Settings',
+      description: 'Configuration',
+      icon: <Settings className="w-6 h-6 text-gray-400" />,
+      href: '/settings',
+      color: 'from-gray-500/20 to-slate-500/20',
+      borderColor: 'border-gray-500/30'
+    },
+    {
+      title: 'Help Center',
+      description: 'Support & Docs',
+      icon: <HelpCircle className="w-6 h-6 text-pink-400" />,
+      href: '/help',
+      color: 'from-pink-500/20 to-rose-500/20',
+      borderColor: 'border-pink-500/30'
     }
   ];
 
@@ -139,7 +164,6 @@ export default function LandingPage() {
       title: 'Aletheia',
       description: 'AI-Powered Session Intelligence',
       icon: <Brain className="w-8 h-8 text-teal-400" />,
-      status: 'Active',
       color: 'from-teal-500/20 to-cyan-500/20',
       borderColor: 'border-teal-500/30'
     },
@@ -147,7 +171,6 @@ export default function LandingPage() {
       title: 'HiTrust Sentinel',
       description: 'Advanced Security & Trust Management',
       icon: <Shield className="w-8 h-8 text-blue-400" />,
-      status: 'Active',
       color: 'from-blue-500/20 to-indigo-500/20',
       borderColor: 'border-blue-500/30'
     },
@@ -155,7 +178,6 @@ export default function LandingPage() {
       title: 'EP Payments',
       description: 'Secure Payment Processing',
       icon: <CreditCard className="w-8 h-8 text-green-400" />,
-      status: 'Connected',
       color: 'from-green-500/20 to-emerald-500/20',
       borderColor: 'border-green-500/30'
     }
@@ -221,13 +243,10 @@ export default function LandingPage() {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
           {reflexCards.map((card, index) => (
-            <div key={index} className={`reflex-card bg-gradient-to-br ${card.color} border ${card.borderColor}`}>
-              <div className="flex items-start justify-between mb-4">
+            <div key={index} className={`reflex-card bg-gradient-to-br ${card.color} border ${card.borderColor} rounded-xl p-6`}>
+              <div className="flex items-start mb-4">
                 <div className="p-3 bg-white/10 rounded-lg">
                   {card.icon}
-                </div>
-                <div className="badge-pretty-success">
-                  {card.status}
                 </div>
               </div>
               <div>
@@ -246,19 +265,16 @@ export default function LandingPage() {
           <p className="text-zinc-400 text-lg">Everything you need to manage your hookah lounge</p>
         </div>
         
-        <div className="quick-access-grid">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
           {quickAccessCards.map((card, index) => (
-            <Link key={index} href={card.href}>
-              <div className={`quick-access-card bg-gradient-to-br ${card.color} border ${card.borderColor}`}>
-                <div className="flex items-start justify-between">
-                  <div className="p-2 bg-white/10 rounded-lg">
+            <Link key={index} href={card.href} className="group">
+              <div className={`bg-gradient-to-br ${card.color} border ${card.borderColor} rounded-xl p-4 h-24 hover:scale-105 transition-all duration-300 cursor-pointer`}>
+                <div className="flex flex-col items-center justify-center h-full text-center">
+                  <div className="mb-2">
                     {card.icon}
                   </div>
-                  <ArrowUp className="w-4 h-4 text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                </div>
-                <div>
-                  <h3 className="font-semibold mb-1">{card.title}</h3>
-                  <p className="text-sm text-zinc-300">{card.description}</p>
+                  <h3 className="font-semibold text-sm mb-1">{card.title}</h3>
+                  <p className="text-xs text-zinc-300 leading-tight">{card.description}</p>
                 </div>
               </div>
             </Link>

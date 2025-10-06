@@ -228,72 +228,39 @@ const GlobalNavigation: React.FC = () => {
   };
 
   return (
-    <nav className="bg-zinc-950 border-b border-zinc-800">
+    <nav className="bg-zinc-950/80 backdrop-blur-sm border-b border-zinc-800/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo and Brand */}
           <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary-400 to-cyan-400 rounded-lg flex items-center justify-center">
+            <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+              <div className="w-8 h-8 bg-gradient-to-br from-teal-400 to-cyan-400 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">H+</span>
               </div>
               <span className="text-xl font-bold text-white">HOOKAH+</span>
-            </div>
-            
-            {/* System Status Indicator */}
-            <div className="hidden md:flex items-center space-x-2 ml-4">
-              <span className="text-sm text-zinc-400">System:</span>
-              <span className="text-sm text-zinc-300">{flowState.progress}%</span>
-              <span className="text-sm text-zinc-400">{getFlowStatusIcon(flowState.currentWorkflow)}</span>
-            </div>
+            </Link>
           </div>
 
           {/* Main Navigation */}
-          <div className="hidden md:flex items-center space-x-1">
-            {navigationGroups.map((group) => (
-              <div key={group.label} className="relative">
-                <div className="flex items-center space-x-1">
-                  {group.items.map((item) => {
-                    const isActive = pathname === item.href;
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        className={cn(
-                          'flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200',
-                          isActive
-                            ? 'bg-primary-600 text-white'
-                            : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
-                        )}
-                      >
-                        {item.icon}
-                        <span>{item.label}</span>
-                        {item.flowState === 'active' && (
-                          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                        )}
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
+          <div className="hidden md:flex items-center space-x-6">
+            <Link href="/fire-session-dashboard" className="text-zinc-300 hover:text-white transition-colors">
+              Dashboard
+            </Link>
+            <Link href="/preorder/T-001" className="text-zinc-300 hover:text-white transition-colors">
+              Pre-Order
+            </Link>
+            <Link href="/sessions" className="text-zinc-300 hover:text-white transition-colors">
+              Sessions
+            </Link>
+            <Link href="/staff-panel" className="text-zinc-300 hover:text-white transition-colors">
+              Staff
+            </Link>
           </div>
 
           {/* Right Side Actions */}
           <div className="flex items-center space-x-4">
-            {/* Live Status */}
-            <div className="hidden lg:flex items-center space-x-2">
-              <div className="flex items-center space-x-1">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-sm text-green-400">Live</span>
-              </div>
-              <div className="text-sm text-zinc-400">
-                Active Sessions: <span className="text-white font-semibold">{sessionCount}</span>
-              </div>
-            </div>
-
             {/* Theme Toggle */}
-            <ThemeToggle className="mr-2" />
+            <ThemeToggle />
 
             {/* Support and Docs */}
             <div className="flex items-center space-x-2">
