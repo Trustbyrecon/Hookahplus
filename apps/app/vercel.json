@@ -1,0 +1,41 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "pnpm --filter @hookahplus/app build",
+  "installCommand": "pnpm install --filter @hookahplus/app...",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "functions": {
+    "app/api/payments/live-test/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/stripe-health/route.ts": {
+      "maxDuration": 15
+    },
+    "app/api/**/route.ts": {
+      "maxDuration": 10
+    }
+  },
+  "redirects": [
+    {
+      "source": "/feat-guests-cart/:path*",
+      "destination": "https://hookahplus-app-prod.vercel.app/:path*",
+      "permanent": false
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, must-revalidate"
+        }
+      ]
+    }
+  ],
+  "env": {
+    "NEXT_PUBLIC_APP_URL": "https://hookahplus-app-prod.vercel.app"
+  }
+}
+
