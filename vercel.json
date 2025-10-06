@@ -1,7 +1,8 @@
 {
   "version": 2,
-  "buildCommand": "pnpm install --no-frozen-lockfile && pnpm run build",
-  "installCommand": "pnpm install --no-frozen-lockfile",
+  "rootDirectory": "apps/app",
+  "buildCommand": "npm install && npm run build",
+  "installCommand": "npm install",
   "functions": {
     "app/api/payments/live-test/route.ts": {
       "maxDuration": 30
