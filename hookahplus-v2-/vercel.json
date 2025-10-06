@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "npm install && npm run build",
-  "installCommand": "npm install",
+  "buildCommand": "cd .. && npm install && cd hookahplus-v2- && npm run build",
+  "installCommand": "cd .. && npm install",
   "outputDirectory": ".next",
   "functions": {
     "app/api/payments/live-test/route.ts": {
