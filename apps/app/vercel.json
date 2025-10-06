@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "pnpm --filter @hookahplus/app build",
-  "installCommand": "pnpm install --filter @hookahplus/app...",
+  "installCommand": "pnpm install --filter @hookahplus/app... --no-frozen-lockfile",
   "outputDirectory": ".next",
   "framework": "nextjs",
   "regions": ["iad1"],
