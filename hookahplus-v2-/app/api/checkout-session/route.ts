@@ -1,8 +1,8 @@
 // app/api/checkout-session/route.ts
 import { NextResponse } from "next/server";
-import { stripe } from "../../../lib/stripe";
-import { signTrust } from "../../../lib/trustlock";
-import { addOrder } from "../../../lib/orders";
+import { stripe } from "../../lib/stripe";
+import { signTrust } from "../../lib/trustlock";
+import { addOrder } from "../../lib/orders";
 
 export async function POST(req: Request) {
   try {

@@ -1,7 +1,7 @@
 // app/api/sessions/route.ts
 import { NextResponse } from "next/server";
-import { getAllSessions, getSessionsByState, getSessionsByTable } from "../../../lib/sessionState";
-import { getActiveSessions, updateCoalStatus, addFlavorToSession, startSession, handleRefill, getFlavorMixLibrary, getCustomerPreviousSessions } from "../../../lib/orders";
+import { getAllSessions, getSessionsByState, getSessionsByTable } from "../../lib/sessionState";
+import { getActiveSessions, updateCoalStatus, addFlavorToSession, startSession, handleRefill, getFlavorMixLibrary, getCustomerPreviousSessions } from "../../lib/orders";
 
 export async function GET(request: Request) {
   try {

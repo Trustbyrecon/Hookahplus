@@ -1,8 +1,8 @@
 // app/api/webhooks/stripe/route.ts
 import { NextResponse } from "next/server";
-import { stripe } from "../../../../lib/stripe";
-import { markPaid } from "../../../../lib/orders";
-import { verifyTrust } from "../../../../lib/trustlock";
+import { stripe } from "../../../lib/stripe";
+import { markPaid } from "../../../lib/orders";
+import { verifyTrust } from "../../../lib/trustlock";
 
 export const runtime = "nodejs"; // ensure Netlify uses Node runtime
 
