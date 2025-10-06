@@ -1,8 +1,8 @@
 // app/api/fire-sessions/[id]/action/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { getSession, upsertSession } from "../../../lib/store";
-import type { Action } from "../../../lib/workflow";
-import { nextState, assertAllowed, FSMError } from "../../../lib/workflow";
+import { getSession, upsertSession } from "../../../app/lib/store.ts";
+import type { Action } from "../../../app/lib/workflow.ts";
+import { nextState, assertAllowed, FSMError } from "../../../app/lib/workflow.ts";
 
 // Required for static export - generate all possible session IDs
 export async function generateStaticParams() {
