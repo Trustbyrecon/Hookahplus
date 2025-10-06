@@ -629,7 +629,7 @@ function EnhancedCard({
       ACTIVE: ["CLOSE", "EXTEND_MIN", "ADD_ITEM", "UNDO"],
       CLOSE: ["UNDO"]
     };
-    return map[state];
+    return map[state] || [];
   }
 
   // Get trust requirement for tooltip
