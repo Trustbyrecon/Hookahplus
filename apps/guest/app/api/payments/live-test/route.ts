@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "../../../../lib/stripeServer";
 import { checkPaymentOperation } from "../../../../lib/reflex-integration";
+import { paymentRateLimit, createRateLimitResponse } from "../../../../lib/rate-limit";
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -8,6 +9,13 @@ export const runtime = 'nodejs';
 // Proxy guests -> app live-test so only APP needs Stripe secret
 export async function POST(req: Request) {
   try {
+    // Rate limiting check
+    const rateLimitResult = paymentRateLimit(req as any);
+    if (!rateLimitResult.success) {
+      console.warn('[Guest:$1-smoke] ⚠️ Rate limit exceeded');
+      return createRateLimitResponse(rateLimitResult);
+    }
+    
     const admin = process.env.ADMIN_TEST_TOKEN || '';
     const appBase = process.env.NEXT_PUBLIC_APP_URL || '';
     const body = await req.json().catch(() => ({}));

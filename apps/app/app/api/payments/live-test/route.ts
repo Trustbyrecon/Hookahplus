@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import https from 'https';
+import { paymentRateLimit, createRateLimitResponse } from '@/lib/rate-limit';
 
 // Enhanced Stripe Configuration for Production
 let stripe: Stripe | null = null;
@@ -55,11 +56,23 @@ async function createPaymentWithRetry(params: any, maxRetries = 3): Promise<Stri
 export async function POST(req: NextRequest) {
   const startTime = Date.now();
   console.log('[RWO:$1-smoke] 🚀 Starting $1 smoke test...');
+  
+  // Rate limiting check
+  const rateLimitResult = paymentRateLimit(req);
+  if (!rateLimitResult.success) {
+    console.warn('[RWO:$1-smoke] ⚠️ Rate limit exceeded');
+    return createRateLimitResponse(rateLimitResult);
+  }
+  
   console.log('[RWO:$1-smoke] 🔍 Environment check:', {
     hasStripeKey: !!process.env.STRIPE_SECRET_KEY,
     stripeKeyPrefix: process.env.STRIPE_SECRET_KEY?.substring(0, 10) + '...',
     nodeEnv: process.env.NODE_ENV,
-    vercel: process.env.VERCEL
+    vercel: process.env.VERCEL,
+    rateLimit: {
+      limit: rateLimitResult.limit,
+      remaining: rateLimitResult.remaining
+    }
   });
 
   try {

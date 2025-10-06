@@ -11,26 +11,30 @@ test.describe('Guest App - $1 Smoke Test Flow', () => {
 
   test('$1 Test Button - Proxy to App API', async ({ page }) => {
     // Step 1: Look for $1 test button
-    const testButton = page.locator('text=$1 Test').or(page.locator('text=Test Payment')).or(page.locator('text=Smoke Test'));
-    
-    // If no direct button, look for payment or test section
-    if (await testButton.count() === 0) {
-      const paymentSection = page.locator('text=Payment').or(page.locator('text=Test')).or(page.locator('[data-testid="payment-section"]'));
-      await expect(paymentSection).toBeVisible();
-    }
+    const testButton = page.locator('text=Run $1 Stripe test').or(page.locator('button:has-text("$1")'));
+    await expect(testButton).toBeVisible();
     
     // Step 2: Click the $1 test button
-    await testButton.first().click();
+    await testButton.click();
     
     // Step 3: Wait for API call to App
     const responsePromise = page.waitForResponse(response => 
       response.url().includes('/api/payments/live-test') && response.status() === 200
     );
     
-    await responsePromise;
+    const response = await responsePromise;
+    const responseData = await response.json();
     
     // Step 4: Verify success message
-    await expect(page.locator('text=success').or(page.locator('text=Payment succeeded')).or(page.locator('text=✅'))).toBeVisible();
+    await expect(page.locator('text=✅').or(page.locator('text=Succeeded'))).toBeVisible();
+    
+    // Step 5: Verify response data
+    expect(responseData.ok).toBe(true);
+    expect(responseData.message).toBeDefined();
+    
+    // Step 6: Verify rate limiting headers
+    expect(response.headers()['x-ratelimit-limit']).toBeDefined();
+    expect(response.headers()['x-ratelimit-remaining']).toBeDefined();
   });
 
   test('$1 Test - Fallback Stripe Integration', async ({ page }) => {

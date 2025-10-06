@@ -11,34 +11,31 @@ test.describe('Payments Smoke Test Flow', () => {
 
   test('$1 Smoke Test - Complete Flow', async ({ page }) => {
     // Step 1: Navigate to fire session dashboard
-    await page.click('text=Fire Session Dashboard');
-    await page.waitForURL('**/fire-session-dashboard');
+    await page.goto('/fire-session-dashboard');
+    await page.waitForLoadState('networkidle');
     
-    // Step 2: Look for $1 test button or create test session
-    const testButton = page.locator('text=$1 Test').or(page.locator('text=Test Payment')).or(page.locator('text=Smoke Test'));
-    
-    if (await testButton.count() === 0) {
-      // If no direct test button, look for create session button
-      await page.click('text=Create Session').or(page.click('text=New Session'));
-      await page.waitForTimeout(1000);
-    }
+    // Step 2: Look for $1 test button in header
+    const testButton = page.locator('text=$1 Test').or(page.locator('button:has-text("$1 Test")'));
+    await expect(testButton).toBeVisible();
     
     // Step 3: Click the $1 test button
-    await testButton.first().click();
+    await testButton.click();
     
     // Step 4: Wait for API call and success response
     const responsePromise = page.waitForResponse(response => 
       response.url().includes('/api/payments/live-test') && response.status() === 200
     );
     
-    await responsePromise;
+    const response = await responsePromise;
+    const responseData = await response.json();
     
     // Step 5: Verify success message or status
-    await expect(page.locator('text=success').or(page.locator('text=Payment succeeded')).or(page.locator('text=✅'))).toBeVisible();
+    await expect(page.locator('text=Payment succeeded').or(page.locator('text=✅'))).toBeVisible();
     
     // Step 6: Check for payment intent ID in response
-    const successMessage = page.locator('text=Payment succeeded').or(page.locator('text=success'));
-    await expect(successMessage).toBeVisible();
+    expect(responseData.ok).toBe(true);
+    expect(responseData.intentId).toBeDefined();
+    expect(responseData.amount).toBe(100);
     
     // Step 7: Verify GhostLog entry was created
     const ghostLogResponse = await page.request.get('/api/ghost-log?kind=stripe_smoke_ok');
@@ -53,6 +50,10 @@ test.describe('Payments Smoke Test Flow', () => {
     expect(smokeTestLog).toBeDefined();
     expect(smokeTestLog.data.intentId).toBeDefined();
     expect(smokeTestLog.data.amount).toBe(100);
+    
+    // Step 8: Verify rate limiting headers
+    expect(response.headers()['x-ratelimit-limit']).toBeDefined();
+    expect(response.headers()['x-ratelimit-remaining']).toBeDefined();
   });
 
   test('$1 Smoke Test - Error Handling', async ({ page }) => {
@@ -73,11 +74,31 @@ test.describe('Payments Smoke Test Flow', () => {
     await page.goto('/fire-session-dashboard');
     
     // Click test button
-    const testButton = page.locator('text=$1 Test').or(page.locator('text=Test Payment'));
-    await testButton.first().click();
+    const testButton = page.locator('text=$1 Test').or(page.locator('button:has-text("$1 Test")'));
+    await testButton.click();
     
     // Verify error message is displayed
     await expect(page.locator('text=error').or(page.locator('text=Failed')).or(page.locator('text=❌'))).toBeVisible();
+  });
+
+  test('$1 Smoke Test - Rate Limiting', async ({ page }) => {
+    // Navigate to dashboard
+    await page.goto('/fire-session-dashboard');
+    
+    const testButton = page.locator('text=$1 Test').or(page.locator('button:has-text("$1 Test")'));
+    
+    // Make multiple rapid requests to trigger rate limiting
+    const promises = [];
+    for (let i = 0; i < 6; i++) { // Exceed the 5 request limit
+      promises.push(testButton.click());
+      await page.waitForTimeout(100); // Small delay between clicks
+    }
+    
+    // Wait for all requests to complete
+    await Promise.all(promises);
+    
+    // Check for rate limit error message
+    await expect(page.locator('text=Rate limit exceeded').or(page.locator('text=429'))).toBeVisible();
   });
 
   test('Session Management - Start Session', async ({ page }) => {

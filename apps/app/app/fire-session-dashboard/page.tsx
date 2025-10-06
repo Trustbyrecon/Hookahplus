@@ -18,6 +18,7 @@ import { SessionQueueManager } from '../../components/SessionQueueManager';
 import { SessionMonitor } from '../../components/SessionMonitor';
 import { StaffWorkflowAssistant } from '../../components/StaffWorkflowAssistant';
 import { OptimizedSessionCard } from '../../components/OptimizedSessionCard';
+import DollarTestButton from '../../components/DollarTestButton';
 import { 
   Flame, 
   Users, 
@@ -468,6 +469,9 @@ export default function FireSessionDashboard() {
               </h1>
             </div>
             <div className="flex items-center space-x-4">
+              {/* $1 Smoke Test Button */}
+              <DollarTestButton />
+              
               {/* View is now determined by role - no toggle needed */}
               <div className="flex items-center space-x-2 px-3 py-2 bg-zinc-800 rounded-lg">
                 <span className="text-sm text-zinc-400">View:</span>
