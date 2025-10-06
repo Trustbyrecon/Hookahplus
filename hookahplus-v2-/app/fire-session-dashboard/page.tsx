@@ -356,8 +356,8 @@ export default function FireSessionDashboard() {
   }
 
   // Check if BOH should be displayed (only show for qualified statuses)
-  const shouldShowBOH = (session: EnhancedFireSession) => {
-    return session.bohState && ["WARMING_UP", "READY_FOR_PICKUP", "PICKED_UP"].includes(session.bohState);
+  const shouldShowBOH = (session: EnhancedFireSession): boolean => {
+    return Boolean(session.bohState && ["WARMING_UP", "READY_FOR_PICKUP", "PICKED_UP"].includes(session.bohState));
   };
 
   return (
