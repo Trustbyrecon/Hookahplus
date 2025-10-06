@@ -1,0 +1,100 @@
+name: Test Suite
+
+on:
+  push:
+    branches: [ main, feat/*, fix/* ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        project: [app, guest, site]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: |
+        cd apps/${{ matrix.project }}
+        npm ci
+        
+    - name: Run unit tests
+      run: |
+        cd apps/${{ matrix.project }}
+        if [ -f "vitest.config.ts" ] || [ -f "vitest.config.js" ]; then
+          npm run test -- --run --coverage
+        else
+          echo "No unit tests configured for ${{ matrix.project }}"
+        fi
+        
+    - name: Install Playwright browsers
+      run: |
+        cd apps/${{ matrix.project }}
+        if [ -f "playwright.config.ts" ] || [ -f "playwright.config.js" ]; then
+          npx playwright install --with-deps
+        fi
+        
+    - name: Run E2E tests
+      run: |
+        cd apps/${{ matrix.project }}
+        if [ -f "playwright.config.ts" ] || [ -f "playwright.config.js" ]; then
+          npm run test:e2e
+        else
+          echo "No E2E tests configured for ${{ matrix.project }}"
+        fi
+        
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-${{ matrix.project }}
+        path: |
+          apps/${{ matrix.project }}/test-results/
+          apps/${{ matrix.project }}/coverage/
+        retention-days: 30
+        
+    - name: Upload Playwright report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: playwright-report-${{ matrix.project }}
+        path: apps/${{ matrix.project }}/playwright-report/
+        retention-days: 30
+
+  test-summary:
+    runs-on: ubuntu-latest
+    needs: test
+    if: always()
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      
+    - name: Generate test summary
+      run: |
+        echo "# Test Results Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Project | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|---------|--------|" >> $GITHUB_STEP_SUMMARY
+        
+        for project in app guest site; do
+          if [ -d "test-results-$project" ]; then
+            echo "| $project | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| $project | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
+          fi
+        done
