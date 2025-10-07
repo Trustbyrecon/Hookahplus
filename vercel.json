@@ -18,5 +18,10 @@
     "NPM_CONFIG_REGISTRY": "https://registry.npmjs.org/",
     "NPM_CONFIG_FETCH_RETRIES": "3",
     "NPM_CONFIG_FETCH_RETRY_FACTOR": "2"
+  },
+  "build": {
+    "env": {
+      "NPM_CONFIG_PACKAGE_MANAGER": "npm"
+    }
   }
 }
