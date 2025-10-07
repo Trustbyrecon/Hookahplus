@@ -8,6 +8,7 @@ import Badge from '../components/Badge';
 import { StatusIndicator } from '../components/StatusIndicator';
 import { TrustLock } from '../components/TrustLock';
 import { useCart } from '@/components/cart/CartProvider';
+import { SessionTimerAwareness } from '../components/SessionTimerAwareness';
 import { 
   Clock, 
   Plus, 
@@ -99,6 +100,19 @@ export default function GuestPortal() {
         {/* Trust Lock Display */}
         <div className="mb-8 flex justify-center">
           <TrustLock trustScore={0.87} status="active" version="TLH-v1" size="lg" />
+        </div>
+
+        {/* Session Timer Awareness */}
+        <div className="mb-8">
+          <SessionTimerAwareness
+            tableId="T-001"
+            onSessionStart={() => {
+              console.log('Session started for table T-001');
+            }}
+            onSessionComplete={() => {
+              console.log('Session completed for table T-001');
+            }}
+          />
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

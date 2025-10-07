@@ -4,6 +4,7 @@ import Button from '../components/Button';
 import Badge from '../components/Badge';
 import StatusIndicator from '../components/design-system/components/StatusIndicator';
 import TrustLock from '../components/design-system/components/TrustLock';
+import { LiveSessionStatus } from '../components/LiveSessionStatus';
 import { 
   Flame, 
   Users, 
@@ -144,6 +145,11 @@ export default function Home() {
         {/* Trust Lock Display */}
         <div className="mb-8 flex justify-center">
           <TrustLock trustScore={0.87} status="active" version="TLH-v1" size="lg" />
+        </div>
+
+        {/* Live Session Status */}
+        <div className="mb-8">
+          <LiveSessionStatus />
         </div>
 
         {/* Hero Section */}

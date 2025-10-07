@@ -18,6 +18,8 @@ import { SessionQueueManager } from '../../components/SessionQueueManager';
 import { SessionMonitor } from '../../components/SessionMonitor';
 import { StaffWorkflowAssistant } from '../../components/StaffWorkflowAssistant';
 import { OptimizedSessionCard } from '../../components/OptimizedSessionCard';
+import { FOHTimerInterface } from '../../components/FOHTimerInterface';
+import { ManagerTimerDashboard } from '../../components/ManagerTimerDashboard';
 import DollarTestButton from '../../components/DollarTestButton';
 import { 
   Flame, 
@@ -691,6 +693,45 @@ export default function FireSessionDashboard() {
             </button>
           ))}
         </div>
+
+        {/* FOH Timer Interface - Show only for FOH role */}
+        {userRole === 'FOH' && (
+          <div className="mb-8">
+            <div className="flex items-center space-x-3 mb-4">
+              <Clock className="w-6 h-6 text-teal-400" />
+              <h2 className="text-2xl font-bold text-white">Timer Management</h2>
+              <span className="text-sm text-zinc-400">Your assigned sessions with timers</span>
+            </div>
+            <FOHTimerInterface
+              assignedSessions={sessions.filter(s => s.assignedFOHId)}
+              onTimerAction={(sessionId, action) => {
+                console.log(`Timer action ${action} for session ${sessionId}`);
+                // Handle timer actions here
+              }}
+              onSessionComplete={(sessionId) => {
+                console.log(`Session ${sessionId} completed via timer`);
+                handleStateChange();
+              }}
+            />
+          </div>
+        )}
+
+        {/* Manager Timer Dashboard - Show for Manager and Admin roles */}
+        {(userRole === 'MANAGER' || userRole === 'ADMIN') && (
+          <div className="mb-8">
+            <ManagerTimerDashboard
+              allSessions={sessions}
+              onTimerAction={(sessionId, action) => {
+                console.log(`Manager timer action ${action} for session ${sessionId}`);
+                // Handle timer actions here
+              }}
+              onSessionComplete={(sessionId) => {
+                console.log(`Session ${sessionId} completed via manager timer`);
+                handleStateChange();
+              }}
+            />
+          </div>
+        )}
 
         {/* Sessions List */}
         <div className="space-y-4">
