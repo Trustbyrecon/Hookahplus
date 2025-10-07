@@ -158,20 +158,19 @@ export const ManagerTimerDashboard: React.FC<ManagerTimerDashboardProps> = ({
   // Register timers for all sessions
   useEffect(() => {
     timerSessions.forEach(session => {
-      const handleTimerUpdate = (sessionId: string, timerState: any) => {
-        setTimerStates(prev => new Map(prev.set(sessionId, timerState)));
+      if (!session.timerDuration) return;
+
+      const handleTimerUpdate = (timerState: any) => {
+        setTimerStates(prev => new Map(prev.set(session.id, timerState)));
       };
 
-      const handleTimerComplete = (sessionId: string) => {
-        onSessionComplete(sessionId);
-      };
-
-      sessionTimerService.registerTimer(session, handleTimerUpdate, handleTimerComplete);
+      // Start timer for this session
+      sessionTimerService.startTimer(session.id, session.timerDuration, handleTimerUpdate);
     });
 
     return () => {
       timerSessions.forEach(session => {
-        sessionTimerService.unregisterTimer(session.id);
+        sessionTimerService.stopTimer(session.id);
       });
     };
   }, [timerSessions, onSessionComplete]);

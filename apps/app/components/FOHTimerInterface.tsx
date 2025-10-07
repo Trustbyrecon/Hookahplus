@@ -41,8 +41,10 @@ export const FOHTimerInterface: React.FC<FOHTimerInterfaceProps> = ({
   useEffect(() => {
     // Register timers for all assigned sessions
     timerSessions.forEach(session => {
-      const handleTimerUpdate = (sessionId: string, timerState: any) => {
-        setTimerStates(prev => new Map(prev.set(sessionId, timerState)));
+      if (!session.timerDuration) return;
+
+      const handleTimerUpdate = (timerState: any) => {
+        setTimerStates(prev => new Map(prev.set(session.id, timerState)));
         
         // Generate alerts based on time remaining
         const timeRemaining = timerState.timeRemaining;
@@ -65,7 +67,7 @@ export const FOHTimerInterface: React.FC<FOHTimerInterfaceProps> = ({
         
         if (alertType) {
           const newAlert: TimerAlert = {
-            sessionId,
+            sessionId: session.id,
             tableId: session.tableId,
             type: alertType,
             message,
@@ -73,23 +75,19 @@ export const FOHTimerInterface: React.FC<FOHTimerInterfaceProps> = ({
           };
           
           setAlerts(prev => {
-            const filtered = prev.filter(a => a.sessionId !== sessionId);
+            const filtered = prev.filter(a => a.sessionId !== session.id);
             return [...filtered, newAlert];
           });
         }
       };
 
-      const handleTimerComplete = (sessionId: string) => {
-        onSessionComplete(sessionId);
-        setAlerts(prev => prev.filter(a => a.sessionId !== sessionId));
-      };
-
-      sessionTimerService.registerTimer(session, handleTimerUpdate, handleTimerComplete);
+      // Start timer for this session
+      sessionTimerService.startTimer(session.id, session.timerDuration, handleTimerUpdate);
     });
 
     return () => {
       timerSessions.forEach(session => {
-        sessionTimerService.unregisterTimer(session.id);
+        sessionTimerService.stopTimer(session.id);
       });
     };
   }, [timerSessions, onSessionComplete]);
@@ -113,29 +111,32 @@ export const FOHTimerInterface: React.FC<FOHTimerInterfaceProps> = ({
   };
 
   const handleTimerAction = (sessionId: string, action: 'start' | 'pause' | 'resume' | 'stop' | 'extend') => {
+    const session = timerSessions.find(s => s.id === sessionId);
+    if (!session || !session.timerDuration) return;
+
     switch (action) {
       case 'start':
-        sessionTimerService.startTimer(sessionId);
+        sessionTimerService.startTimer(sessionId, session.timerDuration, (state) => {
+          setTimerStates(prev => new Map(prev.set(sessionId, state)));
+        });
         break;
       case 'pause':
         sessionTimerService.pauseTimer(sessionId);
         break;
       case 'resume':
-        sessionTimerService.startTimer(sessionId);
+        sessionTimerService.resumeTimer(sessionId);
         break;
       case 'stop':
         sessionTimerService.stopTimer(sessionId);
         break;
       case 'extend':
         // Add 15 minutes to the timer
-        const session = timerSessions.find(s => s.id === sessionId);
-        if (session) {
-          const currentState = timerStates.get(sessionId);
-          if (currentState) {
-            const newTimeRemaining = currentState.timeRemaining + (15 * 60); // Add 15 minutes
-            // Update the timer state (this would need to be implemented in the service)
-            console.log(`Extending session ${sessionId} by 15 minutes`);
-          }
+        const currentState = timerStates.get(sessionId);
+        if (currentState) {
+          const newDuration = session.timerDuration + 15; // Add 15 minutes
+          sessionTimerService.startTimer(sessionId, newDuration, (state) => {
+            setTimerStates(prev => new Map(prev.set(sessionId, state)));
+          });
         }
         break;
     }

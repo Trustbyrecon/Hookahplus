@@ -191,3 +191,6 @@ export class SessionTimerService {
     return 'text-green-400';
   }
 }
+
+// Export singleton instance
+export const sessionTimerService = SessionTimerService.getInstance();
