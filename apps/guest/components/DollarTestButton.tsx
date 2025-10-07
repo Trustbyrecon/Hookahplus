@@ -10,7 +10,7 @@ export default function DollarTestButton() {
     setLoading(true);
     setResult(null);
     try {
-      const res = await fetch("/api/payments/live-test", {
+      const res = await fetch("/api/stripe-test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ source: "guests:$1-smoke" }),
