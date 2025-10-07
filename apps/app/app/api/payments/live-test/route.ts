@@ -98,12 +98,18 @@ export async function POST(req: NextRequest) {
       currency: 'usd',
       confirm: true,
       payment_method: 'pm_card_visa',
+      automatic_payment_methods: {
+        enabled: true,
+        allow_redirects: 'never'
+      },
+      return_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/payment/return`,
       metadata: {
         source: 'order-mgmt:$1-smoke',
         env: process.env.NODE_ENV,
         region: process.env.VERCEL_REGION || 'unknown',
         timestamp: new Date().toISOString(),
-        rwo: 'RWO-STRIPE-001'
+        rwo: 'RWO-STRIPE-001',
+        test_type: 'smoke_test'
       }
     });
 

@@ -26,8 +26,14 @@ export async function GET(req: NextRequest) {
       currency: 'usd',
       confirm: true,
       payment_method: 'pm_card_visa',
+      automatic_payment_methods: {
+        enabled: true,
+        allow_redirects: 'never'
+      },
+      return_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/payment/return`,
       metadata: {
-        test: 'simple-stripe-test'
+        test: 'simple-stripe-test',
+        test_type: 'smoke_test'
       }
     });
 

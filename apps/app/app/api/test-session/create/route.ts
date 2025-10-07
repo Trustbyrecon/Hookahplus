@@ -64,7 +64,9 @@ export async function POST(req: NextRequest) {
       description: 'Test Hookah Session - $1',
       automatic_payment_methods: {
         enabled: true,
+        allow_redirects: 'never'
       },
+      return_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/payment/return`,
     });
 
     console.log('✅ Stripe payment intent created:', paymentIntent.id);
