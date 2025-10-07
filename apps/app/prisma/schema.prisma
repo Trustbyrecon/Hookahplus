@@ -36,6 +36,14 @@ model Session {
   timerPausedDuration Int?    // total paused time in seconds
   timerStatus        String?  // 'stopped' | 'running' | 'paused' | 'completed'
 
+  // New fields for Pre-Order flow
+  zone            String?     // 'VIP', 'Standard', 'Patio', etc.
+  fohUserId       String?     // FOH staff assigned to this session
+  posMode         String?     // 'shadow', 'mirror', 'ticket'
+  orderItems      Json?       // Array of ordered items with quantities
+  specialRequests String?     // Customer special requests
+  tableNotes      String?     // Notes specific to this table/session
+
   @@map("sessions")
 }
 
@@ -80,4 +88,55 @@ model SessionTransition {
   createdAt   DateTime @default(now())
 
   @@map("session_transitions")
+}
+
+model OrgSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  category    String?  // 'pos', 'menu', 'timing', 'ui'
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("org_settings")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  displayOrder Int     @default(0)
+  isActive    Boolean  @default(true)
+  icon        String?  // Icon name or URL
+  color       String?  // Hex color code
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  items       Item[]
+
+  @@map("categories")
+}
+
+model Item {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  priceCents  Int
+  categoryId  String
+  isActive    Boolean  @default(true)
+  displayOrder Int     @default(0)
+  imageUrl    String?
+  allergens   String[] // Array of allergen strings
+  isPopular   Boolean  @default(false)
+  prepTime    Int?     // Prep time in minutes
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  category    Category @relation(fields: [categoryId], references: [id])
+
+  @@map("items")
 }

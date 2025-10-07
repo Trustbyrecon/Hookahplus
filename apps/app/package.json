@@ -10,6 +10,8 @@
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:reset": "prisma migrate reset --force && npm run db:seed",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
@@ -44,6 +46,7 @@
     "jsdom": "^27.0.0",
     "postcss": "^8.4.0",
     "tailwindcss": "3.4.17",
+    "tsx": "^4.20.6",
     "vitest": "^3.2.4"
   }
 }
