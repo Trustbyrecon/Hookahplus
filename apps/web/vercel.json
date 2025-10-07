@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "buildCommand": "cd ../../ && pnpm install --no-frozen-lockfile && cd apps/web && pnpm build",
+  "buildCommand": "cd ../../ && npm install && cd apps/web && npm run build",
   "outputDirectory": ".next",
-  "installCommand": "cd ../../ && pnpm install --no-frozen-lockfile",
+  "installCommand": "cd ../../ && npm install",
   "framework": "nextjs",
   "functions": {
     "apps/web/app/api/**/*.ts": {
