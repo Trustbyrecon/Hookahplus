@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -16,8 +16,8 @@ model Session {
   customerRef    String?
   flavor         String?
   priceCents     Int
-  state          SessionState @default(NEW)
-  edgeCase       EdgeCase?
+  state          String       @default("NEW")
+  edgeCase       String?     // 'EQUIPMENT_ISSUE', 'CUSTOMER_NOT_FOUND', 'PAYMENT_FAILED', 'HEALTH_SAFETY', 'OTHER'
   edgeNote       String?
   assignedBOHId  String?
   assignedFOHId  String?
@@ -40,37 +40,20 @@ model Session {
   zone            String?     // 'VIP', 'Standard', 'Patio', etc.
   fohUserId       String?     // FOH staff assigned to this session
   posMode         String?     // 'shadow', 'mirror', 'ticket'
-  orderItems      Json?       // Array of ordered items with quantities
+  orderItems      String?     // JSON string of ordered items with quantities
   specialRequests String?     // Customer special requests
   tableNotes      String?     // Notes specific to this table/session
 
   @@map("sessions")
 }
 
-enum SessionState {
-  NEW
-  PREP_IN_PROGRESS
-  READY_FOR_DELIVERY
-  OUT_FOR_DELIVERY
-  ACTIVE
-  PAUSED
-  COMPLETED
-  CANCELLED
-}
-
-enum EdgeCase {
-  EQUIPMENT_ISSUE
-  CUSTOMER_NOT_FOUND
-  PAYMENT_FAILED
-  HEALTH_SAFETY
-  OTHER
-}
+// Enums replaced with string fields for SQLite compatibility
 
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
   name      String?
-  roles     String[] // ["BOH", "FOH", "MANAGER", "ADMIN"]
+  roles     String   // Comma-separated roles: "BOH,FOH,MANAGER,ADMIN"
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -129,7 +112,7 @@ model Item {
   isActive    Boolean  @default(true)
   displayOrder Int     @default(0)
   imageUrl    String?
-  allergens   String[] // Array of allergen strings
+  allergens   String   // Comma-separated allergen strings
   isPopular   Boolean  @default(false)
   prepTime    Int?     // Prep time in minutes
   createdAt   DateTime @default(now())

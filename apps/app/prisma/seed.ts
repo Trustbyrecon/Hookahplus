@@ -107,7 +107,7 @@ async function main() {
       displayOrder: 1,
       isPopular: true,
       prepTime: 5,
-      allergens: []
+      allergens: ""
     },
     {
       name: 'Mint',
@@ -117,7 +117,7 @@ async function main() {
       displayOrder: 2,
       isPopular: true,
       prepTime: 5,
-      allergens: []
+      allergens: ""
     },
     {
       name: 'Grape',
@@ -127,7 +127,7 @@ async function main() {
       displayOrder: 3,
       isPopular: false,
       prepTime: 5,
-      allergens: []
+      allergens: ""
     },
     {
       name: 'Strawberry',
@@ -137,7 +137,7 @@ async function main() {
       displayOrder: 4,
       isPopular: false,
       prepTime: 5,
-      allergens: []
+      allergens: ""
     },
     {
       name: 'Mix & Match',
@@ -147,7 +147,7 @@ async function main() {
       displayOrder: 5,
       isPopular: true,
       prepTime: 7,
-      allergens: []
+      allergens: ""
     },
 
     // Beverages
@@ -159,7 +159,7 @@ async function main() {
       displayOrder: 1,
       isPopular: true,
       prepTime: 3,
-      allergens: []
+      allergens: ""
     },
     {
       name: 'Mint Tea',
@@ -169,7 +169,7 @@ async function main() {
       displayOrder: 2,
       isPopular: true,
       prepTime: 2,
-      allergens: []
+      allergens: ""
     },
     {
       name: 'Fresh Juice',
@@ -179,7 +179,7 @@ async function main() {
       displayOrder: 3,
       isPopular: false,
       prepTime: 2,
-      allergens: []
+      allergens: ""
     },
     {
       name: 'Soft Drinks',
@@ -189,7 +189,7 @@ async function main() {
       displayOrder: 4,
       isPopular: false,
       prepTime: 1,
-      allergens: []
+      allergens: ""
     },
 
     // Snacks
@@ -201,7 +201,7 @@ async function main() {
       displayOrder: 1,
       isPopular: true,
       prepTime: 5,
-      allergens: ['sesame', 'gluten']
+      allergens: 'sesame,gluten'
     },
     {
       name: 'Falafel',
@@ -211,7 +211,7 @@ async function main() {
       displayOrder: 2,
       isPopular: false,
       prepTime: 8,
-      allergens: ['sesame', 'gluten']
+      allergens: 'sesame,gluten'
     },
     {
       name: 'Mixed Nuts',
@@ -221,7 +221,7 @@ async function main() {
       displayOrder: 3,
       isPopular: false,
       prepTime: 1,
-      allergens: ['nuts']
+      allergens: 'nuts'
     },
 
     // Desserts
@@ -233,7 +233,7 @@ async function main() {
       displayOrder: 1,
       isPopular: true,
       prepTime: 2,
-      allergens: ['nuts', 'gluten']
+      allergens: 'nuts,gluten'
     },
     {
       name: 'Turkish Delight',
@@ -243,7 +243,7 @@ async function main() {
       displayOrder: 2,
       isPopular: false,
       prepTime: 1,
-      allergens: []
+      allergens: ""
     },
 
     // Extras
@@ -255,7 +255,7 @@ async function main() {
       displayOrder: 1,
       isPopular: false,
       prepTime: 0,
-      allergens: []
+      allergens: ""
     },
     {
       name: 'Premium Coals',
@@ -265,7 +265,7 @@ async function main() {
       displayOrder: 2,
       isPopular: false,
       prepTime: 0,
-      allergens: []
+      allergens: ""
     },
     {
       name: 'VIP Service',
@@ -275,7 +275,7 @@ async function main() {
       displayOrder: 3,
       isPopular: false,
       prepTime: 0,
-      allergens: []
+      allergens: ""
     }
   ];
 
