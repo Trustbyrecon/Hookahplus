@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Card from '../components/Card';
 import DollarTestButton from '@/components/DollarTestButton';
 import Button from '../components/Button';
