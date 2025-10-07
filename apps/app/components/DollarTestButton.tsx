@@ -35,7 +35,8 @@ export default function DollarTestButton() {
       const duration = Date.now() - startTime;
       
       if (!res.ok) {
-        throw new Error(data?.error || "Request failed");
+        console.error('$1 Test API Error:', data);
+        throw new Error(data?.error || `Request failed with status ${res.status}`);
       }
 
       setResult({ 

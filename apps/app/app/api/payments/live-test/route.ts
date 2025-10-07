@@ -91,6 +91,7 @@ export async function POST(req: NextRequest) {
     const { cartTotal = 0, itemsCount = 0 } = await req.json();
 
     console.log('[RWO:$1-smoke] 💳 Creating PaymentIntent with retry logic...');
+    console.log('[RWO:$1-smoke] 🔗 Using return_url: https://hookahplus-app-prod.vercel.app/payment/return');
     
     // Create PaymentIntent with retry logic and enhanced metadata
     const paymentIntent = await createPaymentWithRetry({
@@ -102,7 +103,7 @@ export async function POST(req: NextRequest) {
         enabled: true,
         allow_redirects: 'never'
       },
-      return_url: process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}/payment/return` : 'https://hookahplus-app-prod.vercel.app/payment/return',
+      return_url: 'https://hookahplus-app-prod.vercel.app/payment/return',
       metadata: {
         source: 'order-mgmt:$1-smoke',
         env: process.env.NODE_ENV,

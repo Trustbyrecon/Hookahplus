@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
         enabled: true,
         allow_redirects: 'never'
       },
-      return_url: process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}/payment/return` : 'https://hookahplus-app-prod.vercel.app/payment/return',
+      return_url: 'https://hookahplus-app-prod.vercel.app/payment/return',
       metadata: {
         test: 'simple-stripe-test',
         test_type: 'smoke_test'
