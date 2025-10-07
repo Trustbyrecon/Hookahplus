@@ -1,14 +1,16 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Card from '../components/Card';
 import DollarTestButton from '@/components/DollarTestButton';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
 import { StatusIndicator } from '../components/StatusIndicator';
-import { TrustLock } from '../components/TrustLock';
 import { useCart } from '@/components/cart/CartProvider';
 import { SessionTimerAwareness } from '../components/SessionTimerAwareness';
+import GlobalNavigation from '../components/GlobalNavigation';
+import QRCodeScanner from '../components/QRCodeScanner';
+import RealTimeSessionSync from '../components/RealTimeSessionSync';
 import { 
   Clock, 
   Plus, 
@@ -27,9 +29,26 @@ import {
 
 export default function GuestPortal() {
   const { add, remove, items, subtotal } = useCart();
+  const [tableData, setTableData] = useState<any>(null);
+  const [sessionMetadata, setSessionMetadata] = useState<any>(null);
+  
   const addToCart = (item: { id: number; name: string; price: number }) => {
     add({ id: String(item.id), name: item.name, price: Math.round(item.price * 100), qty: 1 });
     console.log('Adding to cart:', item); // Debug log
+  };
+
+  const handleTableDetected = (tableData: any) => {
+    setTableData(tableData);
+    console.log('Table detected:', tableData);
+  };
+
+  const handleLoungeDetected = (loungeData: any) => {
+    console.log('Lounge detected:', loungeData);
+  };
+
+  const handleSessionUpdate = (metadata: any) => {
+    setSessionMetadata(metadata);
+    console.log('Session metadata updated:', metadata);
   };
   const menuItems = [
     {
@@ -75,6 +94,8 @@ export default function GuestPortal() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
+      <GlobalNavigation currentPage="home" trustScore={0.87} flowStatus={71} />
+      
       {/* Header */}
       <div className="bg-zinc-950 border-b border-teal-500/50">
         <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
@@ -83,7 +104,7 @@ export default function GuestPortal() {
               <h1 className="text-3xl font-bold">
                 🍃 Pre-Order Station
               </h1>
-              <p className="text-zinc-400 mt-1">Table T-001 • QR scan - Menu browse - Flavor personalize - Start Fire Session</p>
+              <p className="text-zinc-400 mt-1">Table T-001 • Scan QR code to access menu • Customize your flavors • Start your Fire Session</p>
             </div>
             
             <div className="flex items-center space-x-4">
@@ -97,23 +118,36 @@ export default function GuestPortal() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {/* Trust Lock Display */}
-        <div className="mb-8 flex justify-center">
-          <TrustLock trustScore={0.87} status="active" version="TLH-v1" size="lg" />
+        {/* QR Code Scanner */}
+        <div className="mb-8">
+          <QRCodeScanner
+            onTableDetected={handleTableDetected}
+            onLoungeDetected={handleLoungeDetected}
+          />
         </div>
 
         {/* Session Timer Awareness */}
         <div className="mb-8">
           <SessionTimerAwareness
-            tableId="T-001"
+            tableId={tableData?.tableId || "T-001"}
             onSessionStart={() => {
-              console.log('Session started for table T-001');
+              console.log('Session started for table', tableData?.tableId || "T-001");
             }}
             onSessionComplete={() => {
-              console.log('Session completed for table T-001');
+              console.log('Session completed for table', tableData?.tableId || "T-001");
             }}
           />
         </div>
+
+        {/* Real-time Session Sync */}
+        {sessionMetadata && (
+          <div className="mb-8">
+            <RealTimeSessionSync
+              sessionId={sessionMetadata.sessionId}
+              onSessionUpdate={handleSessionUpdate}
+            />
+          </div>
+        )}
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Menu Section */}
@@ -233,21 +267,42 @@ export default function GuestPortal() {
                 ) : (
                   <div className="space-y-3">
                     {items.map((item) => (
-                      <div key={item.id} className="flex items-center justify-between p-3 bg-zinc-800 rounded-lg">
-                        <div className="flex-1">
+                      <div key={item.id} className="p-3 bg-zinc-800 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
                           <div className="font-medium text-sm">{item.name}</div>
-                          <div className="text-xs text-zinc-400">Qty: {item.qty}</div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-semibold text-primary-400">
-                            ${(item.price * item.qty / 100).toFixed(2)}
-                          </div>
                           <button
                             onClick={() => remove(item.id)}
                             className="text-xs text-red-400 hover:text-red-300"
                           >
                             Remove
                           </button>
+                        </div>
+                        
+                        {/* Quantity Controls */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => {
+                                if (item.qty > 1) {
+                                  add({ id: item.id, name: item.name, price: item.price, qty: -1 });
+                                }
+                              }}
+                              className="w-6 h-6 bg-zinc-700 hover:bg-zinc-600 rounded-full flex items-center justify-center text-xs"
+                              disabled={item.qty <= 1}
+                            >
+                              -
+                            </button>
+                            <span className="text-sm text-zinc-300 w-8 text-center">{item.qty}</span>
+                            <button
+                              onClick={() => add({ id: item.id, name: item.name, price: item.price, qty: 1 })}
+                              className="w-6 h-6 bg-zinc-700 hover:bg-zinc-600 rounded-full flex items-center justify-center text-xs"
+                            >
+                              +
+                            </button>
+                          </div>
+                          <div className="font-semibold text-primary-400">
+                            ${(item.price * item.qty / 100).toFixed(2)}
+                          </div>
                         </div>
                       </div>
                     ))}

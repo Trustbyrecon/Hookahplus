@@ -1,0 +1,206 @@
+'use client';
+
+import React, { useState } from 'react';
+import GlobalNavigation from '../../components/GlobalNavigation';
+import Card from '../../components/Card';
+import Button from '../../components/Button';
+import { Clock, CreditCard, AlertCircle, CheckCircle } from 'lucide-react';
+
+export default function ExtendSessionPage() {
+  const [selectedExtension, setSelectedExtension] = useState('20min');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  const extensionOptions = [
+    {
+      id: '20min',
+      duration: '20 Minutes',
+      price: 10.00,
+      description: 'Extend your hookah session for $10.00',
+      popular: true
+    },
+    {
+      id: '30min',
+      duration: '30 Minutes',
+      price: 15.00,
+      description: 'Extend your hookah session for $15.00',
+      popular: false
+    },
+    {
+      id: '45min',
+      duration: '45 Minutes',
+      price: 22.00,
+      description: 'Extend your hookah session for $22.00',
+      popular: false
+    },
+    {
+      id: '60min',
+      duration: '60 Minutes',
+      price: 28.00,
+      description: 'Extend your hookah session for $28.00',
+      popular: false
+    }
+  ];
+
+  const handleExtendSession = async () => {
+    setIsProcessing(true);
+    setError(null);
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Simulate success
+      setSuccess(true);
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 2000);
+    } catch (err) {
+      setError('Failed to extend session. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const selectedOption = extensionOptions.find(opt => opt.id === selectedExtension);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
+      <GlobalNavigation currentPage="extend-session" />
+      
+      <div className="max-w-2xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold mb-4">Extend Your Session</h1>
+          <p className="text-zinc-400">Add more time to your current hookah session</p>
+        </div>
+
+        <Card className="p-8">
+          {success ? (
+            <div className="text-center">
+              <CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-green-400 mb-2">Session Extended!</h2>
+              <p className="text-zinc-400 mb-6">Your session has been successfully extended.</p>
+              <Button 
+                variant="primary" 
+                onClick={() => window.location.href = '/'}
+                className="w-full"
+              >
+                Return to Session
+              </Button>
+            </div>
+          ) : (
+            <>
+              <h2 className="text-xl font-semibold mb-6">Select Extension Duration</h2>
+              
+              <div className="space-y-4 mb-6">
+                {extensionOptions.map((option) => (
+                  <div
+                    key={option.id}
+                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
+                      selectedExtension === option.id
+                        ? 'border-primary-500 bg-primary-500/10'
+                        : 'border-zinc-700 hover:border-zinc-600'
+                    }`}
+                    onClick={() => setSelectedExtension(option.id)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-4 h-4 rounded-full border-2 ${
+                          selectedExtension === option.id
+                            ? 'border-primary-500 bg-primary-500'
+                            : 'border-zinc-600'
+                        }`}>
+                          {selectedExtension === option.id && (
+                            <div className="w-2 h-2 bg-white rounded-full mx-auto mt-0.5" />
+                          )}
+                        </div>
+                        <div>
+                          <div className="flex items-center space-x-2">
+                            <span className="font-medium">{option.duration}</span>
+                            {option.popular && (
+                              <span className="px-2 py-1 bg-primary-500 text-white text-xs rounded-full">
+                                Popular
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-zinc-400">{option.description}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-primary-400">
+                          ${option.price.toFixed(2)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {error && (
+                <div className="mb-6 p-4 bg-red-900/20 border border-red-500/30 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <AlertCircle className="w-5 h-5 text-red-400" />
+                    <span className="text-red-400">{error}</span>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div className="p-4 bg-zinc-800 rounded-lg">
+                  <h3 className="font-medium mb-2">Session Details</h3>
+                  <div className="space-y-2 text-sm text-zinc-400">
+                    <div className="flex justify-between">
+                      <span>Current Table:</span>
+                      <span className="text-white">T-001</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Extension:</span>
+                      <span className="text-white">{selectedOption?.duration}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Total Cost:</span>
+                      <span className="text-primary-400 font-semibold">
+                        ${selectedOption?.price.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <Button
+                  variant="primary"
+                  className="w-full"
+                  onClick={handleExtendSession}
+                  disabled={isProcessing}
+                  leftIcon={<Clock className="w-4 h-4" />}
+                >
+                  {isProcessing ? 'Processing...' : `Extend Session - $${selectedOption?.price.toFixed(2)}`}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => window.location.href = '/'}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </>
+          )}
+        </Card>
+
+        {/* Additional Info */}
+        <Card className="mt-6 p-6">
+          <h3 className="font-semibold mb-4">Session Extension Policy</h3>
+          <ul className="space-y-2 text-sm text-zinc-400">
+            <li>• Extensions are charged immediately upon confirmation</li>
+            <li>• You can extend your session multiple times</li>
+            <li>• Extensions start immediately after your current session ends</li>
+            <li>• All extensions are non-refundable</li>
+            <li>• Staff will be notified of your extension request</li>
+          </ul>
+        </Card>
+      </div>
+    </div>
+  );
+}
