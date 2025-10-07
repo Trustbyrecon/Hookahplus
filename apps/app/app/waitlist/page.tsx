@@ -22,7 +22,12 @@ import {
   Timer,
   Star,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  BarChart3,
+  DollarSign,
+  Gift,
+  Target,
+  Crown
 } from 'lucide-react';
 import GlobalNavigation from '../../components/GlobalNavigation';
 import { Card, Button, Badge } from '../../components';
@@ -118,9 +123,10 @@ export default function WaitlistPage() {
   });
 
   const tabs = [
-    { id: 'queue', label: 'Waitlist Queue', icon: <Clock className="w-4 h-4" /> },
-    { id: 'seated', label: 'Currently Seated', icon: <UserCheck className="w-4 h-4" /> },
-    { id: 'analytics', label: 'Analytics', icon: <Star className="w-4 h-4" /> }
+    { id: 'onboarding', label: 'Onboarding Queue', icon: <Clock className="w-4 h-4" /> },
+    { id: 'referrals', label: 'Referral Program', icon: <Star className="w-4 h-4" /> },
+    { id: 'partners', label: 'Connector Partners', icon: <Users className="w-4 h-4" /> },
+    { id: 'analytics', label: 'Analytics', icon: <BarChart3 className="w-4 h-4" /> }
   ];
 
   const priorityColors = {
@@ -389,11 +395,138 @@ export default function WaitlistPage() {
     </div>
   );
 
+  const renderReferrals = () => (
+    <div className="space-y-6">
+      {/* Referral Program Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-zinc-400">Active Referrers</p>
+              <p className="text-2xl font-bold text-white">47</p>
+            </div>
+            <Users className="w-8 h-8 text-blue-400" />
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-zinc-400">Total Referrals</p>
+              <p className="text-2xl font-bold text-white">234</p>
+            </div>
+            <Target className="w-8 h-8 text-green-400" />
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-zinc-400">Revenue Generated</p>
+              <p className="text-2xl font-bold text-white">$12,450</p>
+            </div>
+            <DollarSign className="w-8 h-8 text-yellow-400" />
+          </div>
+        </Card>
+      </div>
+
+      {/* Referral Program Benefits */}
+      <Card className="p-6">
+        <h3 className="text-lg font-semibold text-white mb-4">Hookah+ Connector Partnership Program</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div className="flex items-start space-x-3">
+              <DollarSign className="w-6 h-6 text-green-400 mt-1" />
+              <div>
+                <h4 className="font-semibold text-white">Revenue Share</h4>
+                <p className="text-sm text-zinc-400">5% of revenue share for 1 year for every lounge you bring to Hookah+</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <Star className="w-6 h-6 text-yellow-400 mt-1" />
+              <div>
+                <h4 className="font-semibold text-white">Early Access</h4>
+                <p className="text-sm text-zinc-400">Early access to new add-ons like AI Flavors & Loyalty</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <Crown className="w-6 h-6 text-purple-400 mt-1" />
+              <div>
+                <h4 className="font-semibold text-white">Spotlight</h4>
+                <p className="text-sm text-zinc-400">Features on our platforms + access for you and your friends</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <Gift className="w-6 h-6 text-blue-400 mt-1" />
+              <div>
+                <h4 className="font-semibold text-white">Community Badge</h4>
+                <p className="text-sm text-zinc-400">Earn and display the Hookah+ Community Connector profile badge</p>
+              </div>
+            </div>
+          </div>
+          <div className="text-center">
+            <div className="bg-zinc-800/50 rounded-lg p-6">
+              <h4 className="font-semibold text-white mb-2">Apply Now</h4>
+              <p className="text-sm text-zinc-400 mb-4">Join the movement. Shape the culture.</p>
+              <Button className="w-full">
+                <Star className="w-4 h-4 mr-2" />
+                Become a Connector
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+
+  const renderPartners = () => (
+    <div className="space-y-6">
+      <Card className="p-6">
+        <h3 className="text-lg font-semibold text-white mb-4">Connector Partners</h3>
+        <div className="space-y-4">
+          {[
+            { name: 'Alex Rodriguez', city: 'Miami, FL', referrals: 12, revenue: 2450, status: 'active', tier: 'Gold' },
+            { name: 'Sarah Chen', city: 'Los Angeles, CA', referrals: 8, revenue: 1890, status: 'active', tier: 'Silver' },
+            { name: 'Mike Johnson', city: 'Phoenix, AZ', referrals: 15, revenue: 3200, status: 'active', tier: 'Platinum' },
+            { name: 'Emma Wilson', city: 'Chicago, IL', referrals: 5, revenue: 1200, status: 'pending', tier: 'Bronze' }
+          ].map((partner, index) => (
+            <div key={index} className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg">
+              <div className="flex items-center space-x-4">
+                <div className="w-10 h-10 bg-zinc-700 rounded-full flex items-center justify-center">
+                  <span className="text-white font-semibold">{partner.name.split(' ').map(n => n[0]).join('')}</span>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-white">{partner.name}</h4>
+                  <p className="text-sm text-zinc-400">{partner.city} • {partner.referrals} referrals</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <Badge className={
+                  partner.tier === 'Platinum' ? 'bg-purple-500/20 text-purple-400' :
+                  partner.tier === 'Gold' ? 'bg-yellow-500/20 text-yellow-400' :
+                  partner.tier === 'Silver' ? 'bg-gray-500/20 text-gray-400' :
+                  'bg-orange-500/20 text-orange-400'
+                }>
+                  {partner.tier}
+                </Badge>
+                <div className="text-right">
+                  <p className="text-white font-semibold">${partner.revenue.toLocaleString()}</p>
+                  <p className="text-sm text-zinc-400">Revenue</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+
   const renderContent = () => {
     switch (activeTab) {
-      case 'queue': return renderQueue();
-      case 'seated': return renderSeated();
-      case 'analytics': return <div className="text-center py-12 text-zinc-400">Waitlist Analytics Coming Soon</div>;
+      case 'onboarding': return renderQueue();
+      case 'referrals': return renderReferrals();
+      case 'partners': return renderPartners();
+      case 'analytics': return <div className="text-center py-12 text-zinc-400">Onboarding Analytics Coming Soon</div>;
       default: return renderQueue();
     }
   };
@@ -408,11 +541,11 @@ export default function WaitlistPage() {
           <div className="flex items-center space-x-3 mb-2">
             <Clock className="w-8 h-8 text-teal-400" />
             <h1 className="text-4xl font-bold bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
-              POS Waitlist
+              Lounge Onboarding
             </h1>
           </div>
           <p className="text-xl text-zinc-400">
-            Manage customer waitlist, seating assignments, and queue optimization
+            Manage new lounge customer intake, referral program, and onboarding flow
           </p>
         </div>
 

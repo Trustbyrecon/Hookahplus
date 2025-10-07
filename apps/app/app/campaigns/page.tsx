@@ -24,7 +24,9 @@ import {
   Search,
   Download,
   Share2,
-  Settings
+  Settings,
+  ShoppingCart,
+  DollarSign
 } from 'lucide-react';
 import GlobalNavigation from '../../components/GlobalNavigation';
 import { Card, Button, Badge } from '../../components';
@@ -32,7 +34,7 @@ import { Card, Button, Badge } from '../../components';
 interface Campaign {
   id: string;
   name: string;
-  type: 'loyalty' | 'promotional' | 'email' | 'sms' | 'social';
+  type: 'loyalty' | 'promotional' | 'email' | 'sms' | 'social' | 'percentage_off' | 'first_x_customers' | 'buy_x_get_y' | 'time_limited';
   status: 'draft' | 'active' | 'paused' | 'completed' | 'scheduled';
   startDate: Date;
   endDate?: Date;
@@ -122,7 +124,14 @@ export default function CampaignsPage() {
     budget: 0,
     startDate: '',
     endDate: '',
-    channels: [] as string[]
+    channels: [] as string[],
+    // Campaign-specific fields
+    percentageOff: 10,
+    firstXCustomers: 50,
+    buyXGetY: { buy: 2, get: 1 },
+    timeLimit: 24, // hours
+    discountAmount: 0,
+    minimumSpend: 0
   });
 
   const tabs = [
@@ -134,7 +143,10 @@ export default function CampaignsPage() {
 
   const campaignTypes = [
     { value: 'loyalty', label: 'Loyalty Program', icon: <Star className="w-4 h-4" /> },
-    { value: 'promotional', label: 'Promotional', icon: <Gift className="w-4 h-4" /> },
+    { value: 'percentage_off', label: 'Percentage Off', icon: <Gift className="w-4 h-4" /> },
+    { value: 'first_x_customers', label: 'First X Customers', icon: <Users className="w-4 h-4" /> },
+    { value: 'buy_x_get_y', label: 'Buy X Get Y', icon: <ShoppingCart className="w-4 h-4" /> },
+    { value: 'time_limited', label: 'Time Limited', icon: <Clock className="w-4 h-4" /> },
     { value: 'email', label: 'Email Marketing', icon: <Mail className="w-4 h-4" /> },
     { value: 'sms', label: 'SMS Campaign', icon: <MessageSquare className="w-4 h-4" /> },
     { value: 'social', label: 'Social Media', icon: <Share2 className="w-4 h-4" /> }
@@ -182,13 +194,19 @@ export default function CampaignsPage() {
     setCampaigns(prev => [campaign, ...prev]);
     setNewCampaign({
       name: '',
-      type: 'promotional',
+      type: 'promotional' as Campaign['type'],
       description: '',
       targetAudience: '',
       budget: 0,
       startDate: '',
       endDate: '',
-      channels: []
+      channels: [],
+      percentageOff: 10,
+      firstXCustomers: 50,
+      buyXGetY: { buy: 2, get: 1 },
+      timeLimit: 24,
+      discountAmount: 0,
+      minimumSpend: 0
     });
     setShowCreateModal(false);
   };
@@ -405,12 +423,185 @@ export default function CampaignsPage() {
     </div>
   );
 
+  const renderLoyalty = () => (
+    <div className="space-y-6">
+      {/* Loyalty Program Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-zinc-400">Active Members</p>
+              <p className="text-2xl font-bold text-white">1,247</p>
+            </div>
+            <Users className="w-8 h-8 text-blue-400" />
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-zinc-400">Points Redeemed</p>
+              <p className="text-2xl font-bold text-white">15,420</p>
+            </div>
+            <Star className="w-8 h-8 text-yellow-400" />
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-zinc-400">Avg. Points per Visit</p>
+              <p className="text-2xl font-bold text-white">125</p>
+            </div>
+            <TrendingUp className="w-8 h-8 text-green-400" />
+          </div>
+        </Card>
+      </div>
+
+      {/* Loyalty Tiers */}
+      <Card className="p-6">
+        <h3 className="text-lg font-semibold text-white mb-4">Loyalty Tiers</h3>
+        <div className="space-y-4">
+          {[
+            { name: 'Bronze', points: '0-499', benefits: '5% off all orders', members: 456, color: 'bg-orange-500' },
+            { name: 'Silver', points: '500-999', benefits: '10% off + free refills', members: 623, color: 'bg-gray-400' },
+            { name: 'Gold', points: '1000-1999', benefits: '15% off + priority seating', members: 168, color: 'bg-yellow-500' },
+            { name: 'Platinum', points: '2000+', benefits: '20% off + exclusive flavors', members: 12, color: 'bg-purple-500' }
+          ].map((tier, index) => (
+            <div key={index} className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg">
+              <div className="flex items-center space-x-4">
+                <div className={`w-4 h-4 rounded-full ${tier.color}`} />
+                <div>
+                  <h4 className="font-semibold text-white">{tier.name}</h4>
+                  <p className="text-sm text-zinc-400">{tier.points} points • {tier.benefits}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-white font-semibold">{tier.members} members</p>
+                <p className="text-sm text-zinc-400">Active</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Recent Redemptions */}
+      <Card className="p-6">
+        <h3 className="text-lg font-semibold text-white mb-4">Recent Redemptions</h3>
+        <div className="space-y-3">
+          {[
+            { customer: 'John Doe', item: 'Free Hookah Session', points: 500, date: '2 hours ago' },
+            { customer: 'Sarah Chen', item: '10% Discount', points: 200, date: '4 hours ago' },
+            { customer: 'Mike Wilson', item: 'Priority Seating', points: 100, date: '6 hours ago' },
+            { customer: 'Emma Davis', item: 'Free Refill', points: 150, date: '8 hours ago' }
+          ].map((redemption, index) => (
+            <div key={index} className="flex items-center justify-between p-3 bg-zinc-800/30 rounded-lg">
+              <div>
+                <p className="text-white font-medium">{redemption.customer}</p>
+                <p className="text-sm text-zinc-400">{redemption.item}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-yellow-400 font-semibold">-{redemption.points} pts</p>
+                <p className="text-sm text-zinc-500">{redemption.date}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+
+  const renderAnalytics = () => (
+    <div className="space-y-6">
+      {/* Campaign Performance */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-zinc-400">Total Reach</p>
+              <p className="text-2xl font-bold text-white">12,450</p>
+            </div>
+            <Users className="w-8 h-8 text-blue-400" />
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-zinc-400">Engagement Rate</p>
+              <p className="text-2xl font-bold text-white">18.5%</p>
+            </div>
+            <TrendingUp className="w-8 h-8 text-green-400" />
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-zinc-400">Conversions</p>
+              <p className="text-2xl font-bold text-white">2,340</p>
+            </div>
+            <CheckCircle className="w-8 h-8 text-purple-400" />
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-zinc-400">Avg. ROI</p>
+              <p className="text-2xl font-bold text-white">3.2x</p>
+            </div>
+            <DollarSign className="w-8 h-8 text-yellow-400" />
+          </div>
+        </Card>
+      </div>
+
+      {/* Campaign Performance Chart */}
+      <Card className="p-6">
+        <h3 className="text-lg font-semibold text-white mb-4">Campaign Performance</h3>
+        <div className="h-64 flex items-center justify-center bg-zinc-800/50 rounded-lg">
+          <div className="text-center text-zinc-400">
+            <BarChart3 className="w-12 h-12 mx-auto mb-2" />
+            <p>Campaign performance chart visualization</p>
+          </div>
+        </div>
+      </Card>
+
+      {/* Top Performing Campaigns */}
+      <Card className="p-6">
+        <h3 className="text-lg font-semibold text-white mb-4">Top Performing Campaigns</h3>
+        <div className="space-y-4">
+          {[
+            { name: 'Summer Hookah Special', reach: 2500, engagement: 22.3, conversions: 456, roi: 4.2 },
+            { name: 'VIP Loyalty Program', reach: 800, engagement: 45.8, conversions: 120, roi: 3.8 },
+            { name: 'New Customer Welcome', reach: 1200, engagement: 15.2, conversions: 180, roi: 2.1 }
+          ].map((campaign, index) => (
+            <div key={index} className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg">
+              <div className="flex-1">
+                <h4 className="font-semibold text-white">{campaign.name}</h4>
+                <div className="flex items-center space-x-4 mt-2 text-sm text-zinc-400">
+                  <span>Reach: {campaign.reach.toLocaleString()}</span>
+                  <span>Engagement: {campaign.engagement}%</span>
+                  <span>Conversions: {campaign.conversions}</span>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-green-400 font-semibold">{campaign.roi}x ROI</p>
+                <p className="text-sm text-zinc-400">Performance</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+
   const renderContent = () => {
     switch (activeTab) {
       case 'overview': return renderOverview();
       case 'campaigns': return renderCampaigns();
-      case 'loyalty': return <div className="text-center py-12 text-zinc-400">Loyalty Programs Coming Soon</div>;
-      case 'analytics': return <div className="text-center py-12 text-zinc-400">Campaign Analytics Coming Soon</div>;
+      case 'loyalty': return renderLoyalty();
+      case 'analytics': return renderAnalytics();
       default: return renderOverview();
     }
   };
@@ -484,6 +675,110 @@ export default function CampaignsPage() {
                     ))}
                   </select>
                 </div>
+
+                {/* Campaign-specific fields */}
+                {newCampaign.type === 'percentage_off' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-300 mb-2">Percentage Off</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="100"
+                        value={newCampaign.percentageOff}
+                        onChange={(e) => setNewCampaign(prev => ({ ...prev, percentageOff: parseInt(e.target.value) || 0 }))}
+                        className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        placeholder="10"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-300 mb-2">Minimum Spend ($)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={newCampaign.minimumSpend}
+                        onChange={(e) => setNewCampaign(prev => ({ ...prev, minimumSpend: parseInt(e.target.value) || 0 }))}
+                        className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {newCampaign.type === 'first_x_customers' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-300 mb-2">First X Customers</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={newCampaign.firstXCustomers}
+                        onChange={(e) => setNewCampaign(prev => ({ ...prev, firstXCustomers: parseInt(e.target.value) || 0 }))}
+                        className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        placeholder="50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-300 mb-2">Discount Amount ($)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={newCampaign.discountAmount}
+                        onChange={(e) => setNewCampaign(prev => ({ ...prev, discountAmount: parseInt(e.target.value) || 0 }))}
+                        className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {newCampaign.type === 'buy_x_get_y' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-300 mb-2">Buy X Items</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={newCampaign.buyXGetY.buy}
+                        onChange={(e) => setNewCampaign(prev => ({ 
+                          ...prev, 
+                          buyXGetY: { ...prev.buyXGetY, buy: parseInt(e.target.value) || 1 }
+                        }))}
+                        className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        placeholder="2"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-300 mb-2">Get Y Items</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={newCampaign.buyXGetY.get}
+                        onChange={(e) => setNewCampaign(prev => ({ 
+                          ...prev, 
+                          buyXGetY: { ...prev.buyXGetY, get: parseInt(e.target.value) || 1 }
+                        }))}
+                        className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        placeholder="1"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {newCampaign.type === 'time_limited' && (
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Time Limit (hours)</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="168"
+                      value={newCampaign.timeLimit}
+                      onChange={(e) => setNewCampaign(prev => ({ ...prev, timeLimit: parseInt(e.target.value) || 24 }))}
+                      className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      placeholder="24"
+                    />
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-medium text-zinc-300 mb-2">Description</label>

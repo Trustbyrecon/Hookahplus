@@ -286,7 +286,7 @@ const GlobalNavigation: React.FC = () => {
         <div className="px-4 py-2 space-y-1">
           {navigationGroups.map((group) => (
             <div key={group.label} className="space-y-1">
-              <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+              <div className="text-xs font-semibold text-zinc-200 uppercase tracking-wider">
                 {group.label}
               </div>
               {group.items.map((item) => {
