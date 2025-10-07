@@ -25,6 +25,35 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     
+    // Handle guest build requests
+    if (body.source === 'guest_portal') {
+      const sessionData = {
+        tableId: body.tableId,
+        customerRef: body.customerName || body.customerId,
+        flavor: body.items?.[0]?.name || 'Mixed Flavor',
+        priceCents: body.totalAmount || 0,
+        assignedBOHId: body.bohStaff || 'BOH_AUTO',
+        assignedFOHId: body.fohStaff || 'FOH_AUTO',
+        assignedBOH: body.bohStaff || 'BOH_AUTO',
+        assignedFOH: body.fohStaff || 'FOH_AUTO',
+        notes: `Guest session from ${body.loungeId}`,
+        timerDuration: body.sessionDuration || 60,
+        state: 'ACTIVE',
+        startedAt: new Date(),
+        paymentStatus: 'completed'
+      };
+
+      const newSession = MockSessionStore.createSession(sessionData);
+      
+      return NextResponse.json({ 
+        ok: true, 
+        sessionId: newSession.id,
+        session: newSession,
+        message: "Guest session created successfully" 
+      });
+    }
+    
+    // Handle regular app build requests
     const sessionData = {
       tableId: body.tableId,
       customerRef: body.customerName || body.customerRef,

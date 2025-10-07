@@ -11,6 +11,7 @@ import { SessionTimerAwareness } from '../components/SessionTimerAwareness';
 import GlobalNavigation from '../components/GlobalNavigation';
 import QRCodeScanner from '../components/QRCodeScanner';
 import RealTimeSessionSync from '../components/RealTimeSessionSync';
+import { sessionManager, SessionData } from '../lib/sessionManager';
 import { 
   Clock, 
   Plus, 
@@ -31,6 +32,8 @@ export default function GuestPortal() {
   const { add, remove, items, subtotal } = useCart();
   const [tableData, setTableData] = useState<any>(null);
   const [sessionMetadata, setSessionMetadata] = useState<any>(null);
+  const [currentSession, setCurrentSession] = useState<SessionData | null>(null);
+  const [isStartingSession, setIsStartingSession] = useState(false);
   
   const addToCart = (item: { id: number; name: string; price: number }) => {
     add({ id: String(item.id), name: item.name, price: Math.round(item.price * 100), qty: 1 });
@@ -49,6 +52,85 @@ export default function GuestPortal() {
   const handleSessionUpdate = (metadata: any) => {
     setSessionMetadata(metadata);
     console.log('Session metadata updated:', metadata);
+  };
+
+  // Subscribe to session updates
+  useEffect(() => {
+    const unsubscribe = sessionManager.subscribe((session) => {
+      setCurrentSession(session);
+    });
+
+    // Get current session if exists
+    const existingSession = sessionManager.getCurrentSession();
+    if (existingSession) {
+      setCurrentSession(existingSession);
+    }
+
+    return unsubscribe;
+  }, []);
+
+  // Handle Fire Session button click
+  const handleFireSession = async () => {
+    if (items.length === 0) {
+      alert('Please add items to your cart before starting a session');
+      return;
+    }
+
+    if (!tableData) {
+      alert('Please scan your table QR code first');
+      return;
+    }
+
+    setIsStartingSession(true);
+
+    try {
+      const result = await sessionManager.startSession({
+        tableId: tableData.tableId,
+        loungeId: tableData.loungeId,
+        customerId: `guest_${Date.now()}`,
+        items: items.map(item => ({
+          name: item.name,
+          quantity: item.qty,
+          price: item.price
+        })),
+        totalAmount: subtotal,
+        customerName: 'Guest Customer',
+        customerPhone: '',
+        sessionDuration: 60
+      });
+
+      if (result.ok && result.session) {
+        // Start monitoring the session
+        sessionManager.startMonitoring();
+        alert('Session started successfully! You can now view it in the App build.');
+      } else {
+        alert(`Failed to start session: ${result.error}`);
+      }
+    } catch (error) {
+      alert(`Error starting session: ${error}`);
+    } finally {
+      setIsStartingSession(false);
+    }
+  };
+
+  // Handle Staff Panel button click
+  const handleStaffPanel = () => {
+    if (currentSession) {
+      sessionManager.openAppBuild('staff');
+    } else {
+      // Open general staff panel
+      window.open('https://hookahplus-app-prod.vercel.app/fire-session-dashboard', '_blank');
+    }
+  };
+
+  // Handle Dashboard button click
+  const handleDashboard = () => {
+    if (currentSession) {
+      sessionManager.openAppBuild('dashboard');
+    } else {
+      // Open general dashboard
+      window.open('https://hookahplus-app-prod.vercel.app/dashboard', '_blank');
+    }
   };
   const menuItems = [
     {
@@ -138,6 +220,68 @@ export default function GuestPortal() {
             }}
           />
         </div>
+
+        {/* Current Session Status */}
+        {currentSession && (
+          <div className="mb-8">
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse" />
+                  <h3 className="text-lg font-semibold">Active Session</h3>
+                </div>
+                <div className="text-sm text-zinc-400">
+                  Session ID: {currentSession.sessionId}
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-zinc-800 rounded-lg p-4">
+                  <div className="text-sm text-zinc-400 mb-1">Table</div>
+                  <div className="text-lg font-semibold">{currentSession.tableId}</div>
+                </div>
+                
+                <div className="bg-zinc-800 rounded-lg p-4">
+                  <div className="text-sm text-zinc-400 mb-1">Time Remaining</div>
+                  <div className="text-lg font-semibold text-primary-400">
+                    {currentSession.timeRemaining} min
+                  </div>
+                </div>
+                
+                <div className="bg-zinc-800 rounded-lg p-4">
+                  <div className="text-sm text-zinc-400 mb-1">Total Amount</div>
+                  <div className="text-lg font-semibold text-green-400">
+                    ${(currentSession.totalAmount / 100).toFixed(2)}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-4 flex space-x-3">
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => sessionManager.openAppBuild('session')}
+                >
+                  View in App Build
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => sessionManager.openAppBuild('staff')}
+                >
+                  Staff Panel
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => sessionManager.openAppBuild('dashboard')}
+                >
+                  Dashboard
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )}
 
         {/* Real-time Session Sync */}
         {sessionMetadata && (
@@ -326,42 +470,38 @@ export default function GuestPortal() {
                     variant="fire" 
                     className="w-full"
                     leftIcon={<Zap className="w-4 h-4" />}
-                    onClick={() => {
-                      if (items.length === 0) {
-                        alert('Please add items to your cart before starting a session');
-                        return;
-                      }
-                      // Start session workflow
-                      console.log('Starting Fire Session with cart:', items);
-                      // Navigate to session workflow
-                      window.location.href = '/customer-flow';
-                    }}
+                    onClick={handleFireSession}
+                    disabled={isStartingSession || !tableData}
                   >
-                    🔥 Fire Session
+                    {isStartingSession ? 'Starting Session...' : '🔥 Fire Session'}
                   </Button>
                   
                   <Button 
                     variant="outline" 
                     className="w-full"
                     leftIcon={<UserCheck className="w-4 h-4" />}
-                    onClick={() => {
-                      // Navigate to staff panel
-                      window.open('https://hookahplus-app-prod.vercel.app/fire-session-dashboard', '_blank');
-                    }}
+                    onClick={handleStaffPanel}
                   >
                     Staff Panel
+                    {currentSession && (
+                      <span className="ml-2 text-xs bg-green-500 text-white px-2 py-1 rounded-full">
+                        Live
+                      </span>
+                    )}
                   </Button>
                   
                   <Button 
                     variant="outline" 
                     className="w-full"
                     leftIcon={<BarChart3 className="w-4 h-4" />}
-                    onClick={() => {
-                      // Navigate to dashboard
-                      window.open('https://hookahplus-app-prod.vercel.app/dashboard', '_blank');
-                    }}
+                    onClick={handleDashboard}
                   >
                     Dashboard
+                    {currentSession && (
+                      <span className="ml-2 text-xs bg-blue-500 text-white px-2 py-1 rounded-full">
+                        Active
+                      </span>
+                    )}
                   </Button>
                   
                   <Button 
