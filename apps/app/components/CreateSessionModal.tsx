@@ -22,6 +22,7 @@ interface SessionData {
   bohStaff: string;
   fohStaff: string;
   notes: string;
+  timerDuration: number; // in minutes
 }
 
 const sessionTypes = [
@@ -54,6 +55,14 @@ const fohStaff = [
   'Lisa Brown'
 ];
 
+const timerDurations = [
+  { value: 30, label: '30 minutes', description: 'Standard session' },
+  { value: 45, label: '45 minutes', description: 'Extended session' },
+  { value: 60, label: '1 hour', description: 'Premium session' },
+  { value: 90, label: '1.5 hours', description: 'VIP session' },
+  { value: 120, label: '2 hours', description: 'Ultimate session' }
+];
+
 export default function CreateSessionModal({ isOpen, onClose, onCreateSession }: CreateSessionModalProps) {
   const [formData, setFormData] = useState<SessionData>({
     tableId: 'table-001',
@@ -65,7 +74,8 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
     amount: 30,
     bohStaff: '',
     fohStaff: '',
-    notes: ''
+    notes: '',
+    timerDuration: 60 // Default to 1 hour
   });
 
   const [selectedTable, setSelectedTable] = useState<TableType | null>(null);
@@ -100,6 +110,7 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
     if (!formData.sessionType) newErrors.sessionType = 'Session type is required';
     if (!formData.flavor) newErrors.flavor = 'Flavor is required';
     if (!formData.amount || formData.amount <= 0) newErrors.amount = 'Amount must be greater than 0';
+    if (!formData.timerDuration || formData.timerDuration <= 0) newErrors.timerDuration = 'Session duration is required';
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -306,6 +317,30 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
                 </div>
                 {errors.amount && (
                   <p className="text-red-400 text-sm mt-1">{errors.amount}</p>
+                )}
+              </div>
+
+              {/* Timer Duration */}
+              <div>
+                <label className="block text-sm font-medium text-white mb-2 font-semibold">
+                  <Clock className="w-4 h-4 inline mr-2" />
+                  Session Duration *
+                </label>
+                <select
+                  value={formData.timerDuration}
+                  onChange={(e) => handleInputChange('timerDuration', parseInt(e.target.value))}
+                  className={`w-full px-4 py-3 bg-zinc-800/80 border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500 ${
+                    errors.timerDuration ? 'border-red-500' : 'border-zinc-500'
+                  }`}
+                >
+                  {timerDurations.map((duration) => (
+                    <option key={duration.value} value={duration.value}>
+                      {duration.label} - {duration.description}
+                    </option>
+                  ))}
+                </select>
+                {errors.timerDuration && (
+                  <p className="text-red-400 text-sm mt-1">{errors.timerDuration}</p>
                 )}
               </div>
 

@@ -28,6 +28,13 @@ model Session {
   paymentStatus  String?     // requires "succeeded" to complete
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
+  
+  // Timer fields
+  timerDuration      Int?     // in minutes
+  timerStartedAt     DateTime?
+  timerPausedAt      DateTime?
+  timerPausedDuration Int?    // total paused time in seconds
+  timerStatus        String?  // 'stopped' | 'running' | 'paused' | 'completed'
 
   @@map("sessions")
 }

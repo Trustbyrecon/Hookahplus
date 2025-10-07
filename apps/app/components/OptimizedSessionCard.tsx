@@ -18,6 +18,7 @@ import { SessionNotes as SessionNotesComponent, SessionNote } from './SessionNot
 import { FlagManager } from './FlagManager';
 import { ResolutionNotes } from './ResolutionNotes';
 import { RoleBasedActions } from './RoleBasedActions';
+import { SessionTimerCard } from './SessionTimerCard';
 import { Session } from '../types/session';
 
 interface OptimizedSessionCardProps {
@@ -143,6 +144,24 @@ export function OptimizedSessionCard({
           <div className="text-sm text-zinc-300">{session.notes}</div>
         </div>
       </div>
+
+      {/* Session Timer */}
+      {session.timerDuration && (session.state === 'ACTIVE' || session.state === 'PAUSED') && (
+        <div className="mb-4">
+          <SessionTimerCard 
+            session={session}
+            onTimerUpdate={(sessionId, timerState) => {
+              // Handle timer updates - could update session state
+              console.log(`Timer update for session ${sessionId}:`, timerState);
+            }}
+            onTimerComplete={(sessionId) => {
+              // Handle timer completion - could transition session to completed
+              console.log(`Timer completed for session ${sessionId}`);
+              onStateChange(sessionId, 'COMPLETE', 'Session timer completed');
+            }}
+          />
+        </div>
+      )}
 
       {/* Compact Notes and Flags Section */}
       <div className="mb-4">

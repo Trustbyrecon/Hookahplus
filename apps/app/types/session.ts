@@ -38,6 +38,13 @@ export interface Session {
   createdAt: Date;
   updatedAt: Date;
   
+  // Timer-related fields
+  timerDuration?: number; // in minutes
+  timerStartedAt?: Date;
+  timerPausedAt?: Date;
+  timerPausedDuration?: number; // total paused time in seconds
+  timerStatus?: 'stopped' | 'running' | 'paused' | 'completed';
+  
   // UI-specific fields (computed)
   statusColor?: string;
   statusIcon?: string;
