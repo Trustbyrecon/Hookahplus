@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "cd apps/app && pnpm install && pnpm run build",
-  "installCommand": "pnpm install --filter @hookahplus/app...",
+  "buildCommand": "cd apps/app && pnpm install --no-frozen-lockfile --retry 3 && pnpm run build",
+  "installCommand": "pnpm install --filter @hookahplus/app... --no-frozen-lockfile --retry 3",
   "outputDirectory": "apps/app/.next",
   "framework": "nextjs",
   "functions": {
@@ -14,6 +14,9 @@
   },
   "regions": ["iad1"],
   "env": {
-    "FORCE_REBUILD": "true"
+    "FORCE_REBUILD": "true",
+    "NPM_CONFIG_REGISTRY": "https://registry.npmjs.org/",
+    "NPM_CONFIG_FETCH_RETRIES": "3",
+    "NPM_CONFIG_FETCH_RETRY_FACTOR": "2"
   }
 }
