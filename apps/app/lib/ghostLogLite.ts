@@ -163,14 +163,14 @@ export class GhostLogLite {
   /**
    * Get trust statistics
    */
-  getTrustStatistics(): {
+  async getTrustStatistics(): Promise<{
     totalEvents: number;
     uniqueCustomers: number;
     uniqueVenues: number;
     eventsByType: Record<string, number>;
     averageEventsPerCustomer: number;
     trustChainIntegrity: number;
-  } {
+  }> {
     const entries = Array.from(this.logEntries.values());
     const uniqueCustomers = new Set(entries.map(e => e.customerId)).size;
     const uniqueVenues = new Set(entries.map(e => e.venueId)).size;
@@ -185,7 +185,7 @@ export class GhostLogLite {
     const customers = Array.from(new Set(entries.map(e => e.customerId)));
     
     for (const customerId of customers) {
-      const verification = this.verifyTrustChain(customerId);
+      const verification = await this.verifyTrustChain(customerId);
       if (verification.isValid) validChains++;
     }
 
