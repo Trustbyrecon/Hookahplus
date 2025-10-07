@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Robust build script for Vercel
-# Handles NPM registry connectivity issues
+# Handles NPM registry connectivity issues with fallback strategies
 
 set -e
 
@@ -41,13 +41,31 @@ retry_command() {
     return 1
 }
 
-# Install dependencies with retry logic
+# Try pnpm first, fallback to npm if it fails
 echo "📦 Installing dependencies..."
-retry_command "pnpm install --no-frozen-lockfile"
+
+if retry_command "pnpm install --no-frozen-lockfile"; then
+    echo "✅ pnpm install succeeded"
+    PACKAGE_MANAGER="pnpm"
+else
+    echo "⚠️ pnpm failed, trying npm..."
+    if retry_command "npm install"; then
+        echo "✅ npm install succeeded"
+        PACKAGE_MANAGER="npm"
+    else
+        echo "💥 Both pnpm and npm failed"
+        exit 1
+    fi
+fi
 
 # Build the application
 echo "🔨 Building application..."
 cd apps/app
-retry_command "pnpm run build"
+
+if [ "$PACKAGE_MANAGER" = "pnpm" ]; then
+    retry_command "pnpm run build"
+else
+    retry_command "npm run build"
+fi
 
 echo "🎉 Build completed successfully!"
