@@ -1,10 +1,13 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { CheckCircle, XCircle, Clock, ExternalLink } from 'lucide-react';
 
-export default function PaymentReturnPage() {
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
+function PaymentReturnContent() {
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'unknown'>('loading');
   const [paymentIntentId, setPaymentIntentId] = useState<string>('');
@@ -151,5 +154,21 @@ export default function PaymentReturnPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PaymentReturnPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-zinc-800/50 backdrop-blur-sm border border-zinc-700/50 rounded-xl p-8 text-center">
+          <Clock className="w-16 h-16 text-blue-500 animate-spin mx-auto mb-4" />
+          <h1 className="text-2xl font-bold mb-2">Loading...</h1>
+          <p className="text-zinc-400">Processing payment information...</p>
+        </div>
+      </div>
+    }>
+      <PaymentReturnContent />
+    </Suspense>
   );
 }

@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
         enabled: true,
         allow_redirects: 'never'
       },
-      return_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/payment/return`,
+      return_url: process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}/payment/return` : 'https://hookahplus-app-prod.vercel.app/payment/return',
       metadata: {
         source: 'order-mgmt:$1-smoke',
         env: process.env.NODE_ENV,
