@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 
 export default function GuestPortal() {
-  const { add } = useCart();
+  const { add, remove, items, subtotal } = useCart();
   const addToCart = (item: { id: number; name: string; price: number }) => {
     add({ id: String(item.id), name: item.name, price: Math.round(item.price * 100), qty: 1 });
     console.log('Adding to cart:', item); // Debug log
@@ -224,11 +224,45 @@ export default function GuestPortal() {
               <div className="p-6">
                 <h3 className="text-lg font-semibold mb-4">Your Order</h3>
                 
-                {/* Empty Cart */}
-                <div className="text-center py-8">
-                  <ShoppingCart className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-                  <p className="text-zinc-400">Your cart is empty. Add items to get started.</p>
-                </div>
+                {/* Cart Items */}
+                {items.length === 0 ? (
+                  <div className="text-center py-8">
+                    <ShoppingCart className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
+                    <p className="text-zinc-400">Your cart is empty. Add items to get started.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {items.map((item) => (
+                      <div key={item.id} className="flex items-center justify-between p-3 bg-zinc-800 rounded-lg">
+                        <div className="flex-1">
+                          <div className="font-medium text-sm">{item.name}</div>
+                          <div className="text-xs text-zinc-400">Qty: {item.qty}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-semibold text-primary-400">
+                            ${(item.price * item.qty / 100).toFixed(2)}
+                          </div>
+                          <button
+                            onClick={() => remove(item.id)}
+                            className="text-xs text-red-400 hover:text-red-300"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {/* Subtotal */}
+                    <div className="border-t border-zinc-700 pt-3">
+                      <div className="flex justify-between items-center">
+                        <span className="font-semibold">Subtotal:</span>
+                        <span className="text-lg font-bold text-primary-400">
+                          ${(subtotal / 100).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Table Status */}
                 <div className="mt-6 p-4 bg-zinc-800 rounded-lg">
@@ -245,6 +279,16 @@ export default function GuestPortal() {
                     variant="fire" 
                     className="w-full"
                     leftIcon={<Zap className="w-4 h-4" />}
+                    onClick={() => {
+                      if (items.length === 0) {
+                        alert('Please add items to your cart before starting a session');
+                        return;
+                      }
+                      // Start session workflow
+                      console.log('Starting Fire Session with cart:', items);
+                      // Navigate to session workflow
+                      window.location.href = '/customer-flow';
+                    }}
                   >
                     🔥 Fire Session
                   </Button>
@@ -253,6 +297,10 @@ export default function GuestPortal() {
                     variant="outline" 
                     className="w-full"
                     leftIcon={<UserCheck className="w-4 h-4" />}
+                    onClick={() => {
+                      // Navigate to staff panel
+                      window.open('https://hookahplus-app-prod.vercel.app/fire-session-dashboard', '_blank');
+                    }}
                   >
                     Staff Panel
                   </Button>
@@ -261,8 +309,24 @@ export default function GuestPortal() {
                     variant="outline" 
                     className="w-full"
                     leftIcon={<BarChart3 className="w-4 h-4" />}
+                    onClick={() => {
+                      // Navigate to dashboard
+                      window.open('https://hookahplus-app-prod.vercel.app/dashboard', '_blank');
+                    }}
                   >
                     Dashboard
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    leftIcon={<Star className="w-4 h-4" />}
+                    onClick={() => {
+                      // Navigate to partnership page
+                      window.location.href = '/partnership';
+                    }}
+                  >
+                    Join Partnership Program
                   </Button>
                 </div>
               </div>
