@@ -453,12 +453,28 @@ export default function DocsPage() {
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <Button size="sm" variant="outline" className="text-zinc-400 border-zinc-600">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="text-zinc-400 border-zinc-600"
+                            onClick={() => {
+                              // Navigate to article page
+                              window.location.href = `/docs/getting-started/${article.id}`;
+                            }}
+                          >
                             <FileText className="w-3 h-3 mr-1" />
                             Read
                           </Button>
                           {article.type === 'video' && (
-                            <Button size="sm" variant="outline" className="text-zinc-400 border-zinc-600">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="text-zinc-400 border-zinc-600"
+                              onClick={() => {
+                                // Open video in new tab
+                                window.open(`/docs/videos/${article.id}`, '_blank');
+                              }}
+                            >
                               <Play className="w-3 h-3 mr-1" />
                               Watch
                             </Button>

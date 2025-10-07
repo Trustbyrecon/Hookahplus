@@ -176,7 +176,7 @@ export function FOHActions({ sessionId, state, userRoles, onStateChange }: Sessi
             onClick={() => act("COMPLETE")}
           >
             <CheckCircle className="w-4 h-4 mr-2" />
-            Close Session
+            Complete Session
           </button>
         </>
       )}
@@ -213,6 +213,32 @@ export function ManagerActions({ sessionId, state, userRoles, onStateChange, onF
     if (busy) return;
     setBusy(true);
     try {
+      // Add audit note for manager cancellations
+      if (transition === "CANCEL") {
+        const auditNote = {
+          sessionId,
+          content: `Session cancelled by Manager - ${new Date().toLocaleString()}`,
+          type: 'audit',
+          createdBy: 'MANAGER',
+          timestamp: new Date().toISOString()
+        };
+        
+        // Log to GhostLog for audit trail
+        await fetch('/api/ghost-log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            kind: 'session_cancelled',
+            data: {
+              sessionId,
+              cancelledBy: 'MANAGER',
+              timestamp: new Date().toISOString(),
+              reason: extra?.reason || 'No reason provided'
+            }
+          })
+        });
+      }
+
       const response = await fetch(`/api/sessions/${sessionId}/transition`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
