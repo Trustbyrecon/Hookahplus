@@ -54,7 +54,7 @@ export default function GuestPortal() {
     console.log('Session metadata updated:', metadata);
   };
 
-  // Subscribe to session updates
+  // Subscribe to session updates - force rebuild
   useEffect(() => {
     const unsubscribe = sessionManager.subscribe((session) => {
       setCurrentSession(session);
