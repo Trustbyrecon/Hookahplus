@@ -2,7 +2,7 @@
 // GET /api/trust-lock/verify/:customerId
 
 import { NextRequest, NextResponse } from 'next/server';
-import { ghostLogLite } from '../../../../lib/ghostLogLite';
+import { ghostLogLite } from '@/lib/ghostLogLite';
 
 export async function GET(req: NextRequest, { params }: { params: { customerId: string } }) {
   try {

@@ -1,6 +1,6 @@
 // Trust Lock Notes Binding API
 import { NextRequest, NextResponse } from 'next/server';
-import { sessionNotesLoyaltyBinding } from '../../../../lib/sessionNotesLoyaltyBinding';
+import { sessionNotesLoyaltyBinding } from '@/lib/sessionNotesLoyaltyBinding';
 
 export async function POST(req: NextRequest) {
   try {
