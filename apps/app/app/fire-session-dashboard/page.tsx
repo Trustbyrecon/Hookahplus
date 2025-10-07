@@ -85,15 +85,20 @@ export default function FireSessionDashboard() {
   const [isPrettyTheme, setIsPrettyTheme] = useState(false);
 
   useEffect(() => {
-    // Check for pretty theme on client side
-    setIsPrettyTheme(process.env.NEXT_PUBLIC_PRETTY_THEME === '1' || window.location.hostname.includes('vercel.app'));
+    // Always enable pretty theme for development and production
+    setIsPrettyTheme(true);
     
     // Debug: Log theme status
-    console.log('Pretty theme enabled:', process.env.NEXT_PUBLIC_PRETTY_THEME === '1' || window.location.hostname.includes('vercel.app'));
+    console.log('Pretty theme enabled: true');
     console.log('Hostname:', window.location.hostname);
   }, []);
   
   const [showCreateModal, setShowCreateModal] = useState(false);
+  
+  // Debug modal state
+  useEffect(() => {
+    console.log('Modal state changed:', showCreateModal);
+  }, [showCreateModal]);
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
@@ -416,12 +421,26 @@ export default function FireSessionDashboard() {
             <p className="text-zinc-400 mb-8">Manage your hookah sessions</p>
             <div className="flex justify-center space-x-4">
               <Button 
-                onClick={() => setShowCreateModal(true)}
+                onClick={() => {
+                  console.log('Create New Session button clicked!');
+                  setShowCreateModal(true);
+                }}
                 variant="primary" 
                 size="lg"
               >
                 Create New Session
               </Button>
+              
+              {/* Test button */}
+              <button 
+                onClick={() => {
+                  console.log('Test button clicked!');
+                  setShowCreateModal(true);
+                }}
+                className="px-6 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              >
+                Test Button
+              </button>
             </div>
           </div>
         </div>
