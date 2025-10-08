@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     const timestamp = new Date().toISOString();
 
     // Create trust stamp
-    const trustStamp = hashGuestEvent(type, guestId || 'anonymous', loungeId || 'default', sessionId, payload);
+    const trustStamp = hashGuestEvent(type, guestId || 'anonymous', loungeId || 'default', sessionId || 'no-session', payload);
 
     // Create analytics event
     const analyticsEvent: AnalyticsEvent = {
