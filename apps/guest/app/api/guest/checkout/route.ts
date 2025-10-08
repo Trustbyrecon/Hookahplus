@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { CheckoutRequest, CheckoutResponse, LoyaltyEvent } from '../../../../../types/guest';
+import { CheckoutRequest, CheckoutResponse, LoyaltyEvent } from '@/types/guest';
 import { featureFlags } from './flags';
 import { createGhostLogEntry, hashGuestEvent } from './hash';
 import { v4 as uuidv4 } from 'uuid';
