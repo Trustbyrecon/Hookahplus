@@ -69,44 +69,6 @@ export function createTrustStamp(
 }
 
 /**
- * Verify a trust stamp
- */
-export function verifyTrustStamp(
-  ghostHash: string,
-  signature: string,
-  payload: Record<string, any>,
-  timestamp: string,
-  nonce: string
-): boolean {
-  try {
-    // Recreate the hash
-    const dataToHash = {
-      payload,
-      timestamp,
-      nonce
-    };
-    
-    const dataString = JSON.stringify(dataToHash, Object.keys(dataToHash).sort());
-    const expectedHash = crypto.createHash('sha256').update(dataString).digest('hex');
-    
-    // Verify hash matches
-    if (expectedHash !== ghostHash) {
-      return false;
-    }
-    
-    // Verify signature
-    const expectedSignature = crypto.createHmac('sha256', process.env.GHOSTLOG_SECRET || 'default-secret')
-      .update(ghostHash)
-      .digest('hex');
-    
-    return expectedSignature === signature;
-  } catch (error) {
-    console.error('Trust stamp verification failed:', error);
-    return false;
-  }
-}
-
-/**
  * Create a GhostLog entry
  */
 export function createGhostLogEntry(
@@ -128,72 +90,6 @@ export function createGhostLogEntry(
     nonce,
     ghostHash: trustStamp.ghostHash,
     signature: trustStamp.signature
-  };
-}
-
-/**
- * Verify a GhostLog entry
- */
-export function verifyGhostLogEntry(entry: GhostLogEntry): boolean {
-  return verifyTrustStamp(
-    entry.ghostHash,
-    entry.signature,
-    entry.payload,
-    entry.timestamp,
-    entry.nonce
-  );
-}
-
-/**
- * Create a chain of trust (for audit trails)
- */
-export function createTrustChain(entries: GhostLogEntry[]): string {
-  const chainData = entries.map(entry => ({
-    eventId: entry.eventId,
-    ghostHash: entry.ghostHash,
-    timestamp: entry.timestamp
-  }));
-  
-  const chainString = JSON.stringify(chainData, Object.keys(chainData).sort());
-  return crypto.createHash('sha256').update(chainString).digest('hex');
-}
-
-/**
- * Verify trust chain integrity
- */
-export function verifyTrustChain(entries: GhostLogEntry[]): boolean {
-  try {
-    // Verify each entry
-    for (const entry of entries) {
-      if (!verifyGhostLogEntry(entry)) {
-        return false;
-      }
-    }
-    
-    // Verify chain integrity
-    const expectedChain = createTrustChain(entries);
-    // In a real implementation, you'd compare with a stored chain hash
-    return true;
-  } catch (error) {
-    console.error('Trust chain verification failed:', error);
-    return false;
-  }
-}
-
-/**
- * Export event data for audit
- */
-export function exportAuditData(entries: GhostLogEntry[]): {
-  entries: GhostLogEntry[];
-  chainHash: string;
-  exportTimestamp: string;
-  totalEvents: number;
-} {
-  return {
-    entries,
-    chainHash: createTrustChain(entries),
-    exportTimestamp: new Date().toISOString(),
-    totalEvents: entries.length
   };
 }
 
