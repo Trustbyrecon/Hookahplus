@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     let session;
     
     if (sessionId) {
-      session = MockSessionStore.getSessionById(sessionId);
+      session = MockSessionStore.getSession(sessionId);
     } else if (tableId) {
       const sessions = MockSessionStore.getSessions();
       session = sessions.find(s => s.tableId === tableId && s.state === 'ACTIVE');

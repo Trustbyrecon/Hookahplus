@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
     // Apply dynamic pricing if enabled
     const flags = featureFlags.getLoungeFlags(session.loungeId);
     let finalBasePrice = basePrice;
-    if (isDynamicPricingEnabled(session.loungeId)) {
+    if (isDynamicPricingEnabled()) {
       finalBasePrice = applyDynamicPricing(basePrice, session);
     }
 
