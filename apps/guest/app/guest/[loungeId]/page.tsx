@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import { QRData, GuestProfile, FeatureFlags } from '../../../types/guest';
+import { QRData, GuestProfile, FeatureFlags } from '@/types/guest';
 import { featureFlags } from '../../../config/flags';
 import QRGate from '../../../components/guest/QRGate';
 import FlavorComposer from '../../../components/guest/FlavorComposer';

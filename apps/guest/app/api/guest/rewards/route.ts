@@ -135,7 +135,10 @@ export async function GET(req: NextRequest) {
         timestamp: new Date().toISOString()
       };
 
-      const ghostLogEntry = createGhostLogEntry('rewards.viewed', eventPayload);
+      const ghostLogEntry = createGhostLogEntry({
+        eventType: 'rewards.viewed',
+        ...eventPayload
+      });
       console.log('Rewards view logged:', ghostLogEntry);
     }
 

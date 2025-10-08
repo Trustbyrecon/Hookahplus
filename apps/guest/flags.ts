@@ -1,4 +1,4 @@
-import { FeatureFlags } from '../types/guest';
+import { FeatureFlags } from '@/types/guest';
 
 /**
  * Feature Flags Configuration

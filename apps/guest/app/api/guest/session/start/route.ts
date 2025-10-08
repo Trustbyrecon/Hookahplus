@@ -41,7 +41,9 @@ export async function POST(req: NextRequest) {
     const sessionId = `session_${uuidv4()}`;
 
     // Create trust stamp
-    const trustStamp = hashSessionEvent(sessionId, 'session.started', {
+    const trustStamp = hashSessionEvent({
+      sessionId,
+      eventType: 'session.started',
       loungeId,
       guestId,
       tableId
@@ -67,8 +69,8 @@ export async function POST(req: NextRequest) {
         startedAt: new Date().toISOString()
       },
       trust: {
-        ghostHash: trustStamp.ghostHash,
-        signature: trustStamp.signature
+        ghostHash: trustStamp,
+        signature: trustStamp
       },
       tableId
     };
@@ -94,7 +96,10 @@ export async function POST(req: NextRequest) {
         timestamp: session.ts.startedAt
       };
 
-      const ghostLogEntry = createGhostLogEntry('session.started', eventPayload);
+      const ghostLogEntry = createGhostLogEntry({
+        eventType: 'session.started',
+        ...eventPayload
+      });
       console.log('Session start logged:', ghostLogEntry);
     }
 
