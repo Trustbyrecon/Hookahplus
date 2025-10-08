@@ -152,8 +152,8 @@ export async function GET(req: NextRequest) {
         acc[event.eventType] = (acc[event.eventType] || 0) + 1;
         return acc;
       }, {} as Record<string, number>),
-      uniqueGuests: new Set(filteredEvents.map(event => event.guestId)).size,
-      uniqueLounges: new Set(filteredEvents.map(event => event.loungeId)).size,
+      uniqueGuests: new Set(filteredEvents.map((event: any) => event.guestId)).size,
+      uniqueLounges: new Set(filteredEvents.map((event: any) => event.loungeId)).size,
       timeRange: {
         earliest: filteredEvents.length > 0 ? filteredEvents[filteredEvents.length - 1].timestamp : null,
         latest: filteredEvents.length > 0 ? filteredEvents[0].timestamp : null

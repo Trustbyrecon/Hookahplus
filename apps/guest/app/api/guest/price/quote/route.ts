@@ -143,7 +143,7 @@ function calculateBasePrice(flavors: string[]): number {
   if (flavors.length === 0) return 0;
   
   // Base price is the highest priced flavor
-  const prices = flavors.map(flavor => FLAVOR_PRICES[flavor] || 0);
+  const prices = flavors.map((flavor: string) => FLAVOR_PRICES[flavor] || 0);
   return Math.max(...prices);
 }
 

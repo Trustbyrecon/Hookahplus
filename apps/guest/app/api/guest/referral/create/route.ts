@@ -167,7 +167,7 @@ export async function GET(req: NextRequest) {
       totalJoins,
       totalRewards,
       conversionRate: Math.round(conversionRate * 100) / 100,
-      referrals: userReferrals.map(ref => ({
+      referrals: userReferrals.map((ref: any) => ({
         code: ref.code,
         clicks: ref.clicks,
         joins: ref.joins,
