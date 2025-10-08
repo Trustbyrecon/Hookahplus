@@ -116,7 +116,7 @@ export async function GET(req: NextRequest) {
     const sessions = guestProfile.sessions || [];
 
     // Get badge definitions for earned badges
-    const badges = earnedBadges.map(badgeId => BADGE_DEFINITIONS[badgeId]).filter(Boolean);
+    const badges = earnedBadges.map((badgeId: string) => BADGE_DEFINITIONS[badgeId]).filter(Boolean);
 
     // Calculate next badge
     const nextBadge = calculateNextBadge(guestProfile, earnedBadges);
