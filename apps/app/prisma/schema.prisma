@@ -47,6 +47,74 @@ model Session {
   @@map("sessions")
 }
 
+// Partnership Models
+model Partner {
+  id          String   @id @default(cuid())
+  name        String
+  email       String   @unique
+  tier        String   @default("bronze") // bronze|silver|gold|platinum
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  referrals   Referral[]
+  payouts     Payout[]
+  stats       PartnerStats?
+
+  @@map("partners")
+}
+
+model PartnerStats {
+  id              String   @id @default(cuid())
+  partnerId       String   @unique
+  totalReferrals  Int      @default(0)
+  activeLounges   Int      @default(0)
+  referralsLast30d Int     @default(0)
+  qualityScore    Float    @default(0.0)
+  lastUpdated     DateTime @default(now())
+
+  // Relations
+  partner         Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+  @@map("partner_stats")
+}
+
+model Referral {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  partnerId   String
+  loungeId    String?
+  isActive    Boolean   @default(true)
+  uses        Int       @default(0)
+  maxUses     Int?
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  activatedAt DateTime?
+
+  // Relations
+  partner     Partner   @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+  @@map("referrals")
+}
+
+model Payout {
+  id           String   @id @default(cuid())
+  partnerId    String
+  period       String   // e.g., "2025-01"
+  gross        Float
+  revSharePct  Float
+  net          Float
+  status       String   @default("pending") // pending|paid
+  createdAt    DateTime @default(now())
+  paidAt       DateTime?
+
+  // Relations
+  partner      Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+  @@map("payouts")
+}
+
 // Enums replaced with string fields for SQLite compatibility
 
 model User {

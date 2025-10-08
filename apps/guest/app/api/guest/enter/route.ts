@@ -103,11 +103,14 @@ export async function POST(req: NextRequest) {
     // Log guest entry event
     if (flags.ghostlog.lite) {
       const eventPayload = {
+        eventType: 'guest.entered',
         loungeId,
+        guestId,
         ref,
         isNewGuest,
         deviceId,
-        sessionId
+        sessionId,
+        referralSource: ref ? 'partner' : 'direct'
       };
 
       const ghostLogEntry = createGhostLogEntry(eventPayload);
@@ -120,6 +123,21 @@ export async function POST(req: NextRequest) {
     if (ref && flags.referral.qr.v1) {
       // Track referral click
       console.log(`Referral tracked: ${ref} for guest ${guestId} at lounge ${loungeId}`);
+      
+      // Log partner referral event to GhostLog
+      if (flags.ghostlog.lite) {
+        const referralEvent = {
+          eventType: 'partner.referral.used',
+          partnerId: ref,
+          loungeId,
+          guestId,
+          sessionId,
+          timestamp: new Date().toISOString()
+        };
+        
+        const referralLogEntry = createGhostLogEntry(referralEvent);
+        console.log('Partner Referral Logged:', referralLogEntry);
+      }
       
       // In production, update referral analytics
     }

@@ -17,7 +17,8 @@ import {
   UserCheck,
   Crown,
   MapPin,
-  Eye
+  Eye,
+  Handshake
 } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 
@@ -183,6 +184,25 @@ const GlobalNavigation: React.FC = () => {
           flowState: 'idle',
           nextAction: 'View generated layout',
           aiRecommendation: 'Deploy layout to dashboard'
+        }
+      ]
+    },
+    {
+      label: 'Partnership',
+      color: 'text-green-300',
+      bgColor: 'bg-green-500/10',
+      flowState: 'active',
+      description: 'Partner program and referrals',
+      aiInsight: 'Track your referrals and earnings',
+      items: [
+        {
+          label: 'Partnership',
+          href: '/partnership',
+          icon: <Handshake className="w-4 h-4" />,
+          description: 'Partnership dashboard',
+          flowState: 'active',
+          nextAction: 'View partnership status',
+          aiRecommendation: 'Check your referral progress'
         }
       ]
     },
