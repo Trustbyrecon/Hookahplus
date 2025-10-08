@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { RewardsResponse, BadgeDefinition, LoyaltyEvent } from '../../../types/guest';
 import { featureFlags } from '../../../config/flags';
-import { createGhostLogEntry } from '../../../libs/ghostlog/hash';
+import { createGhostLogEntry } from '../../../../libs/ghostlog/hash';
 
 // Mock data stores
 const guestProfiles = new Map<string, any>();

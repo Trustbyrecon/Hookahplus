@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { GuestProfile, FeatureFlags, ReferralCreateResponse } from '../../../types/guest';
-import { createGhostLogEntry } from '../../../libs/ghostlog/hash';
+import { createGhostLogEntry } from '../../libs/ghostlog/hash';
 import { QrCode, Share2, Copy, Users, Gift, ExternalLink } from 'lucide-react';
 
 interface ReferralQRProps {

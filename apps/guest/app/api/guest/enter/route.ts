@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GuestEnterRequest, GuestEnterResponse, GuestProfile, QRData } from '../../../types/guest';
 import { featureFlags } from '../../../config/flags';
-import { createGhostLogEntry, hashGuestEvent } from '../../../libs/ghostlog/hash';
+import { createGhostLogEntry, hashGuestEvent } from '../../../../libs/ghostlog/hash';
 import { v4 as uuidv4 } from 'uuid';
 
 // Mock data store (in production, this would be a database)
