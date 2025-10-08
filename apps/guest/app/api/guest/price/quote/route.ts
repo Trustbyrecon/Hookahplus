@@ -192,7 +192,7 @@ function applyDynamicPricing(basePrice: number, session: any): number {
  * Apply promo code discount
  */
 function applyPromoCode(code: string, subtotal: number): any {
-  const promo = PROMO_CODES[code.toUpperCase()];
+  const promo = PROMO_CODES[code.toUpperCase() as keyof typeof PROMO_CODES];
   if (!promo) {
     return undefined;
   }
