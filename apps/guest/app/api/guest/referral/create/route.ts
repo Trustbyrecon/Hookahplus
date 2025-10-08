@@ -89,7 +89,10 @@ export async function POST(req: NextRequest) {
         timestamp: new Date().toISOString()
       };
 
-      const ghostLogEntry = createGhostLogEntry('referral.created', eventPayload);
+      const ghostLogEntry = createGhostLogEntry({
+        eventType: 'referral.created',
+        ...eventPayload
+      });
       console.log('Referral creation logged:', ghostLogEntry);
     }
 
