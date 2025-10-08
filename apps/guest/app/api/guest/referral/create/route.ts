@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ReferralCreateRequest, ReferralCreateResponse, ReferralLink } from '../../../../types/guest';
-import { featureFlags } from '../../../config/flags';
-import { createGhostLogEntry } from '../../../libs/ghostlog/hash';
+import { featureFlags } from './flags';
+import { createGhostLogEntry } from './hash';
 import { v4 as uuidv4 } from 'uuid';
 import QRCode from 'qrcode';
 
@@ -212,7 +212,7 @@ function generateReferralCode(): string {
 /**
  * Track referral click
  */
-export async function trackReferralClick(code: string, loungeId: string): Promise<void> {
+async function trackReferralClick(code: string, loungeId: string): Promise<void> {
   const referral = referralLinks.get(code);
   if (referral) {
     referral.clicks++;
@@ -226,7 +226,7 @@ export async function trackReferralClick(code: string, loungeId: string): Promis
 /**
  * Track referral join
  */
-export async function trackReferralJoin(code: string, guestId: string, loungeId: string): Promise<void> {
+async function trackReferralJoin(code: string, guestId: string, loungeId: string): Promise<void> {
   const referral = referralLinks.get(code);
   if (referral) {
     referral.joins++;

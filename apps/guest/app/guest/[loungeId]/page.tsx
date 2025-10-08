@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { QRData, GuestProfile, FeatureFlags } from '../../../types/guest';
-import { featureFlags } from '../../config/flags';
+import { featureFlags } from '../../../config/flags';
 import QRGate from '../../../components/guest/QRGate';
 import FlavorComposer from '../../../components/guest/FlavorComposer';
 import SessionCard from '../../../components/guest/SessionCard';
@@ -11,7 +11,7 @@ import PriceBreakdown from '../../../components/guest/PriceBreakdown';
 import RewardsBadgeStrip from '../../../components/guest/RewardsBadgeStrip';
 import ReferralQR from '../../../components/guest/ReferralQR';
 import MemoryBreadcrumbs from '../../../components/guest/MemoryBreadcrumbs';
-import { createGhostLogEntry } from '../../libs/ghostlog/hash';
+import { createGhostLogEntry } from '../../../libs/ghostlog/hash';
 
 export default function GuestLoungePage() {
   const params = useParams();

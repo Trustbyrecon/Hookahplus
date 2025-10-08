@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GuestEnterRequest, GuestEnterResponse, GuestProfile, QRData } from '../../../types/guest';
-import { featureFlags } from '../../../config/flags';
-import { createGhostLogEntry, hashGuestEvent } from '../../../libs/ghostlog/hash';
+import { GuestEnterRequest, GuestEnterResponse, GuestProfile, QRData } from '../../../../types/guest';
+import { featureFlags } from './flags';
+import { createGhostLogEntry, hashGuestEvent } from './hash';
 import { v4 as uuidv4 } from 'uuid';
 
 // Mock data store (in production, this would be a database)
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
 
     // Create session if not pre-seeded
     let sessionId: string | undefined;
-    if (!body.s) {
+    if (!body.u) {
       sessionId = `session_${uuidv4()}`;
       sessions.set(sessionId, {
         sessionId,
@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
         sessionId
       };
 
-      const ghostLogEntry = createGhostLogEntry('guest.entered', eventPayload);
+      const ghostLogEntry = createGhostLogEntry(eventPayload);
       
       // In production, store the ghost log entry
       console.log('GhostLog Entry:', ghostLogEntry);

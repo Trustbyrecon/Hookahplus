@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SessionStartRequest, SessionStartResponse, Session } from '../../../../types/guest';
-import { featureFlags } from '../../../config/flags';
-import { createGhostLogEntry, hashSessionEvent } from '../../../libs/ghostlog/hash';
+import { featureFlags } from './flags';
+import { createGhostLogEntry, hashSessionEvent } from './hash';
 import { v4 as uuidv4 } from 'uuid';
 
 // Mock data stores

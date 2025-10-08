@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { EventLogRequest, EventLogResponse, AnalyticsEvent } from '../../../../types/guest';
-import { featureFlags } from '../../../config/flags';
-import { createGhostLogEntry, hashGuestEvent } from '../../../libs/ghostlog/hash';
+import { EventLogRequest, EventLogResponse, AnalyticsEvent } from '../../../../../types/guest';
+import { featureFlags } from './flags';
+import { createGhostLogEntry, hashGuestEvent } from './hash';
 
 // Mock data stores
 const eventLogs = new Map<string, AnalyticsEvent>();

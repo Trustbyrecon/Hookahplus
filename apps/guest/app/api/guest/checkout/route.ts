@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CheckoutRequest, CheckoutResponse, LoyaltyEvent } from '../../../../types/guest';
-import { featureFlags } from '../../../config/flags';
-import { createGhostLogEntry, hashGuestEvent } from '../../../libs/ghostlog/hash';
+import { featureFlags } from './flags';
+import { createGhostLogEntry, hashGuestEvent } from './hash';
 import { v4 as uuidv4 } from 'uuid';
 
 // Mock data stores
@@ -147,7 +147,7 @@ export async function POST(req: NextRequest) {
         timestamp: new Date().toISOString()
       };
 
-      const ghostLogEntry = createGhostLogEntry('checkout.completed', eventPayload);
+      const ghostLogEntry = createGhostLogEntry(eventPayload);
       console.log('Checkout completed logged:', ghostLogEntry);
     }
 
@@ -187,7 +187,7 @@ async function checkAndAwardBadges(guestId: string, loungeId: string, sessionId:
   // Regular badge: 3 sessions at same lounge
   if (!badges.includes('Regular') && sessions.length >= 3) {
     const recentSessions = sessions.slice(0, 3);
-    const sameLoungeSessions = recentSessions.filter(s => {
+    const sameLoungeSessions = recentSessions.filter((s: string) => {
       const session = sessions.get(s);
       return session && session.loungeId === loungeId;
     });
@@ -210,12 +210,12 @@ async function checkAndAwardBadges(guestId: string, loungeId: string, sessionId:
   // Explorer badge: 2 different lounges in 30 days
   if (!badges.includes('Explorer')) {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const recentSessions = sessions.slice(0, 10).filter(s => {
+    const recentSessions = sessions.slice(0, 10).filter((s: string) => {
       const session = sessions.get(s);
       return session && new Date(session.ts.startedAt) > thirtyDaysAgo;
     });
     
-    const uniqueLounges = new Set(recentSessions.map(s => {
+    const uniqueLounges = new Set(recentSessions.map((s: string) => {
       const session = sessions.get(s);
       return session?.loungeId;
     }).filter(Boolean));
