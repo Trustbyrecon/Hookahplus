@@ -105,7 +105,10 @@ export async function POST(req: NextRequest) {
         timestamp: new Date().toISOString()
       };
 
-      const ghostLogEntry = createGhostLogEntry('price.quoted', eventPayload);
+      const ghostLogEntry = createGhostLogEntry({
+        eventType: 'price.quoted',
+        ...eventPayload
+      });
       console.log('Price quote logged:', ghostLogEntry);
     }
 
