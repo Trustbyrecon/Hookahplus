@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
 
     // Apply promo code if provided and enabled
     let promo: any = undefined;
-    if (promoCode && isPromosEnabled(session.loungeId)) {
+    if (promoCode && isPromosEnabled()) {
       promo = applyPromoCode(promoCode, subtotal);
     }
 
