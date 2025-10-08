@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CheckoutRequest, CheckoutResponse, LoyaltyEvent } from '../../../../types/guest';
-import { featureFlags } from '../../../../config/flags';
-import { createGhostLogEntry, hashGuestEvent } from '../../../../libs/ghostlog/hash';
+import { featureFlags } from '../../../config/flags';
+import { createGhostLogEntry, hashGuestEvent } from '../../../libs/ghostlog/hash';
 import { v4 as uuidv4 } from 'uuid';
 
 // Mock data stores

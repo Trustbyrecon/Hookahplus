@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ReferralCreateRequest, ReferralCreateResponse, ReferralLink } from '../../../../types/guest';
-import { featureFlags } from '../../../../config/flags';
-import { createGhostLogEntry } from '../../../../libs/ghostlog/hash';
+import { featureFlags } from '../../../config/flags';
+import { createGhostLogEntry } from '../../../libs/ghostlog/hash';
 import { v4 as uuidv4 } from 'uuid';
 import QRCode from 'qrcode';
 
