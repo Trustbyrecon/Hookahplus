@@ -65,7 +65,8 @@ export async function POST(req: NextRequest) {
     eventLogs.set(eventId, analyticsEvent);
 
     // Create GhostLog entry
-    const ghostLogEntry = createGhostLogEntry(type, {
+    const ghostLogEntry = createGhostLogEntry({
+      eventType: type,
       eventId,
       guestId: guestId || 'anonymous',
       loungeId: loungeId || 'default',
