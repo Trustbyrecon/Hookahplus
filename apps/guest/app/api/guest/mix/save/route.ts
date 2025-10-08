@@ -81,7 +81,10 @@ export async function POST(req: NextRequest) {
         timestamp: new Date().toISOString()
       };
 
-      const ghostLogEntry = createGhostLogEntry('mix.selected', eventPayload);
+      const ghostLogEntry = createGhostLogEntry({
+        eventType: 'mix.selected',
+        ...eventPayload
+      });
       console.log('Mix selection logged:', ghostLogEntry);
     }
 
