@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
         assignedFOH: body.fohStaff || 'FOH_AUTO',
         notes: `Guest session from ${body.loungeId}`,
         timerDuration: body.sessionDuration || 60,
-        state: 'ACTIVE',
+        state: 'ACTIVE' as const,
         startedAt: new Date(),
         paymentStatus: 'completed'
       };

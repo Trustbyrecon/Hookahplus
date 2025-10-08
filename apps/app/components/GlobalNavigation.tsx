@@ -18,7 +18,7 @@ import {
   Crown,
   MapPin,
   Eye,
-  Handshake
+  UserPlus
 } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 
@@ -198,7 +198,7 @@ const GlobalNavigation: React.FC = () => {
         {
           label: 'Partnership',
           href: '/partnership',
-          icon: <Handshake className="w-4 h-4" />,
+          icon: <UserPlus className="w-4 h-4" />,
           description: 'Partnership dashboard',
           flowState: 'active',
           nextAction: 'View partnership status',
