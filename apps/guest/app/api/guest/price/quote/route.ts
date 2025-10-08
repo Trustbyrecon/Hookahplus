@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PriceQuoteRequest, PriceQuoteResponse } from '../../../../types/guest';
+import { PriceQuoteRequest, PriceQuoteResponse } from '../../../../../types/guest';
 import { featureFlags, isDynamicPricingEnabled, isPromosEnabled } from './flags';
 import { createGhostLogEntry } from './hash';
 
