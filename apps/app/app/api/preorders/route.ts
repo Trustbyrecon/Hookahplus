@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createGhostLogEntry } from '../ghost-log/route';
+import { createGhostLogEntry } from '../../../lib/ghost-log';
 import { v4 as uuidv4 } from 'uuid';
 
 // In-memory storage for preorders (in production, this would be a database)

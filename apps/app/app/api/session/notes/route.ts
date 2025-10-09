@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createGhostLogEntry } from '../../ghost-log/route';
+import { createGhostLogEntry } from '../../../../lib/ghost-log';
 
 // In-memory storage for session notes (in production, this would be a database)
 let sessionNotes: Array<{

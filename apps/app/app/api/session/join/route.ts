@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createGhostLogEntry } from '../../ghost-log/route';
+import { createGhostLogEntry } from '../../../../lib/ghost-log';
 
 // Import sessions from the sessions route (in production, this would be a shared database)
 let sessions: Array<{
