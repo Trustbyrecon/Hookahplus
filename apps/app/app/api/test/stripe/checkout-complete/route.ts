@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createGhostLogEntry } from '../../ghost-log/route';
+import { createGhostLogEntry } from '../../../ghost-log/route';
 
 export async function POST(req: NextRequest) {
   try {
