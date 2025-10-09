@@ -196,6 +196,136 @@ export default function DemoPage() {
           </div>
         </div>
 
+        {/* Interactive Workflow Walkthrough */}
+        <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-6 mb-8">
+          <h3 className="text-2xl font-semibold text-teal-300 mb-6">Operational Workflow - Interactive Walkthrough</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { 
+                icon: "📊", 
+                title: "Dashboard", 
+                desc: "Real-time lounge overview with live metrics",
+                color: "from-blue-500 to-indigo-500",
+                status: "active"
+              },
+              { 
+                icon: "🍃", 
+                title: "Sessions", 
+                desc: "Active hookah sessions and customer management",
+                color: "from-orange-500 to-red-500",
+                status: "active"
+              },
+              { 
+                icon: "👥", 
+                title: "Staff Ops", 
+                desc: "FOH/BOH coordination and workflow management",
+                color: "from-green-500 to-emerald-500",
+                status: "active"
+              },
+              { 
+                icon: "⚙️", 
+                title: "Admin", 
+                desc: "System configuration and analytics dashboard",
+                color: "from-purple-500 to-violet-500",
+                status: "active"
+              }
+            ].map((step, index) => (
+              <div key={index} className="group cursor-pointer">
+                <div className={`bg-gradient-to-br ${step.color} p-0.5 rounded-xl`}>
+                  <div className="bg-zinc-800 rounded-xl p-4 h-full card-hover">
+                    <div className="text-center">
+                      <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">
+                        {step.icon}
+                      </div>
+                      <h4 className="text-lg font-semibold text-white mb-2">{step.title}</h4>
+                      <p className="text-zinc-400 text-sm leading-relaxed">{step.desc}</p>
+                      <div className="mt-3">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-400 border border-green-500/30">
+                          ✓ {step.status}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-6 p-4 bg-teal-500/10 rounded-xl border border-teal-500/20">
+            <div className="text-center">
+              <div className="text-teal-300 font-bold mb-2 text-lg">🎯 SaaS Flow Complete!</div>
+              <div className="text-sm text-teal-200 leading-relaxed">
+                This interactive workflow demonstrates the complete operational flow from dashboard monitoring to admin management.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 1-Min Demo Reel Section */}
+        <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-6 mb-8">
+          <h3 className="text-2xl font-semibold text-teal-300 mb-6">1-Min Demo Reel</h3>
+          <div className="relative aspect-video bg-zinc-800 rounded-2xl overflow-hidden">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center">
+                <div className="text-6xl mb-4 animate-pulse">🎬</div>
+                <div className="text-xl text-zinc-300 mb-2">Demo Video Loading...</div>
+                <div className="text-sm text-zinc-400 mb-4">Experience the complete Hookah+ workflow in 60 seconds</div>
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-2 h-2 bg-teal-500 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-teal-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                  <div className="w-2 h-2 bg-teal-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                </div>
+              </div>
+            </div>
+            <iframe
+              src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=0&rel=0&modestbranding=1"
+              title="Hookah+ 1-Min Demo Reel"
+              className="w-full h-full opacity-0 hover:opacity-100 transition-opacity duration-500"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+          <div className="mt-4 flex items-center justify-center gap-4">
+            <button className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+              ▶️ Play Demo
+            </button>
+            <button className="bg-zinc-700 hover:bg-zinc-600 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+              📝 View Transcript
+            </button>
+          </div>
+        </div>
+
+        {/* Reflex Potential ROI */}
+        <div className="bg-gradient-to-r from-purple-900 to-blue-900 border border-purple-500 rounded-xl p-6 mb-8">
+          <h3 className="text-2xl font-semibold text-purple-300 mb-4">Your Reflex Potential</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="text-center">
+              <div className="text-4xl font-bold text-purple-400 mb-2">+127%</div>
+              <div className="text-sm text-purple-200">Revenue Increase</div>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl font-bold text-purple-400 mb-2">-43%</div>
+              <div className="text-sm text-purple-200">Operational Costs</div>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl font-bold text-purple-400 mb-2">+89%</div>
+              <div className="text-sm text-purple-200">Customer Satisfaction</div>
+            </div>
+          </div>
+          <div className="mt-4 text-center">
+            <div className="text-sm text-purple-200 mb-4">
+              Based on data from similar lounges using Hookah+ platform
+            </div>
+            <div className="flex gap-4 justify-center">
+              <Link href="/pre-order" className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-bold transition-colors">
+                Request Operator Access
+              </Link>
+              <Link href="/demo" className="bg-zinc-700 hover:bg-zinc-600 text-white px-6 py-3 rounded-lg font-bold transition-colors">
+                Explore Public Demo
+              </Link>
+            </div>
+          </div>
+        </div>
+
         {/* Enhanced Features */}
         <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-6">
           <h3 className="text-2xl font-semibold text-teal-300 mb-6">Enhanced Lounge Features</h3>

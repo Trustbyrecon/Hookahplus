@@ -43,66 +43,115 @@ export default function Home() {
           secure payments, and seamless ordering.
         </p>
         
-        {/* Main CTA - "Start preorders" */}
-        <div className="mb-12">
-          <Link href="/preorder/T-001">
-            <button 
-              className="bg-gradient-to-r from-teal-500 to-blue-600 hover:from-teal-600 hover:to-blue-700 text-white font-bold py-4 px-8 rounded-full text-xl shadow-2xl hover:shadow-teal-500/25 transition-all transform hover:scale-105"
-              onClick={() => {
-                if (typeof window !== 'undefined' && (window as any).gtag) {
-                  (window as any).gtag('event', 'Hero_StartPreorders', {
-                    event_category: 'Navigation',
-                    event_label: 'T-001',
-                  });
-                }
-              }}
-            >
-              🚀 Start Preorders
-            </button>
-          </Link>
-          <p className="text-zinc-400 text-sm mt-3">QR scan → Menu browse → Flavor personalize → Pay securely</p>
-        </div>
-
-        {/* Secondary CTAs */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-8">
-          <Link href="/demo">
-            <button 
-              className="bg-zinc-700 hover:bg-zinc-600 text-white font-medium py-3 px-6 rounded-lg transition-colors"
-              onClick={() => {
-                if (typeof window !== 'undefined' && (window as any).gtag) {
-                  (window as any).gtag('event', 'Hero_ViewDemo', {
-                    event_category: 'Navigation',
-                    event_label: 'Demo',
-                  });
-                }
-              }}
-            >
-              🎬 See Demo
-            </button>
-          </Link>
-          <Link href="/onboarding#waitlist">
-            <button 
-              className="bg-zinc-700 hover:bg-zinc-600 text-white font-medium py-3 px-6 rounded-lg transition-colors"
-              onClick={() => {
-                if (typeof window !== 'undefined' && (window as any).gtag) {
-                  (window as any).gtag('event', 'Hero_ViewDemo', {
-                    event_category: 'Navigation',
-                    event_label: 'Waitlist',
-                  });
-                }
-              }}
-            >
-              📋 POS Waitlist
-            </button>
-          </Link>
-        </div>
-
-        {/* Trust Lock Display */}
-        <div className="mb-8 p-4 border border-teal-500 rounded-lg bg-zinc-900/50">
-          <div className="flex items-center gap-2">
-            <span className="text-green-400">🔒</span>
-            <span className="text-teal-200">Trust-Lock: TLH-v1::active</span>
+        {/* Top Metrics Row with Hover Tooltips */}
+        <div className="mb-8 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl">
+          <div className="bg-zinc-900/50 border border-orange-500/30 rounded-lg p-4 group relative">
+            <div className="text-2xl font-bold text-orange-400 mb-1">500+</div>
+            <div className="text-sm text-zinc-400">Active Sessions</div>
+            <div className="absolute -top-2 -right-2 w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center text-xs text-white font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-help" title="Real-time active hookah sessions across all lounges">
+              ?
+            </div>
           </div>
+          <div className="bg-zinc-900/50 border border-green-500/30 rounded-lg p-4 group relative">
+            <div className="text-2xl font-bold text-green-400 mb-1">$45K</div>
+            <div className="text-sm text-zinc-400">Revenue</div>
+            <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-xs text-white font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-help" title="Total revenue generated through Hookah+ platform">
+              ?
+            </div>
+          </div>
+          <div className="bg-zinc-900/50 border border-purple-500/30 rounded-lg p-4 group relative">
+            <div className="text-2xl font-bold text-purple-400 mb-1">0.87</div>
+            <div className="text-sm text-zinc-400">Trust Aligned</div>
+            <div className="absolute -top-2 -right-2 w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center text-xs text-white font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-help" title="Reflex Score = system trust alignment and operational efficiency">
+              ?
+            </div>
+          </div>
+          <div className="bg-zinc-900/50 border border-blue-500/30 rounded-lg p-4 group relative">
+            <div className="text-2xl font-bold text-blue-400 mb-1">99.9%</div>
+            <div className="text-sm text-zinc-400">System Health</div>
+            <div className="absolute -top-2 -right-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-xs text-white font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-help" title="Uptime and system reliability metrics">
+              ?
+            </div>
+          </div>
+        </div>
+
+        {/* Trust Anchors */}
+        <div className="mb-8 p-6 border border-teal-500 rounded-lg bg-zinc-900/50">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-green-400">🔒</span>
+            <span className="text-teal-200 text-lg font-semibold">Powered by Reflex Intelligence</span>
+          </div>
+          <div className="flex items-center justify-center gap-8 mb-4">
+            <div className="text-center">
+              <div className="text-2xl mb-2">💳</div>
+              <div className="text-sm text-zinc-400">Stripe</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl mb-2">🍀</div>
+              <div className="text-sm text-zinc-400">Clover</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl mb-2">🍞</div>
+              <div className="text-sm text-zinc-400">Toast</div>
+            </div>
+          </div>
+          <div className="text-center">
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-400 border border-green-500/30">
+              ✓ Verified Secure Transactions
+            </span>
+          </div>
+        </div>
+
+        {/* Color-Coded CTAs */}
+        <div className="mb-8">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/demo">
+              <button 
+                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold py-4 px-8 rounded-full text-xl shadow-2xl hover:shadow-green-500/25 transition-all transform hover:scale-105"
+                onClick={() => {
+                  if (typeof window !== 'undefined' && (window as any).gtag) {
+                    (window as any).gtag('event', 'Hero_ViewDemo', {
+                      event_category: 'Navigation',
+                      event_label: 'Demo',
+                    });
+                  }
+                }}
+              >
+                🎬 See Demo
+              </button>
+            </Link>
+            <Link href="/pre-order">
+              <button 
+                className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-bold py-4 px-8 rounded-full text-xl shadow-2xl hover:shadow-amber-500/25 transition-all transform hover:scale-105"
+                onClick={() => {
+                  if (typeof window !== 'undefined' && (window as any).gtag) {
+                    (window as any).gtag('event', 'Hero_CampaignPreOrders', {
+                      event_category: 'Navigation',
+                      event_label: 'Pre-Orders',
+                    });
+                  }
+                }}
+              >
+                📱 Campaign Pre-Orders
+              </button>
+            </Link>
+            <Link href="/dashboard">
+              <button 
+                className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white font-bold py-4 px-8 rounded-full text-xl shadow-2xl hover:shadow-blue-500/25 transition-all transform hover:scale-105"
+                onClick={() => {
+                  if (typeof window !== 'undefined' && (window as any).gtag) {
+                    (window as any).gtag('event', 'Hero_LiveDashboard', {
+                      event_category: 'Navigation',
+                      event_label: 'Dashboard',
+                    });
+                  }
+                }}
+              >
+                📊 Live Dashboard
+              </button>
+            </Link>
+          </div>
+          <p className="text-zinc-400 text-sm mt-3">Green (Demo) • Amber (Pre-Orders) • Blue (Dashboard)</p>
         </div>
       </div>
 

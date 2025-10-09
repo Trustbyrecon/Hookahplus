@@ -254,23 +254,38 @@ const UnifiedDashboard = () => {
                 <p className="text-xl text-zinc-300 font-light">AI-Powered Hookah Lounge Management System</p>
               </div>
               
-              {/* Enhanced Flow Conductor Status */}
-              <div className={`text-right transition-all duration-1000 delay-200 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-                <div className="glass rounded-2xl p-4 border border-zinc-700/50">
-                  <div className="flex items-center space-x-4 mb-3">
-                    <span className="text-emerald-400 text-lg">🔄</span>
-                    <span className="text-sm text-zinc-400">Workflow:</span>
-                    <span className="text-sm text-emerald-400 capitalize font-medium">{dashboardState.currentWorkflow.replace('-', ' ')}</span>
+            {/* Enhanced Flow Conductor Status with System Pulse */}
+            <div className={`text-right transition-all duration-1000 delay-200 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+              <div className="glass rounded-2xl p-4 border border-zinc-700/50">
+                <div className="flex items-center space-x-4 mb-3">
+                  <span className="text-emerald-400 text-lg">🔄</span>
+                  <span className="text-sm text-zinc-400">Workflow:</span>
+                  <span className="text-sm text-emerald-400 capitalize font-medium">{dashboardState.currentWorkflow.replace('-', ' ')}</span>
+                </div>
+                <div className="w-40 bg-zinc-800/50 rounded-full h-3 mb-2">
+                  <div 
+                    className="bg-gradient-to-r from-teal-500 to-emerald-500 h-3 rounded-full transition-all duration-700 shadow-lg"
+                    style={{ width: `${dashboardState.progress}%` }}
+                  ></div>
+                </div>
+                <div className="text-sm text-emerald-400 font-medium">{dashboardState.progress}% Complete</div>
+                
+                {/* System Pulse Chart */}
+                <div className="mt-4 system-pulse">
+                  <div className="text-xs text-zinc-400 mb-2">System Pulse</div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="color-sessions text-center">
+                      <div className="font-bold">99.9%</div>
+                      <div>Uptime</div>
+                    </div>
+                    <div className="color-health text-center">
+                      <div className="font-bold">45ms</div>
+                      <div>Response</div>
+                    </div>
                   </div>
-                  <div className="w-40 bg-zinc-800/50 rounded-full h-3 mb-2">
-                    <div 
-                      className="bg-gradient-to-r from-teal-500 to-emerald-500 h-3 rounded-full transition-all duration-700 shadow-lg"
-                      style={{ width: `${dashboardState.progress}%` }}
-                    ></div>
-                  </div>
-                  <div className="text-sm text-emerald-400 font-medium">{dashboardState.progress}% Complete</div>
                 </div>
               </div>
+            </div>
             </div>
 
             {/* Enhanced AI Agent Collaboration Bar */}
@@ -293,6 +308,13 @@ const UnifiedDashboard = () => {
                     <div className="w-3 h-3 bg-purple-400 rounded-full animate-pulse"></div>
                     <span className="text-sm text-zinc-400">Trust-Lock:</span>
                     <span className="text-sm text-purple-400 font-medium">{dashboardState.trustLockStatus}</span>
+                  </div>
+
+                  <div className="flex items-center space-x-3">
+                    <div className="w-3 h-3 bg-purple-400 rounded-full animate-pulse"></div>
+                    <span className="text-sm text-zinc-400">Reflex Score:</span>
+                    <span className="reflex-score-internal text-sm">0.87</span>
+                    <span className="trust-aligned text-xs">Trust Aligned</span>
                   </div>
                 </div>
 
@@ -404,16 +426,16 @@ const UnifiedDashboard = () => {
           </div>
         </div>
 
-        {/* Premium Key Metrics */}
+        {/* Premium Key Metrics with Standardized Color Coding */}
         <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 transition-all duration-1000 delay-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
           {[
-            { icon: "📊", label: "Total Orders", value: metrics.totalOrders, color: "from-teal-500 to-cyan-500" },
-            { icon: "💰", label: "Total Revenue", value: `$${metrics.totalRevenue.toFixed(2)}`, color: "from-emerald-500 to-green-500" },
-            { icon: "📱", label: "Mobile Orders", value: metrics.mobileOrders, color: "from-purple-500 to-pink-500" },
-            { icon: "🍃", label: "Active Sessions", value: metrics.activeSessions, color: "from-blue-500 to-indigo-500" }
+            { icon: "🍃", label: "Active Sessions", value: metrics.activeSessions, color: "color-sessions", gradient: "from-orange-500 to-red-500" },
+            { icon: "💰", label: "Total Revenue", value: `$${metrics.totalRevenue.toFixed(2)}`, color: "color-revenue", gradient: "from-emerald-500 to-green-500" },
+            { icon: "🌀", label: "Reflex Score", value: "0.87", color: "color-reflex", gradient: "from-purple-500 to-violet-500" },
+            { icon: "📊", label: "System Health", value: "99.9%", color: "color-health", gradient: "from-blue-500 to-indigo-500" }
           ].map((metric, index) => (
             <div key={index} className="group">
-              <div className={`bg-gradient-to-br ${metric.color} p-0.5 rounded-2xl`}>
+              <div className={`bg-gradient-to-br ${metric.gradient} p-0.5 rounded-2xl`}>
                 <div className="glass rounded-2xl p-6 h-full card-hover">
                   <div className="flex items-center">
                     <div className="p-3 bg-white/10 rounded-xl group-hover:scale-110 transition-transform duration-300">
@@ -421,7 +443,7 @@ const UnifiedDashboard = () => {
                     </div>
                     <div className="ml-4">
                       <p className="text-sm font-medium text-zinc-400 mb-1">{metric.label}</p>
-                      <p className="text-2xl font-bold text-white">{metric.value}</p>
+                      <p className={`text-2xl font-bold ${metric.color.split(' ')[0]}`}>{metric.value}</p>
                     </div>
                   </div>
                 </div>
