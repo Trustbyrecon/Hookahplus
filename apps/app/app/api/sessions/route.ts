@@ -1,83 +1,85 @@
-import { NextRequest, NextResponse } from "next/server";
-import { MockSessionStore } from "@/lib/mockSessionStore";
+import { NextRequest, NextResponse } from 'next/server';
 
-// GET all sessions
+// In-memory storage for sessions (in production, this would be a database)
+let sessions: Array<{
+  id: string;
+  session_id: string;
+  lounge_id: string;
+  table_id?: string;
+  flavor_mix: string[];
+  status: 'pending_guest_arrival' | 'ready_to_start' | 'arrived' | 'active' | 'completed';
+  created_at: string;
+  started_at?: string;
+  completed_at?: string;
+}> = [];
+
 export async function GET(req: NextRequest) {
   try {
-    const sessions = MockSessionStore.getSessions();
-    
-    return NextResponse.json({ 
-      ok: true, 
-      sessions,
-      count: sessions.length 
-    });
-  } catch (error: any) {
-    console.error("Get sessions error:", error);
-    return NextResponse.json(
-      { error: error.message || "Internal server error" },
-      { status: 500 }
-    );
+    const { searchParams } = new URL(req.url);
+    const sessionId = searchParams.get('sessionId') || searchParams.get('id');
+
+    if (sessionId) {
+      const session = sessions.find(s => s.session_id === sessionId || s.id === sessionId);
+      if (!session) {
+        return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+      }
+      return NextResponse.json({ session });
+    }
+
+    // Return all sessions if no sessionId specified
+    return NextResponse.json({ sessions });
+
+  } catch (error) {
+    console.error('Error retrieving sessions:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-// POST create new session
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    
-    // Handle guest build requests
-    if (body.source === 'guest_portal') {
-      const sessionData = {
-        tableId: body.tableId,
-        customerRef: body.customerName || body.customerId,
-        flavor: body.items?.[0]?.name || 'Mixed Flavor',
-        priceCents: body.totalAmount || 0,
-        assignedBOHId: body.bohStaff || 'BOH_AUTO',
-        assignedFOHId: body.fohStaff || 'FOH_AUTO',
-        assignedBOH: body.bohStaff || 'BOH_AUTO',
-        assignedFOH: body.fohStaff || 'FOH_AUTO',
-        notes: `Guest session from ${body.loungeId}`,
-        timerDuration: body.sessionDuration || 60,
-        state: 'ACTIVE' as const,
-        startedAt: new Date(),
-        paymentStatus: 'completed'
-      };
+    const { 
+      session_id, 
+      lounge_id, 
+      table_id, 
+      flavor_mix 
+    } = body;
 
-      const newSession = MockSessionStore.createSession(sessionData);
-      
+    // Validate required fields
+    if (!session_id) {
+      return NextResponse.json({ error: 'Session ID is required' }, { status: 400 });
+    }
+
+    // Check if session already exists
+    const existingSession = sessions.find(s => s.session_id === session_id);
+    if (existingSession) {
       return NextResponse.json({ 
-        ok: true, 
-        sessionId: newSession.id,
-        session: newSession,
-        message: "Guest session created successfully" 
+        session: existingSession,
+        message: 'Session already exists'
       });
     }
-    
-    // Handle regular app build requests
-    const sessionData = {
-      tableId: body.tableId,
-      customerRef: body.customerName || body.customerRef,
-      flavor: body.flavor,
-      priceCents: Math.round((body.amount || 0) * 100),
-      assignedBOHId: body.bohStaff,
-      assignedFOHId: body.fohStaff,
-      assignedBOH: body.bohStaff,
-      assignedFOH: body.fohStaff,
-      notes: body.notes,
+
+    // Create new session
+    const session = {
+      id: `session_${Date.now()}`,
+      session_id,
+      lounge_id,
+      table_id,
+      flavor_mix: flavor_mix || [],
+      status: 'pending_guest_arrival' as const,
+      created_at: new Date().toISOString()
     };
 
-    const newSession = MockSessionStore.createSession(sessionData);
-    
+    sessions.push(session);
+
     return NextResponse.json({ 
-      ok: true, 
-      session: newSession,
-      message: "Session created successfully" 
+      success: true, 
+      session,
+      message: 'Session created successfully'
     });
-  } catch (error: any) {
-    console.error("Create session error:", error);
-    return NextResponse.json(
-      { error: error.message || "Internal server error" },
-      { status: 500 }
-    );
+
+  } catch (error) {
+    console.error('Error creating session:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
