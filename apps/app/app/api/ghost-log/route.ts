@@ -7,6 +7,32 @@ let ghostLog: Array<{
   data: any;
 }> = [];
 
+// Helper function to create ghost log entries
+export async function createGhostLogEntry(entry: any) {
+  try {
+    const logEntry = {
+      timestamp: entry.timestamp || new Date().toISOString(),
+      kind: entry.kind || entry.eventType || 'unknown',
+      data: entry
+    };
+
+    // Store log entry
+    ghostLog.push(logEntry);
+
+    // Keep only last 1000 entries to prevent memory issues
+    if (ghostLog.length > 1000) {
+      ghostLog = ghostLog.slice(-1000);
+    }
+
+    console.log(`[GhostLog] 📝 Logged: ${logEntry.kind} at ${logEntry.timestamp}`);
+    
+    return { ok: true, logged: true };
+  } catch (error) {
+    console.error('[GhostLog] ❌ Failed to log entry:', error);
+    return { ok: false, error: 'Failed to log entry' };
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const logEntry = await req.json();
