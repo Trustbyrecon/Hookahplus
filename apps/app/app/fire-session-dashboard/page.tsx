@@ -540,7 +540,7 @@ export default function FireSessionDashboard() {
         {/* Debug Info */}
         <div className="mb-4 p-4 bg-zinc-800 rounded-lg">
           <div className="text-sm text-zinc-400">
-            <strong>Debug Info:</strong> Pretty Theme: {isPrettyTheme ? '✅ Enabled' : '❌ Disabled'} | 
+            <strong>Debug Info:</strong> Theme: {selectedTheme} | 
             Sessions Loaded: {sessions.length} | 
             Loading: {loading ? '🔄' : '✅'} | 
             API Status: Connected
