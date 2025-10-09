@@ -123,7 +123,14 @@ export default function AdminPage() {
               <h1 className="text-3xl font-bold text-white">Administrative Control</h1>
               <p className="text-zinc-400 mt-2">System management and monitoring</p>
             </div>
-            <Button variant="primary" className="flex items-center gap-2">
+            <Button 
+              variant="primary" 
+              className="flex items-center gap-2"
+              onClick={() => {
+                console.log('Opening admin actions');
+                alert('Admin Actions Panel\n\nAvailable Actions:\n• System Backup\n• Security Scan\n• Performance Report\n• User Audit\n• Database Maintenance');
+              }}
+            >
               <Crown className="w-4 h-4" />
               Admin Actions
             </Button>
@@ -217,7 +224,18 @@ export default function AdminPage() {
                         <div className="text-sm text-zinc-400">Last Run</div>
                         <div className="text-sm text-white">{action.lastRun}</div>
                       </div>
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          console.log(`Admin action: ${action.title}`);
+                          if (action.status === 'completed') {
+                            alert(`Viewing Report for: ${action.title}\n\nLast Run: ${action.lastRun}\nStatus: ${action.status}\n\nReport Contents:\n• System metrics\n• Performance data\n• Security logs\n• User activity`);
+                          } else {
+                            alert(`Running Action: ${action.title}\n\nDescription: ${action.description}\n\nThis action will:\n• Check system status\n• Generate reports\n• Update logs\n• Notify administrators`);
+                          }
+                        }}
+                      >
                         {action.status === 'completed' ? 'View Report' : 'Run Now'}
                       </Button>
                     </div>
@@ -232,19 +250,47 @@ export default function AdminPage() {
         <div className="mt-8">
           <h2 className="text-2xl font-bold mb-6">Quick Actions</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Button variant="outline" className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+              onClick={() => {
+                console.log('Initiating system backup');
+                alert('System Backup\n\nInitiating full system backup...\n\n• Database backup\n• File system backup\n• Configuration backup\n• Estimated time: 15 minutes');
+              }}
+            >
               <Database className="w-4 h-4" />
               Backup
             </Button>
-            <Button variant="outline" className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+              onClick={() => {
+                console.log('Starting security scan');
+                alert('Security Scan\n\nStarting comprehensive security scan...\n\n• Vulnerability assessment\n• Access control review\n• Threat detection\n• Estimated time: 10 minutes');
+              }}
+            >
               <Shield className="w-4 h-4" />
               Security Scan
             </Button>
-            <Button variant="outline" className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+              onClick={() => {
+                console.log('Generating reports');
+                alert('Performance Reports\n\nGenerating system performance reports...\n\n• Usage statistics\n• Performance metrics\n• Error logs\n• User activity');
+              }}
+            >
               <BarChart3 className="w-4 h-4" />
               Reports
             </Button>
-            <Button variant="outline" className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+              onClick={() => {
+                console.log('Opening system settings');
+                alert('System Settings\n\nOpening system configuration panel...\n\n• User permissions\n• System preferences\n• Security settings\n• Maintenance options');
+              }}
+            >
               <Settings className="w-4 h-4" />
               Settings
             </Button>

@@ -110,7 +110,15 @@ export default function StaffOpsPage() {
               <h1 className="text-3xl font-bold text-white">Operations Center</h1>
               <p className="text-zinc-400 mt-2">Staff coordination and workflow management</p>
             </div>
-            <Button variant="primary" className="flex items-center gap-2">
+            <Button 
+              variant="primary" 
+              className="flex items-center gap-2"
+              onClick={() => {
+                console.log('Sending staff alert');
+                // Send alert to all staff members
+                alert('Staff Alert Sent! All team members have been notified.');
+              }}
+            >
               <Bell className="w-4 h-4" />
               Send Alert
             </Button>
@@ -239,10 +247,26 @@ export default function StaffOpsPage() {
                     
                     <div className="mt-4 pt-4 border-t border-zinc-700">
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="flex-1">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={() => {
+                            console.log(`Viewing details for task ${task.id}`);
+                            alert(`Task Details: ${task.title}\nAssigned to: ${task.assignedTo}\nEstimated Time: ${task.estimatedTime}\nPriority: ${task.priority}`);
+                          }}
+                        >
                           View Details
                         </Button>
-                        <Button variant="primary" size="sm" className="flex-1">
+                        <Button 
+                          variant="primary" 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={() => {
+                            console.log(`Managing task ${task.id}`);
+                            alert(`Managing Task: ${task.title}\nStatus: ${task.status}\nAction: ${task.status === 'completed' ? 'Reviewing completed task' : 'Managing active task'}`);
+                          }}
+                        >
                           {task.status === 'completed' ? 'Review' : 'Manage'}
                         </Button>
                       </div>

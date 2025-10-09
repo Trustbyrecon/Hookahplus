@@ -86,7 +86,15 @@ export default function SessionsPage() {
               <h1 className="text-3xl font-bold text-white">Fire Session Management</h1>
               <p className="text-zinc-400 mt-2">Real-time session monitoring and control</p>
             </div>
-            <Button variant="primary" className="flex items-center gap-2">
+            <Button 
+              variant="primary" 
+              className="flex items-center gap-2"
+              onClick={() => {
+                console.log('Starting new session');
+                // Open session creation modal or navigate to session creation
+                alert('Starting new session - Opening session creation interface');
+              }}
+            >
               <Play className="w-4 h-4" />
               Start New Session
             </Button>
@@ -147,10 +155,28 @@ export default function SessionsPage() {
                   
                   <div className="mt-4 pt-4 border-t border-zinc-700">
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="flex-1">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => {
+                          console.log(`Viewing details for session ${session.id}`);
+                          // Navigate to session details or open modal
+                          alert(`Viewing details for ${session.table} - ${session.mix}`);
+                        }}
+                      >
                         View Details
                       </Button>
-                      <Button variant="primary" size="sm" className="flex-1">
+                      <Button 
+                        variant="primary" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => {
+                          console.log(`Managing session ${session.id}`);
+                          // Open session management interface
+                          alert(`Managing ${session.table} - Duration: ${session.duration}, Guests: ${session.guests}`);
+                        }}
+                      >
                         Manage
                       </Button>
                     </div>

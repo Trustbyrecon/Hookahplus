@@ -113,7 +113,14 @@ export default function StaffPanelPage() {
               <h1 className="text-3xl font-bold text-white">Team Control</h1>
               <p className="text-zinc-400 mt-2">Staff performance monitoring and management</p>
             </div>
-            <Button variant="primary" className="flex items-center gap-2">
+            <Button 
+              variant="primary" 
+              className="flex items-center gap-2"
+              onClick={() => {
+                console.log('Recognizing staff member');
+                alert('Staff Recognition System\n\nSelect a staff member to recognize for outstanding performance!');
+              }}
+            >
               <Award className="w-4 h-4" />
               Recognize Staff
             </Button>
@@ -194,7 +201,14 @@ export default function StaffPanelPage() {
                         <div className="text-sm text-zinc-400">Revenue Generated</div>
                         <div className="text-lg font-semibold text-green-400">{staff.revenue}</div>
                       </div>
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          console.log(`Viewing details for staff ${staff.id}`);
+                          alert(`Staff Performance Details:\n\nName: ${staff.name}\nRole: ${staff.role}\nRating: ${staff.rating}/5\nTasks Completed: ${staff.tasksCompleted}\nEfficiency: ${staff.efficiency}%\nRevenue Generated: ${staff.revenue}`);
+                        }}
+                      >
                         View Details
                       </Button>
                     </div>
