@@ -84,16 +84,7 @@ import {
 import { Session, SessionStatus, SessionTeam, SessionNotes } from '../../types/session';
 
 export default function FireSessionDashboard() {
-  const [isPrettyTheme, setIsPrettyTheme] = useState(false);
-
-  useEffect(() => {
-    // Always enable pretty theme for development and production
-    setIsPrettyTheme(true);
-    
-    // Debug: Log theme status
-    console.log('Pretty theme enabled: true');
-    console.log('Hostname:', window.location.hostname);
-  }, []);
+  const [selectedTheme, setSelectedTheme] = useState<'midnight' | 'sunset' | 'ocean' | 'forest'>('midnight');
   
   const [showCreateModal, setShowCreateModal] = useState(false);
   
@@ -413,44 +404,6 @@ export default function FireSessionDashboard() {
     return tabMatch && roleMatch;
   });
 
-  if (!isPrettyTheme) {
-    // Fallback to original solid design
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
-        <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold mb-4">Fire Session Dashboard</h1>
-            <p className="text-zinc-400 mb-8">Manage your hookah sessions</p>
-            <div className="flex justify-center space-x-4">
-              <Button 
-                onClick={() => {
-                  console.log('Create New Session button clicked!');
-                  setShowCreateModal(true);
-                }}
-                variant="primary" 
-                size="lg"
-              >
-                Create New Session
-              </Button>
-              
-              {/* Test button */}
-              <button 
-                onClick={() => {
-                  console.log('Test button clicked!');
-                  setShowCreateModal(true);
-                }}
-                className="px-6 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700"
-              >
-                Test Button
-              </button>
-            </div>
-          </div>
-        </div>
-            </div>
-    );
-  }
-
-  // Pretty Theme Design
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
       {/* Global Navigation */}
@@ -493,66 +446,71 @@ export default function FireSessionDashboard() {
               {/* $1 Smoke Test Button */}
               <DollarTestButton />
               
-              {/* View is now determined by role - no toggle needed */}
+              {/* Dynamic Role Toggle */}
               <div className="flex items-center space-x-2 px-3 py-2 bg-zinc-800 rounded-lg">
-                <span className="text-sm text-zinc-400">View:</span>
-                <span className="text-sm font-medium text-white">{selectedRole}</span>
-                <span className="text-xs text-zinc-500">({userRole})</span>
+                <span className="text-sm text-zinc-400">Role:</span>
+                <select 
+                  value={userRole} 
+                  onChange={(e) => handleRoleChange(e.target.value as any)}
+                  className="bg-zinc-700 text-white text-sm font-medium px-2 py-1 rounded border-none focus:outline-none focus:ring-2 focus:ring-teal-500"
+                >
+                  <option value="BOH">BOH</option>
+                  <option value="FOH">FOH</option>
+                  <option value="MANAGER">MANAGER</option>
+                  <option value="ADMIN">ADMIN</option>
+                </select>
+                <span className="text-xs text-zinc-500">({selectedRole} View)</span>
               </div>
-              <Link href="/">
-                <Button className="btn-pretty-secondary">
-                  <BarChart3 className="w-4 h-4 mr-2" />
-                  Dashboard
-                </Button>
-              </Link>
-              <Link href="/preorder/T-001">
-                <Button className="btn-pretty-secondary">
-                  <QrCode className="w-4 h-4 mr-2" />
-                  Pre-Order
-                </Button>
-              </Link>
-              <Link href="/fire-session-dashboard">
-                <Button className="btn-pretty-primary">
-                  <Flame className="w-4 h-4 mr-2" />
-                  Fire Sessions
-                </Button>
-              </Link>
             </div>
           </div>
           <p className="text-xl text-zinc-400">
-            Complete BOH/FOH workflow management with production-ready buttons
+            Real-time session management with intelligent workflow automation and staff coordination
           </p>
         </div>
 
-        {/* Role Selector and Filters */}
-        <div className="mb-6 space-y-4">
-          <RoleSelector 
-            currentRole={userRole} 
-            onRoleChange={handleRoleChange} 
-          />
-          <SessionFilters 
-            onFiltersChange={handleFiltersChange}
-            availableStaff={['BOH Staff 1', 'BOH Staff 2', 'FOH Staff 1', 'FOH Staff 2', 'Manager']}
-          />
+        {/* Theme Selector and Controls */}
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <span className="text-sm text-zinc-400">Lounge Theme:</span>
+            <div className="flex space-x-2">
+              {[
+                { id: 'midnight', name: 'Midnight Lounge', color: 'bg-zinc-800', accent: 'border-zinc-600' },
+                { id: 'sunset', name: 'Sunset Vibes', color: 'bg-orange-800', accent: 'border-orange-600' },
+                { id: 'ocean', name: 'Ocean Breeze', color: 'bg-blue-800', accent: 'border-blue-600' },
+                { id: 'forest', name: 'Forest Retreat', color: 'bg-green-800', accent: 'border-green-600' }
+              ].map(theme => (
+                <button
+                  key={theme.id}
+                  onClick={() => setSelectedTheme(theme.id as any)}
+                  className={`w-8 h-8 rounded-full ${theme.color} ${theme.accent} border-2 ${
+                    selectedTheme === theme.id ? 'ring-2 ring-white' : ''
+                  }`}
+                  title={theme.name}
+                />
+              ))}
+            </div>
+          </div>
           
-          {/* Advanced Management Toggle */}
-          <div className="flex items-center justify-between bg-zinc-800/50 rounded-lg p-4 border border-zinc-700">
-            <div className="flex items-center space-x-4">
-              <h3 className="text-lg font-semibold">Advanced Management</h3>
-              <span className="text-sm text-zinc-400">
-                {sessions.length >= 10 ? 'Recommended for 10+ sessions' : 'Available for all session counts'}
-              </span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant={showAdvancedManagement ? 'primary' : 'outline'}
-                onClick={() => setShowAdvancedManagement(!showAdvancedManagement)}
-                className="bg-purple-500 hover:bg-purple-600"
-              >
-                <Zap className="w-4 h-4 mr-2" />
-                {showAdvancedManagement ? 'Hide' : 'Show'} Advanced
-              </Button>
-            </div>
+          <div className="flex items-center space-x-2">
+            <Button 
+              onClick={() => {
+                console.log('Create Session button clicked');
+                setShowCreateModal(true);
+              }}
+              className="btn-pretty-primary"
+              disabled={loading}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create Session
+            </Button>
+            <Button 
+              onClick={loadSessions}
+              className="btn-pretty-secondary"
+              disabled={loading}
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              {loading ? 'Loading...' : 'Refresh'}
+            </Button>
           </div>
         </div>
 
@@ -641,41 +599,6 @@ export default function FireSessionDashboard() {
           </div>
         )}
 
-        {/* Action Buttons */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
-            <Button 
-              onClick={() => {
-                console.log('Create Session button clicked');
-                setShowCreateModal(true);
-              }}
-              className="btn-pretty-primary text-lg px-8 py-4"
-              disabled={loading}
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              Create Session
-            </Button>
-            <Button 
-              onClick={loadSessions}
-              className="btn-pretty-secondary"
-              disabled={loading}
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              {loading ? 'Loading...' : 'Refresh'}
-            </Button>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Button className="btn-pretty-secondary">
-              <Filter className="w-4 h-4 mr-2" />
-              Filter
-            </Button>
-            <Button className="btn-pretty-secondary">
-              <Search className="w-4 h-4 mr-2" />
-              Search
-            </Button>
-          </div>
-        </div>
 
         {/* Filter Tabs */}
         <div className="flex space-x-2 mb-8">
@@ -694,44 +617,109 @@ export default function FireSessionDashboard() {
           ))}
         </div>
 
-        {/* FOH Timer Interface - Show only for FOH role */}
-        {userRole === 'FOH' && (
-          <div className="mb-8">
-            <div className="flex items-center space-x-3 mb-4">
-              <Clock className="w-6 h-6 text-teal-400" />
-              <h2 className="text-2xl font-bold text-white">Timer Management</h2>
-              <span className="text-sm text-zinc-400">Your assigned sessions with timers</span>
+        {/* All Timer Sessions - Consolidated */}
+        <div className="mb-8">
+          <div className="flex items-center space-x-3 mb-4">
+            <Clock className="w-6 h-6 text-teal-400" />
+            <h2 className="text-2xl font-bold text-white">All Timer Sessions</h2>
+            <span className="text-sm text-zinc-400">Live & Historical Data</span>
+          </div>
+          
+          {/* Timer Sessions Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            {/* Live Sessions */}
+            {sessions.filter(s => s.state === 'ACTIVE' && s.timerDuration).map(session => (
+              <div key={session.id} className="bg-zinc-800/50 rounded-lg p-4 border border-green-500/30">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    <span className="text-sm font-medium text-green-400">LIVE</span>
+                  </div>
+                  <span className="text-xs text-zinc-400">Table {session.tableId}</span>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-lg font-semibold">{session.flavor || 'Hookah Session'}</div>
+                  <div className="text-sm text-zinc-400">
+                    Duration: {session.timerDuration}min | Started: {session.startedAt ? new Date(session.startedAt).toLocaleTimeString() : 'N/A'}
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-zinc-400">Revenue:</span>
+                    <span className="text-green-400 font-semibold">${(session.priceCents / 100).toFixed(2)}</span>
+                  </div>
+                </div>
+                <div className="mt-3 pt-3 border-t border-zinc-700">
+                  <div className="flex gap-2">
+                    <Button size="sm" className="btn-pretty-secondary flex-1">
+                      <Pause className="w-3 h-3 mr-1" />
+                      Pause
+                    </Button>
+                    <Button size="sm" className="btn-pretty-primary flex-1">
+                      <CheckCircle className="w-3 h-3 mr-1" />
+                      Complete
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+            
+            {/* Historical Sessions */}
+            {sessions.filter(s => s.state === 'COMPLETED' && s.timerDuration).slice(0, 3).map(session => (
+              <div key={session.id} className="bg-zinc-800/50 rounded-lg p-4 border border-zinc-700">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-zinc-400 rounded-full"></div>
+                    <span className="text-sm font-medium text-zinc-400">COMPLETED</span>
+                  </div>
+                  <span className="text-xs text-zinc-400">Table {session.tableId}</span>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-lg font-semibold">{session.flavor || 'Hookah Session'}</div>
+                  <div className="text-sm text-zinc-400">
+                    Duration: {session.timerDuration}min | Completed: {session.endedAt ? new Date(session.endedAt).toLocaleTimeString() : 'N/A'}
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-zinc-400">Revenue:</span>
+                    <span className="text-green-400 font-semibold">${(session.priceCents / 100).toFixed(2)}</span>
+                  </div>
+                </div>
+                <div className="mt-3 pt-3 border-t border-zinc-700">
+                  <Button size="sm" className="btn-pretty-secondary w-full">
+                    <Eye className="w-3 h-3 mr-1" />
+                    View Details
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          {/* Timer Summary Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-zinc-800/30 rounded-lg p-3 text-center">
+              <div className="text-lg font-bold text-green-400">
+                {sessions.filter(s => s.state === 'ACTIVE' && s.timerDuration).length}
+              </div>
+              <div className="text-xs text-zinc-400">Active Timers</div>
             </div>
-            <FOHTimerInterface
-              assignedSessions={sessions.filter(s => s.assignedFOHId)}
-              onTimerAction={(sessionId, action) => {
-                console.log(`Timer action ${action} for session ${sessionId}`);
-                // Handle timer actions here
-              }}
-              onSessionComplete={(sessionId) => {
-                console.log(`Session ${sessionId} completed via timer`);
-                handleStateChange();
-              }}
-            />
+            <div className="bg-zinc-800/30 rounded-lg p-3 text-center">
+              <div className="text-lg font-bold text-blue-400">
+                {sessions.filter(s => s.state === 'COMPLETED' && s.timerDuration).length}
+              </div>
+              <div className="text-xs text-zinc-400">Completed Today</div>
+            </div>
+            <div className="bg-zinc-800/30 rounded-lg p-3 text-center">
+              <div className="text-lg font-bold text-purple-400">
+                {Math.round(sessions.reduce((sum, s) => sum + (s.timerDuration || 0), 0) / Math.max(sessions.length, 1))}min
+              </div>
+              <div className="text-xs text-zinc-400">Avg Duration</div>
+            </div>
+            <div className="bg-zinc-800/30 rounded-lg p-3 text-center">
+              <div className="text-lg font-bold text-yellow-400">
+                ${(sessions.reduce((sum, s) => sum + s.priceCents, 0) / 100).toFixed(0)}
+              </div>
+              <div className="text-xs text-zinc-400">Total Revenue</div>
+            </div>
           </div>
-        )}
-
-        {/* Manager Timer Dashboard - Show for Manager and Admin roles */}
-        {(userRole === 'MANAGER' || userRole === 'ADMIN') && (
-          <div className="mb-8">
-            <ManagerTimerDashboard
-              allSessions={sessions}
-              onTimerAction={(sessionId, action) => {
-                console.log(`Manager timer action ${action} for session ${sessionId}`);
-                // Handle timer actions here
-              }}
-              onSessionComplete={(sessionId) => {
-                console.log(`Session ${sessionId} completed via manager timer`);
-                handleStateChange();
-              }}
-            />
-          </div>
-        )}
+        </div>
 
         {/* Sessions List */}
         <div className="space-y-4">
