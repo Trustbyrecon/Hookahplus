@@ -1,24 +1,20 @@
 import React from 'react';
 import Card from '../components/Card';
 import Button from '../components/Button';
-import Badge from '../components/Badge';
 import StatusIndicator from '../components/design-system/components/StatusIndicator';
-import TrustLock from '../components/design-system/components/TrustLock';
-import { LiveSessionStatus } from '../components/LiveSessionStatus';
 import { 
   Flame, 
   Users, 
   Clock, 
   TrendingUp,
-  Plus,
   BarChart3,
   Settings,
-  ChefHat,
   UserCheck,
-  AlertTriangle,
   Brain,
   Shield,
-  CreditCard
+  CreditCard,
+  ArrowRight,
+  Play
 } from 'lucide-react';
 
 export default function Home() {
@@ -52,70 +48,46 @@ export default function Home() {
     }
   ];
 
-  const quickActions = [
+  const operationalFlow = [
     {
       title: 'Dashboard',
       description: 'Live Operations',
       icon: <BarChart3 className="w-5 h-5" />,
-      variant: 'primary' as const,
       href: '/dashboard',
-      status: '0 active'
+      status: '0 active',
+      step: 1
     },
     {
-      title: 'Pre-Order',
-      description: 'Customer Interface',
-      icon: <Users className="w-5 h-5" />,
-      variant: 'outline' as const,
-      href: '/preorder',
-      status: 'QR Ready'
-    },
-    {
-      title: 'Fire Session',
-      description: 'Live Sessions',
+      title: 'Sessions',
+      description: 'Fire Session Management',
       icon: <Flame className="w-5 h-5" />,
-      variant: 'outline' as const,
       href: '/sessions',
-      status: '0 active'
-    },
-    {
-      title: 'Staff Mgmt',
-      description: 'Operations',
-      icon: <Settings className="w-5 h-5" />,
-      variant: 'outline' as const,
-      href: '/staff',
-      status: 'Real-time'
+      status: '0 active',
+      step: 2
     },
     {
       title: 'Staff Ops',
-      description: 'Workflow',
+      description: 'Workflow Management',
       icon: <UserCheck className="w-5 h-5" />,
-      variant: 'outline' as const,
       href: '/staff-ops',
-      status: 'Live Data'
+      status: 'Live Data',
+      step: 3
     },
     {
-      title: 'POS Waitlist',
-      description: 'B2B Pipeline',
-      icon: <Clock className="w-5 h-5" />,
-      variant: 'outline' as const,
-      href: '/waitlist',
-      status: 'Analytics'
+      title: 'Staff Panel',
+      description: 'Operations Control',
+      icon: <Settings className="w-5 h-5" />,
+      href: '/staff',
+      status: 'Real-time',
+      step: 4
     },
     {
-      title: 'Campaigns',
-      description: 'Pre-Orders',
-      icon: <Plus className="w-5 h-5" />,
-      variant: 'outline' as const,
-      href: '/campaigns',
-      status: 'Live'
-    },
-    {
-      title: 'Layout Preview',
-      description: 'Visual Map',
-      icon: <BarChart3 className="w-5 h-5" />,
-      variant: 'outline' as const,
-      href: '/layout-preview',
-      status: 'Interactive'
+      title: 'Admin',
+      description: 'System Management',
+      icon: <Shield className="w-5 h-5" />,
+      href: '/admin/sync',
+      status: 'Monitoring',
+      step: 5
     }
   ];
 
@@ -142,21 +114,16 @@ export default function Home() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {/* Trust Lock Display */}
-        <div className="mb-8 flex justify-center">
-          <TrustLock trustScore={0.87} status="active" version="TLH-v1" size="lg" />
-        </div>
-
-        {/* Live Session Status */}
-        <div className="mb-8">
-          <LiveSessionStatus />
-        </div>
-
         {/* Hero Section */}
         <div className="text-center mb-12">
           <h2 className="text-4xl md:text-6xl font-bold mb-6">
-            North Star • Real-time Operations
+            Hookah+ Operations Center
           </h2>
+          <p className="text-xl text-zinc-400 mb-8 max-w-3xl mx-auto">
+            Real-time lounge management with AI-powered personalization and secure transactions
+          </p>
+          
+          {/* Key Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {metrics.map((metric, index) => (
               <div key={index} className="text-center">
@@ -170,64 +137,71 @@ export default function Home() {
               </div>
             ))}
           </div>
-          <div className="flex justify-center gap-4">
-            <Button variant="primary" size="lg">
-              🔄 Refresh
-            </Button>
-            <Button variant="outline" size="lg">
-              ▶️ Auto-refresh
-            </Button>
-          </div>
         </div>
 
-        {/* Main Content */}
+        {/* Operational Flow */}
         <div className="mb-12">
           <h3 className="text-2xl font-bold text-center mb-8">
-            # Hookah+
+            Operational Workflow
           </h3>
           <p className="text-center text-zinc-400 text-lg mb-8">
-            Experience the future of lounge sessions with AI-powered personalization, secure payments, and seamless ordering.
+            Streamlined process from dashboard to admin management
           </p>
           
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-teal-500/10 border border-teal-500/20 rounded-lg mb-4">
-              <Shield className="w-4 h-4 text-teal-400" />
-              <span className="text-teal-400 font-medium">HiTrust: TLH-v1::active</span>
-            </div>
-            <div className="text-sm text-zinc-400">
-              0.87 Trust Score
-            </div>
-            <div className="text-xs text-zinc-500 mt-1">
-              Cryptographic verification • Real-time monitoring • Secure transactions
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            {operationalFlow.map((action, index) => (
+              <Card key={index} className="hover:border-teal-500/50 transition-colors relative">
+                <div className="p-4 text-center">
+                  <div className="w-12 h-12 bg-teal-500/10 rounded-lg flex items-center justify-center mx-auto mb-3">
+                    <div className="text-teal-400">
+                      {action.icon}
+                    </div>
+                  </div>
+                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-teal-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                    {action.step}
+                  </div>
+                  <h4 className="font-semibold mb-1">{action.title}</h4>
+                  <p className="text-xs text-zinc-400 mb-2">{action.description}</p>
+                  <div className="text-xs text-teal-400">{action.status}</div>
+                </div>
+                {index < operationalFlow.length - 1 && (
+                  <div className="hidden md:block absolute top-1/2 -right-2 transform -translate-y-1/2">
+                    <ArrowRight className="w-4 h-4 text-teal-400" />
+                  </div>
+                )}
+              </Card>
+            ))}
           </div>
+        </div>
 
-          <div className="text-center mb-8">
-            <h4 className="text-lg font-semibold mb-2">🍃 Pre-Order Station</h4>
-            <p className="text-zinc-400 text-sm mb-4">
-              QR scan → Menu browse → Flavor personalize → Start Fire Session
-            </p>
-            <div className="flex justify-center gap-4">
-              <Button variant="primary">
-                🎬 See Demo
+        {/* Campaign Actions */}
+        <div className="mb-12">
+          <h3 className="text-2xl font-bold text-center mb-8">
+            Campaign Management
+          </h3>
+          <div className="text-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button variant="primary" size="lg" className="flex items-center gap-2">
+                <Play className="w-4 h-4" />
+                See Demo
               </Button>
-              <Button variant="outline">
-                🚀 Campaign Pre-Orders
+              <Button variant="outline" size="lg">
+                Campaign Pre-Orders
               </Button>
-              <Button variant="outline">
-                📊 Live Dashboard
+              <Button variant="outline" size="lg">
+                Live Dashboard
               </Button>
             </div>
           </div>
         </div>
 
-        {/* Powered by Reflex Intelligence */}
+        {/* AI Intelligence */}
         <div className="mb-12">
           <h3 className="text-2xl font-bold text-center mb-8">
-            ## Powered by Reflex Intelligence
+            Powered by Reflex Intelligence
           </h3>
           <p className="text-center text-zinc-400 text-lg mb-8">
-            Real-time AI agents working in perfect harmony
+            AI agents working in perfect harmony
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -236,14 +210,11 @@ export default function Home() {
                 <div className="w-16 h-16 bg-pink-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Brain className="w-8 h-8 text-pink-400" />
                 </div>
-                <h4 className="text-lg font-semibold mb-2">### Aliethia Memory</h4>
+                <h4 className="text-lg font-semibold mb-2">Aliethia Memory</h4>
                 <p className="text-zinc-400 text-sm mb-4">
-                  Learns your flavor preferences and suggests perfect pairings
+                  Learns flavor preferences and suggests perfect pairings
                 </p>
-                <div className="text-sm">
-                  <div className="text-teal-400 font-semibold">Trust Score: 0.87 ✅</div>
-                  <div className="text-zinc-400">Active Sessions: 0</div>
-                </div>
+                <div className="text-sm text-teal-400 font-semibold">Active Sessions: 0</div>
               </div>
             </Card>
 
@@ -252,14 +223,11 @@ export default function Home() {
                 <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Shield className="w-8 h-8 text-green-400" />
                 </div>
-                <h4 className="text-lg font-semibold mb-2">### HiTrust Sentinel</h4>
+                <h4 className="text-lg font-semibold mb-2">HiTrust Sentinel</h4>
                 <p className="text-zinc-400 text-sm mb-4">
                   Cryptographic verification for every transaction
                 </p>
-                <div className="text-sm">
-                  <div className="text-teal-400 font-semibold">Security Level: TLH-v1::active</div>
-                  <div className="text-zinc-400">Verification: 100% ✅</div>
-                </div>
+                <div className="text-sm text-teal-400 font-semibold">Verification: 100% ✅</div>
               </div>
             </Card>
 
@@ -268,46 +236,17 @@ export default function Home() {
                 <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
                   <CreditCard className="w-8 h-8 text-blue-400" />
                 </div>
-                <h4 className="text-lg font-semibold mb-2">### EP Payments</h4>
+                <h4 className="text-lg font-semibold mb-2">EP Payments</h4>
                 <p className="text-zinc-400 text-sm mb-4">
                   Secure Stripe integration with real-time processing
                 </p>
-                <div className="text-sm">
-                  <div className="text-teal-400 font-semibold">Processing Rate: 0.82 ✅</div>
-                  <div className="text-zinc-400">Revenue: $0</div>
-                </div>
+                <div className="text-sm text-teal-400 font-semibold">Revenue: $0</div>
               </div>
             </Card>
-          </div>
-        </div>
-
-        {/* Quick Access */}
-        <div className="mb-12">
-          <h3 className="text-2xl font-bold text-center mb-8">
-            ## Quick Access
-          </h3>
-          <p className="text-center text-zinc-400 text-lg mb-8">
-            Navigate to any operational area with live data integration
-          </p>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {quickActions.map((action, index) => (
-              <Card key={index} className="hover:border-teal-500/50 transition-colors">
-                <div className="p-4 text-center">
-                  <div className="w-12 h-12 bg-teal-500/10 rounded-lg flex items-center justify-center mx-auto mb-3">
-                    <div className="text-teal-400">
-                      {action.icon}
-                    </div>
-                  </div>
-                  <h4 className="font-semibold mb-1">{action.title}</h4>
-                  <p className="text-xs text-zinc-400 mb-2">{action.description}</p>
-                  <div className="text-xs text-teal-400">{action.status}</div>
-                </div>
-              </Card>
-            ))}
           </div>
         </div>
       </div>
     </div>
   );
+}
 }
