@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     }));
 
     // Add flagging logic based on event types
-    const flagged = events.map((e) => ({
+    const flagged = events.map((e: any) => ({
       ...e,
       flags:
         e.type === "app.lead.created" ? [] :
