@@ -177,26 +177,6 @@ export default function GuestPortal() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
       <GlobalNavigation currentPage="home" trustScore={0.87} flowStatus={71} />
-      
-      {/* Pre-Order Station Header */}
-      <div className="bg-zinc-950 border-b border-teal-500/50">
-        <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold">
-                🍃 Pre-Order Station
-              </h1>
-              <p className="text-zinc-400 mt-1">Table T-001 • Scan QR code to access menu • Customize your flavors • Start your Fire Session</p>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <StatusIndicator status="online" label="QR Ready" value="Active" />
-              <StatusIndicator status="online" label="Menu" value="Loaded" />
-              <StatusIndicator status="online" label="Payment" value="Ready" />
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
