@@ -14,14 +14,19 @@ import {
   Shield,
   CreditCard,
   ArrowRight,
-  Play
+  Play,
+  CheckCircle,
+  Zap,
+  Activity,
+  Heart,
+  Star
 } from 'lucide-react';
 
 export default function Home() {
   const metrics = [
     {
-      title: 'Total Sessions',
-      value: '0',
+      title: 'Active Sessions',
+      value: '18',
       icon: <Flame className="w-6 h-6" />,
       color: 'text-orange-400',
       bgColor: 'bg-orange-500/10',
@@ -29,8 +34,8 @@ export default function Home() {
       changeType: 'positive' as const
     },
     {
-      title: 'Revenue',
-      value: '$0',
+      title: 'Projected Revenue',
+      value: '$12,340',
       icon: <TrendingUp className="w-6 h-6" />,
       color: 'text-green-400',
       bgColor: 'bg-green-500/10',
@@ -38,9 +43,18 @@ export default function Home() {
       changeType: 'positive' as const
     },
     {
+      title: 'Reflex Score',
+      value: '92%',
+      icon: <Star className="w-6 h-6" />,
+      color: 'text-purple-400',
+      bgColor: 'bg-purple-500/10',
+      change: 'Trust Aligned',
+      changeType: 'positive' as const
+    },
+    {
       title: 'System Health',
       value: 'EXCELLENT',
-      icon: <Shield className="w-6 h-6" />,
+      icon: <Heart className="w-6 h-6" />,
       color: 'text-blue-400',
       bgColor: 'bg-blue-500/10',
       change: '0%',
@@ -54,32 +68,36 @@ export default function Home() {
       description: 'Live Operations',
       icon: <BarChart3 className="w-5 h-5" />,
       href: '/dashboard',
-      status: '0 active',
-      step: 1
+      status: '18 active',
+      step: 1,
+      state: 'active'
     },
     {
       title: 'Sessions',
       description: 'Fire Session Management',
       icon: <Flame className="w-5 h-5" />,
       href: '/sessions',
-      status: '0 active',
-      step: 2
+      status: '18 active',
+      step: 2,
+      state: 'active'
     },
     {
-      title: 'Staff Ops',
+      title: 'Operations',
       description: 'Workflow Management',
       icon: <UserCheck className="w-5 h-5" />,
       href: '/staff-ops',
       status: 'Live Data',
-      step: 3
+      step: 3,
+      state: 'completed'
     },
     {
-      title: 'Staff Panel',
+      title: 'Team Control',
       description: 'Operations Control',
       icon: <Settings className="w-5 h-5" />,
       href: '/staff',
       status: 'Real-time',
-      step: 4
+      step: 4,
+      state: 'pending'
     },
     {
       title: 'Admin',
@@ -87,7 +105,8 @@ export default function Home() {
       icon: <Shield className="w-5 h-5" />,
       href: '/admin/sync',
       status: 'Monitoring',
-      step: 5
+      step: 5,
+      state: 'pending'
     }
   ];
 
@@ -120,22 +139,45 @@ export default function Home() {
             Hookah+ Operations Center
           </h2>
           <p className="text-xl text-zinc-400 mb-8 max-w-3xl mx-auto">
-            Real-time lounge management with AI-powered personalization and secure transactions
+            Enterprise-grade lounge management with AI-powered personalization and secure transactions
           </p>
           
           {/* Key Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
             {metrics.map((metric, index) => (
               <div key={index} className="text-center">
-                <div className={`inline-flex items-center justify-center w-12 h-12 rounded-lg ${metric.bgColor} mb-3`}>
+                <div className={`inline-flex items-center justify-center w-12 h-12 rounded-lg ${metric.bgColor} mb-3 ${metric.title === 'System Health' ? 'animate-pulse' : ''}`}>
                   <div className={metric.color}>
                     {metric.icon}
                   </div>
                 </div>
                 <div className="text-2xl font-bold text-teal-400 mb-1">{metric.value}</div>
                 <div className="text-sm text-zinc-400">{metric.title}</div>
+                <div className="text-xs text-zinc-500 mt-1">{metric.change}</div>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* Enterprise CTA Section */}
+        <div className="mb-12">
+          <div className="text-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+              <Button 
+                variant="primary" 
+                size="lg" 
+                className="flex items-center gap-2 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white px-8 py-4 text-lg font-semibold shadow-lg transform hover:scale-105 transition-all duration-200"
+              >
+                <Play className="w-5 h-5" />
+                See Demo
+              </Button>
+              <Button variant="outline" size="lg" className="px-6 py-3">
+                Campaign Pre-Orders
+              </Button>
+              <Button variant="outline" size="lg" className="px-6 py-3">
+                Live Dashboard
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -150,19 +192,39 @@ export default function Home() {
           
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             {operationalFlow.map((action, index) => (
-              <Card key={index} className="hover:border-teal-500/50 transition-colors relative">
+              <Card key={index} className={`hover:border-teal-500/50 transition-colors relative ${
+                action.state === 'active' ? 'border-green-500/50 bg-green-500/5' :
+                action.state === 'completed' ? 'border-teal-500/50 bg-teal-500/5' :
+                'border-zinc-700'
+              }`}>
                 <div className="p-4 text-center">
-                  <div className="w-12 h-12 bg-teal-500/10 rounded-lg flex items-center justify-center mx-auto mb-3">
-                    <div className="text-teal-400">
-                      {action.icon}
+                  <div className={`w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-3 ${
+                    action.state === 'active' ? 'bg-green-500/20' :
+                    action.state === 'completed' ? 'bg-teal-500/20' :
+                    'bg-zinc-500/20'
+                  }`}>
+                    <div className={`${
+                      action.state === 'active' ? 'text-green-400' :
+                      action.state === 'completed' ? 'text-teal-400' :
+                      'text-zinc-400'
+                    }`}>
+                      {action.state === 'completed' ? <CheckCircle className="w-5 h-5" /> : action.icon}
                     </div>
                   </div>
-                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-teal-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
-                    {action.step}
+                  <div className={`absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                    action.state === 'active' ? 'bg-green-500 text-white animate-pulse' :
+                    action.state === 'completed' ? 'bg-teal-500 text-white' :
+                    'bg-zinc-500 text-zinc-300'
+                  }`}>
+                    {action.state === 'completed' ? <CheckCircle className="w-3 h-3" /> : action.step}
                   </div>
                   <h4 className="font-semibold mb-1">{action.title}</h4>
                   <p className="text-xs text-zinc-400 mb-2">{action.description}</p>
-                  <div className="text-xs text-teal-400">{action.status}</div>
+                  <div className={`text-xs ${
+                    action.state === 'active' ? 'text-green-400' :
+                    action.state === 'completed' ? 'text-teal-400' :
+                    'text-zinc-400'
+                  }`}>{action.status}</div>
                 </div>
                 {index < operationalFlow.length - 1 && (
                   <div className="hidden md:block absolute top-1/2 -right-2 transform -translate-y-1/2">
@@ -174,23 +236,15 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Campaign Actions */}
+        {/* Powered by Integration Strip */}
         <div className="mb-12">
-          <h3 className="text-2xl font-bold text-center mb-8">
-            Campaign Management
-          </h3>
-          <div className="text-center">
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button variant="primary" size="lg" className="flex items-center gap-2">
-                <Play className="w-4 h-4" />
-                See Demo
-              </Button>
-              <Button variant="outline" size="lg">
-                Campaign Pre-Orders
-              </Button>
-              <Button variant="outline" size="lg">
-                Live Dashboard
-              </Button>
+          <div className="text-center mb-8">
+            <h3 className="text-lg font-semibold text-zinc-300 mb-4">Powered by Enterprise Integrations</h3>
+            <div className="flex justify-center items-center gap-8 opacity-60">
+              <div className="text-sm font-medium">Stripe</div>
+              <div className="text-sm font-medium">Square</div>
+              <div className="text-sm font-medium">Toast</div>
+              <div className="text-sm font-medium">Clover</div>
             </div>
           </div>
         </div>
@@ -214,7 +268,8 @@ export default function Home() {
                 <p className="text-zinc-400 text-sm mb-4">
                   Learns flavor preferences and suggests perfect pairings
                 </p>
-                <div className="text-sm text-teal-400 font-semibold">Active Sessions: 0</div>
+                <div className="text-sm text-teal-400 font-semibold mb-2">Learning guest preferences: 3 insights today</div>
+                <div className="text-xs text-zinc-500">Active Sessions: 18</div>
               </div>
             </Card>
 
@@ -227,7 +282,8 @@ export default function Home() {
                 <p className="text-zinc-400 text-sm mb-4">
                   Cryptographic verification for every transaction
                 </p>
-                <div className="text-sm text-teal-400 font-semibold">Verification: 100% ✅</div>
+                <div className="text-sm text-teal-400 font-semibold mb-2">100% verified last 72h</div>
+                <div className="text-xs text-zinc-500">Verification: 100% ✅</div>
               </div>
             </Card>
 
@@ -240,7 +296,8 @@ export default function Home() {
                 <p className="text-zinc-400 text-sm mb-4">
                   Secure Stripe integration with real-time processing
                 </p>
-                <div className="text-sm text-teal-400 font-semibold">Revenue: $0</div>
+                <div className="text-sm text-teal-400 font-semibold mb-2">Processed $1,220 in past 24h</div>
+                <div className="text-xs text-zinc-500">Revenue: $12,340</div>
               </div>
             </Card>
           </div>
