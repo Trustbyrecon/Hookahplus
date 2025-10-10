@@ -159,7 +159,7 @@ export default function OperatorPage() {
       description: 'View performance metrics',
       icon: <BarChart3 className="w-6 h-6" />,
       color: 'bg-orange-600 hover:bg-orange-500',
-      action: () => window.location.href = '/dashboard'
+      action: () => window.location.href = '/fire-session-dashboard'
     }
   ];
 
