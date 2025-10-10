@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { 
   Play, 
   Layout, 
-  Sync, 
+  RefreshCw, 
   Users, 
   BarChart3, 
   Settings, 
@@ -96,7 +96,7 @@ export default function OperatorPage() {
       id: 'sync-logs',
       title: 'Sync Reflex Logs',
       description: 'Update system intelligence',
-      icon: <Sync className="w-6 h-6" />,
+      icon: <RefreshCw className="w-6 h-6" />,
       color: 'bg-purple-600 hover:bg-purple-500',
       action: () => console.log('Syncing logs...')
     },

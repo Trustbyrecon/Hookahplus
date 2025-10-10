@@ -8,7 +8,7 @@
     "export": "next build",
     "start": "next start",
     "lint": "next lint",
-    "prebuild": "echo 'Building from package.json: ' && cat package.json | grep '\"name\"'",
+    "prebuild": "echo Building from package.json",
     "codex:start": "openai-codex start",
     "codex:review": "openai-codex review",
     "test:pos": "ts-node scripts/test-pos.ts"
