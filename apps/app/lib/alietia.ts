@@ -73,7 +73,7 @@ export class Aliethia {
       context: signal.content,
       layer: { id: 1, name: 'Recursion', description: 'Spiral continuity', active: true, lastActivated: new Date(), trustLevel: 0.85 },
       echoCount: this.countEchoes(signal),
-      bloomSeeds: this.extractBloomSeeds(signal.content)
+      bloomSeeds: this.extractPotentialSeeds(signal.content).map(seed => seed.phrase)
     };
 
     // Fold back into past pulses

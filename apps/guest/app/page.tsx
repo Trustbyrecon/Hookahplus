@@ -125,7 +125,7 @@ export default function GuestPortal() {
       }
     } catch (error) {
       console.error('Error starting session:', error);
-      alert('Error creating session: ' + error.message);
+      alert('Error creating session: ' + (error instanceof Error ? error.message : String(error)));
     } finally {
       setIsStartingSession(false);
     }
