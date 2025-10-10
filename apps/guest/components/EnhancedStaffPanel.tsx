@@ -178,7 +178,7 @@ export default function GuestIntelligenceDashboard({ sessionId, tableId, onClose
           category: 'community'
         },
         {
-          id: 'flavor_explorer',
+          badgeId: 'flavor_explorer',
           name: 'Flavor Explorer',
           description: 'Try 15 different flavors',
           icon: <Wind className="w-4 h-4" />,
