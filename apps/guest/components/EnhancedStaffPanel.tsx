@@ -37,11 +37,20 @@ interface BehavioralMemory {
     averageSessionDuration: number;
     spendingPattern: 'budget' | 'premium' | 'luxury';
     visitFrequency: 'regular' | 'occasional' | 'first-time';
+    preferredTimeSlots: string[];
+    typicalOrderPattern: string[];
   };
   trustScore: number;
   loyaltyTier: 'bronze' | 'silver' | 'gold' | 'platinum';
   badges: Badge[];
+  badgeProgress: BadgeProgress[];
   sessionHistory: SessionSummary[];
+  predictiveInsights: {
+    nextVisitPrediction: string;
+    likelyOrder: string[];
+    optimalServiceTiming: string;
+    upsellProbability: number;
+  };
 }
 
 interface Badge {
@@ -51,7 +60,20 @@ interface Badge {
   icon: React.ReactNode;
   color: string;
   earnedAt: string;
-  category: 'loyalty' | 'spending' | 'social' | 'special' | 'achievement';
+  category: 'loyalty' | 'spending' | 'social' | 'special' | 'achievement' | 'community';
+}
+
+interface BadgeProgress {
+  badgeId: string;
+  name: string;
+  description: string;
+  icon: React.ReactNode;
+  color: string;
+  currentProgress: number;
+  targetProgress: number;
+  nextMilestone: string;
+  estimatedTimeToEarn: string;
+  category: 'loyalty' | 'spending' | 'social' | 'special' | 'achievement' | 'community';
 }
 
 interface SessionSummary {
@@ -73,17 +95,17 @@ interface SessionNote {
   category: 'service' | 'equipment' | 'customer' | 'operational';
 }
 
-interface EnhancedStaffPanelProps {
+interface GuestIntelligenceDashboardProps {
   sessionId?: string;
   tableId?: string;
   onClose: () => void;
 }
 
-export default function EnhancedStaffPanel({ sessionId, tableId, onClose }: EnhancedStaffPanelProps) {
+export default function GuestIntelligenceDashboard({ sessionId, tableId, onClose }: GuestIntelligenceDashboardProps) {
   const [behavioralMemory, setBehavioralMemory] = useState<BehavioralMemory | null>(null);
   const [sessionNotes, setSessionNotes] = useState<SessionNote[]>([]);
   const [piiMaskingEnabled, setPiiMaskingEnabled] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'memory' | 'notes' | 'badges'>('overview');
+  const [activeTab, setActiveTab] = useState<'profile' | 'intelligence' | 'achievements' | 'operational'>('profile');
   const [loading, setLoading] = useState(true);
 
   // Mock behavioral memory data
@@ -95,7 +117,9 @@ export default function EnhancedStaffPanel({ sessionId, tableId, onClose }: Enha
         preferredZone: 'VIP',
         averageSessionDuration: 45,
         spendingPattern: 'premium',
-        visitFrequency: 'regular'
+        visitFrequency: 'regular',
+        preferredTimeSlots: ['7:00 PM', '8:00 PM', '9:00 PM'],
+        typicalOrderPattern: ['Blue Mist + Extra Mint', 'Strawberry Mojito', 'Premium Service']
       },
       trustScore: 87,
       loyaltyTier: 'gold',
@@ -128,6 +152,44 @@ export default function EnhancedStaffPanel({ sessionId, tableId, onClose }: Enha
           category: 'social'
         }
       ],
+      badgeProgress: [
+        {
+          badgeId: 'community_champion',
+          name: 'Community Champion',
+          description: 'Share 5 experiences on social media',
+          icon: <Sparkles className="w-4 h-4" />,
+          color: 'text-blue-400',
+          currentProgress: 3,
+          targetProgress: 5,
+          nextMilestone: 'Share 2 more experiences',
+          estimatedTimeToEarn: '2-3 visits',
+          category: 'community'
+        },
+        {
+          badgeId: 'review_master',
+          name: 'Review Master',
+          description: 'Leave 10 reviews across Hookah+ network',
+          icon: <MessageSquare className="w-4 h-4" />,
+          color: 'text-green-400',
+          currentProgress: 7,
+          targetProgress: 10,
+          nextMilestone: 'Leave 3 more reviews',
+          estimatedTimeToEarn: '1-2 visits',
+          category: 'community'
+        },
+        {
+          id: 'flavor_explorer',
+          name: 'Flavor Explorer',
+          description: 'Try 15 different flavors',
+          icon: <Wind className="w-4 h-4" />,
+          color: 'text-orange-400',
+          currentProgress: 12,
+          targetProgress: 15,
+          nextMilestone: 'Try 3 more flavors',
+          estimatedTimeToEarn: '3-4 visits',
+          category: 'achievement'
+        }
+      ],
       sessionHistory: [
         {
           id: 'session_001',
@@ -147,7 +209,13 @@ export default function EnhancedStaffPanel({ sessionId, tableId, onClose }: Enha
           notes: 'Good experience, minor delay',
           piiMasked: true
         }
-      ]
+      ],
+      predictiveInsights: {
+        nextVisitPrediction: 'Likely to visit within 1-2 weeks',
+        likelyOrder: ['Blue Mist + Extra Mint', 'Strawberry Mojito'],
+        optimalServiceTiming: 'Start cleanup at 40 minutes (prefers 45-min sessions)',
+        upsellProbability: 75
+      }
     };
 
     const mockNotes: SessionNote[] = [
@@ -230,9 +298,9 @@ export default function EnhancedStaffPanel({ sessionId, tableId, onClose }: Enha
               <Brain className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white">Enhanced Staff Panel</h2>
+              <h2 className="text-xl font-bold text-white">Guest Intelligence Dashboard</h2>
               <p className="text-sm text-zinc-400">
-                {tableId ? `Table ${tableId}` : 'Session Overview'} • Behavioral Memory & PII Protection
+                {tableId ? `Table ${tableId}` : 'Session Overview'} • Customer Memory & Predictive Service
               </p>
             </div>
           </div>
@@ -260,10 +328,10 @@ export default function EnhancedStaffPanel({ sessionId, tableId, onClose }: Enha
         {/* Tabs */}
         <div className="flex border-b border-zinc-700">
           {[
-            { id: 'overview', label: 'Overview', icon: <BarChart3 className="w-4 h-4" /> },
-            { id: 'memory', label: 'Behavioral Memory', icon: <Brain className="w-4 h-4" /> },
-            { id: 'badges', label: 'Badges & Achievements', icon: <Award className="w-4 h-4" /> },
-            { id: 'notes', label: 'Session Notes', icon: <MessageSquare className="w-4 h-4" /> }
+            { id: 'profile', label: 'Customer Profile', icon: <BarChart3 className="w-4 h-4" /> },
+            { id: 'intelligence', label: 'Service Intelligence', icon: <Brain className="w-4 h-4" /> },
+            { id: 'achievements', label: 'Achievements & Rewards', icon: <Award className="w-4 h-4" /> },
+            { id: 'operational', label: 'Operational Memory', icon: <MessageSquare className="w-4 h-4" /> }
           ].map(tab => (
             <button
               key={tab.id}
@@ -282,7 +350,7 @@ export default function EnhancedStaffPanel({ sessionId, tableId, onClose }: Enha
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
-          {activeTab === 'overview' && behavioralMemory && (
+          {activeTab === 'profile' && behavioralMemory && (
             <div className="space-y-6">
               {/* Trust Score & Loyalty */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -360,17 +428,75 @@ export default function EnhancedStaffPanel({ sessionId, tableId, onClose }: Enha
                       {behavioralMemory.preferences.spendingPattern.toUpperCase()}
                     </span>
                   </div>
+                  <div>
+                    <p className="text-sm text-zinc-400 mb-2">Preferred Time Slots</p>
+                    <div className="flex flex-wrap gap-1">
+                      {behavioralMemory.preferences.preferredTimeSlots.map(time => (
+                        <span key={time} className="px-2 py-1 bg-blue-600 text-blue-100 rounded text-xs">
+                          {time}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-zinc-400 mb-2">Typical Order Pattern</p>
+                    <div className="space-y-1">
+                      {behavioralMemory.preferences.typicalOrderPattern.map(order => (
+                        <div key={order} className="text-xs text-zinc-300">• {order}</div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Predictive Insights */}
+              <div className="bg-zinc-800 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
+                  <Zap className="w-5 h-5 text-yellow-400" />
+                  <span>Predictive Service Intelligence</span>
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-zinc-400 mb-2">Next Visit Prediction</p>
+                    <p className="text-white font-medium">{behavioralMemory.predictiveInsights.nextVisitPrediction}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-zinc-400 mb-2">Likely Order</p>
+                    <div className="flex flex-wrap gap-1">
+                      {behavioralMemory.predictiveInsights.likelyOrder.map(item => (
+                        <span key={item} className="px-2 py-1 bg-green-600 text-green-100 rounded text-xs">
+                          {item}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-zinc-400 mb-2">Optimal Service Timing</p>
+                    <p className="text-white text-sm">{behavioralMemory.predictiveInsights.optimalServiceTiming}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-zinc-400 mb-2">Upsell Probability</p>
+                    <div className="flex items-center space-x-2">
+                      <div className="flex-1 bg-zinc-700 rounded-full h-2">
+                        <div 
+                          className="bg-green-400 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${behavioralMemory.predictiveInsights.upsellProbability}%` }}
+                        ></div>
+                      </div>
+                      <span className="text-sm text-white">{behavioralMemory.predictiveInsights.upsellProbability}%</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           )}
 
-          {activeTab === 'memory' && behavioralMemory && (
+          {activeTab === 'intelligence' && behavioralMemory && (
             <div className="space-y-6">
               <div className="bg-zinc-800 rounded-lg p-6">
                 <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
                   <Brain className="w-5 h-5 text-blue-400" />
-                  <span>Session History</span>
+                  <span>Service Intelligence & History</span>
                 </h3>
                 <div className="space-y-4">
                   {behavioralMemory.sessionHistory.map(session => (
@@ -408,7 +534,7 @@ export default function EnhancedStaffPanel({ sessionId, tableId, onClose }: Enha
             </div>
           )}
 
-          {activeTab === 'badges' && behavioralMemory && (
+          {activeTab === 'achievements' && behavioralMemory && (
             <div className="space-y-6">
               <div className="bg-zinc-800 rounded-lg p-6">
                 <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
@@ -432,16 +558,59 @@ export default function EnhancedStaffPanel({ sessionId, tableId, onClose }: Enha
                   ))}
                 </div>
               </div>
+
+              {/* Progress Tracking */}
+              <div className="bg-zinc-800 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
+                  <Target className="w-5 h-5 text-green-400" />
+                  <span>Progress & Future Rewards</span>
+                </h3>
+                <div className="space-y-4">
+                  {behavioralMemory.badgeProgress.map(progress => (
+                    <div key={progress.badgeId} className="border border-zinc-700 rounded-lg p-4">
+                      <div className="flex items-center space-x-3 mb-3">
+                        <div className={`p-2 rounded-lg bg-zinc-700 ${progress.color}`}>
+                          {progress.icon}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-medium text-white">{progress.name}</h4>
+                          <p className="text-sm text-zinc-300">{progress.description}</p>
+                        </div>
+                      </div>
+                      <div className="mb-2">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm text-zinc-400">Progress</span>
+                          <span className="text-sm text-white">{progress.currentProgress}/{progress.targetProgress}</span>
+                        </div>
+                        <div className="w-full bg-zinc-700 rounded-full h-2">
+                          <div 
+                            className={`h-2 rounded-full transition-all duration-300 ${
+                              progress.category === 'community' ? 'bg-blue-400' :
+                              progress.category === 'achievement' ? 'bg-orange-400' :
+                              'bg-green-400'
+                            }`}
+                            style={{ width: `${(progress.currentProgress / progress.targetProgress) * 100}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-zinc-400">{progress.nextMilestone}</span>
+                        <span className="text-blue-400">{progress.estimatedTimeToEarn}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
-          {activeTab === 'notes' && (
+          {activeTab === 'operational' && (
             <div className="space-y-6">
               <div className="bg-zinc-800 rounded-lg p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-white flex items-center space-x-2">
                     <MessageSquare className="w-5 h-5 text-blue-400" />
-                    <span>Session Notes</span>
+                    <span>Operational Memory</span>
                   </h3>
                   <div className="flex items-center space-x-2">
                     <span className="text-xs text-zinc-400">PII Protection:</span>
