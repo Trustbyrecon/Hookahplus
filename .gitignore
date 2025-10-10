@@ -145,3 +145,4 @@ temp/
 *.njsproj
 *.sln
 *.sw?
+.env*.local
