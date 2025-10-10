@@ -82,7 +82,7 @@ export default function OperatorPage() {
       description: 'Launch a new hookah session',
       icon: <Play className="w-6 h-6" />,
       color: 'bg-emerald-600 hover:bg-emerald-500',
-      action: () => console.log('Starting new session...')
+      action: () => window.location.href = '/fire-session-dashboard'
     },
     {
       id: 'layout-manager',
@@ -90,7 +90,7 @@ export default function OperatorPage() {
       description: 'Configure table arrangements',
       icon: <Layout className="w-6 h-6" />,
       color: 'bg-blue-600 hover:bg-blue-500',
-      action: () => console.log('Opening layout manager...')
+      action: () => window.location.href = '/layout-preview'
     },
     {
       id: 'sync-logs',
@@ -98,7 +98,60 @@ export default function OperatorPage() {
       description: 'Update system intelligence',
       icon: <RefreshCw className="w-6 h-6" />,
       color: 'bg-purple-600 hover:bg-purple-500',
-      action: () => console.log('Syncing logs...')
+      action: async () => {
+        // Trigger Aliethia Memory Layer sync
+        const syncButton = document.querySelector('[data-action="sync-logs"]');
+        if (syncButton) {
+          syncButton.innerHTML = '<RefreshCw className="w-6 h-6 animate-spin" /> Syncing...';
+          syncButton.disabled = true;
+        }
+
+        try {
+          const response = await fetch('/api/reflex/sync', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              timestamp: Date.now(),
+              source: 'operator-dashboard',
+              layers: ['recursion', 'silent-fingerprints', 'mirrors', 'rhythm-guard', 'seeded-futures']
+            })
+          });
+
+          const result = await response.json();
+          
+          if (result.success) {
+            // Update trust score and system health with sync results
+            setTrustScore(result.data.trustScore);
+            setSystemHealth(result.data.systemHealth);
+            
+            // Dispatch sync complete event
+            window.dispatchEvent(new CustomEvent('reflex-sync-complete', {
+              detail: result.data
+            }));
+
+            if (syncButton) {
+              syncButton.innerHTML = '<RefreshCw className="w-6 h-6" /> Sync Complete ✓';
+              setTimeout(() => {
+                syncButton.innerHTML = '<RefreshCw className="w-6 h-6" /> Sync Reflex Logs';
+                syncButton.disabled = false;
+              }, 2000);
+            }
+          } else {
+            throw new Error(result.error || 'Sync failed');
+          }
+        } catch (error) {
+          console.error('Reflex sync error:', error);
+          if (syncButton) {
+            syncButton.innerHTML = '<RefreshCw className="w-6 h-6" /> Sync Failed';
+            setTimeout(() => {
+              syncButton.innerHTML = '<RefreshCw className="w-6 h-6" /> Sync Reflex Logs';
+              syncButton.disabled = false;
+            }, 2000);
+          }
+        }
+      }
     },
     {
       id: 'analytics',
@@ -106,7 +159,7 @@ export default function OperatorPage() {
       description: 'View performance metrics',
       icon: <BarChart3 className="w-6 h-6" />,
       color: 'bg-orange-600 hover:bg-orange-500',
-      action: () => console.log('Opening analytics...')
+      action: () => window.location.href = '/dashboard'
     }
   ];
 
@@ -236,6 +289,7 @@ export default function OperatorPage() {
               <button
                 key={action.id}
                 onClick={action.action}
+                data-action={action.id}
                 className={`${action.color} text-white p-6 rounded-xl transition-all duration-200 hover:scale-105 hover:shadow-lg group`}
               >
                 <div className="flex items-center space-x-3 mb-3">
