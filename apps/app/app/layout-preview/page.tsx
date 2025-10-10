@@ -5,41 +5,13 @@ import {
   Upload, 
   MapPin,
   Users,
-  DollarSign,
-  Clock,
-  Zap,
-  Target,
-  CheckCircle,
-  AlertCircle,
-  Activity,
-  Plus,
-  Minus,
-  RotateCcw,
-  Lock,
-  Unlock,
-  ArrowRight,
-  ArrowLeft,
-  Info,
-  Lightbulb,
   Camera,
   FileText,
-  Settings,
   Brain,
-  Sparkles,
-  TrendingUp,
-  Shield,
-  Eye,
-  Download,
-  RefreshCw,
-  BarChart3,
-  Filter,
-  Search,
-  Maximize2,
-  Minimize2,
-  Play,
-  Pause
+  RefreshCw
 } from 'lucide-react';
 import GlobalNavigation from '../../components/GlobalNavigation';
+import AliethiaLayers from '../../components/AliethiaLayers';
 
 export default function LayoutPreviewPage() {
   // Core state for physical lounge digitization
@@ -47,58 +19,12 @@ export default function LayoutPreviewPage() {
   const [yamlMetadata, setYamlMetadata] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [generatedLayout, setGeneratedLayout] = useState<any>(null);
-  const [revenueMetrics, setRevenueMetrics] = useState({
-    sessionsPerMonth: 1000,
-    revenuePerSession: 70,
-    monthlyRevenue: 35000,
-    hookahPlusAnnualRevenue: 12000
-  });
-  const [posIntegration, setPosIntegration] = useState<'square' | 'clover' | 'toast' | 'stripe'>('square');
   const [behavioralMemory, setBehavioralMemory] = useState<any[]>([]);
   
   // File input refs
   const photoInputRef = useRef<HTMLInputElement>(null);
   const yamlInputRef = useRef<HTMLInputElement>(null);
 
-  // POS Integration Priority (as specified)
-  const posIntegrations = [
-    {
-      id: 'square',
-      name: 'Square',
-      priority: 1,
-      description: 'Best QR Alignment',
-      icon: '🟦',
-      color: 'bg-blue-500',
-      features: ['QR Code Integration', 'Mobile Payments', 'Inventory Sync']
-    },
-    {
-      id: 'clover',
-      name: 'Clover',
-      priority: 2,
-      description: 'Developer-friendly, strong lounge adoption',
-      icon: '🟩',
-      color: 'bg-green-500',
-      features: ['API Integration', 'Custom Apps', 'Lounge Analytics']
-    },
-    {
-      id: 'toast',
-      name: 'Toast',
-      priority: 3,
-      description: 'Extend reach into hybrid hookah+food lounges',
-      icon: '🟨',
-      color: 'bg-yellow-500',
-      features: ['Food Integration', 'Kitchen Display', 'Multi-Concept']
-    },
-    {
-      id: 'stripe',
-      name: 'Stripe',
-      priority: 4,
-      description: 'Universal checkout/pre-order layer',
-      icon: '🟪',
-      color: 'bg-purple-500',
-      features: ['Online Payments', 'Pre-Orders', 'Subscription Management']
-    }
-  ];
 
   // Handle photo upload
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -162,11 +88,11 @@ export default function LayoutPreviewPage() {
       <GlobalNavigation />
       
       <div className="max-w-7xl mx-auto p-6">
-        {/* Header */}
+          {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-white mb-2">Physical Lounge Digitization</h1>
           <p className="text-gray-400 text-lg">Connect your physical space to Hookah+ operations for maximum revenue generation</p>
-        </div>
+              </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Column - Upload & Processing */}
@@ -190,14 +116,14 @@ export default function LayoutPreviewPage() {
                   onChange={handlePhotoUpload}
                   className="hidden"
                 />
-                <button
+                <button 
                   onClick={() => photoInputRef.current?.click()}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
                 >
                   Select Photos
                 </button>
-              </div>
-              
+          </div>
+
               {uploadedPhotos.length > 0 && (
                 <div className="mt-4">
                   <p className="text-green-400 mb-2">✓ {uploadedPhotos.length} photos uploaded</p>
@@ -207,10 +133,10 @@ export default function LayoutPreviewPage() {
                         {file.name}
                       </span>
                     ))}
-                  </div>
+                </div>
                 </div>
               )}
-            </div>
+                </div>
 
             {/* YAML Metadata Upload */}
             <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
@@ -243,7 +169,7 @@ export default function LayoutPreviewPage() {
                   <p className="text-green-400 mb-2">✓ YAML metadata loaded</p>
                   <div className="bg-gray-800 p-3 rounded text-sm text-gray-300 font-mono">
                     {yamlMetadata.substring(0, 200)}...
-                  </div>
+                </div>
                 </div>
               )}
             </div>
@@ -268,134 +194,141 @@ export default function LayoutPreviewPage() {
             </button>
           </div>
 
-          {/* Right Column - Revenue Model & POS Integration */}
+          {/* Right Column - Generated Layout Output */}
           <div className="space-y-6">
-            {/* Revenue Model */}
-            <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
-              <h2 className="text-xl font-semibold text-white mb-4 flex items-center">
-                <DollarSign className="w-5 h-5 mr-2 text-green-400" />
-                Revenue Model
-              </h2>
-              
-              <div className="space-y-4">
-                <div className="bg-gray-800 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold text-white mb-2">Per Session Revenue</h3>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-gray-400">Base Price</p>
-                      <p className="text-white font-semibold">$30</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400">Add-ons/Premium</p>
-                      <p className="text-white font-semibold">$40</p>
-                    </div>
-                  </div>
-                  <div className="mt-3 pt-3 border-t border-gray-700">
-                    <p className="text-gray-400">Hookah+ Profit per Session</p>
-                    <p className="text-green-400 font-bold text-lg">$1.65 - $1.90</p>
-                  </div>
-                </div>
-                
-                <div className="bg-gray-800 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold text-white mb-2">Monthly Lounge Revenue</h3>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-gray-400">Sessions/Month</p>
-                      <p className="text-white font-semibold">1,000</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400">Revenue/Month</p>
-                      <p className="text-white font-semibold">$35,000</p>
-                    </div>
-                  </div>
-                  <div className="mt-3 pt-3 border-t border-gray-700">
-                    <p className="text-gray-400">Hookah+ Annual Revenue/Lounge</p>
-                    <p className="text-green-400 font-bold text-lg">$12k - $15k</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+            {generatedLayout ? (
+              <>
+                {/* Live Layout Visualization */}
+                <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
+                  <h2 className="text-xl font-semibold text-white mb-4 flex items-center">
+                    <MapPin className="w-5 h-5 mr-2 text-purple-400" />
+                    Live Layout Visualization
+                  </h2>
 
-            {/* POS Integration Priority */}
-            <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
-              <h2 className="text-xl font-semibold text-white mb-4 flex items-center">
-                <Settings className="w-5 h-5 mr-2 text-blue-400" />
-                POS Integration Priority
-              </h2>
-              
-              <div className="space-y-3">
-                {posIntegrations.map((pos) => (
-                  <div
-                    key={pos.id}
-                    className={`p-4 rounded-lg border cursor-pointer transition-all ${
-                      posIntegration === pos.id 
-                        ? 'border-blue-500 bg-blue-500/10' 
-                        : 'border-gray-700 hover:border-gray-600'
-                    }`}
-                    onClick={() => setPosIntegration(pos.id as any)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <span className="text-2xl mr-3">{pos.icon}</span>
-                        <div>
-                          <h3 className="font-semibold text-white">{pos.name}</h3>
-                          <p className="text-sm text-gray-400">{pos.description}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-xs text-gray-500">Priority</span>
-                        <p className="text-white font-bold">{pos.priority}</p>
-                      </div>
-                    </div>
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {pos.features.map((feature, index) => (
-                        <span key={index} className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded">
-                          {feature}
-                        </span>
-                      ))}
-                    </div>
+          {/* Layout Canvas */}
+                  <div className="bg-white rounded-lg p-4 mb-4">
+                    <div className="relative mx-auto border-2 border-gray-300 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 shadow-lg"
+                         style={{ width: '400px', height: '300px' }}>
+                      {generatedLayout.zones.map((zone: any, index: number) => {
+                        const colors = {
+                          blue: 'bg-blue-500',
+                          purple: 'bg-purple-500',
+                          green: 'bg-green-500'
+                        };
+                        const positions = [
+                          { x: 20, y: 20, width: 120, height: 80 },
+                          { x: 160, y: 20, width: 100, height: 100 },
+                          { x: 20, y: 120, width: 200, height: 80 }
+                        ];
+                        const pos = positions[index] || positions[0];
+                        
+                        return (
+                <div
+                  key={zone.id}
+                            className={`absolute ${colors[zone.color as keyof typeof colors]} opacity-80 hover:opacity-100 cursor-pointer transition-all duration-300 hover:scale-105 ${
+                              zone.sessions > 0 ? 'animate-pulse' : ''
+                  }`}
+                  style={{
+                              left: pos.x,
+                              top: pos.y,
+                              width: pos.width,
+                              height: pos.height,
+                              borderRadius: '8px',
+                              boxShadow: zone.sessions > 0 ? '0 0 15px rgba(239, 68, 68, 0.3)' : '0 2px 8px rgba(0,0,0,0.1)'
+                            }}
+                >
+                  <div className="p-2 text-white text-sm font-medium">
+                    {zone.name}
                   </div>
-                ))}
-              </div>
+                            <div className="absolute bottom-1 left-2 text-xs text-white font-semibold">
+                    {zone.occupied}/{zone.capacity}
+                  </div>
+                  {zone.sessions > 0 && (
+                              <div className="absolute top-1 right-1 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold animate-bounce">
+                      {zone.sessions}
+                    </div>
+                  )}
+                  </div>
+                );
+              })}
             </div>
           </div>
-        </div>
 
-        {/* Generated Layout Display */}
-        {generatedLayout && (
-          <div className="mt-8 bg-gray-900 border border-gray-700 rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-white mb-4 flex items-center">
-              <MapPin className="w-5 h-5 mr-2 text-purple-400" />
-              Generated Digital Layout
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {generatedLayout.zones.map((zone: any) => (
-                <div key={zone.id} className="bg-gray-800 p-4 rounded-lg">
-                  <h3 className="font-semibold text-white mb-2">{zone.name}</h3>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div>
-                      <p className="text-gray-400">Capacity</p>
-                      <p className="text-white">{zone.capacity}</p>
+                  {/* Layout Stats */}
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div className="bg-gray-800 p-3 rounded-lg">
+                      <div className="text-2xl font-bold text-white">{generatedLayout.totalCapacity}</div>
+                      <div className="text-sm text-gray-400">Total Capacity</div>
                     </div>
-                    <div>
-                      <p className="text-gray-400">Occupied</p>
-                      <p className="text-white">{zone.occupied}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400">Active Sessions</p>
-                      <p className="text-green-400 font-semibold">{zone.sessions}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400">Status</p>
-                      <p className="text-green-400">Live</p>
-                    </div>
+                    <div className="bg-gray-800 p-3 rounded-lg">
+                      <div className="text-2xl font-bold text-green-400">{generatedLayout.activeSessions}</div>
+                      <div className="text-sm text-gray-400">Active Sessions</div>
+          </div>
+                    <div className="bg-gray-800 p-3 rounded-lg">
+                      <div className="text-2xl font-bold text-blue-400">${generatedLayout.monthlyRevenue.toLocaleString()}</div>
+                      <div className="text-sm text-gray-400">Monthly Revenue</div>
+          </div>
+                  </div>
+                </div>
+
+                {/* Zone Details */}
+                <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
+                  <h2 className="text-xl font-semibold text-white mb-4 flex items-center">
+                    <Users className="w-5 h-5 mr-2 text-blue-400" />
+                    Zone Details
+                  </h2>
+                  
+                  <div className="space-y-3">
+                    {generatedLayout.zones.map((zone: any) => (
+                      <div key={zone.id} className="bg-gray-800 p-4 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="font-semibold text-white">{zone.name}</h3>
+                          <div className={`w-3 h-3 rounded-full ${
+                            zone.occupied === zone.capacity ? 'bg-red-400' :
+                            zone.occupied > zone.capacity * 0.7 ? 'bg-yellow-400' :
+                            'bg-green-400'
+                          }`} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <p className="text-gray-400">Capacity</p>
+                            <p className="text-white">{zone.capacity}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-400">Occupied</p>
+                            <p className="text-white">{zone.occupied}</p>
+            </div>
+                          <div>
+                            <p className="text-gray-400">Available</p>
+                            <p className="text-green-400">{zone.capacity - zone.occupied}</p>
+          </div>
+                  <div>
+                            <p className="text-gray-400">Active Sessions</p>
+                            <p className="text-red-400 font-semibold">{zone.sessions}</p>
+                          </div>
                   </div>
                 </div>
               ))}
             </div>
           </div>
-        )}
+              </>
+            ) : (
+              /* Placeholder when no layout generated */
+              <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
+                <h2 className="text-xl font-semibold text-white mb-4 flex items-center">
+                  <MapPin className="w-5 h-5 mr-2 text-gray-400" />
+                  Layout Output
+                </h2>
+                <div className="text-center py-12">
+                  <MapPin className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                  <p className="text-gray-400 mb-2">No layout generated yet</p>
+                  <p className="text-gray-500 text-sm">Upload photos and YAML metadata to generate your digital layout</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
 
         {/* Behavioral Memory Layer */}
         {behavioralMemory.length > 0 && (
@@ -423,6 +356,11 @@ export default function LayoutPreviewPage() {
             </div>
           </div>
         )}
+
+        {/* Aliethia - The Five Unseen Layers */}
+        <div className="mt-8">
+          <AliethiaLayers />
+        </div>
       </div>
     </div>
   );
