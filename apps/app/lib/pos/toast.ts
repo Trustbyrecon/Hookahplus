@@ -271,3 +271,4 @@ export class ToastAdapter implements PosAdapter {
       return false;
     }
   }
+}
