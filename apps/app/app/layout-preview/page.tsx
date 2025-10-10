@@ -61,7 +61,7 @@ export default function LayoutPreviewPage() {
         ],
         totalCapacity: 34,
         activeSessions: 13,
-        monthlyRevenue: revenueMetrics.monthlyRevenue
+        monthlyRevenue: 35000
       };
       
       setGeneratedLayout(mockLayout);

@@ -130,47 +130,6 @@ export default function GuestPortal() {
       setIsStartingSession(false);
     }
   };
-    if (items.length === 0) {
-      alert('Please add items to your cart before starting a session');
-      return;
-    }
-
-    if (!tableData) {
-      alert('Please scan your table QR code first');
-      return;
-    }
-
-    setIsStartingSession(true);
-
-    try {
-      const result = await sessionManager.startSession({
-        tableId: tableData.tableId,
-        loungeId: tableData.loungeId,
-        customerId: `guest_${Date.now()}`,
-        items: items.map(item => ({
-          name: item.name,
-          quantity: item.qty,
-          price: item.price
-        })),
-        totalAmount: subtotal,
-        customerName: 'Guest Customer',
-        customerPhone: '',
-        sessionDuration: 60
-      });
-
-      if (result.ok && result.session) {
-        // Start monitoring the session
-        sessionManager.startMonitoring();
-        alert('Session started successfully! You can now view it in the App build.');
-      } else {
-        alert(`Failed to start session: ${result.error}`);
-      }
-    } catch (error) {
-      alert(`Error starting session: ${error}`);
-    } finally {
-      setIsStartingSession(false);
-    }
-  };
 
   // Handle Staff Panel button click
   const handleStaffPanel = () => {

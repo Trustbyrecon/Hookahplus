@@ -8,9 +8,7 @@ import {
   EyeOff, 
   Brain, 
   Fingerprint, 
-  Mirror, 
   Music, 
-  Seedling,
   Zap,
   Shield,
   Target,
@@ -36,9 +34,9 @@ const AliethiaLayer: React.FC<AliethiaLayerProps> = ({ layer, isVisible, onToggl
     switch (id) {
       case 1: return <RefreshCw className="w-6 h-6" />;
       case 2: return <Fingerprint className="w-6 h-6" />;
-      case 3: return <Mirror className="w-6 h-6" />;
+      case 3: return <Eye className="w-6 h-6" />;
       case 4: return <Music className="w-6 h-6" />;
-      case 5: return <Seedling className="w-6 h-6" />;
+      case 5: return <Target className="w-6 h-6" />;
       default: return <Brain className="w-6 h-6" />;
     }
   };
