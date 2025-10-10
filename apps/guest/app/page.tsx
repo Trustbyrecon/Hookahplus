@@ -71,6 +71,65 @@ export default function GuestPortal() {
 
   // Handle Fire Session button click
   const handleFireSession = async () => {
+    try {
+      setIsStartingSession(true);
+      
+      // Create session data
+      const sessionData = {
+        session_id: `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        lounge_id: 'guest-lounge',
+        table_id: tableData?.tableId || 'T-001',
+        flavor_mix: items.map(item => item.name),
+        meta: {
+          customerId: 'guest',
+          phone: '+1234567890',
+          email: 'guest@hookahplus.com',
+          flavors: items.map(item => item.name),
+          selectedItems: items,
+          totalAmount: subtotal,
+          source: 'guest_portal'
+        }
+      };
+
+      // Send to both guest and staff APIs
+      const guestResponse = await fetch('/api/guest/session/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          loungeId: 'guest-lounge',
+          guestId: 'guest',
+          tableId: tableData?.tableId || 'T-001'
+        })
+      });
+
+      const staffResponse = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(sessionData)
+      });
+
+      if (guestResponse.ok && staffResponse.ok) {
+        alert('Session started successfully! You can now view it in the App build.');
+        
+        // Clear cart after successful session start
+        items.forEach(item => remove(item.id));
+        
+        // Refresh staff dashboard if open
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('sessionCreated', { 
+            detail: { sessionData } 
+          }));
+        }
+      } else {
+        throw new Error('Failed to create session');
+      }
+    } catch (error) {
+      console.error('Error starting session:', error);
+      alert('Error creating session: ' + error.message);
+    } finally {
+      setIsStartingSession(false);
+    }
+  };
     if (items.length === 0) {
       alert('Please add items to your cart before starting a session');
       return;
@@ -176,6 +235,7 @@ export default function GuestPortal() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
+      <GlobalNavigation currentPage="home" />
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {/* QR Code Scanner */}

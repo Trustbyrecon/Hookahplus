@@ -160,6 +160,18 @@ export default function FireSessionDashboard() {
   // Load sessions on mount
   useEffect(() => {
     loadSessions();
+    
+    // Listen for session creation events from guest portal
+    const handleSessionCreated = () => {
+      console.log('Session created event received, refreshing...');
+      loadSessions();
+    };
+    
+    window.addEventListener('sessionCreated', handleSessionCreated);
+    
+    return () => {
+      window.removeEventListener('sessionCreated', handleSessionCreated);
+    };
   }, [loadSessions]);
 
   // Mock session notes
@@ -404,8 +416,23 @@ export default function FireSessionDashboard() {
     return tabMatch && roleMatch;
   });
 
+  const getThemeClasses = () => {
+    switch (selectedTheme) {
+      case 'midnight':
+        return 'bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white';
+      case 'sunset':
+        return 'bg-gradient-to-br from-orange-950 via-orange-900 to-amber-900 text-orange-100';
+      case 'ocean':
+        return 'bg-gradient-to-br from-blue-950 via-blue-900 to-cyan-900 text-blue-100';
+      case 'forest':
+        return 'bg-gradient-to-br from-green-950 via-green-900 to-emerald-900 text-green-100';
+      default:
+        return 'bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white';
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
+    <div className={`min-h-screen ${getThemeClasses()}`}>
       {/* Global Navigation */}
       <GlobalNavigation />
       {/* Header */}

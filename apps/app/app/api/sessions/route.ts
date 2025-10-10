@@ -45,13 +45,16 @@ export async function POST(req: NextRequest) {
       flavor_mix 
     } = body;
 
+    // Generate session_id if not provided
+    const finalSessionId = session_id || `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
     // Validate required fields
-    if (!session_id) {
+    if (!finalSessionId) {
       return NextResponse.json({ error: 'Session ID is required' }, { status: 400 });
     }
 
     // Check if session already exists
-    const existingSession = sessions.find(s => s.session_id === session_id);
+    const existingSession = sessions.find(s => s.session_id === finalSessionId);
     if (existingSession) {
       return NextResponse.json({ 
         session: existingSession,
@@ -62,7 +65,7 @@ export async function POST(req: NextRequest) {
     // Create new session
     const session = {
       id: `session_${Date.now()}`,
-      session_id,
+      session_id: finalSessionId,
       lounge_id,
       table_id,
       flavor_mix: flavor_mix || [],
