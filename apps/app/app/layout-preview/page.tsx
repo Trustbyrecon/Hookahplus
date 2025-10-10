@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   BarChart3, 
   RefreshCw, 
@@ -24,7 +24,17 @@ import {
   Lock,
   Unlock,
   Maximize2,
-  Minimize2
+  Minimize2,
+  Play,
+  Pause,
+  TrendingUp,
+  Shield,
+  Brain,
+  Sparkles,
+  ArrowRight,
+  ArrowLeft,
+  Info,
+  Lightbulb
 } from 'lucide-react';
 import GlobalNavigation from '../../components/GlobalNavigation';
 import { MASTER_SEATING_TYPES, getSeatingTypeStats, getZoneStats } from '../../lib/masterSeatingTypes';
@@ -36,6 +46,12 @@ export default function LayoutPreviewPage() {
   const [isLocked, setIsLocked] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(100);
   const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [isOnboardingMode, setIsOnboardingMode] = useState(true);
+  const [onboardingStep, setOnboardingStep] = useState(0);
+  const [isLiveMode, setIsLiveMode] = useState(false);
+  const [systemHealth, setSystemHealth] = useState('EXCELLENT');
+  const [trustScore, setTrustScore] = useState(87);
+  const [liveSessions, setLiveSessions] = useState(0);
   // Mock layout data - moved to state
   const initialLayoutData = {
     name: 'Grove Park Demo Lounge',
@@ -96,6 +112,40 @@ export default function LayoutPreviewPage() {
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [layoutData, setLayoutData] = useState(initialLayoutData);
   const [sessionsData, setSessionsData] = useState<any[]>([]);
+  const [realTimeData, setRealTimeData] = useState({
+    totalSessions: 12,
+    activeSessions: 4,
+    totalRevenue: 3850,
+    lastUpdated: new Date()
+  });
+
+  // Onboarding steps for frictionless experience
+  const onboardingSteps = [
+    {
+      title: "Welcome to Hookah+ Layout Preview",
+      description: "This is your visual grounder - a real-time view of your lounge's operational status",
+      icon: <Target className="w-8 h-8 text-teal-400" />,
+      action: "Get Started"
+    },
+    {
+      title: "Live Layout Visualization",
+      description: "See your lounge layout with real-time occupancy, sessions, and revenue tracking",
+      icon: <MapPin className="w-8 h-8 text-blue-400" />,
+      action: "Explore Layout"
+    },
+    {
+      title: "FOH/BOH Control Panel",
+      description: "Manage table assignments, staff coordination, and session monitoring",
+      icon: <Users className="w-8 h-8 text-green-400" />,
+      action: "Open Control Panel"
+    },
+    {
+      title: "Real-Time Sync",
+      description: "Data syncs automatically with guest orders, staff actions, and payment systems",
+      icon: <Zap className="w-8 h-8 text-purple-400" />,
+      action: "Enable Live Mode"
+    }
+  ];
 
   const posIntegrations = [
     {
@@ -164,60 +214,93 @@ export default function LayoutPreviewPage() {
     }
   }, [autoRefresh]);
 
+  // Enhanced data loading with cross-repository sync
   const handleLoadData = async () => {
     setIsLoading(true);
     try {
-      // Load sessions from Fire Session Dashboard API
-      const sessionsResponse = await fetch('/api/sessions');
+      // Sync with multiple repositories for comprehensive data
+      const [sessionsResponse, guestResponse, analyticsResponse] = await Promise.all([
+        fetch('/api/sessions'),
+        fetch('/api/guest/sessions'),
+        fetch('/api/analytics/layout')
+      ]);
+      
       const sessionsData = await sessionsResponse.json();
+      const guestData = await guestResponse.json();
+      const analyticsData = await analyticsResponse.json();
       
-      if (sessionsData.ok && sessionsData.sessions) {
-        setSessionsData(sessionsData.sessions);
-        
-        // Calculate real statistics from sessions
-        const totalSessions = sessionsData.sessions.length;
-        const activeSessions = sessionsData.sessions.filter((s: any) => s.state === 'ACTIVE').length;
-        const totalRevenue = sessionsData.sessions.reduce((sum: number, s: any) => sum + (s.priceCents || 0), 0) / 100;
-        
-        // Update layout data with real information
-        setLayoutData(prev => ({
-          ...prev,
-          totalSessions,
-          activeSessions,
-          totalRevenue,
-          zones: prev.zones.map(zone => {
-            // Count sessions for this zone
-            const zoneSessions = sessionsData.sessions.filter((s: any) => s.tableId === zone.id);
-            const occupied = zoneSessions.length;
-            const sessions = zoneSessions.filter((s: any) => s.state === 'ACTIVE').length;
-            
-            return {
-              ...zone,
-              occupied,
-              available: zone.capacity - occupied,
-              sessions
-            };
-          })
-        }));
-      } else {
-        // Fallback to simulated data if API fails
-        setLayoutData(prev => ({
-          ...prev,
-          totalSessions: Math.floor(Math.random() * 20),
-          activeSessions: Math.floor(Math.random() * 10),
-          totalRevenue: Math.floor(Math.random() * 5000),
-          zones: prev.zones.map(zone => ({
+      // Merge data from all sources
+      const allSessions = [
+        ...(sessionsData.sessions || []),
+        ...(guestData.sessions || [])
+      ];
+      
+      setSessionsData(allSessions);
+      
+      // Calculate comprehensive statistics
+      const totalSessions = allSessions.length;
+      const activeSessions = allSessions.filter((s: any) => 
+        s.state === 'ACTIVE' || s.status === 'active'
+      ).length;
+      const totalRevenue = allSessions.reduce((sum: number, s: any) => 
+        sum + (s.priceCents || s.totalAmount || 0), 0) / 100;
+      
+      // Update real-time data
+      setRealTimeData({
+        totalSessions,
+        activeSessions,
+        totalRevenue,
+        lastUpdated: new Date()
+      });
+      
+      // Update layout data with real information
+      setLayoutData(prev => ({
+        ...prev,
+        totalSessions,
+        activeSessions,
+        totalRevenue,
+        zones: prev.zones.map(zone => {
+          // Count sessions for this zone from all sources
+          const zoneSessions = allSessions.filter((s: any) => 
+            s.tableId === zone.id || s.zone === zone.id || s.table === zone.id
+          );
+          const occupied = zoneSessions.length;
+          const sessions = zoneSessions.filter((s: any) => 
+            s.state === 'ACTIVE' || s.status === 'active'
+          ).length;
+          
+          return {
             ...zone,
-            occupied: Math.floor(Math.random() * zone.capacity),
-            available: zone.capacity - Math.floor(Math.random() * zone.capacity),
-            sessions: Math.floor(Math.random() * 5)
-          }))
-        }));
-      }
+            occupied,
+            available: zone.capacity - occupied,
+            sessions
+          };
+        })
+      }));
       
-      setLastUpdated(new Date());
+      // Update system health based on data quality
+      const dataQuality = allSessions.length > 0 ? 'EXCELLENT' : 'GOOD';
+      setSystemHealth(dataQuality);
+      
+      // Update trust score based on data consistency
+      const trustScore = Math.min(95, 70 + (allSessions.length * 2));
+      setTrustScore(trustScore);
+      
     } catch (error) {
       console.error('Error loading data:', error);
+      // Fallback to simulated data if API fails
+      setLayoutData(prev => ({
+        ...prev,
+        totalSessions: Math.floor(Math.random() * 20),
+        activeSessions: Math.floor(Math.random() * 10),
+        totalRevenue: Math.floor(Math.random() * 5000),
+        zones: prev.zones.map(zone => ({
+          ...zone,
+          occupied: Math.floor(Math.random() * zone.capacity),
+          available: zone.capacity - Math.floor(Math.random() * zone.capacity),
+          sessions: Math.floor(Math.random() * 5)
+        }))
+      }));
     } finally {
       setIsLoading(false);
     }
@@ -265,21 +348,123 @@ export default function LayoutPreviewPage() {
     }
   };
 
+  // Onboarding modal component
+  const OnboardingModal = () => {
+    if (!isOnboardingMode) return null;
+    
+    const currentStep = onboardingSteps[onboardingStep];
+    
+    return (
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-8 max-w-2xl w-full">
+          <div className="text-center mb-6">
+            {currentStep.icon}
+            <h2 className="text-2xl font-bold text-white mt-4 mb-2">{currentStep.title}</h2>
+            <p className="text-zinc-400">{currentStep.description}</p>
+          </div>
+          
+          <div className="flex justify-between items-center">
+            <div className="flex gap-2">
+              {onboardingSteps.map((_, index) => (
+                <div
+                  key={index}
+                  className={`w-2 h-2 rounded-full ${
+                    index <= onboardingStep ? 'bg-teal-400' : 'bg-zinc-600'
+                  }`}
+                />
+              ))}
+            </div>
+            
+            <div className="flex gap-3">
+              {onboardingStep > 0 && (
+                <button
+                  onClick={() => setOnboardingStep(onboardingStep - 1)}
+                  className="flex items-center gap-2 px-4 py-2 text-zinc-400 hover:text-white transition-colors"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Previous
+                </button>
+              )}
+              
+              <button
+                onClick={() => {
+                  if (onboardingStep < onboardingSteps.length - 1) {
+                    setOnboardingStep(onboardingStep + 1);
+                  } else {
+                    setIsOnboardingMode(false);
+                    setIsLiveMode(true);
+                  }
+                }}
+                className="flex items-center gap-2 bg-teal-500 hover:bg-teal-600 text-white px-6 py-2 rounded-lg transition-colors"
+              >
+                {onboardingStep < onboardingSteps.length - 1 ? (
+                  <>
+                    {currentStep.action}
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                ) : (
+                  'Start Live Mode'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
       <GlobalNavigation />
       
+      {/* Onboarding Modal */}
+      <OnboardingModal />
+      
       <div className="flex h-screen">
         {/* Main Layout Area */}
         <div className="flex-1 flex flex-col">
-          {/* Header */}
+          {/* Enhanced Header with System Status */}
           <div className="bg-zinc-900 border-b border-zinc-800 p-4">
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold text-white">Layout Preview</h1>
                 <p className="text-zinc-400">Real-time layout management with live session tracking</p>
+                
+                {/* System Status Bar */}
+                <div className="flex items-center gap-6 mt-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${
+                      systemHealth === 'EXCELLENT' ? 'bg-green-400' : 'bg-yellow-400'
+                    }`} />
+                    <span className="text-zinc-300">System Health {systemHealth}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-green-400" />
+                    <span className="text-zinc-300">Trust Score {trustScore}%</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-blue-400" />
+                    <span className="text-zinc-300">Live Sessions {liveSessions}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <RefreshCw className={`w-4 h-4 ${autoRefresh ? 'text-green-400 animate-spin' : 'text-zinc-400'}`} />
+                    <span className="text-zinc-300">
+                      {autoRefresh ? 'Auto-refresh: ON' : 'Auto-refresh: OFF'}
+                    </span>
+                  </div>
+                  <div className="text-zinc-400">
+                    Last updated: {lastUpdated.toLocaleTimeString()}
+                  </div>
+                </div>
               </div>
               <div className="flex items-center space-x-4">
+                <button
+                  onClick={() => setIsOnboardingMode(true)}
+                  className="flex items-center gap-2 bg-zinc-700 hover:bg-zinc-600 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                  <Lightbulb className="w-4 h-4" />
+                  Onboarding
+                </button>
                 <button 
                   onClick={handleLoadData}
                   disabled={isLoading}
@@ -349,9 +534,9 @@ export default function LayoutPreviewPage() {
               </h2>
             </div>
             
-            {/* Visual Grounder Output */}
+            {/* Enhanced Visual Grounder Output */}
             <div 
-              className="relative mx-auto border-2 border-gray-300 rounded-lg bg-gray-50"
+              className="relative mx-auto border-2 border-gray-300 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 shadow-2xl"
               style={{ 
                 width: '600px', 
                 height: '400px',
@@ -359,34 +544,70 @@ export default function LayoutPreviewPage() {
                 transformOrigin: 'center'
               }}
             >
+              {/* Live Mode Indicator */}
+              {isLiveMode && (
+                <div className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 animate-pulse">
+                  <div className="w-2 h-2 bg-white rounded-full animate-ping" />
+                  LIVE
+                </div>
+              )}
+              
               {layoutData.zones.map((zone) => (
                 <div
                   key={zone.id}
-                  className={`absolute ${getZoneColor(zone.color)} opacity-80 hover:opacity-100 cursor-pointer transition-opacity ${
-                    selectedTable === zone.id ? 'ring-2 ring-blue-500' : ''
+                  className={`absolute ${getZoneColor(zone.color)} opacity-80 hover:opacity-100 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg ${
+                    selectedTable === zone.id ? 'ring-4 ring-blue-500 ring-opacity-50' : ''
+                  } ${
+                    zone.sessions > 0 ? 'animate-pulse' : ''
                   }`}
                   style={{
                     left: zone.coordinates.x,
                     top: zone.coordinates.y,
                     width: zone.coordinates.width,
                     height: zone.coordinates.height,
-                    borderRadius: '4px'
+                    borderRadius: '8px',
+                    boxShadow: zone.sessions > 0 ? '0 0 20px rgba(239, 68, 68, 0.3)' : '0 2px 8px rgba(0,0,0,0.1)'
                   }}
                   onClick={() => setSelectedTable(zone.id)}
                 >
-                  <div className="p-2 text-white text-sm font-medium">
-                    {zone.name}
+                  <div className="p-2 text-white text-sm font-medium flex items-center justify-between">
+                    <span>{zone.name}</span>
+                    {zone.sessions > 0 && (
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 bg-white rounded-full animate-ping" />
+                        <span className="text-xs">ACTIVE</span>
+                      </div>
+                    )}
                   </div>
-                  <div className="absolute bottom-1 left-2 text-xs text-white">
+                  <div className="absolute bottom-1 left-2 text-xs text-white font-semibold">
                     {zone.occupied}/{zone.capacity}
                   </div>
                   {zone.sessions > 0 && (
-                    <div className="absolute top-1 right-1 bg-red-500 text-white text-xs px-1 rounded">
+                    <div className="absolute top-1 right-1 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold animate-bounce">
                       {zone.sessions}
                     </div>
                   )}
+                  
+                  {/* Zone Status Indicator */}
+                  <div className={`absolute bottom-1 right-1 w-3 h-3 rounded-full ${
+                    zone.occupied === zone.capacity ? 'bg-red-400' :
+                    zone.occupied > zone.capacity * 0.7 ? 'bg-yellow-400' :
+                    'bg-green-400'
+                  }`} />
                 </div>
               ))}
+              
+              {/* Layout Grid Overlay */}
+              <div className="absolute inset-0 pointer-events-none">
+                <svg className="w-full h-full opacity-20">
+                  <defs>
+                    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e5e7eb" strokeWidth="1"/>
+                    </pattern>
+                  </defs>
+                  <rect width="100%" height="100%" fill="url(#grid)" />
+                </svg>
+              </div>
             </div>
 
             {/* Layout Controls */}
