@@ -337,7 +337,7 @@ export class Aliethia {
 
   private extractPotentialSeeds(content: string): any[] {
     // Extract potential bloom seeds from content
-    const seeds = [];
+    const seeds: any[] = [];
     const phrases = this.extractPhrases(content);
     const symbols = this.extractSymbols(content);
     const cadences = this.extractCadences(content);

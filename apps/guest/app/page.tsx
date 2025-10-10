@@ -11,6 +11,7 @@ import { SessionTimerAwareness } from '../components/SessionTimerAwareness';
 import GlobalNavigation from '../components/GlobalNavigation';
 import QRCodeScanner from '../components/QRCodeScanner';
 import RealTimeSessionSync from '../components/RealTimeSessionSync';
+import EnhancedStaffPanel from '../components/EnhancedStaffPanel';
 import { sessionManager, SessionData } from '../lib/sessionManager';
 import { 
   Clock, 
@@ -34,6 +35,7 @@ export default function GuestPortal() {
   const [sessionMetadata, setSessionMetadata] = useState<any>(null);
   const [currentSession, setCurrentSession] = useState<SessionData | null>(null);
   const [isStartingSession, setIsStartingSession] = useState(false);
+  const [showEnhancedStaffPanel, setShowEnhancedStaffPanel] = useState(false);
   
   const addToCart = (item: { id: number; name: string; price: number }) => {
     add({ id: String(item.id), name: item.name, price: Math.round(item.price * 100), qty: 1 });
@@ -74,7 +76,7 @@ export default function GuestPortal() {
     try {
       setIsStartingSession(true);
       
-      // Create session data
+      // Create session data for main app API
       const sessionData = {
         session_id: `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         lounge_id: 'guest-lounge',
@@ -91,24 +93,17 @@ export default function GuestPortal() {
         }
       };
 
-      // Send to both guest and staff APIs
-      const guestResponse = await fetch('/api/guest/session/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          loungeId: 'guest-lounge',
-          guestId: 'guest',
-          tableId: tableData?.tableId || 'T-001'
-        })
-      });
-
-      const staffResponse = await fetch('/api/sessions', {
+      // Send directly to main app sessions API
+      const response = await fetch('/api/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(sessionData)
       });
 
-      if (guestResponse.ok && staffResponse.ok) {
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Session created successfully:', result);
+        
         alert('Session started successfully! You can now view it in the App build.');
         
         // Clear cart after successful session start
@@ -117,11 +112,12 @@ export default function GuestPortal() {
         // Refresh staff dashboard if open
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('sessionCreated', { 
-            detail: { sessionData } 
+            detail: { sessionData: result.session } 
           }));
         }
       } else {
-        throw new Error('Failed to create session');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create session');
       }
     } catch (error) {
       console.error('Error starting session:', error);
@@ -133,12 +129,7 @@ export default function GuestPortal() {
 
   // Handle Staff Panel button click
   const handleStaffPanel = () => {
-    if (currentSession) {
-      sessionManager.openAppBuild('staff');
-    } else {
-      // Open general staff panel
-      window.open('https://hookahplus-app-prod.vercel.app/fire-session-dashboard', '_blank');
-    }
+    setShowEnhancedStaffPanel(true);
   };
 
   // Handle Dashboard button click
@@ -518,6 +509,15 @@ export default function GuestPortal() {
           </div>
         </div>
       </div>
+
+      {/* Enhanced Staff Panel Modal */}
+      {showEnhancedStaffPanel && (
+        <EnhancedStaffPanel
+          sessionId={currentSession?.sessionId}
+          tableId={tableData?.tableId}
+          onClose={() => setShowEnhancedStaffPanel(false)}
+        />
+      )}
     </div>
   );
 }
