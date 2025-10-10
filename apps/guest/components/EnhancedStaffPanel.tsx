@@ -25,7 +25,8 @@ import {
   AlertTriangle,
   CheckCircle,
   Crown,
-  Flame
+  Flame,
+  X
 } from 'lucide-react';
 
 interface BehavioralMemory {
