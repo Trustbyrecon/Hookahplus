@@ -93,6 +93,14 @@ export default function LandingPage() {
       borderColor: 'border-orange-500/30'
     },
     {
+      title: 'Operator Dashboard',
+      description: 'Enterprise Control',
+      icon: <Crown className="w-6 h-6 text-emerald-400" />,
+      href: '/operator',
+      color: 'from-emerald-500/20 to-teal-500/20',
+      borderColor: 'border-emerald-500/30'
+    },
+    {
       title: 'Staff Ops',
       description: 'Operations',
       icon: <Users className="w-6 h-6 text-purple-400" />,

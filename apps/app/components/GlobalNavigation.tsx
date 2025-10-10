@@ -128,6 +128,15 @@ const GlobalNavigation: React.FC = () => {
           flowState: 'active',
           nextAction: 'Manage active fire sessions',
           aiRecommendation: 'Monitor live sessions'
+        },
+        {
+          label: 'Operator Dashboard',
+          href: '/operator',
+          icon: <Crown className="w-4 h-4" />,
+          description: 'Enterprise-grade operator control',
+          flowState: 'active',
+          nextAction: 'Access operator controls',
+          aiRecommendation: 'Monitor system metrics and trust score'
         }
       ]
     },
