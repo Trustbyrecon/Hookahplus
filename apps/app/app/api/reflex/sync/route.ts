@@ -11,36 +11,31 @@ export async function POST(request: NextRequest) {
       source,
       layers: layers || ['recursion', 'silent-fingerprints', 'mirrors', 'rhythm-guard', 'seeded-futures'],
       status: 'synced',
-      results: {
-        recursion: {
-          echoes: Math.floor(Math.random() * 50) + 20,
-          trustSignals: Math.floor(Math.random() * 100) + 50,
-          status: 'active'
+      businessIntelligence: {
+        customerFlowOptimization: {
+          patternsDetected: Math.floor(Math.random() * 15) + 20,
+          efficiencyGains: Math.floor(Math.random() * 25) + 15,
+          status: 'optimizing'
         },
-        silentFingerprints: {
-          gapsDetected: Math.floor(Math.random() * 10),
-          patternsIdentified: Math.floor(Math.random() * 25) + 15,
+        revenuePatternRecognition: {
+          peakHoursIdentified: Math.floor(Math.random() * 8) + 3,
+          upsellOpportunities: Math.floor(Math.random() * 12) + 8,
+          status: 'learning'
+        },
+        staffEfficiencyTracking: {
+          performanceMetrics: Math.floor(Math.random() * 20) + 30,
+          improvementAreas: Math.floor(Math.random() * 5) + 2,
           status: 'monitoring'
         },
-        mirrors: {
-          perspectives: 4,
-          fusionBeams: Math.floor(Math.random() * 20) + 10,
-          status: 'operational'
-        },
-        rhythmGuard: {
-          patternsProtected: Math.floor(Math.random() * 30) + 20,
-          timingAccuracy: Math.floor(Math.random() * 20) + 80,
-          status: 'secure'
-        },
-        seededFutures: {
-          bloomSeeds: Math.floor(Math.random() * 15) + 5,
-          germinationRate: Math.floor(Math.random() * 30) + 70,
-          status: 'growing'
+        predictiveInsights: {
+          customerPreferences: Math.floor(Math.random() * 25) + 15,
+          demandForecasting: Math.floor(Math.random() * 30) + 70,
+          status: 'generating'
         }
       },
       trustScore: Math.floor(Math.random() * 10) + 85, // 85-95
       systemHealth: Math.floor(Math.random() * 5) + 95, // 95-100
-      memoryLayerStatus: 'optimized'
+      intelligenceLevel: 'optimized'
     };
 
     // Log the sync event
@@ -49,7 +44,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: syncResults,
-      message: 'Reflex logs synchronized successfully'
+      message: 'Business intelligence synchronized successfully'
     });
 
   } catch (error) {
@@ -57,7 +52,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { 
         success: false, 
-        error: 'Failed to sync reflex logs',
+        error: 'Failed to sync business intelligence',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
@@ -67,7 +62,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   return NextResponse.json({
-    message: 'Reflex sync endpoint ready',
+    message: 'Business intelligence sync endpoint ready',
     availableLayers: ['recursion', 'silent-fingerprints', 'mirrors', 'rhythm-guard', 'seeded-futures'],
     status: 'operational'
   });

@@ -94,8 +94,8 @@ export default function OperatorPage() {
     },
     {
       id: 'sync-logs',
-      title: 'Sync Reflex Logs',
-      description: 'Update system intelligence',
+      title: 'Sync Business Intelligence',
+      description: 'Update customer insights & patterns',
       icon: <RefreshCw className="w-6 h-6" />,
       color: 'bg-purple-600 hover:bg-purple-500',
       action: async () => {
@@ -132,9 +132,9 @@ export default function OperatorPage() {
             }));
 
             if (syncButton) {
-              syncButton.innerHTML = '<RefreshCw className="w-6 h-6" /> Sync Complete ✓';
+              syncButton.innerHTML = '<RefreshCw className="w-6 h-6" /> Intelligence Updated ✓';
               setTimeout(() => {
-                syncButton.innerHTML = '<RefreshCw className="w-6 h-6" /> Sync Reflex Logs';
+                syncButton.innerHTML = '<RefreshCw className="w-6 h-6" /> Sync Business Intelligence';
                 syncButton.disabled = false;
               }, 2000);
             }
@@ -146,7 +146,7 @@ export default function OperatorPage() {
           if (syncButton) {
             syncButton.innerHTML = '<RefreshCw className="w-6 h-6" /> Sync Failed';
             setTimeout(() => {
-              syncButton.innerHTML = '<RefreshCw className="w-6 h-6" /> Sync Reflex Logs';
+              syncButton.innerHTML = '<RefreshCw className="w-6 h-6" /> Sync Business Intelligence';
               syncButton.disabled = false;
             }, 2000);
           }
@@ -335,24 +335,24 @@ export default function OperatorPage() {
             <div className="bg-zinc-800/50 backdrop-blur-sm border border-zinc-700 rounded-xl p-6 mb-6">
               <h3 className="text-lg font-semibold text-white mb-6 flex items-center space-x-2">
                 <Brain className="w-5 h-5 text-purple-400" />
-                <span>Reflex Agent Status</span>
+                <span>Lounge Intelligence Status</span>
               </h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-zinc-300">Operational Flow</span>
-                  <span className="text-emerald-400 font-medium">Synced</span>
+                  <span className="text-zinc-300">Customer Flow Optimization</span>
+                  <span className="text-emerald-400 font-medium">Active</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-zinc-300">Memory Layer</span>
-                  <span className="text-blue-400 font-medium">Active</span>
+                  <span className="text-zinc-300">Revenue Pattern Recognition</span>
+                  <span className="text-blue-400 font-medium">Learning</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-zinc-300">Trust Binding</span>
-                  <span className="text-purple-400 font-medium">Secure</span>
+                  <span className="text-zinc-300">Staff Efficiency Tracking</span>
+                  <span className="text-purple-400 font-medium">Monitoring</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-zinc-300">AI Intelligence</span>
-                  <span className="text-orange-400 font-medium">Learning</span>
+                  <span className="text-zinc-300">Predictive Insights</span>
+                  <span className="text-orange-400 font-medium">Generating</span>
                 </div>
               </div>
             </div>
@@ -361,7 +361,7 @@ export default function OperatorPage() {
             <div className="bg-zinc-800/50 backdrop-blur-sm border border-zinc-700 rounded-xl p-6">
               <h3 className="text-lg font-semibold text-white mb-6 flex items-center space-x-2">
                 <Shield className="w-5 h-5 text-emerald-400" />
-                <span>Trust Score</span>
+                <span>Business Intelligence Score</span>
               </h3>
               <div className="text-center">
                 <div className="relative w-24 h-24 mx-auto mb-4">
@@ -390,7 +390,12 @@ export default function OperatorPage() {
                     <span className="text-2xl font-bold text-white">{trustScore}</span>
                   </div>
                 </div>
-                <p className="text-sm text-zinc-400">System Trust Level</p>
+                <p className="text-sm text-zinc-400 mb-2">System Intelligence Level</p>
+                <div className="text-xs text-emerald-300 bg-emerald-500/10 px-2 py-1 rounded">
+                  {trustScore >= 90 ? "🎯 Peak Performance" : 
+                   trustScore >= 85 ? "🚀 High Efficiency" : 
+                   trustScore >= 80 ? "✅ Good Standing" : "⚠️ Needs Attention"}
+                </div>
               </div>
             </div>
           </div>
