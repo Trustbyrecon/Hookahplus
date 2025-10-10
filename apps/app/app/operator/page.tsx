@@ -100,7 +100,7 @@ export default function OperatorPage() {
       color: 'bg-purple-600 hover:bg-purple-500',
       action: async () => {
         // Trigger Aliethia Memory Layer sync
-        const syncButton = document.querySelector('[data-action="sync-logs"]');
+        const syncButton = document.querySelector('[data-action="sync-logs"]') as HTMLButtonElement;
         if (syncButton) {
           syncButton.innerHTML = '<RefreshCw className="w-6 h-6 animate-spin" /> Syncing...';
           syncButton.disabled = true;
