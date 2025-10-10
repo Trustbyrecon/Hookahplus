@@ -1,9 +1,34 @@
 // app/operator/page.tsx
 "use client";
 
-import { useEffect } from "react";
-// Removed: import { Button } from "@/components/ui/button";
-// import { button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { 
+  Play, 
+  Layout, 
+  Sync, 
+  Users, 
+  BarChart3, 
+  Settings, 
+  Bell, 
+  Shield, 
+  Zap, 
+  Clock, 
+  TrendingUp, 
+  Activity,
+  Eye,
+  EyeOff,
+  Menu,
+  X,
+  ChevronDown,
+  Star,
+  Crown,
+  Target,
+  Brain,
+  Heart,
+  Coffee,
+  Wind,
+  Sparkles
+} from "lucide-react";
 
 function useReflexAgent(routeName: string) {
   useEffect(() => {
@@ -31,29 +56,292 @@ function useReflexAgent(routeName: string) {
 
 export default function OperatorPage() {
   useReflexAgent("Operator");
+  const [activeSessions, setActiveSessions] = useState(12);
+  const [totalRevenue, setTotalRevenue] = useState(2847);
+  const [systemHealth, setSystemHealth] = useState(98);
+  const [trustScore, setTrustScore] = useState(87);
+  const [isLiveMode, setIsLiveMode] = useState(true);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  // Mock real-time data updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveSessions(prev => prev + Math.floor(Math.random() * 3) - 1);
+      setTotalRevenue(prev => prev + Math.floor(Math.random() * 50));
+      setSystemHealth(prev => Math.max(95, Math.min(100, prev + Math.floor(Math.random() * 6) - 3)));
+      setTrustScore(prev => Math.max(80, Math.min(95, prev + Math.floor(Math.random() * 4) - 2)));
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const quickActions = [
+    {
+      id: 'start-session',
+      title: 'Start New Session',
+      description: 'Launch a new hookah session',
+      icon: <Play className="w-6 h-6" />,
+      color: 'bg-emerald-600 hover:bg-emerald-500',
+      action: () => console.log('Starting new session...')
+    },
+    {
+      id: 'layout-manager',
+      title: 'Lounge Layout Manager',
+      description: 'Configure table arrangements',
+      icon: <Layout className="w-6 h-6" />,
+      color: 'bg-blue-600 hover:bg-blue-500',
+      action: () => console.log('Opening layout manager...')
+    },
+    {
+      id: 'sync-logs',
+      title: 'Sync Reflex Logs',
+      description: 'Update system intelligence',
+      icon: <Sync className="w-6 h-6" />,
+      color: 'bg-purple-600 hover:bg-purple-500',
+      action: () => console.log('Syncing logs...')
+    },
+    {
+      id: 'analytics',
+      title: 'Analytics Dashboard',
+      description: 'View performance metrics',
+      icon: <BarChart3 className="w-6 h-6" />,
+      color: 'bg-orange-600 hover:bg-orange-500',
+      action: () => console.log('Opening analytics...')
+    }
+  ];
+
+  const metrics = [
+    {
+      title: 'Active Sessions',
+      value: activeSessions,
+      change: '+3',
+      changeType: 'positive',
+      icon: <Users className="w-5 h-5" />,
+      color: 'text-emerald-400'
+    },
+    {
+      title: 'Today\'s Revenue',
+      value: `$${totalRevenue.toLocaleString()}`,
+      change: '+12%',
+      changeType: 'positive',
+      icon: <TrendingUp className="w-5 h-5" />,
+      color: 'text-green-400'
+    },
+    {
+      title: 'System Health',
+      value: `${systemHealth}%`,
+      change: '+2%',
+      changeType: 'positive',
+      icon: <Activity className="w-5 h-5" />,
+      color: 'text-blue-400'
+    },
+    {
+      title: 'Trust Score',
+      value: trustScore,
+      change: '+5',
+      changeType: 'positive',
+      icon: <Shield className="w-5 h-5" />,
+      color: 'text-purple-400'
+    }
+  ];
+
+  const recentActivity = [
+    { id: 1, action: 'Session T-007 started', time: '2 min ago', type: 'session' },
+    { id: 2, action: 'Payment processed for T-003', time: '5 min ago', type: 'payment' },
+    { id: 3, action: 'Layout updated - VIP section', time: '12 min ago', type: 'layout' },
+    { id: 4, action: 'Reflex logs synchronized', time: '18 min ago', type: 'system' }
+  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white p-8">
-      <h1 className="text-4xl font-extrabold text-teal-400 mb-6">Main Operator Dashboard</h1>
-      <p className="mb-4 text-lg max-w-xl">
-        Manage sessions, layouts, and view Reflex Agent state in real-time.
-      </p>
+    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
+      {/* Header */}
+      <header className="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="p-2 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-lg">
+                <Zap className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-white">Hookah+ Operator Dashboard</h1>
+                <p className="text-sm text-zinc-400">Enterprise-grade lounge management</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              {/* Live Mode Indicator */}
+              <div className={`flex items-center space-x-2 px-3 py-2 rounded-lg ${
+                isLiveMode ? 'bg-emerald-600/20 text-emerald-400' : 'bg-zinc-700 text-zinc-400'
+              }`}>
+                <div className={`w-2 h-2 rounded-full ${
+                  isLiveMode ? 'bg-emerald-400 animate-pulse' : 'bg-zinc-500'
+                }`}></div>
+                <span className="text-sm font-medium">
+                  {isLiveMode ? 'LIVE' : 'OFFLINE'}
+                </span>
+              </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-8">
-        <button className="bg-teal-600 hover:bg-teal-500 text-white py-6 text-lg rounded" type="button">
-          Start New Session
-        </button>
-        <button className="border border-teal-400 text-teal-300 hover:text-white py-6 text-lg rounded bg-transparent" type="button">
-          Lounge Layout Manager
-        </button>
-        <button className="text-teal-200 hover:text-white py-6 text-lg rounded bg-transparent" type="button">
-          Sync Reflex Logs
-        </button>
-      </div>
+              {/* Notifications */}
+              <button 
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="p-2 hover:bg-zinc-800 rounded-lg transition-colors relative"
+              >
+                <Bell className="w-5 h-5 text-zinc-400" />
+                {showNotifications && (
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
+                )}
+              </button>
 
-      <div className="mt-12 border border-teal-600 p-6 rounded-2xl bg-zinc-800 shadow-xl">
-        <p className="text-teal-200 text-lg">🌀 Reflex Agent Live — Operational Flow Synced</p>
-      </div>
+              {/* Settings */}
+              <button className="p-2 hover:bg-zinc-800 rounded-lg transition-colors">
+                <Settings className="w-5 h-5 text-zinc-400" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        {/* Metrics Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {metrics.map((metric, index) => (
+            <div key={index} className="bg-zinc-800/50 backdrop-blur-sm border border-zinc-700 rounded-xl p-6 hover:border-zinc-600 transition-colors">
+              <div className="flex items-center justify-between mb-4">
+                <div className={`p-2 rounded-lg bg-zinc-700 ${metric.color}`}>
+                  {metric.icon}
+                </div>
+                <span className={`text-sm font-medium ${
+                  metric.changeType === 'positive' ? 'text-emerald-400' : 'text-red-400'
+                }`}>
+                  {metric.change}
+                </span>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-white mb-1">{metric.value}</p>
+                <p className="text-sm text-zinc-400">{metric.title}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Quick Actions */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-white mb-6 flex items-center space-x-2">
+            <Target className="w-5 h-5 text-emerald-400" />
+            <span>Quick Actions</span>
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {quickActions.map((action) => (
+              <button
+                key={action.id}
+                onClick={action.action}
+                className={`${action.color} text-white p-6 rounded-xl transition-all duration-200 hover:scale-105 hover:shadow-lg group`}
+              >
+                <div className="flex items-center space-x-3 mb-3">
+                  {action.icon}
+                  <h3 className="font-semibold text-lg">{action.title}</h3>
+                </div>
+                <p className="text-sm opacity-90">{action.description}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Dashboard Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Recent Activity */}
+          <div className="lg:col-span-2">
+            <div className="bg-zinc-800/50 backdrop-blur-sm border border-zinc-700 rounded-xl p-6">
+              <h3 className="text-lg font-semibold text-white mb-6 flex items-center space-x-2">
+                <Clock className="w-5 h-5 text-blue-400" />
+                <span>Recent Activity</span>
+              </h3>
+              <div className="space-y-4">
+                {recentActivity.map((activity) => (
+                  <div key={activity.id} className="flex items-center justify-between p-4 bg-zinc-700/50 rounded-lg hover:bg-zinc-700 transition-colors">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-2 h-2 rounded-full ${
+                        activity.type === 'session' ? 'bg-emerald-400' :
+                        activity.type === 'payment' ? 'bg-green-400' :
+                        activity.type === 'layout' ? 'bg-blue-400' :
+                        'bg-purple-400'
+                      }`}></div>
+                      <span className="text-white">{activity.action}</span>
+                    </div>
+                    <span className="text-sm text-zinc-400">{activity.time}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* System Status */}
+          <div>
+            <div className="bg-zinc-800/50 backdrop-blur-sm border border-zinc-700 rounded-xl p-6 mb-6">
+              <h3 className="text-lg font-semibold text-white mb-6 flex items-center space-x-2">
+                <Brain className="w-5 h-5 text-purple-400" />
+                <span>Reflex Agent Status</span>
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-zinc-300">Operational Flow</span>
+                  <span className="text-emerald-400 font-medium">Synced</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-zinc-300">Memory Layer</span>
+                  <span className="text-blue-400 font-medium">Active</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-zinc-300">Trust Binding</span>
+                  <span className="text-purple-400 font-medium">Secure</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-zinc-300">AI Intelligence</span>
+                  <span className="text-orange-400 font-medium">Learning</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Trust Score Visualization */}
+            <div className="bg-zinc-800/50 backdrop-blur-sm border border-zinc-700 rounded-xl p-6">
+              <h3 className="text-lg font-semibold text-white mb-6 flex items-center space-x-2">
+                <Shield className="w-5 h-5 text-emerald-400" />
+                <span>Trust Score</span>
+              </h3>
+              <div className="text-center">
+                <div className="relative w-24 h-24 mx-auto mb-4">
+                  <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="40"
+                      stroke="currentColor"
+                      strokeWidth="8"
+                      fill="none"
+                      className="text-zinc-700"
+                    />
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="40"
+                      stroke="currentColor"
+                      strokeWidth="8"
+                      fill="none"
+                      strokeDasharray={`${trustScore * 2.51} 251`}
+                      className="text-emerald-400 transition-all duration-1000"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-2xl font-bold text-white">{trustScore}</span>
+                  </div>
+                </div>
+                <p className="text-sm text-zinc-400">System Trust Level</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
