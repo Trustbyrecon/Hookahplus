@@ -86,8 +86,8 @@ const SUB_TIERS: SubTier[] = [
     id: "starter",
     name: "Starter",
     monthly: 49,
-    includes: ["Session Timer", "QR Payments"],
-    ideal: "New lounges",
+    includes: ["Session Timer", "QR Payments", "Basic Analytics"],
+    ideal: "New lounges (1-5 tables)",
     reflex: "Reflex Core Metrics",
     pulse: 45,
     color: "slate",
@@ -96,8 +96,8 @@ const SUB_TIERS: SubTier[] = [
     id: "core",
     name: "Core",
     monthly: 99,
-    includes: ["Add-On Tracking", "Loyalty"],
-    ideal: "Busy lounges",
+    includes: ["Add-On Tracking", "Loyalty Program", "Staff Management"],
+    ideal: "Busy lounges (6-15 tables)",
     reflex: "Reflex Mix Recommender",
     pulse: 65,
     color: "cyan",
@@ -106,8 +106,8 @@ const SUB_TIERS: SubTier[] = [
     id: "trust",
     name: "Trust+",
     monthly: 199,
-    includes: ["AI Memory", "Stripe Sync", "Reflex Logs"],
-    ideal: "Growth-phase lounges",
+    includes: ["AI Memory", "Stripe Sync", "Reflex Logs", "Predictive Analytics"],
+    ideal: "Growth-phase lounges (16+ tables)",
     reflex: "TrustGraph + Smart Pricing",
     pulse: 85,
     color: "violet",
@@ -116,8 +116,8 @@ const SUB_TIERS: SubTier[] = [
     id: "enterprise",
     name: "Enterprise+",
     monthly: null,
-    includes: ["API Access", "Multi-Location Ops", "SLA & SSO"],
-    ideal: "Franchises",
+    includes: ["API Access", "Multi-Location Ops", "SLA & SSO", "Custom Integrations"],
+    ideal: "Franchises & Chains",
     reflex: "Full Reflex Chain Integration",
     pulse: 95,
     color: "emerald",
@@ -195,12 +195,33 @@ function SubTierCard({ t, annual, onSelect }: { t: SubTier; annual: boolean; onS
     return `${currency(m)}/${annual ? "mo (annual)" : "mo"}`;
   }, [t, annual]);
 
+  // Calculate per-session rates based on typical lounge capacity
+  const getPerSessionRate = (tierId: string, monthly: number | null) => {
+    if (!monthly) return "Custom";
+    const annualRate = annual ? Math.round(monthly * 0.85) : monthly;
+    const sessionsPerMonth = {
+      starter: 200,    // 1-5 tables, ~200 sessions/month
+      core: 600,       // 6-15 tables, ~600 sessions/month  
+      trust: 1200,     // 16+ tables, ~1200 sessions/month
+      enterprise: 2000 // Franchises, ~2000+ sessions/month
+    };
+    const sessions = sessionsPerMonth[tierId as keyof typeof sessionsPerMonth] || 200;
+    const perSession = annualRate / sessions;
+    return `~${currency(perSession)}/session`;
+  };
+
   return (
     <Card className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">{t.name}</h3>
         <span className={`px-2 py-1 rounded-full text-xs bg-${t.color}-500/15 text-${t.color}-300 border border-${t.color}-500/30`}>{price}</span>
       </div>
+      
+      {/* Per-Session Rate */}
+      <div className="text-sm text-white/70">
+        <span className="font-medium">Per Session:</span> {getPerSessionRate(t.id, t.monthly)}
+      </div>
+      
       <ul className="text-sm list-disc pl-4 text-white/80">
         {t.includes.map((i) => <li key={i}>{i}</li>)}
       </ul>
@@ -321,7 +342,38 @@ export default function PricingIntelligenceBoard() {
           <button
             data-agent
             data-event="click:start-onboarding"
-            onClick={() => fireAgent({ type: "ui.cta.startOnboarding", selectedSub })}
+            onClick={async () => {
+              fireAgent({ type: "ui.cta.startOnboarding", selectedSub });
+              
+              // Trigger sync/optimize for onboarding flow
+              try {
+                const response = await fetch('/api/sync/optimize', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    action: 'start_onboarding',
+                    selectedTier: selectedSub,
+                    timestamp: Date.now(),
+                    source: 'pricing_intelligence'
+                  })
+                });
+                
+                if (response.ok) {
+                  const result = await response.json();
+                  console.log('Onboarding optimization triggered:', result);
+                  
+                  // Route to lounge onboarding flow
+                  window.location.href = '/layout-preview?onboarding=true&tier=' + (selectedSub || 'starter');
+                } else {
+                  // Fallback to direct routing
+                  window.location.href = '/layout-preview?onboarding=true';
+                }
+              } catch (error) {
+                console.error('Onboarding optimization failed:', error);
+                // Fallback to direct routing
+                window.location.href = '/layout-preview?onboarding=true';
+              }
+            }}
             className="inline-flex items-center justify-center rounded-xl bg-emerald-500 px-4 py-2 text-sm font-medium hover:bg-emerald-400 transition"
           >
             Start Operator Onboarding
@@ -337,7 +389,39 @@ export default function PricingIntelligenceBoard() {
           <button
             data-agent
             data-event="click:contact-sales"
-            onClick={() => fireAgent({ type: "ui.cta.contactSales" })}
+            onClick={async () => {
+              fireAgent({ type: "ui.cta.contactSales", selectedSub });
+              
+              // Add to POS waitlist
+              try {
+                const response = await fetch('/api/admin/pos-waitlist', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    source: 'pricing_intelligence',
+                    selectedTier: selectedSub,
+                    interest: 'pos_integration',
+                    timestamp: Date.now(),
+                    contactType: 'sales_inquiry'
+                  })
+                });
+                
+                if (response.ok) {
+                  const result = await response.json();
+                  console.log('Added to POS waitlist:', result);
+                  
+                  // Show success message
+                  alert('Thank you! You\'ve been added to our POS integration waitlist. Our sales team will contact you soon.');
+                } else {
+                  // Fallback to contact form
+                  window.location.href = '/admin/pos-waitlist';
+                }
+              } catch (error) {
+                console.error('POS waitlist signup failed:', error);
+                // Fallback to contact form
+                window.location.href = '/admin/pos-waitlist';
+              }
+            }}
             className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm hover:bg-white/10"
           >
             Contact Sales
