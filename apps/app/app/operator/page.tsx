@@ -93,6 +93,14 @@ export default function OperatorPage() {
       action: () => window.location.href = '/layout-preview'
     },
     {
+      id: 'pricing-intelligence',
+      title: 'Pricing Intelligence',
+      description: 'Revenue optimization & pricing strategy',
+      icon: <BarChart3 className="w-6 h-6" />,
+      color: 'bg-violet-600 hover:bg-violet-500',
+      action: () => window.location.href = '/pricing'
+    },
+    {
       id: 'sync-logs',
       title: 'Sync Business Intelligence',
       description: 'Update customer insights & patterns',
@@ -222,6 +230,19 @@ export default function OperatorPage() {
             </div>
             
             <div className="flex items-center space-x-4">
+              {/* Navigation Links */}
+              <div className="hidden md:flex items-center space-x-4">
+                <a href="/" className="text-zinc-300 hover:text-white transition-colors text-sm">
+                  Dashboard
+                </a>
+                <a href="/pricing" className="text-zinc-300 hover:text-white transition-colors text-sm">
+                  Pricing Intelligence
+                </a>
+                <a href="/admin/reflex" className="text-zinc-300 hover:text-white transition-colors text-sm">
+                  Event Analytics
+                </a>
+              </div>
+
               {/* Live Mode Indicator */}
               <div className={`flex items-center space-x-2 px-3 py-2 rounded-lg ${
                 isLiveMode ? 'bg-emerald-600/20 text-emerald-400' : 'bg-zinc-700 text-zinc-400'
