@@ -191,3 +191,19 @@ model Item {
 
   @@map("items")
 }
+
+model ReflexEvent {
+  id             String   @id @default(cuid())
+  type           String
+  source         String   @default("ui") // ui | backend | agent
+  sessionId      String?  // lounge session id (if any)
+  paymentIntent  String?  // stripe PI (if any)
+  payload        String?  // JSON string for SQLite compatibility
+  payloadHash    String?  // SHA256 hash for deduplication
+  userAgent      String?
+  ip             String?
+  createdAt      DateTime @default(now())
+
+  @@index([type, createdAt])
+  @@map("reflex_events")
+}

@@ -137,6 +137,15 @@ const GlobalNavigation: React.FC = () => {
           flowState: 'active',
           nextAction: 'Access operator controls',
           aiRecommendation: 'Monitor system metrics and trust score'
+        },
+        {
+          label: 'Pricing Intelligence',
+          href: '/pricing',
+          icon: <BarChart3 className="w-4 h-4" />,
+          description: 'Revenue optimization and pricing strategy',
+          flowState: 'active',
+          nextAction: 'Configure pricing tiers',
+          aiRecommendation: 'Optimize add-on pricing for maximum revenue'
         }
       ]
     },
@@ -231,6 +240,15 @@ const GlobalNavigation: React.FC = () => {
           flowState: 'idle',
           nextAction: 'Access admin functions',
           aiRecommendation: 'Review system settings'
+        },
+        {
+          label: 'Reflex Events',
+          href: '/admin/reflex',
+          icon: <BarChart3 className="w-4 h-4" />,
+          description: 'Monitor pricing intelligence events',
+          flowState: 'active',
+          nextAction: 'View event analytics',
+          aiRecommendation: 'Track user behavior patterns'
         }
       ]
     }
