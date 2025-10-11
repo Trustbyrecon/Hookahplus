@@ -14,21 +14,22 @@ import {
   Zap, 
   Clock, 
   TrendingUp, 
-  Activity,
-  Eye,
-  EyeOff,
-  Menu,
-  X,
-  ChevronDown,
-  Star,
-  Crown,
-  Target,
-  Brain,
-  Heart,
-  Coffee,
-  Wind,
+  Activity, 
+  Eye, 
+  EyeOff, 
+  Menu, 
+  X, 
+  ChevronDown, 
+  Star, 
+  Crown, 
+  Target, 
+  Brain, 
+  Heart, 
+  Coffee, 
+  Wind, 
   Sparkles
 } from "lucide-react";
+import Ktl4StatusDashboard from '@/components/Ktl4StatusDashboard';
 
 function useReflexAgent(routeName: string) {
   useEffect(() => {
@@ -320,6 +321,13 @@ export default function OperatorPage() {
                 <p className="text-sm opacity-90">{action.description}</p>
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* KTL-4 Keep-The-Lights-On Status */}
+        <div className="mb-8">
+          <div className="bg-zinc-800/50 backdrop-blur-sm border border-zinc-700 rounded-xl p-6">
+            <Ktl4StatusDashboard />
           </div>
         </div>
 

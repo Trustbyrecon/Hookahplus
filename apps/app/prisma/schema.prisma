@@ -207,3 +207,115 @@ model ReflexEvent {
   @@index([type, createdAt])
   @@map("reflex_events")
 }
+
+// KTL-4 Keep-The-Lights-On Models
+model Ktl4HealthCheck {
+  id          String   @id @default(cuid())
+  flowName    String   // 'payment_settlement', 'session_lifecycle', 'order_intake', 'pos_sync'
+  checkType   String   // 'heartbeat', 'reconciliation', 'latency', 'parity'
+  status      String   // 'healthy', 'degraded', 'critical', 'failed'
+  details     String?  // JSON string with check details
+  threshold   String?  // Threshold that was checked
+  actualValue String?  // Actual value that triggered status
+  operatorId  String?  // Operator who triggered manual check
+  createdAt   DateTime @default(now())
+
+  @@index([flowName, createdAt])
+  @@map("ktl4_health_checks")
+}
+
+model SettlementReconciliation {
+  id              String   @id @default(cuid())
+  stripeChargeId  String?  // Stripe charge ID
+  posTicketId     String?  // POS ticket ID
+  sessionId       String?  // Associated session
+  amountCents     Int      // Amount in cents
+  status          String   // 'pending', 'matched', 'orphaned', 'reconciled'
+  mismatchReason  String?  // Reason for mismatch if any
+  repairRunId     String?  // ID of repair run that fixed it
+  createdAt       DateTime @default(now())
+  reconciledAt    DateTime?
+
+  @@index([stripeChargeId])
+  @@index([posTicketId])
+  @@index([status, createdAt])
+  @@map("settlement_reconciliation")
+}
+
+model PosTicket {
+  id              String   @id @default(cuid())
+  ticketId        String   @unique // External POS ticket ID
+  sessionId       String?  // Associated session
+  stripeChargeId  String?  // Associated Stripe charge
+  amountCents     Int      // Total amount in cents
+  items           String?  // JSON string of items
+  taxes           Int?     // Tax amount in cents
+  tips            Int?     // Tip amount in cents
+  status          String   // 'pending', 'paid', 'refunded', 'cancelled'
+  posSystem       String   // 'square', 'clover', 'toast'
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([ticketId])
+  @@index([sessionId])
+  @@index([stripeChargeId])
+  @@map("pos_tickets")
+}
+
+model SessionHeartbeat {
+  id          String   @id @default(cuid())
+  sessionId   String
+  stationId   String?  // Physical station/table ID
+  status      String   // 'active', 'paused', 'stalled', 'completed'
+  elapsedSecs Int      // Elapsed time in seconds
+  remainingSecs Int?   // Remaining time in seconds
+  lastPing    DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@index([sessionId, lastPing])
+  @@map("session_heartbeats")
+}
+
+model PricingLock {
+  id              String   @id @default(cuid())
+  sessionId       String   @unique
+  finalPriceCents Int      // Final locked price
+  priceHash       String   // Hash of pricing components
+  components      String?  // JSON string of price components
+  lockedAt        DateTime @default(now())
+  operatorId      String?  // Operator who locked pricing
+  auditNote       String?  // Manual override note if any
+
+  @@index([sessionId])
+  @@map("pricing_locks")
+}
+
+model Ktl4Alert {
+  id          String   @id @default(cuid())
+  priority    String   // 'P1', 'P2', 'P3'
+  flowName    String   // Which KTL-4 flow
+  alertType   String   // Type of alert
+  message     String   // Alert message
+  details     String?  // JSON string with alert details
+  status      String   // 'active', 'acknowledged', 'resolved'
+  acknowledgedBy String? // Operator who acknowledged
+  resolvedAt  DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([priority, status, createdAt])
+  @@map("ktl4_alerts")
+}
+
+model BreakGlassAction {
+  id          String   @id @default(cuid())
+  actionType  String   // 'freeze_station', 'degraded_mode', 'manual_override'
+  targetId    String?  // Station/session ID affected
+  operatorId  String   // Operator who took action
+  reason      String   // Reason for break-glass action
+  details     String?  // JSON string with action details
+  createdAt   DateTime @default(now())
+  resolvedAt  DateTime?
+
+  @@index([actionType, createdAt])
+  @@map("break_glass_actions")
+}
