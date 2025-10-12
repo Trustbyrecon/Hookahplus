@@ -37,6 +37,8 @@ export default function GuestPortal() {
   const [currentSession, setCurrentSession] = useState<SessionData | null>(null);
   const [isStartingSession, setIsStartingSession] = useState(false);
   const [showEnhancedStaffPanel, setShowEnhancedStaffPanel] = useState(false);
+  const [pricingModel, setPricingModel] = useState<'flat' | 'time-based'>('flat');
+  const [sessionDuration, setSessionDuration] = useState(60); // Default 60 minutes
   
   const addToCart = (item: { id: number; name: string; price: number }) => {
     add({ id: String(item.id), name: item.name, price: Math.round(item.price * 100), qty: 1 });
@@ -68,18 +70,41 @@ export default function GuestPortal() {
     console.log('Session metadata updated:', metadata);
   };
 
-  // Ensure base hookah is always in cart
+  // Calculate base price based on pricing model
+  const calculateBasePrice = () => {
+    if (pricingModel === 'flat') {
+      return 3000; // $30.00 in cents
+    } else {
+      return Math.round(sessionDuration * 0.50 * 100); // $0.50 per minute in cents
+    }
+  };
+
+  // Ensure base hookah is always in cart with correct pricing
   useEffect(() => {
     const baseHookahExists = items.some(item => item.name === 'Premium Hookah');
+    const currentBasePrice = calculateBasePrice();
+    
     if (!baseHookahExists) {
       add({ 
         id: 'base-hookah', 
         name: 'Premium Hookah', 
-        price: 3000, // $30.00 in cents
+        price: currentBasePrice,
         qty: 1 
       });
+    } else {
+      // Update existing base hookah price if pricing model changed
+      const baseHookah = items.find(item => item.name === 'Premium Hookah');
+      if (baseHookah && baseHookah.price !== currentBasePrice) {
+        remove(baseHookah.id);
+        add({ 
+          id: 'base-hookah', 
+          name: 'Premium Hookah', 
+          price: currentBasePrice,
+          qty: 1 
+        });
+      }
     }
-  }, [items, add]);
+  }, [items, add, remove, pricingModel, sessionDuration]);
 
   // Subscribe to session updates - force rebuild
   useEffect(() => {
@@ -110,7 +135,11 @@ export default function GuestPortal() {
         totalAmount: subtotal,
         customerName: 'Guest Customer',
         customerPhone: '+1234567890',
-        sessionDuration: 60
+        sessionDuration: sessionDuration,
+        pricingModel: pricingModel,
+        flavorMix: items.filter(item => item.name.includes('Add-on')).map(item => item.name.replace(' Add-on', '')),
+        flavorMixPrice: items.filter(item => item.name.includes('Add-on')).reduce((sum, item) => sum + item.price, 0) / 100,
+        basePrice: calculateBasePrice() / 100
       };
 
       // Send to guest session start API
@@ -208,10 +237,10 @@ export default function GuestPortal() {
       <GlobalNavigation currentPage="home" />
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-        {/* Compact QR Scanner & Table Status */}
+        {/* QR Scanner & Table Status with Pricing Options */}
         <div className="mb-6">
-          <div className="bg-zinc-800/50 backdrop-blur-sm border border-zinc-700 rounded-lg p-3">
-            <div className="flex items-center justify-between">
+          <div className="bg-zinc-800/50 backdrop-blur-sm border border-zinc-700 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-zinc-700 rounded-lg flex items-center justify-center">
                   <QrCode className="w-4 h-4 text-teal-400" />
@@ -226,7 +255,66 @@ export default function GuestPortal() {
                 <div className="text-xs text-zinc-400">Base: $30.00</div>
               </div>
             </div>
-        </div>
+            
+            {/* QR Scanner Section */}
+            <div className="mb-4">
+              <QRCodeScanner onTableDetected={handleTableDetected} onLoungeDetected={handleLoungeDetected} />
+            </div>
+            
+            {/* Pricing Model Selection */}
+            <div className="border-t border-zinc-700 pt-4">
+              <div className="text-sm font-medium text-white mb-3">Session Pricing</div>
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <button
+                  onClick={() => setPricingModel('flat')}
+                  className={`p-3 rounded-lg border text-left transition-colors ${
+                    pricingModel === 'flat'
+                      ? 'border-teal-500 bg-teal-500/20 text-teal-300'
+                      : 'border-zinc-600 bg-zinc-800/80 text-zinc-300 hover:border-zinc-500'
+                  }`}
+                >
+                  <div className="font-medium text-sm">Flat Fee</div>
+                  <div className="text-xs text-zinc-400">$30.00 fixed</div>
+                </button>
+                <button
+                  onClick={() => setPricingModel('time-based')}
+                  className={`p-3 rounded-lg border text-left transition-colors ${
+                    pricingModel === 'time-based'
+                      ? 'border-teal-500 bg-teal-500/20 text-teal-300'
+                      : 'border-zinc-600 bg-zinc-800/80 text-zinc-300 hover:border-zinc-500'
+                  }`}
+                >
+                  <div className="font-medium text-sm">Time-Based</div>
+                  <div className="text-xs text-zinc-400">$0.50/min</div>
+                </button>
+              </div>
+              
+              {/* Session Duration Selector (only show for time-based) */}
+              {pricingModel === 'time-based' && (
+                <div className="mb-3">
+                  <div className="text-xs text-zinc-400 mb-2">Session Duration</div>
+                  <select
+                    value={sessionDuration}
+                    onChange={(e) => setSessionDuration(parseInt(e.target.value))}
+                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  >
+                    <option value={30}>30 minutes - $15.00</option>
+                    <option value={45}>45 minutes - $22.50</option>
+                    <option value={60}>60 minutes - $30.00</option>
+                    <option value={90}>90 minutes - $45.00</option>
+                    <option value={120}>120 minutes - $60.00</option>
+                  </select>
+                </div>
+              )}
+              
+              <div className="text-xs text-zinc-400">
+                {pricingModel === 'flat' 
+                  ? 'Fixed $30.00 + flavor add-ons' 
+                  : `$${(sessionDuration * 0.50).toFixed(2)} for ${sessionDuration}min + flavor add-ons`
+                }
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Current Session Status - Compact */}
