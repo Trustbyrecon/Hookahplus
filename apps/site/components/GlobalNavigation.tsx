@@ -16,7 +16,8 @@ import {
   ChefHat,
   UserCheck,
   Crown,
-  CreditCard
+  CreditCard,
+  Sparkles
 } from 'lucide-react';
 
 // AI Agent Collaboration Interface
@@ -175,6 +176,15 @@ const GlobalNavigation: React.FC = () => {
           flowState: 'active',
           nextAction: 'Sign up for early access',
           aiRecommendation: 'Be first to integrate your POS'
+        },
+        {
+          label: 'Flavor Demo',
+          href: '/flavor-demo',
+          icon: <Sparkles className="w-4 h-4" />,
+          description: 'Try the flavor wheel experience',
+          flowState: 'active',
+          nextAction: 'Experience interactive demo',
+          aiRecommendation: 'See the future of flavor selection'
         }
       ]
     }

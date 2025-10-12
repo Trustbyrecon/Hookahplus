@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { cn } from '../../utils/cn';
 import Card from '../Card';
 import { Plus, Minus, Star, Heart } from 'lucide-react';
+import FlavorMixSelector from './FlavorMixSelector';
 
 export interface Flavor {
   id: string;
@@ -32,6 +33,75 @@ const FlavorSelector: React.FC<FlavorSelectorProps> = ({
   maxSelections = 3,
   className
 }) => {
+  const [totalPrice, setTotalPrice] = useState(0);
+  const [useEnhancedSelector, setUseEnhancedSelector] = useState(true);
+
+  // Calculate total price when flavors change
+  useEffect(() => {
+    const total = selectedFlavors.reduce((sum, flavorId) => {
+      const flavor = flavors.find(f => f.id === flavorId);
+      return sum + (flavor?.price || 0);
+    }, 0);
+    setTotalPrice(total);
+  }, [selectedFlavors, flavors]);
+
+  // Convert flavors to FlavorMixSelector format
+  const convertedFlavors = flavors.map(flavor => ({
+    id: flavor.id,
+    name: flavor.name,
+    description: flavor.description,
+    category: flavor.category,
+    intensity: flavor.intensity,
+    price: flavor.price,
+    image: flavor.image,
+    isPopular: flavor.isPopular,
+    isFavorite: flavor.isFavorite
+  }));
+
+  if (useEnhancedSelector) {
+    return (
+      <div className={cn('space-y-6', className)}>
+        {/* Enhanced Flavor Mix Selector */}
+        <FlavorMixSelector
+          flavors={convertedFlavors}
+          selectedFlavors={selectedFlavors}
+          onSelectionChange={onSelectionChange}
+          maxSelections={maxSelections}
+          onPriceUpdate={setTotalPrice}
+        />
+
+        {/* Price Summary */}
+        {totalPrice > 0 && (
+          <Card className="bg-teal-500/10 border-teal-500/30">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Star className="w-5 h-5 text-teal-400" />
+                <span className="text-teal-300 font-medium">Flavor Mix Total</span>
+              </div>
+              <div className="text-xl font-bold text-teal-300">
+                ${totalPrice.toFixed(2)}
+              </div>
+            </div>
+            <div className="text-sm text-teal-400 mt-1">
+              {selectedFlavors.length} flavor{selectedFlavors.length !== 1 ? 's' : ''} selected
+            </div>
+          </Card>
+        )}
+
+        {/* Toggle Button */}
+        <div className="flex justify-center">
+          <button
+            onClick={() => setUseEnhancedSelector(!useEnhancedSelector)}
+            className="px-4 py-2 text-sm text-zinc-400 hover:text-zinc-300 transition-colors"
+          >
+            {useEnhancedSelector ? 'Switch to Grid View' : 'Switch to Wheel View'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Original grid-based selector as fallback
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
@@ -188,6 +258,16 @@ const FlavorSelector: React.FC<FlavorSelectorProps> = ({
           <p className="text-zinc-400">No flavors found matching your search.</p>
         </div>
       )}
+
+      {/* Toggle Button */}
+      <div className="flex justify-center">
+        <button
+          onClick={() => setUseEnhancedSelector(!useEnhancedSelector)}
+          className="px-4 py-2 text-sm text-zinc-400 hover:text-zinc-300 transition-colors"
+        >
+          {useEnhancedSelector ? 'Switch to Grid View' : 'Switch to Wheel View'}
+        </button>
+      </div>
     </div>
   );
 };
