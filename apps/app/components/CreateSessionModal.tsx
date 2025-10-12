@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { X, User, Phone, Clock, Flame, DollarSign, Users, FileText, MapPin } from 'lucide-react';
 import { TableSelector } from './TableSelector';
 import { TableType } from '../lib/tableTypes';
+import FlavorWheelSelector from './FlavorWheelSelector';
 
 interface CreateSessionModalProps {
   isOpen: boolean;
@@ -17,7 +18,9 @@ interface SessionData {
   customerName: string;
   customerPhone: string;
   sessionType: string;
-  flavor: string;
+  flavor: string; // Keep for backward compatibility
+  flavorMix: string[]; // New: array of flavor IDs
+  flavorMixPrice: number; // New: total price for flavor mix
   amount: number;
   bohStaff: string;
   fohStaff: string;
@@ -70,8 +73,10 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
     customerName: 'John Smith',
     customerPhone: '+1 (555) 123-4567',
     sessionType: 'walk-in',
-    flavor: 'Blue Mist',
-    amount: 30,
+    flavor: 'Blue Mist', // Keep for backward compatibility
+    flavorMix: [], // New: empty array for flavor mix
+    flavorMixPrice: 0, // New: no additional flavor cost initially
+    amount: 30, // Base session price
     bohStaff: '',
     fohStaff: '',
     notes: '',
@@ -97,9 +102,19 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
       ...prev,
       tableId: table.id,
       tableType: table,
-      amount: 30 * table.priceMultiplier // Adjust price based on table type
+      amount: 30 * table.priceMultiplier + prev.flavorMixPrice // Base price + flavor mix price
     }));
     setShowTableSelector(false);
+  };
+
+  // Handle flavor mix changes
+  const handleFlavorMixChange = (flavors: string[], totalPrice: number) => {
+    setFormData(prev => ({
+      ...prev,
+      flavorMix: flavors,
+      flavorMixPrice: totalPrice,
+      amount: (prev.amount - prev.flavorMixPrice) + totalPrice // Recalculate total amount
+    }));
   };
 
   const validateForm = (): boolean => {
@@ -108,7 +123,7 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
     if (!formData.tableId.trim()) newErrors.tableId = 'Table ID is required';
     if (!formData.customerName.trim()) newErrors.customerName = 'Customer name is required';
     if (!formData.sessionType) newErrors.sessionType = 'Session type is required';
-    if (!formData.flavor) newErrors.flavor = 'Flavor is required';
+    if (formData.flavorMix.length === 0) newErrors.flavor = 'At least one flavor must be selected';
     if (!formData.amount || formData.amount <= 0) newErrors.amount = 'Amount must be greater than 0';
     if (!formData.timerDuration || formData.timerDuration <= 0) newErrors.timerDuration = 'Session duration is required';
     
@@ -273,24 +288,25 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
 
             {/* Right Column */}
             <div className="space-y-4">
-              {/* Flavor */}
+              {/* Flavor Mix Selection */}
               <div>
                 <label className="block text-sm font-medium text-white mb-2 font-semibold">
-                  Flavor *
+                  Flavor Mix *
                 </label>
-                <select
-                  value={formData.flavor}
-                  onChange={(e) => handleInputChange('flavor', e.target.value)}
-                  className={`w-full px-4 py-3 bg-zinc-800 border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500 ${
-                    errors.flavor ? 'border-red-500' : 'border-zinc-500'
-                  }`}
-                >
-                  {flavors.map((flavor) => (
-                    <option key={flavor} value={flavor}>
-                      {flavor}
-                    </option>
-                  ))}
-                </select>
+                <div className="p-4 bg-zinc-800/50 rounded-lg border border-zinc-600">
+                  <FlavorWheelSelector
+                    selectedFlavors={formData.flavorMix}
+                    onSelectionChange={handleFlavorMixChange}
+                    maxSelections={3}
+                    mode="staff"
+                    className=""
+                  />
+                </div>
+                {formData.flavorMixPrice > 0 && (
+                  <div className="mt-2 text-sm text-green-400">
+                    Flavor Add-ons: +${formData.flavorMixPrice.toFixed(2)}
+                  </div>
+                )}
                 {errors.flavor && (
                   <p className="text-red-400 text-sm mt-1">{errors.flavor}</p>
                 )}
@@ -299,7 +315,7 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
               {/* Amount */}
               <div>
                 <label className="block text-sm font-medium text-white mb-2 font-semibold">
-                  Amount *
+                  Total Amount *
                 </label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-4 h-4" />
@@ -308,12 +324,13 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
                     step="0.01"
                     min="0"
                     value={formData.amount}
-                    onChange={(e) => handleInputChange('amount', parseFloat(e.target.value) || 0)}
-                    className={`w-full pl-10 pr-4 py-3 bg-zinc-800 border rounded-lg text-white placeholder-zinc-300 focus:outline-none focus:ring-2 focus:ring-teal-500 ${
-                      errors.amount ? 'border-red-500' : 'border-zinc-500'
-                    }`}
+                    readOnly
+                    className="w-full pl-10 pr-4 py-3 bg-zinc-700 border border-zinc-500 rounded-lg text-white cursor-not-allowed"
                     placeholder="0.00"
                   />
+                </div>
+                <div className="mt-1 text-xs text-zinc-400">
+                  Base: $30.00 + Flavors: ${formData.flavorMixPrice.toFixed(2)} = ${formData.amount.toFixed(2)}
                 </div>
                 {errors.amount && (
                   <p className="text-red-400 text-sm mt-1">{errors.amount}</p>
