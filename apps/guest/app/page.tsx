@@ -43,6 +43,17 @@ export default function GuestPortal() {
     console.log('Adding to cart:', item); // Debug log
   };
 
+  const addFlavorToCart = (flavorName: string) => {
+    // Add flavor as add-on to base hookah
+    const flavorItem = {
+      id: Date.now() + Math.random(),
+      name: `${flavorName} Add-on`,
+      price: 2.00, // $2 per flavor add-on
+      description: `Premium ${flavorName} flavor enhancement`
+    };
+    add({ id: String(flavorItem.id), name: flavorItem.name, price: Math.round(flavorItem.price * 100), qty: 1 });
+  };
+
   const handleTableDetected = (tableData: any) => {
     setTableData(tableData);
     console.log('Table detected:', tableData);
@@ -56,6 +67,19 @@ export default function GuestPortal() {
     setSessionMetadata(metadata);
     console.log('Session metadata updated:', metadata);
   };
+
+  // Ensure base hookah is always in cart
+  useEffect(() => {
+    const baseHookahExists = items.some(item => item.name === 'Premium Hookah');
+    if (!baseHookahExists) {
+      add({ 
+        id: 'base-hookah', 
+        name: 'Premium Hookah', 
+        price: 3000, // $30.00 in cents
+        qty: 1 
+      });
+    }
+  }, [items, add]);
 
   // Subscribe to session updates - force rebuild
   useEffect(() => {
@@ -94,8 +118,8 @@ export default function GuestPortal() {
         }
       };
 
-      // Send directly to main app sessions API
-      const response = await fetch('/api/sessions', {
+      // Send to guest session start API
+      const response = await fetch('/api/session/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(sessionData)
@@ -189,84 +213,39 @@ export default function GuestPortal() {
       <GlobalNavigation currentPage="home" />
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {/* QR Code Scanner */}
-        <div className="mb-8">
-          <QRCodeScanner
-            onTableDetected={handleTableDetected}
-            onLoungeDetected={handleLoungeDetected}
-          />
+        {/* Compact QR Scanner & Table Status */}
+        <div className="mb-6">
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-zinc-800 rounded-lg flex items-center justify-center">
+                  <QRCodeScanner onTableDetected={handleTableDetected} onLoungeDetected={handleLoungeDetected} />
+                </div>
+                <div>
+                  <div className="text-sm text-zinc-400">Table</div>
+                  <div className="font-semibold">{tableData?.tableId || "T-001"}</div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-sm text-green-400 font-medium">READY</div>
+                <div className="text-xs text-zinc-400">Base: $30.00</div>
+              </div>
+            </div>
+          </Card>
         </div>
 
-        {/* Session Timer Awareness */}
-        <div className="mb-8">
-          <SessionTimerAwareness
-            tableId={tableData?.tableId || "T-001"}
-            onSessionStart={() => {
-              console.log('Session started for table', tableData?.tableId || "T-001");
-            }}
-            onSessionComplete={() => {
-              console.log('Session completed for table', tableData?.tableId || "T-001");
-            }}
-          />
-        </div>
-
-        {/* Current Session Status */}
+        {/* Current Session Status - Compact */}
         {currentSession && (
-          <div className="mb-8">
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-4">
+          <div className="mb-6">
+            <Card className="p-4">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse" />
-                  <h3 className="text-lg font-semibold">Active Session</h3>
+                  <span className="font-semibold">Active Session</span>
                 </div>
                 <div className="text-sm text-zinc-400">
-                  Session ID: {currentSession.sessionId}
+                  {currentSession.timeRemaining} min • ${(currentSession.totalAmount / 100).toFixed(2)}
                 </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-zinc-800 rounded-lg p-4">
-                  <div className="text-sm text-zinc-400 mb-1">Table</div>
-                  <div className="text-lg font-semibold">{currentSession.tableId}</div>
-                </div>
-                
-                <div className="bg-zinc-800 rounded-lg p-4">
-                  <div className="text-sm text-zinc-400 mb-1">Time Remaining</div>
-                  <div className="text-lg font-semibold text-primary-400">
-                    {currentSession.timeRemaining} min
-                  </div>
-                </div>
-                
-                <div className="bg-zinc-800 rounded-lg p-4">
-                  <div className="text-sm text-zinc-400 mb-1">Total Amount</div>
-                  <div className="text-lg font-semibold text-green-400">
-                    ${(currentSession.totalAmount / 100).toFixed(2)}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mt-4 flex space-x-3">
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => sessionManager.openAppBuild('session')}
-                >
-                  View in App Build
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => sessionManager.openAppBuild('staff')}
-                >
-                  Staff Panel
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => sessionManager.openAppBuild('dashboard')}
-                >
-                  Dashboard
-                </Button>
               </div>
             </Card>
           </div>
@@ -282,35 +261,25 @@ export default function GuestPortal() {
           </div>
         )}
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Menu Section */}
-          <div className="lg:col-span-2">
-            {/* Test Mode Toggle */}
-            <div className="mb-6">
-              <label className="flex items-center space-x-2">
-                <input type="checkbox" className="rounded border-zinc-600 bg-zinc-800 text-primary-500 focus:ring-primary-500" />
-                <span className="text-sm text-zinc-300">Test Mode ($1.00)</span>
-              </label>
-              {/* $1 Stripe sandbox test */}
-              <DollarTestButton />
-            </div>
-
-            {/* Flavor Wheel Experience */}
-            <Card className="mb-6">
+        {/* Main Layout - Compact */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left: Flavor Wheel */}
+          <div>
+            <Card className="h-full">
               <div className="p-6">
-                <h3 className="text-lg font-semibold mb-4">🎯 Create Your Perfect Mix</h3>
-                <p className="text-zinc-400 text-sm mb-4">
-                  Use our interactive flavor wheel to craft your ideal hookah experience
-                </p>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold">🎯 Create Your Perfect Mix</h3>
+                  <div className="text-sm text-zinc-400">Base: $30.00</div>
+                </div>
                 <FlavorMixSelector
-                  selectedFlavors={items.map(item => item.name)}
+                  selectedFlavors={items.filter(item => item.name.includes('Add-on')).map(item => item.name.replace(' Add-on', ''))}
                   onSelectionChange={(flavors) => {
-                    // Convert flavor selections to cart items
+                    // Clear existing flavor add-ons
+                    items.filter(item => item.name.includes('Add-on')).forEach(item => remove(item.id));
+                    
+                    // Add new flavor selections
                     flavors.forEach(flavor => {
-                      const existingItem = menuItems.find(item => item.name.toLowerCase().includes(flavor.toLowerCase()));
-                      if (existingItem) {
-                        addToCart(existingItem);
-                      }
+                      addFlavorToCart(flavor);
                     });
                   }}
                   maxSelections={3}
@@ -320,167 +289,68 @@ export default function GuestPortal() {
                 />
               </div>
             </Card>
-
-            {/* Quick Order */}
-            <Card className="mb-6">
-              <div className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Quick Order</h3>
-                <p className="text-zinc-400 text-sm mb-4">
-                  Select popular flavors to build your quick order
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {menuItems.filter(item => item.popular).map((item) => (
-                    <div key={item.id} className="flex items-center space-x-3 p-3 bg-zinc-800 rounded-lg">
-                      <div className="text-2xl">🍃</div>
-                      <div className="flex-1">
-                        <div className="font-medium">{item.name}</div>
-                        <div className="text-sm text-zinc-400">{item.description}</div>
-                        <div className="text-sm font-semibold text-primary-400">${item.price.toFixed(2)}</div>
-                      </div>
-                      <Button size="sm" variant="outline" onClick={() => addToCart(item)}>
-                        Quick Add
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </Card>
-
-            {/* Popular This Week */}
-            <Card className="mb-6">
-              <div className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Popular This Week</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {menuItems.filter(item => item.popular).map((item) => (
-                    <div key={item.id} className="flex items-center space-x-3 p-3 bg-zinc-800 rounded-lg">
-                      <div className="text-2xl">🍃</div>
-                      <div className="flex-1">
-                        <div className="font-medium">{item.name}</div>
-                        <div className="text-sm text-zinc-400">{item.description}</div>
-                        <div className="text-sm font-semibold text-primary-400">${item.price.toFixed(2)}</div>
-                      </div>
-                      <Button size="sm" variant="outline" onClick={() => addToCart(item)}>
-                        Quick Add
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </Card>
-
-            {/* Streamlined Menu */}
-            <Card>
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-semibold">Menu</h3>
-                  <div className="text-sm text-zinc-400">
-                    {menuItems.length} items available
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  {menuItems.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between p-3 bg-zinc-800 rounded-lg hover:bg-zinc-700 transition-colors">
-                      <div className="flex items-center space-x-3">
-                        <div className="text-xl">🍃</div>
-                        <div>
-                          <div className="font-medium text-sm">{item.name}</div>
-                          <div className="text-xs text-zinc-400">{item.description}</div>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <div className="text-sm font-semibold text-primary-400">
-                          ${item.price.toFixed(2)}
-                        </div>
-                        <Button size="sm" variant="primary" onClick={() => addToCart(item)}>
-                          Add
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </Card>
           </div>
 
-          {/* Order Summary */}
-          <div className="lg:col-span-1">
-            <Card className="sticky top-8">
+          {/* Right: Order & Actions */}
+          <div>
+            <Card className="h-full">
               <div className="p-6">
                 <h3 className="text-lg font-semibold mb-4">Your Order</h3>
                 
-                {/* Cart Items */}
-                {items.length === 0 ? (
-                  <div className="text-center py-8">
-                    <ShoppingCart className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-                    <p className="text-zinc-400">Your cart is empty. Add items to get started.</p>
+                {/* Base Hookah */}
+                <div className="mb-4 p-3 bg-zinc-800 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium">Premium Hookah</div>
+                      <div className="text-sm text-zinc-400">Base session (60 min)</div>
+                    </div>
+                    <div className="font-semibold text-primary-400">$30.00</div>
                   </div>
-                ) : (
-                  <div className="space-y-3">
-                    {items.map((item) => (
-                      <div key={item.id} className="p-3 bg-zinc-800 rounded-lg">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="font-medium text-sm">{item.name}</div>
-                          <button
-                            onClick={() => remove(item.id)}
-                            className="text-xs text-red-400 hover:text-red-300"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                        
-                        {/* Quantity Controls */}
-                        <div className="flex items-center justify-between">
+                </div>
+                
+                {/* Flavor Add-ons */}
+                {items.filter(item => item.name.includes('Add-on')).length > 0 && (
+                  <div className="mb-4">
+                    <div className="text-sm text-zinc-400 mb-2">Flavor Add-ons</div>
+                    <div className="space-y-2">
+                      {items.filter(item => item.name.includes('Add-on')).map((item) => (
+                        <div key={item.id} className="flex items-center justify-between p-2 bg-zinc-800 rounded">
+                          <div className="text-sm">{item.name.replace(' Add-on', '')}</div>
                           <div className="flex items-center space-x-2">
+                            <div className="text-sm text-primary-400">${(item.price / 100).toFixed(2)}</div>
                             <button
-                              onClick={() => {
-                                if (item.qty > 1) {
-                                  add({ id: item.id, name: item.name, price: item.price, qty: -1 });
-                                }
-                              }}
-                              className="w-6 h-6 bg-zinc-700 hover:bg-zinc-600 rounded-full flex items-center justify-center text-xs"
-                              disabled={item.qty <= 1}
+                              onClick={() => remove(item.id)}
+                              className="text-xs text-red-400 hover:text-red-300"
                             >
-                              -
+                              Remove
                             </button>
-                            <span className="text-sm text-zinc-300 w-8 text-center">{item.qty}</span>
-                            <button
-                              onClick={() => add({ id: item.id, name: item.name, price: item.price, qty: 1 })}
-                              className="w-6 h-6 bg-zinc-700 hover:bg-zinc-600 rounded-full flex items-center justify-center text-xs"
-                            >
-                              +
-                            </button>
-                          </div>
-                          <div className="font-semibold text-primary-400">
-                            ${(item.price * item.qty / 100).toFixed(2)}
                           </div>
                         </div>
-                      </div>
-                    ))}
-                    
-                    {/* Subtotal */}
-                    <div className="border-t border-zinc-700 pt-3">
-                      <div className="flex justify-between items-center">
-                        <span className="font-semibold">Subtotal:</span>
-                        <span className="text-lg font-bold text-primary-400">
-                          ${(subtotal / 100).toFixed(2)}
-                        </span>
-                      </div>
+                      ))}
                     </div>
                   </div>
                 )}
-
-                {/* Table Status */}
-                <div className="mt-6 p-4 bg-zinc-800 rounded-lg">
-                  <h4 className="font-semibold mb-2">Table Status</h4>
-                  <div className="flex items-center justify-between">
-                    <span className="text-green-400 font-medium">AVAILABLE</span>
-                    <span className="text-sm text-zinc-400">15 min</span>
+                
+                {/* Total */}
+                <div className="border-t border-zinc-700 pt-4 mb-6">
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold">Total:</span>
+                    <span className="text-xl font-bold text-primary-400">
+                      ${(subtotal / 100).toFixed(2)}
+                    </span>
                   </div>
                 </div>
 
-                {/* Quick Actions */}
-                <div className="mt-6 space-y-3">
+                {/* Table Status */}
+                <div className="mb-6 p-3 bg-zinc-800 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-zinc-400">Table Status</span>
+                    <span className="text-green-400 font-medium">AVAILABLE</span>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="space-y-3">
                   <Button 
                     variant="fire" 
                     className="w-full"
@@ -491,36 +361,27 @@ export default function GuestPortal() {
                     {isStartingSession ? 'Starting Session...' : '🔥 Fire Session'}
                   </Button>
                   
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    leftIcon={<Brain className="w-4 h-4" />}
-                    onClick={handleStaffPanel}
-                  >
-                    Guest Intelligence Dashboard
-                    {currentSession && (
-                      <span className="ml-2 text-xs bg-green-500 text-white px-2 py-1 rounded-full">
-                        Live
-                      </span>
-                    )}
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    leftIcon={<BarChart3 className="w-4 h-4" />}
-                    onClick={() => {
-                      // Navigate to operator dashboard in site build
-                      window.open('https://hookahplus.net/operator', '_blank');
-                    }}
-                  >
-                    Operator Dashboard
-                    {currentSession && (
-                      <span className="ml-2 text-xs bg-blue-500 text-white px-2 py-1 rounded-full">
-                        Active
-                      </span>
-                    )}
-                  </Button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      leftIcon={<Brain className="w-4 h-4" />}
+                      onClick={handleStaffPanel}
+                    >
+                      Intelligence
+                    </Button>
+                    
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      leftIcon={<BarChart3 className="w-4 h-4" />}
+                      onClick={() => {
+                        window.open('https://hookahplus.net/operator', '_blank');
+                      }}
+                    >
+                      Dashboard
+                    </Button>
+                  </div>
                 </div>
               </div>
             </Card>
