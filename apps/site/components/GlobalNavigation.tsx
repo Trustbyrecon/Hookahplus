@@ -15,7 +15,8 @@ import {
   Flame,
   ChefHat,
   UserCheck,
-  Crown
+  Crown,
+  CreditCard
 } from 'lucide-react';
 
 // AI Agent Collaboration Interface
@@ -155,6 +156,25 @@ const GlobalNavigation: React.FC = () => {
           flowState: 'idle',
           nextAction: 'Access admin functions',
           aiRecommendation: 'Review system settings'
+        }
+      ]
+    },
+    {
+      label: 'Integration',
+      color: 'text-purple-300',
+      bgColor: 'bg-purple-500/10',
+      flowState: 'active',
+      description: 'POS integration and partnerships',
+      aiInsight: 'POS integration waitlist is active',
+      items: [
+        {
+          label: 'POS Waitlist',
+          href: '/pos-waitlist',
+          icon: <CreditCard className="w-4 h-4" />,
+          description: 'Join POS integration waitlist',
+          flowState: 'active',
+          nextAction: 'Sign up for early access',
+          aiRecommendation: 'Be first to integrate your POS'
         }
       ]
     }

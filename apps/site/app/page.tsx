@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import Card from '../components/Card';
 import Button from '../components/Button';
@@ -176,6 +178,15 @@ export default function Home() {
               </Button>
               <Button variant="outline" size="lg" className="px-6 py-3">
                 Live Dashboard
+              </Button>
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="px-6 py-3 border-purple-500/50 text-purple-400 hover:bg-purple-500/10 hover:border-purple-400"
+                onClick={() => window.location.href = '/pos-waitlist'}
+              >
+                <CreditCard className="w-4 h-4 mr-2" />
+                POS Integration
               </Button>
             </div>
           </div>
