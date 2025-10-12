@@ -26,7 +26,8 @@ import {
   BarChart3,
   Brain,
   Shield,
-  CreditCard
+  CreditCard,
+  QrCode
 } from 'lucide-react';
 
 export default function GuestPortal() {
@@ -206,26 +207,26 @@ export default function GuestPortal() {
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
       <GlobalNavigation currentPage="home" />
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
         {/* Compact QR Scanner & Table Status */}
         <div className="mb-6">
-          <Card className="p-4">
+          <div className="bg-zinc-800/50 backdrop-blur-sm border border-zinc-700 rounded-lg p-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-zinc-800 rounded-lg flex items-center justify-center">
-                  <QRCodeScanner onTableDetected={handleTableDetected} onLoungeDetected={handleLoungeDetected} />
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-zinc-700 rounded-lg flex items-center justify-center">
+                  <QrCode className="w-4 h-4 text-teal-400" />
                 </div>
                 <div>
-                  <div className="text-sm text-zinc-400">Table</div>
-                  <div className="font-semibold">{tableData?.tableId || "T-001"}</div>
+                  <div className="text-xs text-zinc-400">Table</div>
+                  <div className="text-sm font-semibold">{tableData?.tableId || "T-001"}</div>
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-sm text-green-400 font-medium">READY</div>
+                <div className="text-xs text-green-400 font-medium">READY</div>
                 <div className="text-xs text-zinc-400">Base: $30.00</div>
               </div>
+            </div>
         </div>
-          </Card>
         </div>
 
         {/* Current Session Status - Compact */}
@@ -264,8 +265,8 @@ export default function GuestPortal() {
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-lg font-semibold">🎯 Choose Your Flavor Mix</h3>
                   <div className="text-sm text-zinc-400">Base: $30.00</div>
-                </div>
-                
+            </div>
+
                 {/* Compact Flavor Categories */}
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
                   {['Mint & Cool', 'Fruity', 'Citrus', 'Dessert', 'Spice & Bold', 'Floral'].map((category) => (
@@ -363,8 +364,8 @@ export default function GuestPortal() {
                     </div>
                     <div className="font-semibold text-primary-400">$30.00</div>
                   </div>
-                </div>
-                
+                        </div>
+                        
                 {/* Flavor Add-ons */}
                 {items.filter(item => item.name.includes('Add-on')).length > 0 && (
                   <div className="mb-3">
@@ -381,13 +382,13 @@ export default function GuestPortal() {
                             >
                               ×
                             </button>
-                          </div>
                         </div>
-                      ))}
+                      </div>
+                    ))}
                     </div>
                   </div>
                 )}
-                
+
                 {/* Total */}
                 <div className="border-t border-zinc-700 pt-3 mb-4">
                   <div className="flex justify-between items-center">
@@ -411,25 +412,25 @@ export default function GuestPortal() {
                   </Button>
                   
                   <div className="grid grid-cols-2 gap-2">
-                    <Button 
-                      variant="outline" 
+                  <Button 
+                    variant="outline" 
                       size="sm"
                       leftIcon={<Brain className="w-3 h-3" />}
-                      onClick={handleStaffPanel}
-                    >
+                    onClick={handleStaffPanel}
+                  >
                       Intelligence
-                    </Button>
-                    
-                    <Button 
-                      variant="outline" 
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
                       size="sm"
                       leftIcon={<BarChart3 className="w-3 h-3" />}
-                      onClick={() => {
+                    onClick={() => {
                         window.open('https://hookahplus.net/operator', '_blank');
-                      }}
-                    >
+                    }}
+                  >
                       Dashboard
-                    </Button>
+                  </Button>
                   </div>
                 </div>
               </div>
