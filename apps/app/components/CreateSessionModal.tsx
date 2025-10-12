@@ -134,7 +134,20 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      onCreateSession(formData);
+      // Ensure all required fields are properly formatted
+      const sessionData = {
+        ...formData,
+        flavor: formData.flavorMix.join(', '), // Convert array to string for backward compatibility
+        amount: formData.amount || (30 + formData.flavorMixPrice), // Ensure amount is calculated
+        tableId: formData.tableId || selectedTable?.id || 'table-001', // Ensure tableId exists
+        customerName: formData.customerName || 'Guest Customer', // Ensure customer name exists
+        customerPhone: formData.customerPhone || '+1234567890', // Ensure phone exists
+        sessionType: formData.sessionType || 'walk-in', // Ensure session type exists
+        timerDuration: formData.timerDuration || 60 // Ensure duration exists
+      };
+      
+      console.log('Creating session with data:', sessionData); // Debug log
+      onCreateSession(sessionData);
       onClose();
     }
   };

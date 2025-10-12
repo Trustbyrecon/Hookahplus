@@ -84,8 +84,6 @@ import {
 import { Session, SessionStatus, SessionTeam, SessionNotes } from '../../types/session';
 
 export default function FireSessionDashboard() {
-  const [selectedTheme, setSelectedTheme] = useState<'midnight' | 'sunset' | 'ocean' | 'forest'>('midnight');
-  
   const [showCreateModal, setShowCreateModal] = useState(false);
   
   // Debug modal state
@@ -417,18 +415,8 @@ export default function FireSessionDashboard() {
   });
 
   const getThemeClasses = () => {
-    switch (selectedTheme) {
-      case 'midnight':
-        return 'bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white';
-      case 'sunset':
-        return 'bg-gradient-to-br from-orange-950 via-orange-900 to-amber-900 text-orange-100';
-      case 'ocean':
-        return 'bg-gradient-to-br from-blue-950 via-blue-900 to-cyan-900 text-blue-100';
-      case 'forest':
-        return 'bg-gradient-to-br from-green-950 via-green-900 to-emerald-900 text-green-100';
-      default:
-        return 'bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white';
-    }
+    // Always use midnight theme (black base)
+    return 'bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white';
   };
 
   return (
@@ -495,29 +483,8 @@ export default function FireSessionDashboard() {
           </p>
         </div>
 
-        {/* Theme Selector and Controls */}
-        <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-zinc-400">Lounge Theme:</span>
-            <div className="flex space-x-2">
-              {[
-                { id: 'midnight', name: 'Midnight Lounge', color: 'bg-zinc-800', accent: 'border-zinc-600' },
-                { id: 'sunset', name: 'Sunset Vibes', color: 'bg-orange-800', accent: 'border-orange-600' },
-                { id: 'ocean', name: 'Ocean Breeze', color: 'bg-blue-800', accent: 'border-blue-600' },
-                { id: 'forest', name: 'Forest Retreat', color: 'bg-green-800', accent: 'border-green-600' }
-              ].map(theme => (
-                <button
-                  key={theme.id}
-                  onClick={() => setSelectedTheme(theme.id as any)}
-                  className={`w-8 h-8 rounded-full ${theme.color} ${theme.accent} border-2 ${
-                    selectedTheme === theme.id ? 'ring-2 ring-white' : ''
-                  }`}
-                  title={theme.name}
-                />
-              ))}
-            </div>
-          </div>
-          
+        {/* Controls */}
+        <div className="mb-6 flex items-center justify-end">
           <div className="flex items-center space-x-2">
             <Button 
               onClick={() => {
@@ -567,7 +534,7 @@ export default function FireSessionDashboard() {
         {/* Debug Info */}
         <div className="mb-4 p-4 bg-zinc-800 rounded-lg">
           <div className="text-sm text-zinc-400">
-            <strong>Debug Info:</strong> Theme: {selectedTheme} | 
+            <strong>Debug Info:</strong> Theme: midnight | 
             Sessions Loaded: {sessions.length} | 
             Loading: {loading ? '🔄' : '✅'} | 
             API Status: Connected

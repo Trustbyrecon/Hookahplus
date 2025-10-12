@@ -141,52 +141,39 @@ export function TableSelector({
         </div>
       )}
 
-      {/* Tables Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Tables Grid - Compact Design */}
+      <div className="max-h-64 overflow-y-auto space-y-2">
         {filteredTables.map((table) => (
           <div
             key={table.id}
             onClick={() => onTableSelect(table)}
-            className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 hover:scale-105 ${
+            className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 hover:bg-zinc-700/50 ${
               selectedTableId === table.id
-                ? 'border-teal-500 bg-teal-500/20 ring-2 ring-teal-500/20 shadow-lg'
-                : 'border-zinc-600 bg-zinc-800/80 hover:border-zinc-500 hover:bg-zinc-800/90 shadow-md hover:shadow-lg'
+                ? 'border-teal-500 bg-teal-500/20 ring-1 ring-teal-500/30'
+                : 'border-zinc-600 bg-zinc-800/80 hover:border-zinc-500'
             }`}
           >
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-center space-x-2">
-                <span className="text-2xl">{getTypeIcon(table.type)}</span>
-                <div>
-                  <h3 className="text-lg font-bold text-white">{table.name}</h3>
-                  <p className="text-sm text-zinc-200 capitalize font-medium">{table.type}</p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <span className="text-lg">{getTypeIcon(table.type)}</span>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-bold text-white truncate">{table.name}</h3>
+                  <div className="flex items-center space-x-2 text-xs text-zinc-300">
+                    <span className="capitalize">{table.type}</span>
+                    <span>•</span>
+                    <span>{table.location}</span>
+                    {showCapacity && (
+                      <>
+                        <span>•</span>
+                        <span>{table.capacity}p</span>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className={`px-2 py-1 rounded-full text-xs font-medium border ${getAvailabilityColor(table.availability)}`}>
-                {getAvailabilityIcon(table.availability)} {table.availability}
+                {getAvailabilityIcon(table.availability)}
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2 text-sm text-white">
-                <MapPin className="w-4 h-4 text-blue-400" />
-                <span className="font-medium">{table.location}</span>
-              </div>
-              
-              {showCapacity && (
-                <div className="flex items-center space-x-2 text-sm text-white">
-                  <Users className="w-4 h-4 text-green-400" />
-                  <span className="font-medium">Capacity: {table.capacity} people</span>
-                </div>
-              )}
-
-              {showPricing && (
-                <div className="flex items-center space-x-2 text-sm text-white">
-                  <Star className="w-4 h-4 text-yellow-400" />
-                  <span className="font-medium">Price: {table.priceMultiplier}x base rate</span>
-                </div>
-              )}
-
-              <p className="text-sm text-zinc-200 mt-2 leading-relaxed">{table.description}</p>
             </div>
           </div>
         ))}

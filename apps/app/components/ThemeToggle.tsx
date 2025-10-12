@@ -85,15 +85,9 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
         title={isPrettyTheme ? 'Disable Pretty Theme' : 'Enable Pretty Theme'}
       >
         {isPrettyTheme ? (
-          <>
-            <Sun className="w-4 h-4" />
-            <span>Pretty</span>
-          </>
+          <Sun className="w-4 h-4" />
         ) : (
-          <>
-            <Moon className="w-4 h-4" />
-            <span>Classic</span>
-          </>
+          <Moon className="w-4 h-4" />
         )}
       </button>
     </div>
