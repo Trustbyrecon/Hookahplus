@@ -12,7 +12,6 @@ import GlobalNavigation from '../components/GlobalNavigation';
 import QRCodeScanner from '../components/QRCodeScanner';
 import RealTimeSessionSync from '../components/RealTimeSessionSync';
 import GuestIntelligenceDashboard from '../components/EnhancedStaffPanel';
-import FlavorMixSelector from '../components/customer/FlavorMixSelector';
 import { sessionManager, SessionData } from '../lib/sessionManager';
 import { 
   Clock, 
@@ -101,21 +100,16 @@ export default function GuestPortal() {
     try {
       setIsStartingSession(true);
       
-      // Create session data for main app API
+      // Create session data for guest session API
       const sessionData = {
-        session_id: `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        lounge_id: 'guest-lounge',
-        table_id: tableData?.tableId || 'T-001',
-        flavor_mix: items.map(item => item.name),
-        meta: {
-          customerId: 'guest',
-          phone: '+1234567890',
-          email: 'guest@hookahplus.com',
-          flavors: items.map(item => item.name),
-          selectedItems: items,
-          totalAmount: subtotal,
-          source: 'guest_portal'
-        }
+        tableId: tableData?.tableId || 'T-001',
+        loungeId: 'guest-lounge',
+        customerId: 'guest',
+        items: items,
+        totalAmount: subtotal,
+        customerName: 'Guest Customer',
+        customerPhone: '+1234567890',
+        sessionDuration: 60
       };
 
       // Send to guest session start API
@@ -230,7 +224,7 @@ export default function GuestPortal() {
                 <div className="text-sm text-green-400 font-medium">READY</div>
                 <div className="text-xs text-zinc-400">Base: $30.00</div>
               </div>
-            </div>
+        </div>
           </Card>
         </div>
 
@@ -261,48 +255,111 @@ export default function GuestPortal() {
           </div>
         )}
         
-        {/* Main Layout - Compact */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left: Flavor Wheel */}
-          <div>
-            <Card className="h-full">
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold">🎯 Create Your Perfect Mix</h3>
+        {/* Ultra-Compact Layout - No Scrolling */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+          {/* Left: Compact Flavor Selection */}
+          <div className="xl:col-span-2">
+            <Card className="h-fit">
+              <div className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-semibold">🎯 Choose Your Flavor Mix</h3>
                   <div className="text-sm text-zinc-400">Base: $30.00</div>
                 </div>
-                <FlavorMixSelector
-                  selectedFlavors={items.filter(item => item.name.includes('Add-on')).map(item => item.name.replace(' Add-on', ''))}
-                  onSelectionChange={(flavors) => {
-                    // Clear existing flavor add-ons
-                    items.filter(item => item.name.includes('Add-on')).forEach(item => remove(item.id));
-                    
-                    // Add new flavor selections
-                    flavors.forEach(flavor => {
-                      addFlavorToCart(flavor);
-                    });
-                  }}
-                  maxSelections={3}
-                  onPriceUpdate={(price) => {
-                    console.log('Flavor mix price updated:', price);
-                  }}
-                />
+                
+                {/* Compact Flavor Categories */}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+                  {['Mint & Cool', 'Fruity', 'Citrus', 'Dessert', 'Spice & Bold', 'Floral'].map((category) => (
+                    <div key={category} className="p-2 bg-zinc-800 rounded-lg">
+                      <div className="text-xs text-zinc-400 mb-1">{category}</div>
+                      <div className="flex flex-wrap gap-1">
+                        {category === 'Mint & Cool' && ['Mint', 'Spearmint', 'Ice Mint'].map(flavor => (
+                          <button
+                            key={flavor}
+                            onClick={() => addFlavorToCart(flavor)}
+                            className="text-xs px-2 py-1 rounded-full bg-zinc-700 hover:bg-zinc-600 border border-zinc-600"
+                          >
+                            {flavor}
+                          </button>
+                        ))}
+                        {category === 'Fruity' && ['Mango', 'Peach', 'Watermelon', 'Grape'].map(flavor => (
+                          <button
+                            key={flavor}
+                            onClick={() => addFlavorToCart(flavor)}
+                            className="text-xs px-2 py-1 rounded-full bg-zinc-700 hover:bg-zinc-600 border border-zinc-600"
+                          >
+                            {flavor}
+                          </button>
+                        ))}
+                        {category === 'Citrus' && ['Lemon', 'Orange', 'Lime', 'Tangerine'].map(flavor => (
+                          <button
+                            key={flavor}
+                            onClick={() => addFlavorToCart(flavor)}
+                            className="text-xs px-2 py-1 rounded-full bg-zinc-700 hover:bg-zinc-600 border border-zinc-600"
+                          >
+                            {flavor}
+                          </button>
+                        ))}
+                        {category === 'Dessert' && ['Vanilla', 'Caramel', 'Chocolate'].map(flavor => (
+                          <button
+                            key={flavor}
+                            onClick={() => addFlavorToCart(flavor)}
+                            className="text-xs px-2 py-1 rounded-full bg-zinc-700 hover:bg-zinc-600 border border-zinc-600"
+                          >
+                            {flavor}
+                          </button>
+                        ))}
+                        {category === 'Spice & Bold' && ['Double Apple', 'Cinnamon', 'Cardamom'].map(flavor => (
+                          <button
+                            key={flavor}
+                            onClick={() => addFlavorToCart(flavor)}
+                            className="text-xs px-2 py-1 rounded-full bg-zinc-700 hover:bg-zinc-600 border border-zinc-600"
+                          >
+                            {flavor}
+                          </button>
+                        ))}
+                        {category === 'Floral' && ['Rose', 'Jasmine', 'Lavender'].map(flavor => (
+                          <button
+                            key={flavor}
+                            onClick={() => addFlavorToCart(flavor)}
+                            className="text-xs px-2 py-1 rounded-full bg-zinc-700 hover:bg-zinc-600 border border-zinc-600"
+                          >
+                            {flavor}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Selected Flavors Display */}
+                {items.filter(item => item.name.includes('Add-on')).length > 0 && (
+                  <div className="p-3 bg-zinc-800 rounded-lg">
+                    <div className="text-sm text-zinc-400 mb-2">Selected Flavors:</div>
+                    <div className="flex flex-wrap gap-2">
+                      {items.filter(item => item.name.includes('Add-on')).map((item) => (
+                        <span key={item.id} className="text-xs px-2 py-1 rounded-full bg-primary-500/20 border border-primary-500/30">
+                          {item.name.replace(' Add-on', '')} ${(item.price / 100).toFixed(2)}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </Card>
           </div>
 
-          {/* Right: Order & Actions */}
+          {/* Right: Order Summary & Actions */}
           <div>
-            <Card className="h-full">
-              <div className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Your Order</h3>
+            <Card className="h-fit">
+              <div className="p-4">
+                <h3 className="text-lg font-semibold mb-3">Your Order</h3>
                 
                 {/* Base Hookah */}
-                <div className="mb-4 p-3 bg-zinc-800 rounded-lg">
+                <div className="mb-3 p-2 bg-zinc-800 rounded">
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="font-medium">Premium Hookah</div>
-                      <div className="text-sm text-zinc-400">Base session (60 min)</div>
+                      <div className="font-medium text-sm">Premium Hookah</div>
+                      <div className="text-xs text-zinc-400">60 min session</div>
                     </div>
                     <div className="font-semibold text-primary-400">$30.00</div>
                   </div>
@@ -310,19 +367,19 @@ export default function GuestPortal() {
                 
                 {/* Flavor Add-ons */}
                 {items.filter(item => item.name.includes('Add-on')).length > 0 && (
-                  <div className="mb-4">
-                    <div className="text-sm text-zinc-400 mb-2">Flavor Add-ons</div>
-                    <div className="space-y-2">
+                  <div className="mb-3">
+                    <div className="text-xs text-zinc-400 mb-1">Add-ons</div>
+                    <div className="space-y-1">
                       {items.filter(item => item.name.includes('Add-on')).map((item) => (
-                        <div key={item.id} className="flex items-center justify-between p-2 bg-zinc-800 rounded">
-                          <div className="text-sm">{item.name.replace(' Add-on', '')}</div>
-                          <div className="flex items-center space-x-2">
-                            <div className="text-sm text-primary-400">${(item.price / 100).toFixed(2)}</div>
+                        <div key={item.id} className="flex items-center justify-between p-1 bg-zinc-800 rounded text-xs">
+                          <span>{item.name.replace(' Add-on', '')}</span>
+                          <div className="flex items-center space-x-1">
+                            <span className="text-primary-400">${(item.price / 100).toFixed(2)}</span>
                             <button
                               onClick={() => remove(item.id)}
-                              className="text-xs text-red-400 hover:text-red-300"
+                              className="text-red-400 hover:text-red-300"
                             >
-                              Remove
+                              ×
                             </button>
                           </div>
                         </div>
@@ -332,25 +389,17 @@ export default function GuestPortal() {
                 )}
                 
                 {/* Total */}
-                <div className="border-t border-zinc-700 pt-4 mb-6">
+                <div className="border-t border-zinc-700 pt-3 mb-4">
                   <div className="flex justify-between items-center">
                     <span className="font-semibold">Total:</span>
-                    <span className="text-xl font-bold text-primary-400">
+                    <span className="text-lg font-bold text-primary-400">
                       ${(subtotal / 100).toFixed(2)}
                     </span>
                   </div>
                 </div>
 
-                {/* Table Status */}
-                <div className="mb-6 p-3 bg-zinc-800 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-zinc-400">Table Status</span>
-                    <span className="text-green-400 font-medium">AVAILABLE</span>
-                  </div>
-                </div>
-
                 {/* Action Buttons */}
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <Button 
                     variant="fire" 
                     className="w-full"
@@ -358,14 +407,14 @@ export default function GuestPortal() {
                     onClick={handleFireSession}
                     disabled={isStartingSession || !tableData}
                   >
-                    {isStartingSession ? 'Starting Session...' : '🔥 Fire Session'}
+                    {isStartingSession ? 'Starting...' : '🔥 Fire Session'}
                   </Button>
                   
                   <div className="grid grid-cols-2 gap-2">
                     <Button 
                       variant="outline" 
                       size="sm"
-                      leftIcon={<Brain className="w-4 h-4" />}
+                      leftIcon={<Brain className="w-3 h-3" />}
                       onClick={handleStaffPanel}
                     >
                       Intelligence
@@ -374,7 +423,7 @@ export default function GuestPortal() {
                     <Button 
                       variant="outline" 
                       size="sm"
-                      leftIcon={<BarChart3 className="w-4 h-4" />}
+                      leftIcon={<BarChart3 className="w-3 h-3" />}
                       onClick={() => {
                         window.open('https://hookahplus.net/operator', '_blank');
                       }}
