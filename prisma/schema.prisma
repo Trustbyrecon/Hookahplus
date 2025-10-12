@@ -11,7 +11,7 @@ model Badge {
   id     String  @id
   label  String
   scope  String  // 'lounge' | 'network'
-  rule   Json
+  rule   String  // JSON as string for SQLite compatibility
   active Boolean @default(true)
   awards Award[]
 }
@@ -46,11 +46,11 @@ model Event {
 model Session {
   id           String   @id @default(cuid())
   externalRef  String?  // qrToken | reservationId | stripeCheckoutId
-  source       SessionSource
+  source       String   // QR | RESERVE | WALK_IN
   trustSignature String
-  state        SessionState @default(PENDING)
+  state        String   @default("PENDING") // PENDING | ACTIVE | PAUSED | CLOSED | CANCELED
   customerPhone String?
-  flavorMix    Json?
+  flavorMix    String?  // JSON as string for SQLite compatibility
   loungeId     String
   version      Int @default(1)
   createdAt    DateTime @default(now())
@@ -66,23 +66,9 @@ model SessionEvent {
   sessionId   String
   type        String
   payloadSeal String
-  data        Json
+  data        String   // JSON as string for SQLite compatibility
   createdAt   DateTime @default(now())
   session     Session  @relation(fields: [sessionId], references: [id])
 
   @@index([sessionId])
-}
-
-enum SessionSource { 
-  QR 
-  RESERVE 
-  WALK_IN 
-}
-
-enum SessionState { 
-  PENDING 
-  ACTIVE 
-  PAUSED 
-  CLOSED 
-  CANCELED 
 }

@@ -77,7 +77,7 @@ export async function POST(req: Request) {
           create: {
             type: "CREATED",
             payloadSeal: trustSignature,
-            data: { idempotencyKey, source, customerPhone, flavorMix }
+            data: JSON.stringify({ idempotencyKey, source, customerPhone, flavorMix })
           }
         }
       },

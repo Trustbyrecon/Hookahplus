@@ -9,7 +9,7 @@ import FlavorWheelSelector from './FlavorWheelSelector';
 interface CreateSessionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateSession: (sessionData: SessionData) => void;
+  onCreateSession: (sessionData: any) => void; // Changed to any to accept API data format
 }
 
 interface SessionData {
@@ -26,6 +26,8 @@ interface SessionData {
   fohStaff: string;
   notes: string;
   timerDuration: number; // in minutes
+  pricingModel: 'flat' | 'time-based'; // New: pricing model choice
+  basePrice: number; // New: base price for calculations
 }
 
 const sessionTypes = [
@@ -80,7 +82,9 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
     bohStaff: '',
     fohStaff: '',
     notes: '',
-    timerDuration: 60 // Default to 1 hour
+    timerDuration: 60, // Default to 1 hour
+    pricingModel: 'flat', // New: default to flat fee
+    basePrice: 30 // New: base price for calculations
   });
 
   const [selectedTable, setSelectedTable] = useState<TableType | null>(null);
@@ -88,8 +92,33 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
 
   const [errors, setErrors] = useState<Partial<Record<keyof SessionData, string>>>({});
 
+  // Calculate total amount based on pricing model
+  const calculateTotalAmount = (pricingModel: 'flat' | 'time-based', timerDuration: number, flavorMixPrice: number) => {
+    if (pricingModel === 'flat') {
+      return 30 + flavorMixPrice; // Flat $30 + flavor add-ons
+    } else {
+      // Time-based: $0.50 per minute + flavor add-ons
+      const timeBasedPrice = (timerDuration * 0.50);
+      return timeBasedPrice + flavorMixPrice;
+    }
+  };
+
   const handleInputChange = (field: keyof SessionData, value: string | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => {
+      const updated = { ...prev, [field]: value };
+      
+      // Recalculate amount when pricing model or duration changes
+      if (field === 'pricingModel' || field === 'timerDuration') {
+        updated.amount = calculateTotalAmount(
+          field === 'pricingModel' ? value as 'flat' | 'time-based' : updated.pricingModel,
+          field === 'timerDuration' ? value as number : updated.timerDuration,
+          updated.flavorMixPrice
+        );
+      }
+      
+      return updated;
+    });
+    
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
@@ -109,12 +138,15 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
 
   // Handle flavor mix changes
   const handleFlavorMixChange = (flavors: string[], totalPrice: number) => {
-    setFormData(prev => ({
-      ...prev,
-      flavorMix: flavors,
-      flavorMixPrice: totalPrice,
-      amount: (prev.amount - prev.flavorMixPrice) + totalPrice // Recalculate total amount
-    }));
+    setFormData(prev => {
+      const updated = {
+        ...prev,
+        flavorMix: flavors,
+        flavorMixPrice: totalPrice,
+        amount: calculateTotalAmount(prev.pricingModel, prev.timerDuration, totalPrice)
+      };
+      return updated;
+    });
   };
 
   const validateForm = (): boolean => {
@@ -134,20 +166,27 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      // Ensure all required fields are properly formatted
-      const sessionData = {
-        ...formData,
-        flavor: formData.flavorMix.join(', '), // Convert array to string for backward compatibility
-        amount: formData.amount || (30 + formData.flavorMixPrice), // Ensure amount is calculated
-        tableId: formData.tableId || selectedTable?.id || 'table-001', // Ensure tableId exists
-        customerName: formData.customerName || 'Guest Customer', // Ensure customer name exists
-        customerPhone: formData.customerPhone || '+1234567890', // Ensure phone exists
-        sessionType: formData.sessionType || 'walk-in', // Ensure session type exists
-        timerDuration: formData.timerDuration || 60 // Ensure duration exists
+      // Format data for the API endpoint
+      const apiData = {
+        session_id: `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        lounge_id: 'fire-session-lounge',
+        table_id: formData.tableId || selectedTable?.id || 'table-001',
+        flavor_mix: formData.flavorMix,
+        customer_name: formData.customerName || 'Guest Customer',
+        customer_phone: formData.customerPhone || '+1234567890',
+        session_type: formData.sessionType || 'walk-in',
+        amount: formData.amount,
+        pricing_model: formData.pricingModel,
+        timer_duration: formData.timerDuration,
+        boh_staff: formData.bohStaff,
+        foh_staff: formData.fohStaff,
+        notes: formData.notes,
+        flavor_mix_price: formData.flavorMixPrice,
+        base_price: formData.basePrice
       };
       
-      console.log('Creating session with data:', sessionData); // Debug log
-      onCreateSession(sessionData);
+      console.log('Creating session with data:', apiData); // Debug log
+      onCreateSession(apiData);
       onClose();
     }
   };
@@ -325,6 +364,45 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
                 )}
               </div>
 
+              {/* Pricing Model */}
+              <div>
+                <label className="block text-sm font-medium text-white mb-2 font-semibold">
+                  Pricing Model *
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleInputChange('pricingModel', 'flat')}
+                    className={`p-3 rounded-lg border text-left transition-colors ${
+                      formData.pricingModel === 'flat'
+                        ? 'border-teal-500 bg-teal-500/20 text-teal-300'
+                        : 'border-zinc-600 bg-zinc-800/80 text-zinc-300 hover:border-zinc-500'
+                    }`}
+                  >
+                    <div className="font-medium">Flat Fee</div>
+                    <div className="text-sm text-zinc-400">$30.00 fixed</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleInputChange('pricingModel', 'time-based')}
+                    className={`p-3 rounded-lg border text-left transition-colors ${
+                      formData.pricingModel === 'time-based'
+                        ? 'border-teal-500 bg-teal-500/20 text-teal-300'
+                        : 'border-zinc-600 bg-zinc-800/80 text-zinc-300 hover:border-zinc-500'
+                    }`}
+                  >
+                    <div className="font-medium">Time-Based</div>
+                    <div className="text-sm text-zinc-400">$0.50/min</div>
+                  </button>
+                </div>
+                <div className="mt-2 text-xs text-zinc-400">
+                  {formData.pricingModel === 'flat' 
+                    ? 'Fixed $30.00 + flavor add-ons' 
+                    : `$${(formData.timerDuration * 0.50).toFixed(2)} for ${formData.timerDuration}min + flavor add-ons`
+                  }
+                </div>
+              </div>
+
               {/* Amount */}
               <div>
                 <label className="block text-sm font-medium text-white mb-2 font-semibold">
@@ -343,7 +421,10 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
                   />
                 </div>
                 <div className="mt-1 text-xs text-zinc-400">
-                  Base: $30.00 + Flavors: ${formData.flavorMixPrice.toFixed(2)} = ${formData.amount.toFixed(2)}
+                  {formData.pricingModel === 'flat' 
+                    ? `Base: $30.00 + Flavors: $${formData.flavorMixPrice.toFixed(2)} = $${formData.amount.toFixed(2)}`
+                    : `Time: $${(formData.timerDuration * 0.50).toFixed(2)} + Flavors: $${formData.flavorMixPrice.toFixed(2)} = $${formData.amount.toFixed(2)}`
+                  }
                 </div>
                 {errors.amount && (
                   <p className="text-red-400 text-sm mt-1">{errors.amount}</p>

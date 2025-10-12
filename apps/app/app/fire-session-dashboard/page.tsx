@@ -257,7 +257,7 @@ export default function FireSessionDashboard() {
       
       const data = await response.json();
       
-      if (data.ok && data.session) {
+      if (data.success && data.session) {
         console.log('✅ Session created:', data.session);
         // Reload sessions to get updated list
         await loadSessions();

@@ -42,7 +42,18 @@ export async function POST(req: NextRequest) {
       session_id, 
       lounge_id, 
       table_id, 
-      flavor_mix 
+      flavor_mix,
+      customer_name,
+      customer_phone,
+      session_type,
+      amount,
+      pricing_model,
+      timer_duration,
+      boh_staff,
+      foh_staff,
+      notes,
+      flavor_mix_price,
+      base_price
     } = body;
 
     // Generate session_id if not provided
@@ -66,11 +77,23 @@ export async function POST(req: NextRequest) {
     const session = {
       id: `session_${Date.now()}`,
       session_id: finalSessionId,
-      lounge_id,
-      table_id,
+      lounge_id: lounge_id || 'fire-session-lounge',
+      table_id: table_id || 'table-001',
       flavor_mix: flavor_mix || [],
       status: 'pending_guest_arrival' as const,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      // Additional fields
+      customer_name: customer_name || 'Guest Customer',
+      customer_phone: customer_phone || '+1234567890',
+      session_type: session_type || 'walk-in',
+      amount: amount || 30,
+      pricing_model: pricing_model || 'flat',
+      timer_duration: timer_duration || 60,
+      boh_staff: boh_staff || '',
+      foh_staff: foh_staff || '',
+      notes: notes || '',
+      flavor_mix_price: flavor_mix_price || 0,
+      base_price: base_price || 30
     };
 
     sessions.push(session);
