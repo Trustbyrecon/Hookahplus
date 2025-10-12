@@ -12,6 +12,7 @@ import GlobalNavigation from '../components/GlobalNavigation';
 import QRCodeScanner from '../components/QRCodeScanner';
 import RealTimeSessionSync from '../components/RealTimeSessionSync';
 import GuestIntelligenceDashboard from '../components/EnhancedStaffPanel';
+import FlavorMixSelector from '../components/customer/FlavorMixSelector';
 import { sessionManager, SessionData } from '../lib/sessionManager';
 import { 
   Clock, 
@@ -137,8 +138,8 @@ export default function GuestPortal() {
     if (currentSession) {
       sessionManager.openAppBuild('dashboard');
     } else {
-      // Open general dashboard
-      window.open('https://hookahplus-app-prod.vercel.app/dashboard', '_blank');
+      // Open general operator dashboard
+      window.open('https://hookahplus.net/operator', '_blank');
     }
   };
   const menuItems = [
@@ -293,6 +294,32 @@ export default function GuestPortal() {
               {/* $1 Stripe sandbox test */}
               <DollarTestButton />
             </div>
+
+            {/* Flavor Wheel Experience */}
+            <Card className="mb-6">
+              <div className="p-6">
+                <h3 className="text-lg font-semibold mb-4">🎯 Create Your Perfect Mix</h3>
+                <p className="text-zinc-400 text-sm mb-4">
+                  Use our interactive flavor wheel to craft your ideal hookah experience
+                </p>
+                <FlavorMixSelector
+                  selectedFlavors={items.map(item => item.name)}
+                  onSelectionChange={(flavors) => {
+                    // Convert flavor selections to cart items
+                    flavors.forEach(flavor => {
+                      const existingItem = menuItems.find(item => item.name.toLowerCase().includes(flavor.toLowerCase()));
+                      if (existingItem) {
+                        addToCart(existingItem);
+                      }
+                    });
+                  }}
+                  maxSelections={3}
+                  onPriceUpdate={(price) => {
+                    console.log('Flavor mix price updated:', price);
+                  }}
+                />
+              </div>
+            </Card>
 
             {/* Quick Order */}
             <Card className="mb-6">
@@ -467,10 +494,10 @@ export default function GuestPortal() {
                   <Button 
                     variant="outline" 
                     className="w-full"
-                    leftIcon={<UserCheck className="w-4 h-4" />}
+                    leftIcon={<Brain className="w-4 h-4" />}
                     onClick={handleStaffPanel}
                   >
-                    Staff Panel
+                    Guest Intelligence Dashboard
                     {currentSession && (
                       <span className="ml-2 text-xs bg-green-500 text-white px-2 py-1 rounded-full">
                         Live
@@ -482,26 +509,17 @@ export default function GuestPortal() {
                     variant="outline" 
                     className="w-full"
                     leftIcon={<BarChart3 className="w-4 h-4" />}
-                    onClick={handleDashboard}
+                    onClick={() => {
+                      // Navigate to operator dashboard in site build
+                      window.open('https://hookahplus.net/operator', '_blank');
+                    }}
                   >
-                    Dashboard
+                    Operator Dashboard
                     {currentSession && (
                       <span className="ml-2 text-xs bg-blue-500 text-white px-2 py-1 rounded-full">
                         Active
                       </span>
                     )}
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    leftIcon={<Star className="w-4 h-4" />}
-                    onClick={() => {
-                      // Navigate to partnership page
-                      window.location.href = '/partnership';
-                    }}
-                  >
-                    Join Partnership Program
                   </Button>
                 </div>
               </div>

@@ -144,7 +144,7 @@ class SessionManager {
         url = this.currentSession.staffPanelUrl || `https://hookahplus-app-prod.vercel.app/fire-session-dashboard?table=${this.currentSession.tableId}`;
         break;
       case 'dashboard':
-        url = this.currentSession.dashboardUrl || `https://hookahplus-app-prod.vercel.app/dashboard?session=${this.currentSession.sessionId}`;
+        url = this.currentSession.dashboardUrl || `https://hookahplus.net/operator?session=${this.currentSession.sessionId}`;
         break;
     }
 
