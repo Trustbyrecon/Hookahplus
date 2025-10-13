@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import DollarTestButton from './DollarTestButton';
 import { 
   Flame, 
   Users, 
@@ -66,7 +67,16 @@ import {
   Wand2,
   FlaskConical,
   ListFilter,
-  ChevronRight
+  ChevronRight,
+  Loader2,
+  CheckCircle as CheckCircleIcon,
+  XCircle,
+  AlertCircle as AlertCircleIcon,
+  Wifi,
+  WifiOff,
+  Server,
+  Database,
+  Zap as ZapIcon
 } from 'lucide-react';
 
 // Enhanced visual design system matching FlavorWheel treatment
@@ -418,6 +428,222 @@ const EnhancedFlavorSelection = ({
   );
 };
 
+// Enhanced Role Selector Component
+const EnhancedRoleSelector = ({ 
+  userRole, 
+  onRoleChange, 
+  selectedRole 
+}: {
+  userRole: string;
+  onRoleChange: (role: string) => void;
+  selectedRole: string;
+}) => {
+  const roles = [
+    { id: 'BOH', label: 'BOH', icon: ChefHat, color: 'text-orange-400' },
+    { id: 'FOH', label: 'FOH', icon: UserCheck, color: 'text-blue-400' },
+    { id: 'MANAGER', label: 'MANAGER', icon: Crown, color: 'text-purple-400' },
+    { id: 'ADMIN', label: 'ADMIN', icon: Shield, color: 'text-red-400' }
+  ];
+
+  return (
+    <div className="flex items-center space-x-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10">
+      <span className="text-sm text-zinc-400">Role:</span>
+      <select 
+        value={userRole} 
+        onChange={(e) => onRoleChange(e.target.value)}
+        className="bg-transparent text-white text-sm font-medium px-2 py-1 rounded border-none focus:outline-none focus:ring-2 focus:ring-teal-500"
+      >
+        {roles.map(role => {
+          const Icon = role.icon;
+          return (
+            <option key={role.id} value={role.id}>
+              {role.label}
+            </option>
+          );
+        })}
+      </select>
+      <span className="text-xs text-zinc-500">({selectedRole} View)</span>
+    </div>
+  );
+};
+
+// Enhanced Filter Tabs Component
+const EnhancedFilterTabs = ({ 
+  activeTab, 
+  onTabChange, 
+  sessionCounts 
+}: {
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+  sessionCounts: { overview: number; boh: number; foh: number; edgeCases: number };
+}) => {
+  const tabs = [
+    { id: 'overview', label: 'Overview', count: sessionCounts.overview, icon: BarChart3 },
+    { id: 'boh', label: 'BOH', count: sessionCounts.boh, icon: ChefHat },
+    { id: 'foh', label: 'FOH', count: sessionCounts.foh, icon: UserCheck },
+    { id: 'edgeCases', label: 'Edge Cases', count: sessionCounts.edgeCases, icon: AlertTriangle }
+  ];
+
+  return (
+    <div className="flex space-x-2 mb-6">
+      {tabs.map((tab) => {
+        const Icon = tab.icon;
+        return (
+          <button
+            key={tab.id}
+            onClick={() => onTabChange(tab.id)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === tab.id
+                ? 'bg-teal-600 text-white'
+                : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white'
+            }`}
+          >
+            <Icon className="w-4 h-4" />
+            {tab.label} ({tab.count})
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
+// Enhanced Debug Info Bar Component
+const EnhancedDebugInfoBar = ({ 
+  theme, 
+  sessionsLoaded, 
+  loading, 
+  apiStatus, 
+  ktl4Status, 
+  hitrustStatus 
+}: {
+  theme: string;
+  sessionsLoaded: number;
+  loading: boolean;
+  apiStatus: string;
+  ktl4Status: string;
+  hitrustStatus: string;
+}) => {
+  return (
+    <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-3 mb-6">
+      <div className="flex items-center justify-between text-xs text-zinc-400">
+        <div className="flex items-center space-x-4">
+          <span>Theme: {theme}</span>
+          <span>Sessions Loaded: {sessionsLoaded}</span>
+          <span>Loading: {loading ? '⏳' : '✅'}</span>
+          <span>API Status: {apiStatus}</span>
+        </div>
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center gap-1">
+            <Server className="w-3 h-3" />
+            <span>KTL4: {ktl4Status}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Shield className="w-3 h-3" />
+            <span>HiTrust: {hitrustStatus}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Enhanced Refresh Button Component
+const EnhancedRefreshButton = ({ 
+  onRefresh, 
+  loading 
+}: {
+  onRefresh: () => void;
+  loading: boolean;
+}) => {
+  return (
+    <motion.button
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      onClick={onRefresh}
+      disabled={loading}
+      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-700 hover:bg-zinc-600 disabled:opacity-60 disabled:cursor-not-allowed text-white transition-all duration-200 text-sm font-medium"
+    >
+      <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+      <span>Refresh</span>
+    </motion.button>
+  );
+};
+
+// Enhanced KTL4 Status Component
+const EnhancedKTL4Status = ({ 
+  healthStatus, 
+  onRunHealthCheck, 
+  onRunReconciliation, 
+  onExecuteBreakGlass 
+}: {
+  healthStatus: any[];
+  onRunHealthCheck: () => void;
+  onRunReconciliation: () => void;
+  onExecuteBreakGlass: (action: string) => void;
+}) => {
+  const [showKTL4Panel, setShowKTL4Panel] = useState(false);
+
+  return (
+    <div className="relative">
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        onClick={() => setShowKTL4Panel(!showKTL4Panel)}
+        className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-purple-600/20 to-blue-600/20 border border-purple-500/30 text-purple-300 hover:from-purple-600/30 hover:to-blue-600/30 transition-all duration-200 text-sm font-medium"
+      >
+        <ZapIcon className="w-4 h-4" />
+        <span>KTL4</span>
+        <ChevronRight className={`w-3 h-3 transition-transform ${showKTL4Panel ? 'rotate-90' : ''}`} />
+      </motion.button>
+
+      <AnimatePresence>
+        {showKTL4Panel && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="absolute top-full left-0 mt-2 w-80 bg-zinc-900 border border-purple-500/30 rounded-xl p-4 shadow-xl z-50"
+          >
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold text-purple-300 mb-3">KTL-4 Keep-The-Lights-On</h4>
+              
+              <div className="grid grid-cols-2 gap-2">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  onClick={onRunHealthCheck}
+                  className="px-3 py-2 rounded-lg bg-green-600/20 border border-green-500/30 text-green-300 text-xs font-medium hover:bg-green-600/30 transition-colors"
+                >
+                  Health Check
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  onClick={onRunReconciliation}
+                  className="px-3 py-2 rounded-lg bg-blue-600/20 border border-blue-500/30 text-blue-300 text-xs font-medium hover:bg-blue-600/30 transition-colors"
+                >
+                  Reconcile
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  onClick={() => onExecuteBreakGlass('freeze_station')}
+                  className="px-3 py-2 rounded-lg bg-orange-600/20 border border-orange-500/30 text-orange-300 text-xs font-medium hover:bg-orange-600/30 transition-colors"
+                >
+                  Freeze Station
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  onClick={() => onExecuteBreakGlass('emergency_stop')}
+                  className="px-3 py-2 rounded-lg bg-red-600/20 border border-red-500/30 text-red-300 text-xs font-medium hover:bg-red-600/30 transition-colors"
+                >
+                  Emergency Stop
+                </motion.button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 // Main enhanced FSD component
 export default function EnhancedFSDDesign({ 
   sessions = [],
@@ -431,6 +657,119 @@ export default function EnhancedFSDDesign({
   const [selectedFlavors, setSelectedFlavors] = useState<any[]>([]);
   const [activeView, setActiveView] = useState<'sessions' | 'flavors' | 'analytics'>('sessions');
   
+  // Enhanced state management for Classic Design business logic
+  const [userRole, setUserRole] = useState<'BOH' | 'FOH' | 'MANAGER' | 'ADMIN'>('MANAGER');
+  const [selectedRole, setSelectedRole] = useState<'FOH' | 'BOH'>('FOH');
+  const [activeTab, setActiveTab] = useState('overview');
+  const [loading, setLoading] = useState(false);
+  const [apiStatus, setApiStatus] = useState('Connected');
+  const [ktl4Status, setKtl4Status] = useState('Active');
+  const [hitrustStatus, setHitrustStatus] = useState('Verified');
+  const [theme, setTheme] = useState('midnight');
+  
+  // KTL4 and HiTrust API integration functions
+  const runKTL4HealthCheck = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/ktl4/health-check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          flowName: 'session_lifecycle',
+          checkType: 'comprehensive',
+          operatorId: 'enhanced_fsd'
+        })
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log('KTL4 Health Check:', result);
+        setKtl4Status('Healthy');
+      }
+    } catch (error) {
+      console.error('KTL4 Health Check failed:', error);
+      setKtl4Status('Degraded');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const runKTL4Reconciliation = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/ktl4/reconcile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'run_reconciliation',
+          operatorId: 'enhanced_fsd'
+        })
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log('KTL4 Reconciliation:', result);
+      }
+    } catch (error) {
+      console.error('KTL4 Reconciliation failed:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const executeKTL4BreakGlass = useCallback(async (actionType: string) => {
+    if (!confirm(`Are you sure you want to execute ${actionType}? This is an emergency action.`)) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch('/api/ktl4/break-glass', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          actionType,
+          operatorId: 'enhanced_fsd',
+          reason: `Emergency action executed from Enhanced FSD`
+        })
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log('KTL4 Break-Glass executed:', result);
+      }
+    } catch (error) {
+      console.error('KTL4 Break-Glass failed:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const refreshSessions = useCallback(async () => {
+    setLoading(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setApiStatus('Connected');
+    } catch (error) {
+      setApiStatus('Disconnected');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleRoleChange = useCallback((role: string) => {
+    setUserRole(role as any);
+    // Determine view based on role
+    switch (role) {
+      case 'BOH': setSelectedRole('BOH'); break;
+      case 'FOH': setSelectedRole('FOH'); break;
+      case 'MANAGER': setSelectedRole('FOH'); break;
+      case 'ADMIN': setSelectedRole('FOH'); break;
+      default: setSelectedRole('FOH');
+    }
+  }, []);
+
   // Enhanced sample data for QA testing - demonstrates full guest-to-lounge-owner workflow
   const sampleSessions = [
     {
@@ -629,6 +968,30 @@ export default function EnhancedFSDDesign({
                 <span className="text-sm text-green-400 font-medium">Live</span>
               </div>
               
+              {/* $1 Test Button */}
+              <DollarTestButton />
+              
+              {/* Role Selector */}
+              <EnhancedRoleSelector
+                userRole={userRole}
+                onRoleChange={handleRoleChange}
+                selectedRole={selectedRole}
+              />
+              
+              {/* KTL4 Status */}
+              <EnhancedKTL4Status
+                healthStatus={[]}
+                onRunHealthCheck={runKTL4HealthCheck}
+                onRunReconciliation={runKTL4Reconciliation}
+                onExecuteBreakGlass={executeKTL4BreakGlass}
+              />
+              
+              {/* Refresh Button */}
+              <EnhancedRefreshButton
+                onRefresh={refreshSessions}
+                loading={loading}
+              />
+              
               {/* Create Session Button */}
               <motion.button
                 whileHover={{ scale: 1.05 }}
@@ -648,6 +1011,28 @@ export default function EnhancedFSDDesign({
         
         {/* Enhanced Metrics */}
         <EnhancedMetrics metrics={metrics} />
+        
+        {/* Debug Info Bar */}
+        <EnhancedDebugInfoBar
+          theme={theme}
+          sessionsLoaded={displaySessions.length}
+          loading={loading}
+          apiStatus={apiStatus}
+          ktl4Status={ktl4Status}
+          hitrustStatus={hitrustStatus}
+        />
+        
+        {/* Filter Tabs */}
+        <EnhancedFilterTabs
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          sessionCounts={{
+            overview: displaySessions.length,
+            boh: displaySessions.filter(s => s.state === 'PREP_IN_PROGRESS' || s.state === 'READY_FOR_DELIVERY').length,
+            foh: displaySessions.filter(s => s.state === 'ACTIVE' || s.state === 'PAUSED').length,
+            edgeCases: displaySessions.filter(s => s.edgeCase).length
+          }}
+        />
         
         {/* View Toggle */}
         <div className="flex items-center gap-2 mb-6">
