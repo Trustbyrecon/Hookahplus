@@ -232,12 +232,28 @@ const EnhancedSessionCard = ({
       <div className="space-y-2">
         <div className="text-lg font-semibold text-white">{session.flavor || 'Hookah Session'}</div>
         <div className="text-sm text-zinc-400">
-          Duration: {session.timerDuration}min | Started: {session.startedAt ? new Date(session.startedAt).toLocaleTimeString() : 'N/A'}
+          {session.customerName && `Guest: ${session.customerName}`}
+          {session.customerPhone && ` | ${session.customerPhone}`}
+        </div>
+        <div className="text-sm text-zinc-400">
+          {session.timerDuration && `Duration: ${session.timerDuration}min`}
+          {session.startedAt && ` | Started: ${new Date(session.startedAt).toLocaleTimeString()}`}
+          {session.pricingModel && ` | ${session.pricingModel === 'time-based' ? 'Time-based' : 'Flat rate'}`}
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-zinc-400">Revenue:</span>
           <span className="text-green-400 font-semibold">${(session.priceCents / 100).toFixed(2)}</span>
         </div>
+        {session.flavorMix && session.flavorMix.length > 0 && (
+          <div className="text-xs text-zinc-500">
+            Mix: {session.flavorMix.join(' + ')}
+          </div>
+        )}
+        {session.assignedBOH && session.assignedFOH && (
+          <div className="text-xs text-zinc-500">
+            Staff: {session.assignedBOH} (BOH) • {session.assignedFOH} (FOH)
+          </div>
+        )}
       </div>
       
       <div className="mt-3 pt-3 border-t border-zinc-700">
@@ -309,18 +325,31 @@ const EnhancedFlavorSelection = ({
       title: "Quick Order",
       subtitle: "Select popular flavors to build your quick order",
       items: [
-        { id: "blue-mist", name: "Blue Mist Hookah", price: 32, description: "Premium blueberry mint blend with smooth clouds", quickAdd: true },
-        { id: "double-apple", name: "Double Apple Hookah", price: 30, description: "Classic apple flavor with authentic taste", quickAdd: true },
-        { id: "mint-fresh", name: "Mint Fresh Hookah", price: 29, description: "Cool mint with refreshing aftertaste", quickAdd: true },
-        { id: "strawberry-mojito", name: "Strawberry Mojito", price: 8, description: "Fresh strawberry with mint and lime", quickAdd: true }
+        { id: "blue-mist-mint", name: "Blue Mist + Mint", price: 35, description: "Premium blueberry mint blend with smooth clouds", quickAdd: true },
+        { id: "strawberry-mojito", name: "Strawberry Mojito", price: 28, description: "Fresh strawberry with mint and lime", quickAdd: true },
+        { id: "double-apple-cardamom", name: "Double Apple + Cardamom", price: 42, description: "Classic apple with exotic spice", quickAdd: true },
+        { id: "watermelon-mint", name: "Watermelon Mint", price: 32, description: "Refreshing summer blend", quickAdd: true },
+        { id: "rose-lavender", name: "Rose + Lavender", price: 45, description: "Elegant floral combination", quickAdd: true },
+        { id: "peach-wave", name: "Peach Wave", price: 28, description: "Sweet peach with tropical notes", quickAdd: true }
       ]
     },
     trending: {
       title: "Popular This Week",
       subtitle: "Trending flavors customers are loving",
       items: [
-        { id: "blue-mist", name: "Blue Mist Hookah", price: 32, trending: true },
-        { id: "mint-fresh", name: "Mint Fresh Hookah", price: 29, trending: true }
+        { id: "blue-mist-mint", name: "Blue Mist + Mint", price: 35, trending: true },
+        { id: "strawberry-mojito", name: "Strawberry Mojito", price: 28, trending: true },
+        { id: "watermelon-mint", name: "Watermelon Mint", price: 32, trending: true }
+      ]
+    },
+    premium: {
+      title: "Premium Mixes",
+      subtitle: "Sophisticated flavor combinations",
+      items: [
+        { id: "rose-lavender", name: "Rose + Lavender", price: 45, description: "Elegant floral combination" },
+        { id: "double-apple-cardamom", name: "Double Apple + Cardamom", price: 42, description: "Classic apple with exotic spice" },
+        { id: "vanilla-caramel", name: "Vanilla + Caramel", price: 38, description: "Rich dessert-inspired blend" },
+        { id: "jasmine-honey", name: "Jasmine + Honey", price: 40, description: "Aromatic with natural sweetness" }
       ]
     }
   };
@@ -399,10 +428,129 @@ export default function EnhancedFSDDesign({
   const [selectedFlavors, setSelectedFlavors] = useState<any[]>([]);
   const [activeView, setActiveView] = useState<'sessions' | 'flavors' | 'analytics'>('sessions');
   
+  // Enhanced sample data for QA testing - demonstrates full guest-to-lounge-owner workflow
+  const sampleSessions = [
+    {
+      id: 'session_T-001_1758552685415',
+      tableId: 'T-001',
+      customerRef: '15551234556',
+      flavor: 'Blue Mist + Mint',
+      priceCents: 3500,
+      state: 'ACTIVE',
+      assignedBOHId: 'boh-1',
+      assignedFOHId: 'foh-1',
+      startedAt: new Date(Date.now() - 25 * 60 * 1000), // 25 minutes ago
+      timerDuration: 60,
+      createdAt: new Date(Date.now() - 30 * 60 * 1000),
+      updatedAt: new Date(),
+      assignedBOH: 'Mike Rodriguez',
+      assignedFOH: 'Sarah Chen',
+      notes: 'Guest: Alex Johnson | QR Code: T-001 | Flavor Mix: Blue Mist + Mint',
+      customerName: 'Alex Johnson',
+      customerPhone: '+1 (555) 123-4567',
+      flavorMix: ['Blue Mist', 'Mint'],
+      pricingModel: 'time-based',
+      basePrice: 30,
+      flavorMixPrice: 5
+    },
+    {
+      id: 'session_T-003_1758552685416',
+      tableId: 'T-003',
+      customerRef: '15551234557',
+      flavor: 'Strawberry Mojito',
+      priceCents: 2800,
+      state: 'PREP_IN_PROGRESS',
+      assignedBOHId: 'boh-2',
+      assignedFOHId: 'foh-2',
+      createdAt: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
+      updatedAt: new Date(),
+      assignedBOH: 'David Wilson',
+      assignedFOH: 'Emily Davis',
+      notes: 'Guest: Maria Garcia | QR Code: T-003 | Flavor Mix: Strawberry Mojito',
+      customerName: 'Maria Garcia',
+      customerPhone: '+1 (555) 234-5678',
+      flavorMix: ['Strawberry', 'Mint', 'Lime'],
+      pricingModel: 'flat',
+      basePrice: 30,
+      flavorMixPrice: 8
+    },
+    {
+      id: 'session_T-005_1758552685417',
+      tableId: 'T-005',
+      customerRef: '15551234558',
+      flavor: 'Double Apple + Cardamom',
+      priceCents: 4200,
+      state: 'READY_FOR_DELIVERY',
+      assignedBOHId: 'boh-1',
+      assignedFOHId: 'foh-3',
+      createdAt: new Date(Date.now() - 15 * 60 * 1000), // 15 minutes ago
+      updatedAt: new Date(),
+      assignedBOH: 'Mike Rodriguez',
+      assignedFOH: 'James Brown',
+      notes: 'Guest: Ahmed Hassan | QR Code: T-005 | Flavor Mix: Double Apple + Cardamom',
+      customerName: 'Ahmed Hassan',
+      customerPhone: '+1 (555) 345-6789',
+      flavorMix: ['Double Apple', 'Cardamom'],
+      pricingModel: 'time-based',
+      basePrice: 30,
+      flavorMixPrice: 12
+    },
+    {
+      id: 'session_T-007_1758552685418',
+      tableId: 'T-007',
+      customerRef: '15551234559',
+      flavor: 'Watermelon Mint',
+      priceCents: 3200,
+      state: 'COMPLETED',
+      assignedBOHId: 'boh-2',
+      assignedFOHId: 'foh-1',
+      startedAt: new Date(Date.now() - 90 * 60 * 1000), // 90 minutes ago
+      endedAt: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
+      timerDuration: 60,
+      createdAt: new Date(Date.now() - 95 * 60 * 1000),
+      updatedAt: new Date(Date.now() - 30 * 60 * 1000),
+      assignedBOH: 'David Wilson',
+      assignedFOH: 'Sarah Chen',
+      notes: 'Guest: Jennifer Lee | QR Code: T-007 | Flavor Mix: Watermelon Mint | Duration: 60min',
+      customerName: 'Jennifer Lee',
+      customerPhone: '+1 (555) 456-7890',
+      flavorMix: ['Watermelon', 'Mint'],
+      pricingModel: 'flat',
+      basePrice: 30,
+      flavorMixPrice: 2
+    },
+    {
+      id: 'session_T-009_1758552685419',
+      tableId: 'T-009',
+      customerRef: '15551234560',
+      flavor: 'Rose + Lavender',
+      priceCents: 4500,
+      state: 'PAUSED',
+      assignedBOHId: 'boh-1',
+      assignedFOHId: 'foh-2',
+      startedAt: new Date(Date.now() - 45 * 60 * 1000), // 45 minutes ago
+      timerDuration: 90,
+      createdAt: new Date(Date.now() - 50 * 60 * 1000),
+      updatedAt: new Date(),
+      assignedBOH: 'Mike Rodriguez',
+      assignedFOH: 'Emily Davis',
+      notes: 'Guest: Robert Kim | QR Code: T-009 | Flavor Mix: Rose + Lavender | PAUSED: Customer stepped out',
+      customerName: 'Robert Kim',
+      customerPhone: '+1 (555) 567-8901',
+      flavorMix: ['Rose', 'Lavender'],
+      pricingModel: 'time-based',
+      basePrice: 30,
+      flavorMixPrice: 15
+    }
+  ];
+  
+  // Use sample data if no sessions provided, otherwise use provided sessions
+  const displaySessions = sessions.length > 0 ? sessions : sampleSessions;
+  
   const metrics = [
     {
       title: 'Active Sessions',
-      value: sessions.filter(s => s.state === 'ACTIVE').length.toString(),
+      value: displaySessions.filter(s => s.state === 'ACTIVE').length.toString(),
       icon: <Flame className="w-6 h-6" />,
       color: 'text-orange-400',
       bgColor: 'bg-orange-500/10',
@@ -411,7 +559,7 @@ export default function EnhancedFSDDesign({
     },
     {
       title: 'Total Revenue',
-      value: `$${sessions.reduce((sum, s) => sum + (s.priceCents || 0), 0) / 100}`,
+      value: `$${(displaySessions.reduce((sum, s) => sum + (s.priceCents || 0), 0) / 100).toFixed(0)}`,
       icon: <TrendingUp className="w-6 h-6" />,
       color: 'text-green-400',
       bgColor: 'bg-green-500/10',
@@ -581,8 +729,22 @@ export default function EnhancedFSDDesign({
                 <EnhancedCard variant="glass">
                   <div className="p-6">
                     <h3 className="text-lg font-semibold text-white mb-4">Revenue Trends</h3>
-                    <div className="text-3xl font-bold text-teal-400 mb-2">$12,340</div>
+                    <div className="text-3xl font-bold text-teal-400 mb-2">$1,247</div>
                     <div className="text-sm text-zinc-400">+5% from last week</div>
+                    <div className="mt-4 space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-zinc-400">Today:</span>
+                        <span className="text-green-400">$247</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-zinc-400">This Week:</span>
+                        <span className="text-teal-400">$1,247</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-zinc-400">This Month:</span>
+                        <span className="text-blue-400">$4,892</span>
+                      </div>
+                    </div>
                   </div>
                 </EnhancedCard>
                 
@@ -591,6 +753,79 @@ export default function EnhancedFSDDesign({
                     <h3 className="text-lg font-semibold text-white mb-4">Session Performance</h3>
                     <div className="text-3xl font-bold text-green-400 mb-2">92%</div>
                     <div className="text-sm text-zinc-400">Success Rate</div>
+                    <div className="mt-4 space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-zinc-400">Avg Duration:</span>
+                        <span className="text-blue-400">58 min</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-zinc-400">Customer Satisfaction:</span>
+                        <span className="text-green-400">4.8/5</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-zinc-400">Repeat Rate:</span>
+                        <span className="text-purple-400">67%</span>
+                      </div>
+                    </div>
+                  </div>
+                </EnhancedCard>
+                
+                <EnhancedCard variant="glass">
+                  <div className="p-6">
+                    <h3 className="text-lg font-semibold text-white mb-4">Popular Flavors</h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-zinc-300">Blue Mist + Mint</span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-16 bg-zinc-700 rounded-full h-2">
+                            <div className="bg-teal-400 h-2 rounded-full" style={{ width: '85%' }}></div>
+                          </div>
+                          <span className="text-teal-400 text-sm">85%</span>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-zinc-300">Strawberry Mojito</span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-16 bg-zinc-700 rounded-full h-2">
+                            <div className="bg-green-400 h-2 rounded-full" style={{ width: '72%' }}></div>
+                          </div>
+                          <span className="text-green-400 text-sm">72%</span>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-zinc-300">Watermelon Mint</span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-16 bg-zinc-700 rounded-full h-2">
+                            <div className="bg-blue-400 h-2 rounded-full" style={{ width: '68%' }}></div>
+                          </div>
+                          <span className="text-blue-400 text-sm">68%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </EnhancedCard>
+                
+                <EnhancedCard variant="glass">
+                  <div className="p-6">
+                    <h3 className="text-lg font-semibold text-white mb-4">Staff Performance</h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-zinc-300">Mike Rodriguez (BOH)</span>
+                        <span className="text-green-400 text-sm">3 sessions</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-zinc-300">Sarah Chen (FOH)</span>
+                        <span className="text-teal-400 text-sm">2 sessions</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-zinc-300">Emily Davis (FOH)</span>
+                        <span className="text-blue-400 text-sm">2 sessions</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-zinc-300">David Wilson (BOH)</span>
+                        <span className="text-purple-400 text-sm">2 sessions</span>
+                      </div>
+                    </div>
                   </div>
                 </EnhancedCard>
               </div>
