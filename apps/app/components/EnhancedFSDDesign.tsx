@@ -569,74 +569,6 @@ const EnhancedRefreshButton = ({
   );
 };
 
-// Enhanced Customer KPI Metrics Component
-const EnhancedCustomerKPIs = ({ session }: { session: any }) => {
-  const getLoyaltyColor = (tier: string) => {
-    switch (tier) {
-      case 'Platinum': return 'text-purple-400';
-      case 'Gold': return 'text-yellow-400';
-      case 'Silver': return 'text-gray-400';
-      case 'New': return 'text-blue-400';
-      default: return 'text-zinc-400';
-    }
-  };
-
-  const getMoatScore = (moat: any) => {
-    let score = 0;
-    if (moat.brandLoyalty === 'Very High') score += 4;
-    else if (moat.brandLoyalty === 'High') score += 3;
-    else if (moat.brandLoyalty === 'Medium') score += 2;
-    else score += 1;
-    
-    if (moat.referralPotential === 'Very High') score += 4;
-    else if (moat.referralPotential === 'High') score += 3;
-    else if (moat.referralPotential === 'Medium') score += 2;
-    else score += 1;
-    
-    return Math.min(score, 8);
-  };
-
-  const moatScore = getMoatScore(session.moatAlignment);
-
-  return (
-    <div className="mt-3 p-3 bg-zinc-800/30 rounded-lg border border-zinc-700">
-      <div className="grid grid-cols-2 gap-3 text-xs">
-        <div>
-          <span className="text-zinc-400">Satisfaction:</span>
-          <span className="ml-1 text-green-400 font-medium">{session.customerKPIs.satisfaction}/5</span>
-        </div>
-        <div>
-          <span className="text-zinc-400">Loyalty:</span>
-          <span className={`ml-1 font-medium ${getLoyaltyColor(session.customerKPIs.loyaltyTier)}`}>
-            {session.customerKPIs.loyaltyTier}
-          </span>
-        </div>
-        <div>
-          <span className="text-zinc-400">Avg Spend:</span>
-          <span className="ml-1 text-blue-400 font-medium">${session.customerKPIs.avgSpend}</span>
-        </div>
-        <div>
-          <span className="text-zinc-400">Frequency:</span>
-          <span className="ml-1 text-cyan-400 font-medium">{session.customerKPIs.visitFrequency}</span>
-        </div>
-        <div className="col-span-2">
-          <div className="flex items-center justify-between">
-            <span className="text-zinc-400">Moat Score:</span>
-            <div className="flex items-center gap-2">
-              <div className="w-16 bg-zinc-700 rounded-full h-2">
-                <div 
-                  className="bg-gradient-to-r from-green-400 to-blue-400 h-2 rounded-full transition-all duration-300" 
-                  style={{ width: `${(moatScore / 8) * 100}%` }}
-                ></div>
-              </div>
-              <span className="text-green-400 font-medium">{moatScore}/8</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // Enhanced Tab-Specific Session Cards
 const EnhancedTabSessionCard = ({ session, tabType, onAction }: { 
@@ -657,31 +589,68 @@ const EnhancedTabSessionCard = ({ session, tabType, onAction }: {
   };
 
   const getTabSpecificActions = () => {
+    // BOH/FOH Operational Workflow Logic
+    const getOperationalActions = () => {
+      switch (session.state) {
+        case 'CREATED':
+          return [
+            { action: 'start_prep', label: 'Start Prep', icon: ChefHat, color: 'bg-orange-600 hover:bg-orange-700' }
+          ];
+        case 'PREP_IN_PROGRESS':
+          return [
+            { action: 'prep_complete', label: 'Prep Complete', icon: CheckCircle, color: 'bg-green-600 hover:bg-green-700' },
+            { action: 'ready_delivery', label: 'Ready for Delivery', icon: ArrowUp, color: 'bg-blue-600 hover:bg-blue-700' }
+          ];
+        case 'READY_FOR_DELIVERY':
+          return [
+            { action: 'foh_pickup', label: 'FOH Pickup', icon: UserCheck, color: 'bg-teal-600 hover:bg-teal-700' },
+            { action: 'deliver_to_table', label: 'Deliver to Table', icon: ArrowDown, color: 'bg-purple-600 hover:bg-purple-700' }
+          ];
+        case 'ACTIVE':
+          return [
+            { action: 'pause', label: 'Pause', icon: Pause, color: 'bg-yellow-600 hover:bg-yellow-700' },
+            { action: 'complete', label: 'Complete', icon: CheckCircle, color: 'bg-green-600 hover:bg-green-700' },
+            { action: 'refill_request', label: 'Refill Request', icon: RotateCcw, color: 'bg-blue-600 hover:bg-blue-700' }
+          ];
+        case 'PAUSED':
+          return [
+            { action: 'resume', label: 'Resume', icon: Play, color: 'bg-green-600 hover:bg-green-700' },
+            { action: 'complete', label: 'Complete', icon: CheckCircle, color: 'bg-purple-600 hover:bg-purple-700' }
+          ];
+        case 'PAYMENT_FAILED':
+          return [
+            { action: 'retry_payment', label: 'Retry Payment', icon: CreditCard, color: 'bg-red-600 hover:bg-red-700' },
+            { action: 'resolve', label: 'Resolve Issue', icon: Shield, color: 'bg-orange-600 hover:bg-orange-700' },
+            { action: 'escalate', label: 'Escalate', icon: AlertTriangle, color: 'bg-red-600 hover:bg-red-700' }
+          ];
+        default:
+          return [
+            { action: 'view', label: 'View Details', icon: Eye, color: 'bg-zinc-600 hover:bg-zinc-700' }
+          ];
+      }
+    };
+
+    // For Overview tab, show operational workflow actions
+    if (tabType === 'overview') {
+      return getOperationalActions();
+    }
+
+    // For specific tabs, show filtered actions
     switch (tabType) {
-      case 'overview':
-        return [
-          { action: 'view', label: 'View Details', icon: Eye },
-          { action: 'edit', label: 'Edit Session', icon: Edit3 }
-        ];
       case 'boh':
-        return [
-          { action: 'prep_complete', label: 'Prep Complete', icon: CheckCircle },
-          { action: 'ready_delivery', label: 'Ready for Delivery', icon: ArrowUp }
-        ];
+        return getOperationalActions().filter(action => 
+          ['start_prep', 'prep_complete', 'ready_delivery'].includes(action.action)
+        );
       case 'foh':
-        return [
-          { action: 'start_service', label: 'Start Service', icon: Play },
-          { action: 'pause', label: 'Pause', icon: Pause },
-          { action: 'complete', label: 'Complete', icon: CheckCircle }
-        ];
+        return getOperationalActions().filter(action => 
+          ['foh_pickup', 'deliver_to_table', 'pause', 'resume', 'complete', 'refill_request'].includes(action.action)
+        );
       case 'edgeCases':
-        return [
-          { action: 'resolve', label: 'Resolve Issue', icon: Shield },
-          { action: 'retry_payment', label: 'Retry Payment', icon: CreditCard },
-          { action: 'escalate', label: 'Escalate', icon: AlertTriangle }
-        ];
+        return getOperationalActions().filter(action => 
+          ['retry_payment', 'resolve', 'escalate'].includes(action.action)
+        );
       default:
-        return [];
+        return getOperationalActions();
     }
   };
 
@@ -719,8 +688,27 @@ const EnhancedTabSessionCard = ({ session, tabType, onAction }: {
         </div>
       )}
 
-      {/* Customer KPIs */}
-      <EnhancedCustomerKPIs session={session} />
+      {/* Customer KPIs - Simplified for operational use */}
+      <div className="mt-3 p-3 bg-zinc-800/30 rounded-lg border border-zinc-700">
+        <div className="grid grid-cols-2 gap-3 text-xs">
+          <div>
+            <span className="text-zinc-400">Satisfaction:</span>
+            <span className="ml-1 text-green-400 font-medium">{session.customerKPIs?.satisfaction || 'N/A'}/5</span>
+          </div>
+          <div>
+            <span className="text-zinc-400">Loyalty:</span>
+            <span className="ml-1 text-blue-400 font-medium">{session.customerKPIs?.loyaltyTier || 'New'}</span>
+          </div>
+          <div>
+            <span className="text-zinc-400">Avg Spend:</span>
+            <span className="ml-1 text-green-400 font-medium">${session.customerKPIs?.avgSpend || 0}</span>
+          </div>
+          <div>
+            <span className="text-zinc-400">Frequency:</span>
+            <span className="ml-1 text-cyan-400 font-medium">{session.customerKPIs?.visitFrequency || 'First Visit'}</span>
+          </div>
+        </div>
+      </div>
 
       {/* Edge Case Details */}
       {session.edgeCase && (
@@ -737,7 +725,7 @@ const EnhancedTabSessionCard = ({ session, tabType, onAction }: {
       )}
 
       {/* Tab-Specific Actions */}
-      <div className="flex gap-2 mt-4">
+      <div className="flex flex-wrap gap-2 mt-4">
         {actions.map((action) => {
           const Icon = action.icon;
           return (
@@ -746,7 +734,7 @@ const EnhancedTabSessionCard = ({ session, tabType, onAction }: {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => onAction?.(action.action, session.id)}
-              className="flex items-center gap-1 px-3 py-1 rounded-lg bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-medium transition-colors"
+              className={`flex items-center gap-1 px-3 py-1 rounded-lg text-white text-xs font-medium transition-colors ${action.color || 'bg-zinc-700 hover:bg-zinc-600'}`}
             >
               <Icon className="w-3 h-3" />
               {action.label}
@@ -978,28 +966,44 @@ export default function EnhancedFSDDesign({
           window.dispatchEvent(new CustomEvent('openEditSessionModal', { detail: { sessionId } }));
           return;
 
-        // BOH Tab Actions
+        // BOH Workflow Actions
+        case 'start_prep':
+          endpoint = '/api/sessions/[id]/transition';
+          body = { sessionId, newState: 'PREP_IN_PROGRESS', operatorId: 'enhanced_fsd', workflow: 'BOH_START_PREP' };
+          break;
         case 'prep_complete':
           endpoint = '/api/sessions/[id]/transition';
-          body = { sessionId, newState: 'READY_FOR_DELIVERY', operatorId: 'enhanced_fsd' };
+          body = { sessionId, newState: 'READY_FOR_DELIVERY', operatorId: 'enhanced_fsd', workflow: 'BOH_PREP_COMPLETE' };
           break;
         case 'ready_delivery':
           endpoint = '/api/sessions/[id]/transition';
-          body = { sessionId, newState: 'READY_FOR_DELIVERY', operatorId: 'enhanced_fsd' };
+          body = { sessionId, newState: 'READY_FOR_DELIVERY', operatorId: 'enhanced_fsd', workflow: 'BOH_READY_DELIVERY' };
           break;
 
-        // FOH Tab Actions
-        case 'start_service':
+        // FOH Workflow Actions
+        case 'foh_pickup':
           endpoint = '/api/sessions/[id]/transition';
-          body = { sessionId, newState: 'ACTIVE', operatorId: 'enhanced_fsd' };
+          body = { sessionId, newState: 'FOH_PICKUP', operatorId: 'enhanced_fsd', workflow: 'FOH_PICKUP' };
+          break;
+        case 'deliver_to_table':
+          endpoint = '/api/sessions/[id]/transition';
+          body = { sessionId, newState: 'ACTIVE', operatorId: 'enhanced_fsd', workflow: 'FOH_DELIVER' };
           break;
         case 'pause':
           endpoint = '/api/sessions/[id]/transition';
-          body = { sessionId, newState: 'PAUSED', operatorId: 'enhanced_fsd' };
+          body = { sessionId, newState: 'PAUSED', operatorId: 'enhanced_fsd', workflow: 'FOH_PAUSE' };
+          break;
+        case 'resume':
+          endpoint = '/api/sessions/[id]/transition';
+          body = { sessionId, newState: 'ACTIVE', operatorId: 'enhanced_fsd', workflow: 'FOH_RESUME' };
           break;
         case 'complete':
           endpoint = '/api/sessions/[id]/transition';
-          body = { sessionId, newState: 'COMPLETED', operatorId: 'enhanced_fsd' };
+          body = { sessionId, newState: 'COMPLETED', operatorId: 'enhanced_fsd', workflow: 'FOH_COMPLETE' };
+          break;
+        case 'refill_request':
+          endpoint = '/api/sessions/[id]/refill';
+          body = { sessionId, operatorId: 'enhanced_fsd', workflow: 'FOH_REFILL_REQUEST' };
           break;
 
         // Edge Case Actions
@@ -1070,7 +1074,7 @@ export default function EnhancedFSDDesign({
 
   // Enhanced sample data for QA testing - demonstrates full guest-to-lounge-owner workflow
   const sampleSessions = [
-    // OVERVIEW TAB SESSIONS (5 total)
+    // OVERVIEW TAB SESSIONS - Complete Workflow States
     {
       id: 'session_T-001_1758552685415',
       tableId: 'T-001',
@@ -1099,12 +1103,6 @@ export default function EnhancedFSDDesign({
         avgSpend: 45,
         loyaltyTier: 'Gold',
         visitFrequency: 'Weekly'
-      },
-      moatAlignment: {
-        flavorPreference: 'Premium',
-        priceSensitivity: 'Low',
-        brandLoyalty: 'High',
-        referralPotential: 'High'
       }
     },
     // BOH TAB SESSIONS (2 total)
@@ -1134,12 +1132,6 @@ export default function EnhancedFSDDesign({
         avgSpend: 28,
         loyaltyTier: 'Silver',
         visitFrequency: 'Monthly'
-      },
-      moatAlignment: {
-        flavorPreference: 'Classic',
-        priceSensitivity: 'Medium',
-        brandLoyalty: 'Medium',
-        referralPotential: 'Medium'
       }
     },
     {
@@ -1168,12 +1160,6 @@ export default function EnhancedFSDDesign({
         avgSpend: 52,
         loyaltyTier: 'Platinum',
         visitFrequency: 'Bi-weekly'
-      },
-      moatAlignment: {
-        flavorPreference: 'Exotic',
-        priceSensitivity: 'Low',
-        brandLoyalty: 'Very High',
-        referralPotential: 'Very High'
       }
     },
     // FOH TAB SESSIONS (2 total)
@@ -1206,12 +1192,6 @@ export default function EnhancedFSDDesign({
         avgSpend: 38,
         loyaltyTier: 'Gold',
         visitFrequency: 'Weekly'
-      },
-      moatAlignment: {
-        flavorPreference: 'Refreshing',
-        priceSensitivity: 'Low',
-        brandLoyalty: 'High',
-        referralPotential: 'High'
       }
     },
     {
@@ -1242,12 +1222,6 @@ export default function EnhancedFSDDesign({
         avgSpend: 42,
         loyaltyTier: 'Silver',
         visitFrequency: 'Monthly'
-      },
-      moatAlignment: {
-        flavorPreference: 'Elegant',
-        priceSensitivity: 'Medium',
-        brandLoyalty: 'Medium',
-        referralPotential: 'Medium'
       }
     },
     // EDGE CASE SESSION (1 total)
@@ -1285,12 +1259,6 @@ export default function EnhancedFSDDesign({
         avgSpend: 0,
         loyaltyTier: 'New',
         visitFrequency: 'First Visit'
-      },
-      moatAlignment: {
-        flavorPreference: 'Unknown',
-        priceSensitivity: 'High',
-        brandLoyalty: 'Low',
-        referralPotential: 'Low'
       }
     }
   ];
@@ -1406,10 +1374,22 @@ export default function EnhancedFSDDesign({
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => {
-                  // Trigger create session modal
-                  window.dispatchEvent(new CustomEvent('openCreateSessionModal'));
+                  // Trigger create session modal with proper event
+                  const event = new CustomEvent('openCreateSessionModal', {
+                    detail: { source: 'enhanced_fsd_header' }
+                  });
+                  window.dispatchEvent(event);
+                  
+                  // Also try direct modal opening as fallback
+                  setTimeout(() => {
+                    const modalTrigger = document.querySelector('[data-create-session-trigger]');
+                    if (modalTrigger) {
+                      (modalTrigger as HTMLElement).click();
+                    }
+                  }, 100);
                 }}
                 className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold transition-all duration-200 flex items-center gap-2 shadow-lg"
+                data-create-session-trigger="true"
               >
                 <Plus className="w-5 h-5" />
                 Create Session
@@ -1487,16 +1467,18 @@ export default function EnhancedFSDDesign({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="space-y-4"
+              className="space-y-6"
             >
-              <div className="mb-4 p-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-xl">
-                <h3 className="text-lg font-semibold text-blue-300 mb-2">📊 Overview Dashboard</h3>
-                <p className="text-sm text-zinc-400">
-                  Complete session overview with customer KPIs and moat alignment metrics for optimal business intelligence.
-                </p>
+              {/* Live Sessions Header */}
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                <h2 className="text-2xl font-bold text-white">Live Sessions</h2>
+                <span className="text-sm text-zinc-400">Real-time Management</span>
               </div>
-              <div className="grid gap-4">
-                {displaySessions.slice(0, 5).map((session) => (
+              
+              {/* Unified Live Sessions Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {displaySessions.map((session) => (
                   <EnhancedTabSessionCard
                     key={session.id}
                     session={session}
