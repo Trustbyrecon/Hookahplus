@@ -156,21 +156,29 @@ export default function FlavorWheelSelector({
 
   // Handle flavor selection
   const toggleFlavor = (flavorId: string) => {
-    const newSelected = selected.includes(flavorId) 
-      ? selected.filter(id => id !== flavorId)
-      : selected.length < maxSelections 
-        ? [...selected, flavorId]
-        : selected;
-    
-    setSelected(newSelected);
-    onSelectionChange(newSelected, calculatePrice(newSelected));
+    try {
+      const newSelected = selected.includes(flavorId) 
+        ? selected.filter(id => id !== flavorId)
+        : selected.length < maxSelections 
+          ? [...selected, flavorId]
+          : selected;
+      
+      setSelected(newSelected);
+      onSelectionChange(newSelected, calculatePrice(newSelected));
+    } catch (error) {
+      console.error('Error in toggleFlavor:', error);
+    }
   };
 
   // Handle preset selection
   const selectPreset = (preset: typeof STAFF_PRESETS[0]) => {
-    setSelected(preset.flavors);
-    onSelectionChange(preset.flavors, preset.price);
-    setShowPresets(false);
+    try {
+      setSelected(preset.flavors);
+      onSelectionChange(preset.flavors, preset.price);
+      setShowPresets(false);
+    } catch (error) {
+      console.error('Error in selectPreset:', error);
+    }
   };
 
   // Calculate price for flavor array

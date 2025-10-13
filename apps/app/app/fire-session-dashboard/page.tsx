@@ -138,6 +138,11 @@ export default function FireSessionDashboard() {
     try {
       setLoading(true);
       const response = await fetch('/api/sessions');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
       
       if (data.ok && data.sessions) {
@@ -147,9 +152,17 @@ export default function FireSessionDashboard() {
         console.log('✅ Loaded sessions from API:', data.sessions.length);
       } else {
         console.error('❌ Failed to load sessions:', data.error);
+        // Set empty state on error
+        setSessions([]);
+        setTotalSessions(0);
+        setActiveSessions(0);
       }
     } catch (error) {
       console.error('❌ Error loading sessions:', error);
+      // Set empty state on error
+      setSessions([]);
+      setTotalSessions(0);
+      setActiveSessions(0);
     } finally {
       setLoading(false);
     }
@@ -160,7 +173,7 @@ export default function FireSessionDashboard() {
     loadSessions();
     
     // Listen for session creation events from guest portal
-    const handleSessionCreated = (event: CustomEvent) => {
+    const handleSessionCreated = (event: Event) => {
       console.log('Session created event received, updating sessions...');
       // Use a more gentle update instead of full reload
       setTimeout(() => {
@@ -168,10 +181,19 @@ export default function FireSessionDashboard() {
       }, 100);
     };
     
-    window.addEventListener('sessionCreated', handleSessionCreated as EventListener);
+    // Add event listener with proper error handling
+    try {
+      window.addEventListener('sessionCreated', handleSessionCreated);
+    } catch (error) {
+      console.warn('Could not add sessionCreated event listener:', error);
+    }
     
     return () => {
-      window.removeEventListener('sessionCreated', handleSessionCreated as EventListener);
+      try {
+        window.removeEventListener('sessionCreated', handleSessionCreated);
+      } catch (error) {
+        console.warn('Could not remove sessionCreated event listener:', error);
+      }
     };
   }, [loadSessions]);
 
@@ -263,14 +285,25 @@ export default function FireSessionDashboard() {
       if (data.success && data.session) {
         console.log('✅ Session created:', data.session);
         // Add the new session to the list without full reload
-        setSessions(prev => [...prev, data.session]);
+        setSessions(prev => {
+          try {
+            return [...prev, data.session];
+          } catch (error) {
+            console.error('Error updating sessions state:', error);
+            return prev;
+          }
+        });
         setTotalSessions(prev => prev + 1);
         if (data.session.state === 'ACTIVE') {
           setActiveSessions(prev => prev + 1);
         }
         // Optional: gentle reload after a delay to ensure consistency
         setTimeout(() => {
-          loadSessions();
+          try {
+            loadSessions();
+          } catch (error) {
+            console.error('Error in delayed session reload:', error);
+          }
         }, 500);
       } else {
         console.error('❌ Failed to create session:', data.error);
