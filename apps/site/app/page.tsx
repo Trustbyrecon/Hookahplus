@@ -169,11 +169,17 @@ export default function Home() {
                 variant="primary" 
                 size="lg" 
                 className="flex items-center gap-2 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white px-8 py-4 text-lg font-semibold shadow-lg transform hover:scale-105 transition-all duration-200"
+                onClick={() => window.location.href = '/flavor-demo'}
               >
                 <Play className="w-5 h-5" />
                 See Demo
               </Button>
-              <Button variant="outline" size="lg" className="px-6 py-3">
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="px-6 py-3"
+                onClick={() => window.location.href = '/pre-order'}
+              >
                 Campaign Pre-Orders
               </Button>
               <Button variant="outline" size="lg" className="px-6 py-3">

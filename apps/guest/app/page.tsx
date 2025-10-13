@@ -13,6 +13,84 @@ import QRCodeScanner from '../components/QRCodeScanner';
 import RealTimeSessionSync from '../components/RealTimeSessionSync';
 import GuestIntelligenceDashboard from '../components/EnhancedStaffPanel';
 import { sessionManager, SessionData } from '../lib/sessionManager';
+import FlavorMixSelector from '../components/customer/FlavorMixSelector';
+
+// Flavor categories for the FlavorMixSelector
+const FLAVOR_CATEGORIES = [
+  {
+    id: "mint",
+    label: "Mint & Cool",
+    hue: 176,
+    tier: "standard",
+    items: [
+      { id: "mint", label: "Classic Mint", price: 2.0 },
+      { id: "ice-mint", label: "Ice Mint", price: 2.0 },
+      { id: "spearmint", label: "Spearmint", price: 2.0 },
+      { id: "menthol", label: "Menthol Burst", price: 2.5 },
+    ],
+  },
+  {
+    id: "fruit",
+    label: "Fruity",
+    hue: 18,
+    tier: "standard",
+    items: [
+      { id: "mango", label: "Mango", price: 2.0 },
+      { id: "peach", label: "Peach", price: 2.0 },
+      { id: "watermelon", label: "Watermelon", price: 2.0 },
+      { id: "grape", label: "Grape", price: 2.0 },
+      { id: "berry", label: "Mixed Berry", price: 2.5 },
+    ],
+  },
+  {
+    id: "citrus",
+    label: "Citrus",
+    hue: 48,
+    tier: "standard",
+    items: [
+      { id: "lemon", label: "Lemon", price: 2.0 },
+      { id: "orange", label: "Orange", price: 2.0 },
+      { id: "lime", label: "Lime", price: 2.0 },
+      { id: "tangerine", label: "Tangerine", price: 2.5 },
+    ],
+  },
+  {
+    id: "dessert",
+    label: "Dessert",
+    hue: 300,
+    tier: "medium",
+    items: [
+      { id: "vanilla", label: "Vanilla", price: 3.0 },
+      { id: "caramel", label: "Caramel", price: 3.0 },
+      { id: "chocolate", label: "Chocolate", price: 3.5 },
+      { id: "cookie", label: "Cookie Dough", price: 3.5 },
+    ],
+  },
+  {
+    id: "spice",
+    label: "Spice & Bold",
+    hue: 12,
+    tier: "medium",
+    items: [
+      { id: "double-apple", label: "Double Apple", price: 3.0 },
+      { id: "cinnamon", label: "Cinnamon", price: 3.0 },
+      { id: "cardamom", label: "Cardamom", price: 3.5 },
+      { id: "anise", label: "Anise", price: 3.5 },
+    ],
+  },
+  {
+    id: "premium",
+    label: "Premium",
+    hue: 272,
+    tier: "premium",
+    items: [
+      { id: "vodka-infused", label: "Vodka-Infused", price: 4.0 },
+      { id: "whiskey-barrel", label: "Whiskey Barrel", price: 4.0 },
+      { id: "boutique-import", label: "Boutique Import", price: 4.5 },
+      { id: "rose", label: "Rose", price: 4.0 },
+    ],
+  },
+];
 import { 
   Clock, 
   Plus, 
@@ -40,6 +118,10 @@ export default function GuestPortal() {
   const [pricingModel, setPricingModel] = useState<'flat' | 'time-based'>('flat');
   const [sessionDuration, setSessionDuration] = useState(60); // Default 60 minutes
   
+  // FlavorMixSelector state
+  const [selectedFlavors, setSelectedFlavors] = useState<string[]>([]);
+  const [flavorMixPrice, setFlavorMixPrice] = useState(0);
+  
   const addToCart = (item: { id: number; name: string; price: number }) => {
     add({ id: String(item.id), name: item.name, price: Math.round(item.price * 100), qty: 1 });
     console.log('Adding to cart:', item); // Debug log
@@ -54,6 +136,26 @@ export default function GuestPortal() {
       description: `Premium ${flavorName} flavor enhancement`
     };
     add({ id: String(flavorItem.id), name: flavorItem.name, price: Math.round(flavorItem.price * 100), qty: 1 });
+  };
+
+  // FlavorMixSelector handlers
+  const handleFlavorSelectionChange = (flavors: string[]) => {
+    setSelectedFlavors(flavors);
+    
+    // Clear existing flavor add-ons from cart
+    items.filter(item => item.name.includes('Add-on')).forEach(item => remove(item.id));
+    
+    // Add new flavor add-ons to cart
+    flavors.forEach(flavorId => {
+      const flavor = FLAVOR_CATEGORIES.flatMap(c => c.items).find(f => f.id === flavorId);
+      if (flavor) {
+        addFlavorToCart(flavor.label);
+      }
+    });
+  };
+
+  const handleFlavorPriceUpdate = (total: number) => {
+    setFlavorMixPrice(total);
   };
 
   const handleTableDetected = (tableData: any) => {
@@ -344,92 +446,51 @@ export default function GuestPortal() {
           </div>
         )}
         
-        {/* Ultra-Compact Layout - No Scrolling */}
+        {/* Flavor Mix Selector - Wheel/Guided Mode */}
+        <div className="mb-6">
+          <FlavorMixSelector
+            selectedFlavors={selectedFlavors}
+            onSelectionChange={handleFlavorSelectionChange}
+            maxSelections={3}
+            onPriceUpdate={handleFlavorPriceUpdate}
+          />
+        </div>
+
+        {/* Order Summary & Actions */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-          {/* Left: Compact Flavor Selection */}
+          {/* Left: Session Info */}
           <div className="xl:col-span-2">
             <Card className="h-fit">
               <div className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-semibold">🎯 Choose Your Flavor Mix</h3>
-                  <div className="text-sm text-zinc-400">Base: $30.00</div>
-            </div>
-
-                {/* Compact Flavor Categories */}
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
-                  {['Mint & Cool', 'Fruity', 'Citrus', 'Dessert', 'Spice & Bold', 'Floral'].map((category) => (
-                    <div key={category} className="p-2 bg-zinc-800 rounded-lg">
-                      <div className="text-xs text-zinc-400 mb-1">{category}</div>
-                      <div className="flex flex-wrap gap-1">
-                        {category === 'Mint & Cool' && ['Mint', 'Spearmint', 'Ice Mint'].map(flavor => (
-                          <button
-                            key={flavor}
-                            onClick={() => addFlavorToCart(flavor)}
-                            className="text-xs px-2 py-1 rounded-full bg-zinc-700 hover:bg-zinc-600 border border-zinc-600"
-                          >
-                            {flavor}
-                          </button>
-                        ))}
-                        {category === 'Fruity' && ['Mango', 'Peach', 'Watermelon', 'Grape'].map(flavor => (
-                          <button
-                            key={flavor}
-                            onClick={() => addFlavorToCart(flavor)}
-                            className="text-xs px-2 py-1 rounded-full bg-zinc-700 hover:bg-zinc-600 border border-zinc-600"
-                          >
-                            {flavor}
-                          </button>
-                        ))}
-                        {category === 'Citrus' && ['Lemon', 'Orange', 'Lime', 'Tangerine'].map(flavor => (
-                          <button
-                            key={flavor}
-                            onClick={() => addFlavorToCart(flavor)}
-                            className="text-xs px-2 py-1 rounded-full bg-zinc-700 hover:bg-zinc-600 border border-zinc-600"
-                          >
-                            {flavor}
-                          </button>
-                        ))}
-                        {category === 'Dessert' && ['Vanilla', 'Caramel', 'Chocolate'].map(flavor => (
-                          <button
-                            key={flavor}
-                            onClick={() => addFlavorToCart(flavor)}
-                            className="text-xs px-2 py-1 rounded-full bg-zinc-700 hover:bg-zinc-600 border border-zinc-600"
-                          >
-                            {flavor}
-                          </button>
-                        ))}
-                        {category === 'Spice & Bold' && ['Double Apple', 'Cinnamon', 'Cardamom'].map(flavor => (
-                          <button
-                            key={flavor}
-                            onClick={() => addFlavorToCart(flavor)}
-                            className="text-xs px-2 py-1 rounded-full bg-zinc-700 hover:bg-zinc-600 border border-zinc-600"
-                          >
-                            {flavor}
-                          </button>
-                        ))}
-                        {category === 'Floral' && ['Rose', 'Jasmine', 'Lavender'].map(flavor => (
-                          <button
-                            key={flavor}
-                            onClick={() => addFlavorToCart(flavor)}
-                            className="text-xs px-2 py-1 rounded-full bg-zinc-700 hover:bg-zinc-600 border border-zinc-600"
-                          >
-                            {flavor}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <h3 className="text-lg font-semibold mb-3">Session Details</h3>
                 
+                {/* Session Pricing Info */}
+                <div className="p-3 bg-zinc-800 rounded-lg mb-4">
+                  <div className="text-sm text-zinc-400 mb-2">Pricing Model</div>
+                  <div className="text-lg font-semibold">
+                    {pricingModel === 'flat' ? 'Flat Fee' : 'Time-Based'}
+                  </div>
+                  <div className="text-sm text-zinc-400">
+                    {pricingModel === 'flat' 
+                      ? 'Fixed $30.00 + flavor add-ons' 
+                      : `$${(sessionDuration * 0.50).toFixed(2)} for ${sessionDuration}min + flavor add-ons`
+                    }
+                  </div>
+                </div>
+
                 {/* Selected Flavors Display */}
-                {items.filter(item => item.name.includes('Add-on')).length > 0 && (
+                {selectedFlavors.length > 0 && (
                   <div className="p-3 bg-zinc-800 rounded-lg">
                     <div className="text-sm text-zinc-400 mb-2">Selected Flavors:</div>
                     <div className="flex flex-wrap gap-2">
-                      {items.filter(item => item.name.includes('Add-on')).map((item) => (
-                        <span key={item.id} className="text-xs px-2 py-1 rounded-full bg-primary-500/20 border border-primary-500/30">
-                          {item.name.replace(' Add-on', '')} ${(item.price / 100).toFixed(2)}
-                        </span>
-                      ))}
+                      {selectedFlavors.map((flavorId) => {
+                        const flavor = FLAVOR_CATEGORIES.flatMap(c => c.items).find(f => f.id === flavorId);
+                        return (
+                          <span key={flavorId} className="text-xs px-2 py-1 rounded-full bg-primary-500/20 border border-primary-500/30">
+                            {flavor?.label || flavorId} ${(flavor?.price || 0).toFixed(2)}
+                          </span>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
