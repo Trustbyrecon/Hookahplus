@@ -160,15 +160,18 @@ export default function FireSessionDashboard() {
     loadSessions();
     
     // Listen for session creation events from guest portal
-    const handleSessionCreated = () => {
-      console.log('Session created event received, refreshing...');
-      loadSessions();
+    const handleSessionCreated = (event: CustomEvent) => {
+      console.log('Session created event received, updating sessions...');
+      // Use a more gentle update instead of full reload
+      setTimeout(() => {
+        loadSessions();
+      }, 100);
     };
     
-    window.addEventListener('sessionCreated', handleSessionCreated);
+    window.addEventListener('sessionCreated', handleSessionCreated as EventListener);
     
     return () => {
-      window.removeEventListener('sessionCreated', handleSessionCreated);
+      window.removeEventListener('sessionCreated', handleSessionCreated as EventListener);
     };
   }, [loadSessions]);
 
@@ -259,8 +262,16 @@ export default function FireSessionDashboard() {
       
       if (data.success && data.session) {
         console.log('✅ Session created:', data.session);
-        // Reload sessions to get updated list
-        await loadSessions();
+        // Add the new session to the list without full reload
+        setSessions(prev => [...prev, data.session]);
+        setTotalSessions(prev => prev + 1);
+        if (data.session.state === 'ACTIVE') {
+          setActiveSessions(prev => prev + 1);
+        }
+        // Optional: gentle reload after a delay to ensure consistency
+        setTimeout(() => {
+          loadSessions();
+        }, 500);
       } else {
         console.error('❌ Failed to create session:', data.error);
         alert(`Error creating session: ${data.error}`);

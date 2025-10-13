@@ -228,7 +228,11 @@ export default function FlavorWheelSelector({
             {STAFF_PRESETS.map((preset) => (
               <button
                 key={preset.id}
-                onClick={() => selectPreset(preset)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  selectPreset(preset);
+                }}
                 className="p-3 bg-zinc-700 hover:bg-zinc-600 rounded-lg text-left transition-colors"
               >
                 <div className="text-sm font-medium text-white">{preset.name}</div>
@@ -306,7 +310,11 @@ export default function FlavorWheelSelector({
               {category.items.map((flavor) => (
                 <button
                   key={flavor.id}
-                  onClick={() => toggleFlavor(flavor.id)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleFlavor(flavor.id);
+                  }}
                   disabled={!selected.includes(flavor.id) && selected.length >= maxSelections}
                   className={`w-full text-left text-xs px-2 py-1 rounded border transition-colors ${
                     selected.includes(flavor.id)
