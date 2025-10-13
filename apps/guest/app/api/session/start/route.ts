@@ -38,17 +38,36 @@ export async function POST(req: NextRequest) {
       source: 'guest_portal'
     };
 
-    // Send to App build
+    // Send to App build with correct data format
     const appBuildUrl = process.env.APP_BUILD_URL || 'https://hookahplus-app-prod.vercel.app';
     
     try {
-      const response = await fetch(`${appBuildUrl}/api/sessions/create`, {
+      // Format data to match App Build's expected format
+      const appBuildData = {
+        session_id: `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        lounge_id: loungeId || 'guest-lounge',
+        table_id: tableId,
+        flavor_mix: items.filter((item: any) => item.name.includes('Add-on')).map((item: any) => item.name.replace(' Add-on', '')),
+        customer_name: customerName || 'Guest Customer',
+        customer_phone: customerPhone || '+1234567890',
+        session_type: 'guest-portal',
+        amount: totalAmount / 100, // Convert from cents to dollars
+        pricing_model: 'flat', // Default to flat for guest sessions
+        timer_duration: sessionDuration,
+        boh_staff: '',
+        foh_staff: '',
+        notes: `Guest session from ${tableId}`,
+        flavor_mix_price: items.filter((item: any) => item.name.includes('Add-on')).reduce((sum: number, item: any) => sum + item.price, 0) / 100,
+        base_price: 30 // Default base price
+      };
+
+      const response = await fetch(`${appBuildUrl}/api/sessions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${process.env.APP_BUILD_API_KEY || 'guest-sync-key'}`
         },
-        body: JSON.stringify(sessionData)
+        body: JSON.stringify(appBuildData)
       });
 
       if (response.ok) {
@@ -57,18 +76,20 @@ export async function POST(req: NextRequest) {
         // Return session info to guest
         return NextResponse.json({
           ok: true,
-          sessionId: appResponse.sessionId || `session_${Date.now()}`,
+          sessionId: appResponse.session?.session_id || `session_${Date.now()}`,
           tableId,
           loungeId,
           status: 'ACTIVE',
           startedAt: sessionData.startedAt,
           message: 'Session started successfully',
-          appBuildUrl: `${appBuildUrl}/fire-session-dashboard?session=${appResponse.sessionId || `session_${Date.now()}`}`,
+          appBuildUrl: `${appBuildUrl}/fire-session-dashboard?session=${appResponse.session?.session_id || `session_${Date.now()}`}`,
           staffPanelUrl: `${appBuildUrl}/fire-session-dashboard?table=${tableId}`,
-          dashboardUrl: `${appBuildUrl}/dashboard?session=${appResponse.sessionId || `session_${Date.now()}`}`
+          dashboardUrl: `${appBuildUrl}/dashboard?session=${appResponse.session?.session_id || `session_${Date.now()}`}`,
+          session: appResponse.session
         });
       } else {
-        throw new Error(`App build responded with status ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`App build responded with status ${response.status}: ${errorText}`);
       }
     } catch (appError) {
       // Fallback: create local session
