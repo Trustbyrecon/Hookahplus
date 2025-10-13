@@ -76,7 +76,8 @@ import {
   WifiOff,
   Server,
   Database,
-  Zap as ZapIcon
+  Zap as ZapIcon,
+  Info
 } from 'lucide-react';
 
 // Enhanced visual design system matching FlavorWheel treatment
@@ -589,43 +590,161 @@ const EnhancedTabSessionCard = ({ session, tabType, onAction }: {
   };
 
   const getTabSpecificActions = () => {
-    // BOH/FOH Operational Workflow Logic
+    // BOH/FOH Operational Workflow Logic with Business Truth
     const getOperationalActions = () => {
       switch (session.state) {
         case 'CREATED':
           return [
-            { action: 'start_prep', label: 'Start Prep', icon: ChefHat, color: 'bg-orange-600 hover:bg-orange-700' }
+            { 
+              action: 'start_prep', 
+              label: 'Start Prep', 
+              icon: ChefHat, 
+              color: 'bg-orange-600 hover:bg-orange-700',
+              businessLogic: 'BOH begins hookah preparation: coals heating, bowl packing, flavor mixing'
+            }
           ];
         case 'PREP_IN_PROGRESS':
           return [
-            { action: 'prep_complete', label: 'Prep Complete', icon: CheckCircle, color: 'bg-green-600 hover:bg-green-700' },
-            { action: 'ready_delivery', label: 'Ready for Delivery', icon: ArrowUp, color: 'bg-blue-600 hover:bg-blue-700' }
+            { 
+              action: 'prep_complete', 
+              label: 'Prep Complete', 
+              icon: CheckCircle, 
+              color: 'bg-green-600 hover:bg-green-700',
+              businessLogic: 'BOH completes preparation: hookah assembled, coals ready, quality checked, ready for FOH pickup'
+            },
+            { 
+              action: 'prep_issue', 
+              label: 'Prep Issue', 
+              icon: AlertTriangle, 
+              color: 'bg-red-600 hover:bg-red-700',
+              businessLogic: 'BOH encounters issue: missing ingredients, equipment problem, needs management intervention'
+            }
           ];
         case 'READY_FOR_DELIVERY':
           return [
-            { action: 'foh_pickup', label: 'FOH Pickup', icon: UserCheck, color: 'bg-teal-600 hover:bg-teal-700' },
-            { action: 'deliver_to_table', label: 'Deliver to Table', icon: ArrowDown, color: 'bg-purple-600 hover:bg-purple-700' }
+            { 
+              action: 'foh_pickup', 
+              label: 'FOH Pickup', 
+              icon: UserCheck, 
+              color: 'bg-teal-600 hover:bg-teal-700',
+              businessLogic: 'FOH collects prepared hookah from BOH station, verifies completeness, begins delivery to table'
+            },
+            { 
+              action: 'boh_hold', 
+              label: 'Hold at BOH', 
+              icon: Clock, 
+              color: 'bg-yellow-600 hover:bg-yellow-700',
+              businessLogic: 'Hold hookah at BOH station: customer not ready, table not available, special timing request'
+            }
+          ];
+        case 'FOH_PICKUP':
+          return [
+            { 
+              action: 'deliver_to_table', 
+              label: 'Deliver to Table', 
+              icon: ArrowDown, 
+              color: 'bg-purple-600 hover:bg-purple-700',
+              businessLogic: 'FOH delivers hookah to table: setup complete, customer briefed, session timer started'
+            },
+            { 
+              action: 'return_to_boh', 
+              label: 'Return to BOH', 
+              icon: ArrowLeft, 
+              color: 'bg-orange-600 hover:bg-orange-700',
+              businessLogic: 'Return hookah to BOH: customer not at table, table issue, needs re-preparation'
+            }
           ];
         case 'ACTIVE':
           return [
-            { action: 'pause', label: 'Pause', icon: Pause, color: 'bg-yellow-600 hover:bg-yellow-700' },
-            { action: 'complete', label: 'Complete', icon: CheckCircle, color: 'bg-green-600 hover:bg-green-700' },
-            { action: 'refill_request', label: 'Refill Request', icon: RotateCcw, color: 'bg-blue-600 hover:bg-blue-700' }
+            { 
+              action: 'pause', 
+              label: 'Pause Session', 
+              icon: Pause, 
+              color: 'bg-yellow-600 hover:bg-yellow-700',
+              businessLogic: 'Pause active session: customer step away, coals cooling, timer paused, session preserved'
+            },
+            { 
+              action: 'refill_request', 
+              label: 'Refill Request', 
+              icon: RotateCcw, 
+              color: 'bg-blue-600 hover:bg-blue-700',
+              businessLogic: 'Customer requests refill: return to BOH for new coals/flavor, maintain session continuity'
+            },
+            { 
+              action: 'complete', 
+              label: 'Complete Session', 
+              icon: CheckCircle, 
+              color: 'bg-green-600 hover:bg-green-700',
+              businessLogic: 'Session completed: customer finished, cleanup initiated, payment processed, table cleared'
+            }
           ];
         case 'PAUSED':
           return [
-            { action: 'resume', label: 'Resume', icon: Play, color: 'bg-green-600 hover:bg-green-700' },
-            { action: 'complete', label: 'Complete', icon: CheckCircle, color: 'bg-purple-600 hover:bg-purple-700' }
+            { 
+              action: 'resume', 
+              label: 'Resume Session', 
+              icon: Play, 
+              color: 'bg-green-600 hover:bg-green-700',
+              businessLogic: 'Resume paused session: customer returned, coals reheated, timer restarted, service continues'
+            },
+            { 
+              action: 'complete', 
+              label: 'Complete Session', 
+              icon: CheckCircle, 
+              color: 'bg-purple-600 hover:bg-purple-700',
+              businessLogic: 'Complete paused session: customer finished, cleanup initiated, payment processed, table cleared'
+            }
+          ];
+        case 'REFILL_NEEDED':
+          return [
+            { 
+              action: 'boh_refill', 
+              label: 'BOH Refill', 
+              icon: ChefHat, 
+              color: 'bg-orange-600 hover:bg-orange-700',
+              businessLogic: 'Send to BOH for refill: new coals, flavor refresh, quality check, return to FOH'
+            },
+            { 
+              action: 'complete', 
+              label: 'Complete Session', 
+              icon: CheckCircle, 
+              color: 'bg-green-600 hover:bg-green-700',
+              businessLogic: 'Complete session without refill: customer satisfied, cleanup initiated, payment processed'
+            }
           ];
         case 'PAYMENT_FAILED':
           return [
-            { action: 'retry_payment', label: 'Retry Payment', icon: CreditCard, color: 'bg-red-600 hover:bg-red-700' },
-            { action: 'resolve', label: 'Resolve Issue', icon: Shield, color: 'bg-orange-600 hover:bg-orange-700' },
-            { action: 'escalate', label: 'Escalate', icon: AlertTriangle, color: 'bg-red-600 hover:bg-red-700' }
+            { 
+              action: 'retry_payment', 
+              label: 'Retry Payment', 
+              icon: CreditCard, 
+              color: 'bg-red-600 hover:bg-red-700',
+              businessLogic: 'Retry payment processing: new payment method, resolve card issues, complete transaction'
+            },
+            { 
+              action: 'resolve', 
+              label: 'Resolve Issue', 
+              icon: Shield, 
+              color: 'bg-orange-600 hover:bg-orange-700',
+              businessLogic: 'Manual resolution: manager intervention, alternative payment, issue documentation'
+            },
+            { 
+              action: 'escalate', 
+              label: 'Escalate', 
+              icon: AlertTriangle, 
+              color: 'bg-red-600 hover:bg-red-700',
+              businessLogic: 'Escalate to management: complex issue, customer dispute, requires senior intervention'
+            }
           ];
         default:
           return [
-            { action: 'view', label: 'View Details', icon: Eye, color: 'bg-zinc-600 hover:bg-zinc-700' }
+            { 
+              action: 'view', 
+              label: 'View Details', 
+              icon: Eye, 
+              color: 'bg-zinc-600 hover:bg-zinc-700',
+              businessLogic: 'View session details: customer info, order history, current status, staff notes'
+            }
           ];
       }
     };
@@ -724,21 +843,35 @@ const EnhancedTabSessionCard = ({ session, tabType, onAction }: {
         </div>
       )}
 
-      {/* Tab-Specific Actions */}
+      {/* Tab-Specific Actions with Business Logic */}
       <div className="flex flex-wrap gap-2 mt-4">
         {actions.map((action) => {
           const Icon = action.icon;
           return (
-            <motion.button
-              key={action.action}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => onAction?.(action.action, session.id)}
-              className={`flex items-center gap-1 px-3 py-1 rounded-lg text-white text-xs font-medium transition-colors ${action.color || 'bg-zinc-700 hover:bg-zinc-600'}`}
-            >
-              <Icon className="w-3 h-3" />
-              {action.label}
-            </motion.button>
+            <div key={action.action} className="relative group">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => onAction?.(action.action, session.id)}
+                className={`flex items-center gap-1 px-3 py-1 rounded-lg text-white text-xs font-medium transition-colors ${action.color || 'bg-zinc-700 hover:bg-zinc-600'}`}
+                title={action.businessLogic}
+              >
+                <Icon className="w-3 h-3" />
+                {action.label}
+                {action.businessLogic && (
+                  <Info className="w-3 h-3 ml-1 opacity-60" />
+                )}
+              </motion.button>
+              
+              {/* Business Logic Tooltip */}
+              {action.businessLogic && (
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-zinc-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 max-w-xs">
+                  <div className="text-center font-medium text-zinc-300 mb-1">Business Logic:</div>
+                  <div className="text-zinc-400">{action.businessLogic}</div>
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-zinc-900"></div>
+                </div>
+              )}
+            </div>
           );
         })}
       </div>
