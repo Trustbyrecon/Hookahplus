@@ -21,6 +21,7 @@ import { OptimizedSessionCard } from '../../components/OptimizedSessionCard';
 import { FOHTimerInterface } from '../../components/FOHTimerInterface';
 import { ManagerTimerDashboard } from '../../components/ManagerTimerDashboard';
 import DollarTestButton from '../../components/DollarTestButton';
+import EnhancedFSDDesign from '../../components/EnhancedFSDDesign';
 import { 
   Flame, 
   Users, 
@@ -85,6 +86,7 @@ import { Session, SessionStatus, SessionTeam, SessionNotes } from '../../types/s
 
 export default function FireSessionDashboard() {
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [useEnhancedDesign, setUseEnhancedDesign] = useState(true);
   
   // Debug modal state
   useEffect(() => {
@@ -465,8 +467,34 @@ export default function FireSessionDashboard() {
 
   return (
     <div className={`min-h-screen ${getThemeClasses()}`}>
-      {/* Global Navigation */}
-      <GlobalNavigation />
+      {/* Enhanced Design Toggle */}
+      <div className="fixed top-4 right-4 z-50">
+        <button
+          onClick={() => setUseEnhancedDesign(!useEnhancedDesign)}
+          className="px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white text-sm font-medium hover:bg-white/20 transition-colors flex items-center gap-2"
+        >
+          <Sparkles className="w-4 h-4" />
+          {useEnhancedDesign ? 'Enhanced' : 'Classic'} Design
+        </button>
+      </div>
+
+      {/* Enhanced Design */}
+      {useEnhancedDesign ? (
+        <EnhancedFSDDesign
+          sessions={sessions}
+          onSessionAction={(action, sessionId) => {
+            if (action === 'complete') {
+              handleStatusChange(sessionId, 'COMPLETED');
+            } else if (action === 'pause') {
+              handleStatusChange(sessionId, 'PAUSED');
+            }
+          }}
+        />
+      ) : (
+        /* Original Design */
+        <>
+          {/* Global Navigation */}
+          <GlobalNavigation />
       {/* Header */}
       <div className="status-bar">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
@@ -820,7 +848,8 @@ export default function FireSessionDashboard() {
         onClose={() => setShowCreateModal(false)}
         onCreateSession={handleCreateSession}
       />
-
+        </>
+      )}
     </div>
   );
 }
