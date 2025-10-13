@@ -77,7 +77,8 @@ import {
   Server,
   Database,
   Zap as ZapIcon,
-  Info
+  Info,
+  ArrowLeft
 } from 'lucide-react';
 
 // Enhanced visual design system matching FlavorWheel treatment
@@ -1102,41 +1103,124 @@ export default function EnhancedFSDDesign({
         // BOH Workflow Actions
         case 'start_prep':
           endpoint = '/api/sessions/[id]/transition';
-          body = { sessionId, newState: 'PREP_IN_PROGRESS', operatorId: 'enhanced_fsd', workflow: 'BOH_START_PREP' };
+          body = { 
+            sessionId, 
+            newState: 'PREP_IN_PROGRESS', 
+            operatorId: 'enhanced_fsd', 
+            workflow: 'BOH_START_PREP',
+            businessLogic: 'BOH begins hookah preparation: coals heating, bowl packing, flavor mixing'
+          };
           break;
         case 'prep_complete':
           endpoint = '/api/sessions/[id]/transition';
-          body = { sessionId, newState: 'READY_FOR_DELIVERY', operatorId: 'enhanced_fsd', workflow: 'BOH_PREP_COMPLETE' };
+          body = { 
+            sessionId, 
+            newState: 'READY_FOR_DELIVERY', 
+            operatorId: 'enhanced_fsd', 
+            workflow: 'BOH_PREP_COMPLETE',
+            businessLogic: 'BOH completes preparation: hookah assembled, coals ready, quality checked, ready for FOH pickup'
+          };
           break;
-        case 'ready_delivery':
+        case 'prep_issue':
           endpoint = '/api/sessions/[id]/transition';
-          body = { sessionId, newState: 'READY_FOR_DELIVERY', operatorId: 'enhanced_fsd', workflow: 'BOH_READY_DELIVERY' };
+          body = { 
+            sessionId, 
+            newState: 'PREP_ISSUE', 
+            operatorId: 'enhanced_fsd', 
+            workflow: 'BOH_PREP_ISSUE',
+            businessLogic: 'BOH encounters issue: missing ingredients, equipment problem, needs management intervention'
+          };
+          break;
+        case 'boh_hold':
+          endpoint = '/api/sessions/[id]/transition';
+          body = { 
+            sessionId, 
+            newState: 'BOH_HOLD', 
+            operatorId: 'enhanced_fsd', 
+            workflow: 'BOH_HOLD',
+            businessLogic: 'Hold hookah at BOH station: customer not ready, table not available, special timing request'
+          };
           break;
 
         // FOH Workflow Actions
         case 'foh_pickup':
           endpoint = '/api/sessions/[id]/transition';
-          body = { sessionId, newState: 'FOH_PICKUP', operatorId: 'enhanced_fsd', workflow: 'FOH_PICKUP' };
+          body = { 
+            sessionId, 
+            newState: 'FOH_PICKUP', 
+            operatorId: 'enhanced_fsd', 
+            workflow: 'FOH_PICKUP',
+            businessLogic: 'FOH collects prepared hookah from BOH station, verifies completeness, begins delivery to table'
+          };
           break;
         case 'deliver_to_table':
           endpoint = '/api/sessions/[id]/transition';
-          body = { sessionId, newState: 'ACTIVE', operatorId: 'enhanced_fsd', workflow: 'FOH_DELIVER' };
+          body = { 
+            sessionId, 
+            newState: 'ACTIVE', 
+            operatorId: 'enhanced_fsd', 
+            workflow: 'FOH_DELIVER',
+            businessLogic: 'FOH delivers hookah to table: setup complete, customer briefed, session timer started'
+          };
+          break;
+        case 'return_to_boh':
+          endpoint = '/api/sessions/[id]/transition';
+          body = { 
+            sessionId, 
+            newState: 'PREP_IN_PROGRESS', 
+            operatorId: 'enhanced_fsd', 
+            workflow: 'FOH_RETURN_TO_BOH',
+            businessLogic: 'Return hookah to BOH: customer not at table, table issue, needs re-preparation'
+          };
           break;
         case 'pause':
           endpoint = '/api/sessions/[id]/transition';
-          body = { sessionId, newState: 'PAUSED', operatorId: 'enhanced_fsd', workflow: 'FOH_PAUSE' };
+          body = { 
+            sessionId, 
+            newState: 'PAUSED', 
+            operatorId: 'enhanced_fsd', 
+            workflow: 'FOH_PAUSE',
+            businessLogic: 'Pause active session: customer step away, coals cooling, timer paused, session preserved'
+          };
           break;
         case 'resume':
           endpoint = '/api/sessions/[id]/transition';
-          body = { sessionId, newState: 'ACTIVE', operatorId: 'enhanced_fsd', workflow: 'FOH_RESUME' };
+          body = { 
+            sessionId, 
+            newState: 'ACTIVE', 
+            operatorId: 'enhanced_fsd', 
+            workflow: 'FOH_RESUME',
+            businessLogic: 'Resume paused session: customer returned, coals reheated, timer restarted, service continues'
+          };
           break;
         case 'complete':
           endpoint = '/api/sessions/[id]/transition';
-          body = { sessionId, newState: 'COMPLETED', operatorId: 'enhanced_fsd', workflow: 'FOH_COMPLETE' };
+          body = { 
+            sessionId, 
+            newState: 'COMPLETED', 
+            operatorId: 'enhanced_fsd', 
+            workflow: 'FOH_COMPLETE',
+            businessLogic: 'Session completed: customer finished, cleanup initiated, payment processed, table cleared'
+          };
           break;
         case 'refill_request':
           endpoint = '/api/sessions/[id]/refill';
-          body = { sessionId, operatorId: 'enhanced_fsd', workflow: 'FOH_REFILL_REQUEST' };
+          body = { 
+            sessionId, 
+            operatorId: 'enhanced_fsd', 
+            workflow: 'FOH_REFILL_REQUEST',
+            businessLogic: 'Customer requests refill: return to BOH for new coals/flavor, maintain session continuity'
+          };
+          break;
+        case 'boh_refill':
+          endpoint = '/api/sessions/[id]/transition';
+          body = { 
+            sessionId, 
+            newState: 'REFILL_NEEDED', 
+            operatorId: 'enhanced_fsd', 
+            workflow: 'FOH_TO_BOH_REFILL',
+            businessLogic: 'Send to BOH for refill: new coals, flavor refresh, quality check, return to FOH'
+          };
           break;
 
         // Edge Case Actions
