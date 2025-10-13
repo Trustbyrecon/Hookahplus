@@ -580,13 +580,41 @@ const EnhancedTabSessionCard = ({ session, tabType, onAction }: {
 }) => {
   const getStatusColor = (state: string) => {
     switch (state) {
+      case 'CREATED': return 'bg-blue-500/20 border-blue-500/30 text-blue-300';
       case 'ACTIVE': return 'bg-green-500/20 border-green-500/30 text-green-300';
       case 'PREP_IN_PROGRESS': return 'bg-orange-500/20 border-orange-500/30 text-orange-300';
-      case 'READY_FOR_DELIVERY': return 'bg-blue-500/20 border-blue-500/30 text-blue-300';
+      case 'READY_FOR_DELIVERY': return 'bg-teal-500/20 border-teal-500/30 text-teal-300';
+      case 'FOH_PICKUP': return 'bg-purple-500/20 border-purple-500/30 text-purple-300';
       case 'PAUSED': return 'bg-yellow-500/20 border-yellow-500/30 text-yellow-300';
       case 'COMPLETED': return 'bg-purple-500/20 border-purple-500/30 text-purple-300';
       case 'PAYMENT_FAILED': return 'bg-red-500/20 border-red-500/30 text-red-300';
+      case 'PREP_ISSUE': return 'bg-red-600/20 border-red-600/30 text-red-400';
+      case 'BOH_HOLD': return 'bg-yellow-600/20 border-yellow-600/30 text-yellow-400';
+      case 'REFILL_NEEDED': return 'bg-blue-600/20 border-blue-600/30 text-blue-400';
+      case 'RESOLVED': return 'bg-green-600/20 border-green-600/30 text-green-400';
+      case 'PAYMENT_RETRY': return 'bg-orange-600/20 border-orange-600/30 text-orange-400';
+      case 'ESCALATED': return 'bg-red-800/20 border-red-800/30 text-red-500';
       default: return 'bg-zinc-500/20 border-zinc-500/30 text-zinc-300';
+    }
+  };
+
+  const getStatusIcon = (state: string) => {
+    switch (state) {
+      case 'CREATED': return '⏳';
+      case 'PREP_IN_PROGRESS': return '👨‍🍳';
+      case 'READY_FOR_DELIVERY': return '📦';
+      case 'FOH_PICKUP': return '🚶‍♂️';
+      case 'ACTIVE': return '🔥';
+      case 'PAUSED': return '⏸️';
+      case 'COMPLETED': return '✅';
+      case 'PAYMENT_FAILED': return '💳❌';
+      case 'PREP_ISSUE': return '⚠️';
+      case 'BOH_HOLD': return '⏳';
+      case 'REFILL_NEEDED': return '🔄';
+      case 'RESOLVED': return '✅';
+      case 'PAYMENT_RETRY': return '🔄💳';
+      case 'ESCALATED': return '🚨';
+      default: return '❓';
     }
   };
 
@@ -788,7 +816,8 @@ const EnhancedTabSessionCard = ({ session, tabType, onAction }: {
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-lg font-semibold text-white">{session.tableId}</span>
-            <span className={`px-2 py-1 rounded-lg text-xs font-medium ${getStatusColor(session.state)}`}>
+            <span className={`px-2 py-1 rounded-lg text-xs font-medium flex items-center gap-1 ${getStatusColor(session.state)}`}>
+              <span className="text-sm">{getStatusIcon(session.state)}</span>
               {session.state.replace('_', ' ')}
             </span>
           </div>
@@ -842,6 +871,16 @@ const EnhancedTabSessionCard = ({ session, tabType, onAction }: {
         </div>
       </div>
 
+      {/* Session Notes - Always visible for operational transparency */}
+      <div className="mt-3 p-2 bg-zinc-800/30 border border-zinc-700 rounded-lg">
+        <div className="text-xs text-zinc-400 font-medium mb-1 flex items-center gap-1">
+          <Info className="w-3 h-3" /> Session Notes:
+        </div>
+        <div className="text-xs text-zinc-300">
+          {session.notes || 'No notes added yet. Click edit to add operational notes.'}
+        </div>
+      </div>
+
       {/* Edge Case Details */}
       {session.edgeCase && (
         <div className="mt-3 p-2 bg-red-500/10 border border-red-500/30 rounded-lg">
@@ -888,6 +927,14 @@ const EnhancedTabSessionCard = ({ session, tabType, onAction }: {
           );
         })}
       </div>
+
+      {/* Status Transition Indicator */}
+      {session.lastUpdated && (
+        <div className="mt-2 text-xs text-zinc-500 flex items-center gap-1">
+          <Clock className="w-3 h-3" />
+          Last updated: {new Date(session.lastUpdated).toLocaleTimeString()}
+        </div>
+      )}
     </motion.div>
   );
 };
@@ -989,6 +1036,36 @@ export default function EnhancedFSDDesign({
   const [ktl4Status, setKtl4Status] = useState('Active');
   const [hitrustStatus, setHitrustStatus] = useState('Verified');
   const [theme, setTheme] = useState('midnight');
+  const [notifications, setNotifications] = useState<any[]>([]);
+  
+  // Notification system for operational feedback
+  const addNotification = useCallback((type: 'success' | 'error' | 'info', message: string, sessionId?: string) => {
+    const notification = {
+      id: Date.now(),
+      type,
+      message,
+      sessionId,
+      timestamp: new Date().toISOString()
+    };
+    setNotifications(prev => [notification, ...prev.slice(0, 4)]); // Keep only last 5 notifications
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== notification.id));
+    }, 5000);
+  }, []);
+
+  // Enhanced session state management with real-time updates
+  const updateSessionState = useCallback((sessionId: string, newState: string, additionalData?: any) => {
+    // Since sessions is a prop, we'll trigger a refresh instead of direct state update
+    // The parent component should handle the state update
+    window.dispatchEvent(new CustomEvent('sessionStateUpdate', { 
+      detail: { sessionId, newState, additionalData } 
+    }));
+    
+    // Add notification for state change
+    addNotification('info', `Session ${sessionId} state changed to ${newState.replace('_', ' ')}`, sessionId);
+  }, [addNotification]);
   
   // KTL4 and HiTrust API integration functions
   const runKTL4HealthCheck = useCallback(async () => {
@@ -1100,6 +1177,7 @@ export default function EnhancedFSDDesign({
       let endpoint = '';
       let method = 'POST';
       let body: any = { sessionId };
+      let newState = '';
 
       switch (action) {
         // Overview Tab Actions
@@ -1115,149 +1193,186 @@ export default function EnhancedFSDDesign({
         // BOH Workflow Actions
         case 'start_prep':
           endpoint = '/api/sessions/[id]/transition';
+          newState = 'PREP_IN_PROGRESS';
           body = { 
             sessionId, 
-            newState: 'PREP_IN_PROGRESS', 
+            newState, 
             operatorId: 'enhanced_fsd', 
             workflow: 'BOH_START_PREP',
-            businessLogic: 'BOH begins hookah preparation: coals heating, bowl packing, flavor mixing'
+            businessLogic: 'BOH begins hookah preparation: coals heating, bowl packing, flavor mixing',
+            timestamp: new Date().toISOString()
           };
           break;
         case 'prep_complete':
           endpoint = '/api/sessions/[id]/transition';
+          newState = 'READY_FOR_DELIVERY';
           body = { 
             sessionId, 
-            newState: 'READY_FOR_DELIVERY', 
+            newState, 
             operatorId: 'enhanced_fsd', 
             workflow: 'BOH_PREP_COMPLETE',
-            businessLogic: 'BOH completes preparation: hookah assembled, coals ready, quality checked, ready for FOH pickup'
+            businessLogic: 'BOH completes preparation: hookah assembled, coals ready, quality checked, ready for FOH pickup',
+            timestamp: new Date().toISOString()
           };
           break;
         case 'prep_issue':
           endpoint = '/api/sessions/[id]/transition';
+          newState = 'PREP_ISSUE';
           body = { 
             sessionId, 
-            newState: 'PREP_ISSUE', 
+            newState, 
             operatorId: 'enhanced_fsd', 
             workflow: 'BOH_PREP_ISSUE',
-            businessLogic: 'BOH encounters issue: missing ingredients, equipment problem, needs management intervention'
+            businessLogic: 'BOH encounters issue: missing ingredients, equipment problem, needs management intervention',
+            timestamp: new Date().toISOString()
           };
           break;
         case 'boh_hold':
           endpoint = '/api/sessions/[id]/transition';
+          newState = 'BOH_HOLD';
           body = { 
             sessionId, 
-            newState: 'BOH_HOLD', 
+            newState, 
             operatorId: 'enhanced_fsd', 
             workflow: 'BOH_HOLD',
-            businessLogic: 'Hold hookah at BOH station: customer not ready, table not available, special timing request'
+            businessLogic: 'Hold hookah at BOH station: customer not ready, table not available, special timing request',
+            timestamp: new Date().toISOString()
           };
           break;
 
         // FOH Workflow Actions
         case 'foh_pickup':
           endpoint = '/api/sessions/[id]/transition';
+          newState = 'FOH_PICKUP';
           body = { 
             sessionId, 
-            newState: 'FOH_PICKUP', 
+            newState, 
             operatorId: 'enhanced_fsd', 
             workflow: 'FOH_PICKUP',
-            businessLogic: 'FOH collects prepared hookah from BOH station, verifies completeness, begins delivery to table'
+            businessLogic: 'FOH collects prepared hookah from BOH station, verifies completeness, begins delivery to table',
+            timestamp: new Date().toISOString()
           };
           break;
         case 'deliver_to_table':
           endpoint = '/api/sessions/[id]/transition';
+          newState = 'ACTIVE';
           body = { 
             sessionId, 
-            newState: 'ACTIVE', 
+            newState, 
             operatorId: 'enhanced_fsd', 
             workflow: 'FOH_DELIVER',
-            businessLogic: 'FOH delivers hookah to table: setup complete, customer briefed, session timer started'
+            businessLogic: 'FOH delivers hookah to table: setup complete, customer briefed, session timer started',
+            timestamp: new Date().toISOString()
           };
           break;
         case 'return_to_boh':
           endpoint = '/api/sessions/[id]/transition';
+          newState = 'PREP_IN_PROGRESS';
           body = { 
             sessionId, 
-            newState: 'PREP_IN_PROGRESS', 
+            newState, 
             operatorId: 'enhanced_fsd', 
             workflow: 'FOH_RETURN_TO_BOH',
-            businessLogic: 'Return hookah to BOH: customer not at table, table issue, needs re-preparation'
+            businessLogic: 'Return hookah to BOH: customer not at table, table issue, needs re-preparation',
+            timestamp: new Date().toISOString()
           };
           break;
         case 'pause':
           endpoint = '/api/sessions/[id]/transition';
+          newState = 'PAUSED';
           body = { 
             sessionId, 
-            newState: 'PAUSED', 
+            newState, 
             operatorId: 'enhanced_fsd', 
             workflow: 'FOH_PAUSE',
-            businessLogic: 'Pause active session: customer step away, coals cooling, timer paused, session preserved'
+            businessLogic: 'Pause active session: customer step away, coals cooling, timer paused, session preserved',
+            timestamp: new Date().toISOString()
           };
           break;
         case 'resume':
           endpoint = '/api/sessions/[id]/transition';
+          newState = 'ACTIVE';
           body = { 
             sessionId, 
-            newState: 'ACTIVE', 
+            newState, 
             operatorId: 'enhanced_fsd', 
             workflow: 'FOH_RESUME',
-            businessLogic: 'Resume paused session: customer returned, coals reheated, timer restarted, service continues'
+            businessLogic: 'Resume paused session: customer returned, coals reheated, timer restarted, service continues',
+            timestamp: new Date().toISOString()
           };
           break;
         case 'complete':
           endpoint = '/api/sessions/[id]/transition';
+          newState = 'COMPLETED';
           body = { 
             sessionId, 
-            newState: 'COMPLETED', 
+            newState, 
             operatorId: 'enhanced_fsd', 
             workflow: 'FOH_COMPLETE',
-            businessLogic: 'Session completed: customer finished, cleanup initiated, payment processed, table cleared'
+            businessLogic: 'Session completed: customer finished, cleanup initiated, payment processed, table cleared',
+            timestamp: new Date().toISOString()
           };
           break;
         case 'refill_request':
           endpoint = '/api/sessions/[id]/refill';
+          newState = 'REFILL_NEEDED';
           body = { 
             sessionId, 
+            newState,
             operatorId: 'enhanced_fsd', 
             workflow: 'FOH_REFILL_REQUEST',
-            businessLogic: 'Customer requests refill: return to BOH for new coals/flavor, maintain session continuity'
+            businessLogic: 'Customer requests refill: return to BOH for new coals/flavor, maintain session continuity',
+            timestamp: new Date().toISOString()
           };
           break;
         case 'boh_refill':
           endpoint = '/api/sessions/[id]/transition';
+          newState = 'REFILL_NEEDED';
           body = { 
             sessionId, 
-            newState: 'REFILL_NEEDED', 
+            newState, 
             operatorId: 'enhanced_fsd', 
             workflow: 'FOH_TO_BOH_REFILL',
-            businessLogic: 'Send to BOH for refill: new coals, flavor refresh, quality check, return to FOH'
+            businessLogic: 'Send to BOH for refill: new coals, flavor refresh, quality check, return to FOH',
+            timestamp: new Date().toISOString()
           };
           break;
 
         // Edge Case Actions
         case 'resolve':
           endpoint = '/api/ktl4/break-glass';
+          newState = 'RESOLVED';
           body = { 
             actionType: 'manual_override', 
             targetId: sessionId, 
             operatorId: 'enhanced_fsd',
-            reason: 'Manual resolution of edge case'
+            reason: 'Manual resolution of edge case',
+            newState,
+            timestamp: new Date().toISOString()
           };
           break;
         case 'retry_payment':
           endpoint = '/api/payments/retry';
-          body = { sessionId, operatorId: 'enhanced_fsd' };
+          newState = 'PAYMENT_RETRY';
+          body = { 
+            sessionId, 
+            operatorId: 'enhanced_fsd',
+            newState,
+            timestamp: new Date().toISOString()
+          };
           break;
         case 'escalate':
           endpoint = '/api/ktl4/alerts';
+          newState = 'ESCALATED';
           body = { 
             priority: 'high',
             flowName: 'session_lifecycle',
             alertType: 'escalation',
             message: `Session ${sessionId} requires escalation`,
             details: { sessionId },
-            operatorId: 'enhanced_fsd'
+            operatorId: 'enhanced_fsd',
+            newState,
+            timestamp: new Date().toISOString()
           };
           break;
 
@@ -1277,29 +1392,33 @@ export default function EnhancedFSDDesign({
         const result = await response.json();
         console.log(`${action} successful:`, result);
         
+        // Update local session state immediately for better UX
+        if (newState) {
+          updateSessionState(sessionId, newState);
+        }
+        
         // Refresh sessions after successful action
         await refreshSessions();
         
         // Trigger custom event for UI updates
         window.dispatchEvent(new CustomEvent('sessionActionCompleted', { 
-          detail: { action, sessionId, result } 
+          detail: { action, sessionId, result, newState } 
         }));
+
+        // Show success notification
+        addNotification('success', `Session ${sessionId} ${action.replace('_', ' ')} successful`, sessionId);
       } else {
-        throw new Error(`API call failed: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(`API call failed: ${response.status} - ${errorData.message || 'Unknown error'}`);
       }
     } catch (error) {
       console.error(`Failed to execute ${action}:`, error);
       // Show error notification
-      window.dispatchEvent(new CustomEvent('showNotification', { 
-        detail: { 
-          type: 'error', 
-          message: `Failed to ${action.replace('_', ' ')} session` 
-        } 
-      }));
+      addNotification('error', `Failed to ${action.replace('_', ' ')} session ${sessionId}`, sessionId);
     } finally {
       setLoading(false);
     }
-  }, [refreshSessions]);
+  }, [refreshSessions, updateSessionState, addNotification]);
 
   // Enhanced sample data for QA testing - demonstrates full guest-to-lounge-owner workflow
   const sampleSessions = [
@@ -1546,6 +1665,35 @@ export default function EnhancedFSDDesign({
   
   return (
     <div className={`min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white ${className}`}>
+      {/* Notification System */}
+      {notifications.length > 0 && (
+        <div className="fixed top-4 right-4 z-50 space-y-2">
+          {notifications.map((notification) => (
+            <motion.div
+              key={notification.id}
+              initial={{ opacity: 0, x: 300 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 300 }}
+              className={`p-3 rounded-lg shadow-lg max-w-sm ${
+                notification.type === 'success' ? 'bg-green-600 text-white' :
+                notification.type === 'error' ? 'bg-red-600 text-white' :
+                'bg-blue-600 text-white'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">{notification.message}</span>
+                <button
+                  onClick={() => setNotifications(prev => prev.filter(n => n.id !== notification.id))}
+                  className="text-white/70 hover:text-white"
+                >
+                  ×
+                </button>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
+
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {/* Enhanced Header */}
         <motion.div 
