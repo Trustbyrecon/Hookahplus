@@ -569,6 +569,195 @@ const EnhancedRefreshButton = ({
   );
 };
 
+// Enhanced Customer KPI Metrics Component
+const EnhancedCustomerKPIs = ({ session }: { session: any }) => {
+  const getLoyaltyColor = (tier: string) => {
+    switch (tier) {
+      case 'Platinum': return 'text-purple-400';
+      case 'Gold': return 'text-yellow-400';
+      case 'Silver': return 'text-gray-400';
+      case 'New': return 'text-blue-400';
+      default: return 'text-zinc-400';
+    }
+  };
+
+  const getMoatScore = (moat: any) => {
+    let score = 0;
+    if (moat.brandLoyalty === 'Very High') score += 4;
+    else if (moat.brandLoyalty === 'High') score += 3;
+    else if (moat.brandLoyalty === 'Medium') score += 2;
+    else score += 1;
+    
+    if (moat.referralPotential === 'Very High') score += 4;
+    else if (moat.referralPotential === 'High') score += 3;
+    else if (moat.referralPotential === 'Medium') score += 2;
+    else score += 1;
+    
+    return Math.min(score, 8);
+  };
+
+  const moatScore = getMoatScore(session.moatAlignment);
+
+  return (
+    <div className="mt-3 p-3 bg-zinc-800/30 rounded-lg border border-zinc-700">
+      <div className="grid grid-cols-2 gap-3 text-xs">
+        <div>
+          <span className="text-zinc-400">Satisfaction:</span>
+          <span className="ml-1 text-green-400 font-medium">{session.customerKPIs.satisfaction}/5</span>
+        </div>
+        <div>
+          <span className="text-zinc-400">Loyalty:</span>
+          <span className={`ml-1 font-medium ${getLoyaltyColor(session.customerKPIs.loyaltyTier)}`}>
+            {session.customerKPIs.loyaltyTier}
+          </span>
+        </div>
+        <div>
+          <span className="text-zinc-400">Avg Spend:</span>
+          <span className="ml-1 text-blue-400 font-medium">${session.customerKPIs.avgSpend}</span>
+        </div>
+        <div>
+          <span className="text-zinc-400">Frequency:</span>
+          <span className="ml-1 text-cyan-400 font-medium">{session.customerKPIs.visitFrequency}</span>
+        </div>
+        <div className="col-span-2">
+          <div className="flex items-center justify-between">
+            <span className="text-zinc-400">Moat Score:</span>
+            <div className="flex items-center gap-2">
+              <div className="w-16 bg-zinc-700 rounded-full h-2">
+                <div 
+                  className="bg-gradient-to-r from-green-400 to-blue-400 h-2 rounded-full transition-all duration-300" 
+                  style={{ width: `${(moatScore / 8) * 100}%` }}
+                ></div>
+              </div>
+              <span className="text-green-400 font-medium">{moatScore}/8</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Enhanced Tab-Specific Session Cards
+const EnhancedTabSessionCard = ({ session, tabType, onAction }: { 
+  session: any; 
+  tabType: string; 
+  onAction?: (action: string, sessionId: string) => void;
+}) => {
+  const getStatusColor = (state: string) => {
+    switch (state) {
+      case 'ACTIVE': return 'bg-green-500/20 border-green-500/30 text-green-300';
+      case 'PREP_IN_PROGRESS': return 'bg-orange-500/20 border-orange-500/30 text-orange-300';
+      case 'READY_FOR_DELIVERY': return 'bg-blue-500/20 border-blue-500/30 text-blue-300';
+      case 'PAUSED': return 'bg-yellow-500/20 border-yellow-500/30 text-yellow-300';
+      case 'COMPLETED': return 'bg-purple-500/20 border-purple-500/30 text-purple-300';
+      case 'PAYMENT_FAILED': return 'bg-red-500/20 border-red-500/30 text-red-300';
+      default: return 'bg-zinc-500/20 border-zinc-500/30 text-zinc-300';
+    }
+  };
+
+  const getTabSpecificActions = () => {
+    switch (tabType) {
+      case 'overview':
+        return [
+          { action: 'view', label: 'View Details', icon: Eye },
+          { action: 'edit', label: 'Edit Session', icon: Edit3 }
+        ];
+      case 'boh':
+        return [
+          { action: 'prep_complete', label: 'Prep Complete', icon: CheckCircle },
+          { action: 'ready_delivery', label: 'Ready for Delivery', icon: ArrowUp }
+        ];
+      case 'foh':
+        return [
+          { action: 'start_service', label: 'Start Service', icon: Play },
+          { action: 'pause', label: 'Pause', icon: Pause },
+          { action: 'complete', label: 'Complete', icon: CheckCircle }
+        ];
+      case 'edgeCases':
+        return [
+          { action: 'resolve', label: 'Resolve Issue', icon: Shield },
+          { action: 'retry_payment', label: 'Retry Payment', icon: CreditCard },
+          { action: 'escalate', label: 'Escalate', icon: AlertTriangle }
+        ];
+      default:
+        return [];
+    }
+  };
+
+  const actions = getTabSpecificActions();
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 transition-all duration-200"
+    >
+      <div className="flex items-start justify-between mb-3">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-lg font-semibold text-white">{session.tableId}</span>
+            <span className={`px-2 py-1 rounded-lg text-xs font-medium ${getStatusColor(session.state)}`}>
+              {session.state.replace('_', ' ')}
+            </span>
+          </div>
+          <div className="text-sm text-zinc-300">{session.customerName}</div>
+          <div className="text-xs text-zinc-500">{session.customerPhone}</div>
+        </div>
+        <div className="text-right">
+          <div className="text-lg font-semibold text-green-400">${(session.priceCents / 100).toFixed(2)}</div>
+          <div className="text-xs text-zinc-500">{session.flavor}</div>
+        </div>
+      </div>
+
+      {/* Staff Assignment */}
+      {session.assignedBOH && session.assignedFOH && (
+        <div className="text-xs text-zinc-500 mb-3">
+          Staff: {session.assignedBOH} (BOH) • {session.assignedFOH} (FOH)
+        </div>
+      )}
+
+      {/* Customer KPIs */}
+      <EnhancedCustomerKPIs session={session} />
+
+      {/* Edge Case Details */}
+      {session.edgeCase && (
+        <div className="mt-3 p-2 bg-red-500/10 border border-red-500/30 rounded-lg">
+          <div className="text-xs text-red-300 font-medium mb-1">
+            Edge Case: {session.edgeCaseType}
+          </div>
+          {session.edgeCaseDetails && (
+            <div className="text-xs text-red-400">
+              Error: {session.edgeCaseDetails.errorCode} | Retries: {session.edgeCaseDetails.retryCount}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tab-Specific Actions */}
+      <div className="flex gap-2 mt-4">
+        {actions.map((action) => {
+          const Icon = action.icon;
+          return (
+            <motion.button
+              key={action.action}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => onAction?.(action.action, session.id)}
+              className="flex items-center gap-1 px-3 py-1 rounded-lg bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-medium transition-colors"
+            >
+              <Icon className="w-3 h-3" />
+              {action.label}
+            </motion.button>
+          );
+        })}
+      </div>
+    </motion.div>
+  );
+};
+
 // Enhanced KTL4 Status Component
 const EnhancedKTL4Status = ({ 
   healthStatus, 
@@ -770,8 +959,118 @@ export default function EnhancedFSDDesign({
     }
   }, []);
 
+  // Tab-specific API routing functions
+  const handleTabAction = useCallback(async (action: string, sessionId: string) => {
+    setLoading(true);
+    try {
+      let endpoint = '';
+      let method = 'POST';
+      let body: any = { sessionId };
+
+      switch (action) {
+        // Overview Tab Actions
+        case 'view':
+          // Navigate to session details
+          window.open(`/sessions/${sessionId}`, '_blank');
+          return;
+        case 'edit':
+          // Open edit modal
+          window.dispatchEvent(new CustomEvent('openEditSessionModal', { detail: { sessionId } }));
+          return;
+
+        // BOH Tab Actions
+        case 'prep_complete':
+          endpoint = '/api/sessions/[id]/transition';
+          body = { sessionId, newState: 'READY_FOR_DELIVERY', operatorId: 'enhanced_fsd' };
+          break;
+        case 'ready_delivery':
+          endpoint = '/api/sessions/[id]/transition';
+          body = { sessionId, newState: 'READY_FOR_DELIVERY', operatorId: 'enhanced_fsd' };
+          break;
+
+        // FOH Tab Actions
+        case 'start_service':
+          endpoint = '/api/sessions/[id]/transition';
+          body = { sessionId, newState: 'ACTIVE', operatorId: 'enhanced_fsd' };
+          break;
+        case 'pause':
+          endpoint = '/api/sessions/[id]/transition';
+          body = { sessionId, newState: 'PAUSED', operatorId: 'enhanced_fsd' };
+          break;
+        case 'complete':
+          endpoint = '/api/sessions/[id]/transition';
+          body = { sessionId, newState: 'COMPLETED', operatorId: 'enhanced_fsd' };
+          break;
+
+        // Edge Case Actions
+        case 'resolve':
+          endpoint = '/api/ktl4/break-glass';
+          body = { 
+            actionType: 'manual_override', 
+            targetId: sessionId, 
+            operatorId: 'enhanced_fsd',
+            reason: 'Manual resolution of edge case'
+          };
+          break;
+        case 'retry_payment':
+          endpoint = '/api/payments/retry';
+          body = { sessionId, operatorId: 'enhanced_fsd' };
+          break;
+        case 'escalate':
+          endpoint = '/api/ktl4/alerts';
+          body = { 
+            priority: 'high',
+            flowName: 'session_lifecycle',
+            alertType: 'escalation',
+            message: `Session ${sessionId} requires escalation`,
+            details: { sessionId },
+            operatorId: 'enhanced_fsd'
+          };
+          break;
+
+        default:
+          console.warn('Unknown action:', action);
+          return;
+      }
+
+      // Make API call
+      const response = await fetch(endpoint.replace('[id]', sessionId), {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log(`${action} successful:`, result);
+        
+        // Refresh sessions after successful action
+        await refreshSessions();
+        
+        // Trigger custom event for UI updates
+        window.dispatchEvent(new CustomEvent('sessionActionCompleted', { 
+          detail: { action, sessionId, result } 
+        }));
+      } else {
+        throw new Error(`API call failed: ${response.status}`);
+      }
+    } catch (error) {
+      console.error(`Failed to execute ${action}:`, error);
+      // Show error notification
+      window.dispatchEvent(new CustomEvent('showNotification', { 
+        detail: { 
+          type: 'error', 
+          message: `Failed to ${action.replace('_', ' ')} session` 
+        } 
+      }));
+    } finally {
+      setLoading(false);
+    }
+  }, [refreshSessions]);
+
   // Enhanced sample data for QA testing - demonstrates full guest-to-lounge-owner workflow
   const sampleSessions = [
+    // OVERVIEW TAB SESSIONS (5 total)
     {
       id: 'session_T-001_1758552685415',
       tableId: 'T-001',
@@ -793,8 +1092,22 @@ export default function EnhancedFSDDesign({
       flavorMix: ['Blue Mist', 'Mint'],
       pricingModel: 'time-based',
       basePrice: 30,
-      flavorMixPrice: 5
+      flavorMixPrice: 5,
+      customerKPIs: {
+        satisfaction: 4.8,
+        repeatCustomer: true,
+        avgSpend: 45,
+        loyaltyTier: 'Gold',
+        visitFrequency: 'Weekly'
+      },
+      moatAlignment: {
+        flavorPreference: 'Premium',
+        priceSensitivity: 'Low',
+        brandLoyalty: 'High',
+        referralPotential: 'High'
+      }
     },
+    // BOH TAB SESSIONS (2 total)
     {
       id: 'session_T-003_1758552685416',
       tableId: 'T-003',
@@ -814,7 +1127,20 @@ export default function EnhancedFSDDesign({
       flavorMix: ['Strawberry', 'Mint', 'Lime'],
       pricingModel: 'flat',
       basePrice: 30,
-      flavorMixPrice: 8
+      flavorMixPrice: 8,
+      customerKPIs: {
+        satisfaction: 4.5,
+        repeatCustomer: false,
+        avgSpend: 28,
+        loyaltyTier: 'Silver',
+        visitFrequency: 'Monthly'
+      },
+      moatAlignment: {
+        flavorPreference: 'Classic',
+        priceSensitivity: 'Medium',
+        brandLoyalty: 'Medium',
+        referralPotential: 'Medium'
+      }
     },
     {
       id: 'session_T-005_1758552685417',
@@ -835,8 +1161,22 @@ export default function EnhancedFSDDesign({
       flavorMix: ['Double Apple', 'Cardamom'],
       pricingModel: 'time-based',
       basePrice: 30,
-      flavorMixPrice: 12
+      flavorMixPrice: 12,
+      customerKPIs: {
+        satisfaction: 4.9,
+        repeatCustomer: true,
+        avgSpend: 52,
+        loyaltyTier: 'Platinum',
+        visitFrequency: 'Bi-weekly'
+      },
+      moatAlignment: {
+        flavorPreference: 'Exotic',
+        priceSensitivity: 'Low',
+        brandLoyalty: 'Very High',
+        referralPotential: 'Very High'
+      }
     },
+    // FOH TAB SESSIONS (2 total)
     {
       id: 'session_T-007_1758552685418',
       tableId: 'T-007',
@@ -859,7 +1199,20 @@ export default function EnhancedFSDDesign({
       flavorMix: ['Watermelon', 'Mint'],
       pricingModel: 'flat',
       basePrice: 30,
-      flavorMixPrice: 2
+      flavorMixPrice: 2,
+      customerKPIs: {
+        satisfaction: 4.7,
+        repeatCustomer: true,
+        avgSpend: 38,
+        loyaltyTier: 'Gold',
+        visitFrequency: 'Weekly'
+      },
+      moatAlignment: {
+        flavorPreference: 'Refreshing',
+        priceSensitivity: 'Low',
+        brandLoyalty: 'High',
+        referralPotential: 'High'
+      }
     },
     {
       id: 'session_T-009_1758552685419',
@@ -882,7 +1235,63 @@ export default function EnhancedFSDDesign({
       flavorMix: ['Rose', 'Lavender'],
       pricingModel: 'time-based',
       basePrice: 30,
-      flavorMixPrice: 15
+      flavorMixPrice: 15,
+      customerKPIs: {
+        satisfaction: 4.6,
+        repeatCustomer: false,
+        avgSpend: 42,
+        loyaltyTier: 'Silver',
+        visitFrequency: 'Monthly'
+      },
+      moatAlignment: {
+        flavorPreference: 'Elegant',
+        priceSensitivity: 'Medium',
+        brandLoyalty: 'Medium',
+        referralPotential: 'Medium'
+      }
+    },
+    // EDGE CASE SESSION (1 total)
+    {
+      id: 'session_T-011_1758552685420',
+      tableId: 'T-011',
+      customerRef: '15551234561',
+      flavor: 'Payment Failed Session',
+      priceCents: 0,
+      state: 'PAYMENT_FAILED',
+      assignedBOHId: 'boh-2',
+      assignedFOHId: 'foh-3',
+      createdAt: new Date(Date.now() - 10 * 60 * 1000), // 10 minutes ago
+      updatedAt: new Date(),
+      assignedBOH: 'David Wilson',
+      assignedFOH: 'James Brown',
+      notes: 'Guest: Lisa Wang | QR Code: T-011 | EDGE CASE: Payment processing failed - requires manual intervention',
+      customerName: 'Lisa Wang',
+      customerPhone: '+1 (555) 678-9012',
+      flavorMix: ['Double Apple'],
+      pricingModel: 'flat',
+      basePrice: 30,
+      flavorMixPrice: 0,
+      edgeCase: true,
+      edgeCaseType: 'PAYMENT_FAILED',
+      edgeCaseDetails: {
+        errorCode: 'CARD_DECLINED',
+        retryCount: 2,
+        lastAttempt: new Date(Date.now() - 5 * 60 * 1000),
+        requiresManualIntervention: true
+      },
+      customerKPIs: {
+        satisfaction: 3.2,
+        repeatCustomer: false,
+        avgSpend: 0,
+        loyaltyTier: 'New',
+        visitFrequency: 'First Visit'
+      },
+      moatAlignment: {
+        flavorPreference: 'Unknown',
+        priceSensitivity: 'High',
+        brandLoyalty: 'Low',
+        referralPotential: 'Low'
+      }
     }
   ];
   
@@ -1070,8 +1479,117 @@ export default function EnhancedFSDDesign({
           />
         )}
         
-        {/* Content Based on Active View */}
+        {/* Content Based on Active Tab */}
         <AnimatePresence mode="wait">
+          {activeTab === 'overview' && (
+            <motion.div
+              key="overview"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-4"
+            >
+              <div className="mb-4 p-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-xl">
+                <h3 className="text-lg font-semibold text-blue-300 mb-2">📊 Overview Dashboard</h3>
+                <p className="text-sm text-zinc-400">
+                  Complete session overview with customer KPIs and moat alignment metrics for optimal business intelligence.
+                </p>
+              </div>
+              <div className="grid gap-4">
+                {displaySessions.slice(0, 5).map((session) => (
+                  <EnhancedTabSessionCard
+                    key={session.id}
+                    session={session}
+                    tabType="overview"
+                    onAction={handleTabAction}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'boh' && (
+            <motion.div
+              key="boh"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-4"
+            >
+              <div className="mb-4 p-4 bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-xl">
+                <h3 className="text-lg font-semibold text-orange-300 mb-2">👨‍🍳 BOH (Back of House) Workflow</h3>
+                <p className="text-sm text-zinc-400">
+                  Prep and preparation workflow management with staff coordination and quality control.
+                </p>
+              </div>
+              <div className="grid gap-4">
+                {displaySessions.filter(s => s.state === 'PREP_IN_PROGRESS' || s.state === 'READY_FOR_DELIVERY').map((session) => (
+                  <EnhancedTabSessionCard
+                    key={session.id}
+                    session={session}
+                    tabType="boh"
+                    onAction={handleTabAction}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'foh' && (
+            <motion.div
+              key="foh"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-4"
+            >
+              <div className="mb-4 p-4 bg-gradient-to-r from-green-500/10 to-teal-500/10 border border-green-500/20 rounded-xl">
+                <h3 className="text-lg font-semibold text-green-300 mb-2">👥 FOH (Front of House) Service</h3>
+                <p className="text-sm text-zinc-400">
+                  Customer service and session management with real-time monitoring and satisfaction tracking.
+                </p>
+              </div>
+              <div className="grid gap-4">
+                {displaySessions.filter(s => s.state === 'ACTIVE' || s.state === 'PAUSED').map((session) => (
+                  <EnhancedTabSessionCard
+                    key={session.id}
+                    session={session}
+                    tabType="foh"
+                    onAction={handleTabAction}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'edgeCases' && (
+            <motion.div
+              key="edgeCases"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-4"
+            >
+              <div className="mb-4 p-4 bg-gradient-to-r from-red-500/10 to-pink-500/10 border border-red-500/20 rounded-xl">
+                <h3 className="text-lg font-semibold text-red-300 mb-2">⚠️ Edge Cases & Error Handling</h3>
+                <p className="text-sm text-zinc-400">
+                  Critical issues requiring immediate attention: payment failures, system errors, and manual intervention.
+                </p>
+              </div>
+              <div className="grid gap-4">
+                {displaySessions.filter(s => s.edgeCase).map((session) => (
+                  <EnhancedTabSessionCard
+                    key={session.id}
+                    session={session}
+                    tabType="edgeCases"
+                    onAction={handleTabAction}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Legacy Sessions View */}
           {activeView === 'sessions' && (
             <motion.div
               key="sessions"
@@ -1087,7 +1605,7 @@ export default function EnhancedFSDDesign({
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {sessions.map((session) => (
+                {displaySessions.map((session) => (
                   <EnhancedSessionCard
                     key={session.id}
                     session={session}
