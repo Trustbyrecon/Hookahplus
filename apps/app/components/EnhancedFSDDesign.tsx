@@ -309,6 +309,9 @@ const EnhancedMetrics = ({ metrics }: { metrics: any[] }) => {
 };
 
 // Enhanced flavor selection interface
+// INTENT: This is for lounge staff to quickly build flavor profiles for customer sessions
+// ENDPOINT: Selected flavors are sent to POST /api/sessions as part of session creation
+// WORKFLOW: Staff selects flavors → Creates session → Flavors become part of session data
 const EnhancedFlavorSelection = ({ 
   onFlavorSelect,
   selectedFlavors = [],
@@ -625,6 +628,20 @@ export default function EnhancedFSDDesign({
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                 <span className="text-sm text-green-400 font-medium">Live</span>
               </div>
+              
+              {/* Create Session Button */}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  // Trigger create session modal
+                  window.dispatchEvent(new CustomEvent('openCreateSessionModal'));
+                }}
+                className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold transition-all duration-200 flex items-center gap-2 shadow-lg"
+              >
+                <Plus className="w-5 h-5" />
+                Create Session
+              </motion.button>
             </div>
           </div>
         </motion.div>

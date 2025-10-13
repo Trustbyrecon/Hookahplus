@@ -92,6 +92,19 @@ export default function FireSessionDashboard() {
   useEffect(() => {
     console.log('Modal state changed:', showCreateModal);
   }, [showCreateModal]);
+
+  // Listen for Create Session modal events from Enhanced Design
+  useEffect(() => {
+    const handleOpenCreateSessionModal = () => {
+      setShowCreateModal(true);
+    };
+
+    window.addEventListener('openCreateSessionModal', handleOpenCreateSessionModal);
+    
+    return () => {
+      window.removeEventListener('openCreateSessionModal', handleOpenCreateSessionModal);
+    };
+  }, []);
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
