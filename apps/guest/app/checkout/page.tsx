@@ -1,17 +1,15 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Badge, StepIndicator, FlowProgress } from '../../components';
+import GlobalNavigation from '../../components/GlobalNavigation';
+import Card from '../../components/Card';
+import Button from '../../components/Button';
 import { 
   CreditCard, 
   CheckCircle,
-  ArrowRight,
   Shield,
   Clock,
   AlertCircle,
-  User,
-  MapPin,
-  Star,
   Zap,
   Lock
 } from 'lucide-react';
@@ -33,14 +31,14 @@ interface CheckoutData {
 }
 
 export default function CheckoutPage() {
-  const [currentStep, setCurrentStep] = useState(1);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('card_4242');
   const [checkoutData, setCheckoutData] = useState<CheckoutData | null>(null);
-  const [paymentProcessing, setPaymentProcessing] = useState(false);
-  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   // Simulate checkout data from URL params or state
   useEffect(() => {
-    // In a real app, this would come from URL params or state management
     const mockCheckoutData: CheckoutData = {
       customerId: 'cust_1234567890',
       tableId: 'T-015',
@@ -57,55 +55,53 @@ export default function CheckoutPage() {
     setCheckoutData(mockCheckoutData);
   }, []);
 
-  const checkoutSteps = [
+  const paymentMethods = [
     {
-      id: 'review',
-      title: 'Review Order',
-      description: 'Confirm your selection and details',
-      status: (currentStep >= 1 ? (currentStep > 1 ? 'completed' : 'current') : 'upcoming') as 'completed' | 'current' | 'upcoming'
+      id: 'card_4242',
+      name: 'Card ending in 4242',
+      description: 'Expires 12/25',
+      icon: CreditCard,
+      popular: true
     },
     {
-      id: 'payment',
-      title: 'Payment',
-      description: 'Secure payment processing',
-      status: (currentStep >= 2 ? (currentStep > 2 ? 'completed' : 'current') : 'upcoming') as 'completed' | 'current' | 'upcoming'
+      id: 'card_1234',
+      name: 'Card ending in 1234',
+      description: 'Expires 08/24',
+      icon: CreditCard,
+      popular: false
     },
     {
-      id: 'confirmation',
-      title: 'Confirmation',
-      description: 'Order confirmed and session started',
-      status: (currentStep >= 3 ? 'completed' : 'upcoming') as 'completed' | 'current' | 'upcoming'
+      id: 'new_card',
+      name: 'Add new card',
+      description: 'Save for future use',
+      icon: CreditCard,
+      popular: false
     }
   ];
 
   const handlePayment = async () => {
-    setPaymentProcessing(true);
-    setCurrentStep(2);
+    setIsProcessing(true);
+    setError(null);
     
-    // Simulate payment processing
-    setTimeout(() => {
-      setPaymentSuccess(true);
-      setPaymentProcessing(false);
-      setCurrentStep(3);
+    try {
+      // Simulate payment processing
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Update checkout data
-      if (checkoutData) {
-        setCheckoutData({
-          ...checkoutData,
-          status: 'completed'
-        });
-      }
-    }, 3000);
-  };
-
-  const handleStartSession = () => {
-    // Redirect to session page or start session
-    window.location.href = '/customer-flow';
+      // Simulate success
+      setSuccess(true);
+      setTimeout(() => {
+        window.location.href = '/customer-flow';
+      }, 2000);
+    } catch (err) {
+      setError('Payment failed. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   if (!checkoutData) {
     return (
-      <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
           <p className="text-zinc-400">Loading checkout...</p>
@@ -115,235 +111,185 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white">
-      {/* Header */}
-      <div className="bg-zinc-900 border-b border-zinc-800">
-        <div className="max-w-4xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">H+</span>
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-green-400">Checkout</h1>
-                <p className="text-sm text-zinc-400">Complete your hookah session order</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Shield className="w-5 h-5 text-green-400" />
-              <span className="text-sm text-zinc-400">Secure Payment</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {/* Progress Indicator */}
-        <div className="mb-12">
-          <StepIndicator 
-            steps={checkoutSteps}
-            orientation="horizontal"
-            className="mb-6"
-          />
-          <FlowProgress 
-            currentStep={currentStep}
-            totalSteps={3}
-            showPercentage={true}
-            size="lg"
-            variant="success"
-          />
+    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
+      <GlobalNavigation currentPage="checkout" />
+      
+      <div className="max-w-2xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold mb-4">Complete Your Order</h1>
+          <p className="text-zinc-400">Review your session details and complete payment</p>
         </div>
 
-        {/* Step Content */}
-        {currentStep === 1 && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Order Summary */}
-            <Card className="bg-zinc-900 border-zinc-800 p-6">
-              <h3 className="text-xl font-semibold mb-4">Order Summary</h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-zinc-400">Table:</span>
-                  <span className="font-semibold">{checkoutData.tableId}</span>
-                </div>
-                
-                <div className="space-y-3">
-                  {checkoutData.flavors.map((flavor) => (
-                    <div key={flavor.id} className="flex items-center justify-between">
-                      <div>
-                        <div className="font-medium">{flavor.name}</div>
-                        <div className="text-sm text-zinc-400">Qty: {flavor.quantity}</div>
-                      </div>
-                      <div className="text-green-400 font-semibold">
-                        ${flavor.price.toFixed(2)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                
-                <div className="border-t border-zinc-700 pt-4 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-zinc-400">Subtotal:</span>
-                    <span className="font-semibold">${checkoutData.subtotal.toFixed(2)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-zinc-400">Tax:</span>
-                    <span className="font-semibold">${checkoutData.tax.toFixed(2)}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-lg font-bold">
-                    <span>Total:</span>
-                    <span className="text-green-400">${checkoutData.total.toFixed(2)}</span>
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            {/* Payment Method */}
-            <Card className="bg-zinc-900 border-zinc-800 p-6">
-              <h3 className="text-xl font-semibold mb-4">Payment Method</h3>
-              <div className="space-y-4">
-                <div className="flex items-center space-x-3 p-4 bg-zinc-800 rounded-lg border-2 border-green-500">
-                  <CreditCard className="w-6 h-6 text-green-400" />
-                  <div>
-                    <div className="font-medium">Card ending in 4242</div>
-                    <div className="text-sm text-zinc-400">Expires 12/25</div>
-                  </div>
-                  <CheckCircle className="w-5 h-5 text-green-400 ml-auto" />
-                </div>
-                
-                <div className="flex items-center space-x-3 p-4 bg-zinc-800 rounded-lg">
-                  <CreditCard className="w-6 h-6 text-zinc-400" />
-                  <div>
-                    <div className="font-medium">Card ending in 1234</div>
-                    <div className="text-sm text-zinc-400">Expires 08/24</div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3 p-4 bg-zinc-800 rounded-lg">
-                  <CreditCard className="w-6 h-6 text-zinc-400" />
-                  <div>
-                    <div className="font-medium">Add new card</div>
-                    <div className="text-sm text-zinc-400">Save for future use</div>
-                  </div>
-                </div>
-              </div>
-              
+        <Card className="p-8">
+          {success ? (
+            <div className="text-center">
+              <CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-green-400 mb-2">Payment Successful!</h2>
+              <p className="text-zinc-400 mb-6">Your hookah session is ready to begin</p>
               <Button 
                 variant="primary" 
-                size="lg" 
-                className="w-full mt-6 bg-green-600 hover:bg-green-700"
-                onClick={handlePayment}
+                onClick={() => window.location.href = '/customer-flow'}
+                className="w-full"
               >
-                <Lock className="w-5 h-5 mr-2" />
-                Pay ${checkoutData.total.toFixed(2)}
+                Start Your Session
               </Button>
-              
-              <p className="text-xs text-zinc-500 text-center mt-4">
-                Your payment is secured with 256-bit SSL encryption
-              </p>
-            </Card>
-          </div>
-        )}
-
-        {currentStep === 2 && (
-          <div className="text-center">
-            <Card className="bg-zinc-900 border-zinc-800 p-12 max-w-2xl mx-auto">
-              {paymentProcessing ? (
-                <div>
-                  <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-green-500 mx-auto mb-6"></div>
-                  <h3 className="text-2xl font-semibold mb-4">Processing Payment</h3>
-                  <p className="text-zinc-400 mb-6">
-                    Please wait while we process your payment securely...
-                  </p>
-                  <div className="flex items-center justify-center space-x-2 text-green-400">
-                    <Shield className="w-5 h-5" />
-                    <span>Secure payment in progress</span>
-                  </div>
-                </div>
-              ) : paymentSuccess ? (
-                <div>
-                  <CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-6" />
-                  <h3 className="text-2xl font-semibold mb-4 text-green-400">Payment Successful!</h3>
-                  <p className="text-zinc-400 mb-6">
-                    Your payment has been processed successfully. Your session will begin shortly.
-                  </p>
-                  <div className="flex items-center justify-center space-x-2 text-green-400">
-                    <CheckCircle className="w-5 h-5" />
-                    <span>Order confirmed</span>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-6" />
-                  <h3 className="text-2xl font-semibold mb-4 text-red-400">Payment Failed</h3>
-                  <p className="text-zinc-400 mb-6">
-                    There was an issue processing your payment. Please try again.
-                  </p>
-                  <Button 
-                    variant="primary" 
-                    onClick={() => setCurrentStep(1)}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    Try Again
-                  </Button>
-                </div>
-              )}
-            </Card>
-          </div>
-        )}
-
-        {currentStep === 3 && (
-          <div className="text-center">
-            <Card className="bg-zinc-900 border-zinc-800 p-12 max-w-2xl mx-auto">
+            </div>
+          ) : (
+            <>
+              {/* Order Summary */}
               <div className="mb-8">
-                <CheckCircle className="w-20 h-20 text-green-400 mx-auto mb-6" />
-                <h2 className="text-3xl font-bold mb-4 text-green-400">Order Confirmed!</h2>
-                <p className="text-xl text-zinc-400 mb-6">
-                  Your hookah session is ready to begin
-                </p>
-              </div>
-              
-              <div className="bg-zinc-800 rounded-lg p-6 mb-8">
-                <h3 className="text-lg font-semibold mb-4">Session Details</h3>
-                <div className="space-y-3">
+                <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
+                <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-zinc-400">Table:</span>
                     <span className="font-semibold">{checkoutData.tableId}</span>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-zinc-400">Flavors:</span>
-                    <span className="font-semibold">{checkoutData.flavors.map(f => f.name).join(', ')}</span>
+                  
+                  <div className="space-y-3">
+                    {checkoutData.flavors.map((flavor) => (
+                      <div key={flavor.id} className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium">{flavor.name}</div>
+                          <div className="text-sm text-zinc-400">Qty: {flavor.quantity}</div>
+                        </div>
+                        <div className="text-green-400 font-semibold">
+                          ${flavor.price.toFixed(2)}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-zinc-400">Total:</span>
-                    <span className="font-semibold text-green-400">${checkoutData.total.toFixed(2)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-zinc-400">Status:</span>
-                    <Badge className="bg-green-500 text-white">Confirmed</Badge>
+                  
+                  <div className="border-t border-zinc-700 pt-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-zinc-400">Subtotal:</span>
+                      <span className="font-semibold">${checkoutData.subtotal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-zinc-400">Tax:</span>
+                      <span className="font-semibold">${checkoutData.tax.toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-lg font-bold">
+                      <span>Total:</span>
+                      <span className="text-green-400">${checkoutData.total.toFixed(2)}</span>
+                    </div>
                   </div>
                 </div>
               </div>
-              
-              <div className="space-y-4">
-                <Button 
-                  variant="primary" 
-                  size="lg" 
-                  className="w-full bg-green-600 hover:bg-green-700"
-                  onClick={handleStartSession}
-                >
-                  <Zap className="w-5 h-5 mr-2" />
-                  Start Your Session
-                </Button>
+
+              {/* Payment Method Selection */}
+              <div className="mb-6">
+                <h2 className="text-xl font-semibold mb-4">Select Payment Method</h2>
                 
-                <p className="text-sm text-zinc-500">
-                  Your session will begin immediately. Staff will be notified to prepare your hookah.
-                </p>
+                <div className="space-y-4">
+                  {paymentMethods.map((method) => (
+                    <div
+                      key={method.id}
+                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
+                        selectedPaymentMethod === method.id
+                          ? 'border-green-500 bg-green-500/10'
+                          : 'border-zinc-700 hover:border-zinc-600'
+                      }`}
+                      onClick={() => setSelectedPaymentMethod(method.id)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-4 h-4 rounded-full border-2 ${
+                            selectedPaymentMethod === method.id
+                              ? 'border-green-500 bg-green-500'
+                              : 'border-zinc-600'
+                          }`}>
+                            {selectedPaymentMethod === method.id && (
+                              <div className="w-2 h-2 bg-white rounded-full mx-auto mt-0.5" />
+                            )}
+                          </div>
+                          <method.icon className="w-5 h-5 text-zinc-400" />
+                          <div>
+                            <div className="flex items-center space-x-2">
+                              <span className="font-medium">{method.name}</span>
+                              {method.popular && (
+                                <span className="px-2 py-1 bg-green-500 text-white text-xs rounded-full">
+                                  Popular
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-zinc-400">{method.description}</p>
+                          </div>
+                        </div>
+                        {selectedPaymentMethod === method.id && (
+                          <CheckCircle className="w-5 h-5 text-green-400" />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </Card>
-          </div>
-        )}
+
+              {error && (
+                <div className="mb-6 p-4 bg-red-900/20 border border-red-500/30 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <AlertCircle className="w-5 h-5 text-red-400" />
+                    <span className="text-red-400">{error}</span>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div className="p-4 bg-zinc-800 rounded-lg">
+                  <h3 className="font-medium mb-2">Payment Details</h3>
+                  <div className="space-y-2 text-sm text-zinc-400">
+                    <div className="flex justify-between">
+                      <span>Payment Method:</span>
+                      <span className="text-white">{paymentMethods.find(m => m.id === selectedPaymentMethod)?.name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Total Amount:</span>
+                      <span className="text-green-400 font-semibold">
+                        ${checkoutData.total.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Security:</span>
+                      <span className="text-green-400">256-bit SSL encrypted</span>
+                    </div>
+                  </div>
+                </div>
+
+                <Button
+                  variant="primary"
+                  className="w-full"
+                  onClick={handlePayment}
+                  disabled={isProcessing}
+                  leftIcon={<Lock className="w-4 h-4" />}
+                >
+                  {isProcessing ? 'Processing Payment...' : `Pay $${checkoutData.total.toFixed(2)}`}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => window.location.href = '/'}
+                >
+                  Cancel Order
+                </Button>
+              </div>
+            </>
+          )}
+        </Card>
+
+        {/* Security Info */}
+        <Card className="mt-6 p-6">
+          <h3 className="font-semibold mb-4 flex items-center">
+            <Shield className="w-5 h-5 text-green-400 mr-2" />
+            Secure Payment
+          </h3>
+          <ul className="space-y-2 text-sm text-zinc-400">
+            <li>• Your payment information is encrypted and secure</li>
+            <li>• We use industry-standard SSL encryption</li>
+            <li>• Your card details are never stored on our servers</li>
+            <li>• All transactions are processed securely through Stripe</li>
+            <li>• You can cancel your order before payment is processed</li>
+          </ul>
+        </Card>
       </div>
     </div>
   );

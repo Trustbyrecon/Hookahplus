@@ -140,7 +140,7 @@ function toRad(deg: number) {
 export default function FlavorMixSelector({
   selectedFlavors = [],
   onSelectionChange,
-  maxSelections = 3,
+  maxSelections = 4,
   className,
   onPriceUpdate
 }: FlavorMixSelectorProps) {

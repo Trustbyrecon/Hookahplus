@@ -30,7 +30,7 @@ const FlavorSelector: React.FC<FlavorSelectorProps> = ({
   flavors,
   selectedFlavors,
   onSelectionChange,
-  maxSelections = 3,
+  maxSelections = 4,
   className
 }) => {
   const [totalPrice, setTotalPrice] = useState(0);

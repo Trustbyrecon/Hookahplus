@@ -134,7 +134,7 @@ interface FlavorWheelSelectorProps {
 export default function FlavorWheelSelector({
   selectedFlavors = [],
   onSelectionChange,
-  maxSelections = 3,
+  maxSelections = 4,
   mode = 'staff',
   className = ''
 }: FlavorWheelSelectorProps) {

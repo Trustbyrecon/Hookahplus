@@ -370,7 +370,7 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
                   <FlavorWheelSelector
                     selectedFlavors={formData.flavorMix}
                     onSelectionChange={handleFlavorMixChange}
-                    maxSelections={3}
+                    maxSelections={4}
                     mode="staff"
                     className=""
                   />

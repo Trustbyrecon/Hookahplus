@@ -457,7 +457,7 @@ export default function GuestPortal() {
           <FlavorMixSelector
             selectedFlavors={selectedFlavors}
             onSelectionChange={handleFlavorSelectionChange}
-            maxSelections={3}
+            maxSelections={4}
             onPriceUpdate={handleFlavorPriceUpdate}
           />
         </div>
