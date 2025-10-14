@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
-// Session transition schema
-const transitionSchema = z.object({
+// Refill request schema
+const refillSchema = z.object({
   sessionId: z.string(),
-  newState: z.string(),
+  newState: z.string().optional(),
   operatorId: z.string(),
   workflow: z.string(),
   businessLogic: z.string(),
@@ -17,38 +17,39 @@ export async function POST(
 ) {
   try {
     const body = await request.json();
-    const validatedData = transitionSchema.parse(body);
+    const validatedData = refillSchema.parse(body);
     
     const { sessionId, newState, operatorId, workflow, businessLogic, timestamp } = validatedData;
     
-    // Log the transition for debugging
-    console.log(`Session Transition: ${sessionId} -> ${newState}`, {
+    // Log the refill request for debugging
+    console.log(`Refill Request: ${sessionId}`, {
       operatorId,
       workflow,
       businessLogic,
+      newState,
       timestamp
     });
     
-    // Simulate successful transition
+    // Simulate successful refill request
     const response = {
       success: true,
       sessionId,
-      previousState: 'ACTIVE', // This would come from database
-      newState,
-      transition: {
+      refillRequest: {
         operatorId,
         workflow,
         businessLogic,
         timestamp,
-        idempotencyKey: `transition_${sessionId}_${Date.now()}`
+        idempotencyKey: `refill_${sessionId}_${Date.now()}`,
+        estimatedPrepTime: '5-7 minutes',
+        status: 'queued_for_boh'
       },
-      message: `Session ${sessionId} successfully transitioned to ${newState}`
+      message: `Refill request for session ${sessionId} has been queued for BOH`
     };
     
     return NextResponse.json(response, { status: 200 });
     
   } catch (error) {
-    console.error('Session transition error:', error);
+    console.error('Refill request error:', error);
     
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -65,7 +66,7 @@ export async function POST(
       { 
         success: false, 
         error: 'Internal server error',
-        message: 'Failed to transition session'
+        message: 'Failed to process refill request'
       }, 
       { status: 500 }
     );
