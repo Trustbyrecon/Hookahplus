@@ -115,6 +115,7 @@ export type SessionAction =
   | 'START_ACTIVE'
   | 'PAUSE_SESSION'
   | 'RESUME_SESSION'
+  | 'COMPLETE_SESSION'
   | 'REQUEST_REFILL'
   | 'COMPLETE_REFILL'
   | 'CLOSE_SESSION'
@@ -132,8 +133,9 @@ export const ACTION_TO_STATUS: Record<SessionAction, SessionStatus> = {
   'DELIVER_NOW': 'OUT_FOR_DELIVERY',
   'MARK_DELIVERED': 'DELIVERED',
   'START_ACTIVE': 'ACTIVE',
-  'PAUSE_SESSION': 'STAFF_HOLD',
+  'PAUSE_SESSION': 'PAUSED',
   'RESUME_SESSION': 'ACTIVE',
+  'COMPLETE_SESSION': 'COMPLETED',
   'REQUEST_REFILL': 'ACTIVE',
   'COMPLETE_REFILL': 'ACTIVE',
   'CLOSE_SESSION': 'CLOSE_PENDING',
@@ -162,6 +164,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, SessionAction[]> = {
     'START_ACTIVE',
     'PAUSE_SESSION',
     'RESUME_SESSION',
+    'COMPLETE_SESSION',
     'REQUEST_REFILL',
     'COMPLETE_REFILL',
     'CLOSE_SESSION',
@@ -176,6 +179,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, SessionAction[]> = {
     'START_ACTIVE',
     'PAUSE_SESSION',
     'RESUME_SESSION',
+    'COMPLETE_SESSION',
     'REQUEST_REFILL',
     'COMPLETE_REFILL',
     'CLOSE_SESSION',
@@ -194,6 +198,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, SessionAction[]> = {
     'START_ACTIVE',
     'PAUSE_SESSION',
     'RESUME_SESSION',
+    'COMPLETE_SESSION',
     'REQUEST_REFILL',
     'COMPLETE_REFILL',
     'CLOSE_SESSION',
@@ -308,6 +313,8 @@ export const STATUS_COLORS: Record<SessionStatus, string> = {
   'OUT_FOR_DELIVERY': 'bg-purple-500/20 border-purple-500/30 text-purple-300',
   'DELIVERED': 'bg-teal-500/20 border-teal-500/30 text-teal-300',
   'ACTIVE': 'bg-green-500/20 border-green-500/30 text-green-300',
+  'PAUSED': 'bg-yellow-500/20 border-yellow-500/30 text-yellow-300',
+  'COMPLETED': 'bg-emerald-500/20 border-emerald-500/30 text-emerald-300',
   'CLOSE_PENDING': 'bg-gray-500/20 border-gray-500/30 text-gray-300',
   'CLOSED': 'bg-gray-600/20 border-gray-600/30 text-gray-400',
   'STAFF_HOLD': 'bg-yellow-600/20 border-yellow-600/30 text-yellow-300',
