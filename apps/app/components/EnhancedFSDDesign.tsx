@@ -1963,31 +1963,6 @@ export default function EnhancedFSDDesign({
                 loading={loading}
               />
               
-              {/* Create Session Button */}
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => {
-                  // Trigger create session modal with proper event
-                  const event = new CustomEvent('openCreateSessionModal', {
-                    detail: { source: 'enhanced_fsd_header' }
-                  });
-                  window.dispatchEvent(event);
-                  
-                  // Also try direct modal opening as fallback
-                  setTimeout(() => {
-                    const modalTrigger = document.querySelector('[data-create-session-trigger]');
-                    if (modalTrigger) {
-                      (modalTrigger as HTMLElement).click();
-                    }
-                  }, 100);
-                }}
-                className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold transition-all duration-200 flex items-center gap-2 shadow-lg"
-                data-create-session-trigger="true"
-              >
-                <Plus className="w-5 h-5" />
-                Create Session
-              </motion.button>
             </div>
           </div>
         </motion.div>

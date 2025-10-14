@@ -69,6 +69,20 @@ const timerDurations = [
 ];
 
 export default function CreateSessionModal({ isOpen, onClose, onCreateSession }: CreateSessionModalProps) {
+  // Handle escape key
+  React.useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [isOpen, onClose]);
+
   const [formData, setFormData] = useState<SessionData>({
     tableId: 'table-001',
     tableType: {} as TableType,
@@ -194,7 +208,14 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div 
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-zinc-700 bg-zinc-800/50">
@@ -524,7 +545,7 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
               className="px-6 py-3 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
             >
               <Flame className="w-4 h-4 inline mr-2" />
-              NEW Create Session
+              Create New Session
             </button>
           </div>
         </form>
