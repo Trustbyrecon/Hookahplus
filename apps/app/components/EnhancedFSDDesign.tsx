@@ -619,7 +619,49 @@ const EnhancedTabSessionCard = ({ session, tabType, onAction }: {
   };
 
   const getTabSpecificActions = () => {
-    // BOH/FOH Operational Workflow Logic with Business Truth
+    // Generate contextual messages based on session data
+    const getContextualMessage = (action: string) => {
+      const customerName = session.customerName?.split(' ')[0] || 'Customer';
+      const tableId = session.tableId;
+      const flavor = session.flavor;
+      
+      switch (action) {
+        case 'start_prep':
+          return `${customerName}'s ${flavor} hookah ready for prep at ${tableId}`;
+        case 'prep_complete':
+          return `${flavor} hookah prepared and ready for ${customerName} at ${tableId}`;
+        case 'prep_issue':
+          return `Issue with ${flavor} prep for ${customerName} - needs attention`;
+        case 'foh_pickup':
+          return `Pick up ${flavor} hookah for ${customerName} at ${tableId}`;
+        case 'deliver_to_table':
+          return `Deliver ${flavor} to ${customerName} at ${tableId}`;
+        case 'pause':
+          return `Pause ${customerName}'s ${flavor} session at ${tableId}`;
+        case 'resume':
+          return `Resume ${customerName}'s ${flavor} session at ${tableId}`;
+        case 'refill_request':
+          return `Refill ${flavor} for ${customerName} at ${tableId}`;
+        case 'complete':
+          return `Complete ${customerName}'s ${flavor} session at ${tableId}`;
+        case 'boh_hold':
+          return `Hold ${flavor} at BOH for ${customerName}`;
+        case 'return_to_boh':
+          return `Return ${flavor} to BOH from ${tableId}`;
+        case 'boh_refill':
+          return `Send ${flavor} to BOH for refill`;
+        case 'retry_payment':
+          return `Retry payment for ${customerName} at ${tableId}`;
+        case 'resolve':
+          return `Resolve payment issue for ${customerName}`;
+        case 'escalate':
+          return `Escalate ${customerName}'s payment issue`;
+        default:
+          return `Action for ${customerName} at ${tableId}`;
+      }
+    };
+
+    // BOH/FOH Operational Workflow Logic with Contextual Messages
     const getOperationalActions = () => {
       switch (session.state) {
         case 'CREATED':
@@ -629,7 +671,7 @@ const EnhancedTabSessionCard = ({ session, tabType, onAction }: {
               label: 'Start Prep', 
               icon: ChefHat, 
               color: 'bg-orange-600 hover:bg-orange-700',
-              businessLogic: 'BOH begins hookah preparation: coals heating, bowl packing, flavor mixing'
+              businessLogic: getContextualMessage('start_prep')
             }
           ];
         case 'PREP_IN_PROGRESS':
@@ -639,14 +681,14 @@ const EnhancedTabSessionCard = ({ session, tabType, onAction }: {
               label: 'Prep Complete', 
               icon: CheckCircle, 
               color: 'bg-green-600 hover:bg-green-700',
-              businessLogic: 'BOH completes preparation: hookah assembled, coals ready, quality checked, ready for FOH pickup'
+              businessLogic: getContextualMessage('prep_complete')
             },
             { 
               action: 'prep_issue', 
               label: 'Prep Issue', 
               icon: AlertTriangle, 
               color: 'bg-red-600 hover:bg-red-700',
-              businessLogic: 'BOH encounters issue: missing ingredients, equipment problem, needs management intervention'
+              businessLogic: getContextualMessage('prep_issue')
             }
           ];
         case 'READY_FOR_DELIVERY':
@@ -656,14 +698,14 @@ const EnhancedTabSessionCard = ({ session, tabType, onAction }: {
               label: 'FOH Pickup', 
               icon: UserCheck, 
               color: 'bg-teal-600 hover:bg-teal-700',
-              businessLogic: 'FOH collects prepared hookah from BOH station, verifies completeness, begins delivery to table'
+              businessLogic: getContextualMessage('foh_pickup')
             },
             { 
               action: 'boh_hold', 
               label: 'Hold at BOH', 
               icon: Clock, 
               color: 'bg-yellow-600 hover:bg-yellow-700',
-              businessLogic: 'Hold hookah at BOH station: customer not ready, table not available, special timing request'
+              businessLogic: getContextualMessage('boh_hold')
             }
           ];
         case 'FOH_PICKUP':
@@ -673,14 +715,14 @@ const EnhancedTabSessionCard = ({ session, tabType, onAction }: {
               label: 'Deliver to Table', 
               icon: ArrowDown, 
               color: 'bg-purple-600 hover:bg-purple-700',
-              businessLogic: 'FOH delivers hookah to table: setup complete, customer briefed, session timer started'
+              businessLogic: getContextualMessage('deliver_to_table')
             },
             { 
               action: 'return_to_boh', 
               label: 'Return to BOH', 
               icon: ArrowLeft, 
               color: 'bg-orange-600 hover:bg-orange-700',
-              businessLogic: 'Return hookah to BOH: customer not at table, table issue, needs re-preparation'
+              businessLogic: getContextualMessage('return_to_boh')
             }
           ];
         case 'ACTIVE':
@@ -690,21 +732,21 @@ const EnhancedTabSessionCard = ({ session, tabType, onAction }: {
               label: 'Pause Session', 
               icon: Pause, 
               color: 'bg-yellow-600 hover:bg-yellow-700',
-              businessLogic: 'Pause active session: customer step away, coals cooling, timer paused, session preserved'
+              businessLogic: getContextualMessage('pause')
             },
             { 
               action: 'refill_request', 
               label: 'Refill Request', 
               icon: RotateCcw, 
               color: 'bg-blue-600 hover:bg-blue-700',
-              businessLogic: 'Customer requests refill: return to BOH for new coals/flavor, maintain session continuity'
+              businessLogic: getContextualMessage('refill_request')
             },
             { 
               action: 'complete', 
               label: 'Complete Session', 
               icon: CheckCircle, 
               color: 'bg-green-600 hover:bg-green-700',
-              businessLogic: 'Session completed: customer finished, cleanup initiated, payment processed, table cleared'
+              businessLogic: getContextualMessage('complete')
             }
           ];
         case 'PAUSED':
@@ -714,14 +756,14 @@ const EnhancedTabSessionCard = ({ session, tabType, onAction }: {
               label: 'Resume Session', 
               icon: Play, 
               color: 'bg-green-600 hover:bg-green-700',
-              businessLogic: 'Resume paused session: customer returned, coals reheated, timer restarted, service continues'
+              businessLogic: getContextualMessage('resume')
             },
             { 
               action: 'complete', 
               label: 'Complete Session', 
               icon: CheckCircle, 
               color: 'bg-purple-600 hover:bg-purple-700',
-              businessLogic: 'Complete paused session: customer finished, cleanup initiated, payment processed, table cleared'
+              businessLogic: getContextualMessage('complete')
             }
           ];
         case 'REFILL_NEEDED':
@@ -731,14 +773,14 @@ const EnhancedTabSessionCard = ({ session, tabType, onAction }: {
               label: 'BOH Refill', 
               icon: ChefHat, 
               color: 'bg-orange-600 hover:bg-orange-700',
-              businessLogic: 'Send to BOH for refill: new coals, flavor refresh, quality check, return to FOH'
+              businessLogic: getContextualMessage('boh_refill')
             },
             { 
               action: 'complete', 
               label: 'Complete Session', 
               icon: CheckCircle, 
               color: 'bg-green-600 hover:bg-green-700',
-              businessLogic: 'Complete session without refill: customer satisfied, cleanup initiated, payment processed'
+              businessLogic: getContextualMessage('complete')
             }
           ];
         case 'PAYMENT_FAILED':
@@ -748,21 +790,21 @@ const EnhancedTabSessionCard = ({ session, tabType, onAction }: {
               label: 'Retry Payment', 
               icon: CreditCard, 
               color: 'bg-red-600 hover:bg-red-700',
-              businessLogic: 'Retry payment processing: new payment method, resolve card issues, complete transaction'
+              businessLogic: getContextualMessage('retry_payment')
             },
             { 
               action: 'resolve', 
               label: 'Resolve Issue', 
               icon: Shield, 
               color: 'bg-orange-600 hover:bg-orange-700',
-              businessLogic: 'Manual resolution: manager intervention, alternative payment, issue documentation'
+              businessLogic: getContextualMessage('resolve')
             },
             { 
               action: 'escalate', 
               label: 'Escalate', 
               icon: AlertTriangle, 
               color: 'bg-red-600 hover:bg-red-700',
-              businessLogic: 'Escalate to management: complex issue, customer dispute, requires senior intervention'
+              businessLogic: getContextualMessage('escalate')
             }
           ];
         default:
@@ -772,7 +814,7 @@ const EnhancedTabSessionCard = ({ session, tabType, onAction }: {
               label: 'View Details', 
               icon: Eye, 
               color: 'bg-zinc-600 hover:bg-zinc-700',
-              businessLogic: 'View session details: customer info, order history, current status, staff notes'
+              businessLogic: getContextualMessage('view')
             }
           ];
       }
@@ -814,31 +856,39 @@ const EnhancedTabSessionCard = ({ session, tabType, onAction }: {
     >
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-2">
             <span className="text-lg font-semibold text-white">{session.tableId}</span>
             <span className={`px-2 py-1 rounded-lg text-xs font-medium flex items-center gap-1 ${getStatusColor(session.state)}`}>
               <span className="text-sm">{getStatusIcon(session.state)}</span>
               {session.state.replace('_', ' ')}
             </span>
           </div>
-          <div className="text-sm text-zinc-300">{session.customerName}</div>
+          
+          {/* Customer Info - Compact */}
+          <div className="text-sm text-zinc-300 font-medium">{session.customerName}</div>
           <div className="text-xs text-zinc-500">{session.customerPhone}</div>
           
-          {/* Duration and Start Time */}
-          {session.timerDuration && (
-            <div className="text-xs text-zinc-400 mt-1">
-              Duration: {session.timerDuration}min | Started: {session.startedAt ? new Date(session.startedAt).toLocaleTimeString() : 'N/A'}
-            </div>
-          )}
-          
-          {/* Pricing Model */}
-          <div className="text-xs text-blue-400 mt-1">
-            {session.pricingModel === 'time-based' ? 'Time-based' : 'Flat rate'}
+          {/* Session Details - Only show relevant info */}
+          <div className="flex items-center gap-3 mt-2 text-xs">
+            {session.timerDuration && (
+              <span className="text-zinc-400">
+                {session.timerDuration}min | {session.startedAt ? new Date(session.startedAt).toLocaleTimeString() : 'N/A'}
+              </span>
+            )}
+            <span className={`px-2 py-1 rounded text-xs font-medium ${
+              session.pricingModel === 'time-based' 
+                ? 'bg-blue-500/20 text-blue-300' 
+                : 'bg-green-500/20 text-green-300'
+            }`}>
+              {session.pricingModel === 'time-based' ? 'Time-based' : 'Flat rate'}
+            </span>
           </div>
         </div>
+        
+        {/* Price and Flavor - Right aligned */}
         <div className="text-right">
           <div className="text-lg font-semibold text-green-400">${(session.priceCents / 100).toFixed(2)}</div>
-          <div className="text-xs text-zinc-500">{session.flavor}</div>
+          <div className="text-xs text-zinc-400 max-w-24 truncate">{session.flavor}</div>
         </div>
       </div>
 
@@ -849,35 +899,32 @@ const EnhancedTabSessionCard = ({ session, tabType, onAction }: {
         </div>
       )}
 
-      {/* Customer KPIs - Simplified for operational use */}
-      <div className="mt-3 p-3 bg-zinc-800/30 rounded-lg border border-zinc-700">
-        <div className="grid grid-cols-2 gap-3 text-xs">
-          <div>
+      {/* Customer KPIs - Compact operational view */}
+      <div className="mt-3 p-2 bg-zinc-800/30 rounded-lg border border-zinc-700">
+        <div className="flex items-center justify-between text-xs">
+          <div className="flex items-center gap-4">
             <span className="text-zinc-400">Satisfaction:</span>
-            <span className="ml-1 text-green-400 font-medium">{session.customerKPIs?.satisfaction || 'N/A'}/5</span>
-          </div>
-          <div>
+            <span className="text-green-400 font-medium">{session.customerKPIs?.satisfaction || 'N/A'}/5</span>
+            <span className="text-zinc-400">•</span>
             <span className="text-zinc-400">Loyalty:</span>
-            <span className="ml-1 text-blue-400 font-medium">{session.customerKPIs?.loyaltyTier || 'New'}</span>
+            <span className="text-blue-400 font-medium">{session.customerKPIs?.loyaltyTier || 'New'}</span>
           </div>
-          <div>
-            <span className="text-zinc-400">Avg Spend:</span>
-            <span className="ml-1 text-green-400 font-medium">${session.customerKPIs?.avgSpend || 0}</span>
-          </div>
-          <div>
-            <span className="text-zinc-400">Frequency:</span>
-            <span className="ml-1 text-cyan-400 font-medium">{session.customerKPIs?.visitFrequency || 'First Visit'}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-zinc-400">Avg:</span>
+            <span className="text-green-400 font-medium">${session.customerKPIs?.avgSpend || 0}</span>
+            <span className="text-zinc-400">•</span>
+            <span className="text-cyan-400 font-medium">{session.customerKPIs?.visitFrequency || 'First'}</span>
           </div>
         </div>
       </div>
 
-      {/* Session Notes - Always visible for operational transparency */}
+      {/* Session Notes - Operational notes only, no redundant info */}
       <div className="mt-3 p-2 bg-zinc-800/30 border border-zinc-700 rounded-lg">
         <div className="text-xs text-zinc-400 font-medium mb-1 flex items-center gap-1">
-          <Info className="w-3 h-3" /> Session Notes:
+          <Info className="w-3 h-3" /> Operational Notes:
         </div>
         <div className="text-xs text-zinc-300">
-          {session.notes || 'No notes added yet. Click edit to add operational notes.'}
+          {session.operationalNotes || 'No operational notes. Add special instructions, allergies, or service notes.'}
         </div>
       </div>
 
@@ -1438,7 +1485,7 @@ export default function EnhancedFSDDesign({
       updatedAt: new Date(),
       assignedBOH: 'Mike Rodriguez',
       assignedFOH: 'Sarah Chen',
-      notes: 'Guest: Alex Johnson | QR Code: T-001 | Flavor Mix: Blue Mist + Mint',
+      operationalNotes: 'VIP customer - prefers extra mint, allergic to rose flavors',
       customerName: 'Alex Johnson',
       customerPhone: '+1 (555) 123-4567',
       flavorMix: ['Blue Mist', 'Mint'],
@@ -1467,7 +1514,7 @@ export default function EnhancedFSDDesign({
       updatedAt: new Date(),
       assignedBOH: 'David Wilson',
       assignedFOH: 'Emily Davis',
-      notes: 'Guest: Maria Garcia | QR Code: T-003 | Flavor Mix: Strawberry Mojito',
+      operationalNotes: 'First-time customer, prefers mild flavors, table near window',
       customerName: 'Maria Garcia',
       customerPhone: '+1 (555) 234-5678',
       flavorMix: ['Strawberry', 'Mint', 'Lime'],
@@ -1495,7 +1542,7 @@ export default function EnhancedFSDDesign({
       updatedAt: new Date(),
       assignedBOH: 'Mike Rodriguez',
       assignedFOH: 'James Brown',
-      notes: 'Guest: Ahmed Hassan | QR Code: T-005 | Flavor Mix: Double Apple + Cardamom',
+      operationalNotes: 'Regular customer, strong flavor preference, birthday celebration',
       customerName: 'Ahmed Hassan',
       customerPhone: '+1 (555) 345-6789',
       flavorMix: ['Double Apple', 'Cardamom'],
@@ -1527,7 +1574,7 @@ export default function EnhancedFSDDesign({
       updatedAt: new Date(Date.now() - 30 * 60 * 1000),
       assignedBOH: 'David Wilson',
       assignedFOH: 'Sarah Chen',
-      notes: 'Guest: Jennifer Lee | QR Code: T-007 | Flavor Mix: Watermelon Mint | Duration: 60min',
+      operationalNotes: 'Completed session, left positive review, recommended to friends',
       customerName: 'Jennifer Lee',
       customerPhone: '+1 (555) 456-7890',
       flavorMix: ['Watermelon', 'Mint'],
@@ -1557,7 +1604,7 @@ export default function EnhancedFSDDesign({
       updatedAt: new Date(),
       assignedBOH: 'Mike Rodriguez',
       assignedFOH: 'Emily Davis',
-      notes: 'Guest: Robert Kim | QR Code: T-009 | Flavor Mix: Rose + Lavender | PAUSED: Customer stepped out',
+      operationalNotes: 'Customer stepped out for phone call, will return in 10 minutes',
       customerName: 'Robert Kim',
       customerPhone: '+1 (555) 567-8901',
       flavorMix: ['Rose', 'Lavender'],
@@ -1586,7 +1633,7 @@ export default function EnhancedFSDDesign({
       updatedAt: new Date(),
       assignedBOH: 'David Wilson',
       assignedFOH: 'James Brown',
-      notes: 'Guest: Lisa Wang | QR Code: T-011 | EDGE CASE: Payment processing failed - requires manual intervention',
+      operationalNotes: 'Payment declined - card expired, customer needs to update payment method',
       customerName: 'Lisa Wang',
       customerPhone: '+1 (555) 678-9012',
       flavorMix: ['Double Apple'],
