@@ -129,12 +129,16 @@ export default function GuestPortal() {
     console.log('Adding to cart:', item); // Debug log
   };
 
-  const addFlavorToCart = (flavorName: string) => {
+  const addFlavorToCart = (flavorName: string, flavorId: string) => {
+    // Find the actual flavor price from FLAVOR_CATEGORIES
+    const flavor = FLAVOR_CATEGORIES.flatMap(c => c.items).find(f => f.id === flavorId);
+    const flavorPrice = flavor ? flavor.price : 2.0; // Default to $2 if not found
+    
     // Add flavor as add-on to base hookah
     const flavorItem = {
       id: Date.now() + Math.random(),
       name: `${flavorName} Add-on`,
-      price: 2.00, // $2 per flavor add-on
+      price: flavorPrice, // Use actual flavor price
       description: `Premium ${flavorName} flavor enhancement`
     };
     add({ id: String(flavorItem.id), name: flavorItem.name, price: Math.round(flavorItem.price * 100), qty: 1 });
@@ -151,7 +155,7 @@ export default function GuestPortal() {
     flavors.forEach(flavorId => {
       const flavor = FLAVOR_CATEGORIES.flatMap(c => c.items).find(f => f.id === flavorId);
       if (flavor) {
-        addFlavorToCart(flavor.label);
+        addFlavorToCart(flavor.label, flavorId);
       }
     });
   };

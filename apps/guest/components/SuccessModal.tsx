@@ -45,55 +45,52 @@ export default function SuccessModal({
         }
       }}
     >
-      <div className="bg-gradient-to-br from-zinc-900 to-zinc-800 border border-zinc-700 rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
+      <div className="bg-gradient-to-br from-zinc-900 to-zinc-800 border border-zinc-700 rounded-2xl shadow-2xl max-w-sm w-full mx-4 overflow-hidden">
         {/* Header */}
-        <div className="relative p-6 pb-4">
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 p-2 hover:bg-zinc-700 rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5 text-zinc-400" />
-          </button>
-          
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-green-500/20 rounded-full">
-              <CheckCircle className="w-8 h-8 text-green-400" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-white">{title}</h2>
-              <p className="text-sm text-zinc-400 mt-1">Hookah+ Session Management</p>
-            </div>
+        <div className="text-center p-6 pb-4">
+          <h2 className="text-xl font-bold text-white mb-1">{title}</h2>
+          <p className="text-sm text-zinc-400">Hookah+ Session Management</p>
+        </div>
+
+        {/* Success Icon */}
+        <div className="flex justify-center mb-4">
+          <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center">
+            <CheckCircle className="w-10 h-10 text-green-400" />
           </div>
         </div>
 
         {/* Content */}
         <div className="px-6 pb-6">
-          <p className="text-zinc-300 leading-relaxed mb-6">
-            {message}
-          </p>
+          <div className="text-center mb-6">
+            <h3 className="text-lg font-bold text-green-400 mb-2">Session Started!</h3>
+            <p className="text-zinc-300 text-sm leading-relaxed">
+              {message}
+            </p>
+          </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="flex-1 px-4 py-3 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg font-medium transition-colors"
-            >
-              Continue Shopping
-            </button>
+          {/* Action Button */}
+          <div className="space-y-3">
             {onAction && (
               <button
                 onClick={onAction}
-                className="flex-1 px-4 py-3 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white rounded-lg font-medium transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2"
+                className="w-full px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-lg font-medium transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2"
               >
                 <ExternalLink className="w-4 h-4" />
                 {actionText}
               </button>
             )}
+            
+            <button
+              onClick={onClose}
+              className="w-full px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              Continue Shopping
+            </button>
           </div>
 
-          {/* Additional Info */}
+          {/* Status Indicator */}
           <div className="mt-4 p-3 bg-zinc-800/50 rounded-lg border border-zinc-700">
-            <div className="flex items-center gap-2 text-xs text-zinc-400">
+            <div className="flex items-center justify-center gap-2 text-xs text-zinc-400">
               <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
               <span>Session is now live and being tracked</span>
             </div>
