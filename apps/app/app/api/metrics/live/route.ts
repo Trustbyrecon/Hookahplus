@@ -1,0 +1,118 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/db';
+
+export async function GET(request: NextRequest) {
+  try {
+    // Get current timestamp for calculations
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    // Fetch live session data
+    const activeSessions = await prisma.session.findMany({
+      where: {
+        state: {
+          in: ['ACTIVE', 'PREP_IN_PROGRESS', 'READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY']
+        }
+      }
+    });
+
+    // Calculate metrics
+    const activeSessionCount = activeSessions.length;
+    
+    // Calculate revenue from active sessions
+    const revenue = activeSessions.reduce((sum, session) => {
+      return sum + (session.priceCents || 0);
+    }, 0);
+
+    // Calculate average duration for active sessions
+    const sessionsWithDuration = activeSessions.filter(s => s.startedAt);
+    const avgDuration = sessionsWithDuration.length > 0 
+      ? sessionsWithDuration.reduce((sum, session) => {
+          const duration = Math.floor((now.getTime() - session.startedAt!.getTime()) / (1000 * 60)); // minutes
+          return sum + duration;
+        }, 0) / sessionsWithDuration.length
+      : 0;
+
+    // Count alerts/edge cases
+    const alerts = await prisma.session.count({
+      where: {
+        edgeCase: {
+          not: null
+        },
+        state: {
+          not: 'COMPLETED'
+        }
+      }
+    });
+
+    // Count staff assignments
+    const staffAssigned = await prisma.session.count({
+      where: {
+        OR: [
+          { assignedBOHId: { not: null } },
+          { assignedFOHId: { not: null } }
+        ],
+        state: {
+          not: 'COMPLETED'
+        }
+      }
+    });
+
+    // Total sessions today
+    const totalSessionsToday = await prisma.session.count({
+      where: {
+        createdAt: {
+          gte: todayStart
+        }
+      }
+    });
+
+    // Calculate percentage changes (mock for now - would need historical data)
+    const metrics = {
+      activeSessions: activeSessionCount,
+      revenue: Math.round(revenue / 100), // Convert cents to dollars
+      avgDuration: Math.round(avgDuration),
+      alerts,
+      staffAssigned,
+      totalSessions: totalSessionsToday,
+      // Percentage changes (would need historical data for real calculations)
+      changes: {
+        activeSessions: activeSessionCount > 0 ? '+12%' : '0%',
+        revenue: revenue > 0 ? '+8%' : '0%',
+        avgDuration: avgDuration > 0 ? '-5%' : '0%',
+        alerts: alerts > 0 ? '+2%' : '0%',
+        staffAssigned: staffAssigned > 0 ? '+2%' : '0%',
+        totalSessions: totalSessionsToday > 0 ? '+15%' : '0%'
+      }
+    };
+
+    return NextResponse.json({
+      success: true,
+      metrics,
+      timestamp: now.toISOString()
+    });
+
+  } catch (error) {
+    console.error('Error fetching live metrics:', error);
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to fetch metrics',
+      metrics: {
+        activeSessions: 0,
+        revenue: 0,
+        avgDuration: 0,
+        alerts: 0,
+        staffAssigned: 0,
+        totalSessions: 0,
+        changes: {
+          activeSessions: '0%',
+          revenue: '0%',
+          avgDuration: '0%',
+          alerts: '0%',
+          staffAssigned: '0%',
+          totalSessions: '0%'
+        }
+      }
+    }, { status: 500 });
+  }
+}

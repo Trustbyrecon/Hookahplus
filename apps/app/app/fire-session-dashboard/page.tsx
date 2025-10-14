@@ -23,6 +23,10 @@ import { FOHTimerInterface } from '../../components/FOHTimerInterface';
 import { ManagerTimerDashboard } from '../../components/ManagerTimerDashboard';
 import DollarTestButton from '../../components/DollarTestButton';
 import EnhancedFSDDesign from '../../components/EnhancedFSDDesign';
+import DynamicMetricsDashboard from '../../components/DynamicMetricsDashboard';
+import ThemeSelector from '../../components/ThemeSelector';
+import { ThemeProvider, useTheme } from '../../contexts/ThemeContext';
+import { useLiveSessionData } from '../../hooks/useLiveSessionData';
 import { 
   Flame, 
   Users, 
@@ -50,21 +54,24 @@ import {
   TrendingDown,
   Star as StarIcon,
   MessageSquare,
-  Sparkles
+  Sparkles,
+  RefreshCw
 } from 'lucide-react';
 import { Session, SessionStatus, SessionTeam, SessionNotes } from '../../types/session';
 
 export default function FireSessionDashboard() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white flex items-center justify-center">
-      <div className="text-center">
-        <div className="w-16 h-16 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <h2 className="text-lg font-semibold mb-2">Loading Dashboard...</h2>
-        <p className="text-zinc-400 text-sm">Setting up your session</p>
-      </div>
-    </div>}>
-      <FireSessionDashboardContent />
-    </Suspense>
+    <ThemeProvider>
+      <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <h2 className="text-lg font-semibold mb-2">Loading Dashboard...</h2>
+          <p className="text-zinc-400 text-sm">Setting up your session</p>
+        </div>
+      </div>}>
+        <FireSessionDashboardContent />
+      </Suspense>
+    </ThemeProvider>
   );
 }
 
@@ -72,6 +79,11 @@ function FireSessionDashboardContent() {
   const searchParams = useSearchParams();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [useEnhancedDesign, setUseEnhancedDesign] = useState(true);
+  const [userRole, setUserRole] = useState<'BOH' | 'FOH' | 'MANAGER' | 'ADMIN'>('MANAGER');
+  
+  // Use live session data
+  const { sessions, metrics, loading, error, refreshSessions, updateSessionState } = useLiveSessionData();
+  const { currentTheme } = useTheme();
   
   // Check for legacy view parameter
   useEffect(() => {
@@ -97,40 +109,6 @@ function FireSessionDashboardContent() {
     };
   }, []);
 
-  // Sample sessions data
-  const [sessions, setSessions] = useState<Session[]>([
-    {
-      id: 'session-1',
-      tableId: 'T-001',
-      customerRef: 'Alex Johnson',
-      flavor: 'Blue Mist + Mint',
-      priceCents: 3500,
-      state: 'ACTIVE',
-      assignedBOHId: 'staff-1',
-      assignedFOHId: 'staff-2',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      timerDuration: 45,
-      startedAt: new Date(Date.now() - 30 * 60 * 1000),
-      timerStatus: 'running'
-    },
-    {
-      id: 'session-2',
-      tableId: 'T-002',
-      customerRef: 'Sarah Chen',
-      flavor: 'Strawberry Mojito',
-      priceCents: 3000,
-      state: 'PREP_IN_PROGRESS',
-      assignedBOHId: 'staff-3',
-      assignedFOHId: undefined,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      timerDuration: undefined,
-      startedAt: undefined,
-      timerStatus: 'stopped'
-    }
-  ]);
-
   const handleCreateSession = async (sessionData: any) => {
     try {
       const response = await fetch('/api/sessions', {
@@ -146,7 +124,7 @@ function FireSessionDashboardContent() {
       }
 
       const newSession = await response.json();
-      setSessions(prev => [...prev, newSession]);
+      await refreshSessions(); // Refresh live data
       setShowCreateModal(false);
     } catch (error) {
       console.error('Error creating session:', error);
@@ -154,16 +132,11 @@ function FireSessionDashboardContent() {
   };
 
   const handleStatusChange = (sessionId: string, newStatus: SessionStatus) => {
-    setSessions(prev => prev.map(session => 
-      session.id === sessionId 
-        ? { ...session, state: newStatus, updatedAt: new Date() }
-        : session
-    ));
+    updateSessionState(sessionId, newStatus);
   };
 
   const getThemeClasses = () => {
-    // Always use midnight theme (black base)
-    return 'bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white';
+    return `bg-gradient-to-br ${currentTheme.gradients.background} text-${currentTheme.colors.text}`;
   };
 
   return (
@@ -172,7 +145,7 @@ function FireSessionDashboardContent() {
       <div className="fixed top-4 right-4 z-50">
         <button
           onClick={() => setUseEnhancedDesign(!useEnhancedDesign)}
-          className="px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white text-sm font-medium hover:bg-white/20 transition-colors flex items-center gap-2"
+          className={`px-4 py-2 rounded-xl bg-${currentTheme.colors.surface}/20 border border-${currentTheme.colors.border} text-${currentTheme.colors.text} text-sm font-medium hover:bg-${currentTheme.colors.surface}/30 transition-colors flex items-center gap-2`}
         >
           <Sparkles className="w-4 h-4" />
           {useEnhancedDesign ? 'Enhanced' : 'Classic'} Design
@@ -181,17 +154,96 @@ function FireSessionDashboardContent() {
 
       {/* Enhanced Design */}
       {useEnhancedDesign ? (
-        <EnhancedFSDDesign
-          sessions={sessions}
-          userRole="MANAGER"
-          onSessionAction={(action, sessionId) => {
-            if (action === 'complete') {
-              handleStatusChange(sessionId, 'COMPLETED');
-            } else if (action === 'pause') {
-              handleStatusChange(sessionId, 'PAUSED');
-            }
-          }}
-        />
+        <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+          {/* Dynamic Header */}
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center space-x-3">
+              <div className={`p-3 rounded-xl bg-${currentTheme.colors.primary}-500/20`}>
+                <Flame className={`w-8 h-8 text-${currentTheme.colors.primary}-400`} />
+              </div>
+              <div>
+                <h1 className={`text-3xl font-bold text-${currentTheme.colors.text}`}>
+                  Fire Session Dashboard
+                </h1>
+                <p className={`text-sm text-${currentTheme.colors.textSecondary}`}>
+                  Real-time session management with intelligent workflow automation and staff coordination.
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <DollarTestButton />
+              <div className="flex items-center space-x-2">
+                <span className={`text-sm text-${currentTheme.colors.textSecondary}`}>Role:</span>
+                <select 
+                  value={userRole} 
+                  onChange={(e) => setUserRole(e.target.value as any)}
+                  className={`bg-${currentTheme.colors.surface} text-${currentTheme.colors.text} text-sm font-medium px-3 py-2 rounded-lg border border-${currentTheme.colors.border} focus:outline-none focus:ring-2 focus:ring-${currentTheme.colors.primary}-500`}
+                >
+                  <option value="MANAGER">MANAGER</option>
+                  <option value="BOH">BOH</option>
+                  <option value="FOH">FOH</option>
+                  <option value="ADMIN">ADMIN</option>
+                </select>
+                <span className={`text-xs text-${currentTheme.colors.textSecondary}`}>(FOH View)</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Theme Selector */}
+          <div className="mb-6">
+            <ThemeSelector />
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className={`px-6 py-3 rounded-xl bg-gradient-to-r ${currentTheme.gradients.primary} text-white font-semibold hover:scale-105 transition-transform flex items-center gap-2`}
+              >
+                <Plus className="w-5 h-5" />
+                Create Session
+              </button>
+              
+              <button
+                onClick={refreshSessions}
+                disabled={loading}
+                className={`px-4 py-3 rounded-xl bg-${currentTheme.colors.surface} border border-${currentTheme.colors.border} text-${currentTheme.colors.text} hover:bg-${currentTheme.colors.surface}/80 transition-colors flex items-center gap-2 disabled:opacity-50`}
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          {/* Dynamic Metrics Dashboard */}
+          <DynamicMetricsDashboard metrics={metrics} loading={loading} />
+
+          {/* Error Display */}
+          {error && (
+            <div className={`bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6`}>
+              <div className="flex items-center gap-2 text-red-300">
+                <AlertCircle className="w-5 h-5" />
+                <span className="font-medium">Error</span>
+              </div>
+              <p className="text-red-200 text-sm mt-2">{error}</p>
+            </div>
+          )}
+
+          {/* Enhanced Session Management */}
+          <EnhancedFSDDesign
+            sessions={sessions}
+            userRole={userRole}
+            onSessionAction={(action, sessionId) => {
+              if (action === 'complete') {
+                handleStatusChange(sessionId, 'COMPLETED');
+              } else if (action === 'pause') {
+                handleStatusChange(sessionId, 'PAUSED');
+              }
+            }}
+          />
+        </div>
       ) : (
         <>
           {/* Legacy Mode Indicator */}
