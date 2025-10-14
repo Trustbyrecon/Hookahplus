@@ -453,12 +453,12 @@ const EnhancedRoleSelector = ({
       <select 
         value={userRole} 
         onChange={(e) => onRoleChange(e.target.value)}
-        className="bg-transparent text-white text-sm font-medium px-2 py-1 rounded border-none focus:outline-none focus:ring-2 focus:ring-teal-500"
+        className="bg-zinc-800 text-white text-sm font-medium px-3 py-2 rounded-lg border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 min-w-[120px]"
       >
         {roles.map(role => {
           const Icon = role.icon;
           return (
-            <option key={role.id} value={role.id}>
+            <option key={role.id} value={role.id} className="bg-zinc-800 text-white">
               {role.label}
             </option>
           );
@@ -573,10 +573,11 @@ const EnhancedRefreshButton = ({
 
 
 // Enhanced Tab-Specific Session Cards
-const EnhancedTabSessionCard = ({ session, tabType, onAction }: { 
+const EnhancedTabSessionCard = ({ session, tabType, onAction, userRole = 'MANAGER' }: { 
   session: any; 
   tabType: string; 
   onAction?: (action: string, sessionId: string) => void;
+  userRole?: 'BOH' | 'FOH' | 'MANAGER' | 'ADMIN';
 }) => {
   const getStatusColor = (state: string) => {
     switch (state) {
@@ -874,22 +875,45 @@ const EnhancedTabSessionCard = ({ session, tabType, onAction }: {
       return getOperationalActions();
     }
 
-    // For specific tabs, show filtered actions
+    // Role-based action filtering
+    const allActions = getOperationalActions();
+    
+    // Filter by user role first
+    let roleFilteredActions = allActions;
+    switch (userRole) {
+      case 'BOH':
+        roleFilteredActions = allActions.filter(action => 
+          ['start_prep', 'prep_complete', 'ready_delivery', 'prep_issue'].includes(action.action)
+        );
+        break;
+      case 'FOH':
+        roleFilteredActions = allActions.filter(action => 
+          ['foh_pickup', 'deliver_to_table', 'pause', 'resume', 'complete', 'refill_request'].includes(action.action)
+        );
+        break;
+      case 'MANAGER':
+      case 'ADMIN':
+        // Managers and Admins see all actions
+        roleFilteredActions = allActions;
+        break;
+    }
+    
+    // Then filter by tab type
     switch (tabType) {
       case 'boh':
-        return getOperationalActions().filter(action => 
+        return roleFilteredActions.filter(action => 
           ['start_prep', 'prep_complete', 'ready_delivery'].includes(action.action)
         );
       case 'foh':
-        return getOperationalActions().filter(action => 
+        return roleFilteredActions.filter(action => 
           ['foh_pickup', 'deliver_to_table', 'pause', 'resume', 'complete', 'refill_request'].includes(action.action)
         );
       case 'edgeCases':
-        return getOperationalActions().filter(action => 
+        return roleFilteredActions.filter(action => 
           ['retry_payment', 'resolve', 'escalate'].includes(action.action)
         );
       default:
-        return getOperationalActions();
+        return roleFilteredActions;
     }
   };
 
@@ -1162,10 +1186,12 @@ const EnhancedKTL4Status = ({
 // Main enhanced FSD component
 export default function EnhancedFSDDesign({ 
   sessions = [],
+  userRole = 'MANAGER',
   onSessionAction,
   className = ''
 }: {
   sessions?: any[];
+  userRole?: 'BOH' | 'FOH' | 'MANAGER' | 'ADMIN';
   onSessionAction?: (action: string, sessionId: string) => void;
   className?: string;
 }) {
@@ -1173,7 +1199,6 @@ export default function EnhancedFSDDesign({
   const [activeView, setActiveView] = useState<'sessions' | 'flavors' | 'analytics'>('sessions');
   
   // Enhanced state management for Classic Design business logic
-  const [userRole, setUserRole] = useState<'BOH' | 'FOH' | 'MANAGER' | 'ADMIN'>('MANAGER');
   const [selectedRole, setSelectedRole] = useState<'FOH' | 'BOH'>('FOH');
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(false);
@@ -1183,21 +1208,10 @@ export default function EnhancedFSDDesign({
   const [theme, setTheme] = useState('midnight');
   const [notifications, setNotifications] = useState<any[]>([]);
   
-  // Notification system for operational feedback
+  // Notification system disabled to prevent banner notifications
   const addNotification = useCallback((type: 'success' | 'error' | 'info', message: string, sessionId?: string) => {
-    const notification = {
-      id: Date.now(),
-      type,
-      message,
-      sessionId,
-      timestamp: new Date().toISOString()
-    };
-    setNotifications(prev => [notification, ...prev.slice(0, 4)]); // Keep only last 5 notifications
-    
-    // Auto-remove after 5 seconds
-    setTimeout(() => {
-      setNotifications(prev => prev.filter(n => n.id !== notification.id));
-    }, 5000);
+    // Notifications disabled per user request
+    console.log(`[${type.toUpperCase()}] ${message}`, sessionId ? `Session: ${sessionId}` : '');
   }, []);
 
   // Enhanced session state management with real-time updates
@@ -1304,7 +1318,8 @@ export default function EnhancedFSDDesign({
   }, []);
 
   const handleRoleChange = useCallback((role: string) => {
-    setUserRole(role as any);
+    // Role is now managed by parent component
+    console.log(`Role changed to: ${role}`);
     // Determine view based on role
     switch (role) {
       case 'BOH': setSelectedRole('BOH'); break;
@@ -1874,34 +1889,27 @@ export default function EnhancedFSDDesign({
   
   return (
     <div className={`min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white ${className}`}>
-      {/* Notification System */}
-      {notifications.length > 0 && (
-        <div className="fixed top-4 right-4 z-50 space-y-2">
-          {notifications.map((notification) => (
-            <motion.div
-              key={notification.id}
-              initial={{ opacity: 0, x: 300 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 300 }}
-              className={`p-3 rounded-lg shadow-lg max-w-sm ${
-                notification.type === 'success' ? 'bg-green-600 text-white' :
-                notification.type === 'error' ? 'bg-red-600 text-white' :
-                'bg-blue-600 text-white'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">{notification.message}</span>
-                <button
-                  onClick={() => setNotifications(prev => prev.filter(n => n.id !== notification.id))}
-                  className="text-white/70 hover:text-white"
-                >
-                  ×
-                </button>
+      {/* Global Navigation */}
+      <div className="bg-zinc-900/50 backdrop-blur-sm border-b border-zinc-800">
+        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="text-2xl">🍃</div>
+              <div>
+                <h1 className="text-xl font-bold">Hookah+ Operations</h1>
+                <p className="text-sm text-zinc-400">Fire Session Dashboard</p>
               </div>
-            </motion.div>
-          ))}
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2 text-sm text-zinc-400">
+                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                <span>Live</span>
+              </div>
+            </div>
+          </div>
         </div>
-      )}
+      </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {/* Enhanced Header */}
@@ -2106,7 +2114,7 @@ export default function EnhancedFSDDesign({
               <div className="flex items-center space-x-3 mb-4">
                 <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
                 <h2 className="text-2xl font-bold text-white">Live Sessions</h2>
-                <span className="text-sm text-zinc-400">Real-time Management</span>
+                <span className="text-sm text-zinc-400">Overview Dashboard - All Roles</span>
               </div>
               
               {/* Unified Live Sessions Grid */}
@@ -2116,6 +2124,7 @@ export default function EnhancedFSDDesign({
                     key={session.id}
                     session={session}
                     tabType="overview"
+                    userRole={userRole}
                     onAction={handleTabAction}
                   />
                 ))}
@@ -2216,7 +2225,7 @@ export default function EnhancedFSDDesign({
               <div className="flex items-center space-x-3 mb-4">
                 <Clock className="w-6 h-6 text-teal-400" />
                 <h2 className="text-2xl font-bold text-white">Live Sessions</h2>
-                <span className="text-sm text-zinc-400">Real-time Management</span>
+                <span className="text-sm text-zinc-400">Role-Specific Management - {userRole}</span>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

@@ -183,6 +183,7 @@ function FireSessionDashboardContent() {
       {useEnhancedDesign ? (
         <EnhancedFSDDesign
           sessions={sessions}
+          userRole="MANAGER"
           onSessionAction={(action, sessionId) => {
             if (action === 'complete') {
               handleStatusChange(sessionId, 'COMPLETED');
