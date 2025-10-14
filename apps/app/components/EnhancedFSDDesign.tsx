@@ -296,7 +296,7 @@ const EnhancedSessionCard = ({
 // Enhanced metrics display
 const EnhancedMetrics = ({ metrics }: { metrics: any[] }) => {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4 mb-8">
       {metrics.map((metric, index) => (
         <motion.div
           key={index}
@@ -1672,7 +1672,7 @@ export default function EnhancedFSDDesign({
     },
     {
       title: 'Total Revenue',
-      value: `$${(displaySessions.reduce((sum, s) => sum + (s.priceCents || 0), 0) / 100).toFixed(0)}`,
+      value: `$${displaySessions.reduce((sum, s) => sum + (s.amount || 0), 0)}`,
       icon: <TrendingUp className="w-6 h-6" />,
       color: 'text-green-400',
       bgColor: 'bg-green-500/10',
@@ -1695,6 +1695,33 @@ export default function EnhancedFSDDesign({
       color: 'text-purple-400',
       bgColor: 'bg-purple-500/10',
       change: 'Trust Aligned',
+      changeType: 'positive' as const
+    },
+    {
+      title: 'Avg Duration',
+      value: `${Math.round(displaySessions.reduce((sum, s) => sum + (s.timer_duration || 60), 0) / displaySessions.length)}min`,
+      icon: <Clock className="w-6 h-6" />,
+      color: 'text-cyan-400',
+      bgColor: 'bg-cyan-500/10',
+      change: '+8%',
+      changeType: 'positive' as const
+    },
+    {
+      title: 'Staff Assigned',
+      value: displaySessions.filter(s => s.boh_staff && s.foh_staff).length.toString(),
+      icon: <Users className="w-6 h-6" />,
+      color: 'text-indigo-400',
+      bgColor: 'bg-indigo-500/10',
+      change: '100%',
+      changeType: 'positive' as const
+    },
+    {
+      title: 'Total Sessions',
+      value: displaySessions.length.toString(),
+      icon: <BarChart3 className="w-6 h-6" />,
+      color: 'text-emerald-400',
+      bgColor: 'bg-emerald-500/10',
+      change: '+15%',
       changeType: 'positive' as const
     }
   ];
