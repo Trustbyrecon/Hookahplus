@@ -78,6 +78,17 @@ const FLAVOR_CATEGORIES = [
       { id: "lavender", label: "Lavender", price: 3.00 },
     ],
   },
+  { 
+    id: "premium", 
+    label: "Premium", 
+    hue: 320,
+    basePrice: 4.00,
+    items: [
+      { id: "vodka-infused", label: "Vodka-Infused", price: 4.00 },
+      { id: "whiskey-barrel", label: "Whiskey Barrel", price: 4.00 },
+      { id: "boutique-import", label: "Boutique Import", price: 4.50 },
+    ],
+  },
 ];
 
 // Staff-recommended combinations for quick selection
