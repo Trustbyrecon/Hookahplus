@@ -11,6 +11,10 @@ import PriceBreakdown from '../../../components/guest/PriceBreakdown';
 import RewardsBadgeStrip from '../../../components/guest/RewardsBadgeStrip';
 import ReferralQR from '../../../components/guest/ReferralQR';
 import MemoryBreadcrumbs from '../../../components/guest/MemoryBreadcrumbs';
+import MobileOptimizedLayout from '../../../components/guest/MobileOptimizedLayout';
+import MobileQRScanner from '../../../components/guest/MobileQRScanner';
+import MobileFlavorSelector, { MOCK_FLAVORS } from '../../../components/guest/MobileFlavorSelector';
+import MobileCart from '../../../components/guest/MobileCart';
 import { createGhostLogEntry } from '../../../libs/ghostlog/hash';
 
 export default function GuestLoungePage() {
@@ -23,10 +27,24 @@ export default function GuestLoungePage() {
   const [flags, setFlags] = useState<FeatureFlags | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Mobile-specific state
+  const [isMobile, setIsMobile] = useState(false);
+  const [selectedFlavors, setSelectedFlavors] = useState<string[]>([]);
+  const [cartItems, setCartItems] = useState<any[]>([]);
+  const [sessionType, setSessionType] = useState<'flat' | 'time-based'>('flat');
+  const [showQRScanner, setShowQRScanner] = useState(false);
 
   useEffect(() => {
     initializeGuest();
+    detectMobile();
   }, [loungeId]);
+
+  const detectMobile = () => {
+    const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+    const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
+    setIsMobile(isMobileDevice);
+  };
 
   const initializeGuest = async () => {
     try {
@@ -114,6 +132,76 @@ export default function GuestLoungePage() {
     }
   };
 
+  // Mobile handlers
+  const handleFlavorToggle = (flavorId: string) => {
+    setSelectedFlavors(prev => {
+      const newSelection = prev.includes(flavorId)
+        ? prev.filter(id => id !== flavorId)
+        : [...prev, flavorId];
+      
+      // Update cart items
+      const flavor = MOCK_FLAVORS.find(f => f.id === flavorId);
+      if (flavor) {
+        if (newSelection.includes(flavorId)) {
+          setCartItems(prev => [...prev, {
+            id: flavorId,
+            name: flavor.name,
+            price: flavor.price,
+            quantity: 1,
+            type: 'flavor',
+            color: flavor.color
+          }]);
+        } else {
+          setCartItems(prev => prev.filter(item => item.id !== flavorId));
+        }
+      }
+      
+      return newSelection;
+    });
+  };
+
+  const handleClearAllFlavors = () => {
+    setSelectedFlavors([]);
+    setCartItems(prev => prev.filter(item => item.type !== 'flavor'));
+  };
+
+  const handleUpdateQuantity = (id: string, quantity: number) => {
+    if (quantity <= 0) {
+      setCartItems(prev => prev.filter(item => item.id !== id));
+      setSelectedFlavors(prev => prev.filter(flavorId => flavorId !== id));
+    } else {
+      setCartItems(prev => prev.map(item => 
+        item.id === id ? { ...item, quantity } : item
+      ));
+    }
+  };
+
+  const handleRemoveItem = (id: string) => {
+    setCartItems(prev => prev.filter(item => item.id !== id));
+    setSelectedFlavors(prev => prev.filter(flavorId => flavorId !== id));
+  };
+
+  const handleQRScanned = (data: string) => {
+    // Parse QR data and update state
+    const url = new URL(data, window.location.origin);
+    const tableId = url.searchParams.get('tableId');
+    const zone = url.searchParams.get('zone');
+    
+    if (qrData) {
+      setQrData({
+        ...qrData,
+        tableId: tableId || qrData.tableId,
+        zone: zone || qrData.zone
+      });
+    }
+    setShowQRScanner(false);
+  };
+
+  const handleManualEntry = () => {
+    // For now, just simulate QR data
+    handleQRScanned('lounge_001?tableId=T-001&zone=VIP');
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white flex items-center justify-center">
@@ -159,6 +247,76 @@ export default function GuestLoungePage() {
     );
   }
 
+  // Mobile-optimized render
+  if (isMobile) {
+    return (
+      <MobileOptimizedLayout>
+        {!qrData || !flags || !guestProfile ? (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <h2 className="text-lg font-semibold mb-2">Loading...</h2>
+            <p className="text-zinc-400 text-sm">Setting up your experience</p>
+          </div>
+        ) : showQRScanner ? (
+          <MobileQRScanner
+            onQRScanned={handleQRScanned}
+            onManualEntry={handleManualEntry}
+            isScanning={true}
+          />
+        ) : (
+          <div className="space-y-6">
+            {/* QR Scanner Trigger */}
+            <div className="text-center">
+              <button
+                onClick={() => setShowQRScanner(true)}
+                className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white py-3 px-6 rounded-xl font-semibold shadow-lg"
+              >
+                Scan QR Code
+              </button>
+              <p className="text-xs text-zinc-400 mt-2">
+                Table: {qrData.tableId || 'Not selected'} • Zone: {qrData.zone || 'Not selected'}
+              </p>
+            </div>
+
+            {/* Flavor Selection */}
+            <MobileFlavorSelector
+              flavors={MOCK_FLAVORS}
+              selectedFlavors={selectedFlavors}
+              onFlavorToggle={handleFlavorToggle}
+              onClearAll={handleClearAllFlavors}
+              basePrice={3000} // $30.00 base price
+            />
+
+            {/* Cart */}
+            <MobileCart
+              items={cartItems}
+              onUpdateQuantity={handleUpdateQuantity}
+              onRemoveItem={handleRemoveItem}
+              onCheckout={() => console.log('Checkout')}
+              basePrice={3000}
+              sessionType={sessionType}
+              onSessionTypeChange={setSessionType}
+            />
+
+            {/* Trust Lock Indicator */}
+            {flags.ghostlog.lite && (
+              <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3">
+                <div className="flex items-center gap-2 text-green-300">
+                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                  <span className="text-sm font-medium">Trust Lock Active</span>
+                </div>
+                <p className="text-green-200 text-xs mt-1">
+                  Your session is secure and encrypted
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </MobileOptimizedLayout>
+    );
+  }
+
+  // Desktop render (original)
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
       {/* Header */}

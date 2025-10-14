@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Card, Button, Badge } from '../../components';
 import CreateSessionModal from '../../components/CreateSessionModal';
 import SessionActionButtons from '../../components/SessionActionButtons';
@@ -85,8 +86,15 @@ import {
 import { Session, SessionStatus, SessionTeam, SessionNotes } from '../../types/session';
 
 export default function FireSessionDashboard() {
+  const searchParams = useSearchParams();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [useEnhancedDesign, setUseEnhancedDesign] = useState(true);
+  
+  // Check for legacy view parameter
+  useEffect(() => {
+    const view = searchParams.get('view');
+    setUseEnhancedDesign(view !== 'legacy');
+  }, [searchParams]);
   
   // Debug modal state
   useEffect(() => {
@@ -504,6 +512,20 @@ export default function FireSessionDashboard() {
           }}
         />
       ) : (
+        <>
+          {/* Legacy Mode Indicator */}
+          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-6">
+            <div className="flex items-center gap-2 text-yellow-300">
+              <AlertCircle className="w-5 h-5" />
+              <span className="font-medium">Legacy Mode Active</span>
+            </div>
+            <p className="text-yellow-200 text-sm mt-2">
+              You're viewing the classic Fire Session Dashboard. 
+              <Link href="/fire-session-dashboard" className="text-yellow-300 hover:text-yellow-200 underline ml-1">
+                Switch to Enhanced Mode
+              </Link> for the latest features and HiTrust intelligence.
+            </p>
+          </div>
         /* Original Design */
         <>
           {/* Global Navigation */}

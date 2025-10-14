@@ -182,7 +182,12 @@ export default function Home() {
               >
                 Campaign Pre-Orders
               </Button>
-              <Button variant="outline" size="lg" className="px-6 py-3">
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="px-6 py-3"
+                onClick={() => window.open('https://app.hookahplus.net/fire-session-dashboard', '_blank')}
+              >
                 Live Dashboard
               </Button>
               <Button 

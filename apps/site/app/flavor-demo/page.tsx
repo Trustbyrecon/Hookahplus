@@ -205,7 +205,7 @@ export default function FlavorWheelDemo() {
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
             <button
-              onClick={() => window.open('/guest', '_blank')}
+              onClick={() => window.open('https://guest.hookahplus.net', '_blank')}
               className="inline-flex items-center justify-center rounded-xl border border-teal-500/50 bg-teal-500/10 px-8 py-4 text-lg font-semibold hover:bg-teal-500/20 transition-all duration-200"
             >
               <Play className="w-5 h-5 mr-2" />

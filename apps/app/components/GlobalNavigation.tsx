@@ -306,6 +306,35 @@ const GlobalNavigation: React.FC = () => {
 
           {/* Right Side Actions */}
           <div className="flex items-center space-x-4">
+            {/* Settings Dropdown */}
+            <div className="relative group">
+              <button className="flex items-center space-x-1 text-zinc-400 hover:text-white transition-colors">
+                <Settings className="w-4 h-4" />
+                <span className="text-sm">Settings</span>
+              </button>
+              
+              {/* Dropdown Menu */}
+              <div className="absolute right-0 mt-2 w-48 bg-zinc-800 border border-zinc-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                <div className="py-1">
+                  <Link
+                    href="/fire-session-dashboard?view=legacy"
+                    className="flex items-center space-x-2 px-4 py-2 text-sm text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"
+                  >
+                    <Eye className="w-4 h-4" />
+                    <span>Session Overview (Legacy)</span>
+                  </Link>
+                  <div className="border-t border-zinc-700 my-1"></div>
+                  <Link
+                    href="/admin"
+                    className="flex items-center space-x-2 px-4 py-2 text-sm text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"
+                  >
+                    <Shield className="w-4 h-4" />
+                    <span>Admin Panel</span>
+                  </Link>
+                </div>
+              </div>
+            </div>
+
             {/* Theme Toggle */}
             <ThemeToggle />
 
