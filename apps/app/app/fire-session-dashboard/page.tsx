@@ -17,7 +17,7 @@ import { RoleBasedActions, RoleSelector } from '../../components/RoleBasedAction
 import { ResolutionNotes } from '../../components/ResolutionNotes';
 import { SessionQueueManager } from '../../components/SessionQueueManager';
 import { SessionMonitor } from '../../components/SessionMonitor';
-import { StaffWorkflowAssistant } from '../../components/StaffWorkflowAssistant';
+import { ErrorBoundary } from '../../components/ErrorBoundary';
 import { OptimizedSessionCard } from '../../components/OptimizedSessionCard';
 import { FOHTimerInterface } from '../../components/FOHTimerInterface';
 import { ManagerTimerDashboard } from '../../components/ManagerTimerDashboard';
@@ -61,7 +61,9 @@ export default function FireSessionDashboard() {
           <p className="text-zinc-400 text-sm">Setting up your session</p>
         </div>
       </div>}>
-        <FireSessionDashboardContent />
+        <ErrorBoundary>
+          <FireSessionDashboardContent />
+        </ErrorBoundary>
       </Suspense>
     </ThemeProvider>
   );

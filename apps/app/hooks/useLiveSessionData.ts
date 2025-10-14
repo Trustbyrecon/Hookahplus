@@ -207,12 +207,12 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [refreshSessions]);
+  }, []); // Remove refreshSessions dependency to prevent recreation
 
   // Initial load
   useEffect(() => {
     refreshSessions();
-  }, [refreshSessions]);
+  }, []); // Remove refreshSessions dependency to prevent recreation
 
   return {
     sessions,

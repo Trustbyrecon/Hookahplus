@@ -2,7 +2,6 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import DollarTestButton from './DollarTestButton';
 import { 
   Flame, 
   Users, 
@@ -543,27 +542,6 @@ const EnhancedDebugInfoBar = ({
   );
 };
 
-// Enhanced Refresh Button Component
-const EnhancedRefreshButton = ({ 
-  onRefresh, 
-  loading 
-}: {
-  onRefresh: () => void;
-  loading: boolean;
-}) => {
-  return (
-    <motion.button
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      onClick={onRefresh}
-      disabled={loading}
-      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-700 hover:bg-zinc-600 disabled:opacity-60 disabled:cursor-not-allowed text-white transition-all duration-200 text-sm font-medium"
-    >
-      <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-      <span>Refresh</span>
-    </motion.button>
-  );
-};
 
 
 // Enhanced Tab-Specific Session Cards
@@ -1783,20 +1761,11 @@ export default function EnhancedFSDDesign({
                 <span className="text-sm text-green-400 font-medium">Live</span>
               </div>
               
-              {/* $1 Test Button */}
-              <DollarTestButton />
-              
-              {/* Role Selector */}
+              {/* Role Selector - Keep for role-based functionality */}
               <EnhancedRoleSelector
                 userRole={userRole}
                 onRoleChange={handleRoleChange}
                 selectedRole={selectedRole}
-              />
-              
-              {/* Refresh Button */}
-              <EnhancedRefreshButton
-                onRefresh={refreshSessions}
-                loading={loading}
               />
               
             </div>
