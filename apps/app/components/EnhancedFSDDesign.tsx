@@ -515,14 +515,12 @@ const EnhancedDebugInfoBar = ({
   sessionsLoaded, 
   loading, 
   apiStatus, 
-  ktl4Status, 
   hitrustStatus 
 }: {
   theme: string;
   sessionsLoaded: number;
   loading: boolean;
   apiStatus: string;
-  ktl4Status: string;
   hitrustStatus: string;
 }) => {
   return (
@@ -535,10 +533,6 @@ const EnhancedDebugInfoBar = ({
           <span>API Status: {apiStatus}</span>
         </div>
         <div className="flex items-center space-x-4">
-          <div className="flex items-center gap-1">
-            <Server className="w-3 h-3" />
-            <span>KTL4: {ktl4Status}</span>
-          </div>
           <div className="flex items-center gap-1">
             <Shield className="w-3 h-3" />
             <span>HiTrust: {hitrustStatus}</span>
@@ -1108,80 +1102,6 @@ const EnhancedTabSessionCard = ({ session, tabType, onAction, userRole = 'MANAGE
   );
 };
 
-// Enhanced KTL4 Status Component
-const EnhancedKTL4Status = ({ 
-  healthStatus, 
-  onRunHealthCheck, 
-  onRunReconciliation, 
-  onExecuteBreakGlass 
-}: {
-  healthStatus: any[];
-  onRunHealthCheck: () => void;
-  onRunReconciliation: () => void;
-  onExecuteBreakGlass: (action: string) => void;
-}) => {
-  const [showKTL4Panel, setShowKTL4Panel] = useState(false);
-
-  return (
-    <div className="relative">
-      <motion.button
-        whileHover={{ scale: 1.05 }}
-        onClick={() => setShowKTL4Panel(!showKTL4Panel)}
-        className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-purple-600/20 to-blue-600/20 border border-purple-500/30 text-purple-300 hover:from-purple-600/30 hover:to-blue-600/30 transition-all duration-200 text-sm font-medium"
-      >
-        <ZapIcon className="w-4 h-4" />
-        <span>KTL4</span>
-        <ChevronRight className={`w-3 h-3 transition-transform ${showKTL4Panel ? 'rotate-90' : ''}`} />
-      </motion.button>
-
-      <AnimatePresence>
-        {showKTL4Panel && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="absolute top-full left-0 mt-2 w-80 bg-zinc-900 border border-purple-500/30 rounded-xl p-4 shadow-xl z-50"
-          >
-            <div className="space-y-3">
-              <h4 className="text-sm font-semibold text-purple-300 mb-3">KTL-4 Keep-The-Lights-On</h4>
-              
-              <div className="grid grid-cols-2 gap-2">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  onClick={onRunHealthCheck}
-                  className="px-3 py-2 rounded-lg bg-green-600/20 border border-green-500/30 text-green-300 text-xs font-medium hover:bg-green-600/30 transition-colors"
-                >
-                  Health Check
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  onClick={onRunReconciliation}
-                  className="px-3 py-2 rounded-lg bg-blue-600/20 border border-blue-500/30 text-blue-300 text-xs font-medium hover:bg-blue-600/30 transition-colors"
-                >
-                  Reconcile
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  onClick={() => onExecuteBreakGlass('freeze_station')}
-                  className="px-3 py-2 rounded-lg bg-orange-600/20 border border-orange-500/30 text-orange-300 text-xs font-medium hover:bg-orange-600/30 transition-colors"
-                >
-                  Freeze Station
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  onClick={() => onExecuteBreakGlass('emergency_stop')}
-                  className="px-3 py-2 rounded-lg bg-red-600/20 border border-red-500/30 text-red-300 text-xs font-medium hover:bg-red-600/30 transition-colors"
-                >
-                  Emergency Stop
-                </motion.button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-};
 
 // Main enhanced FSD component
 export default function EnhancedFSDDesign({ 
@@ -1203,7 +1123,6 @@ export default function EnhancedFSDDesign({
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(false);
   const [apiStatus, setApiStatus] = useState('Connected');
-  const [ktl4Status, setKtl4Status] = useState('Active');
   const [hitrustStatus, setHitrustStatus] = useState('Verified');
   const [theme, setTheme] = useState('midnight');
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -1226,83 +1145,8 @@ export default function EnhancedFSDDesign({
     addNotification('info', `Session ${sessionId} state changed to ${newState.replace('_', ' ')}`, sessionId);
   }, [addNotification]);
   
-  // KTL4 and HiTrust API integration functions
-  const runKTL4HealthCheck = useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = await fetch('/api/ktl4/health-check', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          flowName: 'session_lifecycle',
-          checkType: 'comprehensive',
-          operatorId: 'enhanced_fsd'
-        })
-      });
-      
-      if (response.ok) {
-        const result = await response.json();
-        console.log('KTL4 Health Check:', result);
-        setKtl4Status('Healthy');
-      }
-    } catch (error) {
-      console.error('KTL4 Health Check failed:', error);
-      setKtl4Status('Degraded');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
-  const runKTL4Reconciliation = useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = await fetch('/api/ktl4/reconcile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'run_reconciliation',
-          operatorId: 'enhanced_fsd'
-        })
-      });
-      
-      if (response.ok) {
-        const result = await response.json();
-        console.log('KTL4 Reconciliation:', result);
-      }
-    } catch (error) {
-      console.error('KTL4 Reconciliation failed:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const executeKTL4BreakGlass = useCallback(async (actionType: string) => {
-    if (!confirm(`Are you sure you want to execute ${actionType}? This is an emergency action.`)) {
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const response = await fetch('/api/ktl4/break-glass', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          actionType,
-          operatorId: 'enhanced_fsd',
-          reason: `Emergency action executed from Enhanced FSD`
-        })
-      });
-      
-      if (response.ok) {
-        const result = await response.json();
-        console.log('KTL4 Break-Glass executed:', result);
-      }
-    } catch (error) {
-      console.error('KTL4 Break-Glass failed:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  
 
   const refreshSessions = useCallback(async () => {
     setLoading(true);
@@ -1949,14 +1793,6 @@ export default function EnhancedFSDDesign({
                 selectedRole={selectedRole}
               />
               
-              {/* KTL4 Status */}
-              <EnhancedKTL4Status
-                healthStatus={[]}
-                onRunHealthCheck={runKTL4HealthCheck}
-                onRunReconciliation={runKTL4Reconciliation}
-                onExecuteBreakGlass={executeKTL4BreakGlass}
-              />
-              
               {/* Refresh Button */}
               <EnhancedRefreshButton
                 onRefresh={refreshSessions}
@@ -1976,7 +1812,6 @@ export default function EnhancedFSDDesign({
           sessionsLoaded={displaySessions.length}
           loading={loading}
           apiStatus={apiStatus}
-          ktl4Status={ktl4Status}
           hitrustStatus={hitrustStatus}
         />
         

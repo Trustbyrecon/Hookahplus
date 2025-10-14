@@ -37,19 +37,12 @@ import {
   Search,
   Filter,
   MoreHorizontal,
-  Play,
-  Pause,
-  Square,
-  RotateCcw,
-  CheckCircle,
-  XCircle,
   AlertCircle,
   Info,
   Star,
   Heart,
   Zap,
   Target,
-  Activity,
   TrendingDown,
   Star as StarIcon,
   MessageSquare,
@@ -210,101 +203,6 @@ function FireSessionDashboardContent() {
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                 Refresh
               </button>
-            </div>
-          </div>
-
-          {/* Centralized Operations Control Panel */}
-          <div className={`bg-${currentTheme.colors.surface}/50 border border-${currentTheme.colors.border} rounded-xl p-6 mb-8`}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className={`text-xl font-bold text-${currentTheme.colors.text} flex items-center gap-2`}>
-                <Activity className="w-6 h-6 text-orange-400" />
-                Live Operations Center
-              </h2>
-              <div className={`text-sm text-${currentTheme.colors.textSecondary}`}>
-                {sessions.filter(s => s.status === 'ACTIVE').length} Active Sessions
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Quick Actions */}
-              <div className={`bg-${currentTheme.colors.surface}/30 rounded-lg p-4`}>
-                <h3 className={`text-sm font-semibold text-${currentTheme.colors.text} mb-3`}>Quick Actions</h3>
-                <div className="space-y-2">
-                  <button
-                    onClick={() => {
-                      // Find first active session and pause it
-                      const activeSession = sessions.find(s => s.status === 'ACTIVE');
-                      if (activeSession) {
-                        handleStatusChange(activeSession.id, 'PAUSED');
-                      }
-                    }}
-                    className={`w-full px-3 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2`}
-                  >
-                    <Pause className="w-4 h-4" />
-                    Pause All Sessions
-                  </button>
-                  <button
-                    onClick={() => {
-                      // Find first paused session and resume it
-                      const pausedSession = sessions.find(s => s.status === 'PAUSED');
-                      if (pausedSession) {
-                        handleStatusChange(pausedSession.id, 'ACTIVE');
-                      }
-                    }}
-                    className={`w-full px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2`}
-                  >
-                    <Play className="w-4 h-4" />
-                    Resume All Sessions
-                  </button>
-                </div>
-              </div>
-
-              {/* Refill Management */}
-              <div className={`bg-${currentTheme.colors.surface}/30 rounded-lg p-4`}>
-                <h3 className={`text-sm font-semibold text-${currentTheme.colors.text} mb-3`}>Refill Management</h3>
-                <div className="space-y-2">
-                  <div className={`text-xs text-${currentTheme.colors.textSecondary} mb-2`}>
-                    {sessions.filter(s => s.coalStatus === 'needs_refill').length} sessions need refill
-                  </div>
-                  <button
-                    onClick={() => {
-                      // Find first session needing refill and complete it
-                      const refillSession = sessions.find(s => s.coalStatus === 'needs_refill');
-                      if (refillSession) {
-                        // This would need to be implemented in the session management
-                        console.log('Completing refill for session:', refillSession.id);
-                      }
-                    }}
-                    className={`w-full px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2`}
-                  >
-                    <RotateCcw className="w-4 h-4" />
-                    Complete Refills
-                  </button>
-                </div>
-              </div>
-
-              {/* Session Completion */}
-              <div className={`bg-${currentTheme.colors.surface}/30 rounded-lg p-4`}>
-                <h3 className={`text-sm font-semibold text-${currentTheme.colors.text} mb-3`}>Session Completion</h3>
-                <div className="space-y-2">
-                  <div className={`text-xs text-${currentTheme.colors.textSecondary} mb-2`}>
-                    {sessions.filter(s => s.status === 'ACTIVE').length} sessions ready to complete
-                  </div>
-                  <button
-                    onClick={() => {
-                      // Find first active session and complete it
-                      const activeSession = sessions.find(s => s.status === 'ACTIVE');
-                      if (activeSession) {
-                        handleStatusChange(activeSession.id, 'COMPLETED');
-                      }
-                    }}
-                    className={`w-full px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2`}
-                  >
-                    <CheckCircle className="w-4 h-4" />
-                    Complete Sessions
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
 

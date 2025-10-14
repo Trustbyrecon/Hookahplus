@@ -23,11 +23,11 @@ export async function GET(req: NextRequest) {
       if (!session) {
         return NextResponse.json({ error: 'Session not found' }, { status: 404 });
       }
-      return NextResponse.json({ session });
+      return NextResponse.json({ success: true, session });
     }
 
     // Return all sessions if no sessionId specified
-    return NextResponse.json({ sessions });
+    return NextResponse.json({ success: true, sessions });
 
   } catch (error) {
     console.error('Error retrieving sessions:', error);
