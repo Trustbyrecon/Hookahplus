@@ -619,46 +619,95 @@ const EnhancedTabSessionCard = ({ session, tabType, onAction }: {
   };
 
   const getTabSpecificActions = () => {
-    // Generate contextual messages based on session data
+    // Generate HiTrust-enhanced contextual messages based on session data
     const getContextualMessage = (action: string) => {
       const customerName = session.customerName?.split(' ')[0] || 'Customer';
       const tableId = session.tableId;
       const flavor = session.flavor;
+      const hiTrust = session.hiTrustIntelligence;
       
+      // Base contextual message
+      let baseMessage = '';
       switch (action) {
         case 'start_prep':
-          return `${customerName}'s ${flavor} hookah ready for prep at ${tableId}`;
+          baseMessage = `${customerName}'s ${flavor} hookah ready for prep at ${tableId}`;
+          break;
         case 'prep_complete':
-          return `${flavor} hookah prepared and ready for ${customerName} at ${tableId}`;
+          baseMessage = `${flavor} hookah prepared and ready for ${customerName} at ${tableId}`;
+          break;
         case 'prep_issue':
-          return `Issue with ${flavor} prep for ${customerName} - needs attention`;
+          baseMessage = `Issue with ${flavor} prep for ${customerName} - needs attention`;
+          break;
         case 'foh_pickup':
-          return `Pick up ${flavor} hookah for ${customerName} at ${tableId}`;
+          baseMessage = `Pick up ${flavor} hookah for ${customerName} at ${tableId}`;
+          break;
         case 'deliver_to_table':
-          return `Deliver ${flavor} to ${customerName} at ${tableId}`;
+          baseMessage = `Deliver ${flavor} to ${customerName} at ${tableId}`;
+          break;
         case 'pause':
-          return `Pause ${customerName}'s ${flavor} session at ${tableId}`;
+          baseMessage = `Pause ${customerName}'s ${flavor} session at ${tableId}`;
+          break;
         case 'resume':
-          return `Resume ${customerName}'s ${flavor} session at ${tableId}`;
+          baseMessage = `Resume ${customerName}'s ${flavor} session at ${tableId}`;
+          break;
         case 'refill_request':
-          return `Refill ${flavor} for ${customerName} at ${tableId}`;
+          baseMessage = `Refill ${flavor} for ${customerName} at ${tableId}`;
+          break;
         case 'complete':
-          return `Complete ${customerName}'s ${flavor} session at ${tableId}`;
+          baseMessage = `Complete ${customerName}'s ${flavor} session at ${tableId}`;
+          break;
         case 'boh_hold':
-          return `Hold ${flavor} at BOH for ${customerName}`;
+          baseMessage = `Hold ${flavor} at BOH for ${customerName}`;
+          break;
         case 'return_to_boh':
-          return `Return ${flavor} to BOH from ${tableId}`;
+          baseMessage = `Return ${flavor} to BOH from ${tableId}`;
+          break;
         case 'boh_refill':
-          return `Send ${flavor} to BOH for refill`;
+          baseMessage = `Send ${flavor} to BOH for refill`;
+          break;
         case 'retry_payment':
-          return `Retry payment for ${customerName} at ${tableId}`;
+          baseMessage = `Retry payment for ${customerName} at ${tableId}`;
+          break;
         case 'resolve':
-          return `Resolve payment issue for ${customerName}`;
+          baseMessage = `Resolve payment issue for ${customerName}`;
+          break;
         case 'escalate':
-          return `Escalate ${customerName}'s payment issue`;
+          baseMessage = `Escalate ${customerName}'s payment issue`;
+          break;
         default:
-          return `Action for ${customerName} at ${tableId}`;
+          baseMessage = `Action for ${customerName} at ${tableId}`;
       }
+      
+      // Add HiTrust intelligence insights
+      if (hiTrust) {
+        const insights = [];
+        
+        // Add behavioral insights
+        if (hiTrust.customerInsights.behaviorPattern === 'premium_spender') {
+          insights.push('VIP customer');
+        }
+        
+        // Add refill history
+        if (hiTrust.customerInsights.refillHistory > 0) {
+          insights.push(`${hiTrust.customerInsights.refillHistory} refills`);
+        }
+        
+        // Add revenue opportunities
+        if (hiTrust.revenueIntelligence.potentialUpsell > 0) {
+          insights.push(`+$${hiTrust.revenueIntelligence.potentialUpsell} upsell`);
+        }
+        
+        // Add predictive insights
+        if (hiTrust.predictiveActions.confidence > 0.8) {
+          insights.push(`${Math.round(hiTrust.predictiveActions.confidence * 100)}% confidence`);
+        }
+        
+        if (insights.length > 0) {
+          baseMessage += ` (${insights.join(', ')})`;
+        }
+      }
+      
+      return baseMessage;
     };
 
     // BOH/FOH Operational Workflow Logic with Contextual Messages
@@ -917,6 +966,55 @@ const EnhancedTabSessionCard = ({ session, tabType, onAction }: {
           </div>
         </div>
       </div>
+
+      {/* HiTrust Intelligence Layer */}
+      {session.hiTrustIntelligence && (
+        <div className="mt-3 p-3 bg-gradient-to-r from-blue-900/20 to-purple-900/20 rounded-lg border border-blue-500/30">
+          <div className="text-xs text-blue-300 font-medium mb-2 flex items-center gap-1">
+            <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></span>
+            HiTrust Intelligence
+          </div>
+          
+          {/* Predictive Actions */}
+          <div className="mb-2">
+            <div className="text-xs text-zinc-400 mb-1">Predicted Next Actions:</div>
+            <div className="flex flex-wrap gap-1">
+              {session.hiTrustIntelligence.predictiveActions.likelyNext.map((action: string, index: number) => (
+                <span key={index} className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded">
+                  {action.replace('_', ' ')}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Revenue Intelligence */}
+          <div className="mb-2">
+            <div className="text-xs text-zinc-400 mb-1">Revenue Opportunities:</div>
+            <div className="flex items-center gap-3 text-xs">
+              <span className="text-green-400">
+                +${session.hiTrustIntelligence.revenueIntelligence.potentialUpsell}
+              </span>
+              <span className="text-zinc-500">•</span>
+              <span className="text-blue-400">
+                {Math.round(session.hiTrustIntelligence.predictiveActions.refillProbability * 100)}% refill
+              </span>
+              <span className="text-zinc-500">•</span>
+              <span className="text-purple-400">
+                {Math.round(session.hiTrustIntelligence.predictiveActions.timeExtensionProbability * 100)}% extend
+              </span>
+            </div>
+          </div>
+
+          {/* Customer Insights */}
+          <div className="text-xs text-zinc-500">
+            <span className="text-zinc-400">Behavior:</span> {session.hiTrustIntelligence.customerInsights.behaviorPattern.replace('_', ' ')}
+            <span className="text-zinc-500 mx-2">•</span>
+            <span className="text-zinc-400">Refills:</span> {session.hiTrustIntelligence.customerInsights.refillHistory}
+            <span className="text-zinc-500 mx-2">•</span>
+            <span className="text-zinc-400">Confidence:</span> {Math.round(session.hiTrustIntelligence.predictiveActions.confidence * 100)}%
+          </div>
+        </div>
+      )}
 
       {/* Session Notes - Operational notes only, no redundant info */}
       <div className="mt-3 p-2 bg-zinc-800/30 border border-zinc-700 rounded-lg">
@@ -1498,6 +1596,38 @@ export default function EnhancedFSDDesign({
         avgSpend: 45,
         loyaltyTier: 'Gold',
         visitFrequency: 'Weekly'
+      },
+      // HiTrust Intelligence Layer
+      hiTrustIntelligence: {
+        customerInsights: {
+          behaviorPattern: 'premium_spender',
+          refillHistory: 2, // 2 refills this session
+          avgSessionDuration: 65, // minutes
+          preferredFlavors: ['Blue Mist', 'Mint', 'Double Apple'],
+          timeExtensionRate: 0.3, // 30% of sessions
+          flavorAddOnRate: 0.6 // 60% add flavors
+        },
+        operationalMetrics: {
+          staffEfficiency: 0.95,
+          issueResolutionRate: 1.0,
+          customerRetentionRate: 0.92,
+          avgPrepTime: 7, // minutes
+          avgDeliveryTime: 2 // minutes
+        },
+        revenueIntelligence: {
+          currentOrderValue: 35.00,
+          potentialUpsell: 12.50, // time extension + flavor add-on
+          refillRevenue: 8.00,
+          loyaltyDiscount: 0.1, // 10% for Gold tier
+          suggestedActions: ['time_extension', 'flavor_addon', 'refill']
+        },
+        predictiveActions: {
+          likelyNext: ['REFILL_NEEDED', 'TIME_EXTENSION'],
+          refillProbability: 0.7,
+          timeExtensionProbability: 0.4,
+          completionProbability: 0.3,
+          confidence: 0.85
+        }
       }
     },
     // BOH TAB SESSIONS (2 total)
@@ -1527,6 +1657,38 @@ export default function EnhancedFSDDesign({
         avgSpend: 28,
         loyaltyTier: 'Silver',
         visitFrequency: 'Monthly'
+      },
+      // HiTrust Intelligence Layer
+      hiTrustIntelligence: {
+        customerInsights: {
+          behaviorPattern: 'first_time_customer',
+          refillHistory: 0,
+          avgSessionDuration: 45,
+          preferredFlavors: ['Strawberry', 'Mint', 'Lime'],
+          timeExtensionRate: 0.1,
+          flavorAddOnRate: 0.2
+        },
+        operationalMetrics: {
+          staffEfficiency: 0.88,
+          issueResolutionRate: 0.95,
+          customerRetentionRate: 0.75,
+          avgPrepTime: 10,
+          avgDeliveryTime: 3
+        },
+        revenueIntelligence: {
+          currentOrderValue: 28.00,
+          potentialUpsell: 5.00,
+          refillRevenue: 0.00,
+          loyaltyDiscount: 0.05,
+          suggestedActions: ['flavor_addon', 'time_extension']
+        },
+        predictiveActions: {
+          likelyNext: ['COMPLETED', 'FLAVOR_ADDON'],
+          refillProbability: 0.2,
+          timeExtensionProbability: 0.1,
+          completionProbability: 0.8,
+          confidence: 0.75
+        }
       }
     },
     {
@@ -1893,6 +2055,53 @@ export default function EnhancedFSDDesign({
               exit={{ opacity: 0, y: -20 }}
               className="space-y-6"
             >
+              {/* HiTrust Intelligence Dashboard */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-6 p-4 bg-gradient-to-r from-blue-900/20 to-purple-900/20 rounded-xl border border-blue-500/30"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 bg-blue-400 rounded-full animate-pulse"></span>
+                    <h2 className="text-lg font-semibold text-blue-300">HiTrust Intelligence Dashboard</h2>
+                  </div>
+                  <div className="text-xs text-zinc-400">
+                    Real-time operational insights
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  {/* Revenue Intelligence */}
+                  <div className="p-3 bg-zinc-800/30 rounded-lg border border-zinc-700">
+                    <div className="text-xs text-zinc-400 mb-1">Revenue Opportunities</div>
+                    <div className="text-lg font-semibold text-green-400">+$47.50</div>
+                    <div className="text-xs text-zinc-500">Across all sessions</div>
+                  </div>
+                  
+                  {/* Predictive Actions */}
+                  <div className="p-3 bg-zinc-800/30 rounded-lg border border-zinc-700">
+                    <div className="text-xs text-zinc-400 mb-1">Predicted Actions</div>
+                    <div className="text-lg font-semibold text-blue-400">3 Refills</div>
+                    <div className="text-xs text-zinc-500">85% confidence</div>
+                  </div>
+                  
+                  {/* Customer Insights */}
+                  <div className="p-3 bg-zinc-800/30 rounded-lg border border-zinc-700">
+                    <div className="text-xs text-zinc-400 mb-1">Customer Behavior</div>
+                    <div className="text-lg font-semibold text-purple-400">Premium</div>
+                    <div className="text-xs text-zinc-500">2 VIP customers</div>
+                  </div>
+                  
+                  {/* Operational Efficiency */}
+                  <div className="p-3 bg-zinc-800/30 rounded-lg border border-zinc-700">
+                    <div className="text-xs text-zinc-400 mb-1">Staff Efficiency</div>
+                    <div className="text-lg font-semibold text-cyan-400">92%</div>
+                    <div className="text-xs text-zinc-500">Average across teams</div>
+                  </div>
+                </div>
+              </motion.div>
+
               {/* Live Sessions Header */}
               <div className="flex items-center space-x-3 mb-4">
                 <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
