@@ -14,6 +14,7 @@ import RealTimeSessionSync from '../components/RealTimeSessionSync';
 import GuestIntelligenceDashboard from '../components/EnhancedStaffPanel';
 import { sessionManager, SessionData } from '../lib/sessionManager';
 import FlavorMixSelector from '../components/customer/FlavorMixSelector';
+import SuccessModal from '../components/SuccessModal';
 
 // Flavor categories for the FlavorMixSelector
 const FLAVOR_CATEGORIES = [
@@ -115,6 +116,7 @@ export default function GuestPortal() {
   const [currentSession, setCurrentSession] = useState<SessionData | null>(null);
   const [isStartingSession, setIsStartingSession] = useState(false);
   const [showEnhancedStaffPanel, setShowEnhancedStaffPanel] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [pricingModel, setPricingModel] = useState<'flat' | 'time-based'>('flat');
   const [sessionDuration, setSessionDuration] = useState(60); // Default 60 minutes
   
@@ -255,7 +257,7 @@ export default function GuestPortal() {
         const result = await response.json();
         console.log('✅ Session created successfully:', result);
         
-        alert('Session started successfully! You can now view it in the App build.');
+        setShowSuccessModal(true);
         
         // Clear cart after successful session start
         items.forEach(item => remove(item.id));
@@ -596,6 +598,16 @@ export default function GuestPortal() {
           onClose={() => setShowEnhancedStaffPanel(false)}
         />
       )}
+
+      {/* Success Modal */}
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        onAction={() => {
+          setShowSuccessModal(false);
+          window.open('https://hookahplus-iursz2jf6-dwaynes-projects-1c5c280a.vercel.app/fire-session-dashboard', '_blank');
+        }}
+      />
     </div>
   );
 }
