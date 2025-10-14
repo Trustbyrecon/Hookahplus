@@ -11,14 +11,15 @@ import {
   Truck, 
   AlertTriangle,
   RotateCcw,
-  Plus
+  Plus,
+  Flame
 } from 'lucide-react';
-import { sessionStateMachine, SessionState, SessionTransition } from '../lib/sessionStateMachine';
+import { VALID_TRANSITIONS, SessionStatus, SessionAction, canPerformAction } from '../lib/sessionStateMachine';
 
 interface SessionStateTransitionProps {
-  currentState: SessionState;
+  currentState: SessionStatus;
   userRole: string;
-  onTransition: (transition: SessionTransition, note?: string) => void;
+  onTransition: (action: SessionAction, note?: string) => void;
   sessionId: string;
   className?: string;
 }
@@ -30,68 +31,66 @@ export const SessionStateTransition: React.FC<SessionStateTransitionProps> = ({
   sessionId,
   className
 }) => {
-  const [showConfirmDialog, setShowConfirmDialog] = useState<SessionTransition | null>(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState<SessionAction | null>(null);
   const [transitionNote, setTransitionNote] = useState('');
 
-  const validTransitions = sessionStateMachine.getValidTransitions(currentState, userRole);
-  const stateInfo = sessionStateMachine.getStateInfo(currentState);
+  const validTransitions = VALID_TRANSITIONS[currentState] || [];
 
-  const getTransitionIcon = (transition: SessionTransition) => {
-    switch (transition) {
-      case 'start_prep':
+  const getTransitionIcon = (action: SessionAction) => {
+    switch (action) {
+      case 'CLAIM_PREP':
         return <Clock className="w-4 h-4" />;
-      case 'prep_complete':
+      case 'HEAT_UP':
+        return <Flame className="w-4 h-4" />;
+      case 'READY_FOR_DELIVERY':
         return <CheckCircle className="w-4 h-4" />;
-      case 'start_delivery':
+      case 'DELIVER_NOW':
         return <Truck className="w-4 h-4" />;
-      case 'delivery_complete':
+      case 'MARK_DELIVERED':
         return <CheckCircle className="w-4 h-4" />;
-      case 'activate_session':
+      case 'START_ACTIVE':
         return <Play className="w-4 h-4" />;
-      case 'pause_session':
+      case 'PAUSE_SESSION':
         return <Pause className="w-4 h-4" />;
-      case 'resume_session':
+      case 'RESUME_SESSION':
         return <Play className="w-4 h-4" />;
-      case 'complete_session':
+      case 'CLOSE_SESSION':
         return <CheckCircle className="w-4 h-4" />;
-      case 'cancel_session':
+      case 'VOID_SESSION':
         return <XCircle className="w-4 h-4" />;
-      case 'extend_session':
-        return <Plus className="w-4 h-4" />;
+      case 'REQUEST_REMAKE':
+        return <RotateCcw className="w-4 h-4" />;
       default:
         return <RotateCcw className="w-4 h-4" />;
     }
   };
 
-  const getTransitionColor = (transition: SessionTransition) => {
-    switch (transition) {
-      case 'start_prep':
-      case 'prep_complete':
-      case 'start_delivery':
-      case 'delivery_complete':
-      case 'activate_session':
-      case 'resume_session':
+  const getTransitionColor = (action: SessionAction) => {
+    switch (action) {
+      case 'CLAIM_PREP':
+      case 'HEAT_UP':
+      case 'READY_FOR_DELIVERY':
+      case 'DELIVER_NOW':
+      case 'MARK_DELIVERED':
+      case 'START_ACTIVE':
+      case 'RESUME_SESSION':
         return 'bg-blue-600 hover:bg-blue-700 text-white';
-      case 'pause_session':
+      case 'PAUSE_SESSION':
         return 'bg-orange-600 hover:bg-orange-700 text-white';
-      case 'complete_session':
+      case 'CLOSE_SESSION':
         return 'bg-green-600 hover:bg-green-700 text-white';
-      case 'cancel_session':
+      case 'VOID_SESSION':
         return 'bg-red-600 hover:bg-red-700 text-white';
-      case 'extend_session':
+      case 'REQUEST_REMAKE':
         return 'bg-purple-600 hover:bg-purple-700 text-white';
       default:
         return 'bg-zinc-600 hover:bg-zinc-700 text-white';
     }
   };
 
-  const handleTransitionClick = (transition: SessionTransition) => {
-    const transitionDetails = sessionStateMachine.getTransitionDetails(transition);
-    
-    if (transitionDetails?.requiresConfirmation) {
-      setShowConfirmDialog(transition);
-    } else {
-      onTransition(transition);
+  const handleTransitionClick = (action: SessionAction) => {
+    if (canPerformAction(userRole as any, action)) {
+      setShowConfirmDialog(action);
     }
   };
 
@@ -123,12 +122,12 @@ export const SessionStateTransition: React.FC<SessionStateTransitionProps> = ({
     <div className={cn('space-y-4', className)}>
       {/* Current State Display */}
       <div className="flex items-center space-x-3 p-3 bg-zinc-800/50 rounded-lg">
-        <div className={cn('p-2 rounded-lg', `bg-${stateInfo.color}-500/20`)}>
-          {React.createElement(require('lucide-react')[stateInfo.icon], { className: 'w-5 h-5' })}
+        <div className="p-2 rounded-lg bg-blue-500/20">
+          <Clock className="w-5 h-5 text-blue-400" />
         </div>
         <div>
-          <div className="font-semibold text-white">{stateInfo.label}</div>
-          <div className="text-sm text-zinc-400">{stateInfo.description}</div>
+          <div className="font-semibold text-white">Current State</div>
+          <div className="text-sm text-zinc-400">{currentState}</div>
         </div>
       </div>
 
@@ -136,17 +135,17 @@ export const SessionStateTransition: React.FC<SessionStateTransitionProps> = ({
       <div className="space-y-2">
         <h4 className="text-sm font-medium text-zinc-300">Available Actions:</h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {validTransitions.map((transition) => (
+          {validTransitions.map((status) => (
             <button
-              key={transition.transition}
-              onClick={() => handleTransitionClick(transition.transition)}
+              key={status}
+              onClick={() => handleTransitionClick(status as SessionAction)}
               className={cn(
                 'flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                getTransitionColor(transition.transition)
+                getTransitionColor(status as SessionAction)
               )}
             >
-              {getTransitionIcon(transition.transition)}
-              <span>{transition.description}</span>
+              {getTransitionIcon(status as SessionAction)}
+              <span>{status}</span>
             </button>
           ))}
         </div>
@@ -162,7 +161,7 @@ export const SessionStateTransition: React.FC<SessionStateTransitionProps> = ({
             </div>
             
             <p className="text-zinc-300 mb-4">
-              Are you sure you want to {sessionStateMachine.getTransitionDetails(showConfirmDialog)?.description.toLowerCase()}?
+              Are you sure you want to perform this action?
             </p>
 
             <div className="space-y-3">

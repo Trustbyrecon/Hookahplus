@@ -273,14 +273,14 @@ function FireSessionDashboardContent() {
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold text-white">{session.tableId}</h3>
                     <Badge className="bg-green-500 text-white">
-                      {session.state}
+                      {session.status}
                     </Badge>
                   </div>
                   <div className="space-y-2 text-sm text-zinc-300">
-                    <p><strong>Customer:</strong> {session.customerRef}</p>
+                    <p><strong>Customer:</strong> {session.customerName}</p>
                     <p><strong>Flavor:</strong> {session.flavor}</p>
-                    <p><strong>Price:</strong> ${(session.priceCents / 100).toFixed(2)}</p>
-                    <p><strong>State:</strong> {session.state}</p>
+                    <p><strong>Price:</strong> ${(session.amount / 100).toFixed(2)}</p>
+                    <p><strong>State:</strong> {session.status}</p>
                   </div>
                 </Card>
               ))}
