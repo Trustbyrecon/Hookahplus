@@ -25,7 +25,8 @@ import {
   X,
   RotateCcw,
   CreditCard,
-  Ban
+  Ban,
+  Brain
 } from 'lucide-react';
 import { 
   SessionStatus, 
@@ -366,6 +367,17 @@ export default function SimpleFSDDesign({
                           </div>
                         );
                       })}
+                    </div>
+                    
+                    {/* Intelligence Button */}
+                    <div className="mt-3 pt-3 border-t border-zinc-700">
+                      <button
+                        onClick={() => window.open(`/guest-intelligence?sessionId=${sessionId}`, '_blank')}
+                        className="flex items-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors w-full justify-center"
+                      >
+                        <Brain className="w-4 h-4" />
+                        <span className="text-sm font-medium">View Intelligence</span>
+                      </button>
                     </div>
                   </div>
                 )}
