@@ -1,214 +1,13 @@
-// Enhanced Session State Machine based on commit #31zZH8hVp
-// Complete state machine for managing hookah sessions with validated transitions
-
-export type SessionStatus = 
-  | 'NEW'
-  | 'PAID_CONFIRMED'
-  | 'PREP_IN_PROGRESS'
-  | 'HEAT_UP'
-  | 'READY_FOR_DELIVERY'
-  | 'OUT_FOR_DELIVERY'
-  | 'DELIVERED'
-  | 'ACTIVE'
-  | 'PAUSED'
-  | 'COMPLETED'
-  | 'CLOSE_PENDING'
-  | 'CLOSED'
-  | 'STAFF_HOLD'
-  | 'STOCK_BLOCKED'
-  | 'REMAKE'
-  | 'REFUND_REQUESTED'
-  | 'REFUNDED'
-  | 'FAILED_PAYMENT'
-  | 'VOIDED';
-
-export type SessionStage = 'BOH' | 'FOH' | 'CUSTOMER';
-
-export interface SessionTimer {
-  remaining: number; // seconds
-  total: number; // seconds
-  isActive: boolean;
-  startedAt?: number;
-  pausedAt?: number;
-  pausedDuration?: number;
-}
-
-export interface FireSession {
-  id: string;
-  tableId: string;
-  customerName: string;
-  customerPhone?: string;
-  flavor: string;
-  amount: number;
-  status: SessionStatus;
-  currentStage: SessionStage;
-  assignedStaff: {
-    boh?: string;
-    foh?: string;
-  };
-  createdAt: number;
-  updatedAt: number;
-  sessionStartTime?: number;
-  sessionDuration: number;
-  coalStatus: 'active' | 'needs_refill' | 'burnt_out';
-  refillStatus: 'none' | 'requested' | 'delivered';
-  notes: string;
-  edgeCase: string | null;
-  sessionTimer?: SessionTimer;
-  bohState?: 'PREPARING' | 'WARMING_UP' | 'READY_FOR_PICKUP' | 'PICKED_UP';
-  guestTimerDisplay?: boolean;
-}
-
-// State transition validation
-export const VALID_TRANSITIONS: Record<SessionStatus, SessionStatus[]> = {
-  'NEW': ['PAID_CONFIRMED', 'FAILED_PAYMENT'],
-  'PAID_CONFIRMED': ['PREP_IN_PROGRESS', 'REFUND_REQUESTED'],
-  'PREP_IN_PROGRESS': ['HEAT_UP', 'STAFF_HOLD', 'STOCK_BLOCKED', 'REMAKE'],
-  'HEAT_UP': ['READY_FOR_DELIVERY', 'STAFF_HOLD'],
-  'READY_FOR_DELIVERY': ['OUT_FOR_DELIVERY', 'STAFF_HOLD'],
-  'OUT_FOR_DELIVERY': ['DELIVERED', 'STAFF_HOLD'],
-  'DELIVERED': ['ACTIVE', 'STAFF_HOLD'],
-  'ACTIVE': ['PAUSED', 'COMPLETED', 'CLOSE_PENDING', 'STAFF_HOLD'],
-  'PAUSED': ['ACTIVE', 'COMPLETED', 'CLOSE_PENDING', 'STAFF_HOLD'],
-  'COMPLETED': ['CLOSED'],
-  'CLOSE_PENDING': ['CLOSED', 'ACTIVE'],
-  'CLOSED': [],
-  'STAFF_HOLD': ['PREP_IN_PROGRESS', 'READY_FOR_DELIVERY', 'ACTIVE', 'CLOSE_PENDING'],
-  'STOCK_BLOCKED': ['PREP_IN_PROGRESS'],
-  'REMAKE': ['PREP_IN_PROGRESS'],
-  'REFUND_REQUESTED': ['REFUNDED'],
-  'REFUNDED': [],
-  'FAILED_PAYMENT': ['VOIDED'],
-  'VOIDED': []
-};
-
-// Stage mapping for each status
-export const STATUS_TO_STAGE: Record<SessionStatus, SessionStage> = {
-  'NEW': 'CUSTOMER',
-  'PAID_CONFIRMED': 'BOH',
-  'PREP_IN_PROGRESS': 'BOH',
-  'HEAT_UP': 'BOH',
-  'READY_FOR_DELIVERY': 'BOH',
-  'OUT_FOR_DELIVERY': 'FOH',
-  'DELIVERED': 'FOH',
-  'ACTIVE': 'CUSTOMER',
-  'PAUSED': 'CUSTOMER',
-  'COMPLETED': 'FOH',
-  'CLOSE_PENDING': 'FOH',
-  'CLOSED': 'FOH',
-  'STAFF_HOLD': 'BOH',
-  'STOCK_BLOCKED': 'BOH',
-  'REMAKE': 'BOH',
-  'REFUND_REQUESTED': 'FOH',
-  'REFUNDED': 'FOH',
-  'FAILED_PAYMENT': 'CUSTOMER',
-  'VOIDED': 'FOH'
-};
-
-// Action types for session commands
-export type SessionAction = 
-  | 'CLAIM_PREP'
-  | 'HEAT_UP'
-  | 'READY_FOR_DELIVERY'
-  | 'DELIVER_NOW'
-  | 'MARK_DELIVERED'
-  | 'START_ACTIVE'
-  | 'PAUSE_SESSION'
-  | 'RESUME_SESSION'
-  | 'COMPLETE_SESSION'
-  | 'REQUEST_REFILL'
-  | 'COMPLETE_REFILL'
-  | 'CLOSE_SESSION'
-  | 'PUT_ON_HOLD'
-  | 'RESOLVE_HOLD'
-  | 'REQUEST_REMAKE'
-  | 'PROCESS_REFUND'
-  | 'VOID_SESSION';
-
-// Action to status mapping
-export const ACTION_TO_STATUS: Record<SessionAction, SessionStatus> = {
-  'CLAIM_PREP': 'PREP_IN_PROGRESS',
-  'HEAT_UP': 'HEAT_UP',
-  'READY_FOR_DELIVERY': 'READY_FOR_DELIVERY',
-  'DELIVER_NOW': 'OUT_FOR_DELIVERY',
-  'MARK_DELIVERED': 'DELIVERED',
-  'START_ACTIVE': 'ACTIVE',
-  'PAUSE_SESSION': 'PAUSED',
-  'RESUME_SESSION': 'ACTIVE',
-  'COMPLETE_SESSION': 'COMPLETED',
-  'REQUEST_REFILL': 'ACTIVE',
-  'COMPLETE_REFILL': 'ACTIVE',
-  'CLOSE_SESSION': 'CLOSE_PENDING',
-  'PUT_ON_HOLD': 'STAFF_HOLD',
-  'RESOLVE_HOLD': 'ACTIVE',
-  'REQUEST_REMAKE': 'REMAKE',
-  'PROCESS_REFUND': 'REFUND_REQUESTED',
-  'VOID_SESSION': 'VOIDED'
-};
-
-// Permission-based action validation
-export type UserRole = 'BOH' | 'FOH' | 'MANAGER' | 'ADMIN';
-
-export const ROLE_PERMISSIONS: Record<UserRole, SessionAction[]> = {
-  'BOH': [
-    'CLAIM_PREP',
-    'HEAT_UP', 
-    'READY_FOR_DELIVERY',
-    'PUT_ON_HOLD',
-    'RESOLVE_HOLD',
-    'REQUEST_REMAKE'
-  ],
-  'FOH': [
-    'DELIVER_NOW',
-    'MARK_DELIVERED',
-    'START_ACTIVE',
-    'PAUSE_SESSION',
-    'RESUME_SESSION',
-    'COMPLETE_SESSION',
-    'REQUEST_REFILL',
-    'COMPLETE_REFILL',
-    'CLOSE_SESSION',
-    'PROCESS_REFUND'
-  ],
-  'MANAGER': [
-    'CLAIM_PREP',
-    'HEAT_UP',
-    'READY_FOR_DELIVERY',
-    'DELIVER_NOW',
-    'MARK_DELIVERED',
-    'START_ACTIVE',
-    'PAUSE_SESSION',
-    'RESUME_SESSION',
-    'COMPLETE_SESSION',
-    'REQUEST_REFILL',
-    'COMPLETE_REFILL',
-    'CLOSE_SESSION',
-    'PUT_ON_HOLD',
-    'RESOLVE_HOLD',
-    'REQUEST_REMAKE',
-    'PROCESS_REFUND',
-    'VOID_SESSION'
-  ],
-  'ADMIN': [
-    'CLAIM_PREP',
-    'HEAT_UP',
-    'READY_FOR_DELIVERY',
-    'DELIVER_NOW',
-    'MARK_DELIVERED',
-    'START_ACTIVE',
-    'PAUSE_SESSION',
-    'RESUME_SESSION',
-    'COMPLETE_SESSION',
-    'REQUEST_REFILL',
-    'COMPLETE_REFILL',
-    'CLOSE_SESSION',
-    'PUT_ON_HOLD',
-    'RESOLVE_HOLD',
-    'REQUEST_REMAKE',
-    'PROCESS_REFUND',
-    'VOID_SESSION'
-  ]
-};
+import { 
+  FireSession, 
+  SessionStatus, 
+  SessionAction, 
+  UserRole, 
+  VALID_TRANSITIONS, 
+  ACTION_TO_STATUS, 
+  STATUS_TO_STAGE, 
+  ROLE_PERMISSIONS 
+} from '../types/enhancedSession';
 
 // Trust validation function
 export function canPerformAction(userRole: UserRole, action: SessionAction): boolean {
@@ -222,7 +21,7 @@ export function isValidTransition(currentStatus: SessionStatus, newStatus: Sessi
 
 // Next state calculation with trust validation
 export function nextStateWithTrust(
-  session: FireSession, 
+  session: FireSession,
   action: { type: SessionAction; operatorId: string; timestamp?: number },
   userRole: UserRole
 ): FireSession {
@@ -233,7 +32,7 @@ export function nextStateWithTrust(
 
   // Get target status
   const targetStatus = ACTION_TO_STATUS[action.type];
-  
+ 
   // Validate transition
   if (!isValidTransition(session.status, targetStatus)) {
     throw new Error(`Invalid transition from ${session.status} to ${targetStatus}`);
@@ -293,7 +92,7 @@ export function calculateRemainingTime(session: FireSession): number {
   const elapsed = Math.floor((now - session.sessionStartTime) / 1000);
   const pausedTime = session.sessionTimer.pausedDuration || 0;
   const remaining = Math.max(0, session.sessionTimer.total - elapsed + pausedTime);
-  
+ 
   return remaining;
 }
 
@@ -303,25 +102,43 @@ export function formatDuration(seconds: number): string {
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 }
 
-// Session status colors for UI
-export const STATUS_COLORS: Record<SessionStatus, string> = {
-  'NEW': 'bg-blue-500/20 border-blue-500/30 text-blue-300',
-  'PAID_CONFIRMED': 'bg-green-500/20 border-green-500/30 text-green-300',
-  'PREP_IN_PROGRESS': 'bg-orange-500/20 border-orange-500/30 text-orange-300',
-  'HEAT_UP': 'bg-red-500/20 border-red-500/30 text-red-300',
-  'READY_FOR_DELIVERY': 'bg-yellow-500/20 border-yellow-500/30 text-yellow-300',
-  'OUT_FOR_DELIVERY': 'bg-purple-500/20 border-purple-500/30 text-purple-300',
-  'DELIVERED': 'bg-teal-500/20 border-teal-500/30 text-teal-300',
-  'ACTIVE': 'bg-green-500/20 border-green-500/30 text-green-300',
-  'PAUSED': 'bg-yellow-500/20 border-yellow-500/30 text-yellow-300',
-  'COMPLETED': 'bg-emerald-500/20 border-emerald-500/30 text-emerald-300',
-  'CLOSE_PENDING': 'bg-gray-500/20 border-gray-500/30 text-gray-300',
-  'CLOSED': 'bg-gray-600/20 border-gray-600/30 text-gray-400',
-  'STAFF_HOLD': 'bg-yellow-600/20 border-yellow-600/30 text-yellow-300',
-  'STOCK_BLOCKED': 'bg-red-600/20 border-red-600/30 text-red-300',
-  'REMAKE': 'bg-orange-600/20 border-orange-600/30 text-orange-300',
-  'REFUND_REQUESTED': 'bg-purple-600/20 border-purple-600/30 text-purple-300',
-  'REFUNDED': 'bg-gray-500/20 border-gray-500/30 text-gray-300',
-  'FAILED_PAYMENT': 'bg-red-700/20 border-red-700/30 text-red-400',
-  'VOIDED': 'bg-gray-700/20 border-gray-700/30 text-gray-500'
+// Business logic descriptions for each state
+export const STATE_DESCRIPTIONS: Record<SessionStatus, string> = {
+  'NEW': 'New session created, awaiting payment confirmation',
+  'PAID_CONFIRMED': 'Payment confirmed, ready for BOH preparation',
+  'PREP_IN_PROGRESS': 'BOH preparing hookah: bowl packing, flavor mixing',
+  'HEAT_UP': 'BOH heating coals, final preparation phase',
+  'READY_FOR_DELIVERY': 'Hookah ready, awaiting FOH pickup',
+  'OUT_FOR_DELIVERY': 'FOH delivering hookah to table',
+  'DELIVERED': 'Hookah delivered to table, ready to start',
+  'ACTIVE': 'Session active, customer enjoying hookah',
+  'CLOSE_PENDING': 'Session ending, processing payment',
+  'CLOSED': 'Session completed and closed',
+  'STAFF_HOLD': 'Session on hold, awaiting staff action',
+  'STOCK_BLOCKED': 'Session blocked due to stock shortage',
+  'REMAKE': 'Session requires remake, returning to BOH',
+  'REFUND_REQUESTED': 'Refund requested by customer',
+  'REFUNDED': 'Refund processed and completed',
+  'FAILED_PAYMENT': 'Payment failed, session voided',
+  'VOIDED': 'Session voided and cancelled'
+};
+
+// Business logic descriptions for each action
+export const ACTION_DESCRIPTIONS: Record<SessionAction, string> = {
+  'CLAIM_PREP': 'BOH claims preparation: begins bowl packing and flavor mixing',
+  'HEAT_UP': 'BOH heats coals: final preparation phase before delivery',
+  'READY_FOR_DELIVERY': 'BOH completes prep: hookah ready for FOH pickup',
+  'DELIVER_NOW': 'FOH begins delivery: transporting hookah to table',
+  'MARK_DELIVERED': 'FOH confirms delivery: hookah setup complete at table',
+  'START_ACTIVE': 'FOH starts session: customer begins enjoying hookah',
+  'PAUSE_SESSION': 'Pause session: customer stepped away, coals cooling',
+  'RESUME_SESSION': 'Resume session: customer returned, coals reheated',
+  'REQUEST_REFILL': 'Customer requests refill: return to BOH for new coals',
+  'COMPLETE_REFILL': 'Refill completed: new coals delivered to customer',
+  'CLOSE_SESSION': 'Close session: customer finished, processing payment',
+  'PUT_ON_HOLD': 'Put on hold: temporary pause for staff or customer issue',
+  'RESOLVE_HOLD': 'Resolve hold: issue resolved, resuming normal flow',
+  'REQUEST_REMAKE': 'Request remake: return to BOH for complete re-preparation',
+  'PROCESS_REFUND': 'Process refund: customer refund requested and approved',
+  'VOID_SESSION': 'Void session: cancel session completely'
 };

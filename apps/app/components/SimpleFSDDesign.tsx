@@ -20,8 +20,31 @@ import {
   Home,
   Coffee,
   Timer,
-  Zap
+  Zap,
+  DollarSign,
+  X,
+  RotateCcw,
+  CreditCard,
+  Ban
 } from 'lucide-react';
+import { 
+  SessionStatus, 
+  SessionAction, 
+  UserRole, 
+  FireSession,
+  STATUS_COLORS,
+  ACTION_TO_STATUS,
+  STATUS_TO_STAGE
+} from '../types/enhancedSession';
+import { 
+  canPerformAction, 
+  isValidTransition, 
+  nextStateWithTrust,
+  calculateRemainingTime,
+  formatDuration,
+  STATE_DESCRIPTIONS,
+  ACTION_DESCRIPTIONS
+} from '../lib/sessionStateMachine';
 
 interface SimpleFSDDesignProps {
   sessions?: any[];
@@ -30,145 +53,63 @@ interface SimpleFSDDesignProps {
   className?: string;
 }
 
-// Business Logic Framework - Complete Hookah Lounge Operations
-const BUSINESS_LOGIC = {
-  // BOH Actions
-  START_PREP: {
-    icon: <Package className="w-4 h-4" />,
-    color: "bg-orange-500 hover:bg-orange-600",
-    businessLogic: "BOH begins hookah preparation: coals heating, bowl packing, flavor mixing, quality preparation starts",
-    nextState: "PREP_IN_PROGRESS"
-  },
-  PREP_COMPLETE: {
-    icon: <CheckCircle className="w-4 h-4" />,
-    color: "bg-green-500 hover:bg-green-600",
-    businessLogic: "BOH completes preparation: hookah assembled, coals ready, quality checked, ready for FOH pickup",
-    nextState: "READY_FOR_DELIVERY"
-  },
-  PREP_ISSUE: {
-    icon: <AlertTriangle className="w-4 h-4" />,
-    color: "bg-red-500 hover:bg-red-600",
-    businessLogic: "BOH encounters issue: equipment problem, flavor shortage, quality concern, needs resolution",
-    nextState: "PREP_ISSUE"
-  },
-  BOH_REFILL: {
-    icon: <RefreshCw className="w-4 h-4" />,
-    color: "bg-orange-500 hover:bg-orange-600",
-    businessLogic: "BOH handles refill: new coals, fresh flavor, bowl cleaning, preparation for continued session",
-    nextState: "PREP_IN_PROGRESS"
-  },
-  HOLD_AT_BOH: {
-    icon: <Home className="w-4 h-4" />,
-    color: "bg-yellow-500 hover:bg-yellow-600",
-    businessLogic: "Hold at BOH: customer not ready, table issue, special preparation needed, temporary hold",
-    nextState: "BOH_HOLD"
-  },
-
-  // FOH Actions
-  FOH_PICKUP: {
-    icon: <Truck className="w-4 h-4" />,
-    color: "bg-teal-500 hover:bg-teal-600",
-    businessLogic: "FOH collects prepared hookah from BOH station, verifies completeness, begins delivery to table",
-    nextState: "FOH_PICKUP"
-  },
-  DELIVER_TO_TABLE: {
-    icon: <ArrowRight className="w-4 h-4" />,
-    color: "bg-purple-500 hover:bg-purple-600",
-    businessLogic: "FOH delivers hookah to table: setup complete, customer briefed, session begins",
-    nextState: "ACTIVE"
-  },
-  RETURN_TO_BOH: {
-    icon: <ArrowLeft className="w-4 h-4" />,
-    color: "bg-red-500 hover:bg-red-600",
-    businessLogic: "Return hookah to BOH: customer not at table, table issue, needs re-preparation",
-    nextState: "PREP_IN_PROGRESS"
-  },
-
-  // Session Management
-  PAUSE_SESSION: {
-    icon: <Pause className="w-4 h-4" />,
-    color: "bg-yellow-500 hover:bg-yellow-600",
-    businessLogic: "Pause session: customer stepped away, coals cooling, timer paused, ready to resume",
-    nextState: "PAUSED"
-  },
-  RESUME_SESSION: {
-    icon: <Play className="w-4 h-4" />,
-    color: "bg-green-500 hover:bg-green-600",
-    businessLogic: "Resume session: customer returned, coals reheated, timer restarted, session continues",
-    nextState: "ACTIVE"
-  },
-  REFILL_REQUEST: {
-    icon: <Coffee className="w-4 h-4" />,
-    color: "bg-blue-500 hover:bg-blue-600",
-    businessLogic: "Customer requests refill: return to BOH for new coals/flavor, maintain session continuity",
-    nextState: "REFILL_NEEDED"
-  },
-  COMPLETE_SESSION: {
-    icon: <CheckCircle className="w-4 h-4" />,
-    color: "bg-gray-500 hover:bg-gray-600",
-    businessLogic: "Complete session: customer finished, cleanup required, payment processed, session closed",
-    nextState: "COMPLETED"
-  }
+// Enhanced State Machine - Complete Hookah Lounge Operations
+const ACTION_ICONS: Record<SessionAction, React.ReactNode> = {
+  'CLAIM_PREP': <Package className="w-4 h-4" />,
+  'HEAT_UP': <Flame className="w-4 h-4" />,
+  'READY_FOR_DELIVERY': <CheckCircle className="w-4 h-4" />,
+  'DELIVER_NOW': <Truck className="w-4 h-4" />,
+  'MARK_DELIVERED': <ArrowRight className="w-4 h-4" />,
+  'START_ACTIVE': <Play className="w-4 h-4" />,
+  'PAUSE_SESSION': <Pause className="w-4 h-4" />,
+  'RESUME_SESSION': <Play className="w-4 h-4" />,
+  'REQUEST_REFILL': <Coffee className="w-4 h-4" />,
+  'COMPLETE_REFILL': <RefreshCw className="w-4 h-4" />,
+  'CLOSE_SESSION': <CheckCircle className="w-4 h-4" />,
+  'PUT_ON_HOLD': <Home className="w-4 h-4" />,
+  'RESOLVE_HOLD': <Zap className="w-4 h-4" />,
+  'REQUEST_REMAKE': <RotateCcw className="w-4 h-4" />,
+  'PROCESS_REFUND': <CreditCard className="w-4 h-4" />,
+  'VOID_SESSION': <X className="w-4 h-4" />
 };
 
-// Workflow State Definitions
-const WORKFLOW_STATES = {
-  CREATED: {
-    name: "Created",
-    color: "text-blue-400 bg-blue-500/10",
-    icon: <Package className="w-4 h-4" />,
-    description: "BOH begins hookah preparation: coals heating, bowl packing, flavor mixing",
-    availableActions: ['START_PREP']
-  },
-  PREP_IN_PROGRESS: {
-    name: "Prep In Progress",
-    color: "text-orange-400 bg-orange-500/10",
-    icon: <RefreshCw className="w-4 h-4" />,
-    description: "BOH completes preparation: hookah assembled, coals ready, quality checked",
-    availableActions: ['PREP_COMPLETE', 'PREP_ISSUE']
-  },
-  READY_FOR_DELIVERY: {
-    name: "Ready for Delivery",
-    color: "text-green-400 bg-green-500/10",
-    icon: <Truck className="w-4 h-4" />,
-    description: "FOH collects prepared hookah from BOH station, verifies completeness",
-    availableActions: ['FOH_PICKUP', 'HOLD_AT_BOH']
-  },
-  FOH_PICKUP: {
-    name: "FOH Pickup",
-    color: "text-teal-400 bg-teal-500/10",
-    icon: <Truck className="w-4 h-4" />,
-    description: "FOH delivers hookah to table: setup complete, customer briefed",
-    availableActions: ['DELIVER_TO_TABLE', 'RETURN_TO_BOH']
-  },
-  ACTIVE: {
-    name: "Active",
-    color: "text-green-400 bg-green-500/10",
-    icon: <Play className="w-4 h-4" />,
-    description: "Session running: customer enjoying hookah, timer active",
-    availableActions: ['PAUSE_SESSION', 'REFILL_REQUEST', 'COMPLETE_SESSION']
-  },
-  PAUSED: {
-    name: "Paused",
-    color: "text-yellow-400 bg-yellow-500/10",
-    icon: <Pause className="w-4 h-4" />,
-    description: "Customer stepped away: coals cooling, timer paused",
-    availableActions: ['RESUME_SESSION', 'COMPLETE_SESSION']
-  },
-  REFILL_NEEDED: {
-    name: "Refill Needed",
-    color: "text-blue-400 bg-blue-500/10",
-    icon: <Coffee className="w-4 h-4" />,
-    description: "Customer requests refill: return to BOH for new coals/flavor",
-    availableActions: ['BOH_REFILL', 'COMPLETE_SESSION']
-  },
-  COMPLETED: {
-    name: "Completed",
-    color: "text-gray-400 bg-gray-500/10",
-    icon: <CheckCircle className="w-4 h-4" />,
-    description: "Session finished: customer completed, cleanup required",
-    availableActions: []
-  }
+const ACTION_COLORS: Record<SessionAction, string> = {
+  'CLAIM_PREP': "bg-orange-500 hover:bg-orange-600",
+  'HEAT_UP': "bg-red-500 hover:bg-red-600",
+  'READY_FOR_DELIVERY': "bg-green-500 hover:bg-green-600",
+  'DELIVER_NOW': "bg-purple-500 hover:bg-purple-600",
+  'MARK_DELIVERED': "bg-teal-500 hover:bg-teal-600",
+  'START_ACTIVE': "bg-green-500 hover:bg-green-600",
+  'PAUSE_SESSION': "bg-yellow-500 hover:bg-yellow-600",
+  'RESUME_SESSION': "bg-green-500 hover:bg-green-600",
+  'REQUEST_REFILL': "bg-blue-500 hover:bg-blue-600",
+  'COMPLETE_REFILL': "bg-orange-500 hover:bg-orange-600",
+  'CLOSE_SESSION': "bg-gray-500 hover:bg-gray-600",
+  'PUT_ON_HOLD': "bg-yellow-500 hover:bg-yellow-600",
+  'RESOLVE_HOLD': "bg-green-500 hover:bg-green-600",
+  'REQUEST_REMAKE': "bg-orange-500 hover:bg-orange-600",
+  'PROCESS_REFUND': "bg-purple-500 hover:bg-purple-600",
+  'VOID_SESSION': "bg-red-500 hover:bg-red-600"
+};
+
+const STATE_ICONS: Record<SessionStatus, React.ReactNode> = {
+  'NEW': <DollarSign className="w-4 h-4" />,
+  'PAID_CONFIRMED': <CheckCircle className="w-4 h-4" />,
+  'PREP_IN_PROGRESS': <Package className="w-4 h-4" />,
+  'HEAT_UP': <Flame className="w-4 h-4" />,
+  'READY_FOR_DELIVERY': <Truck className="w-4 h-4" />,
+  'OUT_FOR_DELIVERY': <Truck className="w-4 h-4" />,
+  'DELIVERED': <ArrowRight className="w-4 h-4" />,
+  'ACTIVE': <Play className="w-4 h-4" />,
+  'CLOSE_PENDING': <Clock className="w-4 h-4" />,
+  'CLOSED': <CheckCircle className="w-4 h-4" />,
+  'STAFF_HOLD': <Home className="w-4 h-4" />,
+  'STOCK_BLOCKED': <AlertTriangle className="w-4 h-4" />,
+  'REMAKE': <RotateCcw className="w-4 h-4" />,
+  'REFUND_REQUESTED': <CreditCard className="w-4 h-4" />,
+  'REFUNDED': <CheckCircle className="w-4 h-4" />,
+  'FAILED_PAYMENT': <X className="w-4 h-4" />,
+  'VOIDED': <Ban className="w-4 h-4" />
 };
 
 export default function SimpleFSDDesign({ 
@@ -190,33 +131,39 @@ export default function SimpleFSDDesign({
     }
   };
 
-  const getSessionState = (session: any) => {
-    const status = session.status || session.state || 'CREATED';
-    return WORKFLOW_STATES[status as keyof typeof WORKFLOW_STATES] || WORKFLOW_STATES.CREATED;
+  const getSessionStatus = (session: any): SessionStatus => {
+    return (session.status || session.state || 'NEW') as SessionStatus;
   };
 
-  const getAvailableActions = (session: any) => {
-    const state = getSessionState(session);
-    return state.availableActions.map(actionKey => ({
-      key: actionKey,
-      ...BUSINESS_LOGIC[actionKey as keyof typeof BUSINESS_LOGIC]
-    }));
+  const getSessionStage = (session: any): string => {
+    const status = getSessionStatus(session);
+    return STATUS_TO_STAGE[status];
   };
 
-  const canUserPerformAction = (actionKey: string, userRole: string) => {
-    // BOH Actions
-    if (['START_PREP', 'PREP_COMPLETE', 'PREP_ISSUE', 'BOH_REFILL', 'HOLD_AT_BOH'].includes(actionKey)) {
-      return ['BOH', 'MANAGER', 'ADMIN'].includes(userRole);
-    }
-    // FOH Actions
-    if (['FOH_PICKUP', 'DELIVER_TO_TABLE', 'RETURN_TO_BOH'].includes(actionKey)) {
-      return ['FOH', 'MANAGER', 'ADMIN'].includes(userRole);
-    }
-    // Universal Actions
-    if (['PAUSE_SESSION', 'RESUME_SESSION', 'REFILL_REQUEST', 'COMPLETE_SESSION'].includes(actionKey)) {
-      return true;
-    }
-    return false;
+  const getAvailableActions = (session: any): SessionAction[] => {
+    const status = getSessionStatus(session);
+    const stage = getSessionStage(session);
+    
+    // Get all possible actions for this status
+    const allActions: SessionAction[] = [
+      'CLAIM_PREP', 'HEAT_UP', 'READY_FOR_DELIVERY', 'DELIVER_NOW', 'MARK_DELIVERED',
+      'START_ACTIVE', 'PAUSE_SESSION', 'RESUME_SESSION', 'REQUEST_REFILL', 'COMPLETE_REFILL',
+      'CLOSE_SESSION', 'PUT_ON_HOLD', 'RESOLVE_HOLD', 'REQUEST_REMAKE', 'PROCESS_REFUND', 'VOID_SESSION'
+    ];
+
+    // Filter actions that are valid transitions from current status
+    return allActions.filter(action => {
+      const targetStatus = ACTION_TO_STATUS[action];
+      return isValidTransition(status, targetStatus);
+    });
+  };
+
+  const canUserPerformAction = (action: SessionAction, userRole: string): boolean => {
+    return canPerformAction(userRole as UserRole, action);
+  };
+
+  const getSessionDisplayName = (status: SessionStatus): string => {
+    return status.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
   };
 
   return (
@@ -277,9 +224,13 @@ export default function SimpleFSDDesign({
           </div>
         ) : (
           sessions.map((session) => {
-            const sessionState = getSessionState(session);
+            const sessionStatus = getSessionStatus(session);
+            const sessionStage = getSessionStage(session);
             const availableActions = getAvailableActions(session);
             const sessionId = session.id || session.session_id;
+            const displayName = getSessionDisplayName(sessionStatus);
+            const statusColor = STATUS_COLORS[sessionStatus];
+            const stateIcon = STATE_ICONS[sessionStatus];
 
             return (
               <div
@@ -289,8 +240,8 @@ export default function SimpleFSDDesign({
                 {/* Session Header */}
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center space-x-3">
-                    <div className={`p-2 rounded-lg ${sessionState.color}`}>
-                      {sessionState.icon}
+                    <div className={`p-2 rounded-lg ${statusColor}`}>
+                      {stateIcon}
                     </div>
                     <div>
                       <h3 className="font-medium text-white">
@@ -303,20 +254,36 @@ export default function SimpleFSDDesign({
                   </div>
                   
                   <div className="flex items-center space-x-2">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${sessionState.color}`}>
-                      {sessionState.name}
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${statusColor}`}>
+                      {displayName}
+                    </span>
+                    <span className="text-xs text-zinc-500">
+                      {sessionStage}
                     </span>
                   </div>
                 </div>
 
-                {/* Business Logic Description */}
+                {/* Enhanced State Description */}
                 <div className="mb-3 p-2 bg-zinc-900/50 rounded text-xs text-zinc-300">
                   <div className="flex items-center space-x-1 mb-1">
                     <Info className="w-3 h-3" />
                     <span className="font-medium">Current State:</span>
                   </div>
-                  <p>{sessionState.description}</p>
+                  <p>{STATE_DESCRIPTIONS[sessionStatus]}</p>
                 </div>
+
+                {/* Timer Display */}
+                {session.sessionTimer && (
+                  <div className="mb-3 p-2 bg-zinc-900/30 rounded text-xs text-zinc-300">
+                    <div className="flex items-center space-x-1 mb-1">
+                      <Timer className="w-3 h-3" />
+                      <span className="font-medium">Session Timer:</span>
+                    </div>
+                    <p className="text-lg font-mono">
+                      {formatDuration(calculateRemainingTime(session))}
+                    </p>
+                  </div>
+                )}
 
                 {/* Available Actions */}
                 {availableActions.length > 0 && (
@@ -327,36 +294,39 @@ export default function SimpleFSDDesign({
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {availableActions.map((action) => {
-                        const canPerform = canUserPerformAction(action.key, userRole);
+                        const canPerform = canUserPerformAction(action, userRole);
                         return (
-                          <div key={action.key} className="relative">
+                          <div key={action} className="relative">
                             <button
-                              onClick={() => canPerform && handleSessionAction(action.key.toLowerCase(), sessionId)}
+                              onClick={() => canPerform && handleSessionAction(action.toLowerCase(), sessionId)}
                               disabled={!canPerform}
-                              onMouseEnter={() => setHoveredAction(action.key)}
+                              onMouseEnter={() => setHoveredAction(action)}
                               onMouseLeave={() => setHoveredAction(null)}
                               className={`flex items-center space-x-1 px-3 py-1 rounded text-xs font-medium transition-colors ${
                                 canPerform 
-                                  ? action.color 
+                                  ? ACTION_COLORS[action]
                                   : 'bg-gray-600 text-gray-400 cursor-not-allowed'
                               }`}
                             >
-                              {action.icon}
-                              <span>{action.key.replace(/_/g, ' ')}</span>
+                              {ACTION_ICONS[action]}
+                              <span>{action.replace(/_/g, ' ')}</span>
                               <Info className="w-3 h-3" />
                             </button>
                             
-                            {/* Business Logic Tooltip */}
-                            {hoveredAction === action.key && (
+                            {/* Enhanced Business Logic Tooltip */}
+                            {hoveredAction === action && (
                               <div className="absolute bottom-full left-0 mb-2 w-64 p-3 bg-zinc-900 border border-zinc-700 rounded-lg shadow-lg z-10">
-                                <div className="flex items-center space-x-1 mb-1">
+                                <div className="flex items-center space-x-1 mb-2">
                                   <Info className="w-3 h-3 text-blue-400" />
                                   <span className="text-xs font-medium text-blue-400">Business Logic</span>
                                 </div>
-                                <p className="text-xs text-zinc-300">{action.businessLogic}</p>
-                                <div className="mt-2 pt-2 border-t border-zinc-700">
+                                <p className="text-xs text-zinc-300 mb-2">{ACTION_DESCRIPTIONS[action]}</p>
+                                <div className="pt-2 border-t border-zinc-700">
                                   <p className="text-xs text-zinc-400">
-                                    <span className="font-medium">Next State:</span> {action.nextState.replace(/_/g, ' ')}
+                                    <span className="font-medium">Next State:</span> {getSessionDisplayName(ACTION_TO_STATUS[action])}
+                                  </p>
+                                  <p className="text-xs text-zinc-400">
+                                    <span className="font-medium">Stage:</span> {STATUS_TO_STAGE[ACTION_TO_STATUS[action]]}
                                   </p>
                                 </div>
                               </div>
@@ -368,26 +338,36 @@ export default function SimpleFSDDesign({
                   </div>
                 )}
 
-                {/* Session Details */}
+                {/* Enhanced Session Details */}
                 <div className="mt-3 pt-3 border-t border-zinc-700 space-y-2">
-                  {session.flavor_mix && (
+                  {session.flavor && (
                     <p className="text-sm text-zinc-400">
-                      <span className="font-medium">Flavors:</span> {Array.isArray(session.flavor_mix) ? session.flavor_mix.join(', ') : session.flavor_mix}
+                      <span className="font-medium">Flavor:</span> {session.flavor}
                     </p>
                   )}
-                  {session.timer_duration && (
+                  {session.amount && (
                     <p className="text-sm text-zinc-400">
-                      <span className="font-medium">Duration:</span> {session.timer_duration} minutes
+                      <span className="font-medium">Amount:</span> ${(session.amount / 100).toFixed(2)}
                     </p>
                   )}
-                  {session.boh_staff && (
+                  {session.assignedStaff?.boh && (
                     <p className="text-sm text-zinc-400">
-                      <span className="font-medium">BOH Staff:</span> {session.boh_staff}
+                      <span className="font-medium">BOH Staff:</span> {session.assignedStaff.boh}
                     </p>
                   )}
-                  {session.foh_staff && (
+                  {session.assignedStaff?.foh && (
                     <p className="text-sm text-zinc-400">
-                      <span className="font-medium">FOH Staff:</span> {session.foh_staff}
+                      <span className="font-medium">FOH Staff:</span> {session.assignedStaff.foh}
+                    </p>
+                  )}
+                  {session.coalStatus && (
+                    <p className="text-sm text-zinc-400">
+                      <span className="font-medium">Coal Status:</span> {session.coalStatus.replace(/_/g, ' ')}
+                    </p>
+                  )}
+                  {session.refillStatus && session.refillStatus !== 'none' && (
+                    <p className="text-sm text-zinc-400">
+                      <span className="font-medium">Refill Status:</span> {session.refillStatus.replace(/_/g, ' ')}
                     </p>
                   )}
                 </div>
@@ -426,7 +406,7 @@ export default function SimpleFSDDesign({
                 <span className="text-sm text-zinc-400">BOH Prep</span>
               </div>
               <p className="text-2xl font-bold text-white mt-1">
-                {sessions.filter(s => ['CREATED', 'PREP_IN_PROGRESS', 'READY_FOR_DELIVERY'].includes(s.status || s.state)).length}
+                {sessions.filter(s => ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(s.status || s.state)).length}
               </p>
             </div>
             
@@ -436,7 +416,7 @@ export default function SimpleFSDDesign({
                 <span className="text-sm text-zinc-400">FOH Delivery</span>
               </div>
               <p className="text-2xl font-bold text-white mt-1">
-                {sessions.filter(s => ['FOH_PICKUP'].includes(s.status || s.state)).length}
+                {sessions.filter(s => ['OUT_FOR_DELIVERY', 'DELIVERED'].includes(s.status || s.state)).length}
               </p>
             </div>
           </div>
@@ -448,15 +428,17 @@ export default function SimpleFSDDesign({
               <span>Workflow State Breakdown</span>
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {Object.entries(WORKFLOW_STATES).map(([key, state]) => {
-                const count = sessions.filter(s => (s.status || s.state) === key).length;
+              {Object.entries(STATUS_COLORS).map(([status, colorClass]) => {
+                const count = sessions.filter(s => (s.status || s.state) === status).length;
+                const displayName = getSessionDisplayName(status as SessionStatus);
+                const icon = STATE_ICONS[status as SessionStatus];
                 return (
-                  <div key={key} className="flex items-center space-x-2 p-2 rounded bg-zinc-900/50">
-                    <div className={`p-1 rounded ${state.color}`}>
-                      {state.icon}
+                  <div key={status} className="flex items-center space-x-2 p-2 rounded bg-zinc-900/50">
+                    <div className={`p-1 rounded ${colorClass}`}>
+                      {icon}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-zinc-300 truncate">{state.name}</p>
+                      <p className="text-xs font-medium text-zinc-300 truncate">{displayName}</p>
                       <p className="text-lg font-bold text-white">{count}</p>
                     </div>
                   </div>
