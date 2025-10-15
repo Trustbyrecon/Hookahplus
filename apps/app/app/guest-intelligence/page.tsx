@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import GuestIntelligenceDashboard from '../../components/GuestIntelligenceDashboard';
 import { FireSession } from '../../types/enhancedSession';
 
-export default function GuestIntelligencePage() {
+function GuestIntelligenceContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [session, setSession] = useState<FireSession | null>(null);
@@ -193,5 +193,20 @@ export default function GuestIntelligencePage() {
         onClose={handleClose}
       />
     </div>
+  );
+}
+
+export default function GuestIntelligencePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400 mx-auto mb-4"></div>
+          <p className="text-white">Loading Guest Intelligence...</p>
+        </div>
+      </div>
+    }>
+      <GuestIntelligenceContent />
+    </Suspense>
   );
 }
