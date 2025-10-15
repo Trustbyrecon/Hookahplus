@@ -1,55 +1,19 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, Suspense } from 'react';
-import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import { Card, Button, Badge } from '../../components';
+import React, { useState, useEffect, Suspense } from 'react';
 import CreateSessionModal from '../../components/CreateSessionModal';
-import SessionActionButtons from '../../components/SessionActionButtons';
-import SessionNotesModal from '../../components/SessionNotesModal';
-import { BOHActions, FOHActions, ManagerActions } from '../../components/SessionActions';
 import GlobalNavigation from '../../components/GlobalNavigation';
-import { FOHBOHToggle } from '../../components/FOHBOHToggle';
-import { FlagManager } from '../../components/FlagManager';
-import { SessionFilters, FilterOptions } from '../../components/SessionFilters';
-import { SessionNotes as SessionNotesComponent, SessionNote } from '../../components/SessionNotes';
-import { RoleBasedActions, RoleSelector } from '../../components/RoleBasedActions';
-import { ResolutionNotes } from '../../components/ResolutionNotes';
-import { SessionQueueManager } from '../../components/SessionQueueManager';
-import { SessionMonitor } from '../../components/SessionMonitor';
-import { ErrorBoundary } from '../../components/ErrorBoundary';
-import { OptimizedSessionCard } from '../../components/OptimizedSessionCard';
-import { FOHTimerInterface } from '../../components/FOHTimerInterface';
-import { ManagerTimerDashboard } from '../../components/ManagerTimerDashboard';
 import DollarTestButton from '../../components/DollarTestButton';
 import EnhancedFSDDesign from '../../components/EnhancedFSDDesign';
 import DynamicMetricsDashboard from '../../components/DynamicMetricsDashboard';
+import { ErrorBoundary } from '../../components/ErrorBoundary';
 import { ThemeProvider, useTheme } from '../../contexts/ThemeContext';
 import { useLiveSessionData } from '../../hooks/useLiveSessionData';
 import { 
   Flame, 
-  Users, 
-  Clock, 
-  TrendingUp,
-  Plus,
-  Settings,
-  Bell,
-  Search,
-  Filter,
-  MoreHorizontal,
-  AlertCircle,
-  Info,
-  Star,
-  Heart,
-  Zap,
-  Target,
-  TrendingDown,
-  Star as StarIcon,
-  MessageSquare,
-  Sparkles,
-  RefreshCw
+  AlertCircle
 } from 'lucide-react';
-import { Session, SessionStatus, SessionTeam, SessionNotes } from '../../types/session';
+import { SessionStatus } from '../../types/session';
 
 export default function FireSessionDashboard() {
   return (
@@ -70,20 +34,12 @@ export default function FireSessionDashboard() {
 }
 
 function FireSessionDashboardContent() {
-  const searchParams = useSearchParams();
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [useEnhancedDesign, setUseEnhancedDesign] = useState(true);
   const [userRole, setUserRole] = useState<'BOH' | 'FOH' | 'MANAGER' | 'ADMIN'>('MANAGER');
   
   // Use live session data
   const { sessions, metrics, loading, error, refreshSessions, updateSessionState } = useLiveSessionData();
   const { currentTheme } = useTheme();
-  
-  // Check for legacy view parameter
-  useEffect(() => {
-    const view = searchParams.get('view');
-    setUseEnhancedDesign(view !== 'legacy');
-  }, [searchParams]);
   
   // Debug modal state
   useEffect(() => {
@@ -136,19 +92,8 @@ function FireSessionDashboardContent() {
   return (
     <div className={`min-h-screen ${getThemeClasses()}`}>
       <GlobalNavigation />
-      {/* Enhanced Design Toggle */}
-      <div className="fixed top-4 right-4 z-50">
-        <button
-          onClick={() => setUseEnhancedDesign(!useEnhancedDesign)}
-          className={`px-4 py-2 rounded-xl bg-${currentTheme.colors.surface}/20 border border-${currentTheme.colors.border} text-${currentTheme.colors.text} text-sm font-medium hover:bg-${currentTheme.colors.surface}/30 transition-colors flex items-center gap-2`}
-        >
-          <Sparkles className="w-4 h-4" />
-          {useEnhancedDesign ? 'Enhanced' : 'Classic'} Design
-        </button>
-      </div>
-
-      {/* Enhanced Design */}
-      {useEnhancedDesign ? (
+      
+      {/* Unified Dashboard */}
         <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
           {/* Simplified Header */}
           <div className="flex items-center justify-between mb-8">
@@ -207,7 +152,7 @@ function FireSessionDashboardContent() {
             </div>
           )}
 
-          {/* Enhanced Session Management */}
+          {/* Session Management */}
           <EnhancedFSDDesign
             sessions={sessions}
             userRole={userRole}
@@ -220,50 +165,6 @@ function FireSessionDashboardContent() {
             }}
           />
         </div>
-      ) : (
-        <>
-          {/* Legacy Mode Indicator */}
-          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-6">
-            <div className="flex items-center gap-2 text-yellow-300">
-              <AlertCircle className="w-5 h-5" />
-              <span className="font-medium">Legacy Mode Active</span>
-            </div>
-            <p className="text-yellow-200 text-sm mt-2">
-              You're viewing the classic Fire Session Dashboard. 
-              <Link href="/fire-session-dashboard" className="text-yellow-300 hover:text-yellow-200 underline ml-1">
-                Switch to Enhanced Mode
-              </Link> for the latest features and HiTrust intelligence.
-            </p>
-          </div>
-
-          {/* Classic Design Content */}
-          <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-            <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-white mb-4">Fire Session Dashboard</h1>
-              <p className="text-zinc-400">Classic view - Enhanced mode available</p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {sessions.map((session) => (
-                <Card key={session.id} className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-white">{session.tableId}</h3>
-                    <Badge className="bg-green-500 text-white">
-                      {session.status}
-                    </Badge>
-                  </div>
-                  <div className="space-y-2 text-sm text-zinc-300">
-                    <p><strong>Customer:</strong> {session.customerName}</p>
-                    <p><strong>Flavor:</strong> {session.flavor}</p>
-                    <p><strong>Price:</strong> ${(session.amount / 100).toFixed(2)}</p>
-                    <p><strong>State:</strong> {session.status}</p>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
 
       {/* Modals */}
       <CreateSessionModal
