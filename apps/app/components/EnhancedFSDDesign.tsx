@@ -1737,7 +1737,7 @@ export default function EnhancedFSDDesign({
   const totalPrice = selectedFlavors?.reduce((sum, flavor) => sum + flavor.price, 0) || 0;
   
   return (
-    <div className={`${className}`}>
+    <div className={className}>
       {/* Debug Info Bar */}
       <EnhancedDebugInfoBar
           theme={theme}
