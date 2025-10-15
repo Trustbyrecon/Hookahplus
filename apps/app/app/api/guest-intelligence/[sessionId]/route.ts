@@ -223,9 +223,9 @@ export async function POST(req: NextRequest, { params }: { params: { sessionId: 
       }, { status: 400 });
     }
 
-    // Find the session
-    const sessionIndex = sessions.findIndex(s => s.id === sessionId);
-    if (sessionIndex === -1) {
+    // Verify session exists by fetching from the root API
+    const sessionResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/sessions/${sessionId}`);
+    if (!sessionResponse.ok) {
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
 
@@ -239,8 +239,9 @@ export async function POST(req: NextRequest, { params }: { params: { sessionId: 
       category: category || 'operational'
     };
 
-    // In a real implementation, this would be stored in a database
-    // For now, we'll just return the note
+    // In a real application, you would save this note to a database
+    // For now, we'll just return the created note
+    console.log(`Note added to session ${sessionId}:`, newNote);
     return NextResponse.json({
       success: true,
       note: newNote,
