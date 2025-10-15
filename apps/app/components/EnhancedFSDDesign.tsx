@@ -1734,7 +1734,9 @@ export default function EnhancedFSDDesign({
     setSelectedFlavors([]);
   };
   
-  const totalPrice = selectedFlavors?.reduce((sum, flavor) => sum + flavor.price, 0) || 0;
+  const totalPrice = selectedFlavors?.reduce((sum, flavor) => {
+    return sum + flavor.price;
+  }, 0) || 0;
   
   return (
     <div className={className}>
