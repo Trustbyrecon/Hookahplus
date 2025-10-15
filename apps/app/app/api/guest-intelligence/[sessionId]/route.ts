@@ -1,67 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { FireSession } from '../../../types/enhancedSession';
-import { calculateTrustScore, calculateSingleSessionTrustScore } from '../../../lib/trustScoring';
-import { maskSessionData, detectPiiLevel, createPiiSafeSummary } from '../../../lib/piiMasking';
-
-// In-memory storage for sessions (in production, this would be a database)
-let sessions: FireSession[] = [
-  // Sample sessions for testing
-  {
-    id: 'session_001',
-    tableId: 'T-001',
-    customerName: 'Alex Johnson',
-    customerPhone: '+1 (555) 123-4567',
-    flavor: 'Blue Mist + Mint',
-    amount: 3500, // in cents
-    status: 'ACTIVE',
-    currentStage: 'CUSTOMER',
-    assignedStaff: {
-      boh: 'Mike Rodriguez',
-      foh: 'Sarah Chen'
-    },
-    createdAt: Date.now() - 3600000, // 1 hour ago
-    updatedAt: Date.now(),
-    sessionStartTime: Date.now() - 3600000,
-    sessionDuration: 45 * 60, // 45 minutes in seconds
-    coalStatus: 'active',
-    refillStatus: 'none',
-    notes: 'Customer prefers mild flavors',
-    edgeCase: null,
-    sessionTimer: {
-      remaining: 15 * 60, // 15 minutes remaining
-      total: 45 * 60,
-      isActive: true,
-      startedAt: Date.now() - 3600000
-    },
-    bohState: 'PICKED_UP',
-    guestTimerDisplay: true
-  },
-  {
-    id: 'session_002',
-    tableId: 'T-002',
-    customerName: 'Maria Garcia',
-    customerPhone: '+1 (555) 234-5678',
-    flavor: 'Strawberry Mojito',
-    amount: 2800,
-    status: 'PREP_IN_PROGRESS',
-    currentStage: 'BOH',
-    assignedStaff: {
-      boh: 'David Wilson',
-      foh: 'Emily Davis'
-    },
-    createdAt: Date.now() - 1800000, // 30 minutes ago
-    updatedAt: Date.now(),
-    sessionStartTime: undefined,
-    sessionDuration: 60 * 60, // 60 minutes
-    coalStatus: 'needs_refill',
-    refillStatus: 'none',
-    notes: 'First-time customer, prefers mild flavors',
-    edgeCase: null,
-    sessionTimer: undefined,
-    bohState: 'PREPARING',
-    guestTimerDisplay: false
-  }
-];
+import { FireSession } from '../../../../types/enhancedSession';
+import { calculateTrustScore, calculateSingleSessionTrustScore } from '../../../../lib/trustScoring';
+import { maskSessionData, detectPiiLevel, createPiiSafeSummary } from '../../../../lib/piiMasking';
 
 // GET /api/guest-intelligence/[sessionId] - Get customer intelligence
 export async function GET(req: NextRequest, { params }: { params: { sessionId: string } }) {
@@ -71,30 +11,98 @@ export async function GET(req: NextRequest, { params }: { params: { sessionId: s
     const piiMasking = url.searchParams.get('piiMasking') !== 'false'; // Default to true
     const piiLevel = url.searchParams.get('piiLevel') as 'none' | 'low' | 'medium' | 'high' || 'medium';
 
-    // Find the session
-    const session = sessions.find(s => s.id === sessionId);
-    if (!session) {
+    // Fetch session data from the real Prisma-based API
+    const sessionResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/sessions/${sessionId}`);
+    if (!sessionResponse.ok) {
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
+    
+    const sessionData = await sessionResponse.json();
+    const session = sessionData.session;
+
+    // Convert Prisma session to FireSession format for compatibility
+    const fireSession: FireSession = {
+      id: session.id,
+      tableId: session.tableId,
+      customerName: session.customerRef || 'Unknown Customer',
+      customerPhone: session.customerPhone || '',
+      flavor: session.flavor || 'Unknown Flavor',
+      amount: session.priceCents || 0,
+      status: mapPrismaStateToFireSession(session.state),
+      currentStage: mapStateToStage(session.state),
+      assignedStaff: {
+        boh: session.assignedBOHId || undefined,
+        foh: session.assignedFOHId || undefined
+      },
+      createdAt: new Date(session.createdAt).getTime(),
+      updatedAt: new Date(session.updatedAt).getTime(),
+      sessionStartTime: session.startedAt ? new Date(session.startedAt).getTime() : undefined,
+      sessionDuration: session.durationSecs || 45 * 60,
+      coalStatus: 'active', // Default value
+      refillStatus: 'none', // Default value
+      notes: session.tableNotes || '',
+      edgeCase: session.edgeCase || null,
+      sessionTimer: session.timerStartedAt ? {
+        remaining: calculateRemainingTimeFromPrisma(session),
+        total: session.timerDuration || 45 * 60,
+        isActive: session.timerStatus === 'active',
+        startedAt: new Date(session.timerStartedAt).getTime()
+      } : undefined,
+      bohState: 'PREPARING', // Default value
+      guestTimerDisplay: true
+    };
 
     // Get all sessions for this customer (by phone number for demo purposes)
-    const customerSessions = sessions.filter(s => s.customerPhone === session.customerPhone);
+    const customerSessionsResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/sessions?customerPhone=${encodeURIComponent(session.customerPhone || '')}`);
+    const customerSessionsData = customerSessionsResponse.ok ? await customerSessionsResponse.json() : { sessions: [] };
+    
+    // Convert all customer sessions to FireSession format
+    const customerSessions: FireSession[] = customerSessionsData.sessions.map((s: any) => ({
+      id: s.id,
+      tableId: s.tableId,
+      customerName: s.customerRef || 'Unknown Customer',
+      customerPhone: s.customerPhone || '',
+      flavor: s.flavor || 'Unknown Flavor',
+      amount: s.priceCents || 0,
+      status: mapPrismaStateToFireSession(s.state),
+      currentStage: mapStateToStage(s.state),
+      assignedStaff: {
+        boh: s.assignedBOHId || undefined,
+        foh: s.assignedFOHId || undefined
+      },
+      createdAt: new Date(s.createdAt).getTime(),
+      updatedAt: new Date(s.updatedAt).getTime(),
+      sessionStartTime: s.startedAt ? new Date(s.startedAt).getTime() : undefined,
+      sessionDuration: s.durationSecs || 45 * 60,
+      coalStatus: 'active',
+      refillStatus: 'none',
+      notes: s.tableNotes || '',
+      edgeCase: s.edgeCase || null,
+      sessionTimer: s.timerStartedAt ? {
+        remaining: calculateRemainingTimeFromPrisma(s),
+        total: s.timerDuration || 45 * 60,
+        isActive: s.timerStatus === 'active',
+        startedAt: new Date(s.timerStartedAt).getTime()
+      } : undefined,
+      bohState: 'PREPARING',
+      guestTimerDisplay: true
+    }));
     
     // Calculate trust score
     const trustScoreResult = customerSessions.length > 1 
       ? calculateTrustScore(customerSessions)
       : { 
-          score: calculateSingleSessionTrustScore(session), 
+          score: calculateSingleSessionTrustScore(fireSession), 
           tier: 'bronze' as const,
           recommendations: ['Complete more sessions to build trust']
         };
 
     // Create PII-safe session data
-    const maskedSession = piiMasking ? maskSessionData(session, piiLevel) : session;
+    const maskedSession = piiMasking ? maskSessionData(fireSession, piiLevel) : fireSession;
 
     // Generate behavioral memory data
     const behavioralMemory = {
-      guestId: session.id,
+      guestId: fireSession.id,
       preferences: {
         favoriteFlavors: customerSessions.map(s => s.flavor).slice(0, 3),
         preferredZone: 'VIP', // This would come from actual data
@@ -102,7 +110,7 @@ export async function GET(req: NextRequest, { params }: { params: { sessionId: s
           customerSessions.reduce((sum, s) => sum + s.sessionDuration, 0) / 
           customerSessions.length / 60
         ),
-        spendingPattern: session.amount > 4000 ? 'premium' as const : 'budget' as const,
+        spendingPattern: fireSession.amount > 4000 ? 'premium' as const : 'budget' as const,
         visitFrequency: customerSessions.length > 5 ? 'regular' as const : 'occasional' as const,
         preferredTimeSlots: ['7:00 PM', '8:00 PM', '9:00 PM'], // This would come from actual data
         typicalOrderPattern: customerSessions.map(s => s.flavor).slice(0, 3)
@@ -120,8 +128,8 @@ export async function GET(req: NextRequest, { params }: { params: { sessionId: s
       })),
       predictiveInsights: {
         nextVisitPrediction: 'Likely to visit within 1-2 weeks',
-        likelyOrder: [session.flavor],
-        optimalServiceTiming: `Start cleanup at ${Math.floor(session.sessionDuration / 60) - 5} minutes`,
+        likelyOrder: [fireSession.flavor],
+        optimalServiceTiming: `Start cleanup at ${Math.floor(fireSession.sessionDuration / 60) - 5} minutes`,
         upsellProbability: trustScoreResult.score > 80 ? 85 : 65
       }
     };
@@ -130,17 +138,17 @@ export async function GET(req: NextRequest, { params }: { params: { sessionId: s
     const operationalNotes = [
       {
         id: 'note_001',
-        content: session.notes || 'Customer prefers mild flavors',
+        content: fireSession.notes || 'Customer prefers mild flavors',
         author: 'Staff Member',
-        createdAt: new Date(session.createdAt).toISOString(),
-        piiLevel: detectPiiLevel(session.notes || ''),
+        createdAt: new Date(fireSession.createdAt).toISOString(),
+        piiLevel: detectPiiLevel(fireSession.notes || ''),
         category: 'customer' as const
       },
       {
         id: 'note_002',
-        content: `VIP zone table ${session.tableId} - premium service requested`,
+        content: `VIP zone table ${fireSession.tableId} - premium service requested`,
         author: 'Manager',
-        createdAt: new Date(session.createdAt - 300000).toISOString(),
+        createdAt: new Date(fireSession.createdAt - 300000).toISOString(),
         piiLevel: 'none' as const,
         category: 'service' as const
       }
@@ -167,6 +175,39 @@ export async function GET(req: NextRequest, { params }: { params: { sessionId: s
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
+}
+
+// Helper function to map Prisma session state to FireSession status
+function mapPrismaStateToFireSession(state: string): any {
+  const stateMap: Record<string, any> = {
+    'active': 'ACTIVE',
+    'prep_in_progress': 'PREP_IN_PROGRESS',
+    'ready_for_delivery': 'READY_FOR_DELIVERY',
+    'delivered': 'DELIVERED',
+    'paused': 'STAFF_HOLD',
+    'completed': 'CLOSED',
+    'cancelled': 'VOIDED'
+  };
+  return stateMap[state] || 'NEW';
+}
+
+// Helper function to map state to stage
+function mapStateToStage(state: string): 'BOH' | 'FOH' | 'CUSTOMER' {
+  if (['prep_in_progress', 'ready_for_delivery'].includes(state)) return 'BOH';
+  if (['delivered'].includes(state)) return 'FOH';
+  return 'CUSTOMER';
+}
+
+// Helper function to calculate remaining time from Prisma session
+function calculateRemainingTimeFromPrisma(session: any): number {
+  if (!session.timerStartedAt || !session.timerDuration) return 0;
+  
+  const now = Date.now();
+  const startedAt = new Date(session.timerStartedAt).getTime();
+  const elapsed = Math.floor((now - startedAt) / 1000);
+  const pausedTime = session.timerPausedDuration || 0;
+  
+  return Math.max(0, session.timerDuration - elapsed + pausedTime);
 }
 
 // POST /api/guest-intelligence/[sessionId]/notes - Add operational notes

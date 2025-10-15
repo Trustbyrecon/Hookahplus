@@ -19,11 +19,42 @@ export default function GuestIntelligencePage() {
     const loadSessionData = async () => {
       try {
         if (sessionId) {
-          // Load session data from API
+          // Load session data from the root Prisma-based API
           const response = await fetch(`/api/sessions/${sessionId}`);
           if (response.ok) {
             const data = await response.json();
-            setSession(data.session);
+            // Convert Prisma session to FireSession format
+            const fireSession: FireSession = {
+              id: data.id,
+              tableId: data.tableId,
+              customerName: data.customerRef || 'Unknown Customer',
+              customerPhone: data.customerPhone || '',
+              flavor: data.flavor || 'Unknown Flavor',
+              amount: data.priceCents || 0,
+              status: mapPrismaStateToFireSession(data.state),
+              currentStage: mapStateToStage(data.state),
+              assignedStaff: {
+                boh: data.assignedBOHId || undefined,
+                foh: data.assignedFOHId || undefined
+              },
+              createdAt: new Date(data.createdAt).getTime(),
+              updatedAt: new Date(data.updatedAt).getTime(),
+              sessionStartTime: data.startedAt ? new Date(data.startedAt).getTime() : undefined,
+              sessionDuration: data.durationSecs || 45 * 60,
+              coalStatus: 'active',
+              refillStatus: 'none',
+              notes: data.tableNotes || '',
+              edgeCase: data.edgeCase || null,
+              sessionTimer: data.timerStartedAt ? {
+                remaining: calculateRemainingTimeFromPrisma(data),
+                total: data.timerDuration || 45 * 60,
+                isActive: data.timerStatus === 'active',
+                startedAt: new Date(data.timerStartedAt).getTime()
+              } : undefined,
+              bohState: 'PREPARING',
+              guestTimerDisplay: true
+            };
+            setSession(fireSession);
           } else {
             throw new Error('Session not found');
           }
@@ -33,7 +64,39 @@ export default function GuestIntelligencePage() {
           if (response.ok) {
             const data = await response.json();
             if (data.sessions && data.sessions.length > 0) {
-              setSession(data.sessions[0]); // Get the most recent session for this table
+              const sessionData = data.sessions[0];
+              // Convert Prisma session to FireSession format
+              const fireSession: FireSession = {
+                id: sessionData.id,
+                tableId: sessionData.tableId,
+                customerName: sessionData.customerRef || 'Unknown Customer',
+                customerPhone: sessionData.customerPhone || '',
+                flavor: sessionData.flavor || 'Unknown Flavor',
+                amount: sessionData.priceCents || 0,
+                status: mapPrismaStateToFireSession(sessionData.state),
+                currentStage: mapStateToStage(sessionData.state),
+                assignedStaff: {
+                  boh: sessionData.assignedBOHId || undefined,
+                  foh: sessionData.assignedFOHId || undefined
+                },
+                createdAt: new Date(sessionData.createdAt).getTime(),
+                updatedAt: new Date(sessionData.updatedAt).getTime(),
+                sessionStartTime: sessionData.startedAt ? new Date(sessionData.startedAt).getTime() : undefined,
+                sessionDuration: sessionData.durationSecs || 45 * 60,
+                coalStatus: 'active',
+                refillStatus: 'none',
+                notes: sessionData.tableNotes || '',
+                edgeCase: sessionData.edgeCase || null,
+                sessionTimer: sessionData.timerStartedAt ? {
+                  remaining: calculateRemainingTimeFromPrisma(sessionData),
+                  total: sessionData.timerDuration || 45 * 60,
+                  isActive: sessionData.timerStatus === 'active',
+                  startedAt: new Date(sessionData.timerStartedAt).getTime()
+                } : undefined,
+                bohState: 'PREPARING',
+                guestTimerDisplay: true
+              };
+              setSession(fireSession);
             } else {
               throw new Error('No session found for this table');
             }
@@ -56,6 +119,39 @@ export default function GuestIntelligencePage() {
 
   const handleClose = () => {
     router.back();
+  };
+
+  // Helper function to map Prisma session state to FireSession status
+  const mapPrismaStateToFireSession = (state: string): any => {
+    const stateMap: Record<string, any> = {
+      'active': 'ACTIVE',
+      'prep_in_progress': 'PREP_IN_PROGRESS',
+      'ready_for_delivery': 'READY_FOR_DELIVERY',
+      'delivered': 'DELIVERED',
+      'paused': 'STAFF_HOLD',
+      'completed': 'CLOSED',
+      'cancelled': 'VOIDED'
+    };
+    return stateMap[state] || 'NEW';
+  };
+
+  // Helper function to map state to stage
+  const mapStateToStage = (state: string): 'BOH' | 'FOH' | 'CUSTOMER' => {
+    if (['prep_in_progress', 'ready_for_delivery'].includes(state)) return 'BOH';
+    if (['delivered'].includes(state)) return 'FOH';
+    return 'CUSTOMER';
+  };
+
+  // Helper function to calculate remaining time from Prisma session
+  const calculateRemainingTimeFromPrisma = (session: any): number => {
+    if (!session.timerStartedAt || !session.timerDuration) return 0;
+    
+    const now = Date.now();
+    const startedAt = new Date(session.timerStartedAt).getTime();
+    const elapsed = Math.floor((now - startedAt) / 1000);
+    const pausedTime = session.timerPausedDuration || 0;
+    
+    return Math.max(0, session.timerDuration - elapsed + pausedTime);
   };
 
   if (loading) {
