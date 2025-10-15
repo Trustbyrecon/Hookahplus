@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { FireSession, SessionTimer, calculateRemainingTime, formatDuration } from '@/lib/sessionStateMachine';
+import { FireSession, SessionTimer } from '../types/enhancedSession';
+import { calculateRemainingTime, formatDuration } from '../lib/sessionStateMachine';
 
 interface LiveMetrics {
   activeSessions: number;

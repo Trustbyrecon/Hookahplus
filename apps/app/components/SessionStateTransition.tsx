@@ -14,7 +14,8 @@ import {
   Plus,
   Flame
 } from 'lucide-react';
-import { VALID_TRANSITIONS, SessionStatus, SessionAction, canPerformAction } from '../lib/sessionStateMachine';
+import { SessionStatus, SessionAction, canPerformAction } from '../lib/sessionStateMachine';
+import { VALID_TRANSITIONS } from '../types/enhancedSession';
 
 interface SessionStateTransitionProps {
   currentState: SessionStatus;
