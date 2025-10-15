@@ -7,8 +7,7 @@ import crypto from "crypto";
 export async function GET(req: Request, { params }: { params: { id: string } }) {
   try {
     const session = await prisma.session.findUnique({
-      where: { id: params.id },
-      include: { events: true }
+      where: { id: params.id }
     });
 
     if (!session) {
@@ -64,7 +63,6 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
           } 
         }
       },
-      include: { events: true }
     });
 
     return Response.json({ session: updated }, { 

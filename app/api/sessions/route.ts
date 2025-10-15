@@ -30,7 +30,6 @@ export async function GET(req: Request) {
 
     const sessions = await prisma.session.findMany({
       where: whereClause,
-      include: { events: true },
       orderBy: { createdAt: 'desc' }
     });
 
@@ -81,7 +80,6 @@ export async function POST(req: Request) {
           }
         }
       },
-      include: { events: true }
     });
 
     return Response.json({ session }, { 
