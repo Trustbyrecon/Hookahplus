@@ -20,7 +20,12 @@ export async function GET(request: NextRequest) {
     await prisma.$queryRaw`SELECT 1 as test`;
     
     // Get database stats
-    const stats = await prisma.$queryRaw`
+    const stats = await prisma.$queryRaw<Array<{
+      database_name: string;
+      current_user: string;
+      postgres_version: string;
+      database_size_bytes: bigint;
+    }>>`
       SELECT 
         current_database() as database_name,
         current_user as current_user,
@@ -29,7 +34,13 @@ export async function GET(request: NextRequest) {
     `;
     
     // Get table counts
-    const tableCounts = await prisma.$queryRaw`
+    const tableCounts = await prisma.$queryRaw<Array<{
+      schemaname: string;
+      tablename: string;
+      inserts: bigint;
+      updates: bigint;
+      deletes: bigint;
+    }>>`
       SELECT 
         schemaname,
         tablename,
@@ -42,7 +53,10 @@ export async function GET(request: NextRequest) {
     `;
     
     // Get connection info
-    const connectionInfo = await prisma.$queryRaw`
+    const connectionInfo = await prisma.$queryRaw<Array<{
+      active_connections: bigint;
+      state: string;
+    }>>`
       SELECT 
         count(*) as active_connections,
         state
@@ -53,16 +67,29 @@ export async function GET(request: NextRequest) {
     
     const responseTime = Date.now() - startTime;
     
+    const dbStats = stats[0];
+    
     return NextResponse.json({
       status: 'healthy',
       timestamp: new Date().toISOString(),
       responseTime: `${responseTime}ms`,
       database: {
-        ...stats[0],
-        size_mb: Math.round(Number(stats[0].database_size_bytes) / 1024 / 1024)
+        database_name: dbStats.database_name,
+        current_user: dbStats.current_user,
+        postgres_version: dbStats.postgres_version,
+        size_mb: Math.round(Number(dbStats.database_size_bytes) / 1024 / 1024)
       },
-      tables: tableCounts,
-      connections: connectionInfo,
+      tables: tableCounts.map(table => ({
+        schema: table.schemaname,
+        table: table.tablename,
+        inserts: Number(table.inserts),
+        updates: Number(table.updates),
+        deletes: Number(table.deletes)
+      })),
+      connections: connectionInfo.map(conn => ({
+        state: conn.state,
+        count: Number(conn.active_connections)
+      })),
       checks: {
         connection: 'ok',
         query_performance: responseTime < 1000 ? 'good' : 'slow',
@@ -120,7 +147,11 @@ export async function POST(request: NextRequest) {
     
     // Test 3: Complex query
     const test3Start = Date.now();
-    const complexQuery = await prisma.$queryRaw`
+    const complexQuery = await prisma.$queryRaw<Array<{
+      status: string;
+      count: bigint;
+      avg_duration_seconds: number;
+    }>>`
       SELECT 
         status,
         COUNT(*) as count,
@@ -133,7 +164,11 @@ export async function POST(request: NextRequest) {
       test: 'complex_query',
       duration: Date.now() - test3Start,
       status: 'passed',
-      result: complexQuery
+      result: complexQuery.map(row => ({
+        status: row.status,
+        count: Number(row.count),
+        avg_duration_seconds: row.avg_duration_seconds
+      }))
     });
     
     const totalTime = Date.now() - startTime;
