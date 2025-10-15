@@ -5,7 +5,6 @@ import CreateSessionModal from '../../components/CreateSessionModal';
 import GlobalNavigation from '../../components/GlobalNavigation';
 import DollarTestButton from '../../components/DollarTestButton';
 import EnhancedFSDDesign from '../../components/EnhancedFSDDesign';
-import DynamicMetricsDashboard from '../../components/DynamicMetricsDashboard';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
 import { ThemeProvider, useTheme } from '../../contexts/ThemeContext';
 import { useLiveSessionData } from '../../hooks/useLiveSessionData';
@@ -132,14 +131,6 @@ function FireSessionDashboardContent() {
 
 
 
-          {/* Dynamic Metrics Dashboard */}
-          <DynamicMetricsDashboard 
-            metrics={metrics} 
-            loading={loading}
-            onCreateSession={() => setShowCreateModal(true)}
-            onRefresh={refreshSessions}
-            userRole={userRole}
-          />
 
           {/* Error Display */}
           {error && (
