@@ -150,7 +150,7 @@ function FireSessionDashboardContent() {
       {/* Enhanced Design */}
       {useEnhancedDesign ? (
         <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-          {/* Dynamic Header */}
+          {/* Simplified Header */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center space-x-3">
               <div className={`p-3 rounded-xl bg-${currentTheme.colors.primary}-500/20`}>
@@ -186,30 +186,15 @@ function FireSessionDashboardContent() {
           </div>
 
 
-          {/* Action Buttons */}
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className={`px-6 py-3 rounded-xl bg-gradient-to-r ${currentTheme.gradients.primary} text-white font-semibold hover:scale-105 transition-transform flex items-center gap-2`}
-              >
-                <Plus className="w-5 h-5" />
-                Create Session
-              </button>
-              
-              <button
-                onClick={refreshSessions}
-                disabled={loading}
-                className={`px-4 py-3 rounded-xl bg-${currentTheme.colors.surface} border border-${currentTheme.colors.border} text-${currentTheme.colors.text} hover:bg-${currentTheme.colors.surface}/80 transition-colors flex items-center gap-2 disabled:opacity-50`}
-              >
-                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                Refresh
-              </button>
-            </div>
-          </div>
 
           {/* Dynamic Metrics Dashboard */}
-          <DynamicMetricsDashboard metrics={metrics} loading={loading} />
+          <DynamicMetricsDashboard 
+            metrics={metrics} 
+            loading={loading}
+            onCreateSession={() => setShowCreateModal(true)}
+            onRefresh={refreshSessions}
+            userRole={userRole}
+          />
 
           {/* Error Display */}
           {error && (

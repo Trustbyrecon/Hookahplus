@@ -8,7 +8,11 @@ import {
   Users, 
   BarChart3,
   TrendingUp,
-  TrendingDown
+  TrendingDown,
+  Plus,
+  RefreshCw,
+  Zap,
+  Activity
 } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -76,9 +80,18 @@ function MetricsCard({ icon, value, label, change, isPositive = true, delay = 0 
 interface DynamicMetricsDashboardProps {
   metrics: LiveMetrics;
   loading?: boolean;
+  onCreateSession?: () => void;
+  onRefresh?: () => void;
+  userRole?: 'BOH' | 'FOH' | 'MANAGER' | 'ADMIN';
 }
 
-export default function DynamicMetricsDashboard({ metrics, loading = false }: DynamicMetricsDashboardProps) {
+export default function DynamicMetricsDashboard({ 
+  metrics, 
+  loading = false, 
+  onCreateSession, 
+  onRefresh, 
+  userRole = 'MANAGER' 
+}: DynamicMetricsDashboardProps) {
   const { currentTheme } = useTheme();
 
   if (loading) {
@@ -99,63 +112,128 @@ export default function DynamicMetricsDashboard({ metrics, loading = false }: Dy
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4 mb-8">
-      <MetricsCard
-        icon={<Flame className={`w-5 h-5 text-${currentTheme.colors.primary}-400`} />}
-        value={metrics.activeSessions}
-        label="Active Sessions"
-        change={metrics.changes.activeSessions}
-        delay={0}
-      />
-      
-      <MetricsCard
-        icon={<DollarSign className={`w-5 h-5 text-green-400`} />}
-        value={`$${metrics.revenue}`}
-        label="Revenue"
-        change={metrics.changes.revenue}
-        delay={1}
-      />
-      
-      <MetricsCard
-        icon={<Clock className={`w-5 h-5 text-blue-400`} />}
-        value={`${metrics.avgDuration}min`}
-        label="Avg Duration"
-        change={metrics.changes.avgDuration}
-        isPositive={false}
-        delay={2}
-      />
-      
-      <MetricsCard
-        icon={<AlertTriangle className={`w-5 h-5 text-yellow-400`} />}
-        value={metrics.alerts}
-        label="Alerts"
-        change={metrics.changes.alerts}
-        delay={3}
-      />
-      
-      <MetricsCard
-        icon={<Users className={`w-5 h-5 text-purple-400`} />}
-        value={metrics.staffAssigned}
-        label="Staff Assigned"
-        change={metrics.changes.staffAssigned}
-        delay={4}
-      />
-      
-      <MetricsCard
-        icon={<BarChart3 className={`w-5 h-5 text-${currentTheme.colors.accent}-400`} />}
-        value={metrics.totalSessions}
-        label="Total Sessions"
-        change={metrics.changes.totalSessions}
-        delay={5}
-      />
-      
-      <MetricsCard
-        icon={<BarChart3 className={`w-5 h-5 text-${currentTheme.colors.secondary}-400`} />}
-        value="📊"
-        label="Performance"
-        change="+5%"
-        delay={6}
-      />
+    <div className="space-y-6">
+      {/* Quick Action Bar */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            <span className={`text-sm font-medium text-${currentTheme.colors.textSecondary}`}>
+              Live Operations
+            </span>
+          </div>
+          <div className={`text-sm text-${currentTheme.colors.textSecondary}`}>
+            Role: <span className={`font-semibold text-${currentTheme.colors.primary}-400`}>{userRole}</span>
+          </div>
+        </div>
+        
+        <div className="flex items-center space-x-3">
+          {onCreateSession && (
+            <button
+              onClick={onCreateSession}
+              className={`px-4 py-2 rounded-lg bg-gradient-to-r ${currentTheme.gradients.primary} text-white font-medium hover:scale-105 transition-transform flex items-center gap-2`}
+            >
+              <Plus className="w-4 h-4" />
+              New Session
+            </button>
+          )}
+          {onRefresh && (
+            <button
+              onClick={onRefresh}
+              disabled={loading}
+              className={`px-4 py-2 rounded-lg bg-${currentTheme.colors.surface} border border-${currentTheme.colors.border} text-${currentTheme.colors.text} hover:bg-${currentTheme.colors.surface}/80 transition-colors flex items-center gap-2 disabled:opacity-50`}
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Enhanced Metrics Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <MetricsCard
+          icon={<Flame className={`w-5 h-5 text-orange-400`} />}
+          value={metrics.activeSessions}
+          label="Active Sessions"
+          change={metrics.changes.activeSessions}
+          delay={0}
+        />
+        
+        <MetricsCard
+          icon={<DollarSign className={`w-5 h-5 text-green-400`} />}
+          value={`$${metrics.revenue}`}
+          label="Revenue"
+          change={metrics.changes.revenue}
+          delay={1}
+        />
+        
+        <MetricsCard
+          icon={<Clock className={`w-5 h-5 text-blue-400`} />}
+          value={`${metrics.avgDuration}min`}
+          label="Avg Duration"
+          change={metrics.changes.avgDuration}
+          isPositive={metrics.changes.avgDuration.startsWith('+')}
+          delay={2}
+        />
+        
+        <MetricsCard
+          icon={<AlertTriangle className={`w-5 h-5 text-yellow-400`} />}
+          value={metrics.alerts}
+          label="Alerts"
+          change={metrics.changes.alerts}
+          delay={3}
+        />
+        
+        <MetricsCard
+          icon={<Users className={`w-5 h-5 text-purple-400`} />}
+          value={metrics.staffAssigned}
+          label="Staff Assigned"
+          change={metrics.changes.staffAssigned}
+          delay={4}
+        />
+        
+        <MetricsCard
+          icon={<BarChart3 className={`w-5 h-5 text-cyan-400`} />}
+          value={metrics.totalSessions}
+          label="Total Sessions"
+          change={metrics.changes.totalSessions}
+          delay={5}
+        />
+      </div>
+
+      {/* Real-time Status Bar */}
+      <div className={`bg-${currentTheme.colors.surface}/30 border border-${currentTheme.colors.border} rounded-lg p-4`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-6">
+            <div className="flex items-center space-x-2">
+              <Activity className={`w-4 h-4 text-green-400`} />
+              <span className={`text-sm text-${currentTheme.colors.textSecondary}`}>
+                System Status: <span className="text-green-400 font-medium">Operational</span>
+              </span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Zap className={`w-4 h-4 text-yellow-400`} />
+              <span className={`text-sm text-${currentTheme.colors.textSecondary}`}>
+                Auto-refresh: <span className="text-yellow-400 font-medium">ON</span>
+              </span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Clock className={`w-4 h-4 text-blue-400`} />
+              <span className={`text-sm text-${currentTheme.colors.textSecondary}`}>
+                Last updated: <span className="text-blue-400 font-medium">{new Date().toLocaleTimeString()}</span>
+              </span>
+            </div>
+          </div>
+          
+          <div className={`text-xs text-${currentTheme.colors.textSecondary}`}>
+            {userRole === 'BOH' && 'Back of House Operations'}
+            {userRole === 'FOH' && 'Front of House Operations'}
+            {userRole === 'MANAGER' && 'Management Overview'}
+            {userRole === 'ADMIN' && 'Administrative Control'}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
