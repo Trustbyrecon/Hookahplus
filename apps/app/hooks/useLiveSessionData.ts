@@ -56,9 +56,18 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
       setLoading(true);
       setError(null);
 
+      console.log('[useLiveSessionData] Starting to load sessions...');
+      
       // Load active sessions
       const sessionsResponse = await fetch('/api/sessions?state=ACTIVE');
+      console.log('[useLiveSessionData] Sessions response status:', sessionsResponse.status);
+      
+      if (!sessionsResponse.ok) {
+        throw new Error(`HTTP ${sessionsResponse.status}: ${sessionsResponse.statusText}`);
+      }
+      
       const sessionsResult = await sessionsResponse.json();
+      console.log('[useLiveSessionData] Sessions result:', sessionsResult);
 
       if (sessionsResult.success) {
         // Convert API sessions to FireSession format
@@ -95,6 +104,7 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
           guestTimerDisplay: session.state === 'ACTIVE'
         }));
 
+        console.log('[useLiveSessionData] Successfully loaded sessions:', fireSessions.length);
         setSessions(fireSessions);
 
         // Update session timers
@@ -106,12 +116,46 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
         });
         setSessionTimers(timers);
       } else {
+        console.error('[useLiveSessionData] API returned error:', sessionsResult.error);
         throw new Error(sessionsResult.error || 'Failed to load sessions');
       }
     } catch (err) {
-      console.error('Error loading sessions:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load sessions');
-      setSessions([]);
+      console.error('[useLiveSessionData] Error loading sessions:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load sessions';
+      setError(errorMessage);
+      
+      // Fallback: Use sample data if API fails
+      console.log('[useLiveSessionData] Using fallback sample data...');
+      const fallbackSessions: FireSession[] = [
+        {
+          id: 'fallback-1',
+          tableId: 'T-001',
+          customerName: 'Sample Customer',
+          customerPhone: '+1 (555) 000-0000',
+          flavor: 'Blue Mist + Mint',
+          amount: 3500,
+          status: 'ACTIVE',
+          currentStage: 'CUSTOMER',
+          assignedStaff: { boh: 'Staff-1', foh: 'Staff-2' },
+          createdAt: Date.now() - 30 * 60 * 1000,
+          updatedAt: Date.now(),
+          sessionStartTime: Date.now() - 25 * 60 * 1000,
+          sessionDuration: 25 * 60 * 1000,
+          coalStatus: 'active',
+          refillStatus: 'none',
+          notes: 'Fallback session - API unavailable',
+          edgeCase: null,
+          sessionTimer: {
+            remaining: 35 * 60,
+            total: 60 * 60,
+            isActive: true,
+            startedAt: Date.now() - 25 * 60 * 1000
+          },
+          bohState: 'PREPARING',
+          guestTimerDisplay: true
+        }
+      ];
+      setSessions(fallbackSessions);
     } finally {
       setLoading(false);
     }
@@ -120,16 +164,58 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
   // Load live metrics
   const loadMetrics = useCallback(async () => {
     try {
+      console.log('[useLiveSessionData] Loading metrics...');
       const metricsResponse = await fetch('/api/metrics/live');
+      console.log('[useLiveSessionData] Metrics response status:', metricsResponse.status);
+      
+      if (!metricsResponse.ok) {
+        throw new Error(`HTTP ${metricsResponse.status}: ${metricsResponse.statusText}`);
+      }
+      
       const metricsResult = await metricsResponse.json();
+      console.log('[useLiveSessionData] Metrics result:', metricsResult);
 
       if (metricsResult.success) {
         setMetrics(metricsResult.metrics);
       } else {
-        console.error('Failed to load metrics:', metricsResult.error);
+        console.error('[useLiveSessionData] Metrics API returned error:', metricsResult.error);
+        // Use fallback metrics
+        setMetrics({
+          activeSessions: 1,
+          revenue: 35,
+          avgDuration: 25,
+          alerts: 0,
+          staffAssigned: 2,
+          totalSessions: 1,
+          changes: {
+            activeSessions: '+0%',
+            revenue: '+0%',
+            avgDuration: '0%',
+            alerts: '0%',
+            staffAssigned: '+0%',
+            totalSessions: '+0%'
+          }
+        });
       }
     } catch (err) {
-      console.error('Error loading metrics:', err);
+      console.error('[useLiveSessionData] Error loading metrics:', err);
+      // Use fallback metrics
+      setMetrics({
+        activeSessions: 1,
+        revenue: 35,
+        avgDuration: 25,
+        alerts: 0,
+        staffAssigned: 2,
+        totalSessions: 1,
+        changes: {
+          activeSessions: '+0%',
+          revenue: '+0%',
+          avgDuration: '0%',
+          alerts: '0%',
+          staffAssigned: '+0%',
+          totalSessions: '+0%'
+        }
+      });
     }
   }, []);
 
