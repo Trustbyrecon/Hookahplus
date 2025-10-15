@@ -168,6 +168,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const sessionId = searchParams.get('sessionId') || searchParams.get('id');
+    const state = searchParams.get('state');
 
     if (sessionId) {
       const session = sessions.find(s => s.session_id === sessionId || s.id === sessionId);
@@ -177,8 +178,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: true, session });
     }
 
-    // Return all sessions if no sessionId specified
-    return NextResponse.json({ success: true, sessions });
+    // Filter by state if specified
+    let filteredSessions = sessions;
+    if (state) {
+      filteredSessions = sessions.filter(s => s.state === state);
+    }
+
+    // Return filtered sessions
+    return NextResponse.json({ success: true, sessions: filteredSessions });
 
   } catch (error) {
     console.error('Error retrieving sessions:', error);

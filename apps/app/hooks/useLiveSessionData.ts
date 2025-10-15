@@ -64,42 +64,35 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
         // Convert API sessions to FireSession format
         const fireSessions: FireSession[] = sessionsResult.sessions.map((session: any) => ({
           id: session.id,
-          tableId: session.tableId,
-          customerName: session.customerRef || 'Anonymous',
-          customerPhone: session.customerPhone,
-          flavor: session.flavor || 'Custom Mix',
-          amount: session.priceCents || 3000,
+          tableId: session.table_id || session.tableId || 'Unknown',
+          customerName: session.customer_name || 'Anonymous',
+          customerPhone: session.customer_phone,
+          flavor: session.flavor_mix ? session.flavor_mix.join(' + ') : 'Custom Mix',
+          amount: (session.amount || 30) * 100, // Convert to cents
           status: session.state as any,
           currentStage: mapStateToStage(session.state),
           assignedStaff: {
-            boh: session.assignedBOHId,
-            foh: session.assignedFOHId
+            boh: session.boh_staff,
+            foh: session.foh_staff
           },
-          createdAt: new Date(session.createdAt).getTime(),
-          updatedAt: new Date(session.updatedAt).getTime(),
-          sessionStartTime: session.startedAt ? new Date(session.startedAt).getTime() : undefined,
-          sessionDuration: session.startedAt ? Date.now() - new Date(session.startedAt).getTime() : 0,
+          createdAt: new Date(session.created_at).getTime(),
+          updatedAt: new Date(session.lastUpdated || session.created_at).getTime(),
+          sessionStartTime: session.started_at ? new Date(session.started_at).getTime() : undefined,
+          sessionDuration: session.started_at ? Date.now() - new Date(session.started_at).getTime() : 0,
           coalStatus: 'active' as const,
           refillStatus: 'none' as const,
-          notes: session.tableNotes || '',
-          edgeCase: session.edgeCase,
-          sessionTimer: session.timerDuration ? {
-            remaining: calculateRemainingTime({
-              sessionStartTime: session.startedAt ? new Date(session.startedAt).getTime() : undefined,
-              sessionTimer: {
-                remaining: 0,
-                total: session.timerDuration * 60,
-                isActive: session.timerStatus === 'running'
-              }
-            } as FireSession),
-            total: session.timerDuration * 60,
-            isActive: session.timerStatus === 'running',
-            startedAt: session.timerStartedAt ? new Date(session.timerStartedAt).getTime() : undefined,
-            pausedAt: session.timerPausedAt ? new Date(session.timerPausedAt).getTime() : undefined,
-            pausedDuration: session.timerPausedDuration || 0
+          notes: session.notes || '',
+          edgeCase: session.state === 'PAYMENT_FAILED' ? 'Payment Failed' : null,
+          sessionTimer: session.timer_duration ? {
+            remaining: session.started_at ? Math.max(0, (session.timer_duration * 60) - Math.floor((Date.now() - new Date(session.started_at).getTime()) / 1000)) : session.timer_duration * 60,
+            total: session.timer_duration * 60,
+            isActive: session.state === 'ACTIVE',
+            startedAt: session.started_at ? new Date(session.started_at).getTime() : undefined,
+            pausedAt: undefined,
+            pausedDuration: 0
           } : undefined,
           bohState: 'PREPARING' as const,
-          guestTimerDisplay: session.timerStatus === 'running'
+          guestTimerDisplay: session.state === 'ACTIVE'
         }));
 
         setSessions(fireSessions);
