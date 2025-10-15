@@ -12,6 +12,14 @@
     "app/api/stripe-health/route.ts": {
       "maxDuration": 15
     },
+    "app/api/stripe/webhook/route.ts": {
+      "maxDuration": 30,
+      "memory": 1024
+    },
+    "app/api/square/webhook/route.ts": {
+      "maxDuration": 30,
+      "memory": 1024
+    },
     "app/api/**/route.ts": {
       "maxDuration": 10
     }
