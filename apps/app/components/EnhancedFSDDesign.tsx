@@ -1737,73 +1737,9 @@ export default function EnhancedFSDDesign({
   const totalPrice = selectedFlavors.reduce((sum, flavor) => sum + flavor.price, 0);
   
   return (
-    <div className={`min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white ${className}`}>
-      {/* Global Navigation */}
-      <div className="bg-zinc-900/50 backdrop-blur-sm border-b border-zinc-800">
-        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="text-2xl">🍃</div>
-              <div>
-                <h1 className="text-xl font-bold">Hookah+ Operations</h1>
-                <p className="text-sm text-zinc-400">Fire Session Dashboard</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 text-sm text-zinc-400">
-                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                <span>Live</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {/* Enhanced Header */}
-        <motion.div 
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 rounded-xl bg-teal-500/10 border border-teal-500/30">
-                <Flame className="w-8 h-8 text-teal-400" />
-              </div>
-              <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
-                  Fire Session Dashboard
-                </h1>
-                <p className="text-xl text-zinc-400">
-                  Enterprise-grade session management with AI-powered intelligence
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-sm text-green-400 font-medium">Live</span>
-              </div>
-              
-              {/* Role Selector - Keep for role-based functionality */}
-              <EnhancedRoleSelector
-                userRole={userRole}
-                onRoleChange={handleRoleChange}
-                selectedRole={selectedRole}
-              />
-              
-            </div>
-          </div>
-        </motion.div>
-        
-        {/* Enhanced Metrics */}
-        <EnhancedMetrics metrics={metrics} />
-        
-        {/* Debug Info Bar */}
-        <EnhancedDebugInfoBar
+    <div className={`${className}`}>
+      {/* Debug Info Bar */}
+      <EnhancedDebugInfoBar
           theme={theme}
           sessionsLoaded={displaySessions.length}
           loading={loading}
