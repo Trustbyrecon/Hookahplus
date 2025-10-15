@@ -222,7 +222,7 @@ const EnhancedSessionCard = ({
     PAUSED: { color: 'orange', icon: Pause, label: 'PAUSED' }
   };
   
-  const status = statusConfig[session.state as keyof typeof statusConfig] || statusConfig.PENDING;
+  const status = statusConfig[session.status as keyof typeof statusConfig] || statusConfig.PENDING;
   const StatusIcon = status.icon;
   
   return (
@@ -234,7 +234,7 @@ const EnhancedSessionCard = ({
     >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center space-x-2">
-          <div className={`w-2 h-2 bg-${status.color}-400 rounded-full ${session.state === 'ACTIVE' ? 'animate-pulse' : ''}`}></div>
+          <div className={`w-2 h-2 bg-${status.color}-400 rounded-full ${session.status === 'ACTIVE' ? 'animate-pulse' : ''}`}></div>
           <span className={`text-sm font-medium text-${status.color}-400`}>{status.label}</span>
         </div>
         <span className="text-xs text-zinc-400">Table {session.tableId}</span>
@@ -685,7 +685,7 @@ const EnhancedTabSessionCard = ({ session, tabType, onAction, userRole = 'MANAGE
 
     // BOH/FOH Operational Workflow Logic with Contextual Messages
     const getOperationalActions = () => {
-      switch (session.state) {
+      switch (session.status) {
         case 'CREATED':
           return [
             { 
@@ -903,9 +903,9 @@ const EnhancedTabSessionCard = ({ session, tabType, onAction, userRole = 'MANAGE
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-lg font-semibold text-white">{session.tableId}</span>
-            <span className={`px-2 py-1 rounded-lg text-xs font-medium flex items-center gap-1 ${getStatusColor(session.state)}`}>
-              <span className="text-sm">{getStatusIcon(session.state)}</span>
-              {session.state.replace('_', ' ')}
+            <span className={`px-2 py-1 rounded-lg text-xs font-medium flex items-center gap-1 ${getStatusColor(session.status)}`}>
+              <span className="text-sm">{getStatusIcon(session.status)}</span>
+              {(session.status || 'UNKNOWN').replace('_', ' ')}
             </span>
           </div>
           
@@ -975,9 +975,9 @@ const EnhancedTabSessionCard = ({ session, tabType, onAction, userRole = 'MANAGE
           <div className="mb-2">
             <div className="text-xs text-zinc-400 mb-1">Predicted Next Actions:</div>
             <div className="flex flex-wrap gap-1">
-              {session.hiTrustIntelligence.predictiveActions.likelyNext.map((action: string, index: number) => (
+              {(session.hiTrustIntelligence?.predictiveActions?.likelyNext || []).map((action: string, index: number) => (
                 <span key={index} className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded">
-                  {action.replace('_', ' ')}
+                  {(action || '').replace('_', ' ')}
                 </span>
               ))}
             </div>
@@ -1003,11 +1003,11 @@ const EnhancedTabSessionCard = ({ session, tabType, onAction, userRole = 'MANAGE
 
           {/* Customer Insights */}
           <div className="text-xs text-zinc-500">
-            <span className="text-zinc-400">Behavior:</span> {session.hiTrustIntelligence.customerInsights.behaviorPattern.replace('_', ' ')}
+            <span className="text-zinc-400">Behavior:</span> {(session.hiTrustIntelligence?.customerInsights?.behaviorPattern || 'Unknown').replace('_', ' ')}
             <span className="text-zinc-500 mx-2">•</span>
-            <span className="text-zinc-400">Refills:</span> {session.hiTrustIntelligence.customerInsights.refillHistory}
+            <span className="text-zinc-400">Refills:</span> {session.hiTrustIntelligence?.customerInsights?.refillHistory || 0}
             <span className="text-zinc-500 mx-2">•</span>
-            <span className="text-zinc-400">Confidence:</span> {Math.round(session.hiTrustIntelligence.predictiveActions.confidence * 100)}%
+            <span className="text-zinc-400">Confidence:</span> {Math.round((session.hiTrustIntelligence?.predictiveActions?.confidence || 0) * 100)}%
           </div>
         </div>
       )}
@@ -1120,7 +1120,7 @@ export default function EnhancedFSDDesign({
     }));
     
     // Add notification for state change
-    addNotification('info', `Session ${sessionId} state changed to ${newState.replace('_', ' ')}`, sessionId);
+    addNotification('info', `Session ${sessionId} state changed to ${(newState || 'UNKNOWN').replace('_', ' ')}`, sessionId);
   }, [addNotification]);
   
 
@@ -1388,7 +1388,7 @@ export default function EnhancedFSDDesign({
         }));
 
         // Show success notification
-        addNotification('success', `Session ${sessionId} ${action.replace('_', ' ')} successful`, sessionId);
+        addNotification('success', `Session ${sessionId} ${(action || 'action').replace('_', ' ')} successful`, sessionId);
       } else {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(`API call failed: ${response.status} - ${errorData.message || 'Unknown error'}`);
@@ -1396,7 +1396,7 @@ export default function EnhancedFSDDesign({
     } catch (error) {
       console.error(`Failed to execute ${action}:`, error);
       // Show error notification
-      addNotification('error', `Failed to ${action.replace('_', ' ')} session ${sessionId}`, sessionId);
+      addNotification('error', `Failed to ${(action || 'action').replace('_', ' ')} session ${sessionId}`, sessionId);
     } finally {
       setLoading(false);
     }
@@ -2040,7 +2040,7 @@ export default function EnhancedFSDDesign({
                     key={session.id}
                     session={session}
                     onAction={onSessionAction}
-                    variant={session.state === 'ACTIVE' ? 'live' : 'default'}
+                    variant={session.status === 'ACTIVE' ? 'live' : 'default'}
                   />
                 ))}
               </div>
