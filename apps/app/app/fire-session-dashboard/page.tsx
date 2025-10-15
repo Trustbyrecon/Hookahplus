@@ -4,7 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import CreateSessionModal from '../../components/CreateSessionModal';
 import GlobalNavigation from '../../components/GlobalNavigation';
 import DollarTestButton from '../../components/DollarTestButton';
-import EnhancedFSDDesign from '../../components/EnhancedFSDDesign';
+import SimpleFSDDesign from '../../components/SimpleFSDDesign';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
 import { ThemeProvider, useTheme } from '../../contexts/ThemeContext';
 import { useLiveSessionData } from '../../hooks/useLiveSessionData';
@@ -144,7 +144,7 @@ function FireSessionDashboardContent() {
           )}
 
           {/* Session Management */}
-          <EnhancedFSDDesign
+          <SimpleFSDDesign
             sessions={sessions}
             userRole={userRole}
             onSessionAction={(action, sessionId) => {
