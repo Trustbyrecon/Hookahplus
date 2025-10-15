@@ -125,7 +125,39 @@ export default function SimpleFSDDesign({
     window.dispatchEvent(new CustomEvent('openCreateSessionModal'));
   };
 
-  const handleSessionAction = (action: string, sessionId: string) => {
+  const handleSessionAction = async (action: string, sessionId: string) => {
+    console.log(`Action: ${action} on session: ${sessionId}`);
+    
+    try {
+      const response = await fetch('/api/sessions/actions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sessionId,
+          action: action.toUpperCase(),
+          userRole: userRole || 'MANAGER',
+          operatorId: 'current-user', // In production, this would be the actual user ID
+          notes: `Action ${action} executed by ${userRole || 'MANAGER'}`,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        console.log('Session action successful:', result);
+        // Refresh the page to show updated session state
+        window.location.reload();
+      } else {
+        console.error('Session action failed:', result);
+        alert(`Action failed: ${result.details || result.error}`);
+      }
+    } catch (error) {
+      console.error('Error executing session action:', error);
+      alert('Failed to execute action. Please try again.');
+    }
+
     if (onSessionAction) {
       onSessionAction(action, sessionId);
     }
