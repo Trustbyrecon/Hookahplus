@@ -1730,11 +1730,11 @@ export default function EnhancedFSDDesign({
     setSelectedFlavors(prev => [...prev, flavor]);
   };
   
-  const clearSelectedFlavors = () => {
-    setSelectedFlavors([]);
-  };
-  
-    const totalPrice = selectedFlavors?.reduce(function(sum, flavor) {
+    const clearSelectedFlavors = () => {
+      setSelectedFlavors([]);
+    };
+
+    const totalPrice = selectedFlavors?.reduce(function(sum, flavor) {  
       return sum + flavor.price;
     }, 0) || 0;
   
