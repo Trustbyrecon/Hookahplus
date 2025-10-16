@@ -2,6 +2,7 @@
 
 // Site build deployment trigger - updated for proper Vercel alignment
 // Build timestamp: 2025-10-16T17:20:00Z
+// Campaign Pre-Orders deployment trigger - 2025-10-16T19:15:00Z
 import React from 'react';
 import Card from '../components/Card';
 import Button from '../components/Button';
