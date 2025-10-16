@@ -23,7 +23,8 @@ import {
   Zap,
   Activity,
   Heart,
-  Star
+  Star,
+  Gift
 } from 'lucide-react';
 
 export default function Home() {
@@ -183,6 +184,15 @@ export default function Home() {
                 onClick={() => window.location.href = '/flavor-wheel'}
               >
                 Flavor Wheel
+              </Button>
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="px-6 py-3 border-orange-500/50 text-orange-400 hover:bg-orange-500/10 hover:border-orange-400"
+                onClick={() => window.location.href = '/campaign-preorders'}
+              >
+                <Gift className="w-4 h-4 mr-2" />
+                Campaign Pre-Orders
               </Button>
               <Button 
                 variant="outline" 
