@@ -8,6 +8,7 @@ import {
   CheckCircle, 
   Pause, 
   Play,
+  AlertTriangle,
   MoreVertical,
   Flame,
   Info,
@@ -247,23 +248,30 @@ export default function SimpleFSDDesign({
 
       {/* Tabs */}
       <div className="flex space-x-1 mb-6">
-        {['overview', 'boh', 'foh'].map((tab) => (
+        {[
+          { id: 'overview', label: 'OVERVIEW', icon: '📊' },
+          { id: 'boh', label: 'BOH', icon: '👨‍🍳' },
+          { id: 'foh', label: 'FOH', icon: '👨‍💼' },
+          { id: 'edge', label: 'EDGE CASES', icon: '⚠️' }
+        ].map((tab) => (
           <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              activeTab === tab
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2 ${
+              activeTab === tab.id
                 ? 'bg-orange-500 text-white'
                 : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
             }`}
           >
-            {tab.toUpperCase()}
+            <span>{tab.icon}</span>
+            <span>{tab.label}</span>
           </button>
         ))}
       </div>
 
-      {/* Sessions List */}
-      <div className="space-y-4">
+      {/* Tab Content */}
+      {activeTab === 'overview' && (
+        <div className="space-y-4">
         {sessions.length === 0 ? (
           <div className="text-center py-12">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
@@ -338,6 +346,17 @@ export default function SimpleFSDDesign({
                     <p className="text-lg font-mono">
                       {formatDuration(calculateRemainingTime(session))}
                     </p>
+                  </div>
+                )}
+
+                {/* Session Notes */}
+                {session.notes && (
+                  <div className="mb-3 p-2 bg-blue-900/20 border border-blue-600/30 rounded text-xs">
+                    <div className="flex items-center space-x-1 mb-1">
+                      <span className="text-blue-400">📝</span>
+                      <span className="font-medium text-blue-300">Session Notes:</span>
+                    </div>
+                    <p className="text-blue-200">{session.notes}</p>
                   </div>
                 )}
 
@@ -442,7 +461,112 @@ export default function SimpleFSDDesign({
             );
           })
         )}
-      </div>
+        </div>
+      )}
+
+      {/* BOH Tab */}
+      {activeTab === 'boh' && (
+        <div className="space-y-4">
+          <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
+              <Package className="w-5 h-5 text-orange-400" />
+              <span>Back of House Operations</span>
+            </h3>
+            <div className="space-y-3">
+              {sessions.filter(s => ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(s.status || s.state)).map((session) => (
+                <div key={session.id} className="bg-zinc-900/50 border border-zinc-600 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium text-white">{session.tableId || 'Unknown Table'}</h4>
+                      <p className="text-sm text-zinc-400">{session.flavor || 'Custom Mix'}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-orange-400 font-medium">{session.status || session.state}</p>
+                      <p className="text-xs text-zinc-500">BOH Stage</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {sessions.filter(s => ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(s.status || s.state)).length === 0 && (
+                <p className="text-zinc-400 text-center py-8">No BOH sessions in progress</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FOH Tab */}
+      {activeTab === 'foh' && (
+        <div className="space-y-4">
+          <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
+              <Truck className="w-5 h-5 text-teal-400" />
+              <span>Front of House Operations</span>
+            </h3>
+            <div className="space-y-3">
+              {sessions.filter(s => ['OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(s.status || s.state)).map((session) => (
+                <div key={session.id} className="bg-zinc-900/50 border border-zinc-600 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium text-white">{session.tableId || 'Unknown Table'}</h4>
+                      <p className="text-sm text-zinc-400">{session.customerName || 'Guest Customer'}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-teal-400 font-medium">{session.status || session.state}</p>
+                      <p className="text-xs text-zinc-500">FOH Stage</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {sessions.filter(s => ['OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(s.status || s.state)).length === 0 && (
+                <p className="text-zinc-400 text-center py-8">No FOH sessions in progress</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edge Cases Tab */}
+      {activeTab === 'edge' && (
+        <div className="space-y-4">
+          <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
+              <AlertTriangle className="w-5 h-5 text-red-400" />
+              <span>Edge Cases & Escalations</span>
+            </h3>
+            <div className="space-y-3">
+              {sessions.filter(s => ['STAFF_HOLD', 'STOCK_BLOCKED', 'REMAKE', 'REFUND_REQUESTED', 'FAILED_PAYMENT'].includes(s.status || s.state)).map((session) => (
+                <div key={session.id} className="bg-red-900/20 border border-red-600/30 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium text-white">{session.tableId || 'Unknown Table'}</h4>
+                      <p className="text-sm text-zinc-400">{session.customerName || 'Guest Customer'}</p>
+                      {session.notes && (
+                        <p className="text-sm text-yellow-400 mt-1">📝 {session.notes}</p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-red-400 font-medium">{session.status || session.state}</p>
+                      <p className="text-xs text-zinc-500">Requires Attention</p>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex space-x-2">
+                    <button className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors">
+                      Escalate
+                    </button>
+                    <button className="px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white text-xs rounded transition-colors">
+                      Resolve
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {sessions.filter(s => ['STAFF_HOLD', 'STOCK_BLOCKED', 'REMAKE', 'REFUND_REQUESTED', 'FAILED_PAYMENT'].includes(s.status || s.state)).length === 0 && (
+                <p className="text-zinc-400 text-center py-8">No edge cases requiring attention</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Enhanced Stats with Workflow States */}
       {sessions.length > 0 && (

@@ -60,7 +60,9 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
       console.log('[useLiveSessionData] Starting to load sessions...');
       
       // Load active sessions from root Prisma API
-      const sessionsResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/sessions`);
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+      console.log('[useLiveSessionData] Fetching from:', `${baseUrl}/api/sessions`);
+      const sessionsResponse = await fetch(`${baseUrl}/api/sessions`);
       console.log('[useLiveSessionData] Sessions response status:', sessionsResponse.status);
       
       if (!sessionsResponse.ok) {
@@ -123,38 +125,9 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load sessions';
       setError(errorMessage);
       
-      // Fallback: Use sample data if API fails
-      console.log('[useLiveSessionData] Using fallback sample data...');
-      const fallbackSessions: FireSession[] = [
-        {
-          id: 'fallback-1',
-          tableId: 'T-001',
-          customerName: 'Sample Customer',
-          customerPhone: '+1 (555) 000-0000',
-          flavor: 'Blue Mist + Mint',
-          amount: 3500,
-          status: 'ACTIVE',
-          currentStage: 'CUSTOMER',
-          assignedStaff: { boh: 'Staff-1', foh: 'Staff-2' },
-          createdAt: Date.now() - 30 * 60 * 1000,
-          updatedAt: Date.now(),
-          sessionStartTime: Date.now() - 25 * 60 * 1000,
-          sessionDuration: 25 * 60 * 1000,
-          coalStatus: 'active',
-          refillStatus: 'none',
-          notes: 'Fallback session - API unavailable',
-          edgeCase: null,
-          sessionTimer: {
-            remaining: 35 * 60,
-            total: 60 * 60,
-            isActive: true,
-            startedAt: Date.now() - 25 * 60 * 1000
-          },
-          bohState: 'PREPARING',
-          guestTimerDisplay: true
-        }
-      ];
-      setSessions(fallbackSessions);
+      // No fallback - let the error be handled by the UI
+      console.log('[useLiveSessionData] API failed, no fallback data');
+      setSessions([]);
     } finally {
       setLoading(false);
     }
