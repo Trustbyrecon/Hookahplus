@@ -169,7 +169,7 @@ export default function Home() {
                 variant="primary" 
                 size="lg" 
                 className="flex items-center gap-2 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white px-8 py-4 text-lg font-semibold shadow-lg transform hover:scale-105 transition-all duration-200"
-                onClick={() => window.location.href = '/flavor-demo'}
+                onClick={() => window.location.href = '/sessions'}
               >
                 <Play className="w-5 h-5" />
                 See Demo
@@ -178,9 +178,9 @@ export default function Home() {
                 variant="outline" 
                 size="lg" 
                 className="px-6 py-3"
-                onClick={() => window.location.href = '/pre-order'}
+                onClick={() => window.location.href = '/flavor-wheel'}
               >
-                Campaign Pre-Orders
+                Flavor Wheel
               </Button>
               <Button 
                 variant="outline" 
@@ -297,15 +297,18 @@ export default function Home() {
 
             <Card>
               <div className="p-6 text-center">
-                <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Shield className="w-8 h-8 text-green-400" />
+                <div className="w-16 h-16 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="relative">
+                    <Brain className="w-6 h-6 text-green-400" />
+                    <Shield className="w-4 h-4 text-emerald-300 absolute -bottom-1 -right-1" />
+                  </div>
                 </div>
-                <h4 className="text-lg font-semibold mb-2">HiTrust Sentinel</h4>
+                <h4 className="text-lg font-semibold mb-2">HiTrust Flavor Intelligence</h4>
                 <p className="text-zinc-400 text-sm mb-4">
-                  Cryptographic verification for every transaction
+                  Your preferences are remembered and protected with AI-powered flavor learning
                 </p>
-                <div className="text-sm text-teal-400 font-semibold mb-2">100% verified last 72h</div>
-                <div className="text-xs text-zinc-500">Verification: 100% ✅</div>
+                <div className="text-sm text-teal-400 font-semibold mb-2">🍓 Strawberry Kiwi: 23% preference</div>
+                <div className="text-xs text-zinc-500">Flavor Wheel: Active • Trust Score: 87%</div>
               </div>
             </Card>
 

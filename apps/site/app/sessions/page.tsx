@@ -1,48 +1,35 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
-import { Flame, Users, Clock, TrendingUp, BarChart3, Settings, UserCheck, Brain, Shield, CreditCard, ArrowRight, Play, CheckCircle, Zap, Activity, Heart, Star } from 'lucide-react';
+import { 
+  Flame, Users, Clock, TrendingUp, BarChart3, Settings, UserCheck, Brain, Shield, CreditCard, 
+  ArrowRight, Play, CheckCircle, Zap, Activity, Heart, Star, Package, Truck, Home, Coffee, 
+  Timer, Zap as ZapIcon, DollarSign, X, RotateCcw, CreditCard as CreditCardIcon, Ban, 
+  AlertTriangle, MoreVertical, Info, ArrowLeft, RefreshCw, Eye, EyeOff, Lock, Unlock
+} from 'lucide-react';
+import { 
+  mockSiteData, getActiveSessions, getBohSessions, getFohSessions, getEdgeCaseSessions,
+  formatDuration, formatCurrency, getStatusColor, getStageIcon
+} from '../../lib/mockData';
 
 export default function SessionsPage() {
-  const sessions = [
-    {
-      id: 'session_001',
-      table: 'Table 5',
-      status: 'active',
-      duration: '45m',
-      guests: 4,
-      revenue: '$89.50',
-      mix: 'Blueberry Mint',
-      startTime: '2:30 PM'
-    },
-    {
-      id: 'session_002', 
-      table: 'Table 12',
-      status: 'active',
-      duration: '32m',
-      guests: 2,
-      revenue: '$67.25',
-      mix: 'Strawberry Kiwi',
-      startTime: '3:15 PM'
-    },
-    {
-      id: 'session_003',
-      table: 'Table 8',
-      status: 'completed',
-      duration: '1h 15m',
-      guests: 6,
-      revenue: '$156.80',
-      mix: 'Mango Tango',
-      startTime: '1:45 PM'
-    }
-  ];
+  const [activeTab, setActiveTab] = useState<'overview' | 'boh' | 'foh' | 'edge'>('overview');
+  const [selectedSession, setSelectedSession] = useState<string | null>(null);
+  const [showIntelligence, setShowIntelligence] = useState(false);
+  
+  // Use mock data
+  const sessions = mockSiteData.sessions;
+  const activeSessions = getActiveSessions();
+  const bohSessions = getBohSessions();
+  const fohSessions = getFohSessions();
+  const edgeCaseSessions = getEdgeCaseSessions();
 
   const metrics = [
     {
       title: 'Active Sessions',
-      value: '18',
+      value: activeSessions.length.toString(),
       icon: <Flame className="w-6 h-6" />,
       color: 'text-orange-400',
       bgColor: 'bg-orange-500/10',
@@ -51,7 +38,7 @@ export default function SessionsPage() {
     },
     {
       title: 'Total Revenue',
-      value: '$12,340',
+      value: formatCurrency(sessions.reduce((sum, s) => sum + s.amount, 0)),
       icon: <TrendingUp className="w-6 h-6" />,
       color: 'text-green-400',
       bgColor: 'bg-green-500/10',
@@ -60,7 +47,7 @@ export default function SessionsPage() {
     },
     {
       title: 'Avg Session Time',
-      value: '52m',
+      value: formatDuration(Math.floor(sessions.reduce((sum, s) => sum + s.sessionDuration, 0) / sessions.length)),
       icon: <Clock className="w-6 h-6" />,
       color: 'text-blue-400',
       bgColor: 'bg-blue-500/10',
@@ -88,18 +75,27 @@ export default function SessionsPage() {
               <h1 className="text-3xl font-bold text-white">Fire Session Management</h1>
               <p className="text-zinc-400 mt-2">Real-time session monitoring and control</p>
             </div>
-            <Button 
-              variant="primary" 
-              className="flex items-center gap-2"
-              onClick={() => {
-                console.log('Starting new session');
-                // Open session creation modal or navigate to session creation
-                alert('Starting new session - Opening session creation interface');
-              }}
-            >
-              <Play className="w-4 h-4" />
-              Start New Session
-            </Button>
+            <div className="flex items-center space-x-4">
+              <Button 
+                variant="primary" 
+                className="flex items-center gap-2"
+                onClick={() => {
+                  console.log('Starting new session');
+                  alert('Starting new session - Opening session creation interface');
+                }}
+              >
+                <Play className="w-4 h-4" />
+                Start New Session
+              </Button>
+              <Button 
+                variant="outline" 
+                className="flex items-center gap-2"
+                onClick={() => setShowIntelligence(!showIntelligence)}
+              >
+                <Brain className="w-4 h-4" />
+                {showIntelligence ? 'Hide' : 'Show'} Intelligence
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -121,135 +117,326 @@ export default function SessionsPage() {
           ))}
         </div>
 
-        {/* Active Sessions */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-6">Active Sessions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {sessions.filter(s => s.status === 'active').map((session) => (
-              <Card key={session.id} className="hover:border-teal-500/50 transition-colors">
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold">{session.table}</h3>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                      <span className="text-sm text-green-400">Active</span>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-zinc-400">Duration:</span>
-                      <span className="text-white">{session.duration}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-400">Guests:</span>
-                      <span className="text-white">{session.guests}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-400">Mix:</span>
-                      <span className="text-teal-400">{session.mix}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-400">Revenue:</span>
-                      <span className="text-green-400 font-semibold">{session.revenue}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-4 pt-4 border-t border-zinc-700">
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex-1"
-                        onClick={() => {
-                          console.log(`Viewing details for session ${session.id}`);
-                          // Navigate to session details or open modal
-                          alert(`Viewing details for ${session.table} - ${session.mix}`);
-                        }}
-                      >
-                        View Details
-                      </Button>
-                      <Button 
-                        variant="primary" 
-                        size="sm" 
-                        className="flex-1"
-                        onClick={() => {
-                          console.log(`Managing session ${session.id}`);
-                          // Open session management interface
-                          alert(`Managing ${session.table} - Duration: ${session.duration}, Guests: ${session.guests}`);
-                        }}
-                      >
-                        Manage
-                      </Button>
-                    </div>
-                  </div>
+        {/* Intelligence Panel */}
+        {showIntelligence && (
+          <div className="mb-8 bg-gradient-to-r from-purple-900/20 to-blue-900/20 border border-purple-500/30 rounded-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-purple-300 flex items-center gap-2">
+                <Brain className="w-5 h-5" />
+                Guest Intelligence Dashboard
+              </h3>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowIntelligence(false)}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-zinc-800/50 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-green-400 mb-2">Trust Score</h4>
+                <div className="text-2xl font-bold text-white">{mockSiteData.trustMetrics.averageTrustScore}%</div>
+                <div className="text-xs text-zinc-400">Average across all guests</div>
+              </div>
+              <div className="bg-zinc-800/50 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-blue-400 mb-2">Flavor Preferences</h4>
+                <div className="text-sm text-white">
+                  {Object.entries(mockSiteData.trustMetrics.flavorPreferences)
+                    .slice(0, 3)
+                    .map(([flavor, count]) => (
+                      <div key={flavor} className="flex justify-between">
+                        <span>{flavor}</span>
+                        <span className="text-zinc-400">{count}%</span>
+                      </div>
+                    ))}
                 </div>
-              </Card>
-            ))}
+              </div>
+              <div className="bg-zinc-800/50 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-purple-400 mb-2">Loyalty Tiers</h4>
+                <div className="text-sm text-white">
+                  {Object.entries(mockSiteData.trustMetrics.loyaltyTiers)
+                    .map(([tier, count]) => (
+                      <div key={tier} className="flex justify-between">
+                        <span className="capitalize">{tier}</span>
+                        <span className="text-zinc-400">{count}%</span>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </div>
           </div>
+        )}
+
+        {/* Tabs */}
+        <div className="flex space-x-1 mb-6">
+          {[
+            { id: 'overview', label: 'OVERVIEW', icon: '📊' },
+            { id: 'boh', label: 'BOH', icon: '👨‍🍳' },
+            { id: 'foh', label: 'FOH', icon: '👨‍💼' },
+            { id: 'edge', label: 'EDGE CASES', icon: '⚠️' }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2 ${
+                activeTab === tab.id
+                  ? 'bg-orange-500 text-white'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+              }`}
+            >
+              <span>{tab.icon}</span>
+              <span>{tab.label}</span>
+            </button>
+          ))}
         </div>
 
-        {/* Recent Sessions */}
-        <div>
-          <h2 className="text-2xl font-bold mb-6">Recent Sessions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {sessions.map((session) => (
-              <Card key={session.id} className="hover:border-teal-500/50 transition-colors">
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold">{session.table}</h3>
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${
-                        session.status === 'active' ? 'bg-green-400 animate-pulse' : 'bg-zinc-400'
-                      }`}></div>
-                      <span className={`text-sm ${
-                        session.status === 'active' ? 'text-green-400' : 'text-zinc-400'
-                      }`}>
-                        {session.status === 'active' ? 'Active' : 'Completed'}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-zinc-400">Duration:</span>
-                      <span className="text-white">{session.duration}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-400">Guests:</span>
-                      <span className="text-white">{session.guests}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-400">Mix:</span>
-                      <span className="text-teal-400">{session.mix}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-400">Revenue:</span>
-                      <span className="text-green-400 font-semibold">{session.revenue}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-400">Started:</span>
-                      <span className="text-white">{session.startTime}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-4 pt-4 border-t border-zinc-700">
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="flex-1">
-                        View Details
-                      </Button>
-                      {session.status === 'active' && (
-                        <Button variant="primary" size="sm" className="flex-1">
-                          Manage
-                        </Button>
+        {/* Tab Content */}
+        {activeTab === 'overview' && (
+          <div className="space-y-6">
+            {/* Active Sessions */}
+            <div>
+              <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                <Flame className="w-6 h-6 text-orange-400" />
+                Active Sessions ({activeSessions.length})
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {activeSessions.map((session) => (
+                  <Card key={session.id} className="hover:border-teal-500/50 transition-colors">
+                    <div className="p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold">{session.tableId}</h3>
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                          <span className="text-sm text-green-400">Active</span>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <div className="flex justify-between">
+                          <span className="text-zinc-400">Customer:</span>
+                          <span className="text-white">{session.customerName}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-zinc-400">Flavor:</span>
+                          <span className="text-teal-400">{session.flavor}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-zinc-400">Duration:</span>
+                          <span className="text-white">{formatDuration(session.sessionTimer?.remaining || 0)} remaining</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-zinc-400">Revenue:</span>
+                          <span className="text-green-400 font-semibold">{formatCurrency(session.amount)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-zinc-400">Staff:</span>
+                          <span className="text-white">{session.assignedStaff.foh}</span>
+                        </div>
+                      </div>
+                      
+                      {/* Session Notes */}
+                      {session.notes && (
+                        <div className="mt-3 p-2 bg-blue-900/20 border border-blue-600/30 rounded text-xs">
+                          <div className="flex items-center space-x-1 mb-1">
+                            <span className="text-blue-400">📝</span>
+                            <span className="font-medium text-blue-300">Session Notes:</span>
+                          </div>
+                          <p className="text-blue-200">{session.notes}</p>
+                        </div>
                       )}
+                      
+                      <div className="mt-4 pt-4 border-t border-zinc-700">
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="flex-1"
+                            onClick={() => setSelectedSession(session.id)}
+                          >
+                            View Details
+                          </Button>
+                          <Button 
+                            variant="primary" 
+                            size="sm" 
+                            className="flex-1"
+                            onClick={() => {
+                              console.log(`Managing session ${session.id}`);
+                              alert(`Managing ${session.tableId} - ${session.flavor}`);
+                            }}
+                          >
+                            Manage
+                          </Button>
+                        </div>
+                        
+                        {/* Intelligence Button */}
+                        <div className="mt-3 pt-3 border-t border-zinc-700">
+                          <button
+                            onClick={() => {
+                              console.log(`Opening intelligence for session ${session.id}`);
+                              alert(`Opening Guest Intelligence for ${session.customerName} at ${session.tableId}`);
+                            }}
+                            className="flex items-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors w-full justify-center"
+                          >
+                            <Brain className="w-4 h-4" />
+                            <span className="text-sm font-medium">View Intelligence</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+
+            {/* Workflow State Breakdown */}
+            <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-white mb-4">Workflow State Breakdown</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-orange-400">{activeSessions.length}</div>
+                  <div className="text-sm text-zinc-400">Active Sessions</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-400">{bohSessions.length}</div>
+                  <div className="text-sm text-zinc-400">BOH Prep</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-teal-400">{fohSessions.length}</div>
+                  <div className="text-sm text-zinc-400">FOH Delivery</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-red-400">{edgeCaseSessions.length}</div>
+                  <div className="text-sm text-zinc-400">Edge Cases</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* BOH Tab */}
+        {activeTab === 'boh' && (
+          <div className="space-y-4">
+            <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
+                <Package className="w-5 h-5 text-orange-400" />
+                <span>Back of House Operations</span>
+              </h3>
+              <div className="space-y-3">
+                {bohSessions.map((session) => (
+                  <div key={session.id} className="bg-zinc-900/50 border border-zinc-600 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium text-white">{session.tableId}</h4>
+                        <p className="text-sm text-zinc-400">{session.flavor}</p>
+                        <p className="text-xs text-zinc-500">{session.customerName}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className={`text-sm font-medium ${getStatusColor(session.status)}`}>
+                          {session.status.replace('_', ' ')}
+                        </p>
+                        <p className="text-xs text-zinc-500">BOH Stage</p>
+                      </div>
+                    </div>
+                    {session.notes && (
+                      <div className="mt-2 p-2 bg-blue-900/20 border border-blue-600/30 rounded text-xs">
+                        <span className="text-blue-400">📝</span>
+                        <span className="text-blue-200 ml-1">{session.notes}</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {bohSessions.length === 0 && (
+                  <p className="text-zinc-400 text-center py-8">No BOH sessions in progress</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* FOH Tab */}
+        {activeTab === 'foh' && (
+          <div className="space-y-4">
+            <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
+                <Truck className="w-5 h-5 text-teal-400" />
+                <span>Front of House Operations</span>
+              </h3>
+              <div className="space-y-3">
+                {fohSessions.map((session) => (
+                  <div key={session.id} className="bg-zinc-900/50 border border-zinc-600 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium text-white">{session.tableId}</h4>
+                        <p className="text-sm text-zinc-400">{session.customerName}</p>
+                        <p className="text-xs text-zinc-500">{session.flavor}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className={`text-sm font-medium ${getStatusColor(session.status)}`}>
+                          {session.status.replace('_', ' ')}
+                        </p>
+                        <p className="text-xs text-zinc-500">FOH Stage</p>
+                      </div>
+                    </div>
+                    {session.notes && (
+                      <div className="mt-2 p-2 bg-blue-900/20 border border-blue-600/30 rounded text-xs">
+                        <span className="text-blue-400">📝</span>
+                        <span className="text-blue-200 ml-1">{session.notes}</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {fohSessions.length === 0 && (
+                  <p className="text-zinc-400 text-center py-8">No FOH sessions in progress</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edge Cases Tab */}
+        {activeTab === 'edge' && (
+          <div className="space-y-4">
+            <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
+                <AlertTriangle className="w-5 h-5 text-red-400" />
+                <span>Edge Cases & Escalations</span>
+              </h3>
+              <div className="space-y-3">
+                {edgeCaseSessions.map((session) => (
+                  <div key={session.id} className="bg-red-900/20 border border-red-600/30 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium text-white">{session.tableId}</h4>
+                        <p className="text-sm text-zinc-400">{session.customerName}</p>
+                        {session.notes && (
+                          <p className="text-sm text-yellow-400 mt-1">📝 {session.notes}</p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-red-400 font-medium">
+                          {session.status.replace('_', ' ')}
+                        </p>
+                        <p className="text-xs text-zinc-500">Requires Attention</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex space-x-2">
+                      <button className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors">
+                        Escalate
+                      </button>
+                      <button className="px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white text-xs rounded transition-colors">
+                        Resolve
+                      </button>
                     </div>
                   </div>
-                </div>
-              </Card>
-            ))}
+                ))}
+                {edgeCaseSessions.length === 0 && (
+                  <p className="text-zinc-400 text-center py-8">No edge cases requiring attention</p>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
