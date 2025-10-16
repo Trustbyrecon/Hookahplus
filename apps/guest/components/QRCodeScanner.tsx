@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { QrCode, MapPin, Clock, Users, AlertCircle } from 'lucide-react';
 import { tableDataSync, TableData, LoungeData } from '../lib/tableDataSync';
+import { useHapticFeedback } from '../hooks/useHapticFeedback';
 
 interface QRCodeScannerProps {
   onTableDetected: (tableData: TableData) => void;
@@ -18,6 +19,7 @@ export const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [currentTableData, setCurrentTableData] = useState<TableData | null>(null);
   const [currentLoungeData, setCurrentLoungeData] = useState<LoungeData | null>(null);
+  const { triggerHaptic, triggerSuccess, triggerError } = useHapticFeedback();
 
   useEffect(() => {
     // Start real-time sync with App build
@@ -27,6 +29,7 @@ export const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
   const handleQRScan = async () => {
     setIsScanning(true);
     setError(null);
+    triggerHaptic('light');
     
     try {
       // Simulate QR code scanning
@@ -48,17 +51,21 @@ export const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
         setScanResult(tableData.qrCode);
         onTableDetected(tableData);
         onLoungeDetected(lounge);
+        triggerSuccess();
       } else {
         setError('Table not found. Please check your QR code.');
+        triggerError();
       }
     } catch (err) {
       setError('Failed to connect to table data. Please try again.');
+      triggerError();
     } finally {
       setIsScanning(false);
     }
   };
 
   const handleManualEntry = async () => {
+    triggerHaptic('light');
     const tableId = prompt('Enter your table number (e.g., T-001):');
     if (tableId) {
       try {
@@ -73,11 +80,14 @@ export const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
           setScanResult(tableData.qrCode);
           onTableDetected(tableData);
           onLoungeDetected(lounge);
+          triggerSuccess();
         } else {
           setError('Table not found. Please check the table number.');
+          triggerError();
         }
       } catch (err) {
         setError('Failed to connect to table data. Please try again.');
+        triggerError();
       }
     }
   };
@@ -97,7 +107,8 @@ export const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
           <button
             onClick={handleQRScan}
             disabled={isScanning}
-            className="w-full bg-primary-600 hover:bg-primary-700 disabled:bg-zinc-700 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors"
+            className="w-full min-h-[44px] bg-primary-600 hover:bg-primary-700 disabled:bg-zinc-700 text-white py-3 px-4 rounded-lg text-sm font-medium transition-all duration-150 ease-out active:scale-95 touch-manipulation"
+            style={{ touchAction: 'manipulation' }}
           >
             {isScanning ? 'Scanning...' : 'Scan QR Code'}
           </button>
@@ -108,7 +119,8 @@ export const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
 
           <button
             onClick={handleManualEntry}
-            className="w-full bg-zinc-700 hover:bg-zinc-600 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors"
+            className="w-full min-h-[44px] bg-zinc-700 hover:bg-zinc-600 text-white py-3 px-4 rounded-lg text-sm font-medium transition-all duration-150 ease-out active:scale-95 touch-manipulation"
+            style={{ touchAction: 'manipulation' }}
           >
             Enter Table Number
           </button>
@@ -171,7 +183,8 @@ export const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
               setCurrentTableData(null);
               setCurrentLoungeData(null);
             }}
-            className="w-full bg-zinc-700 hover:bg-zinc-600 text-white py-2 px-3 rounded-lg text-xs transition-colors"
+            className="w-full min-h-[44px] bg-zinc-700 hover:bg-zinc-600 text-white py-3 px-4 rounded-lg text-xs transition-all duration-150 ease-out active:scale-95 touch-manipulation"
+            style={{ touchAction: 'manipulation' }}
           >
             Scan Different Table
           </button>

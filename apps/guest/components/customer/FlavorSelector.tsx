@@ -5,6 +5,7 @@ import { cn } from '../../utils/cn';
 import Card from '../Card';
 import { Plus, Minus, Star, Heart } from 'lucide-react';
 import FlavorMixSelector from './FlavorMixSelector';
+import { useHapticFeedback } from '../../hooks/useHapticFeedback';
 
 export interface Flavor {
   id: string;
@@ -35,6 +36,7 @@ const FlavorSelector: React.FC<FlavorSelectorProps> = ({
 }) => {
   const [totalPrice, setTotalPrice] = useState(0);
   const [useEnhancedSelector, setUseEnhancedSelector] = useState(true);
+  const { triggerHaptic, triggerSelection, triggerError } = useHapticFeedback();
 
   // Calculate total price when flavors change
   useEffect(() => {
@@ -88,11 +90,12 @@ const FlavorSelector: React.FC<FlavorSelectorProps> = ({
           </Card>
         )}
 
-        {/* Toggle Button */}
+        {/* Toggle Button - Mobile Optimized */}
         <div className="flex justify-center">
           <button
             onClick={() => setUseEnhancedSelector(!useEnhancedSelector)}
-            className="px-4 py-2 text-sm text-zinc-400 hover:text-zinc-300 transition-colors"
+            className="min-h-[44px] min-w-[44px] px-6 py-3 text-sm text-zinc-400 hover:text-zinc-300 transition-all duration-150 ease-out active:scale-95 active:bg-zinc-800/50 touch-manipulation rounded-lg"
+            style={{ touchAction: 'manipulation' }}
           >
             {useEnhancedSelector ? 'Switch to Grid View' : 'Switch to Wheel View'}
           </button>
@@ -127,9 +130,13 @@ const FlavorSelector: React.FC<FlavorSelectorProps> = ({
 
   const handleFlavorToggle = (flavorId: string) => {
     if (selectedFlavors.includes(flavorId)) {
+      triggerHaptic('light');
       onSelectionChange(selectedFlavors.filter(id => id !== flavorId));
     } else if (selectedFlavors.length < maxSelections) {
+      triggerSelection();
       onSelectionChange([...selectedFlavors, flavorId]);
+    } else {
+      triggerError();
     }
   };
 
@@ -160,11 +167,12 @@ const FlavorSelector: React.FC<FlavorSelectorProps> = ({
               key={category.id}
               onClick={() => setSelectedCategory(category.id)}
               className={cn(
-                'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                'min-h-[44px] min-w-[44px] px-4 py-3 rounded-lg text-sm font-medium transition-all duration-150 ease-out active:scale-95 touch-manipulation',
                 selectedCategory === category.id
-                  ? 'bg-teal-600 text-white'
-                  : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                  ? 'bg-teal-600 text-white active:bg-teal-700'
+                  : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 active:bg-zinc-600'
               )}
+              style={{ touchAction: 'manipulation' }}
             >
               {category.name}
             </button>
@@ -180,7 +188,8 @@ const FlavorSelector: React.FC<FlavorSelectorProps> = ({
         {selectedFlavors.length > 0 && (
           <button
             onClick={() => onSelectionChange([])}
-            className="text-sm text-teal-400 hover:text-teal-300 transition-colors"
+            className="min-h-[44px] min-w-[44px] px-4 py-2 text-sm text-teal-400 hover:text-teal-300 transition-all duration-150 ease-out active:scale-95 active:bg-teal-500/10 touch-manipulation rounded-lg"
+            style={{ touchAction: 'manipulation' }}
           >
             Clear All
           </button>
@@ -197,14 +206,15 @@ const FlavorSelector: React.FC<FlavorSelectorProps> = ({
             <Card
               key={flavor.id}
               className={cn(
-                'cursor-pointer transition-all duration-200 hover:shadow-lg',
+                'cursor-pointer transition-all duration-200 hover:shadow-lg min-h-[120px] touch-manipulation',
                 isSelected 
-                  ? 'border-teal-500 bg-teal-500/10' 
+                  ? 'border-teal-500 bg-teal-500/10 active:scale-95' 
                   : canSelect 
-                  ? 'hover:border-teal-500/50' 
+                  ? 'hover:border-teal-500/50 active:scale-95' 
                   : 'opacity-50 cursor-not-allowed'
               )}
               onClick={() => canSelect && handleFlavorToggle(flavor.id)}
+              style={{ touchAction: 'manipulation' }}
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center space-x-2">
@@ -259,11 +269,12 @@ const FlavorSelector: React.FC<FlavorSelectorProps> = ({
         </div>
       )}
 
-      {/* Toggle Button */}
+      {/* Toggle Button - Mobile Optimized */}
       <div className="flex justify-center">
         <button
           onClick={() => setUseEnhancedSelector(!useEnhancedSelector)}
-          className="px-4 py-2 text-sm text-zinc-400 hover:text-zinc-300 transition-colors"
+          className="min-h-[44px] min-w-[44px] px-6 py-3 text-sm text-zinc-400 hover:text-zinc-300 transition-all duration-150 ease-out active:scale-95 active:bg-zinc-800/50 touch-manipulation rounded-lg"
+          style={{ touchAction: 'manipulation' }}
         >
           {useEnhancedSelector ? 'Switch to Grid View' : 'Switch to Wheel View'}
         </button>
