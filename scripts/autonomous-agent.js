@@ -213,7 +213,7 @@ class AutonomousAgent {
   }
 
   /**
-   * Apply Vercel pattern to other apps
+   * Apply Vercel pattern to other apps in monorepo
    */
   async applyVercelPattern(appName) {
     const vercelConfig = {
@@ -233,6 +233,69 @@ class AutonomousAgent {
     } catch (error) {
       console.error(`❌ ${this.agentName}: Failed to create vercel.json for ${appName}:`, error.message);
       return false;
+    }
+  }
+
+  /**
+   * Update shared package and consuming apps atomically
+   */
+  async updateSharedPackage(packageName, files, message) {
+    try {
+      if (!this.autonomousModeEnabled) {
+        throw new Error(`Agent ${this.agentName} not qualified for autonomous mode.`);
+      }
+
+      console.log(`🔄 ${this.agentName}: Updating shared package ${packageName}...`);
+      
+      // Add package files
+      const packageFiles = files.filter(f => f.startsWith(`packages/${packageName}`));
+      if (packageFiles.length > 0) {
+        execSync(`git add ${packageFiles.join(' ')}`, { stdio: 'inherit' });
+      }
+
+      // Add consuming app files
+      const appFiles = files.filter(f => f.startsWith('apps/'));
+      if (appFiles.length > 0) {
+        execSync(`git add ${appFiles.join(' ')}`, { stdio: 'inherit' });
+      }
+
+      // Commit atomic change
+      execSync(`git commit -m "${message}"`, { stdio: 'inherit' });
+      
+      console.log(`✅ ${this.agentName}: Atomic package update completed`);
+      return { success: true };
+
+    } catch (error) {
+      console.error(`❌ ${this.agentName}: Package update failed:`, error.message);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Validate monorepo build across all apps
+   */
+  async validateMonorepoBuild() {
+    try {
+      console.log(`🧪 ${this.agentName}: Validating monorepo build...`);
+      
+      // Run type check across all apps
+      const typeCheckResult = execSync('npx turbo typecheck', { 
+        encoding: 'utf8',
+        stdio: 'pipe'
+      });
+      
+      // Run build for all apps
+      const buildResult = execSync('npx turbo build', { 
+        encoding: 'utf8',
+        stdio: 'pipe'
+      });
+
+      console.log(`✅ ${this.agentName}: Monorepo validation successful`);
+      return { success: true, typeCheck: typeCheckResult, build: buildResult };
+
+    } catch (error) {
+      console.error(`❌ ${this.agentName}: Monorepo validation failed:`, error.message);
+      return { success: false, error: error.message };
     }
   }
 }
@@ -270,23 +333,47 @@ if (require.main === module) {
       }
       break;
     
+    case 'update-package':
+      const packageName = args[2];
+      const packageFiles = args.slice(3, -1);
+      const packageMessage = args[args.length - 1];
+      if (packageName && packageFiles.length > 0 && packageMessage) {
+        agent.updateSharedPackage(packageName, packageFiles, packageMessage);
+      } else {
+        console.log('Usage: node autonomous-agent.js update-package <package-name> <files...> <message>');
+      }
+      break;
+    
+    case 'validate-monorepo':
+      agent.validateMonorepoBuild();
+      break;
+    
     default:
       console.log(`
-🤖 Autonomous Agent CI/CD Script
+🤖 Autonomous Agent CI/CD Script - Monorepo Aware
 
 Usage:
   node autonomous-agent.js <agent-name> <action> [options]
 
 Actions:
-  commit <files...> <message>  - Commit and push changes
-  test                        - Run smoke tests
-  deploy [project]            - Trigger deployment
-  apply-pattern <app-name>    - Apply Vercel pattern to app
+  commit <files...> <message>           - Commit and push changes
+  test                                  - Run smoke tests
+  deploy [project]                      - Trigger deployment
+  apply-pattern <app-name>              - Apply Vercel pattern to app
+  update-package <package> <files...>   - Update shared package atomically
+  validate-monorepo                     - Validate build across all apps
 
 Examples:
-  node autonomous-agent.js deployment commit "apps/app/vercel.json" "agent: deployment fix - Apply Vercel pattern to app"
-  node autonomous-agent.js smoke-test test
-  node autonomous-agent.js deployment deploy site
+  # Standard commit
+  node autonomous-agent.js moat_reflex_agent commit "apps/app/api/sessions/route.ts" "agent: fix - Resolve build error"
+  
+  # Shared package update
+  node autonomous-agent.js moat_reflex_agent update-package design-system "packages/design-system/src/Button.tsx" "apps/app/components/SessionCard.tsx" "agent: design-system - Add new button variants"
+  
+  # Monorepo validation
+  node autonomous-agent.js smoke_test_agent validate-monorepo
+  
+  # Vercel pattern application
   node autonomous-agent.js deployment apply-pattern app
       `);
   }

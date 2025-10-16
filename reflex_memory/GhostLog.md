@@ -11,6 +11,7 @@
 - **Minimum Reflex Score**: 87%
 - **Qualified Agents**: moat_reflex_agent, smoke_test_agent, reflex_agent, deployment_agent
 - **Safety Protocols**: Active monitoring and escalation enabled
+- **Monorepo Integration**: Aligned with Hookah+ monorepo architecture and agent workflow rules
 
 ### **Autonomous Agent Status**
 - **MOAT-Level Reflex Agent**: 95% → **AUTONOMOUS MODE ACTIVE**
