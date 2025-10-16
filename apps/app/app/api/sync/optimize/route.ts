@@ -18,20 +18,21 @@ export async function POST(req: Request) {
         const onboardingConfig = await optimizeOnboardingFlow(selectedTier);
         
         // Log the optimization event
-        await prisma.reflexEvent.create({
-          data: {
-            type: "sync.optimize.onboarding",
-            source: "api",
-            payload: JSON.stringify({
-              action,
-              selectedTier,
-              config: onboardingConfig,
-              timestamp
-            }),
-            userAgent: req.headers.get("user-agent") || "",
-            ip: req.headers.get("x-forwarded-for")?.split(",")[0] || "0.0.0.0"
-          }
-        });
+        // Temporarily disabled Prisma usage for build compatibility
+        // await prisma.reflexEvent.create({
+        //   data: {
+        //     type: "sync.optimize.onboarding",
+        //     source: "api",
+        //     payload: JSON.stringify({
+        //       action,
+        //       selectedTier,
+        //       config: onboardingConfig,
+        //       timestamp
+        //     }),
+        //     userAgent: req.headers.get("user-agent") || "",
+        //     ip: req.headers.get("x-forwarded-for")?.split(",")[0] || "0.0.0.0"
+        //   }
+        // });
 
         return NextResponse.json({
           success: true,
@@ -44,20 +45,21 @@ export async function POST(req: Request) {
         // Sync pricing intelligence data
         const pricingSync = await syncPricingIntelligence(selectedTier);
         
-        await prisma.reflexEvent.create({
-          data: {
-            type: "sync.optimize.pricing",
-            source: "api",
-            payload: JSON.stringify({
-              action,
-              selectedTier,
-              sync: pricingSync,
-              timestamp
-            }),
-            userAgent: req.headers.get("user-agent") || "",
-            ip: req.headers.get("x-forwarded-for")?.split(",")[0] || "0.0.0.0"
-          }
-        });
+        // Temporarily disabled Prisma usage for build compatibility
+        // await prisma.reflexEvent.create({
+        //   data: {
+        //     type: "sync.optimize.pricing",
+        //     source: "api",
+        //     payload: JSON.stringify({
+        //       action,
+        //       selectedTier,
+        //       sync: pricingSync,
+        //       timestamp
+        //     }),
+        //     userAgent: req.headers.get("user-agent") || "",
+        //     ip: req.headers.get("x-forwarded-for")?.split(",")[0] || "0.0.0.0"
+        //   }
+        // });
 
         return NextResponse.json({
           success: true,
