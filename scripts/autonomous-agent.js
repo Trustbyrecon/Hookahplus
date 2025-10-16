@@ -15,6 +15,18 @@ class AutonomousAgent {
     this.reflexScore = reflexScore;
     this.workingDir = process.cwd();
     this.ghostLogPath = path.join(this.workingDir, 'reflex_memory', 'GhostLog.md');
+    
+    // Autonomous Mode Configuration
+    this.AUTONOMOUS_THRESHOLD = 87;
+    this.QUALIFIED_AGENTS = ['moat_reflex_agent', 'smoke_test_agent', 'reflex_agent', 'deployment_agent'];
+    this.autonomousModeEnabled = this.isQualifiedForAutonomousMode();
+  }
+
+  /**
+   * Check if agent is qualified for autonomous mode
+   */
+  isQualifiedForAutonomousMode() {
+    return this.QUALIFIED_AGENTS.includes(this.agentName) && this.reflexScore >= this.AUTONOMOUS_THRESHOLD;
   }
 
   /**
@@ -22,9 +34,15 @@ class AutonomousAgent {
    */
   async executeGitOperation(files, message, branch = 'main') {
     try {
+      // Check autonomous mode qualification
+      if (!this.autonomousModeEnabled) {
+        throw new Error(`Agent ${this.agentName} not qualified for autonomous mode. Reflex Score: ${this.reflexScore}%, Required: ${this.AUTONOMOUS_THRESHOLD}%`);
+      }
+
       // Pre-action scoring
       const preScore = this.calculateReflexScore('plan', message);
       console.log(`🤖 ${this.agentName}: Pre-action Reflex Score: ${preScore}%`);
+      console.log(`🚀 ${this.agentName}: Autonomous Mode ENABLED`);
 
       if (preScore < 70) {
         throw new Error(`Reflex Score too low: ${preScore}%. Escalating to supervisor.`);

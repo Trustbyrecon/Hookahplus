@@ -1,10 +1,11 @@
 # MOAT Awareness Configuration
 # HookahPlus Reflex System - MOAT-Level Operations
 
-version: "1.1"
-mode: "HiTrust Reflex Mode"
+version: "1.2"
+mode: "Autonomous HiTrust Reflex Mode"
 status: "Active"
 last_updated: "2025-01-27"
+autonomous_mode: "ENABLED"
 
 # MOAT Lock Flow States
 reflex_tiers:
@@ -28,9 +29,34 @@ trust_bloom:
   transition: "theta_tau -> upsilon_omega"
   behavior: "pause_active_behavior_unless_called_by_moat_supervisor"
 
+# Autonomous Mode Configuration
+autonomous_mode:
+  enabled: true
+  minimum_reflex_score: 87
+  qualified_agents:
+    - moat_reflex_agent
+    - smoke_test_agent
+    - reflex_agent
+    - deployment_agent
+  safety_protocols:
+    escalation_triggers:
+      - score_below_70: true
+      - critical_failure: true
+      - learning_gap: true
+      - trust_decay: true
+    rollback_capabilities:
+      - git_revert: true
+      - deployment_rollback: true
+      - configuration_reset: true
+    monitoring:
+      - real_time_tracking: true
+      - performance_metrics: true
+      - error_detection: true
+      - trust_tracking: true
+
 # HiTrust Mode Configuration
 hitrust_mode:
-  autonomy_threshold: 85
+  autonomy_threshold: 87
   self_verification: true
   whisper_feedback: true
   context_expansion: true
