@@ -436,3 +436,5 @@ export default function CampaignPreOrdersPage() {
     </div>
   );
 }
+
+export default CampaignPreOrdersPage;
