@@ -1,5 +1,6 @@
 'use client';
 
+// Site build deployment trigger - updated for proper Vercel alignment
 import React from 'react';
 import Card from '../components/Card';
 import Button from '../components/Button';

@@ -1,5 +1,6 @@
 'use client';
 
+// Guest build deployment trigger - updated for proper Vercel alignment
 import React, { useState, useEffect } from 'react';
 import Card from '../components/Card';
 import DollarTestButton from '@/components/DollarTestButton';
