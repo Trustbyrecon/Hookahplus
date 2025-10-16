@@ -2,22 +2,8 @@
   "version": 2,
   "builds": [
     {
-      "src": "apps/app/package.json",
-      "use": "@vercel/next",
-      "config": {
-        "distDir": ".next"
-      }
-    },
-    {
-      "src": "apps/guest/package.json", 
-      "use": "@vercel/next",
-      "config": {
-        "distDir": ".next"
-      }
-    },
-    {
       "src": "apps/site/package.json",
-      "use": "@vercel/next", 
+      "use": "@vercel/next",
       "config": {
         "distDir": ".next"
       }
@@ -25,25 +11,11 @@
   ],
   "routes": [
     {
-      "src": "/app/(.*)",
-      "dest": "/apps/app/$1"
-    },
-    {
-      "src": "/guest/(.*)",
-      "dest": "/apps/guest/$1"
-    },
-    {
-      "src": "/site/(.*)",
+      "src": "/(.*)",
       "dest": "/apps/site/$1"
     }
   ],
   "functions": {
-    "apps/app/app/api/**/route.ts": {
-      "maxDuration": 10
-    },
-    "apps/guest/app/api/**/route.ts": {
-      "maxDuration": 30
-    },
     "apps/site/app/api/**/route.ts": {
       "maxDuration": 30
     }
@@ -52,7 +24,10 @@
     "FORCE_REBUILD": "true",
     "NPM_CONFIG_REGISTRY": "https://registry.npmjs.org/",
     "NPM_CONFIG_FETCH_RETRIES": "3",
-    "NPM_CONFIG_FETCH_RETRY_FACTOR": "2"
+    "NPM_CONFIG_FETCH_RETRY_FACTOR": "2",
+    "NEXT_PUBLIC_SITE_URL": "https://hookahplus.net",
+    "NEXT_PUBLIC_APP_URL": "https://hookahplus-app-prod.vercel.app",
+    "NEXT_PUBLIC_GUEST_URL": "https://hookahplus-guest-prod.vercel.app"
   },
   "build": {
     "env": {
@@ -61,8 +36,13 @@
   },
   "redirects": [
     {
-      "source": "/feat-guests-cart/:path*",
+      "source": "/app/:path*",
       "destination": "https://hookahplus-app-prod.vercel.app/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/guest/:path*",
+      "destination": "https://hookahplus-guest-prod.vercel.app/:path*",
       "permanent": false
     }
   ],
