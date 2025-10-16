@@ -15,7 +15,6 @@ import {
   ArrowRight,
   ArrowLeft,
   RefreshCw,
-  AlertTriangle,
   Package,
   Truck,
   Home,
