@@ -60,12 +60,21 @@ function FireSessionDashboardContent() {
 
   const handleCreateSession = async (sessionData: any) => {
     try {
-      const response = await fetch('/api/sessions', {
+      // Convert session data to root Prisma API format
+      const prismaSessionData = {
+        loungeId: 'default-lounge',
+        source: 'WALK_IN',
+        externalRef: `table-${sessionData.tableId}-${Date.now()}`,
+        customerPhone: sessionData.customerPhone || '',
+        flavorMix: sessionData.flavor || 'Custom Mix'
+      };
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/sessions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(sessionData),
+        body: JSON.stringify(prismaSessionData),
       });
 
       if (!response.ok) {

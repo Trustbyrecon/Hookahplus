@@ -59,8 +59,8 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
 
       console.log('[useLiveSessionData] Starting to load sessions...');
       
-      // Load active sessions
-      const sessionsResponse = await fetch('/api/sessions?state=ACTIVE');
+      // Load active sessions from root Prisma API
+      const sessionsResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/sessions`);
       console.log('[useLiveSessionData] Sessions response status:', sessionsResponse.status);
       
       if (!sessionsResponse.ok) {
@@ -71,38 +71,36 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
       console.log('[useLiveSessionData] Sessions result:', sessionsResult);
 
       if (sessionsResult.success) {
-        // Convert API sessions to FireSession format
+        // Convert Prisma API sessions to FireSession format
         const fireSessions: FireSession[] = sessionsResult.sessions.map((session: any) => ({
           id: session.id,
-          tableId: session.table_id || session.tableId || 'Unknown',
-          customerName: session.customer_name || 'Anonymous',
-          customerPhone: session.customer_phone,
-          flavor: session.flavor_mix ? session.flavor_mix.join(' + ') : 'Custom Mix',
-          amount: (session.amount || 30) * 100, // Convert to cents
-          status: session.state as any,
+          tableId: session.externalRef || 'Unknown',
+          customerName: session.customerRef || 'Anonymous',
+          customerPhone: session.customerPhone || '',
+          flavor: session.flavorMix || 'Custom Mix',
+          amount: session.priceCents || 0,
+          status: mapPrismaStateToFireSession(session.state),
           currentStage: mapStateToStage(session.state),
           assignedStaff: {
-            boh: session.boh_staff,
-            foh: session.foh_staff
+            boh: session.assignedBOHId,
+            foh: session.assignedFOHId
           },
-          createdAt: new Date(session.created_at).getTime(),
-          updatedAt: new Date(session.lastUpdated || session.created_at).getTime(),
-          sessionStartTime: session.started_at ? new Date(session.started_at).getTime() : undefined,
-          sessionDuration: session.started_at ? Date.now() - new Date(session.started_at).getTime() : 0,
+          createdAt: new Date(session.createdAt).getTime(),
+          updatedAt: new Date(session.updatedAt).getTime(),
+          sessionStartTime: session.startedAt ? new Date(session.startedAt).getTime() : undefined,
+          sessionDuration: session.durationSecs || 45 * 60,
           coalStatus: 'active' as const,
           refillStatus: 'none' as const,
-          notes: session.notes || '',
-          edgeCase: session.state === 'PAYMENT_FAILED' ? 'Payment Failed' : null,
-          sessionTimer: session.timer_duration ? {
-            remaining: session.started_at ? Math.max(0, (session.timer_duration * 60) - Math.floor((Date.now() - new Date(session.started_at).getTime()) / 1000)) : session.timer_duration * 60,
-            total: session.timer_duration * 60,
-            isActive: session.state === 'ACTIVE',
-            startedAt: session.started_at ? new Date(session.started_at).getTime() : undefined,
-            pausedAt: undefined,
-            pausedDuration: 0
+          notes: session.tableNotes || '',
+          edgeCase: session.edgeCase,
+          sessionTimer: session.timerStartedAt ? {
+            remaining: calculateRemainingTimeFromPrisma(session),
+            total: session.timerDuration || 45 * 60,
+            isActive: session.timerStatus === 'active',
+            startedAt: new Date(session.timerStartedAt).getTime()
           } : undefined,
           bohState: 'PREPARING' as const,
-          guestTimerDisplay: session.state === 'ACTIVE'
+          guestTimerDisplay: session.state === 'active'
         }));
 
         console.log('[useLiveSessionData] Successfully loaded sessions:', fireSessions.length);
@@ -303,6 +301,33 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
     refreshSessions,
     updateSessionState
   };
+}
+
+// Helper function to map Prisma session state to FireSession status
+function mapPrismaStateToFireSession(state: string): any {
+  const stateMap: Record<string, any> = {
+    'active': 'ACTIVE',
+    'prep_in_progress': 'PREP_IN_PROGRESS',
+    'ready_for_delivery': 'READY_FOR_DELIVERY',
+    'delivered': 'DELIVERED',
+    'paused': 'STAFF_HOLD',
+    'completed': 'CLOSED',
+    'cancelled': 'VOIDED',
+    'pending': 'NEW'
+  };
+  return stateMap[state] || 'NEW';
+}
+
+// Helper function to calculate remaining time from Prisma session
+function calculateRemainingTimeFromPrisma(session: any): number {
+  if (!session.timerStartedAt || !session.timerDuration) return 0;
+  
+  const now = Date.now();
+  const startedAt = new Date(session.timerStartedAt).getTime();
+  const elapsed = Math.floor((now - startedAt) / 1000);
+  const pausedTime = session.timerPausedDuration || 0;
+  
+  return Math.max(0, session.timerDuration - elapsed + pausedTime);
 }
 
 // Helper function to map state to stage

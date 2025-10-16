@@ -130,29 +130,52 @@ export default function SimpleFSDDesign({
     console.log(`Action: ${action} on session: ${sessionId}`);
     
     try {
-      const response = await fetch('/api/sessions/actions', {
+      // Map action to root Prisma API command format
+      const commandMap: Record<string, string> = {
+        'claim_prep': 'PAYMENT_CONFIRMED',
+        'heat_up': 'PREP_STARTED',
+        'ready_for_delivery': 'READY_FOR_DELIVERY',
+        'deliver_now': 'OUT_FOR_DELIVERY',
+        'mark_delivered': 'DELIVERED',
+        'start_active': 'ACTIVE',
+        'pause_session': 'PAUSE',
+        'resume_session': 'RESUME',
+        'request_refill': 'REFILL_REQUESTED',
+        'complete_refill': 'REFILL_COMPLETED',
+        'close_session': 'CLOSE',
+        'put_on_hold': 'HOLD',
+        'resolve_hold': 'RESOLVE_HOLD',
+        'request_remake': 'REMAKE',
+        'process_refund': 'REFUND',
+        'void_session': 'VOID'
+      };
+
+      const command = commandMap[action.toLowerCase()] || action.toUpperCase();
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/sessions/${sessionId}/command`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          sessionId,
-          action: action.toUpperCase(),
-          userRole: userRole || 'MANAGER',
-          operatorId: 'current-user', // In production, this would be the actual user ID
-          notes: `Action ${action} executed by ${userRole || 'MANAGER'}`,
+          cmd: command,
+          actor: userRole?.toLowerCase() || 'manager',
+          data: {
+            notes: `Action ${action} executed by ${userRole || 'MANAGER'}`,
+            timestamp: Date.now()
+          }
         }),
       });
 
       const result = await response.json();
 
-      if (result.success) {
+      if (result.ok) {
         console.log('Session action successful:', result);
         // Refresh the page to show updated session state
         window.location.reload();
       } else {
         console.error('Session action failed:', result);
-        alert(`Action failed: ${result.details || result.error}`);
+        alert(`Action failed: ${result.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error executing session action:', error);
