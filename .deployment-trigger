@@ -1,0 +1,9 @@
+# Deployment Trigger
+# This file triggers a fresh deployment with updated Vercel configurations
+# Generated: 2025-01-27
+# Purpose: Force redeploy with monorepo root directory settings
+
+deployment_id: stable-production-$(date +%s)
+config_updated: true
+monorepo_root: enabled
+build_commands: updated
