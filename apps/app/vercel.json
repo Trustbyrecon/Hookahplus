@@ -1,26 +1,36 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npm run build",
-  "installCommand": "npm install",
-  "outputDirectory": ".next",
-  "framework": "nextjs",
-  "regions": ["iad1"],
+  "version": 2,
+  "builds": [
+    {
+      "src": "apps/app/package.json",
+      "use": "@vercel/next",
+      "config": {
+        "distDir": "apps/app/.next"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/apps/app/$1"
+    }
+  ],
   "functions": {
-    "app/api/payments/live-test/route.ts": {
+    "apps/app/app/api/payments/live-test/route.ts": {
       "maxDuration": 30
     },
-    "app/api/stripe-health/route.ts": {
+    "apps/app/app/api/stripe-health/route.ts": {
       "maxDuration": 15
     },
-    "app/api/stripe/webhook/route.ts": {
+    "apps/app/app/api/stripe/webhook/route.ts": {
       "maxDuration": 30,
       "memory": 1024
     },
-    "app/api/square/webhook/route.ts": {
+    "apps/app/app/api/square/webhook/route.ts": {
       "maxDuration": 30,
       "memory": 1024
     },
-    "app/api/**/route.ts": {
+    "apps/app/app/api/**/route.ts": {
       "maxDuration": 10
     }
   },
@@ -43,7 +53,8 @@
     }
   ],
   "env": {
-    "NEXT_PUBLIC_APP_URL": "https://hookahplus-app-prod.vercel.app"
+    "NEXT_PUBLIC_APP_URL": "https://hookahplus-app-prod.vercel.app",
+    "NEXT_PUBLIC_GUEST_URL": "https://guest.hookahplus.net",
+    "NEXT_PUBLIC_SITE_URL": "https://hookahplus.net"
   }
 }
-

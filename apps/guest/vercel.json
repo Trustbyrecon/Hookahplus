@@ -2,21 +2,21 @@
   "version": 2,
   "builds": [
     {
-      "src": "package.json",
+      "src": "apps/guest/package.json",
       "use": "@vercel/next",
       "config": {
-        "distDir": ".next"
+        "distDir": "apps/guest/.next"
       }
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/$1"
+      "dest": "/apps/guest/$1"
     }
   ],
   "functions": {
-    "app/api/**/*.ts": {
+    "apps/guest/app/api/**/*.ts": {
       "maxDuration": 30
     }
   },

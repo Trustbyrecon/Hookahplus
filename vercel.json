@@ -5,7 +5,7 @@
       "src": "apps/site/package.json",
       "use": "@vercel/next",
       "config": {
-        "distDir": ".next"
+        "distDir": "apps/site/.next"
       }
     }
   ],
