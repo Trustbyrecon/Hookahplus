@@ -1,0 +1,366 @@
+/* Mobile-specific optimizations for Hookah+ Guest Portal */
+
+/* Base mobile optimizations */
+@media (max-width: 768px) {
+  * {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+  
+  input, textarea, [contenteditable] {
+    -webkit-user-select: text;
+    -khtml-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+  }
+  
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Optimize touch targets */
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+    touch-action: manipulation;
+  }
+  
+  /* Prevent zoom on input focus */
+  input, select, textarea {
+    font-size: 16px;
+  }
+  
+  /* Optimize animations for mobile */
+  .motion-reduce * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  /* Mobile-specific safe areas */
+  .pt-safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .pb-safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .pl-safe-left {
+    padding-left: env(safe-area-inset-left);
+  }
+  
+  .pr-safe-right {
+    padding-right: env(safe-area-inset-right);
+  }
+  
+  /* Mobile navigation optimizations */
+  .mobile-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(24, 24, 27, 0.95);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(63, 63, 70, 0.5);
+    z-index: 50;
+  }
+  
+  /* Mobile card optimizations */
+  .mobile-card {
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: transform 0.2s ease-in-out;
+  }
+  
+  .mobile-card:active {
+    transform: scale(0.98);
+  }
+  
+  /* Mobile button optimizations */
+  .mobile-button {
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.2s ease-in-out;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .mobile-button:active {
+    transform: scale(0.95);
+  }
+  
+  .mobile-button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s ease, height 0.3s ease;
+  }
+  
+  .mobile-button:active::before {
+    width: 200px;
+    height: 200px;
+  }
+  
+  /* Mobile flavor selector optimizations */
+  .mobile-flavor-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding: 16px;
+  }
+  
+  .mobile-flavor-item {
+    aspect-ratio: 1;
+    border-radius: 12px;
+    border: 2px solid transparent;
+    transition: all 0.2s ease-in-out;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .mobile-flavor-item:active {
+    transform: scale(0.95);
+  }
+  
+  .mobile-flavor-item.selected {
+    border-color: rgb(45, 212, 191);
+    background: rgba(45, 212, 191, 0.1);
+  }
+  
+  /* Mobile QR scanner optimizations */
+  .mobile-qr-scanner {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #1f2937;
+  }
+  
+  .mobile-qr-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200px;
+    height: 200px;
+    border: 2px solid rgb(45, 212, 191);
+    border-radius: 12px;
+  }
+  
+  .mobile-qr-corners {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgb(45, 212, 191);
+  }
+  
+  .mobile-qr-corners.top-left {
+    top: -3px;
+    left: -3px;
+    border-right: none;
+    border-bottom: none;
+    border-top-left-radius: 8px;
+  }
+  
+  .mobile-qr-corners.top-right {
+    top: -3px;
+    right: -3px;
+    border-left: none;
+    border-bottom: none;
+    border-top-right-radius: 8px;
+  }
+  
+  .mobile-qr-corners.bottom-left {
+    bottom: -3px;
+    left: -3px;
+    border-right: none;
+    border-top: none;
+    border-bottom-left-radius: 8px;
+  }
+  
+  .mobile-qr-corners.bottom-right {
+    bottom: -3px;
+    right: -3px;
+    border-left: none;
+    border-top: none;
+    border-bottom-right-radius: 8px;
+  }
+  
+  /* Mobile session dashboard optimizations */
+  .mobile-session-dashboard {
+    background: rgba(39, 39, 42, 0.5);
+    border: 1px solid rgba(63, 63, 70, 0.5);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  
+  .mobile-session-progress {
+    height: 8px;
+    background: #374151;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  
+  .mobile-session-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, rgb(45, 212, 191), rgb(6, 182, 212));
+    border-radius: 4px;
+    transition: width 0.3s ease;
+  }
+  
+  /* Mobile cart optimizations */
+  .mobile-cart-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    background: rgba(39, 39, 42, 0.3);
+    border-radius: 8px;
+    margin-bottom: 8px;
+  }
+  
+  .mobile-cart-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .mobile-cart-button {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #4b5563;
+    border: none;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+  }
+  
+  .mobile-cart-button:active {
+    background: #6b7280;
+    transform: scale(0.9);
+  }
+  
+  /* Mobile performance optimizations */
+  .mobile-optimized {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeSpeed;
+  }
+  
+  .mobile-optimized img {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+  
+  /* Mobile gesture indicators */
+  .mobile-gesture-hint {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    pointer-events: none;
+    z-index: 100;
+  }
+  
+  /* Mobile loading states */
+  .mobile-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  
+  .mobile-loading-spinner {
+    width: 24px;
+    height: 24px;
+    border: 2px solid #374151;
+    border-top: 2px solid rgb(45, 212, 191);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  /* Mobile error states */
+  .mobile-error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: rgb(252, 165, 165);
+    padding: 12px;
+    border-radius: 8px;
+    margin: 8px 0;
+  }
+  
+  /* Mobile success states */
+  .mobile-success {
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    color: rgb(134, 239, 172);
+    padding: 12px;
+    border-radius: 8px;
+    margin: 8px 0;
+  }
+  
+  /* Mobile accessibility improvements */
+  .mobile-focus-visible:focus-visible {
+    outline: 2px solid rgb(45, 212, 191);
+    outline-offset: 2px;
+  }
+  
+  /* Mobile dark mode optimizations */
+  @media (prefers-color-scheme: dark) {
+    .mobile-card {
+      background: rgba(24, 24, 27, 0.8);
+      border: 1px solid rgba(63, 63, 70, 0.5);
+    }
+  }
+  
+  /* Mobile landscape optimizations */
+  @media (max-width: 768px) and (orientation: landscape) {
+    .mobile-nav {
+      display: none;
+    }
+    
+    .mobile-flavor-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  
+  /* Mobile very small screens */
+  @media (max-width: 375px) {
+    .mobile-flavor-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      padding: 12px;
+    }
+    
+    .mobile-flavor-item {
+      font-size: 12px;
+    }
+  }
+}
