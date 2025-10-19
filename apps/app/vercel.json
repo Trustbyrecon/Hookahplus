@@ -1,14 +1,5 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "apps/app/package.json",
-      "use": "@vercel/next",
-      "config": {
-        "distDir": "apps/app/.next"
-      }
-    }
-  ],
   "redirects": [
     {
       "source": "/feat-guests-cart/:path*",

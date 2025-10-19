@@ -1,14 +1,5 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "apps/guest/package.json",
-      "use": "@vercel/next",
-      "config": {
-        "distDir": "apps/guest/.next"
-      }
-    }
-  ],
   "env": {
     "NEXT_PUBLIC_GUEST_URL": "https://guest.hookahplus.net",
     "NEXT_PUBLIC_APP_URL": "https://app.hookahplus.net",
