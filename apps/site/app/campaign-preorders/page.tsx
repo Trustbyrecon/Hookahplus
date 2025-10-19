@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import Card from '../components/Card';
-import Button from '../components/Button';
+import Card from '../../components/Card';
+import Button from '../../components/Button';
 import { 
   Calendar, 
   Package, 
@@ -31,7 +31,7 @@ import {
   formatDate,
   getCampaignStatusColor,
   getOrderStatusColor
-} from '../lib/campaignPreOrdersData';
+} from '../../lib/campaignPreOrdersData';
 
 export default function CampaignPreOrdersPage() {
   const [activeTab, setActiveTab] = useState<'campaigns' | 'orders' | 'analytics'>('campaigns');
