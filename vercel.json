@@ -9,12 +9,6 @@
       }
     }
   ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/apps/site/$1"
-    }
-  ],
   "env": {
     "FORCE_REBUILD": "true",
     "NPM_CONFIG_REGISTRY": "https://registry.npmjs.org/",
