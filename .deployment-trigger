@@ -4,13 +4,14 @@ This file was created to trigger a new deployment from the stable-production bra
 
 ## Changes Made:
 - Fixed Vercel function conflict by removing `functions` property from all vercel.json files
+- Fixed Vercel routes conflict by removing `routes` property from all vercel.json files
 - Clean 3-port development setup: Guest(3001), App(3002), Site(3003)
 - Mobile optimizations ready for deployment
 - Agent injection system (Flow Constant Λ∞) deployed
 
 ## Deployment Status:
 - Branch: stable-production
-- Commit: f894de9
-- Status: Ready for Vercel deployment
+- Commit: 650a787
+- Status: Ready for Vercel deployment (routes conflict resolved)
 
 Flow Constant (Λ∞) - Allow → Align → Amplify
