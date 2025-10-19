@@ -15,11 +15,6 @@
       "dest": "/apps/site/$1"
     }
   ],
-  "functions": {
-    "apps/site/app/api/**/route.ts": {
-      "maxDuration": 30
-    }
-  },
   "env": {
     "FORCE_REBUILD": "true",
     "NPM_CONFIG_REGISTRY": "https://registry.npmjs.org/",

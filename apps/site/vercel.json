@@ -15,11 +15,6 @@
       "dest": "/apps/site/$1"
     }
   ],
-  "functions": {
-    "apps/site/app/api/**/*.ts": {
-      "maxDuration": 30
-    }
-  },
   "env": {
     "NEXT_PUBLIC_SITE_URL": "https://hookahplus.net",
     "NEXT_PUBLIC_APP_URL": "https://app.hookahplus.net",

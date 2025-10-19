@@ -15,11 +15,6 @@
       "dest": "/apps/guest/$1"
     }
   ],
-  "functions": {
-    "apps/guest/app/api/**/*.ts": {
-      "maxDuration": 30
-    }
-  },
   "env": {
     "NEXT_PUBLIC_GUEST_URL": "https://guest.hookahplus.net",
     "NEXT_PUBLIC_APP_URL": "https://app.hookahplus.net",
