@@ -1,0 +1,38 @@
+{
+  "name": "@hookahplus/agents",
+  "version": "1.0.0",
+  "description": "Hookah+ Agent Orchestration Layer with ReflexCodexInjector",
+  "type": "module",
+  "main": "injectors/reflexCodexInjector.ts",
+  "scripts": {
+    "inject": "node cmd.js injectAgentCodex",
+    "list": "node cmd.js listCodex",
+    "init": "node cmd.js initializeEcosystem",
+    "help": "node cmd.js help"
+  },
+  "keywords": [
+    "hookahplus",
+    "agents",
+    "orchestration",
+    "resonance",
+    "trust-law",
+    "flow-constant"
+  ],
+  "author": "Hookah+ Orchestration Team",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "exports": {
+    ".": "./injectors/reflexCodexInjector.ts",
+    "./cmd": "./cmd.js"
+  },
+  "files": [
+    "codex/",
+    "injectors/",
+    "cmd.js",
+    "README.md"
+  ]
+}
