@@ -5,13 +5,20 @@ This file was created to trigger a new deployment from the stable-production bra
 ## Changes Made:
 - Fixed Vercel function conflict by removing `functions` property from all vercel.json files
 - Fixed Vercel routes conflict by removing `routes` property from all vercel.json files
+- Fixed duplicate export default errors in site app pages
+- Fixed import path errors in site app pages
 - Clean 3-port development setup: Guest(3001), App(3002), Site(3003)
 - Mobile optimizations ready for deployment
 - Agent injection system (Flow Constant Λ∞) deployed
 
+## Vercel Dashboard Configuration Required:
+- Guest Project: Root Directory = ".", Build Command = "cd apps/guest && npm run build", Output Directory = "apps/guest/.next"
+- App Project: Root Directory = ".", Build Command = "cd apps/app && npm run build", Output Directory = "apps/app/.next"  
+- Site Project: Root Directory = ".", Build Command = "cd apps/site && npm run build", Output Directory = "apps/site/.next"
+
 ## Deployment Status:
 - Branch: stable-production
-- Commit: 650a787
-- Status: Ready for Vercel deployment (routes conflict resolved)
+- Commit: 85685dc
+- Status: Ready for Vercel deployment with correct dashboard settings
 
 Flow Constant (Λ∞) - Allow → Align → Amplify
