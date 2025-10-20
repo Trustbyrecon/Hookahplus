@@ -17,17 +17,43 @@ import {
   UserCheck,
   Crown,
   CreditCard,
-  Sparkles
+  Sparkles,
+  Brain,
+  Zap,
+  TrendingUp,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  Target,
+  Workflow
 } from 'lucide-react';
 
 // AI Agent Collaboration Interface
 interface FlowState {
-  currentWorkflow: 'idle' | 'data-generation' | 'session-management' | 'customer-journey' | 'admin-setup';
+  currentWorkflow: 'idle' | 'data-generation' | 'session-management' | 'customer-journey' | 'admin-setup' | 'ai-optimization';
   activeRole: 'owner' | 'foh' | 'boh' | 'admin';
   dataStatus: 'empty' | 'populated' | 'active' | 'flowing';
   nextAction: string;
   progress: number;
   trustLockStatus: 'active' | 'pending' | 'verified';
+  aiAgents: {
+    aliethia: { status: 'active' | 'idle' | 'processing'; task: string; efficiency: number };
+    echoPrime: { status: 'active' | 'idle' | 'processing'; task: string; efficiency: number };
+    tier3: { status: 'active' | 'idle' | 'processing'; task: string; efficiency: number };
+  };
+  flowConstant: {
+    lambda: number;
+    resonance: 'low' | 'medium' | 'high' | 'optimal';
+    alignment: number;
+  };
+  recommendations: Array<{
+    id: string;
+    type: 'navigation' | 'workflow' | 'optimization';
+    priority: 'low' | 'medium' | 'high' | 'critical';
+    message: string;
+    action?: string;
+    icon: React.ReactNode;
+  }>;
 }
 
 interface NavGroup {
@@ -48,39 +74,95 @@ interface NavItem {
   flowState: 'idle' | 'active' | 'completed' | 'required';
   nextAction?: string;
   aiRecommendation?: string;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  agentOptimized?: boolean;
+  flowScore?: number;
+  lastAccessed?: Date;
+  usageFrequency?: number;
 }
 
 const GlobalNavigation: React.FC = () => {
   const pathname = usePathname();
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
   const [flowState, setFlowState] = useState<FlowState>({
-    currentWorkflow: 'idle',
+    currentWorkflow: 'ai-optimization',
     activeRole: 'owner',
-    dataStatus: 'empty',
-    nextAction: 'Generate demo data to see the system in action',
-    progress: 0,
-    trustLockStatus: 'active'
+    dataStatus: 'flowing',
+    nextAction: 'AI agents are optimizing your navigation flow',
+    progress: 87,
+    trustLockStatus: 'active',
+    aiAgents: {
+      aliethia: { status: 'active', task: 'Navigation optimization', efficiency: 94 },
+      echoPrime: { status: 'active', task: 'Workflow analysis', efficiency: 89 },
+      tier3: { status: 'processing', task: 'Flow constant calculation', efficiency: 92 }
+    },
+    flowConstant: {
+      lambda: 0.87,
+      resonance: 'high',
+      alignment: 91
+    },
+    recommendations: [
+      {
+        id: 'nav-1',
+        type: 'navigation',
+        priority: 'high',
+        message: 'Sessions page has high activity - consider pinning',
+        action: '/sessions',
+        icon: <Flame className="w-4 h-4" />
+      },
+      {
+        id: 'workflow-1',
+        type: 'workflow',
+        priority: 'medium',
+        message: 'Staff operations could benefit from AI optimization',
+        action: '/staff-ops',
+        icon: <Users className="w-4 h-4" />
+      }
+    ]
   });
 
   // AI Agent Collaboration - Dynamic Flow State Management
   useEffect(() => {
     const updateFlowState = () => {
-      // Simulate AI agent collaboration
-      const workflows = ['idle', 'data-generation', 'session-management', 'customer-journey', 'admin-setup'];
+      // Simulate AI agent collaboration with reflexive intelligence
+      const workflows = ['ai-optimization', 'session-management', 'customer-journey', 'admin-setup', 'data-generation'];
       const roles = ['owner', 'foh', 'boh', 'admin'];
-      const dataStatuses = ['empty', 'populated', 'active', 'flowing'];
+      const dataStatuses = ['flowing', 'active', 'populated'];
+      const resonances = ['high', 'optimal', 'medium'] as const;
       
       setFlowState(prev => ({
         ...prev,
         currentWorkflow: workflows[Math.floor(Math.random() * workflows.length)] as any,
         activeRole: roles[Math.floor(Math.random() * roles.length)] as any,
         dataStatus: dataStatuses[Math.floor(Math.random() * dataStatuses.length)] as any,
-        progress: Math.floor(Math.random() * 100),
-        nextAction: 'AI agents are collaborating to optimize your workflow'
+        progress: Math.min(100, prev.progress + Math.floor(Math.random() * 3) - 1),
+        nextAction: 'Reflexive agents are optimizing your navigation flow',
+        aiAgents: {
+          aliethia: { 
+            status: 'active', 
+            task: 'Navigation flow optimization', 
+            efficiency: Math.min(100, prev.aiAgents.aliethia.efficiency + Math.floor(Math.random() * 2) - 1)
+          },
+          echoPrime: { 
+            status: 'active', 
+            task: 'User behavior analysis', 
+            efficiency: Math.min(100, prev.aiAgents.echoPrime.efficiency + Math.floor(Math.random() * 2) - 1)
+          },
+          tier3: { 
+            status: 'processing', 
+            task: 'Flow constant Λ∞ calculation', 
+            efficiency: Math.min(100, prev.aiAgents.tier3.efficiency + Math.floor(Math.random() * 2) - 1)
+          }
+        },
+        flowConstant: {
+          lambda: Math.min(1, prev.flowConstant.lambda + (Math.random() * 0.02 - 0.01)),
+          resonance: resonances[Math.floor(Math.random() * resonances.length)],
+          alignment: Math.min(100, prev.flowConstant.alignment + Math.floor(Math.random() * 2) - 1)
+        }
       }));
     };
 
-    const interval = setInterval(updateFlowState, 5000);
+    const interval = setInterval(updateFlowState, 3000);
     return () => clearInterval(interval);
   }, []);
 
@@ -91,7 +173,7 @@ const GlobalNavigation: React.FC = () => {
       bgColor: 'bg-cyan-500/10',
       flowState: 'active',
       description: 'Essential workflow management',
-      aiInsight: 'AI agents are optimizing your core operations',
+      aiInsight: 'Reflexive agents optimizing core operations',
       items: [
         {
           label: 'Dashboard',
@@ -100,7 +182,11 @@ const GlobalNavigation: React.FC = () => {
           description: 'Main control center',
           flowState: 'active',
           nextAction: 'Monitor system status',
-          aiRecommendation: 'Check recent activity'
+          aiRecommendation: 'Check recent activity',
+          priority: 'high',
+          agentOptimized: true,
+          flowScore: 95,
+          usageFrequency: 85
         },
         {
           label: 'Sessions',
@@ -109,7 +195,11 @@ const GlobalNavigation: React.FC = () => {
           description: 'Fire session management',
           flowState: 'active',
           nextAction: 'Manage active sessions',
-          aiRecommendation: 'Review session analytics'
+          aiRecommendation: 'Review session analytics',
+          priority: 'critical',
+          agentOptimized: true,
+          flowScore: 98,
+          usageFrequency: 92
         }
       ]
     },
@@ -119,7 +209,7 @@ const GlobalNavigation: React.FC = () => {
       bgColor: 'bg-purple-500/10',
       flowState: 'active',
       description: 'Staff management and operations',
-      aiInsight: 'Staff coordination is running smoothly',
+      aiInsight: 'AI agents optimizing staff coordination',
       items: [
         {
           label: 'Staff Ops',
@@ -128,7 +218,11 @@ const GlobalNavigation: React.FC = () => {
           description: 'Staff operations center',
           flowState: 'active',
           nextAction: 'Coordinate staff activities',
-          aiRecommendation: 'Check staff assignments'
+          aiRecommendation: 'Check staff assignments',
+          priority: 'high',
+          agentOptimized: true,
+          flowScore: 88,
+          usageFrequency: 78
         },
         {
           label: 'Staff Panel',
@@ -137,7 +231,11 @@ const GlobalNavigation: React.FC = () => {
           description: 'Staff management panel',
           flowState: 'active',
           nextAction: 'Manage staff assignments',
-          aiRecommendation: 'Review staff performance'
+          aiRecommendation: 'Review staff performance',
+          priority: 'medium',
+          agentOptimized: true,
+          flowScore: 82,
+          usageFrequency: 65
         }
       ]
     },
@@ -147,7 +245,7 @@ const GlobalNavigation: React.FC = () => {
       bgColor: 'bg-red-500/10',
       flowState: 'idle',
       description: 'System administration and control',
-      aiInsight: 'Admin functions are ready for use',
+      aiInsight: 'Admin functions ready for reflexive optimization',
       items: [
         {
           label: 'Admin',
@@ -156,7 +254,11 @@ const GlobalNavigation: React.FC = () => {
           description: 'Administrative control center',
           flowState: 'idle',
           nextAction: 'Access admin functions',
-          aiRecommendation: 'Review system settings'
+          aiRecommendation: 'Review system settings',
+          priority: 'low',
+          agentOptimized: false,
+          flowScore: 45,
+          usageFrequency: 25
         }
       ]
     },
@@ -166,7 +268,7 @@ const GlobalNavigation: React.FC = () => {
       bgColor: 'bg-purple-500/10',
       flowState: 'active',
       description: 'POS integration and partnerships',
-      aiInsight: 'POS integration waitlist is active',
+      aiInsight: 'AI agents monitoring integration opportunities',
       items: [
         {
           label: 'POS Waitlist',
@@ -175,7 +277,11 @@ const GlobalNavigation: React.FC = () => {
           description: 'Join POS integration waitlist',
           flowState: 'active',
           nextAction: 'Sign up for early access',
-          aiRecommendation: 'Be first to integrate your POS'
+          aiRecommendation: 'Be first to integrate your POS',
+          priority: 'medium',
+          agentOptimized: true,
+          flowScore: 75,
+          usageFrequency: 40
         },
         {
           label: 'Flavor Demo',
@@ -184,7 +290,47 @@ const GlobalNavigation: React.FC = () => {
           description: 'Try the flavor wheel experience',
           flowState: 'active',
           nextAction: 'Experience interactive demo',
-          aiRecommendation: 'See the future of flavor selection'
+          aiRecommendation: 'See the future of flavor selection',
+          priority: 'medium',
+          agentOptimized: true,
+          flowScore: 85,
+          usageFrequency: 55
+        }
+      ]
+    },
+    {
+      label: 'Support & Resources',
+      color: 'text-green-300',
+      bgColor: 'bg-green-500/10',
+      flowState: 'active',
+      description: 'Help and documentation',
+      aiInsight: 'AI-powered support system active',
+      items: [
+        {
+          label: 'Support',
+          href: '/support',
+          icon: <HelpCircle className="w-4 h-4" />,
+          description: 'Get help and support',
+          flowState: 'active',
+          nextAction: 'Access support resources',
+          aiRecommendation: 'AI agents ready to assist',
+          priority: 'medium',
+          agentOptimized: true,
+          flowScore: 90,
+          usageFrequency: 35
+        },
+        {
+          label: 'Docs',
+          href: '/docs',
+          icon: <FileText className="w-4 h-4" />,
+          description: 'Documentation and guides',
+          flowState: 'active',
+          nextAction: 'Browse documentation',
+          aiRecommendation: 'Comprehensive guides available',
+          priority: 'medium',
+          agentOptimized: true,
+          flowScore: 88,
+          usageFrequency: 30
         }
       ]
     }
@@ -210,6 +356,32 @@ const GlobalNavigation: React.FC = () => {
     }
   };
 
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'critical': return 'text-red-400 bg-red-500/20';
+      case 'high': return 'text-orange-400 bg-orange-500/20';
+      case 'medium': return 'text-yellow-400 bg-yellow-500/20';
+      case 'low': return 'text-zinc-400 bg-zinc-500/20';
+      default: return 'text-zinc-400 bg-zinc-500/20';
+    }
+  };
+
+  const getFlowScoreColor = (score: number) => {
+    if (score >= 90) return 'text-green-400';
+    if (score >= 75) return 'text-yellow-400';
+    if (score >= 60) return 'text-orange-400';
+    return 'text-red-400';
+  };
+
+  const getAgentStatusIcon = (status: string) => {
+    switch (status) {
+      case 'active': return <CheckCircle className="w-3 h-3 text-green-400" />;
+      case 'processing': return <Clock className="w-3 h-3 text-yellow-400" />;
+      case 'idle': return <AlertTriangle className="w-3 h-3 text-zinc-400" />;
+      default: return <CheckCircle className="w-3 h-3 text-green-400" />;
+    }
+  };
+
   return (
     <nav className="bg-zinc-950 border-b border-zinc-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -223,11 +395,24 @@ const GlobalNavigation: React.FC = () => {
               <span className="text-xl font-bold text-white">HOOKAH+</span>
             </div>
             
-            {/* Flow Status Indicator */}
-            <div className="hidden md:flex items-center space-x-2 ml-4">
-              <span className="text-sm text-zinc-400">Flow Status:</span>
-              <span className="text-sm text-zinc-300">{flowState.progress}%</span>
-              <span className="text-sm text-zinc-400">{getFlowStatusIcon(flowState.currentWorkflow)}</span>
+            {/* Enhanced Flow Status Indicator */}
+            <div className="hidden md:flex items-center space-x-3 ml-4">
+              <div className="flex items-center space-x-2">
+                <Brain className="w-4 h-4 text-primary-400" />
+                <span className="text-sm text-zinc-400">Flow Constant Λ∞:</span>
+                <span className="text-sm text-primary-300 font-medium">{flowState.flowConstant.lambda.toFixed(2)}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <TrendingUp className="w-4 h-4 text-green-400" />
+                <span className="text-sm text-zinc-400">Resonance:</span>
+                <span className={`text-sm font-medium ${
+                  flowState.flowConstant.resonance === 'optimal' ? 'text-green-400' :
+                  flowState.flowConstant.resonance === 'high' ? 'text-blue-400' :
+                  flowState.flowConstant.resonance === 'medium' ? 'text-yellow-400' : 'text-zinc-400'
+                }`}>
+                  {flowState.flowConstant.resonance}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -236,25 +421,87 @@ const GlobalNavigation: React.FC = () => {
             {navigationGroups.map((group) => (
               <div key={group.label} className="relative">
                 <div className="flex items-center space-x-1">
-                  {group.items.map((item) => {
+                  {group.items
+                    .sort((a, b) => {
+                      // Sort by priority first, then by flow score
+                      const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
+                      const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] || 0;
+                      const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] || 0;
+                      
+                      if (aPriority !== bPriority) return bPriority - aPriority;
+                      return (b.flowScore || 0) - (a.flowScore || 0);
+                    })
+                    .map((item) => {
                     const isActive = pathname === item.href;
                     return (
-                      <a
-                        key={item.href}
-                        href={item.href}
-                        className={cn(
-                          'flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200',
-                          isActive
-                            ? 'bg-primary-600 text-white'
-                            : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
-                        )}
-                      >
-                        {item.icon}
-                        <span>{item.label}</span>
-                        {item.flowState === 'active' && (
-                          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                        )}
-                      </a>
+                      <div key={item.href} className="relative group">
+                        <a
+                          href={item.href}
+                          className={cn(
+                            'flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative',
+                            isActive
+                              ? 'bg-primary-600 text-white'
+                              : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
+                          )}
+                        >
+                          {item.icon}
+                          <span>{item.label}</span>
+                          
+                          {/* Priority and Flow Indicators */}
+                          <div className="flex items-center space-x-1">
+                            {item.priority === 'critical' && (
+                              <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />
+                            )}
+                            {item.priority === 'high' && (
+                              <div className="w-2 h-2 bg-orange-400 rounded-full" />
+                            )}
+                            {item.agentOptimized && (
+                              <Brain className="w-3 h-3 text-primary-400" />
+                            )}
+                            {item.flowState === 'active' && (
+                              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                            )}
+                          </div>
+                        </a>
+                        
+                        {/* Enhanced Tooltip with AI Insights */}
+                        <div className="absolute top-full left-0 mt-2 w-80 bg-zinc-900 border border-zinc-700 rounded-lg p-4 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50 pointer-events-none">
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <h3 className="text-sm font-semibold text-white">{item.label}</h3>
+                              <div className="flex items-center space-x-2">
+                                <span className={`text-xs px-2 py-1 rounded ${getPriorityColor(item.priority)}`}>
+                                  {item.priority}
+                                </span>
+                                {item.flowScore && (
+                                  <span className={`text-xs font-medium ${getFlowScoreColor(item.flowScore)}`}>
+                                    {item.flowScore}%
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            
+                            <p className="text-xs text-zinc-300">{item.description}</p>
+                            
+                            {item.aiRecommendation && (
+                              <div className="bg-primary-500/10 border border-primary-500/30 rounded p-2">
+                                <div className="flex items-center mb-1">
+                                  <Brain className="w-3 h-3 text-primary-400 mr-1" />
+                                  <span className="text-xs font-medium text-primary-300">AI Insight</span>
+                                </div>
+                                <p className="text-xs text-zinc-300">{item.aiRecommendation}</p>
+                              </div>
+                            )}
+                            
+                            {item.nextAction && (
+                              <div className="flex items-center text-xs text-zinc-400">
+                                <Target className="w-3 h-3 mr-1" />
+                                <span>{item.nextAction}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
@@ -262,8 +509,28 @@ const GlobalNavigation: React.FC = () => {
             ))}
           </div>
 
-          {/* Right Side Actions */}
+          {/* Enhanced Right Side Actions */}
           <div className="flex items-center space-x-4">
+            {/* AI Agent Status */}
+            <div className="hidden xl:flex items-center space-x-3">
+              <div className="flex items-center space-x-2">
+                <Brain className="w-4 h-4 text-primary-400" />
+                <span className="text-xs text-zinc-400">Agents:</span>
+                <div className="flex items-center space-x-1">
+                  {getAgentStatusIcon(flowState.aiAgents.aliethia.status)}
+                  <span className="text-xs text-zinc-300">Aliethia</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  {getAgentStatusIcon(flowState.aiAgents.echoPrime.status)}
+                  <span className="text-xs text-zinc-300">EchoPrime</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  {getAgentStatusIcon(flowState.aiAgents.tier3.status)}
+                  <span className="text-xs text-zinc-300">Tier3</span>
+                </div>
+              </div>
+            </div>
+
             {/* Trust Lock Status */}
             <div className="hidden lg:flex items-center space-x-2">
               <div className="flex items-center space-x-1">
@@ -271,6 +538,45 @@ const GlobalNavigation: React.FC = () => {
                 <span className="text-sm text-orange-400">Trust-Lock: TLH-v1::active</span>
               </div>
             </div>
+
+            {/* AI Recommendations */}
+            {flowState.recommendations.length > 0 && (
+              <div className="hidden lg:flex items-center space-x-2">
+                <div className="relative group">
+                  <button className="flex items-center space-x-1 text-sm text-zinc-400 hover:text-white transition-colors">
+                    <Zap className="w-4 h-4 text-yellow-400" />
+                    <span>AI Insights</span>
+                    <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse" />
+                  </button>
+                  
+                  {/* Recommendations Dropdown */}
+                  <div className="absolute top-full right-0 mt-2 w-80 bg-zinc-900 border border-zinc-700 rounded-lg p-4 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-semibold text-white mb-2">AI Recommendations</h3>
+                      {flowState.recommendations.map((rec) => (
+                        <div key={rec.id} className="bg-zinc-800 border border-zinc-600 rounded p-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center space-x-2">
+                              {rec.icon}
+                              <span className={`text-xs px-2 py-1 rounded ${getPriorityColor(rec.priority)}`}>
+                                {rec.priority}
+                              </span>
+                            </div>
+                            <span className="text-xs text-zinc-400">{rec.type}</span>
+                          </div>
+                          <p className="text-xs text-zinc-300">{rec.message}</p>
+                          {rec.action && (
+                            <a href={rec.action} className="text-xs text-primary-400 hover:text-primary-300 transition-colors">
+                              Take action →
+                            </a>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Support and Docs */}
             <div className="flex items-center space-x-2">
