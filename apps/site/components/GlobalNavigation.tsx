@@ -513,7 +513,8 @@ const GlobalNavigation: React.FC = () => {
           <div className="flex items-center space-x-4">
             {/* AI Agent Status */}
             <div className="hidden xl:flex items-center space-x-3">
-              <div className="flex items-center space-x-2">
+              {/* AI Agents hidden from public navigation */}
+              {/* <div className="flex items-center space-x-2">
                 <Brain className="w-4 h-4 text-primary-400" />
                 <span className="text-xs text-zinc-400">Agents:</span>
                 <div className="flex items-center space-x-1">
@@ -528,7 +529,7 @@ const GlobalNavigation: React.FC = () => {
                   {getAgentStatusIcon(flowState.aiAgents.tier3.status)}
                   <span className="text-xs text-zinc-300">Tier3</span>
                 </div>
-              </div>
+              </div> */}
             </div>
 
             {/* Trust Lock Status */}
@@ -578,7 +579,7 @@ const GlobalNavigation: React.FC = () => {
               </div>
             )}
 
-            {/* Support and Docs */}
+            {/* Support and Docs - Single clean links */}
             <div className="flex items-center space-x-2">
               <a
                 href="/support"
