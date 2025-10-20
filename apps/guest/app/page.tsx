@@ -15,7 +15,10 @@ import QRCodeScanner from '../components/QRCodeScanner';
 import RealTimeSessionSync from '../components/RealTimeSessionSync';
 import GuestIntelligenceDashboard from '../components/EnhancedStaffPanel';
 import { sessionManager, SessionData } from '../lib/sessionManager';
-import FlavorMixSelector from '../components/customer/FlavorMixSelector';
+import MobileFlavorMixSelector from '../components/customer/MobileFlavorMixSelector';
+import MobileFireSessionDashboard from '../components/customer/MobileFireSessionDashboard';
+import MobileTouchHandler from '../components/customer/MobileTouchHandler';
+import MobilePerformanceOptimizer from '../components/customer/MobilePerformanceOptimizer';
 import SuccessModal from '../components/SuccessModal';
 
 // Flavor categories for the FlavorMixSelector
@@ -454,14 +457,28 @@ export default function GuestPortal() {
           </div>
         )}
         
-        {/* Flavor Mix Selector - Wheel/Guided Mode */}
+        {/* Mobile-Optimized Flavor Mix Selector - Wheel/Guided Mode */}
         <div className="mb-6">
-          <FlavorMixSelector
-            selectedFlavors={selectedFlavors}
-            onSelectionChange={handleFlavorSelectionChange}
-            maxSelections={4}
-            onPriceUpdate={handleFlavorPriceUpdate}
-          />
+          <MobilePerformanceOptimizer enableLazyLoading={true} enablePerformanceTracking={true}>
+            <MobileTouchHandler
+              onSwipe={(direction, distance) => {
+                console.log(`Swipe ${direction} detected with distance ${distance}`);
+              }}
+              onTap={(position) => {
+                console.log(`Tap detected at ${position.x}, ${position.y}`);
+              }}
+              onDoubleTap={(position) => {
+                console.log(`Double tap detected at ${position.x}, ${position.y}`);
+              }}
+            >
+              <MobileFlavorMixSelector
+                selectedFlavors={selectedFlavors}
+                onSelectionChange={handleFlavorSelectionChange}
+                maxSelections={4}
+                onPriceUpdate={handleFlavorPriceUpdate}
+              />
+            </MobileTouchHandler>
+          </MobilePerformanceOptimizer>
         </div>
 
         {/* Order Summary & Actions */}
