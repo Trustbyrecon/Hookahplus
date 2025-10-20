@@ -18,7 +18,9 @@ import { sessionManager, SessionData } from '../lib/sessionManager';
 import MobileFlavorMixSelector from '../components/customer/MobileFlavorMixSelector';
 import MobileFireSessionDashboard from '../components/customer/MobileFireSessionDashboard';
 import MobileTouchHandler from '../components/customer/MobileTouchHandler';
-import MobilePerformanceOptimizer from '../components/customer/MobilePerformanceOptimizer';
+import IOSOptimized from '../components/platform/IOSOptimized';
+import AndroidOptimized from '../components/platform/AndroidOptimized';
+import { usePlatformDetection } from '../utils/platformDetection';
 import SuccessModal from '../components/SuccessModal';
 
 // Flavor categories for the FlavorMixSelector
@@ -128,6 +130,9 @@ export default function GuestPortal() {
   // FlavorMixSelector state
   const [selectedFlavors, setSelectedFlavors] = useState<string[]>([]);
   const [flavorMixPrice, setFlavorMixPrice] = useState(0);
+  
+  // Platform detection
+  const platform = usePlatformDetection();
   
   const addToCart = (item: { id: number; name: string; price: number }) => {
     add({ id: String(item.id), name: item.name, price: Math.round(item.price * 100), qty: 1 });
@@ -345,9 +350,28 @@ export default function GuestPortal() {
     { name: 'Desserts', count: 1, active: false }
   ];
 
+  // Platform-specific wrapper component
+  const PlatformWrapper = ({ children }: { children: React.ReactNode }) => {
+    if (platform.isIOS) {
+      return (
+        <IOSOptimized enableBiometrics={true} enableHaptics={true} enableSafeArea={true}>
+          {children}
+        </IOSOptimized>
+      );
+    } else if (platform.isAndroid) {
+      return (
+        <AndroidOptimized enableBiometrics={true} enableHaptics={true} enableMaterialDesign={true}>
+          {children}
+        </AndroidOptimized>
+      );
+    }
+    return <>{children}</>;
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
-      <GlobalNavigation currentPage="home" />
+    <PlatformWrapper>
+      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white platform-optimized">
+        <GlobalNavigation currentPage="home" />
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
         {/* QR Scanner & Table Status with Pricing Options */}
@@ -631,6 +655,7 @@ export default function GuestPortal() {
           window.open('https://hookahplus-iursz2jf6-dwaynes-projects-1c5c280a.vercel.app/fire-session-dashboard', '_blank');
         }}
       />
-    </div>
+      </div>
+    </PlatformWrapper>
   );
 }
