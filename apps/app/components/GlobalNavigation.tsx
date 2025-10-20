@@ -18,7 +18,8 @@ import {
   Crown,
   MapPin,
   Eye,
-  UserPlus
+  UserPlus,
+  QrCode
 } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 
@@ -242,14 +243,14 @@ const GlobalNavigation: React.FC = () => {
           aiRecommendation: 'Review system settings'
         },
         {
-          label: 'Reflex Events',
-          href: '/admin/reflex',
-          icon: <BarChart3 className="w-4 h-4" />,
-          description: 'Monitor pricing intelligence events',
+          label: 'QR Generator',
+          href: '/admin/qr',
+          icon: <QrCode className="w-4 h-4" />,
+          description: 'Generate QR codes for lounge sessions',
           flowState: 'active',
-          nextAction: 'View event analytics',
-          aiRecommendation: 'Track user behavior patterns'
-        }
+          nextAction: 'Create QR codes for tables',
+          aiRecommendation: 'Generate QR codes for customer entry flow'
+        },
       ]
     }
   ];

@@ -14,8 +14,8 @@ import {
   Volume2,
   VolumeX
 } from 'lucide-react';
-import { cn } from '../../utils/cn';
-import { usePlatformDetection, PlatformUtils } from '../../utils/platformDetection';
+import { cn } from '../../../utils/cn';
+import { usePlatformDetection, PlatformUtils } from '../../../utils/platformDetection';
 
 /**
  * Android-Specific Mobile Optimizations

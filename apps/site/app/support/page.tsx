@@ -95,18 +95,30 @@ const SupportPage = () => {
     },
     {
       id: '4',
+      question: 'How do I generate QR codes for my lounge tables?',
+      answer: 'Navigate to the Admin section in your Hookah+ dashboard, then click on "QR Generator". Enter your lounge ID and optional campaign reference, then click "Generate QR Code". The QR code will link customers directly to your guest portal for seamless session entry.',
+      category: 'technical'
+    },
+    {
+      id: '5',
+      question: 'What information is included in the QR code?',
+      answer: 'QR codes contain your lounge ID and optional campaign tracking parameters. When scanned, customers are directed to the guest portal where they can start their session, view menu items, and place orders. The system tracks the source of each session for analytics.',
+      category: 'technical'
+    },
+    {
+      id: '6',
       question: 'What are the pricing options for Hookah+?',
       answer: 'We offer flexible pricing plans starting with a free tier for small venues. Our premium plans include advanced AI features, unlimited sessions, priority support, and custom integrations. Contact our sales team for enterprise pricing.',
       category: 'billing'
     },
     {
-      id: '5',
+      id: '7',
       question: 'How do I manage staff permissions and roles?',
       answer: 'Use the Staff Operations panel to assign roles (FOH, BOH, Admin) and set permissions. Our AI system learns from your staff patterns and suggests optimal role assignments based on performance data.',
       category: 'general'
     },
     {
-      id: '6',
+      id: '8',
       question: 'Is my data secure with Hookah+?',
       answer: 'Absolutely! We use enterprise-grade security with Trust-Lock encryption (TLH-v1). All data is encrypted in transit and at rest. We\'re SOC 2 compliant and follow industry best practices for data protection.',
       category: 'technical'

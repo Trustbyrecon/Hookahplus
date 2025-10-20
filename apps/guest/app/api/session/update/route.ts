@@ -3,46 +3,32 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { loungeId, tableId, guestId, sessionType = 'standard' } = body;
+    const { sessionId, updates } = body;
 
-    // Validate required fields
-    if (!loungeId) {
-      return NextResponse.json({ error: 'Missing loungeId' }, { status: 400 });
+    if (!sessionId) {
+      return NextResponse.json({ error: 'Missing sessionId' }, { status: 400 });
     }
 
-    // Generate session ID
-    const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // In production, update session in database
+    console.log(`[Session Update] Updating session ${sessionId} with:`, updates);
 
-    // Create session data
-    const sessionData = {
+    // Mock updated session data
+    const updatedSession = {
       sessionId,
-      loungeId,
-      tableId: tableId || 'T-001',
-      guestId: guestId || `guest_${Date.now()}`,
-      sessionType,
-      status: 'active',
-      startTime: new Date().toISOString(),
-      duration: 0,
-      flavors: [],
-      orders: [],
-      totalAmount: 0,
-      createdAt: new Date().toISOString(),
+      ...updates,
       updatedAt: new Date().toISOString()
     };
 
-    // Store session (in production, this would be stored in database)
-    console.log(`[Session Start] Created session ${sessionId} for lounge ${loungeId}`);
-
     return NextResponse.json({
       success: true,
-      session: sessionData,
-      message: 'Session started successfully'
+      session: updatedSession,
+      message: 'Session updated successfully'
     });
 
   } catch (error) {
-    console.error('Error starting session:', error);
+    console.error('Error updating session:', error);
     return NextResponse.json({ 
-      error: 'Failed to start session',
+      error: 'Failed to update session',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
@@ -57,8 +43,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Missing sessionId parameter' }, { status: 400 });
     }
 
-    // In production, fetch from database
-    // For now, return mock data
+    // In production, fetch session from database
     const sessionData = {
       sessionId,
       loungeId: 'lounge_001',
@@ -66,7 +51,7 @@ export async function GET(req: NextRequest) {
       guestId: 'guest_123',
       sessionType: 'standard',
       status: 'active',
-      startTime: new Date(Date.now() - 300000).toISOString(), // 5 minutes ago
+      startTime: new Date(Date.now() - 300000).toISOString(),
       duration: 300,
       flavors: ['mint', 'grape'],
       orders: [
