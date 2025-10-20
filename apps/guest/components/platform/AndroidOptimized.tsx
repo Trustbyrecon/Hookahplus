@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Fingerprint, 
-  Android, 
+  Smartphone, 
   Chrome,
   Wifi,
   Battery,
@@ -179,7 +179,7 @@ export default function AndroidOptimized({
       <div className="android-status-bar bg-blue-600">
         <div className="flex items-center justify-between px-4 py-2">
           <div className="flex items-center gap-2 text-white text-sm">
-            <Android className="w-4 h-4" />
+            <Smartphone className="w-4 h-4" />
             <span>Android {platform.version}</span>
           </div>
           

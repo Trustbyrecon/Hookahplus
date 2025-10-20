@@ -18,6 +18,7 @@ import { sessionManager, SessionData } from '../lib/sessionManager';
 import MobileFlavorMixSelector from '../components/customer/MobileFlavorMixSelector';
 import MobileFireSessionDashboard from '../components/customer/MobileFireSessionDashboard';
 import MobileTouchHandler from '../components/customer/MobileTouchHandler';
+import MobilePerformanceOptimizer from '../components/customer/MobilePerformanceOptimizer';
 import IOSOptimized from '../components/platform/IOSOptimized';
 import AndroidOptimized from '../components/platform/AndroidOptimized';
 import { usePlatformDetection } from '../utils/platformDetection';
