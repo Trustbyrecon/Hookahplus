@@ -179,9 +179,9 @@ export const PlatformUtils = {
 
     // iOS-specific touch handling
     handleIOSTouch: (element: HTMLElement) => {
-      element.style.webkitTouchCallout = 'none';
-      element.style.webkitUserSelect = 'none';
-      element.style.webkitTapHighlightColor = 'transparent';
+      (element.style as any).webkitTouchCallout = 'none';
+      (element.style as any).webkitUserSelect = 'none';
+      (element.style as any).webkitTapHighlightColor = 'transparent';
     }
   },
 
@@ -233,7 +233,7 @@ export const PlatformUtils = {
     // Android-specific touch handling
     handleAndroidTouch: (element: HTMLElement) => {
       element.style.touchAction = 'manipulation';
-      element.style.webkitTapHighlightColor = 'rgba(0, 0, 0, 0.1)';
+      (element.style as any).webkitTapHighlightColor = 'rgba(0, 0, 0, 0.1)';
     }
   },
 
