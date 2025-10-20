@@ -11,7 +11,7 @@ import { StatusIndicator } from '../components/StatusIndicator';
 import { useCart } from '@/components/cart/CartProvider';
 import { SessionTimerAwareness } from '../components/SessionTimerAwareness';
 import GlobalNavigation from '../components/GlobalNavigation';
-import QRCodeScanner from '../components/QRCodeScanner';
+import { QRCodeScanner } from '../components/QRCodeScanner';
 import RealTimeSessionSync from '../components/RealTimeSessionSync';
 import GuestIntelligenceDashboard from '../components/EnhancedStaffPanel';
 import { sessionManager, SessionData } from '../lib/sessionManager';
