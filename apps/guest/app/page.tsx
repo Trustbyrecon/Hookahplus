@@ -24,6 +24,29 @@ import AndroidOptimized from '../components/platform/AndroidOptimized';
 import { usePlatformDetection } from '../utils/platformDetection';
 import SuccessModal from '../components/SuccessModal';
 
+// Analytics tracking functions
+const trackConversion = (eventName: string, value?: number) => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', 'conversion', {
+      event_category: 'conversion',
+      event_label: eventName,
+      value: value || 0,
+      currency: 'USD'
+    });
+    console.log(`[Analytics] 💰 Conversion tracked: ${eventName}`);
+  }
+};
+
+const trackEngagement = (action: string, component: string) => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', 'engagement', {
+      event_category: 'user_interaction',
+      event_label: `${component}:${action}`
+    });
+    console.log(`[Analytics] 📊 Engagement tracked: ${component}:${action}`);
+  }
+};
+
 // Flavor categories for the FlavorMixSelector
 const FLAVOR_CATEGORIES = [
   {

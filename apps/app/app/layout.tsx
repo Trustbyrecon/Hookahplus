@@ -1,6 +1,7 @@
 import './globals.css'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
+import AnalyticsScript from '../components/AnalyticsScript'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -19,6 +20,9 @@ export default function RootLayout({
 
   return (
     <html lang="en" className={isPrettyTheme ? 'pretty-theme' : ''}>
+      <head>
+        <AnalyticsScript />
+      </head>
       <body className={`${inter.className} ${isPrettyTheme ? 'pretty-theme' : ''}`}>
         {/* Top Status Bar */}
         {isPrettyTheme && (

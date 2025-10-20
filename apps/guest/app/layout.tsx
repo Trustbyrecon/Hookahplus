@@ -4,6 +4,7 @@ import '../styles/platform-optimizations.css'
 import GlobalNavigation from '../components/GlobalNavigation'
 import { CartProvider } from '../components/cart/CartProvider'
 import { CartToggle } from '../components/cart/CartUI'
+import AnalyticsScript from '../components/AnalyticsScript'
 
 export const metadata = {
   title: 'HookahPlus Guest Portal',
@@ -18,6 +19,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <AnalyticsScript />
+      </head>
       <body className="min-h-screen bg-zinc-950 text-white">
         <CartProvider>
           {children}

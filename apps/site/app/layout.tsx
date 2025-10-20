@@ -1,5 +1,6 @@
 import './globals.css'
 import GlobalNavigation from '../components/GlobalNavigation'
+import AnalyticsScript from '../components/AnalyticsScript'
 
 export const metadata = {
   title: 'HookahPlus - The Future of Hookah Lounge Management',
@@ -14,6 +15,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <AnalyticsScript />
+      </head>
       <body className="min-h-screen bg-zinc-950 text-white">
         <GlobalNavigation />
         {children}

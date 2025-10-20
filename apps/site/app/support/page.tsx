@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   HelpCircle, 
   Mail, 
@@ -20,6 +20,29 @@ import {
   Zap
 } from 'lucide-react';
 
+// Analytics tracking functions
+const trackConversion = (eventName: string, value?: number) => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', 'conversion', {
+      event_category: 'conversion',
+      event_label: eventName,
+      value: value || 0,
+      currency: 'USD'
+    });
+    console.log(`[Analytics] 💰 Conversion tracked: ${eventName}`);
+  }
+};
+
+const trackEngagement = (action: string, component: string) => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', 'engagement', {
+      event_category: 'user_interaction',
+      event_label: `${component}:${action}`
+    });
+    console.log(`[Analytics] 📊 Engagement tracked: ${component}:${action}`);
+  }
+};
+
 interface FAQItem {
   id: string;
   question: string;
@@ -38,6 +61,18 @@ const SupportPage = () => {
     priority: 'medium',
     category: 'general'
   });
+
+  // Track page view on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', 'page_view', {
+        page_title: 'Support Center',
+        page_location: window.location.href,
+        page_path: '/support'
+      });
+      trackEngagement('page_view', 'support_center');
+    }
+  }, []);
 
   const faqData: FAQItem[] = [
     {
