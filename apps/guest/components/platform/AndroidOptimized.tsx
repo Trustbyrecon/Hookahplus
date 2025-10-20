@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Fingerprint, 
   Smartphone, 
-  Chrome,
+  Globe,
   Wifi,
   Battery,
   Signal,

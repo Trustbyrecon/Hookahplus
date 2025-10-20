@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Smartphone, 
   Apple, 
-  Safari,
+  Globe,
   Wifi,
   Battery,
   Signal,
