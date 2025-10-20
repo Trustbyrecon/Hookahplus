@@ -11,7 +11,7 @@ import { StatusIndicator } from '../components/StatusIndicator';
 import { useCart } from '@/components/cart/CartProvider';
 import { SessionTimerAwareness } from '../components/SessionTimerAwareness';
 import GlobalNavigation from '../components/GlobalNavigation';
-import { QRCodeScanner } from '../components/QRCodeScanner';
+import { HookahTracker } from '../components/HookahTracker';
 import RealTimeSessionSync from '../components/RealTimeSessionSync';
 import GuestIntelligenceDashboard from '../components/EnhancedStaffPanel';
 import { sessionManager, SessionData } from '../lib/sessionManager';
@@ -146,7 +146,8 @@ export default function GuestPortal() {
   const [sessionMetadata, setSessionMetadata] = useState<any>(null);
   const [currentSession, setCurrentSession] = useState<SessionData | null>(null);
   const [isStartingSession, setIsStartingSession] = useState(false);
-  const [showEnhancedStaffPanel, setShowEnhancedStaffPanel] = useState(false);
+  const [showHookahTracker, setShowHookahTracker] = useState(false);
+  const [trackingSessionId, setTrackingSessionId] = useState<string | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [pricingModel, setPricingModel] = useState<'flat' | 'time-based'>('flat');
   const [sessionDuration, setSessionDuration] = useState(60); // Default 60 minutes
@@ -198,13 +199,39 @@ export default function GuestPortal() {
     setFlavorMixPrice(total);
   };
 
-  const handleTableDetected = (tableData: any) => {
+  const handleTableDetected = async (tableData: any) => {
     setTableData(tableData);
     console.log('Table detected:', tableData);
+    
+    // Start hookah tracking
+    const sessionId = `session_${Date.now()}`;
+    setTrackingSessionId(sessionId);
+    
+    try {
+      const response = await fetch('/api/tracking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId,
+          loungeId: tableData.loungeId || 'lounge_001',
+          tableId: tableData.tableId || 'T-001',
+          action: 'start'
+        })
+      });
+      
+      if (response.ok) {
+        setShowHookahTracker(true);
+        trackEngagement('qr_scan_success', 'hookah_tracker');
+      }
+    } catch (error) {
+      console.error('Failed to start tracking:', error);
+    }
   };
 
-  const handleLoungeDetected = (loungeData: any) => {
-    console.log('Lounge detected:', loungeData);
+  const handleTrackingComplete = () => {
+    setShowHookahTracker(false);
+    setShowSuccessModal(true);
+    trackConversion('hookah_delivered', 25); // Track successful delivery
   };
 
   const handleSessionUpdate = (metadata: any) => {
@@ -394,7 +421,19 @@ export default function GuestPortal() {
 
   return (
     <PlatformWrapper>
-      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white platform-optimized">
+      {/* Hookah Tracker - Show when tracking is active */}
+      {showHookahTracker && trackingSessionId && tableData && (
+        <HookahTracker
+          sessionId={trackingSessionId}
+          loungeId={tableData.loungeId || 'lounge_001'}
+          tableId={tableData.tableId || 'T-001'}
+          onComplete={handleTrackingComplete}
+        />
+      )}
+      
+      {/* Main Guest Portal - Show when not tracking */}
+      {!showHookahTracker && (
+        <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white platform-optimized">
         <GlobalNavigation currentPage="home" />
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
@@ -680,6 +719,7 @@ export default function GuestPortal() {
         }}
       />
       </div>
+      )}
     </PlatformWrapper>
   );
 }
