@@ -1,14 +1,5 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "apps/site/package.json",
-      "use": "@vercel/next",
-      "config": {
-        "distDir": "apps/site/.next"
-      }
-    }
-  ],
   "env": {
     "FORCE_REBUILD": "true",
     "NPM_CONFIG_REGISTRY": "https://registry.npmjs.org/",
