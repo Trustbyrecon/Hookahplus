@@ -39,6 +39,15 @@ interface LoungeConfig {
   lounge_id: string;
   lounge_name: string;
   slug: string;
+  session_price?: number;
+  reflex_enabled?: boolean;
+  contact?: {
+    owner_name: string;
+    email: string;
+    phone: string;
+    address: string;
+  };
+  hours?: Record<string, string>;
   tables: TableConfig[];
   campaigns?: CampaignConfig[];
   qr_settings?: {
