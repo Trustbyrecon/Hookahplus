@@ -395,25 +395,6 @@ const GlobalNavigation: React.FC = () => {
               <span className="text-xl font-bold text-white">HOOKAH+</span>
             </div>
             
-            {/* Enhanced Flow Status Indicator */}
-            <div className="hidden md:flex items-center space-x-3 ml-4">
-              <div className="flex items-center space-x-2">
-                <Brain className="w-4 h-4 text-primary-400" />
-                <span className="text-sm text-zinc-400">Flow Constant Λ∞:</span>
-                <span className="text-sm text-primary-300 font-medium">{flowState.flowConstant.lambda.toFixed(2)}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <TrendingUp className="w-4 h-4 text-green-400" />
-                <span className="text-sm text-zinc-400">Resonance:</span>
-                <span className={`text-sm font-medium ${
-                  flowState.flowConstant.resonance === 'optimal' ? 'text-green-400' :
-                  flowState.flowConstant.resonance === 'high' ? 'text-blue-400' :
-                  flowState.flowConstant.resonance === 'medium' ? 'text-yellow-400' : 'text-zinc-400'
-                }`}>
-                  {flowState.flowConstant.resonance}
-                </span>
-              </div>
-            </div>
           </div>
 
           {/* Main Navigation */}
@@ -578,6 +559,22 @@ const GlobalNavigation: React.FC = () => {
                 </div>
               </div>
             )}
+
+            {/* Support and Docs - Clean links */}
+            <div className="flex items-center space-x-2">
+              <a
+                href="/support"
+                className="text-sm text-zinc-400 hover:text-white transition-colors"
+              >
+                Support
+              </a>
+              <a
+                href="/docs"
+                className="text-sm text-zinc-400 hover:text-white transition-colors"
+              >
+                Docs
+              </a>
+            </div>
 
           </div>
         </div>

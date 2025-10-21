@@ -127,7 +127,7 @@ export default function Home() {
                 Hookah<span className="text-teal-400">+</span>
               </h1>
               <p className="text-zinc-400 mt-1">
-                Experience the future of lounge sessions with AI-powered personalization, secure payments, and seamless ordering.
+                Light the Flame. Feel the Flow.
               </p>
             </div>
             <div className="flex items-center space-x-4">
