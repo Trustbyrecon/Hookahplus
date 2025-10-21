@@ -1,0 +1,413 @@
+"use client";
+
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
+import Link from 'next/link';
+import { Card, Button, Badge } from '../../../components';
+import { CartProvider, useCart } from '../../../components/cart/CartProvider';
+import { CartDisplay } from '../../../components/cart/CartDisplay';
+import { StripeTestSession } from '../../../components/StripeTestSession';
+import { NewSmokeTest } from '../../../components/NewSmokeTest';
+import { StripeDiagnostic } from '../../../components/StripeDiagnostic';
+import GlobalNavigation from '../../../components/GlobalNavigation';
+import QRCode from 'qrcode';
+import { 
+  Flame, 
+  Users, 
+  Clock, 
+  TrendingUp,
+  Plus,
+  BarChart3,
+  Settings,
+  ChefHat,
+  UserCheck,
+  AlertTriangle,
+  Crown,
+  Folder,
+  FileText,
+  RefreshCw,
+  CheckCircle,
+  Flag,
+  Pause,
+  Zap,
+  Trash2,
+  Edit3,
+  Menu,
+  X,
+  DollarSign,
+  Activity,
+  TrendingDown,
+  Star,
+  Shield,
+  AlertCircle,
+  CheckCircle2,
+  Clock3,
+  User,
+  Phone,
+  MapPin,
+  Calendar,
+  Filter,
+  Search,
+  MoreHorizontal,
+  ArrowUp,
+  ArrowDown,
+  Minus,
+  Target,
+  Zap as Lightning,
+  Heart,
+  Coffee,
+  Wind,
+  Sparkles,
+  Brain,
+  Lock,
+  CreditCard,
+  Smartphone,
+  QrCode,
+  Play,
+  Save,
+  Eye,
+  EyeOff,
+  ShoppingCart,
+  Star as StarIcon
+} from 'lucide-react';
+
+function PreOrderPageContent() {
+  const params = useParams();
+  const tableId = params.tableId as string;
+  const { add } = useCart();
+  // Theme is now managed entirely by ThemeToggle component
+  const [showTestMode, setShowTestMode] = useState(false);
+  const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
+
+  // Menu items
+  const menuItems = [
+    {
+      id: 1,
+      name: 'Blue Mist Hookah',
+      description: 'Premium blueberry mint blend with smooth clouds',
+      price: 32.00,
+      category: 'Hookah',
+      popular: true,
+      icon: '🍃'
+    },
+    {
+      id: 2,
+      name: 'Double Apple Hookah',
+      description: 'Classic apple flavor with authentic taste',
+      price: 30.00,
+      category: 'Hookah',
+      popular: true,
+      icon: '🍎'
+    },
+    {
+      id: 3,
+      name: 'Mint Fresh Hookah',
+      description: 'Cool mint with refreshing aftertaste',
+      price: 29.00,
+      category: 'Hookah',
+      popular: true,
+      icon: '🌿'
+    },
+    {
+      id: 4,
+      name: 'Strawberry Mojito',
+      description: 'Fresh strawberry with mint and lime',
+      price: 8.00,
+      category: 'Drinks',
+      popular: true,
+      icon: '🍓'
+    },
+    {
+      id: 5,
+      name: 'Peach Wave',
+      description: 'Sweet peach with tropical notes',
+      price: 28.00,
+      category: 'Hookah',
+      popular: false,
+      icon: '🍑'
+    },
+    {
+      id: 6,
+      name: 'Watermelon Mint',
+      description: 'Refreshing watermelon with cool mint',
+      price: 31.00,
+      category: 'Hookah',
+      popular: false,
+      icon: '🍉'
+    }
+  ];
+
+  const categories = [
+    { name: 'Hookah', count: 4, active: true },
+    { name: 'Drinks', count: 2, active: false },
+    { name: 'Food', count: 1, active: false },
+    { name: 'Desserts', count: 1, active: false }
+  ];
+
+  const handleTestMode = async () => {
+    try {
+      const response = await fetch('/api/payments/live-test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-token': process.env.NEXT_PUBLIC_ADMIN_TEST_TOKEN || ''
+        },
+        body: JSON.stringify({ source: 'preorder:$1-smoke' })
+      });
+
+      const data = await response.json();
+      setTestResult({
+        ok: response.ok,
+        message: data.message || (response.ok ? 'Test successful' : 'Test failed')
+      });
+    } catch (error) {
+      setTestResult({
+        ok: false,
+        message: 'Test failed: ' + (error as Error).message
+      });
+    }
+  };
+
+  // Always use pretty theme - ThemeToggle component manages the actual theme switching
+
+  // Pretty Theme Design
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
+      {/* Global Navigation */}
+      <GlobalNavigation />
+      
+      {/* Header */}
+      <div className="status-bar">
+        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="text-sm text-zinc-400">
+                Order Management
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <span className="text-sm text-zinc-400">Live</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Link href="/">
+                  <Button className="btn-pretty-secondary">
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    Home
+                  </Button>
+                </Link>
+                <Link href="/fire-session-dashboard">
+                  <Button className="btn-pretty-secondary">
+                    <Flame className="w-4 h-4 mr-2" />
+                    Fire Dashboard
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Left Column - Menu */}
+          <div className="lg:col-span-2 space-y-4">
+            {/* Test Mode Banner */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="card-pretty p-3 bg-yellow-500/10 border-yellow-500/30">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+                    <span className="text-sm font-medium text-yellow-400">Test Mode ($1.00)</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button 
+                      onClick={handleTestMode}
+                      className="btn-pretty-pill bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 hover:bg-yellow-500/30"
+                    >
+                      <DollarSign className="w-4 h-4 mr-2" />
+                      Run $1 Stripe test
+                    </Button>
+                    {testResult && (
+                      <span className={`text-sm ${testResult.ok ? 'text-green-400' : 'text-red-400'}`}>
+                        {testResult.ok ? '✅' : '❌'} {testResult.message}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Quick Order */}
+            <div className="card-pretty p-4">
+              <h3 className="text-base font-semibold mb-3">Quick Order</h3>
+              <p className="text-zinc-400 text-sm mb-4">
+                Select popular flavors to build your quick order
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {menuItems.filter(item => item.popular).map((item) => (
+                  <div key={item.id} className="flex items-center space-x-3 p-4 bg-zinc-800/50 rounded-lg hover:bg-zinc-700/50 transition-colors duration-300">
+                    <div className="text-2xl">{item.icon}</div>
+                    <div className="flex-1">
+                      <div className="font-medium">{item.name}</div>
+                      <div className="text-sm text-zinc-400">{item.description}</div>
+                      <div className="text-sm font-semibold text-teal-400">${item.price.toFixed(2)}</div>
+                    </div>
+                    <Button 
+                      className="btn-pretty-pill bg-teal-500/20 text-teal-400 border border-teal-500/30 hover:bg-teal-500/30"
+                      onClick={() => add({
+                        id: item.id.toString(),
+                        name: item.name,
+                        price: Math.round(item.price * 100), // Convert to cents
+                        qty: 1,
+                        description: item.description,
+                        icon: item.icon
+                      })}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Quick Add
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Popular This Week */}
+            <div className="card-pretty p-4">
+              <h3 className="text-base font-semibold mb-3">Popular This Week</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {menuItems.filter(item => item.popular).map((item) => (
+                  <div key={item.id} className="flex items-center space-x-3 p-4 bg-zinc-800/50 rounded-lg hover:bg-zinc-700/50 transition-colors duration-300">
+                    <div className="text-2xl">{item.icon}</div>
+                    <div className="flex-1">
+                      <div className="font-medium">{item.name}</div>
+                      <div className="text-sm text-zinc-400">{item.description}</div>
+                      <div className="text-sm font-semibold text-teal-400">${item.price.toFixed(2)}</div>
+                    </div>
+                    <Button 
+                      className="btn-pretty-pill bg-teal-500/20 text-teal-400 border border-teal-500/30 hover:bg-teal-500/30"
+                      onClick={() => add({
+                        id: item.id.toString(),
+                        name: item.name,
+                        price: Math.round(item.price * 100), // Convert to cents
+                        qty: 1,
+                        description: item.description,
+                        icon: item.icon
+                      })}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Quick Add
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Menu Categories */}
+            <div className="card-pretty p-4">
+              <div className="flex space-x-1 mb-6">
+                {categories.map((category, index) => (
+                  <button
+                    key={index}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      category.active
+                        ? 'bg-teal-600 text-white'
+                        : 'text-zinc-400 hover:text-white hover:bg-zinc-700'
+                    }`}
+                  >
+                    {category.name} ({category.count})
+                  </button>
+                ))}
+              </div>
+
+              <div className="space-y-4">
+                {menuItems.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg hover:bg-zinc-700/50 transition-colors duration-300">
+                    <div className="flex items-center space-x-3">
+                      <div className="text-2xl">{item.icon}</div>
+                      <div>
+                        <div className="font-medium">{item.name}</div>
+                        <div className="text-sm text-zinc-400">{item.description}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <div className="text-lg font-semibold text-teal-400">
+                        ${item.price.toFixed(2)}
+                      </div>
+                      <Button className="btn-pretty-pill bg-teal-500/20 text-teal-400 border border-teal-500/30 hover:bg-teal-500/30">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column - Order Summary & Actions */}
+          <div className="lg:col-span-1 space-y-4">
+            {/* Your Order */}
+            <div className="card-pretty p-4">
+              <h3 className="text-base font-semibold mb-3">Your Order</h3>
+              <CartDisplay />
+            </div>
+
+            {/* New $1 Smoke Test */}
+            <div className="card-pretty p-6 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/30">
+              <NewSmokeTest />
+            </div>
+
+            {/* Stripe Diagnostic */}
+            <div className="card-pretty p-4 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/30">
+              <StripeDiagnostic />
+            </div>
+
+
+            {/* Quick Actions */}
+            <div className="card-pretty p-4">
+              <h3 className="text-base font-semibold mb-3">Quick Actions</h3>
+              <div className="space-y-3">
+                <Link href="/fire-session-dashboard">
+                  <Button className="w-full btn-pretty-primary">
+                    <Flame className="w-4 h-4 mr-2" />
+                    Start Fire Session
+                  </Button>
+                </Link>
+                <Link href="/fire-session-dashboard">
+                  <Button className="w-full btn-pretty-secondary">
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    Fire Dashboard
+                  </Button>
+                </Link>
+                <Link href="/staff-panel">
+                  <Button className="w-full btn-pretty-secondary">
+                    <UserCheck className="w-4 h-4 mr-2" />
+                    Staff Panel
+                  </Button>
+                </Link>
+                <Link href="/">
+                  <Button className="w-full btn-pretty-secondary">
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    Dashboard
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function PreOrderPage() {
+  return (
+    <CartProvider>
+      <PreOrderPageContent />
+    </CartProvider>
+  );
+}
