@@ -25,6 +25,7 @@ import {
   CheckCircle,
   Clock,
   Target,
+  QrCode,
   Workflow
 } from 'lucide-react';
 
@@ -259,6 +260,19 @@ const GlobalNavigation: React.FC = () => {
           agentOptimized: false,
           flowScore: 45,
           usageFrequency: 25
+        },
+        {
+          label: 'QR Generator',
+          href: '/admin/qr-generator',
+          icon: <QrCode className="w-4 h-4" />,
+          description: 'Generate QR codes for tables',
+          flowState: 'idle',
+          nextAction: 'Create QR codes for lounge',
+          aiRecommendation: 'Generate table QR codes',
+          priority: 'medium',
+          agentOptimized: true,
+          flowScore: 75,
+          usageFrequency: 40
         }
       ]
     },
@@ -430,17 +444,8 @@ const GlobalNavigation: React.FC = () => {
                           
                           {/* Priority and Flow Indicators */}
                           <div className="flex items-center space-x-1">
-                            {item.priority === 'critical' && (
-                              <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />
-                            )}
-                            {item.priority === 'high' && (
-                              <div className="w-2 h-2 bg-orange-400 rounded-full" />
-                            )}
                             {item.agentOptimized && (
                               <Brain className="w-3 h-3 text-primary-400" />
-                            )}
-                            {item.flowState === 'active' && (
-                              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
                             )}
                           </div>
                         </a>
@@ -528,7 +533,6 @@ const GlobalNavigation: React.FC = () => {
                   <button className="flex items-center space-x-1 text-sm text-zinc-400 hover:text-white transition-colors">
                     <Zap className="w-4 h-4 text-yellow-400" />
                     <span>AI Insights</span>
-                    <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse" />
                   </button>
                   
                   {/* Recommendations Dropdown */}
@@ -603,9 +607,6 @@ const GlobalNavigation: React.FC = () => {
                   >
                     {item.icon}
                     <span>{item.label}</span>
-                    {item.flowState === 'active' && (
-                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse ml-auto" />
-                    )}
                   </a>
                 );
               })}

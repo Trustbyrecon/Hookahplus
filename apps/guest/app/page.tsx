@@ -230,6 +230,11 @@ export default function GuestPortal() {
     }
   };
 
+  const handleLoungeDetected = (loungeData: any) => {
+    console.log('Lounge detected:', loungeData);
+    // Handle lounge detection if needed
+  };
+
   const handleTrackingComplete = () => {
     setShowHookahTracker(false);
     setShowSuccessModal(true);
