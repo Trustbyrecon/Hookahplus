@@ -16,7 +16,11 @@ interface HitTrustApplication {
   createdAt: string;
   updatedAt: string;
   assignedTo?: string;
-  notes?: string[];
+  notes?: Array<{
+    text: string;
+    timestamp: string;
+    author: string;
+  }>;
 }
 
 // In-memory storage for demo (in production, use database)

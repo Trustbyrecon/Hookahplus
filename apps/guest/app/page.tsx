@@ -148,6 +148,7 @@ export default function GuestPortal() {
   const [isStartingSession, setIsStartingSession] = useState(false);
   const [showHookahTracker, setShowHookahTracker] = useState(false);
   const [trackingSessionId, setTrackingSessionId] = useState<string | null>(null);
+  const [showEnhancedStaffPanel, setShowEnhancedStaffPanel] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [pricingModel, setPricingModel] = useState<'flat' | 'time-based'>('flat');
   const [sessionDuration, setSessionDuration] = useState(60); // Default 60 minutes
