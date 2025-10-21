@@ -140,7 +140,8 @@ import {
   Shield,
   CreditCard,
   QrCode,
-  MessageCircle
+  MessageCircle,
+  Users
 } from 'lucide-react';
 
 export default function GuestPortal() {
