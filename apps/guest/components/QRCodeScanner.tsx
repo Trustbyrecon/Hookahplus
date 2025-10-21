@@ -78,7 +78,7 @@ export const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
       // If no QR data provided, simulate scanning
       if (!qrContent) {
         await new Promise(resolve => setTimeout(resolve, 2000));
-        qrContent = `${window.location.origin}/api/guest/enter?loungeId=lounge_001&tableId=T-001&ref=demo`;
+        qrContent = `${window.location.origin}/?loungeId=lounge_001&tableId=T-001&ref=demo`;
       }
       
       const parsed = parseQRCodeFromURL(qrContent);

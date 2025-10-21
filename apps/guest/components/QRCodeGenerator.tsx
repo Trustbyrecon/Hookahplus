@@ -26,9 +26,9 @@ export const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
     setIsGenerating(true);
     
     try {
-      // Create the URL for the QR code
+      // Create the URL for the QR code - point to Guest page with parameters
       const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://guest.hookahplus.net';
-      const qrUrl = `${baseUrl}/api/guest/enter?loungeId=${loungeId}&tableId=${tableId}&ref=${campaignRef}`;
+      const qrUrl = `${baseUrl}/?loungeId=${loungeId}&tableId=${tableId}&ref=${campaignRef}`;
       
       // Generate QR code as data URL
       const qrDataURL = await QRCode.toDataURL(qrUrl, {

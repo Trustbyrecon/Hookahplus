@@ -162,6 +162,43 @@ export default function GuestPortal() {
   // Platform detection
   const platform = usePlatformDetection();
   
+  // Handle URL parameters for QR code scanning
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const loungeId = urlParams.get('loungeId');
+    const tableId = urlParams.get('tableId');
+    const ref = urlParams.get('ref');
+    
+    if (loungeId && tableId) {
+      console.log('QR Code parameters detected:', { loungeId, tableId, ref });
+      
+      // Create table data from URL parameters
+      const tableData = {
+        loungeId,
+        tableId,
+        ref: ref || 'demo',
+        status: 'ready',
+        capacity: 4,
+        zone: 'Main Floor',
+        type: 'table'
+      };
+      
+      // Set table data and trigger QR scan success
+      setTableData(tableData);
+      
+      // Track QR scan event
+      if (typeof window !== 'undefined' && window.gtag) {
+        window.gtag('event', 'qr_scan', {
+          event_category: 'engagement',
+          event_label: `lounge:${loungeId},table:${tableId},ref:${ref || 'none'}`
+        });
+      }
+      
+      // Clear URL parameters to clean up the address bar
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+  
   const addToCart = (item: { id: number; name: string; price: number }) => {
     add({ id: String(item.id), name: item.name, price: Math.round(item.price * 100), qty: 1 });
     console.log('Adding to cart:', item); // Debug log

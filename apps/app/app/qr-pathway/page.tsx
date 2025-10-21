@@ -39,7 +39,7 @@ export default function QRPathwayPage() {
     
     try {
       const baseUrl = typeof window !== 'undefined' ? window.location.origin.replace('app.', 'guest.') : 'https://guest.hookahplus.net';
-      const qrUrl = `${baseUrl}/api/guest/enter?loungeId=${selectedLounge}&tableId=${selectedTable}&ref=${selectedCampaign}`;
+      const qrUrl = `${baseUrl}/?loungeId=${selectedLounge}&tableId=${selectedTable}&ref=${selectedCampaign}`;
       
       const qrDataURL = await QRCode.toDataURL(qrUrl, {
         width: 256,
