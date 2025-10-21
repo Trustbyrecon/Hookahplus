@@ -73,7 +73,7 @@ interface CampaignConfig {
 }
 
 export default function QRGeneratorAdmin() {
-  const [loungeId, setLoungeId] = useState('');
+  const [loungeId, setLoungeId] = useState('HQ+');
   const [tableId, setTableId] = useState('');
   const [campaignRef, setCampaignRef] = useState('');
   const [generatedQR, setGeneratedQR] = useState<QRCodeData | null>(null);

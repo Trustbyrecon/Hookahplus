@@ -182,8 +182,8 @@ const SupportPage = () => {
     {
       icon: <Video className="w-5 h-5" />,
       title: 'Video Tutorials',
-      description: 'Step-by-step video guides',
-      href: '/docs/tutorials'
+      description: 'Coming Soon!',
+      href: '#'
     },
     {
       icon: <FileText className="w-5 h-5" />,
@@ -196,6 +196,12 @@ const SupportPage = () => {
       title: 'Community Forum',
       description: 'Connect with other Hookah+ users',
       href: '/community'
+    },
+    {
+      icon: <Zap className="w-5 h-5" />,
+      title: 'HitTrust Integration',
+      description: 'Join the integration waitlist',
+      href: '/hittrust'
     }
   ];
 

@@ -51,6 +51,15 @@ interface BehavioralMemory {
     optimalServiceTiming: string;
     upsellProbability: number;
   };
+  engagementSeeds: {
+    loyaltyPoints: number;
+    streakCount: number;
+    lastVisitDate: string;
+    nextRewardMilestone: number;
+    personalizedOffers: PersonalizedOffer[];
+    socialConnections: SocialConnection[];
+    achievementProgress: AchievementProgress[];
+  };
 }
 
 interface Badge {
@@ -93,6 +102,38 @@ interface SessionNote {
   createdAt: string;
   piiLevel: 'none' | 'low' | 'medium' | 'high';
   category: 'service' | 'equipment' | 'customer' | 'operational';
+}
+
+interface PersonalizedOffer {
+  id: string;
+  title: string;
+  description: string;
+  discount: number;
+  validUntil: string;
+  category: 'flavor' | 'session' | 'premium' | 'social';
+  icon: React.ReactNode;
+  color: string;
+}
+
+interface SocialConnection {
+  id: string;
+  name: string;
+  type: 'friend' | 'group' | 'community';
+  lastSeen: string;
+  sharedInterests: string[];
+  mutualSessions: number;
+}
+
+interface AchievementProgress {
+  id: string;
+  name: string;
+  description: string;
+  currentProgress: number;
+  targetProgress: number;
+  reward: string;
+  icon: React.ReactNode;
+  color: string;
+  category: 'loyalty' | 'social' | 'exploration' | 'premium';
 }
 
 interface GuestIntelligenceDashboardProps {
@@ -215,6 +256,76 @@ export default function GuestIntelligenceDashboard({ sessionId, tableId, onClose
         likelyOrder: ['Blue Mist + Extra Mint', 'Strawberry Mojito'],
         optimalServiceTiming: 'Start cleanup at 40 minutes (prefers 45-min sessions)',
         upsellProbability: 75
+      },
+      engagementSeeds: {
+        loyaltyPoints: 1250,
+        streakCount: 7,
+        lastVisitDate: '2024-01-20',
+        nextRewardMilestone: 1500,
+        personalizedOffers: [
+          {
+            id: 'offer_001',
+            title: 'Flavor Explorer',
+            description: 'Try 3 new flavors and get 20% off',
+            discount: 20,
+            validUntil: '2024-02-15',
+            category: 'flavor',
+            icon: <Sparkles className="w-4 h-4" />,
+            color: 'bg-purple-500'
+          },
+          {
+            id: 'offer_002',
+            title: 'Premium Upgrade',
+            description: 'Upgrade to VIP service for 15% off',
+            discount: 15,
+            validUntil: '2024-02-01',
+            category: 'premium',
+            icon: <Crown className="w-4 h-4" />,
+            color: 'bg-yellow-500'
+          }
+        ],
+        socialConnections: [
+          {
+            id: 'social_001',
+            name: 'Alex M.',
+            type: 'friend',
+            lastSeen: '2024-01-18',
+            sharedInterests: ['Blue Mist', 'VIP Zone'],
+            mutualSessions: 3
+          },
+          {
+            id: 'social_002',
+            name: 'Sarah K.',
+            type: 'friend',
+            lastSeen: '2024-01-15',
+            sharedInterests: ['Mint Fresh', 'Evening Sessions'],
+            mutualSessions: 2
+          }
+        ],
+        achievementProgress: [
+          {
+            id: 'achieve_001',
+            name: 'Flavor Master',
+            description: 'Try 10 different flavors',
+            currentProgress: 7,
+            targetProgress: 10,
+            reward: 'Free premium flavor upgrade',
+            icon: <Star className="w-4 h-4" />,
+            color: 'text-purple-400',
+            category: 'exploration'
+          },
+          {
+            id: 'achieve_002',
+            name: 'Social Connector',
+            description: 'Bring 5 friends to sessions',
+            currentProgress: 3,
+            targetProgress: 5,
+            reward: 'Group discount for next visit',
+            icon: <Users className="w-4 h-4" />,
+            color: 'text-blue-400',
+            category: 'social'
+          }
+        ]
       }
     };
 
@@ -487,6 +598,112 @@ export default function GuestIntelligenceDashboard({ sessionId, tableId, onClose
                     </div>
                   </div>
                 </div>
+              </div>
+
+              {/* Engagement Seeds & Loyalty Experience */}
+              <div className="bg-gradient-to-r from-purple-900/20 to-pink-900/20 border border-purple-500/30 rounded-lg p-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <Heart className="w-6 h-6 text-pink-400" />
+                  <h3 className="text-lg font-semibold text-white">Loyalty & Engagement</h3>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Loyalty Points & Streak */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <Star className="w-5 h-5 text-yellow-400" />
+                        <span className="text-white font-medium">Loyalty Points</span>
+                      </div>
+                      <span className="text-2xl font-bold text-yellow-400">
+                        {behavioralMemory.engagementSeeds?.loyaltyPoints || 0}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <Flame className="w-5 h-5 text-orange-400" />
+                        <span className="text-white font-medium">Visit Streak</span>
+                      </div>
+                      <span className="text-xl font-bold text-orange-400">
+                        {behavioralMemory.engagementSeeds?.streakCount || 0} days
+                      </span>
+                    </div>
+
+                    <div className="bg-zinc-800/50 rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-zinc-400">Next Reward</span>
+                        <span className="text-sm text-purple-400">
+                          {behavioralMemory.engagementSeeds?.nextRewardMilestone || 100} points
+                        </span>
+                      </div>
+                      <div className="w-full bg-zinc-700 rounded-full h-2">
+                        <div 
+                          className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-500"
+                          style={{ 
+                            width: `${Math.min(100, ((behavioralMemory.engagementSeeds?.loyaltyPoints || 0) / (behavioralMemory.engagementSeeds?.nextRewardMilestone || 100)) * 100)}%` 
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Personalized Offers */}
+                  <div className="space-y-3">
+                    <h4 className="text-white font-medium flex items-center space-x-2">
+                      <Sparkles className="w-4 h-4 text-purple-400" />
+                      <span>Personalized Offers</span>
+                    </h4>
+                    <div className="space-y-2">
+                      {behavioralMemory.engagementSeeds?.personalizedOffers?.slice(0, 2).map((offer) => (
+                        <div key={offer.id} className="bg-zinc-800/50 rounded-lg p-3 border border-purple-500/20">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <div className={`p-1 rounded ${offer.color}`}>
+                                {offer.icon}
+                              </div>
+                              <div>
+                                <p className="text-white text-sm font-medium">{offer.title}</p>
+                                <p className="text-zinc-400 text-xs">{offer.description}</p>
+                              </div>
+                            </div>
+                            <span className="text-green-400 font-bold">{offer.discount}% OFF</span>
+                          </div>
+                        </div>
+                      )) || (
+                        <div className="text-center py-4 text-zinc-500">
+                          <Sparkles className="w-8 h-8 mx-auto mb-2 text-zinc-600" />
+                          <p className="text-sm">No personalized offers available</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Social Connections */}
+                {behavioralMemory.engagementSeeds?.socialConnections && behavioralMemory.engagementSeeds.socialConnections.length > 0 && (
+                  <div className="mt-6">
+                    <h4 className="text-white font-medium mb-3 flex items-center space-x-2">
+                      <Users className="w-4 h-4 text-blue-400" />
+                      <span>Social Connections</span>
+                    </h4>
+                    <div className="flex space-x-3">
+                      {behavioralMemory.engagementSeeds.socialConnections.slice(0, 3).map((connection) => (
+                        <div key={connection.id} className="bg-zinc-800/50 rounded-lg p-3 border border-blue-500/20">
+                          <div className="text-center">
+                            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                              <span className="text-white text-xs font-bold">
+                                {connection.name.charAt(0)}
+                              </span>
+                            </div>
+                            <p className="text-white text-xs font-medium">{connection.name}</p>
+                            <p className="text-zinc-400 text-xs">{connection.type}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

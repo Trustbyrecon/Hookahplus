@@ -17,7 +17,7 @@ export default function SuccessModal({
   onClose,
   title = "Session Started Successfully!",
   message = "Your hookah session has been created and is now active. You can view the live session in the Fire Session Dashboard.",
-  actionText = "View Dashboard",
+  actionText = "Track My Session",
   onAction
 }: SuccessModalProps) {
   // Handle Escape key

@@ -285,19 +285,6 @@ const GlobalNavigation: React.FC = () => {
       aiInsight: 'AI agents monitoring integration opportunities',
       items: [
         {
-          label: 'HitTrust',
-          href: '/hittrust',
-          icon: <CreditCard className="w-4 h-4" />,
-          description: 'Join HitTrust integration waitlist',
-          flowState: 'active',
-          nextAction: 'Sign up for early access',
-          aiRecommendation: 'Be first to integrate your system',
-          priority: 'medium',
-          agentOptimized: true,
-          flowScore: 75,
-          usageFrequency: 40
-        },
-        {
           label: 'Flavor Demo',
           href: '/flavor-demo',
           icon: <Sparkles className="w-4 h-4" />,
