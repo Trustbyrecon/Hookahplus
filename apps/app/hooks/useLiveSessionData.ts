@@ -60,9 +60,8 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
       console.log('[useLiveSessionData] Starting to load sessions...');
       
       // Load active sessions from root Prisma API
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-      console.log('[useLiveSessionData] Fetching from:', `${baseUrl}/api/sessions`);
-      const sessionsResponse = await fetch(`${baseUrl}/api/sessions`);
+      console.log('[useLiveSessionData] Fetching from: /api/sessions');
+      const sessionsResponse = await fetch('/api/sessions');
       console.log('[useLiveSessionData] Sessions response status:', sessionsResponse.status);
       
       if (!sessionsResponse.ok) {

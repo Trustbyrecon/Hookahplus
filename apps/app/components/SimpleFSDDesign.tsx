@@ -251,6 +251,7 @@ export default function SimpleFSDDesign({
           { id: 'overview', label: 'OVERVIEW', icon: '📊' },
           { id: 'boh', label: 'BOH', icon: '👨‍🍳' },
           { id: 'foh', label: 'FOH', icon: '👨‍💼' },
+          { id: 'waitlist', label: 'WAITLIST', icon: '⏰' },
           { id: 'edge', label: 'EDGE CASES', icon: '⚠️' }
         ].map((tab) => (
           <button
@@ -520,6 +521,124 @@ export default function SimpleFSDDesign({
               {sessions.filter(s => ['OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(s.status || s.state)).length === 0 && (
                 <p className="text-zinc-400 text-center py-8">No FOH sessions in progress</p>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Waitlist Tab */}
+      {activeTab === 'waitlist' && (
+        <div className="space-y-4">
+          <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white flex items-center space-x-2">
+                <Clock className="w-5 h-5 text-yellow-400" />
+                <span>Customer Waitlist</span>
+              </h3>
+              <button className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center space-x-2">
+                <Plus className="w-4 h-4" />
+                <span>Add to Waitlist</span>
+              </button>
+            </div>
+            
+            {/* Search and Filters */}
+            <div className="flex space-x-4 mb-6">
+              <div className="flex-1">
+                <input
+                  type="text"
+                  placeholder="Search customers..."
+                  className="w-full px-4 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:border-yellow-500"
+                />
+              </div>
+              <select className="px-4 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:border-yellow-500">
+                <option value="waiting">Waiting</option>
+                <option value="seated">Seated</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+              <select className="px-4 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:border-yellow-500">
+                <option value="all">All Priority</option>
+                <option value="vip">VIP</option>
+                <option value="normal">Normal</option>
+              </select>
+            </div>
+
+            {/* Waitlist Entries */}
+            <div className="space-y-3">
+              {/* Sample waitlist entries */}
+              <div className="bg-zinc-900/50 border border-zinc-600 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                      1
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-white">Sarah Johnson</h4>
+                      <p className="text-sm text-zinc-400">4 people • +1-555-0123 • 25m wait</p>
+                      <p className="text-xs text-zinc-500">Booth preferred • Regular customer</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded-full">NORMAL</span>
+                    <span className="px-2 py-1 bg-orange-500/20 text-orange-400 text-xs rounded-full">WAITING</span>
+                    <button className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition-colors">
+                      Seat
+                    </button>
+                    <button className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-zinc-900/50 border border-zinc-600 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                      2
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-white">Mike Chen</h4>
+                      <p className="text-sm text-zinc-400">2 people • +1-555-0456 • 15m wait</p>
+                      <p className="text-xs text-zinc-500">VIP member</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs rounded-full">VIP</span>
+                    <span className="px-2 py-1 bg-orange-500/20 text-orange-400 text-xs rounded-full">WAITING</span>
+                    <button className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition-colors">
+                      Seat
+                    </button>
+                    <button className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-zinc-900/50 border border-zinc-600 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                      3
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-white">Alex Rodriguez</h4>
+                      <p className="text-sm text-zinc-400">6 people • +1-555-0789 • 45m wait</p>
+                      <p className="text-xs text-zinc-500">Large table needed • Birthday party</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded-full">NORMAL</span>
+                    <span className="px-2 py-1 bg-orange-500/20 text-orange-400 text-xs rounded-full">WAITING</span>
+                    <button className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition-colors">
+                      Seat
+                    </button>
+                    <button className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

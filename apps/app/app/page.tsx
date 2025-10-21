@@ -125,7 +125,7 @@ export default function LandingPage() {
       borderColor: 'border-yellow-500/30'
     },
     {
-      title: 'Campaigns',
+      title: 'Marketing Campaigns',
       description: 'Marketing Tools',
       icon: <Target className="w-6 h-6 text-cyan-400" />,
       href: '/campaigns',
@@ -133,8 +133,8 @@ export default function LandingPage() {
       borderColor: 'border-cyan-500/30'
     },
     {
-      title: 'Layout Preview',
-      description: 'Design System',
+      title: 'Lounge Onboarding',
+      description: 'Physical lounge digitization',
       icon: <Eye className="w-6 h-6 text-indigo-400" />,
       href: '/layout-preview',
       color: 'from-indigo-500/20 to-purple-500/20',
@@ -155,6 +155,14 @@ export default function LandingPage() {
       href: '/settings',
       color: 'from-gray-500/20 to-slate-500/20',
       borderColor: 'border-gray-500/30'
+    },
+    {
+      title: 'QR Generator',
+      description: 'Generate table QR codes',
+      icon: <QrCode className="w-6 h-6 text-purple-400" />,
+      href: '/qr-generator',
+      color: 'from-purple-500/20 to-violet-500/20',
+      borderColor: 'border-purple-500/30'
     },
     {
       title: 'Help Center',
