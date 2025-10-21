@@ -13,6 +13,7 @@ import { SessionTimerAwareness } from '../components/SessionTimerAwareness';
 import GlobalNavigation from '../components/GlobalNavigation';
 import { HookahTracker } from '../components/HookahTracker';
 import { QRCodeScanner } from '../components/QRCodeScanner';
+import { QRCodeGenerator } from '../components/QRCodeGenerator';
 import RealTimeSessionSync from '../components/RealTimeSessionSync';
 import GuestIntelligenceDashboard from '../components/EnhancedStaffPanel';
 import { sessionManager, SessionData } from '../lib/sessionManager';
@@ -329,7 +330,14 @@ export default function GuestPortal() {
         const result = await response.json();
         console.log('✅ Session created successfully:', result);
         
-        setShowSuccessModal(true);
+        // Start Hookah Tracker instead of just showing success modal
+        const sessionId = result.session?.id || `session_${Date.now()}`;
+        const loungeId = tableData?.loungeId || 'lounge_001';
+        const tableId = tableData?.tableId || 'T-001';
+        
+        // Open Hookah Tracker in new window
+        const trackerUrl = `/hookah-tracker?sessionId=${sessionId}&loungeId=${loungeId}&tableId=${tableId}`;
+        window.open(trackerUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
         
         // Clear cart after successful session start
         items.forEach(item => remove(item.id));
@@ -466,6 +474,18 @@ export default function GuestPortal() {
             {/* QR Scanner Section */}
             <div className="mb-4">
               <QRCodeScanner onTableDetected={handleTableDetected} onLoungeDetected={handleLoungeDetected} />
+            </div>
+            
+            {/* QR Code Generator for Testing */}
+            <div className="mb-4">
+              <QRCodeGenerator 
+                loungeId={tableData?.loungeId || 'lounge_001'}
+                tableId={tableData?.tableId || 'T-001'}
+                campaignRef="demo"
+                onQRGenerated={(qrData) => {
+                  console.log('QR Code generated for testing:', qrData);
+                }}
+              />
             </div>
             
             {/* Pricing Model Selection */}
@@ -694,7 +714,14 @@ export default function GuestPortal() {
                       size="sm"
                       leftIcon={<BarChart3 className="w-3 h-3" />}
                     onClick={() => {
-                        window.open('https://hookahplus.net/operator', '_blank');
+                        // Open Hookah Tracker instead of old operator link
+                        const sessionId = `session_${Date.now()}`;
+                        const loungeId = tableData?.loungeId || 'lounge_001';
+                        const tableId = tableData?.tableId || 'T-001';
+                        
+                        // Create a new window with Hookah Tracker
+                        const trackerUrl = `/hookah-tracker?sessionId=${sessionId}&loungeId=${loungeId}&tableId=${tableId}`;
+                        window.open(trackerUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
                     }}
                   >
                       Dashboard
