@@ -156,6 +156,22 @@ export default function POSWaitlistPage() {
             real-time analytics, and streamlined workflows. Be among the first to experience 
             the future of hookah lounge management.
           </p>
+          
+          <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-4 mb-8 max-w-3xl mx-auto">
+            <div className="flex items-start space-x-3">
+              <AlertCircle className="w-5 h-5 text-yellow-400 mt-0.5 flex-shrink-0" />
+              <div>
+                <h3 className="text-lg font-semibold text-yellow-400 mb-2">Pricing Model Limitations</h3>
+                <p className="text-zinc-300 text-sm">
+                  <strong>Currently Limited to:</strong> Flat rate and time-based pricing models only. 
+                  Complex pricing structures and custom billing integrations are not yet supported.
+                </p>
+                <p className="text-zinc-400 text-xs mt-2">
+                  We're working on expanding support for additional pricing models in future releases.
+                </p>
+              </div>
+            </div>
+          </div>
 
           {/* Benefits Grid */}
           <div className="grid md:grid-cols-3 gap-6 mb-12">

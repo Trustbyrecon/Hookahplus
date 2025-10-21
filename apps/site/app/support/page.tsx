@@ -199,8 +199,8 @@ const SupportPage = () => {
     },
     {
       icon: <Zap className="w-5 h-5" />,
-      title: 'HitTrust Integration',
-      description: 'Join the integration waitlist',
+      title: 'Join the list for a lounge demo',
+      description: 'Experience Hookah+ in your lounge',
       href: '/hittrust'
     }
   ];
