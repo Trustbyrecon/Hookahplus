@@ -251,8 +251,8 @@ export default function SimpleFSDDesign({
           { id: 'overview', label: 'OVERVIEW', icon: '📊' },
           { id: 'boh', label: 'BOH', icon: '👨‍🍳' },
           { id: 'foh', label: 'FOH', icon: '👨‍💼' },
-          { id: 'waitlist', label: 'WAITLIST', icon: '⏰' },
-          { id: 'edge', label: 'EDGE CASES', icon: '⚠️' }
+          { id: 'edge', label: 'EDGE CASES', icon: '⚠️' },
+          { id: 'waitlist', label: 'WAITLIST', icon: '⏰' }
         ].map((tab) => (
           <button
             key={tab.id}

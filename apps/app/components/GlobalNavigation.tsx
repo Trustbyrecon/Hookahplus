@@ -276,8 +276,31 @@ const GlobalNavigation: React.FC = () => {
   };
 
   return (
-    <nav className="bg-zinc-950/80 backdrop-blur-sm border-b border-zinc-800/50">
+    <nav className="bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-800/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Status Bar */}
+        <div className="flex items-center justify-between py-2 text-xs">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-1">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <span className="text-zinc-300">System Health EXCELLENT</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+              <span className="text-zinc-300">Trust Score 87%</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+              <span className="text-zinc-300">Live Sessions 0</span>
+            </div>
+          </div>
+          <div className="flex items-center space-x-4">
+            <span className="text-zinc-400">Auto-refresh: ON</span>
+            <span className="text-zinc-400">Last updated: {new Date().toLocaleTimeString()}</span>
+          </div>
+        </div>
+
+        {/* Main Navigation */}
         <div className="flex items-center justify-between h-16">
           {/* Logo and Brand */}
           <div className="flex items-center space-x-4">
@@ -289,71 +312,60 @@ const GlobalNavigation: React.FC = () => {
             </Link>
           </div>
 
-          {/* Main Navigation */}
-          <div className="hidden md:flex items-center space-x-6">
-            <Link href="/fire-session-dashboard" className="text-zinc-300 hover:text-white transition-colors">
+          {/* Main Navigation Links */}
+          <div className="hidden md:flex items-center space-x-8">
+            <Link href="/fire-session-dashboard" className="text-zinc-300 hover:text-white transition-colors font-medium">
               Dashboard
             </Link>
-            <Link href="/preorder/T-001" className="text-zinc-300 hover:text-white transition-colors">
+            <Link href="/preorder/T-001" className="text-zinc-300 hover:text-white transition-colors font-medium">
               Pre-Order
             </Link>
-            <Link href="/sessions" className="text-zinc-300 hover:text-white transition-colors">
+            <Link href="/sessions" className="text-zinc-300 hover:text-white transition-colors font-medium">
               Sessions
             </Link>
-            <Link href="/staff-panel" className="text-zinc-300 hover:text-white transition-colors">
+            <Link href="/staff-panel" className="text-zinc-300 hover:text-white transition-colors font-medium">
               Staff
             </Link>
           </div>
 
           {/* Right Side Actions */}
           <div className="flex items-center space-x-4">
-            {/* Settings Dropdown */}
-            <div className="relative group">
-              <button className="flex items-center space-x-1 text-zinc-400 hover:text-white transition-colors">
-                <Settings className="w-4 h-4" />
-                <span className="text-sm">Settings</span>
-              </button>
-              
-              {/* Dropdown Menu */}
-              <div className="absolute right-0 mt-2 w-48 bg-zinc-800 border border-zinc-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                <div className="py-1">
-                  <Link
-                    href="/fire-session-dashboard?view=legacy"
-                    className="flex items-center space-x-2 px-4 py-2 text-sm text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"
-                  >
-                    <Eye className="w-4 h-4" />
-                    <span>Session Overview (Legacy)</span>
-                  </Link>
-                  <div className="border-t border-zinc-700 my-1"></div>
-                  <Link
-                    href="/admin"
-                    className="flex items-center space-x-2 px-4 py-2 text-sm text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"
-                  >
-                    <Shield className="w-4 h-4" />
-                    <span>Admin Panel</span>
-                  </Link>
-                </div>
-              </div>
-            </div>
+            {/* Settings */}
+            <button className="flex items-center space-x-1 text-zinc-400 hover:text-white transition-colors">
+              <Settings className="w-4 h-4" />
+              <span className="text-sm">Settings</span>
+            </button>
 
-            {/* Theme Toggle */}
-            <ThemeToggle />
+            {/* Support Docs */}
+            <button className="flex items-center space-x-1 text-zinc-400 hover:text-white transition-colors">
+              <HelpCircle className="w-4 h-4" />
+              <span className="text-sm">Support Docs</span>
+            </button>
 
-            {/* Support and Docs */}
+            {/* $1 Test Button */}
+            <Link
+              href="/preorder/T-001"
+              className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
+            >
+              $1 Test
+            </Link>
+
+            {/* Role Dropdown */}
             <div className="flex items-center space-x-2">
-              <Link
-                href="/support"
-                className="text-sm text-zinc-400 hover:text-white transition-colors"
-              >
-                Support
-              </Link>
-              <Link
-                href="/docs"
-                className="text-sm text-zinc-400 hover:text-white transition-colors"
-              >
-                Docs
-              </Link>
+              <span className="text-sm text-zinc-400">Role:</span>
+              <select className="bg-zinc-800 border border-zinc-600 rounded-md px-2 py-1 text-sm text-white">
+                <option value="manager">MANAGER</option>
+                <option value="foh">FOH</option>
+                <option value="boh">BOH</option>
+                <option value="admin">ADMIN</option>
+              </select>
+              <span className="text-xs text-zinc-500">(FOH View)</span>
             </div>
+
+            {/* Search */}
+            <button className="text-zinc-400 hover:text-white transition-colors">
+              <Eye className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </div>

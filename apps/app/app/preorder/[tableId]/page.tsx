@@ -59,6 +59,24 @@ function PreOrderPageContent() {
   const [pendingOrders, setPendingOrders] = useState(1);
   const [completedOrders, setCompletedOrders] = useState(12);
   
+  // Cloud Lounge Demo setup
+  const [loungeConfig, setLoungeConfig] = useState({
+    id: 'CLOUD_DEMO',
+    name: 'Cloud Lounge Demo',
+    tables: [
+      { id: 'T-001', name: 'VIP Booth 1', type: 'booth', capacity: 6, zone: 'VIP' },
+      { id: 'T-002', name: 'VIP Booth 2', type: 'booth', capacity: 6, zone: 'VIP' },
+      { id: 'T-003', name: 'Main Floor 1', type: 'table', capacity: 4, zone: 'Main' },
+      { id: 'T-004', name: 'Main Floor 2', type: 'table', capacity: 4, zone: 'Main' },
+      { id: 'T-005', name: 'Patio Table', type: 'table', capacity: 2, zone: 'Patio' }
+    ],
+    campaigns: [
+      { id: 'none', name: 'None', description: 'No campaign' },
+      { id: 'demo', name: 'Demo Campaign', description: 'Cloud Lounge Demo' },
+      { id: 'vip', name: 'VIP Experience', description: 'Premium service' }
+    ]
+  });
+
   // Table management state
   const [tableData, setTableData] = useState({
     id: tableId,
@@ -76,6 +94,10 @@ function PreOrderPageContent() {
   // Staff alert state
   const [staffAlerts, setStaffAlerts] = useState<any[]>([]);
   const [isAlertingStaff, setIsAlertingStaff] = useState(false);
+  
+  // QR generation state
+  const [selectedTable, setSelectedTable] = useState(tableId);
+  const [selectedCampaign, setSelectedCampaign] = useState('none');
 
   // Generate QR Code
   const generateQRCode = async () => {
@@ -84,7 +106,7 @@ function PreOrderPageContent() {
     try {
       // Route to guest experience with flavor wheel journey
       const baseUrl = typeof window !== 'undefined' ? window.location.origin.replace('app.', 'guest.') : 'https://guest.hookahplus.net';
-      const qrUrl = `${baseUrl}/?loungeId=CLOUD_DEMO&tableId=${tableId}&ref=demo&mode=flavor-wheel`;
+      const qrUrl = `${baseUrl}/?loungeId=CLOUD_DEMO&tableId=${selectedTable}&ref=${selectedCampaign}&mode=flavor-wheel`;
       
       const qrDataURL = await QRCode.toDataURL(qrUrl, {
         width: 200,
@@ -241,6 +263,40 @@ function PreOrderPageContent() {
     }
   };
 
+  // Trigger BOH/FOH workflow when fire session starts
+  const triggerWorkflow = async (sessionData: any) => {
+    try {
+      const response = await fetch('/api/workflow/trigger', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          sessionId: sessionData.sessionId,
+          tableId: selectedTable,
+          loungeId: 'CLOUD_DEMO',
+          campaign: selectedCampaign,
+          workflowType: 'fire_session_start',
+          metadata: {
+            tableName: loungeConfig.tables.find(t => t.id === selectedTable)?.name,
+            zone: loungeConfig.tables.find(t => t.id === selectedTable)?.zone,
+            capacity: loungeConfig.tables.find(t => t.id === selectedTable)?.capacity,
+            campaignName: loungeConfig.campaigns.find(c => c.id === selectedCampaign)?.name,
+            timestamp: new Date().toISOString()
+          }
+        })
+      });
+
+      if (response.ok) {
+        console.log('Workflow triggered successfully for session:', sessionData.sessionId);
+        // Alert staff about new session
+        await alertStaff('session_started', `New fire session started at ${loungeConfig.tables.find(t => t.id === selectedTable)?.name}`);
+      }
+    } catch (error) {
+      console.error('Failed to trigger workflow:', error);
+    }
+  };
+
   // Generate QR code on component mount
   useEffect(() => {
     generateQRCode();
@@ -273,6 +329,45 @@ function PreOrderPageContent() {
                 QR Code Scanner
               </h2>
               
+              {/* Table and Campaign Selection */}
+              <div className="mb-6 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">
+                      Select Table
+                    </label>
+                    <select
+                      value={selectedTable}
+                      onChange={(e) => setSelectedTable(e.target.value)}
+                      className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {loungeConfig.tables.map(table => (
+                        <option key={table.id} value={table.id}>
+                          {table.name} ({table.zone} - {table.capacity} people)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">
+                      Select Campaign
+                    </label>
+                    <select
+                      value={selectedCampaign}
+                      onChange={(e) => setSelectedCampaign(e.target.value)}
+                      className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {loungeConfig.campaigns.map(campaign => (
+                        <option key={campaign.id} value={campaign.id}>
+                          {campaign.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
               {/* QR Code Display */}
               {qrCodeDataURL && (
                 <div className="mb-6">
@@ -284,7 +379,7 @@ function PreOrderPageContent() {
                     />
                   </div>
                   <p className="text-sm text-zinc-400 mt-2">
-                    Scan this QR code to start ordering
+                    Scan this QR code to start ordering at {loungeConfig.tables.find(t => t.id === selectedTable)?.name}
                   </p>
                 </div>
               )}

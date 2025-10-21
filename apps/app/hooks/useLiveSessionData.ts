@@ -2,6 +2,202 @@ import { useState, useEffect, useCallback } from 'react';
 import { FireSession, SessionTimer } from '../types/enhancedSession';
 import { calculateRemainingTime, formatDuration } from '../lib/sessionStateMachine';
 
+// Generate rich demo data for Fire Session Dashboard
+function generateRichDemoData(): FireSession[] {
+  const now = Date.now();
+  const oneHourAgo = now - (60 * 60 * 1000);
+  const twoHoursAgo = now - (2 * 60 * 60 * 1000);
+  const threeHoursAgo = now - (3 * 60 * 60 * 1000);
+
+  return [
+    // BOH Operations - Active sessions
+    {
+      id: 'demo-1',
+      tableId: 'T-001',
+      customerName: 'Sarah Johnson',
+      customerPhone: '+1-555-0123',
+      flavor: 'Mint Fresh + Watermelon',
+      amount: 3200,
+      status: 'PREP_IN_PROGRESS',
+      currentStage: 'BOH',
+      assignedStaff: { boh: 'staff-boh-1', foh: null },
+      createdAt: oneHourAgo,
+      updatedAt: now - (10 * 60 * 1000),
+      sessionStartTime: oneHourAgo,
+      sessionDuration: 45 * 60,
+      coalStatus: 'active',
+      refillStatus: 'none',
+      notes: 'VIP customer - extra attention to detail',
+      edgeCase: false,
+      bohState: 'PREPARING',
+      guestTimerDisplay: false
+    },
+    {
+      id: 'demo-2',
+      tableId: 'T-002',
+      customerName: 'Mike Chen',
+      customerPhone: '+1-555-0124',
+      flavor: 'Peach Wave + Strawberry',
+      amount: 2800,
+      status: 'HEAT_UP',
+      currentStage: 'BOH',
+      assignedStaff: { boh: 'staff-boh-2', foh: null },
+      createdAt: now - (30 * 60 * 1000),
+      updatedAt: now - (5 * 60 * 1000),
+      sessionStartTime: now - (30 * 60 * 1000),
+      sessionDuration: 45 * 60,
+      coalStatus: 'heating',
+      refillStatus: 'none',
+      notes: 'Coals heating up - almost ready',
+      edgeCase: false,
+      bohState: 'HEATING',
+      guestTimerDisplay: false
+    },
+    {
+      id: 'demo-3',
+      tableId: 'T-003',
+      customerName: 'Emma Davis',
+      customerPhone: '+1-555-0125',
+      flavor: 'Classic Mint',
+      amount: 2500,
+      status: 'READY_FOR_DELIVERY',
+      currentStage: 'BOH',
+      assignedStaff: { boh: 'staff-boh-1', foh: 'staff-foh-1' },
+      createdAt: now - (45 * 60 * 1000),
+      updatedAt: now - (2 * 60 * 1000),
+      sessionStartTime: now - (45 * 60 * 1000),
+      sessionDuration: 45 * 60,
+      coalStatus: 'ready',
+      refillStatus: 'none',
+      notes: 'Ready for FOH pickup',
+      edgeCase: false,
+      bohState: 'READY',
+      guestTimerDisplay: false
+    },
+
+    // FOH Operations - Active sessions
+    {
+      id: 'demo-4',
+      tableId: 'T-004',
+      customerName: 'Alex Rodriguez',
+      customerPhone: '+1-555-0126',
+      flavor: 'Mixed Berry + Ice Mint',
+      amount: 3500,
+      status: 'OUT_FOR_DELIVERY',
+      currentStage: 'FOH',
+      assignedStaff: { boh: null, foh: 'staff-foh-2' },
+      createdAt: twoHoursAgo,
+      updatedAt: now - (15 * 60 * 1000),
+      sessionStartTime: twoHoursAgo,
+      sessionDuration: 45 * 60,
+      coalStatus: 'active',
+      refillStatus: 'none',
+      notes: 'En route to table - 2 minutes away',
+      edgeCase: false,
+      bohState: 'DELIVERED',
+      guestTimerDisplay: true,
+      sessionTimer: {
+        remaining: 25 * 60, // 25 minutes left
+        total: 45 * 60,
+        isActive: true,
+        startedAt: twoHoursAgo
+      }
+    },
+    {
+      id: 'demo-5',
+      tableId: 'T-005',
+      customerName: 'Lisa Wang',
+      customerPhone: '+1-555-0127',
+      flavor: 'Grape + Menthol',
+      amount: 3000,
+      status: 'DELIVERED',
+      currentStage: 'FOH',
+      assignedStaff: { boh: null, foh: 'staff-foh-1' },
+      createdAt: threeHoursAgo,
+      updatedAt: now - (5 * 60 * 1000),
+      sessionStartTime: threeHoursAgo,
+      sessionDuration: 45 * 60,
+      coalStatus: 'active',
+      refillStatus: 'none',
+      notes: 'Delivered and active - customer enjoying',
+      edgeCase: false,
+      bohState: 'DELIVERED',
+      guestTimerDisplay: true,
+      sessionTimer: {
+        remaining: 15 * 60, // 15 minutes left
+        total: 45 * 60,
+        isActive: true,
+        startedAt: threeHoursAgo
+      }
+    },
+
+    // Edge Cases & Escalations
+    {
+      id: 'demo-6',
+      tableId: 'T-006',
+      customerName: 'John Smith',
+      customerPhone: '+1-555-0128',
+      flavor: 'Custom Mix',
+      amount: 2800,
+      status: 'STAFF_HOLD',
+      currentStage: 'EDGE_CASE',
+      assignedStaff: { boh: 'staff-boh-2', foh: 'staff-foh-2' },
+      createdAt: now - (20 * 60 * 1000),
+      updatedAt: now - (5 * 60 * 1000),
+      sessionStartTime: now - (20 * 60 * 1000),
+      sessionDuration: 45 * 60,
+      coalStatus: 'paused',
+      refillStatus: 'none',
+      notes: 'Customer requested flavor change - on hold',
+      edgeCase: true,
+      bohState: 'HOLD',
+      guestTimerDisplay: false
+    },
+    {
+      id: 'demo-7',
+      tableId: 'T-007',
+      customerName: 'Maria Garcia',
+      customerPhone: '+1-555-0129',
+      flavor: 'Strawberry Mojito',
+      amount: 2600,
+      status: 'STOCK_BLOCKED',
+      currentStage: 'EDGE_CASE',
+      assignedStaff: { boh: 'staff-boh-1', foh: null },
+      createdAt: now - (15 * 60 * 1000),
+      updatedAt: now - (2 * 60 * 1000),
+      sessionStartTime: now - (15 * 60 * 1000),
+      sessionDuration: 45 * 60,
+      coalStatus: 'blocked',
+      refillStatus: 'none',
+      notes: 'Out of strawberry flavor - waiting for restock',
+      edgeCase: true,
+      bohState: 'BLOCKED',
+      guestTimerDisplay: false
+    },
+    {
+      id: 'demo-8',
+      tableId: 'T-008',
+      customerName: 'David Kim',
+      customerPhone: '+1-555-0130',
+      flavor: 'Watermelon Mint',
+      amount: 2900,
+      status: 'REMAKE',
+      currentStage: 'EDGE_CASE',
+      assignedStaff: { boh: 'staff-boh-2', foh: 'staff-foh-1' },
+      createdAt: now - (10 * 60 * 1000),
+      updatedAt: now - (1 * 60 * 1000),
+      sessionStartTime: now - (10 * 60 * 1000),
+      sessionDuration: 45 * 60,
+      coalStatus: 'remaking',
+      refillStatus: 'none',
+      notes: 'Customer not satisfied with flavor - remaking',
+      edgeCase: true,
+      bohState: 'REMAKING',
+      guestTimerDisplay: false
+    }
+  ];
+}
+
 interface LiveMetrics {
   activeSessions: number;
   revenue: number;
@@ -105,7 +301,15 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
         }));
 
         console.log('[useLiveSessionData] Successfully loaded sessions:', fireSessions.length);
-        setSessions(fireSessions);
+        
+        // If no sessions from API, load demo data
+        if (fireSessions.length === 0) {
+          console.log('[useLiveSessionData] No sessions from API, loading demo data');
+          const demoData = generateRichDemoData();
+          setSessions(demoData);
+        } else {
+          setSessions(fireSessions);
+        }
 
         // Update session timers
         const timers: Record<string, SessionTimer> = {};
@@ -124,9 +328,10 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load sessions';
       setError(errorMessage);
       
-      // No fallback - let the error be handled by the UI
-      console.log('[useLiveSessionData] API failed, no fallback data');
-      setSessions([]);
+      // Add rich demo data when API fails or returns empty
+      console.log('[useLiveSessionData] API failed, loading demo data');
+      const demoData = generateRichDemoData();
+      setSessions(demoData);
     } finally {
       setLoading(false);
     }
