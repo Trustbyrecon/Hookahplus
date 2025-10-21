@@ -139,7 +139,8 @@ import {
   Brain,
   Shield,
   CreditCard,
-  QrCode
+  QrCode,
+  MessageCircle
 } from 'lucide-react';
 
 export default function GuestPortal() {
@@ -162,15 +163,41 @@ export default function GuestPortal() {
   // Platform detection
   const platform = usePlatformDetection();
   
+  // Staff alert functionality
+  const alertStaff = async (alertType: string, message: string) => {
+    try {
+      const response = await fetch('/api/staff/alerts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          tableId: tableData?.tableId || 'unknown',
+          alertType,
+          message,
+          timestamp: new Date().toISOString(),
+          priority: 'normal'
+        })
+      });
+
+      if (response.ok) {
+        console.log('Staff alert sent successfully:', alertType);
+      }
+    } catch (error) {
+      console.error('Failed to alert staff:', error);
+    }
+  };
+  
   // Handle URL parameters for QR code scanning
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const loungeId = urlParams.get('loungeId');
     const tableId = urlParams.get('tableId');
     const ref = urlParams.get('ref');
+    const mode = urlParams.get('mode');
     
     if (loungeId && tableId) {
-      console.log('QR Code parameters detected:', { loungeId, tableId, ref });
+      console.log('QR Code parameters detected:', { loungeId, tableId, ref, mode });
       
       // Create table data from URL parameters
       const tableData = {
@@ -190,8 +217,20 @@ export default function GuestPortal() {
       if (typeof window !== 'undefined' && window.gtag) {
         window.gtag('event', 'qr_scan', {
           event_category: 'engagement',
-          event_label: `lounge:${loungeId},table:${tableId},ref:${ref || 'none'}`
+          event_label: `lounge:${loungeId},table:${tableId},ref:${ref || 'none'},mode:${mode || 'default'}`
         });
+      }
+      
+      // If mode is flavor-wheel, automatically open flavor wheel
+      if (mode === 'flavor-wheel') {
+        console.log('Auto-opening flavor wheel for QR scan');
+        // Trigger flavor wheel opening after a short delay
+        setTimeout(() => {
+          const flavorWheelButton = document.querySelector('[data-flavor-wheel-trigger]') as HTMLButtonElement;
+          if (flavorWheelButton) {
+            flavorWheelButton.click();
+          }
+        }, 1000);
       }
       
       // Clear URL parameters to clean up the address bar
@@ -769,6 +808,43 @@ export default function GuestPortal() {
             </Card>
           </div>
         </div>
+
+        {/* Staff Contact Section */}
+        <Card className="mt-6">
+          <div className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
+                  <Users className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">Need Help?</h3>
+                  <p className="text-sm text-zinc-400">Our staff is here to assist you</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => alertStaff('help_request', 'Guest needs assistance with ordering')}
+                  className="flex items-center gap-2"
+                >
+                  <AlertCircle className="w-4 h-4" />
+                  Contact Staff
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => alertStaff('order_question', 'Guest has questions about their order')}
+                  className="flex items-center gap-2"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  Ask Question
+                </Button>
+              </div>
+            </div>
+          </div>
+        </Card>
       </div>
 
       {/* Guest Intelligence Dashboard Modal */}

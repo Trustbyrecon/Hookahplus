@@ -43,7 +43,7 @@ import {
   MoreHorizontal
 } from 'lucide-react';
 
-export default function PreOrderPage() {
+function PreOrderPageContent() {
   const params = useParams();
   const tableId = params.tableId as string;
   const { add, remove, items, subtotal } = useCart();
@@ -72,14 +72,19 @@ export default function PreOrderPage() {
   // $1 Smoke Test state
   const [testResult, setTestResult] = useState<{ok: boolean, message: string} | null>(null);
   const [isRunningTest, setIsRunningTest] = useState(false);
+  
+  // Staff alert state
+  const [staffAlerts, setStaffAlerts] = useState<any[]>([]);
+  const [isAlertingStaff, setIsAlertingStaff] = useState(false);
 
   // Generate QR Code
   const generateQRCode = async () => {
     setIsGeneratingQR(true);
     
     try {
+      // Route to guest experience with flavor wheel journey
       const baseUrl = typeof window !== 'undefined' ? window.location.origin.replace('app.', 'guest.') : 'https://guest.hookahplus.net';
-      const qrUrl = `${baseUrl}/?loungeId=CLOUD_DEMO&tableId=${tableId}&ref=demo`;
+      const qrUrl = `${baseUrl}/?loungeId=CLOUD_DEMO&tableId=${tableId}&ref=demo&mode=flavor-wheel`;
       
       const qrDataURL = await QRCode.toDataURL(qrUrl, {
         width: 200,
@@ -197,6 +202,42 @@ export default function PreOrderPage() {
       });
     } finally {
       setIsRunningTest(false);
+    }
+  };
+
+  // Alert staff when guest needs help
+  const alertStaff = async (alertType: string, message: string) => {
+    setIsAlertingStaff(true);
+    try {
+      const response = await fetch('/api/staff/alerts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          tableId,
+          alertType,
+          message,
+          timestamp: new Date().toISOString(),
+          priority: 'normal'
+        })
+      });
+
+      if (response.ok) {
+        const newAlert = {
+          id: Date.now(),
+          tableId,
+          alertType,
+          message,
+          timestamp: new Date().toISOString(),
+          status: 'sent'
+        };
+        setStaffAlerts(prev => [newAlert, ...prev]);
+      }
+    } catch (error) {
+      console.error('Failed to alert staff:', error);
+    } finally {
+      setIsAlertingStaff(false);
     }
   };
 
@@ -424,6 +465,78 @@ export default function PreOrderPage() {
           </div>
         </Card>
 
+        {/* Staff Alerts & Guest Integration Section */}
+        <Card className="p-6 mb-8">
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <Users className="w-5 h-5 text-purple-400" />
+            Staff Integration & Guest Alerts
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Guest Alert Controls */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-lg">Guest Alert Controls</h3>
+              <div className="space-y-3">
+                <button
+                  onClick={() => alertStaff('help_request', 'Guest at table ' + tableId + ' needs assistance')}
+                  disabled={isAlertingStaff}
+                  className="w-full p-3 bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-600 rounded-lg transition-colors flex items-center justify-center space-x-2"
+                >
+                  <AlertCircle className="w-4 h-4" />
+                  <span>{isAlertingStaff ? 'Sending Alert...' : 'Alert Staff - Help Needed'}</span>
+                </button>
+                
+                <button
+                  onClick={() => alertStaff('order_ready', 'Order ready for table ' + tableId)}
+                  disabled={isAlertingStaff}
+                  className="w-full p-3 bg-green-600 hover:bg-green-700 disabled:bg-zinc-600 rounded-lg transition-colors flex items-center justify-center space-x-2"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  <span>Alert Staff - Order Ready</span>
+                </button>
+                
+                <button
+                  onClick={() => alertStaff('session_complete', 'Session completed at table ' + tableId)}
+                  disabled={isAlertingStaff}
+                  className="w-full p-3 bg-purple-600 hover:bg-purple-700 disabled:bg-zinc-600 rounded-lg transition-colors flex items-center justify-center space-x-2"
+                >
+                  <Flame className="w-4 h-4" />
+                  <span>Alert Staff - Session Complete</span>
+                </button>
+              </div>
+            </div>
+            
+            {/* Recent Alerts */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-lg">Recent Alerts</h3>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {staffAlerts.length === 0 ? (
+                  <p className="text-zinc-400 text-sm">No recent alerts</p>
+                ) : (
+                  staffAlerts.map(alert => (
+                    <div key={alert.id} className="p-3 bg-zinc-700/50 rounded-lg">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-medium">{alert.alertType}</span>
+                        <span className="text-xs text-zinc-400">
+                          {new Date(alert.timestamp).toLocaleTimeString()}
+                        </span>
+                      </div>
+                      <p className="text-sm text-zinc-300">{alert.message}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          alert.status === 'sent' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'
+                        }`}>
+                          {alert.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </Card>
+
         {/* $1 Smoke Test Section */}
         <Card className="p-6">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
@@ -486,5 +599,13 @@ export default function PreOrderPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function PreOrderPage() {
+  return (
+    <CartProvider>
+      <PreOrderPageContent />
+    </CartProvider>
   );
 }
