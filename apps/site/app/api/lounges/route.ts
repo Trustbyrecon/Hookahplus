@@ -89,7 +89,10 @@ const loadLoungeConfigs = (): LoungeConfig[] => {
   try {
     ensureConfigsDirectory();
     const configsPath = getLoungeConfigsPath();
+    console.log('Looking for lounge configs in:', configsPath);
+    
     const files = fs.readdirSync(configsPath);
+    console.log('Found files:', files);
     
     const configs: LoungeConfig[] = [];
     
@@ -100,14 +103,144 @@ const loadLoungeConfigs = (): LoungeConfig[] => {
           const fileContent = fs.readFileSync(filePath, 'utf8');
           const config = yaml.load(fileContent) as LoungeConfig;
           
+          console.log(`Loaded config from ${file}:`, {
+            lounge_id: config.lounge_id,
+            lounge_name: config.lounge_name,
+            slug: config.slug
+          });
+          
           // Validate required fields
           if (config.lounge_id && config.lounge_name && config.slug) {
             configs.push(config);
+            console.log(`Added config: ${config.lounge_name}`);
+          } else {
+            console.log(`Skipped config ${file} - missing required fields`);
           }
         } catch (error) {
           console.error(`Error loading config ${file}:`, error);
         }
       }
+    }
+    
+    console.log(`Total configs loaded: ${configs.length}`);
+    
+    // If no configs found, create a default Cloud Lounge Demo
+    if (configs.length === 0) {
+      console.log('No configs found, creating default Cloud Lounge Demo');
+      const defaultConfig: LoungeConfig = {
+        lounge_id: 'CLOUD_DEMO',
+        lounge_name: 'Cloud Lounge Demo',
+        slug: 'cloud-lounge-demo',
+        session_price: 25.00,
+        reflex_enabled: true,
+        contact: {
+          owner_name: 'Sarah Martinez',
+          email: 'sarah@cloudlounge.com',
+          phone: '+1 (555) 123-4567',
+          address: '123 Cloud Street, New York, NY 10001'
+        },
+        tables: [
+          {
+            id: 'table_1',
+            name: 'VIP Booth 1',
+            type: 'booth',
+            capacity: 6,
+            zone: 'VIP',
+            coordinates: { x: 10, y: 15, width: 120, height: 80 },
+            qr_enabled: true,
+            status: 'active',
+            price_multiplier: 1.5,
+            description: 'Premium VIP booth with leather seating'
+          },
+          {
+            id: 'table_2',
+            name: 'VIP Booth 2',
+            type: 'booth',
+            capacity: 6,
+            zone: 'VIP',
+            coordinates: { x: 150, y: 15, width: 120, height: 80 },
+            qr_enabled: true,
+            status: 'active',
+            price_multiplier: 1.5,
+            description: 'Premium VIP booth with leather seating'
+          },
+          {
+            id: 'table_3',
+            name: 'Regular Table 1',
+            type: 'table',
+            capacity: 4,
+            zone: 'Main Floor',
+            coordinates: { x: 10, y: 120, width: 100, height: 60 },
+            qr_enabled: true,
+            status: 'active',
+            price_multiplier: 1.0,
+            description: 'Standard table in main area'
+          },
+          {
+            id: 'table_4',
+            name: 'Regular Table 2',
+            type: 'table',
+            capacity: 4,
+            zone: 'Main Floor',
+            coordinates: { x: 130, y: 120, width: 100, height: 60 },
+            qr_enabled: true,
+            status: 'active',
+            price_multiplier: 1.0,
+            description: 'Standard table in main area'
+          },
+          {
+            id: 'table_5',
+            name: 'Regular Table 3',
+            type: 'table',
+            capacity: 4,
+            zone: 'Main Floor',
+            coordinates: { x: 250, y: 120, width: 100, height: 60 },
+            qr_enabled: true,
+            status: 'active',
+            price_multiplier: 1.0,
+            description: 'Standard table in main area'
+          }
+        ],
+        campaigns: [
+          {
+            id: 'welcome_2024',
+            name: 'Welcome 2024',
+            active: true,
+            qr_prefix: 'WELCOME',
+            start_date: '2024-01-01',
+            end_date: '2024-12-31',
+            description: 'New customer welcome campaign'
+          },
+          {
+            id: 'vip_loyalty',
+            name: 'VIP Loyalty Program',
+            active: true,
+            qr_prefix: 'VIP',
+            start_date: '2024-01-01',
+            end_date: '2024-12-31',
+            description: 'Exclusive VIP member benefits'
+          },
+          {
+            id: 'happy_hour',
+            name: 'Happy Hour Special',
+            active: true,
+            qr_prefix: 'HAPPY',
+            start_date: '2024-01-01',
+            end_date: '2024-12-31',
+            description: 'Weekday happy hour pricing'
+          }
+        ],
+        qr_settings: {
+          base_url: 'https://guest.hookahplus.net',
+          include_campaign: true,
+          include_table_info: true,
+          auto_generate: true,
+          bulk_generation: true
+        }
+      };
+      
+      configs.push(defaultConfig);
+      console.log('Added default Cloud Lounge Demo config');
     }
     
     return configs;

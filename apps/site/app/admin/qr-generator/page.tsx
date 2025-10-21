@@ -533,16 +533,83 @@ export default function QRGeneratorAdmin() {
 
           {/* QR History */}
           <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-6 flex items-center space-x-2">
-              <BarChart3 className="w-5 h-5 text-green-400" />
-              <span>QR Code History</span>
-            </h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold flex items-center space-x-2">
+                <BarChart3 className="w-5 h-5 text-green-400" />
+                <span>QR Code History</span>
+              </h2>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-zinc-400">Total: {qrHistory.length}</span>
+                <button
+                  onClick={loadQRHistory}
+                  className="p-2 bg-zinc-700 hover:bg-zinc-600 rounded-lg transition-colors"
+                >
+                  <RefreshCw className="w-4 h-4 text-zinc-400" />
+                </button>
+              </div>
+            </div>
+
+            {/* Analytics Summary */}
+            {qrHistory.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-zinc-700/50 rounded-lg p-3">
+                  <div className="text-2xl font-bold text-white">
+                    {qrHistory.length}
+                  </div>
+                  <div className="text-sm text-zinc-400">Total QR Codes</div>
+                </div>
+                <div className="bg-zinc-700/50 rounded-lg p-3">
+                  <div className="text-2xl font-bold text-green-400">
+                    {qrHistory.reduce((sum, qr) => sum + qr.usageCount, 0)}
+                  </div>
+                  <div className="text-sm text-zinc-400">Total Scans</div>
+                </div>
+                <div className="bg-zinc-700/50 rounded-lg p-3">
+                  <div className="text-2xl font-bold text-blue-400">
+                    {qrHistory.filter(qr => qr.status === 'active').length}
+                  </div>
+                  <div className="text-sm text-zinc-400">Active Codes</div>
+                </div>
+                <div className="bg-zinc-700/50 rounded-lg p-3">
+                  <div className="text-2xl font-bold text-purple-400">
+                    {Math.round(qrHistory.reduce((sum, qr) => sum + qr.usageCount, 0) / qrHistory.length) || 0}
+                  </div>
+                  <div className="text-sm text-zinc-400">Avg Scans/Code</div>
+                </div>
+              </div>
+            )}
+
+            {/* Filter and Search */}
+            {qrHistory.length > 0 && (
+              <div className="flex space-x-4 mb-4">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    placeholder="Search QR codes..."
+                    className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:border-primary-500"
+                  />
+                </div>
+                <select className="px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:border-primary-500">
+                  <option value="all">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="expired">Expired</option>
+                </select>
+                <select className="px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:border-primary-500">
+                  <option value="newest">Newest First</option>
+                  <option value="oldest">Oldest First</option>
+                  <option value="most-used">Most Used</option>
+                  <option value="least-used">Least Used</option>
+                </select>
+              </div>
+            )}
 
             <div className="space-y-3 max-h-96 overflow-y-auto custom-scrollbar">
               {qrHistory.length === 0 ? (
                 <div className="text-center py-8">
                   <QrCode className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-                  <p className="text-zinc-400">No QR codes generated yet</p>
+                  <p className="text-zinc-400 mb-2">No QR codes generated yet</p>
+                  <p className="text-sm text-zinc-500">Generate your first QR code to get started</p>
                 </div>
               ) : (
                 qrHistory.map((qr) => (
@@ -550,48 +617,93 @@ export default function QRGeneratorAdmin() {
                     key={qr.id}
                     className="bg-zinc-700 border border-zinc-600 rounded-lg p-4 hover:border-zinc-500 transition-colors"
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center space-x-2">
-                        <Building className="w-4 h-4 text-blue-400" />
-                        <span className="font-medium">{qr.loungeId}</span>
-                        {qr.tableId && (
-                          <>
-                            <span className="text-zinc-400">-</span>
-                            <span className="text-zinc-300">{qr.tableId}</span>
-                          </>
-                        )}
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-zinc-600 rounded-lg flex items-center justify-center">
+                          <QrCode className="w-5 h-5 text-zinc-300" />
+                        </div>
+                        <div>
+                          <div className="flex items-center space-x-2">
+                            <Building className="w-4 h-4 text-blue-400" />
+                            <span className="font-medium text-white">{qr.loungeId}</span>
+                            {qr.tableId && (
+                              <>
+                                <span className="text-zinc-400">-</span>
+                                <span className="text-zinc-300">{qr.tableId}</span>
+                              </>
+                            )}
+                            {qr.campaignRef && (
+                              <>
+                                <span className="text-zinc-400">-</span>
+                                <span className="text-purple-300">{qr.campaignRef}</span>
+                              </>
+                            )}
+                          </div>
+                          <div className="text-xs text-zinc-400 mt-1">
+                            Created {formatDate(qr.createdAt)}
+                          </div>
+                        </div>
                       </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(qr.status)}`}>
-                        {qr.status}
-                      </span>
+                      <div className="flex items-center space-x-2">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(qr.status)}`}>
+                          {qr.status}
+                        </span>
+                        <div className="text-right">
+                          <div className="text-sm font-medium text-white">{qr.usageCount}</div>
+                          <div className="text-xs text-zinc-400">scans</div>
+                        </div>
+                      </div>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-2 text-xs text-zinc-400 mb-3">
-                      <div>Created: {formatDate(qr.createdAt)}</div>
-                      <div>Usage: {qr.usageCount} scans</div>
+                    {/* Usage Stats */}
+                    <div className="grid grid-cols-3 gap-4 mb-3 text-xs">
+                      <div className="bg-zinc-800/50 rounded p-2">
+                        <div className="text-zinc-400">Last Used</div>
+                        <div className="text-white">
+                          {qr.lastUsed ? formatDate(qr.lastUsed) : 'Never'}
+                        </div>
+                      </div>
+                      <div className="bg-zinc-800/50 rounded p-2">
+                        <div className="text-zinc-400">URL</div>
+                        <div className="text-white truncate">{qr.url}</div>
+                      </div>
+                      <div className="bg-zinc-800/50 rounded p-2">
+                        <div className="text-zinc-400">Performance</div>
+                        <div className={`${qr.usageCount > 10 ? 'text-green-400' : qr.usageCount > 5 ? 'text-yellow-400' : 'text-red-400'}`}>
+                          {qr.usageCount > 10 ? 'High' : qr.usageCount > 5 ? 'Medium' : 'Low'}
+                        </div>
+                      </div>
                     </div>
                     
+                    {/* Action Buttons */}
                     <div className="flex space-x-2">
                       <button
                         onClick={() => setSelectedQR(qr)}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-1 px-2 rounded text-xs transition-colors flex items-center justify-center space-x-1"
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded text-xs transition-colors flex items-center justify-center space-x-1"
                       >
                         <Eye className="w-3 h-3" />
                         <span>View</span>
                       </button>
                       <button
                         onClick={() => copyToClipboard(qr.url)}
-                        className="flex-1 bg-zinc-600 hover:bg-zinc-500 text-white py-1 px-2 rounded text-xs transition-colors flex items-center justify-center space-x-1"
+                        className="flex-1 bg-zinc-600 hover:bg-zinc-500 text-white py-2 px-3 rounded text-xs transition-colors flex items-center justify-center space-x-1"
                       >
                         <Copy className="w-3 h-3" />
                         <span>Copy</span>
                       </button>
                       <button
                         onClick={() => downloadQR(qr)}
-                        className="flex-1 bg-green-600 hover:bg-green-700 text-white py-1 px-2 rounded text-xs transition-colors flex items-center justify-center space-x-1"
+                        className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded text-xs transition-colors flex items-center justify-center space-x-1"
                       >
                         <Download className="w-3 h-3" />
                         <span>Download</span>
+                      </button>
+                      <button
+                        onClick={() => {/* TODO: Add regenerate functionality */}}
+                        className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2 px-3 rounded text-xs transition-colors flex items-center justify-center space-x-1"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                        <span>Regenerate</span>
                       </button>
                     </div>
                   </div>
