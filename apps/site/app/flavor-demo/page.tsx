@@ -212,7 +212,7 @@ export default function FlavorWheelDemo() {
               Try Full Experience
             </button>
             <button
-              onClick={() => window.open('/pos-waitlist', '_blank')}
+              onClick={() => window.open('/contact', '_blank')}
               className="inline-flex items-center justify-center rounded-xl border border-purple-500/50 bg-purple-500/10 px-8 py-4 text-lg font-semibold hover:bg-purple-500/20 transition-all duration-200"
             >
               <ArrowRight className="w-5 h-5 mr-2" />

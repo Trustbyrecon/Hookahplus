@@ -1,0 +1,225 @@
+lounge_name: "Cloud Lounge Demo"
+slug: "cloud-lounge-demo"
+lounge_id: "CLOUD_DEMO"
+session_price: 25.00
+reflex_enabled: true
+
+contact:
+  owner_name: "Sarah Martinez"
+  email: "sarah@cloudlounge.com"
+  phone: "+1 (555) 123-4567"
+  address: "123 Cloud Street, New York, NY 10001"
+
+hours:
+  monday: "6:00 PM - 2:00 AM"
+  tuesday: "6:00 PM - 2:00 AM"
+  wednesday: "6:00 PM - 2:00 AM"
+  thursday: "6:00 PM - 2:00 AM"
+  friday: "6:00 PM - 3:00 AM"
+  saturday: "6:00 PM - 3:00 AM"
+  sunday: "6:00 PM - 1:00 AM"
+
+tables:
+  - id: "table_1"
+    name: "VIP Booth 1"
+    type: "booth"
+    capacity: 6
+    zone: "VIP"
+    coordinates:
+      x: 10
+      y: 15
+      width: 120
+      height: 80
+    qr_enabled: true
+    status: "active"
+    price_multiplier: 1.5
+    description: "Premium VIP booth with leather seating"
+    
+  - id: "table_2"
+    name: "VIP Booth 2"
+    type: "booth"
+    capacity: 6
+    zone: "VIP"
+    coordinates:
+      x: 150
+      y: 15
+      width: 120
+      height: 80
+    qr_enabled: true
+    status: "active"
+    price_multiplier: 1.5
+    description: "Premium VIP booth with leather seating"
+    
+  - id: "table_3"
+    name: "Regular Table 1"
+    type: "table"
+    capacity: 4
+    zone: "Main Floor"
+    coordinates:
+      x: 10
+      y: 120
+      width: 100
+      height: 60
+    qr_enabled: true
+    status: "active"
+    price_multiplier: 1.0
+    description: "Standard table in main area"
+    
+  - id: "table_4"
+    name: "Regular Table 2"
+    type: "table"
+    capacity: 4
+    zone: "Main Floor"
+    coordinates:
+      x: 130
+      y: 120
+      width: 100
+      height: 60
+    qr_enabled: true
+    status: "active"
+    price_multiplier: 1.0
+    description: "Standard table in main area"
+    
+  - id: "table_5"
+    name: "Regular Table 3"
+    type: "table"
+    capacity: 4
+    zone: "Main Floor"
+    coordinates:
+      x: 250
+      y: 120
+      width: 100
+      height: 60
+    qr_enabled: true
+    status: "active"
+    price_multiplier: 1.0
+    description: "Standard table in main area"
+    
+  - id: "table_6"
+    name: "Outdoor Patio 1"
+    type: "outdoor"
+    capacity: 6
+    zone: "Patio"
+    coordinates:
+      x: 10
+      y: 200
+      width: 120
+      height: 80
+    qr_enabled: true
+    status: "active"
+    price_multiplier: 1.2
+    description: "Outdoor seating with weather protection"
+    
+  - id: "table_7"
+    name: "Outdoor Patio 2"
+    type: "outdoor"
+    capacity: 6
+    zone: "Patio"
+    coordinates:
+      x: 150
+      y: 200
+      width: 120
+      height: 80
+    qr_enabled: true
+    status: "active"
+    price_multiplier: 1.2
+    description: "Outdoor seating with weather protection"
+
+campaigns:
+  - id: "welcome_2024"
+    name: "Welcome 2024"
+    active: true
+    qr_prefix: "WELCOME"
+    start_date: "2024-01-01"
+    end_date: "2024-12-31"
+    description: "New customer welcome campaign"
+    discount_percentage: 15
+    min_session_duration: 30
+    
+  - id: "vip_loyalty"
+    name: "VIP Loyalty Program"
+    active: true
+    qr_prefix: "VIP"
+    start_date: "2024-01-01"
+    end_date: "2024-12-31"
+    description: "Exclusive VIP member benefits"
+    discount_percentage: 20
+    min_session_duration: 45
+    
+  - id: "happy_hour"
+    name: "Happy Hour Special"
+    active: true
+    qr_prefix: "HAPPY"
+    start_date: "2024-01-01"
+    end_date: "2024-12-31"
+    description: "Weekday happy hour pricing"
+    discount_percentage: 25
+    min_session_duration: 30
+    time_restrictions:
+      start_time: "18:00"
+      end_time: "20:00"
+      days: ["monday", "tuesday", "wednesday", "thursday"]
+
+qr_settings:
+  base_url: "https://guest.hookahplus.net"
+  include_campaign: true
+  include_table_info: true
+  auto_generate: true
+  bulk_generation: true
+
+flavors:
+  standard:
+    - id: "mint"
+      name: "Classic Mint"
+      price: 2.00
+      category: "mint"
+      description: "Refreshing classic mint flavor"
+      
+    - id: "apple"
+      name: "Green Apple"
+      price: 2.00
+      category: "fruit"
+      description: "Crisp green apple taste"
+      
+    - id: "grape"
+      name: "Grape"
+      price: 2.00
+      category: "fruit"
+      description: "Sweet grape flavor"
+      
+    - id: "watermelon"
+      name: "Watermelon"
+      price: 2.00
+      category: "fruit"
+      description: "Fresh watermelon taste"
+      
+    - id: "lemon"
+      name: "Lemon"
+      price: 2.00
+      category: "citrus"
+      description: "Tangy lemon flavor"
+      
+  premium:
+    - id: "blue_mist"
+      name: "Blue Mist"
+      price: 3.50
+      category: "premium"
+      description: "Signature premium blend"
+      
+    - id: "double_apple"
+      name: "Double Apple"
+      price: 3.00
+      category: "premium"
+      description: "Rich double apple flavor"
+      
+    - id: "mint_fresh"
+      name: "Mint Fresh"
+      price: 3.00
+      category: "premium"
+      description: "Extra fresh mint blend"
+
+integrations:
+  pos_system: "Square"
+  payment_processor: "Stripe"
+  analytics: "Google Analytics 4"
+  notifications: "Twilio SMS"
