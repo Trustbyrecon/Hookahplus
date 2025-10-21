@@ -176,24 +176,24 @@ export default function Home() {
                 onClick={() => window.location.href = '/sessions'}
               >
                 <Play className="w-5 h-5" />
-                See Demo
+                Lounge Experience Demo
               </Button>
               <Button 
                 variant="outline" 
                 size="lg" 
                 className="px-6 py-3"
-                onClick={() => window.location.href = '/flavor-wheel'}
+                onClick={() => window.location.href = '/flavor-demo'}
               >
-                Flavor Wheel
+                Guest Experience
               </Button>
               <Button 
                 variant="outline" 
                 size="lg" 
                 className="px-6 py-3 border-orange-500/50 text-orange-400 hover:bg-orange-500/10 hover:border-orange-400"
-                onClick={() => window.location.href = '/campaign-preorders'}
+                onClick={() => window.location.href = '/hittrust'}
               >
                 <Gift className="w-4 h-4 mr-2" />
-                Campaign Pre-Orders
+                HitTrust
               </Button>
               <Button 
                 variant="outline" 
@@ -202,15 +202,6 @@ export default function Home() {
                 onClick={() => window.open('https://app.hookahplus.net/fire-session-dashboard', '_blank')}
               >
                 Live Dashboard
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="px-6 py-3 border-purple-500/50 text-purple-400 hover:bg-purple-500/10 hover:border-purple-400"
-                onClick={() => window.location.href = '/pos-waitlist'}
-              >
-                <CreditCard className="w-4 h-4 mr-2" />
-                POS Integration
               </Button>
             </div>
           </div>

@@ -168,7 +168,7 @@ export default function FlavorWheelDemo() {
     setSelected((prev) => {
       if (prev.includes(id)) {
         return prev.filter((x) => x !== id);
-      } else if (prev.length < 3) {
+      } else if (prev.length < 4) {
         return [...prev, id];
       }
       return prev;
@@ -227,7 +227,7 @@ export default function FlavorWheelDemo() {
           <div className="flex items-center justify-between mb-8">
             <div>
               <h2 className="text-2xl md:text-3xl font-semibold tracking-tight">Flavor Mix Selector</h2>
-              <p className="text-zinc-400">Select up to 3 flavors for your perfect hookah session</p>
+              <p className="text-zinc-400">Select up to 4 flavors for your perfect hookah session</p>
             </div>
             <div className="flex items-center gap-2">
               <button

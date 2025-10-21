@@ -271,13 +271,13 @@ const GlobalNavigation: React.FC = () => {
       aiInsight: 'AI agents monitoring integration opportunities',
       items: [
         {
-          label: 'POS Waitlist',
-          href: '/pos-waitlist',
+          label: 'HitTrust',
+          href: '/hittrust',
           icon: <CreditCard className="w-4 h-4" />,
-          description: 'Join POS integration waitlist',
+          description: 'Join HitTrust integration waitlist',
           flowState: 'active',
           nextAction: 'Sign up for early access',
-          aiRecommendation: 'Be first to integrate your POS',
+          aiRecommendation: 'Be first to integrate your system',
           priority: 'medium',
           agentOptimized: true,
           flowScore: 75,
@@ -579,21 +579,6 @@ const GlobalNavigation: React.FC = () => {
               </div>
             )}
 
-            {/* Support and Docs - Single clean links */}
-            <div className="flex items-center space-x-2">
-              <a
-                href="/support"
-                className="text-sm text-zinc-400 hover:text-white transition-colors"
-              >
-                Support
-              </a>
-              <a
-                href="/docs"
-                className="text-sm text-zinc-400 hover:text-white transition-colors"
-              >
-                Docs
-              </a>
-            </div>
           </div>
         </div>
       </div>
