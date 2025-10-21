@@ -78,10 +78,15 @@ export default function SessionsPage() {
             <div className="flex items-center space-x-4">
               <Button 
                 variant="primary" 
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 bg-gradient-to-r from-orange-500/10 to-red-500/10 border-orange-500/30 text-orange-400 hover:from-orange-500/20 hover:to-red-500/20 hover:border-orange-400 transition-all duration-200 transform hover:scale-105"
                 onClick={() => {
                   console.log('Starting new session');
-                  alert('Starting new session - Opening session creation interface');
+                  // Enhanced session creation with better UX
+                  const confirmed = window.confirm('Ready to start a new hookah session? This will open the session creation interface.');
+                  if (confirmed) {
+                    // Open in new tab for better workflow
+                    window.open('/fire-session-dashboard', '_blank');
+                  }
                 }}
               >
                 <Play className="w-4 h-4" />

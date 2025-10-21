@@ -148,11 +148,11 @@ export default function Home() {
             Enterprise-grade lounge management with AI-powered personalization and secure transactions
           </p>
           
-          {/* Key Metrics */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-            {metrics.map((metric, index) => (
+          {/* Key Metrics - Simplified */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-8">
+            {metrics.filter(metric => metric.title !== 'System Health').map((metric, index) => (
               <div key={index} className="text-center">
-                <div className={`inline-flex items-center justify-center w-12 h-12 rounded-lg ${metric.bgColor} mb-3 ${metric.title === 'System Health' ? 'animate-pulse' : ''}`}>
+                <div className={`inline-flex items-center justify-center w-12 h-12 rounded-lg ${metric.bgColor} mb-3`}>
                   <div className={metric.color}>
                     {metric.icon}
                   </div>
@@ -190,18 +190,10 @@ export default function Home() {
                 variant="outline" 
                 size="lg" 
                 className="px-6 py-3 border-orange-500/50 text-orange-400 hover:bg-orange-500/10 hover:border-orange-400"
-                onClick={() => window.location.href = '/hittrust'}
+                onClick={() => window.location.href = '/contact'}
               >
                 <Gift className="w-4 h-4 mr-2" />
-                HitTrust
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="px-6 py-3"
-                onClick={() => window.open('https://app.hookahplus.net/fire-session-dashboard', '_blank')}
-              >
-                Live Dashboard
+                Contact Us
               </Button>
             </div>
           </div>
