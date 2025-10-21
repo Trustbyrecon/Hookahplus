@@ -35,6 +35,43 @@ interface QRCodeData {
   status: 'active' | 'inactive' | 'expired';
 }
 
+interface LoungeConfig {
+  lounge_id: string;
+  lounge_name: string;
+  slug: string;
+  tables: TableConfig[];
+  campaigns?: CampaignConfig[];
+  qr_settings?: {
+    base_url: string;
+    include_campaign: boolean;
+    include_table_info: boolean;
+    auto_generate: boolean;
+    bulk_generation: boolean;
+  };
+}
+
+interface TableConfig {
+  id: string;
+  name: string;
+  type: string;
+  capacity: number;
+  zone: string;
+  qr_enabled: boolean;
+  status: 'active' | 'inactive' | 'maintenance';
+  price_multiplier: number;
+  description: string;
+}
+
+interface CampaignConfig {
+  id: string;
+  name: string;
+  active: boolean;
+  qr_prefix: string;
+  start_date: string;
+  end_date: string;
+  description: string;
+}
+
 export default function QRGeneratorAdmin() {
   const [loungeId, setLoungeId] = useState('');
   const [tableId, setTableId] = useState('');
@@ -44,11 +81,74 @@ export default function QRGeneratorAdmin() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [selectedQR, setSelectedQR] = useState<QRCodeData | null>(null);
+  
+  // New state for YAML integration
+  const [lounges, setLounges] = useState<LoungeConfig[]>([]);
+  const [selectedLounge, setSelectedLounge] = useState<LoungeConfig | null>(null);
+  const [availableTables, setAvailableTables] = useState<TableConfig[]>([]);
+  const [availableCampaigns, setAvailableCampaigns] = useState<CampaignConfig[]>([]);
+  const [isLoadingLounges, setIsLoadingLounges] = useState(true);
+  const [bulkMode, setBulkMode] = useState(false);
+  const [selectedTablesForBulk, setSelectedTablesForBulk] = useState<string[]>([]);
 
   // Load QR history on component mount
   useEffect(() => {
     loadQRHistory();
+    loadLounges();
   }, []);
+
+  // Load lounges when loungeId changes
+  useEffect(() => {
+    if (loungeId) {
+      loadLoungeDetails(loungeId);
+    }
+  }, [loungeId]);
+
+  const loadLounges = async () => {
+    try {
+      setIsLoadingLounges(true);
+      const response = await fetch('/api/lounges');
+      const data = await response.json();
+      
+      if (data.success) {
+        setLounges(data.lounges);
+      }
+    } catch (error) {
+      console.error('Failed to load lounges:', error);
+    } finally {
+      setIsLoadingLounges(false);
+    }
+  };
+
+  const loadLoungeDetails = async (loungeId: string) => {
+    try {
+      const response = await fetch(`/api/lounges/${loungeId}?includeTables=true&includeCampaigns=true`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setSelectedLounge(data.lounge);
+        setAvailableTables(data.lounge.tables || []);
+        setAvailableCampaigns(data.lounge.campaigns || []);
+      }
+    } catch (error) {
+      console.error('Failed to load lounge details:', error);
+    }
+  };
+
+  const handleLoungeChange = (newLoungeId: string) => {
+    setLoungeId(newLoungeId);
+    setTableId('');
+    setCampaignRef('');
+    setSelectedTablesForBulk([]);
+  };
+
+  const handleBulkTableToggle = (tableId: string) => {
+    setSelectedTablesForBulk(prev => 
+      prev.includes(tableId) 
+        ? prev.filter(id => id !== tableId)
+        : [...prev, tableId]
+    );
+  };
 
   const loadQRHistory = async () => {
     try {
@@ -208,46 +308,143 @@ export default function QRGeneratorAdmin() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-zinc-300 mb-2">
-                  Lounge ID <span className="text-red-400">*</span>
+                  Lounge <span className="text-red-400">*</span>
                 </label>
-                <input
-                  type="text"
+                <select
                   value={loungeId}
-                  onChange={(e) => setLoungeId(e.target.value)}
-                  placeholder="e.g., lounge_001"
-                  className="w-full px-4 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:border-blue-500"
-                />
+                  onChange={(e) => handleLoungeChange(e.target.value)}
+                  className="w-full px-4 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                  disabled={isLoadingLounges}
+                >
+                  <option value="">
+                    {isLoadingLounges ? 'Loading lounges...' : 'Select a lounge'}
+                  </option>
+                  {lounges.map((lounge) => (
+                    <option key={lounge.lounge_id} value={lounge.lounge_id}>
+                      {lounge.lounge_name} ({lounge.lounge_id})
+                    </option>
+                  ))}
+                </select>
+                {selectedLounge && (
+                  <div className="mt-2 text-xs text-zinc-400">
+                    {availableTables.length} tables available • {availableCampaigns.length} campaigns
+                  </div>
+                )}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-zinc-300 mb-2">
-                  Table ID (Optional)
+                  Table (Optional)
                 </label>
-                <input
-                  type="text"
+                <select
                   value={tableId}
                   onChange={(e) => setTableId(e.target.value)}
-                  placeholder="e.g., T-001, Table-5"
-                  className="w-full px-4 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:border-blue-500"
-                />
+                  className="w-full px-4 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                  disabled={!loungeId || availableTables.length === 0}
+                >
+                  <option value="">
+                    {!loungeId ? 'Select a lounge first' : 
+                     availableTables.length === 0 ? 'No tables available' : 
+                     'Select a table (optional)'}
+                  </option>
+                  {availableTables
+                    .filter(table => table.qr_enabled && table.status === 'active')
+                    .map((table) => (
+                      <option key={table.id} value={table.id}>
+                        {table.name} ({table.type}, {table.capacity} seats) - {table.zone}
+                      </option>
+                    ))}
+                </select>
+                {availableTables.length > 0 && (
+                  <div className="mt-2 text-xs text-zinc-400">
+                    {availableTables.filter(t => t.qr_enabled && t.status === 'active').length} QR-enabled tables
+                  </div>
+                )}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-zinc-300 mb-2">
-                  Campaign Reference (Optional)
+                  Campaign (Optional)
                 </label>
-                <input
-                  type="text"
+                <select
                   value={campaignRef}
                   onChange={(e) => setCampaignRef(e.target.value)}
-                  placeholder="e.g., summer2024, vip-event"
-                  className="w-full px-4 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:border-blue-500"
-                />
+                  className="w-full px-4 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                  disabled={!loungeId || availableCampaigns.length === 0}
+                >
+                  <option value="">
+                    {!loungeId ? 'Select a lounge first' : 
+                     availableCampaigns.length === 0 ? 'No campaigns available' : 
+                     'Select a campaign (optional)'}
+                  </option>
+                  {availableCampaigns
+                    .filter(campaign => campaign.active)
+                    .map((campaign) => (
+                      <option key={campaign.id} value={campaign.id}>
+                        {campaign.name} ({campaign.qr_prefix})
+                      </option>
+                    ))}
+                </select>
+                {availableCampaigns.length > 0 && (
+                  <div className="mt-2 text-xs text-zinc-400">
+                    {availableCampaigns.filter(c => c.active).length} active campaigns
+                  </div>
+                )}
               </div>
+
+              {/* Bulk Mode Toggle */}
+              <div className="flex items-center justify-between p-3 bg-zinc-700 rounded-lg">
+                <div>
+                  <label className="text-sm font-medium text-zinc-300">Bulk Generation</label>
+                  <p className="text-xs text-zinc-400">Generate QR codes for multiple tables</p>
+                </div>
+                <button
+                  onClick={() => setBulkMode(!bulkMode)}
+                  className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                    bulkMode 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-zinc-600 text-zinc-300 hover:bg-zinc-500'
+                  }`}
+                >
+                  {bulkMode ? 'Enabled' : 'Disabled'}
+                </button>
+              </div>
+
+              {/* Bulk Table Selection */}
+              {bulkMode && loungeId && availableTables.length > 0 && (
+                <div className="space-y-3">
+                  <label className="block text-sm font-medium text-zinc-300">
+                    Select Tables for Bulk Generation
+                  </label>
+                  <div className="max-h-40 overflow-y-auto border border-zinc-600 rounded-lg p-3 space-y-2">
+                    {availableTables
+                      .filter(table => table.qr_enabled && table.status === 'active')
+                      .map((table) => (
+                        <label key={table.id} className="flex items-center space-x-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedTablesForBulk.includes(table.id)}
+                            onChange={() => handleBulkTableToggle(table.id)}
+                            className="w-4 h-4 text-blue-600 bg-zinc-700 border-zinc-600 rounded focus:ring-blue-500"
+                          />
+                          <div className="flex-1">
+                            <div className="text-sm text-white">{table.name}</div>
+                            <div className="text-xs text-zinc-400">
+                              {table.type} • {table.capacity} seats • {table.zone}
+                            </div>
+                          </div>
+                        </label>
+                      ))}
+                  </div>
+                  <div className="text-xs text-zinc-400">
+                    {selectedTablesForBulk.length} tables selected
+                  </div>
+                </div>
+              )}
 
               <button
                 onClick={generateQRCode}
-                disabled={isGenerating || !loungeId.trim()}
+                disabled={isGenerating || !loungeId.trim() || (bulkMode && selectedTablesForBulk.length === 0)}
                 className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-600 disabled:cursor-not-allowed text-white py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
               >
                 {isGenerating ? (
@@ -258,7 +455,12 @@ export default function QRGeneratorAdmin() {
                 ) : (
                   <>
                     <QrCode className="w-4 h-4" />
-                    <span>Generate QR Code</span>
+                    <span>
+                      {bulkMode 
+                        ? `Generate ${selectedTablesForBulk.length} QR Codes`
+                        : 'Generate QR Code'
+                      }
+                    </span>
                   </>
                 )}
               </button>

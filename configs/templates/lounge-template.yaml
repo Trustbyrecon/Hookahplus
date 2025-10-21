@@ -1,0 +1,136 @@
+# Enhanced Lounge Configuration Template
+# This template defines the structure for lounge YAML configurations
+# Used by QR Generator and Physical Lounge Digitization
+
+lounge_name: "Midnight Ember Lounge"
+slug: "midnight-ember-lounge"
+lounge_id: "lounge_001"  # Primary identifier for QR generation
+session_price: 30
+reflex_enabled: true
+
+# Contact Information
+contact:
+  owner_name: "John Smith"
+  email: "owner@midnightember.com"
+  phone: "+1-555-0123"
+  address: "123 Hookah Street, City, State 12345"
+
+# Business Hours
+hours:
+  monday: "5:00 PM - 2:00 AM"
+  tuesday: "5:00 PM - 2:00 AM"
+  wednesday: "5:00 PM - 2:00 AM"
+  thursday: "5:00 PM - 2:00 AM"
+  friday: "5:00 PM - 3:00 AM"
+  saturday: "5:00 PM - 3:00 AM"
+  sunday: "5:00 PM - 1:00 AM"
+
+# Enhanced Table Configuration
+tables:
+  - id: "T-001"
+    name: "Table 1"
+    type: "table"
+    capacity: 4
+    zone: "main_floor"
+    coordinates: { x: 100, y: 200, width: 80, height: 80 }
+    qr_enabled: true
+    status: "active"
+    price_multiplier: 1.0
+    description: "Standard table seating"
+    
+  - id: "T-002"
+    name: "Table 2"
+    type: "table"
+    capacity: 4
+    zone: "main_floor"
+    coordinates: { x: 200, y: 200, width: 80, height: 80 }
+    qr_enabled: true
+    status: "active"
+    price_multiplier: 1.0
+    description: "Standard table seating"
+    
+  - id: "BAR-01"
+    name: "Bar Counter 1"
+    type: "bar"
+    capacity: 2
+    zone: "bar_area"
+    coordinates: { x: 50, y: 100, width: 200, height: 60 }
+    qr_enabled: true
+    status: "active"
+    price_multiplier: 1.0
+    description: "Bar seating with hookah setup"
+    
+  - id: "BOOTH-01"
+    name: "Booth 1"
+    type: "booth"
+    capacity: 4
+    zone: "booth_area"
+    coordinates: { x: 300, y: 150, width: 120, height: 100 }
+    qr_enabled: true
+    status: "active"
+    price_multiplier: 1.1
+    description: "Semi-private booth seating"
+    
+  - id: "VIP-01"
+    name: "VIP Area 1"
+    type: "vip"
+    capacity: 8
+    zone: "vip_section"
+    coordinates: { x: 400, y: 200, width: 150, height: 120 }
+    qr_enabled: true
+    status: "active"
+    price_multiplier: 1.5
+    description: "Premium VIP seating"
+
+# Campaign Configurations
+campaigns:
+  - id: "summer2024"
+    name: "Summer Special"
+    active: true
+    qr_prefix: "summer"
+    start_date: "2024-06-01"
+    end_date: "2024-08-31"
+    description: "Summer promotion campaign"
+    
+  - id: "vip-events"
+    name: "VIP Events"
+    active: true
+    qr_prefix: "vip"
+    start_date: "2024-01-01"
+    end_date: "2024-12-31"
+    description: "VIP customer events"
+
+# Flavor Configuration
+flavors:
+  standard:
+    - name: "Double Apple"
+      price: 2.0
+      category: "fruit"
+    - name: "Mint"
+      price: 2.0
+      category: "mint"
+    - name: "Grape"
+      price: 2.0
+      category: "fruit"
+  premium:
+    - name: "Rose"
+      price: 3.0
+      category: "floral"
+    - name: "Cardamom"
+      price: 3.0
+      category: "spice"
+
+# QR Code Settings
+qr_settings:
+  base_url: "https://guest.hookahplus.net"
+  include_campaign: true
+  include_table_info: true
+  auto_generate: true
+  bulk_generation: true
+
+# Integration Settings
+integrations:
+  pos_system: "square"
+  payment_processor: "stripe"
+  analytics: "google_analytics"
+  notifications: "email_sms"
