@@ -56,6 +56,12 @@ interface TableConfig {
   type: string;
   capacity: number;
   zone: string;
+  coordinates: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
   qr_enabled: boolean;
   status: 'active' | 'inactive' | 'maintenance';
   price_multiplier: number;
