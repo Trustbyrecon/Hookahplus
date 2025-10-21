@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { QrCode, Download, Printer, RefreshCw, Copy, CheckCircle, BarChart3, Users, Clock, MapPin, Building, Filter, Search } from 'lucide-react';
+import { QrCode, Download, Printer, RefreshCw, Copy, CheckCircle, BarChart3, Users, Clock, MapPin, Building, Filter, Search, Zap } from 'lucide-react';
 import QRCode from 'qrcode';
 
 export default function QRPathwayPage() {
