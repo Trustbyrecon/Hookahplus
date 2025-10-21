@@ -759,26 +759,69 @@ export default function QRGeneratorAdmin() {
 
             {/* Filter and Search */}
             {qrHistory.length > 0 && (
-              <div className="flex space-x-4 mb-4">
-                <div className="flex-1">
-                  <input
-                    type="text"
-                    placeholder="Search QR codes..."
-                    className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:border-primary-500"
-                  />
+              <div className="space-y-4 mb-4">
+                {/* Search Bar */}
+                <div className="flex space-x-4">
+                  <div className="flex-1">
+                    <input
+                      type="text"
+                      placeholder="Search QR codes..."
+                      className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:border-primary-500"
+                    />
+                  </div>
+                  <select className="px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:border-primary-500">
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="expired">Expired</option>
+                  </select>
+                  <select className="px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:border-primary-500">
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="most-used">Most Used</option>
+                    <option value="least-used">Least Used</option>
+                  </select>
                 </div>
-                <select className="px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:border-primary-500">
-                  <option value="all">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                  <option value="expired">Expired</option>
-                </select>
-                <select className="px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:border-primary-500">
-                  <option value="newest">Newest First</option>
-                  <option value="oldest">Oldest First</option>
-                  <option value="most-used">Most Used</option>
-                  <option value="least-used">Least Used</option>
-                </select>
+                
+                {/* Seating Filters */}
+                <div className="flex flex-wrap gap-2">
+                  <span className="text-sm text-zinc-400 mr-2">Filter by Seating:</span>
+                  <button className="px-3 py-1 bg-zinc-700 hover:bg-zinc-600 text-white rounded-full text-sm transition-colors">
+                    All Seating
+                  </button>
+                  <button className="px-3 py-1 bg-zinc-700 hover:bg-zinc-600 text-white rounded-full text-sm transition-colors">
+                    Bar (12)
+                  </button>
+                  <button className="px-3 py-1 bg-zinc-700 hover:bg-zinc-600 text-white rounded-full text-sm transition-colors">
+                    Chair (8)
+                  </button>
+                  <button className="px-3 py-1 bg-zinc-700 hover:bg-zinc-600 text-white rounded-full text-sm transition-colors">
+                    VIP (4)
+                  </button>
+                  <button className="px-3 py-1 bg-zinc-700 hover:bg-zinc-600 text-white rounded-full text-sm transition-colors">
+                    Booth (6)
+                  </button>
+                  <button className="px-3 py-1 bg-zinc-700 hover:bg-zinc-600 text-white rounded-full text-sm transition-colors">
+                    Patio (3)
+                  </button>
+                </div>
+                
+                {/* Capacity Filters */}
+                <div className="flex flex-wrap gap-2">
+                  <span className="text-sm text-zinc-400 mr-2">Filter by Capacity:</span>
+                  <button className="px-3 py-1 bg-zinc-700 hover:bg-zinc-600 text-white rounded-full text-sm transition-colors">
+                    All Capacities
+                  </button>
+                  <button className="px-3 py-1 bg-zinc-700 hover:bg-zinc-600 text-white rounded-full text-sm transition-colors">
+                    2-4 People (15)
+                  </button>
+                  <button className="px-3 py-1 bg-zinc-700 hover:bg-zinc-600 text-white rounded-full text-sm transition-colors">
+                    4-6 People (8)
+                  </button>
+                  <button className="px-3 py-1 bg-zinc-700 hover:bg-zinc-600 text-white rounded-full text-sm transition-colors">
+                    6+ People (5)
+                  </button>
+                </div>
               </div>
             )}
 

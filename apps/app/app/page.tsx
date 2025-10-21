@@ -48,9 +48,9 @@ import {
   Zap as Lightning,
   Heart,
   Coffee,
+  Brain,
   Wind,
   Sparkles,
-  Brain,
   Lock,
   CreditCard,
   Smartphone,
@@ -77,10 +77,10 @@ export default function LandingPage() {
       borderColor: 'border-teal-500/30'
     },
     {
-      title: 'Pre-Order',
-      description: 'Table Ordering',
+      title: 'QR Pathway',
+      description: 'QR Code Ordering Flow',
       icon: <QrCode className="w-6 h-6 text-blue-400" />,
-      href: '/preorder/T-001',
+      href: '/qr-pathway',
       color: 'from-blue-500/20 to-indigo-500/20',
       borderColor: 'border-blue-500/30'
     },
@@ -109,10 +109,10 @@ export default function LandingPage() {
       borderColor: 'border-purple-500/30'
     },
     {
-      title: 'Staff Mgmt',
-      description: 'Team Management',
-      icon: <UserCheck className="w-6 h-6 text-green-400" />,
-      href: '/staff-panel',
+      title: 'Guest Intelligence',
+      description: 'Customer Analytics & Insights',
+      icon: <Brain className="w-6 h-6 text-green-400" />,
+      href: '/guest-intelligence',
       color: 'from-green-500/20 to-emerald-500/20',
       borderColor: 'border-green-500/30'
     },

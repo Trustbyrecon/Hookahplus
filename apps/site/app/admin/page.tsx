@@ -3,7 +3,7 @@
 import React from 'react';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
-import { Users, Clock, TrendingUp, BarChart3, Settings, UserCheck, Brain, Shield, CreditCard, ArrowRight, Play, CheckCircle, Zap, Activity, Heart, Star, ChefHat, Bell, Target, Award, Crown, Database, Server } from 'lucide-react';
+import { Users, Clock, TrendingUp, BarChart3, Settings, UserCheck, Brain, Shield, CreditCard, ArrowRight, Play, CheckCircle, Zap, Activity, Heart, Star, ChefHat, Bell, Target, Award, Crown, Database, Server, QrCode } from 'lucide-react';
 
 export default function AdminPage() {
   const systemStatus = [
@@ -73,6 +73,14 @@ export default function AdminPage() {
       lastRun: '3 days ago',
       status: 'pending',
       icon: <Users className="w-5 h-5" />
+    },
+    {
+      id: 'action_005',
+      title: 'QR Code Management',
+      description: 'Manage QR codes, bulk generation, and seating analytics',
+      lastRun: '1 hour ago',
+      status: 'active',
+      icon: <QrCode className="w-5 h-5" />
     }
   ];
 
@@ -231,14 +239,17 @@ export default function AdminPage() {
                         size="sm"
                         onClick={() => {
                           console.log(`Admin action: ${action.title}`);
-                          if (action.status === 'completed') {
+                          if (action.id === 'action_005') {
+                            // QR Code Management - navigate to QR Admin
+                            window.open('/admin/qr-generator', '_blank');
+                          } else if (action.status === 'completed') {
                             alert(`Viewing Report for: ${action.title}\n\nLast Run: ${action.lastRun}\nStatus: ${action.status}\n\nReport Contents:\n• System metrics\n• Performance data\n• Security logs\n• User activity`);
                           } else {
                             alert(`Running Action: ${action.title}\n\nDescription: ${action.description}\n\nThis action will:\n• Check system status\n• Generate reports\n• Update logs\n• Notify administrators`);
                           }
                         }}
                       >
-                        {action.status === 'completed' ? 'View Report' : 'Run Now'}
+                        {action.id === 'action_005' ? 'Manage QR Codes' : (action.status === 'completed' ? 'View Report' : 'Run Now')}
                       </Button>
                     </div>
                   </div>

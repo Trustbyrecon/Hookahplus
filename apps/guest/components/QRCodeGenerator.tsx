@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import QRCode from 'qrcode';
-import { QrCode, Download, Copy, CheckCircle, RefreshCw } from 'lucide-react';
+import { QrCode, Download, Copy, CheckCircle, RefreshCw, Printer } from 'lucide-react';
 
 interface QRCodeGeneratorProps {
   loungeId?: string;
@@ -73,6 +73,65 @@ export const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
     }
   };
 
+  const printQRCode = () => {
+    if (qrCodeDataURL) {
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(`
+          <html>
+            <head>
+              <title>QR Code - ${loungeId} ${tableId}</title>
+              <style>
+                body { 
+                  font-family: Arial, sans-serif; 
+                  text-align: center; 
+                  padding: 20px;
+                  background: white;
+                }
+                .qr-container { 
+                  display: inline-block; 
+                  padding: 20px; 
+                  border: 2px solid #333;
+                  border-radius: 10px;
+                }
+                .qr-info {
+                  margin-top: 15px;
+                  font-size: 14px;
+                  color: #333;
+                }
+                .qr-title {
+                  font-size: 18px;
+                  font-weight: bold;
+                  margin-bottom: 10px;
+                }
+                @media print {
+                  body { margin: 0; padding: 10px; }
+                  .qr-container { border: 2px solid #000; }
+                }
+              </style>
+            </head>
+            <body>
+              <div class="qr-container">
+                <div class="qr-title">Hookah+ Table QR Code</div>
+                <img src="${qrCodeDataURL}" alt="QR Code" style="width: 300px; height: 300px;" />
+                <div class="qr-info">
+                  <div><strong>Lounge:</strong> ${loungeId}</div>
+                  <div><strong>Table:</strong> ${tableId}</div>
+                  <div><strong>Campaign:</strong> ${campaignRef}</div>
+                  <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                    Scan this QR code to start your hookah session
+                  </div>
+                </div>
+              </div>
+            </body>
+          </html>
+        `);
+        printWindow.document.close();
+        printWindow.print();
+      }
+    }
+  };
+
   // Generate QR code on mount
   useEffect(() => {
     generateQRCode();
@@ -134,24 +193,34 @@ export const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
       )}
 
       {/* Action Buttons */}
-      <div className="flex space-x-3">
+      <div className="grid grid-cols-3 gap-2">
         <button
           onClick={generateQRCode}
           disabled={isGenerating}
-          className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-600 text-white py-2 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
+          className="bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-600 text-white py-2 px-3 rounded-lg transition-colors flex items-center justify-center space-x-1 text-sm"
         >
           <RefreshCw className={`w-4 h-4 ${isGenerating ? 'animate-spin' : ''}`} />
           <span>{isGenerating ? 'Generating...' : 'Regenerate'}</span>
         </button>
         
         {qrCodeDataURL && (
-          <button
-            onClick={downloadQRCode}
-            className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
-          >
-            <Download className="w-4 h-4" />
-            <span>Download</span>
-          </button>
+          <>
+            <button
+              onClick={downloadQRCode}
+              className="bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-lg transition-colors flex items-center justify-center space-x-1 text-sm"
+            >
+              <Download className="w-4 h-4" />
+              <span>Download</span>
+            </button>
+            
+            <button
+              onClick={printQRCode}
+              className="bg-purple-600 hover:bg-purple-700 text-white py-2 px-3 rounded-lg transition-colors flex items-center justify-center space-x-1 text-sm"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Print</span>
+            </button>
+          </>
         )}
       </div>
 
