@@ -91,9 +91,150 @@ export default function QRGeneratorAdmin() {
   const [bulkMode, setBulkMode] = useState(false);
   const [selectedTablesForBulk, setSelectedTablesForBulk] = useState<string[]>([]);
 
+  // Cloud Lounge Demo data - integrated directly for immediate availability
+  const cloudLoungeDemo: LoungeConfig = {
+    lounge_id: 'CLOUD_DEMO',
+    lounge_name: 'Cloud Lounge Demo',
+    slug: 'cloud-lounge-demo',
+    session_price: 25.00,
+    reflex_enabled: true,
+    contact: {
+      owner_name: 'Sarah Martinez',
+      email: 'sarah@cloudlounge.com',
+      phone: '+1 (555) 123-4567',
+      address: '123 Cloud Street, New York, NY 10001'
+    },
+    tables: [
+      {
+        id: 'table_1',
+        name: 'VIP Booth 1',
+        type: 'booth',
+        capacity: 6,
+        zone: 'VIP',
+        coordinates: { x: 10, y: 15, width: 120, height: 80 },
+        qr_enabled: true,
+        status: 'active',
+        price_multiplier: 1.5,
+        description: 'Premium VIP booth with leather seating'
+      },
+      {
+        id: 'table_2',
+        name: 'VIP Booth 2',
+        type: 'booth',
+        capacity: 6,
+        zone: 'VIP',
+        coordinates: { x: 150, y: 15, width: 120, height: 80 },
+        qr_enabled: true,
+        status: 'active',
+        price_multiplier: 1.5,
+        description: 'Premium VIP booth with leather seating'
+      },
+      {
+        id: 'table_3',
+        name: 'Regular Table 1',
+        type: 'table',
+        capacity: 4,
+        zone: 'Main Floor',
+        coordinates: { x: 10, y: 120, width: 100, height: 60 },
+        qr_enabled: true,
+        status: 'active',
+        price_multiplier: 1.0,
+        description: 'Standard table in main area'
+      },
+      {
+        id: 'table_4',
+        name: 'Regular Table 2',
+        type: 'table',
+        capacity: 4,
+        zone: 'Main Floor',
+        coordinates: { x: 130, y: 120, width: 100, height: 60 },
+        qr_enabled: true,
+        status: 'active',
+        price_multiplier: 1.0,
+        description: 'Standard table in main area'
+      },
+      {
+        id: 'table_5',
+        name: 'Regular Table 3',
+        type: 'table',
+        capacity: 4,
+        zone: 'Main Floor',
+        coordinates: { x: 250, y: 120, width: 100, height: 60 },
+        qr_enabled: true,
+        status: 'active',
+        price_multiplier: 1.0,
+        description: 'Standard table in main area'
+      },
+      {
+        id: 'table_6',
+        name: 'Outdoor Patio 1',
+        type: 'outdoor',
+        capacity: 6,
+        zone: 'Patio',
+        coordinates: { x: 10, y: 200, width: 120, height: 80 },
+        qr_enabled: true,
+        status: 'active',
+        price_multiplier: 1.2,
+        description: 'Outdoor seating with weather protection'
+      },
+      {
+        id: 'table_7',
+        name: 'Outdoor Patio 2',
+        type: 'outdoor',
+        capacity: 6,
+        zone: 'Patio',
+        coordinates: { x: 150, y: 200, width: 120, height: 80 },
+        qr_enabled: true,
+        status: 'active',
+        price_multiplier: 1.2,
+        description: 'Outdoor seating with weather protection'
+      }
+    ],
+    campaigns: [
+      {
+        id: 'welcome_2024',
+        name: 'Welcome 2024',
+        active: true,
+        qr_prefix: 'WELCOME',
+        start_date: '2024-01-01',
+        end_date: '2024-12-31',
+        description: 'New customer welcome campaign'
+      },
+      {
+        id: 'vip_loyalty',
+        name: 'VIP Loyalty Program',
+        active: true,
+        qr_prefix: 'VIP',
+        start_date: '2024-01-01',
+        end_date: '2024-12-31',
+        description: 'Exclusive VIP member benefits'
+      },
+      {
+        id: 'happy_hour',
+        name: 'Happy Hour Special',
+        active: true,
+        qr_prefix: 'HAPPY',
+        start_date: '2024-01-01',
+        end_date: '2024-12-31',
+        description: 'Weekday happy hour pricing'
+      }
+    ],
+    qr_settings: {
+      base_url: 'https://guest.hookahplus.net',
+      include_campaign: true,
+      include_table_info: true,
+      auto_generate: true,
+      bulk_generation: true
+    }
+  };
+
   // Load QR history on component mount
   useEffect(() => {
     loadQRHistory();
+    // Initialize with Cloud Lounge Demo data immediately
+    setLounges([cloudLoungeDemo]);
+    setIsLoadingLounges(false);
+    // Also try to load from API for additional lounges
     loadLounges();
   }, []);
 
@@ -111,10 +252,23 @@ export default function QRGeneratorAdmin() {
       const data = await response.json();
       
       if (data.success) {
-        setLounges(data.lounges);
+        // Merge Cloud Lounge Demo with API lounges, avoiding duplicates
+        const apiLounges = data.lounges || [];
+        const existingCloudDemo = apiLounges.find((lounge: LoungeConfig) => lounge.lounge_id === 'CLOUD_DEMO');
+        
+        if (!existingCloudDemo) {
+          setLounges([cloudLoungeDemo, ...apiLounges]);
+        } else {
+          setLounges(apiLounges);
+        }
+      } else {
+        // If API fails, just use Cloud Lounge Demo
+        setLounges([cloudLoungeDemo]);
       }
     } catch (error) {
       console.error('Failed to load lounges:', error);
+      // If API fails, just use Cloud Lounge Demo
+      setLounges([cloudLoungeDemo]);
     } finally {
       setIsLoadingLounges(false);
     }
@@ -122,6 +276,15 @@ export default function QRGeneratorAdmin() {
 
   const loadLoungeDetails = async (loungeId: string) => {
     try {
+      // Check if it's the Cloud Lounge Demo first
+      if (loungeId === 'CLOUD_DEMO') {
+        setSelectedLounge(cloudLoungeDemo);
+        setAvailableTables(cloudLoungeDemo.tables || []);
+        setAvailableCampaigns(cloudLoungeDemo.campaigns || []);
+        return;
+      }
+
+      // Otherwise, try to load from API
       const response = await fetch(`/api/lounges/${loungeId}?includeTables=true&includeCampaigns=true`);
       const data = await response.json();
       
