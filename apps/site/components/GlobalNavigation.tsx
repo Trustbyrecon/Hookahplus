@@ -437,23 +437,10 @@ const GlobalNavigation: React.FC = () => {
                           </div>
                         </a>
                         
-                        {/* Enhanced Tooltip with AI Insights */}
-                        <div className="absolute top-full left-0 mt-2 w-80 bg-zinc-900 border border-zinc-700 rounded-lg p-4 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50 pointer-events-none">
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <h3 className="text-sm font-semibold text-white">{item.label}</h3>
-                              <div className="flex items-center space-x-2">
-                                <span className={`text-xs px-2 py-1 rounded ${getPriorityColor(item.priority)}`}>
-                                  {item.priority}
-                                </span>
-                                {item.flowScore && (
-                                  <span className={`text-xs font-medium ${getFlowScoreColor(item.flowScore)}`}>
-                                    {item.flowScore}%
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            
+                        {/* Simplified Tooltip */}
+                        <div className="absolute top-full left-0 mt-2 w-64 bg-zinc-900 border border-zinc-700 rounded-lg p-4 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50 pointer-events-none">
+                          <div className="space-y-2">
+                            <h3 className="text-sm font-semibold text-white">{item.label}</h3>
                             <p className="text-xs text-zinc-300">{item.description}</p>
                             
                             {item.aiRecommendation && (
@@ -522,19 +509,14 @@ const GlobalNavigation: React.FC = () => {
                     <span>AI Insights</span>
                   </button>
                   
-                  {/* Recommendations Dropdown */}
-                  <div className="absolute top-full right-0 mt-2 w-80 bg-zinc-900 border border-zinc-700 rounded-lg p-4 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+                  {/* Simplified AI Recommendations Dropdown */}
+                  <div className="absolute top-full right-0 mt-2 w-64 bg-zinc-900 border border-zinc-700 rounded-lg p-4 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
                     <div className="space-y-3">
                       <h3 className="text-sm font-semibold text-white mb-2">AI Recommendations</h3>
                       {flowState.recommendations.map((rec) => (
                         <div key={rec.id} className="bg-zinc-800 border border-zinc-600 rounded p-3">
-                          <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center space-x-2">
-                              {rec.icon}
-                              <span className={`text-xs px-2 py-1 rounded ${getPriorityColor(rec.priority)}`}>
-                                {rec.priority}
-                              </span>
-                            </div>
+                          <div className="flex items-center space-x-2 mb-1">
+                            {rec.icon}
                             <span className="text-xs text-zinc-400">{rec.type}</span>
                           </div>
                           <p className="text-xs text-zinc-300">{rec.message}</p>
