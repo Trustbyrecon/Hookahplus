@@ -28,7 +28,7 @@ function generateRichDemoData(): FireSession[] {
       coalStatus: 'active',
       refillStatus: 'none',
       notes: 'VIP customer - extra attention to detail',
-      edgeCase: false,
+      edgeCase: null,
       bohState: 'PREPARING',
       guestTimerDisplay: false
     },
@@ -49,7 +49,7 @@ function generateRichDemoData(): FireSession[] {
       coalStatus: 'heating',
       refillStatus: 'none',
       notes: 'Coals heating up - almost ready',
-      edgeCase: false,
+      edgeCase: null,
       bohState: 'HEATING',
       guestTimerDisplay: false
     },
@@ -70,7 +70,7 @@ function generateRichDemoData(): FireSession[] {
       coalStatus: 'ready',
       refillStatus: 'none',
       notes: 'Ready for FOH pickup',
-      edgeCase: false,
+      edgeCase: null,
       bohState: 'READY',
       guestTimerDisplay: false
     },
@@ -93,7 +93,7 @@ function generateRichDemoData(): FireSession[] {
       coalStatus: 'active',
       refillStatus: 'none',
       notes: 'En route to table - 2 minutes away',
-      edgeCase: false,
+      edgeCase: null,
       bohState: 'DELIVERED',
       guestTimerDisplay: true,
       sessionTimer: {
@@ -120,7 +120,7 @@ function generateRichDemoData(): FireSession[] {
       coalStatus: 'active',
       refillStatus: 'none',
       notes: 'Delivered and active - customer enjoying',
-      edgeCase: false,
+      edgeCase: null,
       bohState: 'DELIVERED',
       guestTimerDisplay: true,
       sessionTimer: {
@@ -149,7 +149,7 @@ function generateRichDemoData(): FireSession[] {
       coalStatus: 'paused',
       refillStatus: 'none',
       notes: 'Customer requested flavor change - on hold',
-      edgeCase: true,
+      edgeCase: 'Customer requested flavor change - on hold',
       bohState: 'HOLD',
       guestTimerDisplay: false
     },
@@ -170,7 +170,7 @@ function generateRichDemoData(): FireSession[] {
       coalStatus: 'blocked',
       refillStatus: 'none',
       notes: 'Out of strawberry flavor - waiting for restock',
-      edgeCase: true,
+      edgeCase: 'Customer requested flavor change - on hold',
       bohState: 'BLOCKED',
       guestTimerDisplay: false
     },
@@ -191,7 +191,7 @@ function generateRichDemoData(): FireSession[] {
       coalStatus: 'remaking',
       refillStatus: 'none',
       notes: 'Customer not satisfied with flavor - remaking',
-      edgeCase: true,
+      edgeCase: 'Customer requested flavor change - on hold',
       bohState: 'REMAKING',
       guestTimerDisplay: false
     }

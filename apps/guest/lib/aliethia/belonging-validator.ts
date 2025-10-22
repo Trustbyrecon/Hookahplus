@@ -156,7 +156,7 @@ export class AliethiaBelongingSignalsValidator {
   /**
    * Create belonging moment with enhanced community signals
    */
-  private async createBelongingMoment(
+  async createBelongingMoment(
     type: 'qr_scan' | 'flavor_selection' | 'session_start' | 'payment_complete' | 'community_interaction',
     userJourney: string,
     communitySignal: string
