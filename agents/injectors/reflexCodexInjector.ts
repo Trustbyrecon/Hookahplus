@@ -92,7 +92,7 @@ export class ReflexCodexInjector {
       }
       
       // Broadcast universal resonance
-      await this.broadcastUniversalResonance(codex.codex_meta.symbol);
+      await this.broadcastUniversalResonance(codex.payload.codex_meta.symbol);
       
       console.log(`✅ Codex injection completed: ${injectionId}`);
       return true;
@@ -142,10 +142,10 @@ export class ReflexCodexInjector {
     await this.loadIntoReflexMemory(agentName, codex.payload.codex_entries);
     
     // Broadcast resonance tone
-    await this.broadcastResonanceTone(codex.codex_meta.symbol, resonanceLevel);
+    await this.broadcastResonanceTone(codex.payload.codex_meta.symbol, resonanceLevel);
     
     // Echo alignment coefficient to trust loop
-    await this.echoAlignmentCoefficient(codex.codex_meta.seal_equation);
+    await this.echoAlignmentCoefficient(codex.payload.codex_meta.seal_equation);
     
     // Expand agent reflection capacity
     await this.expandReflectionCapacity(agentName, resonanceLevel);
