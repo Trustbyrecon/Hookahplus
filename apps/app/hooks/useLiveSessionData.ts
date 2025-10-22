@@ -50,7 +50,7 @@ function generateRichDemoData(): FireSession[] {
       refillStatus: 'none',
       notes: 'Coals heating up - almost ready',
       edgeCase: null,
-      bohState: 'HEATING',
+      bohState: 'WARMING_UP',
       guestTimerDisplay: false
     },
     {
@@ -71,7 +71,7 @@ function generateRichDemoData(): FireSession[] {
       refillStatus: 'none',
       notes: 'Ready for FOH pickup',
       edgeCase: null,
-      bohState: 'READY',
+      bohState: 'READY_FOR_PICKUP',
       guestTimerDisplay: false
     },
 
@@ -94,7 +94,7 @@ function generateRichDemoData(): FireSession[] {
       refillStatus: 'none',
       notes: 'En route to table - 2 minutes away',
       edgeCase: null,
-      bohState: 'DELIVERED',
+      bohState: 'PICKED_UP',
       guestTimerDisplay: true,
       sessionTimer: {
         remaining: 25 * 60, // 25 minutes left
@@ -121,7 +121,7 @@ function generateRichDemoData(): FireSession[] {
       refillStatus: 'none',
       notes: 'Delivered and active - customer enjoying',
       edgeCase: null,
-      bohState: 'DELIVERED',
+      bohState: 'PICKED_UP',
       guestTimerDisplay: true,
       sessionTimer: {
         remaining: 15 * 60, // 15 minutes left
@@ -150,7 +150,7 @@ function generateRichDemoData(): FireSession[] {
       refillStatus: 'none',
       notes: 'Customer requested flavor change - on hold',
       edgeCase: 'Customer requested flavor change - on hold',
-      bohState: 'HOLD',
+      bohState: 'PREPARING',
       guestTimerDisplay: false
     },
     {
@@ -171,7 +171,7 @@ function generateRichDemoData(): FireSession[] {
       refillStatus: 'none',
       notes: 'Out of strawberry flavor - waiting for restock',
       edgeCase: 'Customer requested flavor change - on hold',
-      bohState: 'BLOCKED',
+      bohState: 'PREPARING',
       guestTimerDisplay: false
     },
     {
@@ -192,7 +192,7 @@ function generateRichDemoData(): FireSession[] {
       refillStatus: 'none',
       notes: 'Customer not satisfied with flavor - remaking',
       edgeCase: 'Customer requested flavor change - on hold',
-      bohState: 'REMAKING',
+      bohState: 'PREPARING',
       guestTimerDisplay: false
     }
   ];
