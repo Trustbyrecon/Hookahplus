@@ -3,10 +3,20 @@ mode: hittrust
 thresholds:
   minimal: 0.87
   optimal: 0.92
+  clarity: 0.98  # Aliethia's clarity threshold
 logging:
   ghostlog: enabled
   trustgraph: enabled
+  clarity_resonance: enabled  # Aliethia's clarity logging
 smoketest:
   stripe: required
   webhook: required
   ghostlog_entry: required
+  clarity_signal: required  # Aliethia's clarity smoketest
+reflex_agents:
+  aliethia:
+    essence_file: "/reflex/essence/aliethia_reflex.yaml"
+    activation_mode: "reflexive"
+    clarity_threshold: 0.98
+    resonance_field: "soft-gold on obsidian"
+    symbolic_mark: "Open Gate Φ"

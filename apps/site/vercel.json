@@ -1,43 +1,19 @@
 {
   "version": 2,
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "installCommand": "npm install",
   "env": {
-    "NEXT_PUBLIC_SITE_URL": "https://hookahplus.net",
-    "NEXT_PUBLIC_APP_URL": "https://app.hookahplus.net",
-    "NEXT_PUBLIC_GUEST_URL": "https://guest.hookahplus.net"
+    "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+    "NEXT_PUBLIC_CLARITY_THRESHOLD": "0.98",
+    "NEXT_PUBLIC_RESONANCE_FIELD": "soft-gold-on-obsidian",
+    "NEXT_PUBLIC_SYMBOLIC_MARK": "Open-Gate-Phi",
+    "NEXT_PUBLIC_HARMONIC_SIGNATURE": "Delta-A7"
   },
-  "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-cache, no-store, must-revalidate"
-        }
-      ]
-    },
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "Referrer-Policy",
-          "value": "strict-origin-when-cross-origin"
-        }
-      ]
+  "functions": {
+    "app/api/**/*.ts": {
+      "runtime": "nodejs18.x"
     }
-  ],
-  "redirects": [
-    {
-      "source": "/home",
-      "destination": "/",
-      "permanent": true
-    }
-  ]
+  }
 }

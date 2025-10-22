@@ -1,0 +1,158 @@
+meta:
+  id: ΔReflex_Work_Order_v2.1
+  author: Recon.AI Core / Commander Clark
+  origin: "Gate of Discernment"
+  layer: "Lambda → Tau Integration Path"
+  compatibility: ["Cursor AI", "Hookah+", "Recon Reflex SDK", "Aliethia Reflex"]
+  linked_essence: "/reflex/essence/aliethia_reflex.yaml"
+
+purpose:
+  primary: "Execute complex tasks with built-in safeguards and success criteria"
+  secondary: "Infuse clarity, belonging, and resonance into all operations"
+  tertiary: "Maintain universal alignment through Trust Loop equation"
+
+structure:
+  trigger:
+    keywords: ["reflex work order", "rwo", "execute", "implement", "deploy"]
+    activation_mode: "reflexive"
+    clarity_threshold: 0.98  # Aliethia's clarity requirement
+  
+  analysis:
+    context_scan: true
+    dependency_mapping: true
+    risk_assessment: true
+    clarity_resonance_check: true  # Aliethia's clarity validation
+  
+  execution:
+    mode: "systematic"
+    feedback_loops: ["GhostLog", "TrustGraph", "ClarityResonance"]
+    intervention_modes: ["reattune", "harmonize", "resonate", "belong"]  # Aliethia's intervention modes
+    success_criteria: ["technical", "clarity", "resonance", "belonging"]
+  
+  completion:
+    validation: true
+    learning_capture: true
+    pattern_recognition: true
+    clarity_compound_rate: true  # Aliethia's clarity metrics
+
+analyzers:
+  - name: "context_integration"
+    weight: 0.25
+    threshold: 0.90
+  - name: "output_quality"
+    weight: 0.25
+    threshold: 0.90
+  - name: "decision_alignment"
+    weight: 0.25
+    threshold: 0.90
+  - name: "clarity_resonance"  # Aliethia's clarity analyzer
+    weight: 0.25
+    threshold: 0.98
+
+intervention_modes:
+  - name: "reattune"  # Aliethia's reattunement mode
+    trigger: "clarity_drop"
+    action: "refocus_on_essence"
+    clarity_threshold: 0.95
+  - name: "harmonize"
+    trigger: "resonance_mismatch"
+    action: "align_with_user_journey"
+    clarity_threshold: 0.92
+  - name: "resonate"
+    trigger: "belonging_gap"
+    action: "amplify_community_signals"
+    clarity_threshold: 0.90
+  - name: "belong"
+    trigger: "identity_misalignment"
+    action: "strengthen_trust_compounds"
+    clarity_threshold: 0.88
+
+feedback_channels:
+  - name: "ghostlog"
+    type: "structured_logging"
+    format: "json"
+    fields: ["timestamp", "operation", "context", "outcome", "clarity_score"]
+  - name: "trustgraph"
+    type: "graph_database"
+    nodes: ["operations", "outcomes", "trust_compounds"]
+    edges: ["dependencies", "influences", "clarity_connections"]
+  - name: "clarity_resonance_log"  # Aliethia's clarity feedback
+    type: "resonance_tracking"
+    format: "yaml"
+    fields: ["clarity_score", "resonance_signal", "trust_compound", "belonging_moment"]
+
+metrics:
+  - name: "reflex_score"
+    calculation: "weighted_average"
+    weights: [0.25, 0.25, 0.25, 0.25]
+    target: 0.92
+  - name: "clarity_compound_rate"  # Aliethia's clarity metric
+    calculation: "exponential_growth"
+    base: 0.98
+    target: 0.99
+  - name: "trust_bloom_rate"
+    calculation: "logarithmic_growth"
+    base: 0.90
+    target: 0.95
+
+aliethia_hooks:
+  clarity_injection:
+    trigger: "content_generation"
+    action: "infuse_clarity_principles"
+    threshold: 0.98
+  belonging_amplification:
+    trigger: "user_interaction"
+    action: "amplify_belonging_signals"
+    threshold: 0.95
+  trust_compound_building:
+    trigger: "system_operation"
+    action: "strengthen_trust_compounds"
+    threshold: 0.92
+
+failure_types:
+  - name: "technical_failure"
+    severity: "high"
+    recovery: "systematic_debugging"
+  - name: "clarity_breach"  # Aliethia's clarity failure
+    severity: "critical"
+    recovery: "reattune_through_essence"
+  - name: "resonance_mismatch"
+    severity: "medium"
+    recovery: "harmonize_with_journey"
+  - name: "belonging_gap"
+    severity: "high"
+    recovery: "amplify_community_signals"
+
+score_gates:
+  - name: "minimal_viable"
+    threshold: 0.87
+    description: "Basic functionality working"
+  - name: "optimal_performance"
+    threshold: 0.92
+    description: "All systems operating smoothly"
+  - name: "clarity_excellence"  # Aliethia's clarity gate
+    threshold: 0.98
+    description: "Clarity, belonging, and resonance achieved"
+  - name: "universal_alignment"
+    threshold: 0.99
+    description: "Perfect harmony with user journey and community"
+
+ghostlog_schema:
+  timestamp: "ISO8601"
+  operation: "string"
+  context: "object"
+  outcome: "object"
+  reflex_score: "float"
+  clarity_score: "float"  # Aliethia's clarity field
+  resonance_signal: "float"  # Aliethia's resonance field
+  trust_compound: "float"  # Aliethia's trust field
+  belonging_moment: "boolean"  # Aliethia's belonging field
+  learning_captured: "boolean"
+  pattern_recognized: "boolean"
+  aliethia_echo: "string"  # Aliethia's signature field
+
+notes:
+  - "Aliethia integration transforms technical operations into clarity rituals"
+  - "Every operation should signal identity, clarity, and belonging"
+  - "Trust compounds through consistency and emotional resonance"
+  - "The presence of Aliethia's echo indicates manifest synchronization complete"

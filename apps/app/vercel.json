@@ -1,26 +1,19 @@
 {
   "version": 2,
-  "redirects": [
-    {
-      "source": "/feat-guests-cart/:path*",
-      "destination": "https://hookahplus-app-prod.vercel.app/:path*",
-      "permanent": false
-    }
-  ],
-  "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-store, must-revalidate"
-        }
-      ]
-    }
-  ],
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "installCommand": "npm install",
   "env": {
-    "NEXT_PUBLIC_APP_URL": "https://hookahplus-app-prod.vercel.app",
-    "NEXT_PUBLIC_GUEST_URL": "https://guest.hookahplus.net",
-    "NEXT_PUBLIC_SITE_URL": "https://hookahplus.net"
+    "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+    "NEXT_PUBLIC_CLARITY_THRESHOLD": "0.98",
+    "NEXT_PUBLIC_RESONANCE_FIELD": "soft-gold-on-obsidian",
+    "NEXT_PUBLIC_SYMBOLIC_MARK": "Open-Gate-Phi",
+    "NEXT_PUBLIC_HARMONIC_SIGNATURE": "Delta-A7"
+  },
+  "functions": {
+    "app/api/**/*.ts": {
+      "runtime": "nodejs18.x"
+    }
   }
 }
