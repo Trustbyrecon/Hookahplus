@@ -126,7 +126,7 @@ export class AliethiaResonanceActivator {
   /**
    * Create harmonized belonging moment
    */
-  private async createHarmonizedBelongingMoment(
+  async createHarmonizedBelongingMoment(
     type: 'qr_scan' | 'flavor_selection' | 'session_start' | 'payment_complete' | 'community_interaction',
     userJourney: string,
     communitySignal: string
