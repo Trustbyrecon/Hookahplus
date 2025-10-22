@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { aliethiaBelongingValidator } from '../../../lib/aliethia/belonging-validator';
+import { aliethiaBelongingValidator } from '../../../../lib/aliethia/belonging-validator';
 
 /**
  * Aliethia Belonging Signals Validation API Endpoint (Guest App)

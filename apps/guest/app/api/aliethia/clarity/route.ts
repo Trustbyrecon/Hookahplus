@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { aliethiaValidator } from '../../../lib/aliethia/clarity-validator';
+import { aliethiaValidator } from '../../../../lib/aliethia/clarity-validator';
 
 /**
  * Aliethia Clarity Validation API Endpoint (Guest App)
