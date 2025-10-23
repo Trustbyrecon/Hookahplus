@@ -107,3 +107,17 @@ model ReflexEvent {
   @@index([type, createdAt])
   @@index([ip, type, payloadHash, createdAt])
 }
+
+model SettlementReconciliation {
+  id              String   @id @default(cuid())
+  stripeChargeId  String?  // Stripe charge ID
+  amount          Int?     // Amount in cents
+  currency        String?  // Currency code
+  status          String   @default("pending") // pending, matched, orphaned
+  matchedAt       DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status])
+  @@index([stripeChargeId])
+}
