@@ -801,7 +801,7 @@ export default function GuestPortal() {
                         window.open(trackerUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
                     }}
                   >
-                      Dashboard
+                      Hookah Tracker
                   </Button>
                   </div>
                 </div>
