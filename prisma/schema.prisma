@@ -131,6 +131,7 @@ model PosTicket {
   id              String   @id @default(cuid())
   ticketId        String   // POS system ticket ID
   stripeChargeId  String?  // Associated Stripe charge ID
+  sessionId       String?  // Associated session ID
   amount          Int?     // Amount in cents
   currency        String?  // Currency code
   status          String   @default("pending") // pending, paid, refunded
@@ -139,5 +140,6 @@ model PosTicket {
 
   @@index([ticketId])
   @@index([stripeChargeId])
+  @@index([sessionId])
   @@index([status])
 }
