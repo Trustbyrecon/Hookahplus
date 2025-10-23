@@ -206,7 +206,7 @@ class Ktl4HealthChecker {
 
         actualValue = orphanedCharges.length.toString();
         details.orphanedCharges = orphanedCharges.length;
-        details.orphanedAmount = orphanedCharges.reduce((sum, charge) => sum + charge.amountCents, 0);
+        details.orphanedAmount = orphanedCharges.reduce((sum, charge) => sum + charge.amount, 0);
 
         if (orphanedCharges.length > parseInt(config.threshold)) {
           status = orphanedCharges.length > 10 ? 'critical' : 'degraded';
