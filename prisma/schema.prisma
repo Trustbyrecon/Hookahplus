@@ -105,6 +105,9 @@ model Session {
   priceCents   Int?     // Price in cents
   orderItems   String?  // JSON as string for SQLite compatibility
   posMode      String?  // POS integration mode
+  durationSecs Int?     // Session duration in seconds
+  startedAt    DateTime? // Session start time
+  endedAt      DateTime? // Session end time
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   events       SessionEvent[]
