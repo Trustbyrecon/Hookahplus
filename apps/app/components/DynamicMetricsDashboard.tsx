@@ -14,7 +14,7 @@ import {
   Zap,
   Activity
 } from 'lucide-react';
-import { useTheme } from '@/contexts/ThemeContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface LiveMetrics {
   activeSessions: number;
