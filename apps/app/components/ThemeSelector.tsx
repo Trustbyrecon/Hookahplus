@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
-import { useTheme, ThemeName } from '@/contexts/ThemeContext';
+import { useTheme, ThemeName } from '../contexts/ThemeContext';
 
 interface ThemeSelectorProps {
   className?: string;
