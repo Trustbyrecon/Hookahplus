@@ -135,6 +135,8 @@ model PosTicket {
   amount          Int?     // Amount in cents
   currency        String?  // Currency code
   status          String   @default("pending") // pending, paid, refunded
+  posSystem       String?  // POS system identifier
+  items           String?  // JSON string of items
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
