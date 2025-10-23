@@ -8,7 +8,7 @@ let stripe: Stripe | null = null;
 try {
   if (process.env.STRIPE_SECRET_KEY) {
     stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: '2025-08-27.basil',
+      apiVersion: '2023-10-16',
       timeout: 30000,
       maxNetworkRetries: 3,
       telemetry: false,
