@@ -4,11 +4,11 @@
 // Build timestamp: 2025-10-16T17:20:00Z
 import React, { useState, useEffect } from 'react';
 import Card from '../components/Card';
-import DollarTestButton from '@/components/DollarTestButton';
+import DollarTestButton from '../components/DollarTestButton';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
 import { StatusIndicator } from '../components/StatusIndicator';
-import { useCart } from '@/components/cart/CartProvider';
+import { useCart } from '../components/cart/CartProvider';
 import { SessionTimerAwareness } from '../components/SessionTimerAwareness';
 import GlobalNavigation from '../components/GlobalNavigation';
 import { HookahTracker } from '../components/HookahTracker';
