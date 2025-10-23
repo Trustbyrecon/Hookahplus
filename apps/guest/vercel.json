@@ -10,10 +10,5 @@
     "NEXT_PUBLIC_RESONANCE_FIELD": "soft-gold-on-obsidian",
     "NEXT_PUBLIC_SYMBOLIC_MARK": "Open-Gate-Phi",
     "NEXT_PUBLIC_HARMONIC_SIGNATURE": "Delta-A7"
-  },
-  "functions": {
-    "app/api/**/*.ts": {
-      "runtime": "nodejs18.x"
-    }
   }
 }
