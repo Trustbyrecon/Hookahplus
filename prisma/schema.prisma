@@ -82,6 +82,8 @@ model SessionTransition {
   fromState   String
   toState     String
   transition  String
+  userId      String?  // User who triggered the transition
+  note        String?  // Additional notes about the transition
   createdAt   DateTime @default(now())
   session     Session  @relation(fields: [sessionId], references: [id])
 
