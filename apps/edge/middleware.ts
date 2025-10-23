@@ -14,7 +14,7 @@ export function middleware(req: NextRequest) {
   if (!hasCookie) {
     const token = u || cryptoRandom(12);
     const res = NextResponse.next({ request: { headers: req.headers } });
-    res.cookies.set(COOKIE, token, { httpOnly: true, sameSite: "Lax", path: "/" });
+    res.cookies.set(COOKIE, token, { httpOnly: true, sameSite: "lax", path: "/" });
     res.headers.set("x-guest-id-ephem", token); // dev aid
     return res;
   }
