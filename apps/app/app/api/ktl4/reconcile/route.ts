@@ -237,7 +237,7 @@ async function fixOrphanedCharges(operatorId?: string) {
           ticketId,
           sessionId: charge.sessionId,
           stripeChargeId: charge.stripeChargeId,
-          amountCents: charge.amount,
+          amount: charge.amount,
           status: 'paid',
           posSystem: 'repair_generated',
           items: JSON.stringify([{ name: 'Hookah Session', price: charge.amount }])
