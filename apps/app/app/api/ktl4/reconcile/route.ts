@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '../../../../lib/db';
-import { ktl4GhostLog, createKtl4RepairRun } from '@/lib/ktl4-ghostlog';
+import { ktl4GhostLog, createKtl4RepairRun } from '../../../../lib/ktl4-ghostlog';
 
 const ReconciliationSchema = z.object({
   action: z.enum(['run_reconciliation', 'fix_orphaned', 'manual_match']),

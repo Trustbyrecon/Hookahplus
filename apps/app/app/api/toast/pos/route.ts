@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { makePosAdapter } from '@/lib/pos/factory';
-import type { HpOrder, HpItem, ExternalTender } from '@/lib/pos/types';
+import { makePosAdapter } from '../../../../lib/pos/factory';
+import type { HpOrder, HpItem, ExternalTender } from '../../../../lib/pos/types';
 
 /** Toast POS Integration API
  * 

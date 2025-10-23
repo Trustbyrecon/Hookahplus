@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import https from 'https';
-import { paymentRateLimit, createRateLimitResponse } from '@/lib/rate-limit';
+import { paymentRateLimit, createRateLimitResponse } from '../../../../lib/rate-limit';
 
 // Enhanced Stripe Configuration for Production
 let stripe: Stripe | null = null;

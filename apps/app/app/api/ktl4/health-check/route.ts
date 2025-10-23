@@ -6,8 +6,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { ktl4HealthChecker, runKtl4HealthCheck, runAllKtl4HealthChecks } from '@/lib/ktl4-health-checker';
-import { getKtl4HealthStatus, getKtl4CriticalEvents } from '@/lib/ktl4-ghostlog';
+import { ktl4HealthChecker, runKtl4HealthCheck, runAllKtl4HealthChecks } from '../../../../lib/ktl4-health-checker';
+import { getKtl4HealthStatus, getKtl4CriticalEvents } from '../../../../lib/ktl4-ghostlog';
 
 const HealthCheckSchema = z.object({
   flowName: z.enum(['payment_settlement', 'session_lifecycle', 'order_intake', 'pos_sync']),

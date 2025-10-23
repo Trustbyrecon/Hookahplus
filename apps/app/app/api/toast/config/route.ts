@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { makePosAdapter } from '@/lib/pos/factory';
+import { makePosAdapter } from '../../../../lib/pos/factory';
 
 /** Toast Configuration API
  * 

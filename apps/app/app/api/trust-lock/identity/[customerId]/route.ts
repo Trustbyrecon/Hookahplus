@@ -2,10 +2,10 @@
 // GET /api/trust-lock/identity/:customerId
 
 import { NextRequest, NextResponse } from 'next/server';
-import { trustLockService } from '@/lib/trustLockService';
-import { sessionNotesLoyaltyBinding } from '@/lib/sessionNotesLoyaltyBinding';
-import { ghostLogLite } from '@/lib/ghostLogLite';
-import { reflexiveBadgeEngine } from '@/lib/reflexiveBadgeEngine';
+import { trustLockService } from '../../../../../lib/trustLockService';
+import { sessionNotesLoyaltyBinding } from '../../../../../lib/sessionNotesLoyaltyBinding';
+import { ghostLogLite } from '../../../../../lib/ghostLogLite';
+import { reflexiveBadgeEngine } from '../../../../../lib/reflexiveBadgeEngine';
 
 export async function GET(req: NextRequest, { params }: { params: { customerId: string } }) {
   try {

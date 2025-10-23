@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { MockSessionStore } from "@/lib/mockSessionStore";
+import { MockSessionStore } from "../../../../lib/mockSessionStore";
 
 // GET session status
 export async function GET(req: NextRequest) {

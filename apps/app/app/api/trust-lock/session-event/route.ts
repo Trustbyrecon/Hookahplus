@@ -1,8 +1,8 @@
 // Trust Lock Session Event API
 import { NextRequest, NextResponse } from 'next/server';
-import { trustLockService } from '@/lib/trustLockService';
-import { ghostLogLite } from '@/lib/ghostLogLite';
-import { reflexiveBadgeEngine } from '@/lib/reflexiveBadgeEngine';
+import { trustLockService } from '../../../../lib/trustLockService';
+import { ghostLogLite } from '../../../../lib/ghostLogLite';
+import { reflexiveBadgeEngine } from '../../../../lib/reflexiveBadgeEngine';
 
 export async function POST(req: NextRequest) {
   try {

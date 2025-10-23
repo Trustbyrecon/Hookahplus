@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { makePosAdapter } from '@/lib/pos/factory';
-import { ToastAdapter } from '@/lib/pos/toast';
+import { makePosAdapter } from '../../../../lib/pos/factory';
+import { ToastAdapter } from '../../../../lib/pos/toast';
 
 /** Toast Webhook Handler
  * 
