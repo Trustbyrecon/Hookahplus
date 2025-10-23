@@ -52,6 +52,7 @@ model Session {
   customerPhone String?
   flavorMix    String?  // JSON as string for SQLite compatibility
   loungeId     String
+  tableId      String?  // Table identifier for the session
   version      Int @default(1)
   edgeCase     String?  // Edge case identifier
   edgeNote     String?  // Edge case description
@@ -61,6 +62,7 @@ model Session {
   transitions  SessionTransition[]
 
   @@index([loungeId, state])
+  @@index([loungeId, tableId])
   @@unique([loungeId, externalRef]) // idempotent anchor
 }
 
