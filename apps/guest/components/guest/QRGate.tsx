@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { QRData, GuestProfile, FeatureFlags } from '@/types/guest';
+import { QRData, GuestProfile, FeatureFlags } from '../../../types/guest';
 import { createGhostLogEntry } from '../../libs/ghostlog/hash';
 import { Shield, User, Smartphone, Clock, CheckCircle } from 'lucide-react';
 
