@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
 
     // Create Stripe instance with minimal config
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: '2025-08-27.basil',
+      apiVersion: '2023-10-16',
     });
 
     console.log('[Simple Stripe Test] 💳 Creating simple PaymentIntent...');
