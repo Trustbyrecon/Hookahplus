@@ -210,8 +210,15 @@ model Ktl4HealthCheck {
   operatorId   String?
   createdAt    DateTime @default(now())
 
-  @@index([flowName])
-  @@index([checkType])
+model SessionHeartbeat {
+  id          String   @id @default(cuid())
+  sessionId   String
+  lastPing    DateTime
+  status      String   @default("active") // active, inactive, stale
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([sessionId])
+  @@index([lastPing])
   @@index([status])
-  @@index([operatorId])
 }

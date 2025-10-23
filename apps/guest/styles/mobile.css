@@ -370,6 +370,30 @@
   scroll-behavior: smooth;
 }
 
+/* iOS Touch Scrolling Fixes */
+.ios-scroll-fix {
+  -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  will-change: scroll-position;
+}
+
+.ios-touch-container {
+  touch-action: pan-y;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Fix iOS jumpy scrolling */
+.ios-smooth-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+}
+
 .mobile-no-select {
   -webkit-user-select: none;
   -moz-user-select: none;
