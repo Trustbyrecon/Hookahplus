@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { GuestProfile, FeatureFlags } from '@/types/guest';
+import { GuestProfile, FeatureFlags } from '../../../types/guest';
 import { createGhostLogEntry } from '../../libs/ghostlog/hash';
 import { History, Clock, MapPin, Star, Flame, Calendar } from 'lucide-react';
 
