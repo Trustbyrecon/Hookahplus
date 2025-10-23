@@ -12,8 +12,8 @@ import {
   Lock,
   Unlock
 } from 'lucide-react';
-import { cn } from '@/utils/cn';
-import { usePlatformDetection, PlatformUtils } from '@/utils/platformDetection';
+import { cn } from '../../utils/cn';
+import { usePlatformDetection, PlatformUtils } from '../../utils/platformDetection';
 
 /**
  * iOS-Specific Mobile Optimizations

@@ -19,7 +19,7 @@ import {
   Eye,
   Heart
 } from 'lucide-react';
-import { cn } from '@/utils/cn';
+import { cn } from '../utils/cn';
 
 interface TrackingStep {
   id: string;
