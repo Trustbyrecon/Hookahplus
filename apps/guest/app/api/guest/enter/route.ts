@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GuestEnterRequest, GuestEnterResponse, GuestProfile, QRData } from '../../../../../types/guest';
+import { GuestEnterRequest, GuestEnterResponse, GuestProfile, QRData } from '../../../../types/guest';
 import { featureFlags } from './flags';
 import { createGhostLogEntry, hashGuestEvent } from './hash';
 import { v4 as uuidv4 } from 'uuid';
