@@ -26,8 +26,11 @@ model Item {
   categoryId   String
   name         String
   description  String?
-  price        Int      // Price in cents
+  priceCents   Int      // Price in cents
   displayOrder Int      @default(0)
+  isPopular    Boolean  @default(false)
+  prepTime     Int      @default(0)
+  allergens    String   @default("")
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
