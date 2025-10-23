@@ -72,3 +72,19 @@ model SessionEvent {
 
   @@index([sessionId])
 }
+
+model ReflexEvent {
+  id            String    @id @default(cuid())
+  type          String
+  source        String    @default("ui")
+  sessionId     String?
+  paymentIntent String?
+  payload       String?   // JSON as string for SQLite compatibility
+  payloadHash   String?
+  userAgent     String
+  ip            String
+  createdAt     DateTime  @default(now())
+
+  @@index([type, createdAt])
+  @@index([ip, type, payloadHash, createdAt])
+}
