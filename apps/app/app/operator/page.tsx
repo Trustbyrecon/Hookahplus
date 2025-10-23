@@ -29,7 +29,7 @@ import {
   Wind, 
   Sparkles
 } from "lucide-react";
-import Ktl4StatusDashboard from '@/components/Ktl4StatusDashboard';
+import Ktl4StatusDashboard from '../../components/Ktl4StatusDashboard';
 
 function useReflexAgent(routeName: string) {
   useEffect(() => {
