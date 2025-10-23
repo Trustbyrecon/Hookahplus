@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import { prisma } from "@/lib/db";
+import { prisma } from "../../../../lib/db";
 
 const envLimit = Number(process.env.REFLEX_LIMIT_PER_MIN ?? 120);
 
