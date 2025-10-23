@@ -231,3 +231,65 @@ model SessionHeartbeat {
   @@index([lastPing])
   @@index([status])
 }
+
+model Partner {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  tier      String   @default("bronze") // bronze, silver, gold, platinum
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([tier])
+  @@index([isActive])
+}
+
+model PartnerStats {
+  id               String   @id @default(cuid())
+  partnerId        String
+  totalReferrals   Int      @default(0)
+  activeLounges    Int      @default(0)
+  referralsLast30d Int      @default(0)
+  qualityScore     Float    @default(0.0)
+  lastUpdated      DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([partnerId])
+  @@index([lastUpdated])
+}
+
+model Referral {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  partnerId String
+  loungeId  String
+  isActive  Boolean  @default(true)
+  uses      Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([code])
+  @@index([partnerId])
+  @@index([loungeId])
+  @@index([isActive])
+}
+
+model Payout {
+  id          String   @id @default(cuid())
+  partnerId   String
+  period      String   // YYYY-MM format
+  gross       Float
+  revSharePct Float
+  net         Float
+  status      String   @default("pending") // pending, paid, failed
+  paidAt      DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([partnerId])
+  @@index([period])
+  @@index([status])
+}
