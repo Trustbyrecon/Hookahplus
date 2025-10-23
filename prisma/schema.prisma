@@ -118,6 +118,7 @@ model SettlementReconciliation {
   status          String   @default("pending") // pending, matched, orphaned
   matchedAt       DateTime?
   reconciledAt    DateTime? // When reconciliation was completed
+  repairRunId     String?  // Repair run identifier
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
