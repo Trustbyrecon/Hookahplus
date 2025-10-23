@@ -89,7 +89,7 @@ async function main() {
     }
   ];
 
-  const createdCategories = [];
+  const createdCategories: { id: string }[] = [];
   for (const category of categories) {
     const created = await prisma.category.create({ data: category });
     createdCategories.push(created);
