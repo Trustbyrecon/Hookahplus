@@ -4,6 +4,7 @@
   "outputDirectory": ".next",
   "framework": "nextjs",
   "installCommand": "npm install",
+  "ignoreCommand": "bash ../../scripts/vercel-build-guest.sh",
   "env": {
     "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
     "NEXT_PUBLIC_CLARITY_THRESHOLD": "0.98",
