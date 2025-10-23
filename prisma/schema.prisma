@@ -112,6 +112,7 @@ model SettlementReconciliation {
   id              String   @id @default(cuid())
   stripeChargeId  String?  // Stripe charge ID
   posTicketId     String?  // POS ticket ID
+  sessionId       String?  // Session ID
   amount          Int?     // Amount in cents
   currency        String?  // Currency code
   status          String   @default("pending") // pending, matched, orphaned
@@ -123,6 +124,7 @@ model SettlementReconciliation {
   @@index([status])
   @@index([stripeChargeId])
   @@index([posTicketId])
+  @@index([sessionId])
 }
 
 model PosTicket {
