@@ -102,6 +102,9 @@ model Session {
   version      Int @default(1)
   edgeCase     String?  // Edge case identifier
   edgeNote     String?  // Edge case description
+  priceCents   Int?     // Price in cents
+  orderItems   String?  // JSON as string for SQLite compatibility
+  posMode      String?  // POS integration mode
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   events       SessionEvent[]
