@@ -248,7 +248,7 @@ model Partner {
 
 model PartnerStats {
   id               String   @id @default(cuid())
-  partnerId        String
+  partnerId        String   @unique
   totalReferrals   Int      @default(0)
   activeLounges    Int      @default(0)
   referralsLast30d Int      @default(0)
