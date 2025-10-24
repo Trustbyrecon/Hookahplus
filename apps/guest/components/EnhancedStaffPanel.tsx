@@ -282,6 +282,16 @@ export default function GuestIntelligenceDashboard({ sessionId, tableId, onClose
             category: 'premium',
             icon: <Crown className="w-4 h-4" />,
             color: 'bg-yellow-500'
+          },
+          {
+            id: 'offer_003',
+            title: 'Invite Alex M.',
+            description: 'Invite Alex M. and both get 20% off',
+            discount: 20,
+            validUntil: '2024-02-20',
+            category: 'social',
+            icon: <Users className="w-4 h-4" />,
+            color: 'bg-blue-500'
           }
         ],
         socialConnections: [
@@ -655,7 +665,7 @@ export default function GuestIntelligenceDashboard({ sessionId, tableId, onClose
                       <span>Personalized Offers</span>
                     </h4>
                     <div className="space-y-2">
-                      {behavioralMemory.engagementSeeds?.personalizedOffers?.slice(0, 2).map((offer) => (
+                      {behavioralMemory.engagementSeeds?.personalizedOffers?.map((offer) => (
                         <div key={offer.id} className="bg-zinc-800/50 rounded-lg p-3 border border-purple-500/20">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-2">
@@ -878,32 +888,6 @@ export default function GuestIntelligenceDashboard({ sessionId, tableId, onClose
           )}
         </div>
 
-        {/* Personalized Offer Section */}
-        <div className="border-t border-zinc-700 p-6 bg-gradient-to-r from-purple-900/20 to-blue-900/20">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold text-lg">🎁</span>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-white">Special Offer</h3>
-                <p className="text-sm text-zinc-300">Invite Alex M. and both get 20% off</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <div className="text-right">
-                <div className="text-2xl font-bold text-green-400">20% OFF</div>
-                <div className="text-xs text-zinc-400">For both of you</div>
-              </div>
-              <button className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-medium transition-all duration-200 transform hover:scale-105">
-                Share Offer
-              </button>
-            </div>
-          </div>
-          <div className="mt-3 text-xs text-zinc-400">
-            Valid for next visit • Terms and conditions apply
-          </div>
-        </div>
       </div>
     </div>
   );
