@@ -60,7 +60,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
           create: { 
             type: "UPDATED", 
             payloadSeal, 
-            data: { state, flavorMix, note } 
+            data: JSON.stringify({ state, flavorMix, note }) 
           } 
         }
       },

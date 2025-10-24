@@ -92,7 +92,7 @@ async function handleCreateBooking(data: any) {
         source: sessionData.source,
         externalRef: sessionData.externalRef,
         customerPhone: sessionData.customerPhone,
-        flavorMix: sessionData.flavorMix,
+        flavorMix: JSON.stringify(sessionData.flavorMix),
         trustSignature: crypto.createHash("sha256")
           .update(JSON.stringify(sessionData))
           .digest("hex"),
@@ -102,11 +102,11 @@ async function handleCreateBooking(data: any) {
             payloadSeal: crypto.createHash("sha256")
               .update(JSON.stringify({ action: 'create-booking', data }))
               .digest("hex"),
-            data: {
+            data: JSON.stringify({
               action: 'create-booking',
               originalData: data,
               idempotencyKey: createIdempotencyKey()
-            }
+            })
           }
         }
       },

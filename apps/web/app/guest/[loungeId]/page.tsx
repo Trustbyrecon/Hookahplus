@@ -1,6 +1,6 @@
 // apps/web/app/guest/[loungeId]/page.tsx
 "use client";
-import { useIdentity } from "@/components/guest/IdentityProvider";
+import { useIdentity } from "@/apps/web/components/guest/IdentityProvider";
 
 export default function GuestHome() {
   const { loading, guestId } = useIdentity();
