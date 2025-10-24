@@ -222,8 +222,8 @@ model Ktl4HealthCheck {
   checkType   String   // 'heartbeat', 'reconciliation', 'latency', 'parity'
   status      String   // 'healthy', 'degraded', 'critical', 'failed'
   details     String?  // JSON string with check details
-  threshold   String?  // Threshold that was checked
-  actualValue String?  // Actual value that triggered status
+  threshold   Int?     // Threshold that was checked
+  actualValue Int?     // Actual value that triggered status
   operatorId  String?  // Operator who triggered manual check
   createdAt   DateTime @default(now())
 

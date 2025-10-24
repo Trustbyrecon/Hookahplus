@@ -161,8 +161,8 @@ class Ktl4HealthChecker {
         checkType: result.checkType,
         status: result.status,
         details: JSON.stringify(result.details),
-        threshold: result.threshold || null,
-        actualValue: result.actualValue || null,
+        threshold: result.threshold ? Number(result.threshold) : null,
+        actualValue: result.actualValue ? Number(result.actualValue) : null,
         operatorId
       }
     });
