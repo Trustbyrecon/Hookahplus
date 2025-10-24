@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { RewardsResponse, BadgeDefinition, LoyaltyEvent } from '../../../../../../types/guest';
+import { RewardsResponse, BadgeDefinition, LoyaltyEvent } from '../../../../../types/guest';
 import { featureFlags } from './flags';
 import { createGhostLogEntry } from './hash';
 
