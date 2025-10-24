@@ -10,7 +10,7 @@ try {
   if (process.env.STRIPE_SECRET_KEY) {
     // Production-optimized Stripe configuration
     stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: '2025-08-27.basil',
+      apiVersion: '2025-08-27.basil' as any,
       timeout: 45000, // 45 seconds for production
       maxNetworkRetries: 5, // Increased retries
       telemetry: false, // Disable telemetry for better performance
