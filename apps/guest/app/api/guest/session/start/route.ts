@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { SessionStartRequest, SessionStartResponse, Session } from '../../../../../types/guest';
+import { SessionStartRequest, SessionStartResponse, Session } from '../../../../../../types/guest';
 import { featureFlags } from './flags';
 import { createGhostLogEntry, hashSessionEvent } from './hash';
 import { v4 as uuidv4 } from 'uuid';
