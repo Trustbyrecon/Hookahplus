@@ -236,7 +236,7 @@ model SettlementReconciliation {
   stripeChargeId  String?  // Stripe charge ID
   posTicketId     String?  // POS ticket ID
   sessionId       String?  // Associated session
-  amountCents     Int      // Amount in cents
+  amount          Int?     // Amount in cents
   status          String   // 'pending', 'matched', 'orphaned', 'reconciled'
   mismatchReason  String?  // Reason for mismatch if any
   repairRunId     String?  // ID of repair run that fixed it
