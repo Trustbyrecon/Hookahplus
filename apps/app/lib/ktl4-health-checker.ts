@@ -161,8 +161,8 @@ class Ktl4HealthChecker {
         checkType: result.checkType,
         status: result.status,
         details: JSON.stringify(result.details),
-        threshold: result.threshold ? Number(result.threshold) : null,
-        actualValue: result.actualValue ? Number(result.actualValue) : null,
+        threshold: result.threshold || null,
+        actualValue: result.actualValue || null,
         operatorId
       }
     });
@@ -206,7 +206,7 @@ class Ktl4HealthChecker {
 
         actualValue = orphanedCharges.length.toString();
         details.orphanedCharges = orphanedCharges.length;
-        details.orphanedAmount = orphanedCharges.reduce((sum, charge) => sum + charge.amount, 0);
+        details.orphanedAmount = orphanedCharges.reduce((sum, charge) => sum + charge.amountCents, 0);
 
         if (orphanedCharges.length > parseInt(config.threshold)) {
           status = orphanedCharges.length > 10 ? 'critical' : 'degraded';

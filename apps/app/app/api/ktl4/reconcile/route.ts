@@ -181,7 +181,7 @@ async function runReconciliation(operatorId?: string) {
         fixes.push({
           chargeId: charge.stripeChargeId,
           ticketId: matchingTicket.ticketId,
-          amount: charge.amount
+          amount: charge.amountCents
         });
       }
     }
@@ -237,10 +237,10 @@ async function fixOrphanedCharges(operatorId?: string) {
           ticketId,
           sessionId: charge.sessionId,
           stripeChargeId: charge.stripeChargeId,
-          amount: charge.amount,
+          amountCents: charge.amountCents,
           status: 'paid',
           posSystem: 'repair_generated',
-          items: JSON.stringify([{ name: 'Hookah Session', price: charge.amount }])
+          items: JSON.stringify([{ name: 'Hookah Session', price: charge.amountCents }])
         }
       });
 
@@ -259,7 +259,7 @@ async function fixOrphanedCharges(operatorId?: string) {
       fixes.push({
         chargeId: charge.stripeChargeId,
         ticketId,
-        amount: charge.amount
+        amount: charge.amountCents
       });
     }
   }
@@ -328,7 +328,7 @@ async function manualMatch(stripeChargeId: string, posTicketId: string, operator
       repairRunId,
       stripeChargeId,
       posTicketId,
-      amount: reconciliation.amount
+      amount: reconciliation.amountCents
     }
   );
 
@@ -338,7 +338,7 @@ async function manualMatch(stripeChargeId: string, posTicketId: string, operator
       repairRunId,
       stripeChargeId,
       posTicketId,
-      amount: reconciliation.amount
+      amount: reconciliation.amountCents
     }
   });
 }

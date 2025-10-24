@@ -12,9 +12,15 @@ datasource db {
 
 model Session {
   id             String      @id @default(cuid())
+  externalRef    String?     // qrToken | reservationId | stripeCheckoutId
+  source         String      // QR | RESERVE | WALK_IN | POS
+  trustSignature String
   tableId        String
   customerRef    String?
+  customerPhone  String?
   flavor         String?
+  flavorMix      String?     // JSON as string for SQLite compatibility
+  loungeId       String?
   priceCents     Int
   state          String       @default("NEW")
   edgeCase       String?     // 'EQUIPMENT_ISSUE', 'CUSTOMER_NOT_FOUND', 'PAYMENT_FAILED', 'HEALTH_SAFETY', 'OTHER'
@@ -26,6 +32,9 @@ model Session {
   durationSecs   Int?        // compute on complete
   paymentIntent  String?     // Stripe PI id
   paymentStatus  String?     // requires "succeeded" to complete
+  orderItems     String?     // JSON as string for SQLite compatibility
+  posMode        String?     // POS integration mode
+  version        Int         @default(1)
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   
@@ -39,8 +48,6 @@ model Session {
   // New fields for Pre-Order flow
   zone            String?     // 'VIP', 'Standard', 'Patio', etc.
   fohUserId       String?     // FOH staff assigned to this session
-  posMode         String?     // 'shadow', 'mirror', 'ticket'
-  orderItems      String?     // JSON string of ordered items with quantities
   specialRequests String?     // Customer special requests
   tableNotes      String?     // Notes specific to this table/session
 

@@ -188,7 +188,7 @@ model PosTicket {
   ticketId        String   // POS system ticket ID
   stripeChargeId  String?  // Associated Stripe charge ID
   sessionId       String?  // Associated session ID
-  amount          Int?     // Amount in cents
+  amountCents     Int?     // Amount in cents
   currency        String?  // Currency code
   status          String   @default("pending") // pending, paid, refunded
   posSystem       String?  // POS system identifier
