@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { EventLogRequest, EventLogResponse, AnalyticsEvent } from '../../../../../types/guest';
+import { EventLogRequest, EventLogResponse, AnalyticsEvent } from '../../../../../../types/guest';
 import { featureFlags } from './flags';
 import { createGhostLogEntry, hashGuestEvent } from './hash';
 
