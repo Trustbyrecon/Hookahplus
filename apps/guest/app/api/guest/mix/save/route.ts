@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { MixSaveRequest, MixSaveResponse, MixProfile } from '../../../../../types/guest';
+import { MixSaveRequest, MixSaveResponse, MixProfile } from "@guest-types";
 import { featureFlags } from './flags';
 import { createGhostLogEntry } from './hash';
 import { v4 as uuidv4 } from 'uuid';
