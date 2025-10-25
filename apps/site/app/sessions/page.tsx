@@ -43,9 +43,10 @@ export default function SessionsPage() {
                 className="flex items-center gap-2 bg-gradient-to-r from-orange-500/10 to-red-500/10 border-orange-500/30 text-orange-400 hover:from-orange-500/20 hover:to-red-500/20 hover:border-orange-400 transition-all duration-200 transform hover:scale-105"
                 onClick={() => {
                   console.log('Starting new session');
-                  const confirmed = window.confirm('Ready to start a new hookah session? This will open the session creation interface.');
+                  const confirmed = window.confirm('Ready to start a new hookah session? This will create a new session in the current dashboard.');
                   if (confirmed) {
-                    window.open('/fire-session-dashboard', '_blank');
+                    // Dispatch event to open create session modal
+                    window.dispatchEvent(new CustomEvent('openCreateSessionModal'));
                   }
                 }}
               >
