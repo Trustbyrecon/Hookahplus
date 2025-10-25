@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function CancelPage() {
+function CancelPageContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('sid');
 
@@ -95,5 +95,17 @@ export default function CancelPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CancelPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    }>
+      <CancelPageContent />
+    </Suspense>
   );
 }
