@@ -1,5 +1,68 @@
 /* Mobile-Optimized Styles for Hookah+ Guest App */
 
+/* Body-Owned Vertical Scrolling Optimizations */
+
+/* Base body scroll configuration */
+body {
+  /* Ensure body owns all vertical scrolling */
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  
+  /* Smooth scrolling */
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  
+  /* Prevent containers from hijacking scroll */
+  position: relative;
+}
+
+/* Remove scroll from common container patterns */
+.min-h-screen {
+  min-height: 100vh;
+  /* Don't create scroll context */
+  overflow: visible !important;
+}
+
+.flex {
+  /* Ensure flex containers don't interfere with body scroll */
+  overflow: visible !important;
+}
+
+/* Mobile-specific body scroll optimizations */
+@media (max-width: 768px) {
+  body {
+    /* Enhanced mobile scrolling */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    overscroll-behavior-y: contain;
+    
+    /* Touch optimization */
+    touch-action: pan-y;
+    
+    /* Prevent iOS bounce */
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  
+  /* Fix for iOS Safari viewport issues */
+  html {
+    height: -webkit-fill-available;
+  }
+  
+  body {
+    min-height: -webkit-fill-available;
+  }
+  
+  /* Ensure content flows naturally */
+  .mobile-content-container {
+    min-height: 100vh;
+    overflow: visible !important;
+  }
+}
+
 /* Base Mobile Styles */
 @media (max-width: 768px) {
   /* Ensure minimum touch targets */

@@ -5,6 +5,7 @@ import GlobalNavigation from '../components/GlobalNavigation'
 import { CartProvider } from '../components/cart/CartProvider'
 import { CartToggle } from '../components/cart/CartUI'
 import AnalyticsScript from '../components/AnalyticsScript'
+import ScrollManager from '../components/ScrollManager'
 
 export const metadata = {
   title: 'HookahPlus Guest Portal',
@@ -22,7 +23,8 @@ export default function RootLayout({
       <head>
         <AnalyticsScript />
       </head>
-      <body className="min-h-screen bg-zinc-950 text-white">
+      <body className="min-h-screen bg-zinc-950 text-white mobile-content-container">
+        <ScrollManager />
         <CartProvider>
           {children}
           <CartToggle />
