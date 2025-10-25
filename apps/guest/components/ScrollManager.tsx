@@ -3,52 +3,44 @@
 import { useEffect } from 'react';
 
 /**
- * ScrollManager - Ensures body owns vertical scrolling
+ * ScrollManager - Best Practice Mobile Scroll Optimization
  * 
- * This component helps manage scroll behavior by:
- * - Ensuring body owns vertical scroll
- * - Preventing containers from hijacking scroll
- * - Optimizing for mobile touch scrolling
+ * This component helps optimize scroll behavior by:
+ * - Adding mobile-specific scroll enhancements
+ * - Handling iOS Safari viewport issues
+ * - Optimizing touch scrolling without breaking natural flow
  */
 export default function ScrollManager() {
   useEffect(() => {
-    // Ensure body owns vertical scrolling
-    const ensureBodyScroll = () => {
+    // Mobile scroll optimizations
+    const optimizeMobileScroll = () => {
       const body = document.body;
       const html = document.documentElement;
       
-      // Set body scroll properties
-      body.style.overflowY = 'auto';
-      body.style.overflowX = 'hidden';
-      body.style.scrollBehavior = 'smooth';
-      
-      // iOS optimizations
-      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-        (body.style as any).webkitOverflowScrolling = 'touch';
-        body.style.overscrollBehavior = 'contain';
-        (body.style as any).overscrollBehaviorY = 'contain';
-        body.style.touchAction = 'pan-y';
+      // Only apply mobile optimizations on mobile devices
+      if (window.innerWidth <= 768) {
+        // iOS Safari viewport fix
+        if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+          html.style.height = '-webkit-fill-available';
+          body.style.minHeight = '-webkit-fill-available';
+          
+          // iOS momentum scrolling
+          (body.style as any).webkitOverflowScrolling = 'touch';
+          body.style.overscrollBehavior = 'contain';
+          body.style.touchAction = 'pan-y';
+        }
+        
+        // General mobile optimizations
+        body.style.scrollBehavior = 'smooth';
       }
-      
-      // Prevent containers from creating scroll contexts
-      const containers = document.querySelectorAll('.min-h-screen, .flex, .container');
-      containers.forEach(container => {
-        const element = container as HTMLElement;
-        if (element.style.overflowY === 'auto' || element.style.overflowY === 'scroll') {
-          element.style.overflowY = 'visible';
-        }
-        if (element.style.height === '100vh' && element.style.overflowY !== 'visible') {
-          element.style.overflowY = 'visible';
-        }
-      });
     };
     
     // Run on mount
-    ensureBodyScroll();
+    optimizeMobileScroll();
     
     // Re-run on resize (important for mobile orientation changes)
     const handleResize = () => {
-      setTimeout(ensureBodyScroll, 100);
+      setTimeout(optimizeMobileScroll, 100);
     };
     
     window.addEventListener('resize', handleResize);

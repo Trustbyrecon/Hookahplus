@@ -22,8 +22,6 @@ html {
   overflow-x: hidden;
   /* Enable smooth scrolling */
   scroll-behavior: smooth;
-  /* iOS momentum scrolling */
-  -webkit-overflow-scrolling: touch;
 }
 
 body {
@@ -35,34 +33,20 @@ body {
     )
     rgb(var(--background-start-rgb));
   
-  /* Body owns vertical scroll */
-  height: 100%;
+  /* Natural body scrolling */
+  min-height: 100vh;
   overflow-x: hidden;
-  overflow-y: auto;
   
-  /* Smooth scrolling optimizations */
+  /* Smooth scrolling */
   scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
   
   /* Prevent horizontal scroll */
   max-width: 100vw;
-  
-  /* iOS touch scrolling fixes */
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
-  will-change: scroll-position;
 }
 
 /* Ensure all containers respect viewport width */
 * {
   box-sizing: border-box;
-}
-
-/* Prevent containers from creating their own scroll contexts */
-.container-scroll-fix {
-  overflow: visible !important;
-  height: auto !important;
-  max-height: none !important;
 }
 
 /* Mobile-optimized scrolling */
@@ -71,9 +55,6 @@ body {
     /* Enhanced mobile scrolling */
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
-    
-    /* Prevent bounce scrolling on iOS */
-    overscroll-behavior-y: contain;
     
     /* Touch action optimization */
     touch-action: pan-y;
