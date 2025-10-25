@@ -3,7 +3,7 @@
 // Author: Recon.AI Core / Commander Clark
 // Origin: Gate of Discernment
 
-import { ClarityFingerprint, BelongingMoment, TrustCompound } from '../types/aliethia_reflex';
+import { ClarityFingerprint, BelongingMoment, TrustCompound } from '../../types/aliethia_reflex';
 
 export class AliethiaResonanceActivator {
   private resonanceField: string = 'soft-gold-on-obsidian';

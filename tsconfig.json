@@ -40,6 +40,9 @@
   "exclude": [
     "node_modules",
     "hookahplus-vercel-boilerplate/**/*",
-    "tests/**/*"
+    "hookahplus-v2-/**/*",
+    "vercel-deploy/**/*",
+    "tests/**/*",
+    "cypress/**/*"
   ]
 }

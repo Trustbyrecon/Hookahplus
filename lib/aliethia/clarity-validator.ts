@@ -3,7 +3,7 @@
 // Author: Recon.AI Core / Commander Clark
 // Origin: Gate of Discernment
 
-import { ClarityFingerprint, ClarityValidationResult, BelongingMoment, TrustCompound } from '../types/aliethia_reflex';
+import { ClarityFingerprint, ClarityValidationResult, BelongingMoment, TrustCompound } from '../../types/aliethia_reflex';
 
 export class AliethiaClarityValidator {
   private clarityThreshold: number = 0.98;

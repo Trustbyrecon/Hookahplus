@@ -5,7 +5,7 @@
  * Option 3: Predictive Flow Integration with Continuous Proactive Prompts
  */
 
-import { initializeAutoAgenticFlow } from './flow-controller';
+import { initializeAutoAgenticFlow } from '../lib/auto-agentic/flow-controller';
 
 // Initialize the auto-agentic flow controller
 const flowController = initializeAutoAgenticFlow({

@@ -35,7 +35,11 @@ export type ExternalTender = {
   currency: "USD";
 };
 
-export type AttachResult = { pos_order_id: string; created: boolean };
+export type AttachResult = { 
+  pos_order_id: string; 
+  created: boolean; 
+  metadata?: Record<string, any>;
+};
 
 export interface PosAdapter {
   /** Create or attach to an open ticket in the POS for this table/order */
@@ -49,4 +53,16 @@ export interface PosAdapter {
 
   /** Health check / capabilities */
   capabilities(): Promise<{ orderInjection: boolean; externalTender: boolean }>;
+
+  /** Get restaurant configuration (optional - Toast specific) */
+  getRestaurantConfig?(): Promise<{ name: string; guid: string; status: string }>;
+
+  /** Get menu items (optional - Toast specific) */
+  getMenuItems?(): Promise<Array<{ name: string; guid: string; price: number }>>;
+
+  /** Get check details (optional - Toast specific) */
+  getCheckDetails?(checkGuid: string): Promise<{ guid: string; status: string; total: number }>;
+
+  /** Verify webhook signature (optional - Toast specific) */
+  verifyWebhookSignature?(payload: string, signature: string): boolean;
 }

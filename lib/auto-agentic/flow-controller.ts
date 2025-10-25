@@ -4,7 +4,8 @@
  */
 
 import { ContinuousFlowIntegration, initializeContinuousFlow } from './continuous-flow-integration';
-import { ErrorPattern, AutoPrompt } from './auto-prompt-generator';
+import { AutoPrompt } from './auto-prompt-generator';
+import { ErrorPattern } from './predictive-flow';
 
 export interface FlowControllerConfig {
   enableAutoExecution: boolean;
