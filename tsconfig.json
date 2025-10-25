@@ -42,6 +42,7 @@
     "hookahplus-vercel-boilerplate/**/*",
     "hookahplus-v2-/**/*",
     "vercel-deploy/**/*",
+    "server/**/*",
     "tests/**/*",
     "cypress/**/*"
   ]
