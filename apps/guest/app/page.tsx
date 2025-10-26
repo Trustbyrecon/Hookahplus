@@ -15,6 +15,7 @@ import { HookahTracker } from '../components/HookahTracker';
 import { QRCodeScanner } from '../components/QRCodeScanner';
 import RealTimeSessionSync from '../components/RealTimeSessionSync';
 import GuestIntelligenceDashboard from '../components/EnhancedStaffPanel';
+import SessionControls from '../components/SessionControls';
 import { sessionManager, SessionData } from '../lib/sessionManager';
 import MobileFlavorMixSelector from '../components/customer/MobileFlavorMixSelector';
 import MobileFireSessionDashboard from '../components/customer/MobileFireSessionDashboard';
@@ -153,6 +154,9 @@ export default function GuestPortal() {
   const [trackingSessionId, setTrackingSessionId] = useState<string | null>(null);
   const [showEnhancedStaffPanel, setShowEnhancedStaffPanel] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showSessionControls, setShowSessionControls] = useState(false);
+  const [currentSessionDuration, setCurrentSessionDuration] = useState(3600); // 60 minutes in seconds
+  const [isSessionActive, setIsSessionActive] = useState(false);
   const [pricingModel, setPricingModel] = useState<'flat' | 'time-based'>('flat');
   const [sessionDuration, setSessionDuration] = useState(60); // Default 60 minutes
   
@@ -324,8 +328,32 @@ export default function GuestPortal() {
 
   const handleTrackingComplete = () => {
     setShowHookahTracker(false);
-    setShowSuccessModal(true);
+    setIsSessionActive(true);
+    setShowSessionControls(true);
     trackConversion('hookah_delivered', 25); // Track successful delivery
+  };
+
+  // Session control handlers
+  const handleRequestRefill = () => {
+    console.log('Refill requested');
+    trackEngagement('request_refill', 'session_controls');
+  };
+
+  const handleRequestCoals = () => {
+    console.log('New coals requested');
+    trackEngagement('request_coals', 'session_controls');
+  };
+
+  const handleRequestFlavorChange = () => {
+    console.log('Flavor change requested');
+    trackEngagement('request_flavor_change', 'session_controls');
+    setShowSessionControls(false);
+    // Could show flavor selector here
+  };
+
+  const handleRequestStaff = () => {
+    console.log('Staff assistance requested');
+    trackEngagement('request_staff', 'session_controls');
   };
 
   const handleSessionUpdate = (metadata: any) => {
@@ -532,8 +560,42 @@ export default function GuestPortal() {
         />
       )}
       
-      {/* Main Guest Portal - Show when not tracking */}
-      {!showHookahTracker && (
+      {/* Session Controls - Show after tracker completes */}
+      {showSessionControls && isSessionActive && !showHookahTracker && (
+        <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white p-4">
+          <GlobalNavigation currentPage="home" />
+          <div className="max-w-4xl mx-auto py-8">
+            <SessionControls
+              sessionId={trackingSessionId || 'current-session'}
+              sessionDuration={currentSessionDuration}
+              onRequestRefill={handleRequestRefill}
+              onRequestCoals={handleRequestCoals}
+              onRequestFlavorChange={handleRequestFlavorChange}
+              onRequestStaff={handleRequestStaff}
+            />
+            
+            {/* Guest Intelligence Dashboard Toggle */}
+            <div className="mt-8">
+              <button
+                onClick={() => setShowEnhancedStaffPanel(!showEnhancedStaffPanel)}
+                className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-xl font-medium transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2"
+              >
+                <Brain className="w-5 h-5" />
+                <span>{showEnhancedStaffPanel ? 'Hide' : 'Show'} Guest Intelligence</span>
+              </button>
+            </div>
+
+            {showEnhancedStaffPanel && (
+              <div className="mt-6">
+                <GuestIntelligenceDashboard />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Main Guest Portal - Show when not tracking and not in session controls */}
+      {!showHookahTracker && !showSessionControls && (
         <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white platform-optimized">
         <GlobalNavigation currentPage="home" />
       {/* Main Content */}
