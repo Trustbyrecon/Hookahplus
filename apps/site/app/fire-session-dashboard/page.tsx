@@ -23,8 +23,8 @@ export default function FireSessionDashboardPage() {
         <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-white">Enhanced Fire Session Management</h1>
-              <p className="text-zinc-400 mt-2">Advanced session controls with workflow management</p>
+              <h1 className="text-3xl font-bold text-white">🔥 Enhanced Fire Session Dashboard v2.0</h1>
+              <p className="text-zinc-400 mt-2">Advanced session controls with workflow management - ROUTE: /fire-session-dashboard</p>
             </div>
             <div className="flex items-center space-x-4">
               <Button 
