@@ -120,7 +120,7 @@ export default function SessionsPage() {
 
         {/* Enhanced Fire Session Dashboard */}
         <SimpleFSDDesign 
-          sessions={sessions}
+          sessions={[]} // Let the component generate its own demo data
           userRole="MANAGER"
           onSessionAction={(action, sessionId) => {
             console.log(`Session action: ${action} on ${sessionId}`);

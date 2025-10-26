@@ -53,44 +53,76 @@ type SessionAction =
   | 'CLAIM_PREP' 
   | 'HEAT_UP' 
   | 'READY_FOR_DELIVERY' 
-  | 'DELIVER_NOW' 
-  | 'MARK_DELIVERED' 
-  | 'START_ACTIVE' 
-  | 'PAUSE_SESSION' 
-  | 'RESUME_SESSION' 
-  | 'REQUEST_REFILL' 
-  | 'COMPLETE_REFILL' 
-  | 'CLOSE_SESSION' 
-  | 'PUT_ON_HOLD' 
-  | 'RESOLVE_HOLD' 
-  | 'REQUEST_REMAKE' 
-  | 'PROCESS_REFUND' 
-  | 'VOID_SESSION';
+  | 'DELIVER_NOW'
+  | 'MARK_DELIVERED'
+  | 'START_ACTIVE'
+  | 'PAUSE_SESSION'
+  | 'RESUME_SESSION'
+  | 'REQUEST_REFILL'
+  | 'COMPLETE_REFILL'
+  | 'CLOSE_SESSION'
+  | 'PUT_ON_HOLD'
+  | 'RESOLVE_HOLD'
+  | 'REQUEST_REMAKE'
+  | 'PROCESS_REFUND'
+  | 'VOID_SESSION'
+;
 
 type UserRole = 'BOH' | 'FOH' | 'MANAGER' | 'ADMIN';
 
-// Status Colors
+interface FireSession {
+  id: string;
+  tableId: string;
+  customerName: string;
+  flavor: string;
+  amount: number;
+  status: SessionStatus;
+  sessionTimer?: {
+    remaining: number;
+    totalDuration: number;
+    status: 'running' | 'paused' | 'stopped';
+    timerStartedAt?: number;
+    timerPausedAt?: number;
+    timerPausedDuration?: number;
+  };
+  notes?: string;
+  assignedStaff: {
+    boh: string;
+    foh: string;
+  };
+  coalStatus?: 'active' | 'needs_refill' | 'burnt_out';
+  refillStatus?: 'none' | 'requested' | 'in_progress' | 'completed';
+  // Add other relevant fields from mock data or actual session structure
+}
+
+interface SimpleFSDDesignProps {
+  sessions?: FireSession[];
+  userRole?: UserRole;
+  onSessionAction?: (action: string, sessionId: string) => void;
+  className?: string;
+}
+
+// Constants for session management
 const STATUS_COLORS: Record<SessionStatus, string> = {
-  'NEW': "bg-gray-500/20 text-gray-400",
-  'PAID_CONFIRMED': "bg-blue-500/20 text-blue-400",
-  'PREP_IN_PROGRESS': "bg-orange-500/20 text-orange-400",
-  'HEAT_UP': "bg-red-500/20 text-red-400",
-  'READY_FOR_DELIVERY': "bg-green-500/20 text-green-400",
-  'OUT_FOR_DELIVERY': "bg-purple-500/20 text-purple-400",
-  'DELIVERED': "bg-teal-500/20 text-teal-400",
-  'ACTIVE': "bg-green-500/20 text-green-400",
-  'CLOSE_PENDING': "bg-yellow-500/20 text-yellow-400",
-  'CLOSED': "bg-gray-500/20 text-gray-400",
-  'STAFF_HOLD': "bg-yellow-500/20 text-yellow-400",
-  'STOCK_BLOCKED': "bg-red-500/20 text-red-400",
-  'REMAKE': "bg-orange-500/20 text-orange-400",
-  'REFUND_REQUESTED': "bg-purple-500/20 text-purple-400",
-  'REFUNDED': "bg-gray-500/20 text-gray-400",
-  'FAILED_PAYMENT': "bg-red-500/20 text-red-400",
-  'VOIDED': "bg-red-500/20 text-red-400"
+  'NEW': 'bg-blue-500/20 text-blue-400',
+  'PAID_CONFIRMED': 'bg-green-500/20 text-green-400',
+  'PREP_IN_PROGRESS': 'bg-orange-500/20 text-orange-400',
+  'HEAT_UP': 'bg-red-500/20 text-red-400',
+  'READY_FOR_DELIVERY': 'bg-purple-500/20 text-purple-400',
+  'OUT_FOR_DELIVERY': 'bg-teal-500/20 text-teal-400',
+  'DELIVERED': 'bg-green-500/20 text-green-400',
+  'ACTIVE': 'bg-green-500/20 text-green-400',
+  'CLOSE_PENDING': 'bg-gray-500/20 text-gray-400',
+  'CLOSED': 'bg-zinc-500/20 text-zinc-400',
+  'STAFF_HOLD': 'bg-yellow-500/20 text-yellow-400',
+  'STOCK_BLOCKED': 'bg-red-500/20 text-red-400',
+  'REMAKE': 'bg-orange-500/20 text-orange-400',
+  'REFUND_REQUESTED': 'bg-purple-500/20 text-purple-400',
+  'REFUNDED': 'bg-green-500/20 text-green-400',
+  'FAILED_PAYMENT': 'bg-red-500/20 text-red-400',
+  'VOIDED': 'bg-zinc-500/20 text-zinc-400',
 };
 
-// Action to Status Mapping
 const ACTION_TO_STATUS: Record<SessionAction, SessionStatus> = {
   'CLAIM_PREP': 'PREP_IN_PROGRESS',
   'HEAT_UP': 'HEAT_UP',
@@ -98,86 +130,145 @@ const ACTION_TO_STATUS: Record<SessionAction, SessionStatus> = {
   'DELIVER_NOW': 'OUT_FOR_DELIVERY',
   'MARK_DELIVERED': 'DELIVERED',
   'START_ACTIVE': 'ACTIVE',
-  'PAUSE_SESSION': 'STAFF_HOLD',
+  'PAUSE_SESSION': 'STAFF_HOLD', // Pausing puts it on hold
   'RESUME_SESSION': 'ACTIVE',
-  'REQUEST_REFILL': 'STAFF_HOLD',
+  'REQUEST_REFILL': 'ACTIVE', // Refill is a sub-state of active
   'COMPLETE_REFILL': 'ACTIVE',
   'CLOSE_SESSION': 'CLOSE_PENDING',
   'PUT_ON_HOLD': 'STAFF_HOLD',
   'RESOLVE_HOLD': 'ACTIVE',
   'REQUEST_REMAKE': 'REMAKE',
   'PROCESS_REFUND': 'REFUND_REQUESTED',
-  'VOID_SESSION': 'VOIDED'
+  'VOID_SESSION': 'VOIDED',
 };
 
-// Status to Stage Mapping
 const STATUS_TO_STAGE: Record<SessionStatus, string> = {
-  'NEW': 'Payment',
-  'PAID_CONFIRMED': 'Payment',
-  'PREP_IN_PROGRESS': 'BOH',
-  'HEAT_UP': 'BOH',
-  'READY_FOR_DELIVERY': 'BOH',
-  'OUT_FOR_DELIVERY': 'FOH',
-  'DELIVERED': 'FOH',
-  'ACTIVE': 'FOH',
-  'CLOSE_PENDING': 'FOH',
-  'CLOSED': 'Complete',
+  'NEW': 'Order Intake',
+  'PAID_CONFIRMED': 'Order Intake',
+  'PREP_IN_PROGRESS': 'BOH Prep',
+  'HEAT_UP': 'BOH Prep',
+  'READY_FOR_DELIVERY': 'BOH Prep',
+  'OUT_FOR_DELIVERY': 'FOH Delivery',
+  'DELIVERED': 'FOH Delivery',
+  'ACTIVE': 'Active Session',
+  'CLOSE_PENDING': 'Active Session',
+  'CLOSED': 'Completed',
   'STAFF_HOLD': 'Edge Case',
   'STOCK_BLOCKED': 'Edge Case',
   'REMAKE': 'Edge Case',
   'REFUND_REQUESTED': 'Edge Case',
-  'REFUNDED': 'Complete',
+  'REFUNDED': 'Completed',
   'FAILED_PAYMENT': 'Edge Case',
-  'VOIDED': 'Complete'
+  'VOIDED': 'Cancelled',
 };
 
-// State Descriptions
 const STATE_DESCRIPTIONS: Record<SessionStatus, string> = {
-  'NEW': 'New session created, awaiting payment confirmation',
-  'PAID_CONFIRMED': 'Payment confirmed, ready for BOH preparation',
-  'PREP_IN_PROGRESS': 'Back of house is preparing the hookah',
-  'HEAT_UP': 'Coals are heating up, almost ready for delivery',
-  'READY_FOR_DELIVERY': 'Hookah is ready and waiting for FOH delivery',
-  'OUT_FOR_DELIVERY': 'FOH staff is delivering to the table',
-  'DELIVERED': 'Hookah delivered to table, session can begin',
-  'ACTIVE': 'Session is active and running',
-  'CLOSE_PENDING': 'Session is ready to be closed',
-  'CLOSED': 'Session has been completed and closed',
-  'STAFF_HOLD': 'Session is on hold, requires staff attention',
-  'STOCK_BLOCKED': 'Session blocked due to stock issues',
-  'REMAKE': 'Session requires a remake',
-  'REFUND_REQUESTED': 'Customer has requested a refund',
-  'REFUNDED': 'Refund has been processed',
-  'FAILED_PAYMENT': 'Payment failed, requires attention',
-  'VOIDED': 'Session has been voided'
+  'NEW': 'Session created, awaiting payment confirmation.',
+  'PAID_CONFIRMED': 'Payment received, session ready for BOH preparation.',
+  'PREP_IN_PROGRESS': 'Back of House is preparing the hookah.',
+  'HEAT_UP': 'Hookah coals are heating up, almost ready for delivery.',
+  'READY_FOR_DELIVERY': 'Hookah is prepared and ready to be delivered to the table.',
+  'OUT_FOR_DELIVERY': 'Hookah is currently being delivered to the guest table.',
+  'DELIVERED': 'Hookah has been delivered to the guest. Session is now active.',
+  'ACTIVE': 'Guest is actively enjoying the hookah session.',
+  'CLOSE_PENDING': 'Session is ending, awaiting final closeout and payment reconciliation.',
+  'CLOSED': 'Session successfully completed and closed.',
+  'STAFF_HOLD': 'Session is on hold due to a staff-initiated reason (e.g., customer request, issue).',
+  'STOCK_BLOCKED': 'Session is blocked due to an item being out of stock or other inventory issue.',
+  'REMAKE': 'Hookah needs to be remade due to an issue (e.g., wrong flavor, burnt).',
+  'REFUND_REQUESTED': 'A refund has been requested for this session.',
+  'REFUNDED': 'Session has been refunded.',
+  'FAILED_PAYMENT': 'Payment for this session failed.',
+  'VOIDED': 'Session has been cancelled or voided.',
 };
 
-// Action Descriptions
 const ACTION_DESCRIPTIONS: Record<SessionAction, string> = {
-  'CLAIM_PREP': 'Claim this session for BOH preparation',
-  'HEAT_UP': 'Start heating up the coals',
-  'READY_FOR_DELIVERY': 'Mark hookah as ready for FOH delivery',
-  'DELIVER_NOW': 'Start delivering to the table',
-  'MARK_DELIVERED': 'Confirm delivery to the table',
-  'START_ACTIVE': 'Start the active session',
-  'PAUSE_SESSION': 'Pause the current session',
-  'RESUME_SESSION': 'Resume a paused session',
-  'REQUEST_REFILL': 'Request a refill for the session',
-  'COMPLETE_REFILL': 'Complete the refill process',
-  'CLOSE_SESSION': 'Close the session',
-  'PUT_ON_HOLD': 'Put session on hold',
-  'RESOLVE_HOLD': 'Resolve hold and continue session',
-  'REQUEST_REMAKE': 'Request a remake of the hookah',
-  'PROCESS_REFUND': 'Process a refund for the session',
-  'VOID_SESSION': 'Void the entire session'
+  'CLAIM_PREP': 'Assigns the session to BOH staff for preparation.',
+  'HEAT_UP': 'Indicates that the coals are being heated for the hookah.',
+  'READY_FOR_DELIVERY': 'Marks the hookah as ready for Front of House delivery.',
+  'DELIVER_NOW': 'Initiates the delivery process to the guest table.',
+  'MARK_DELIVERED': 'Confirms the hookah has been delivered to the guest.',
+  'START_ACTIVE': 'Activates the session timer and marks it as active.',
+  'PAUSE_SESSION': 'Pauses the session timer and puts the session on hold.',
+  'RESUME_SESSION': 'Resumes a paused session and restarts the timer.',
+  'REQUEST_REFILL': 'Signals FOH to request a coal refill for the guest.',
+  'COMPLETE_REFILL': 'Marks the coal refill as completed by FOH.',
+  'CLOSE_SESSION': 'Initiates the session closeout process, stopping the timer.',
+  'PUT_ON_HOLD': 'Places the session on a staff-defined hold.',
+  'RESOLVE_HOLD': 'Resolves a staff-initiated hold and returns the session to active.',
+  'REQUEST_REMAKE': 'Flags the session for a remake due to quality or guest issue.',
+  'PROCESS_REFUND': 'Initiates the refund process for the session.',
+  'VOID_SESSION': 'Cancels and voids the session, typically for unrecoverable errors.',
 };
 
-interface SimpleFSDDesignProps {
-  sessions?: any[];
-  userRole?: 'BOH' | 'FOH' | 'MANAGER' | 'ADMIN';
-  onSessionAction?: (action: string, sessionId: string) => void;
-  className?: string;
-}
+// State machine for valid transitions
+const VALID_TRANSITIONS: Record<SessionStatus, SessionStatus[]> = {
+  'NEW': ['PAID_CONFIRMED', 'VOIDED'],
+  'PAID_CONFIRMED': ['PREP_IN_PROGRESS', 'VOIDED', 'REFUND_REQUESTED'],
+  'PREP_IN_PROGRESS': ['HEAT_UP', 'STAFF_HOLD', 'STOCK_BLOCKED', 'VOIDED', 'REMAKE'],
+  'HEAT_UP': ['READY_FOR_DELIVERY', 'STAFF_HOLD', 'VOIDED', 'REMAKE'],
+  'READY_FOR_DELIVERY': ['OUT_FOR_DELIVERY', 'STAFF_HOLD', 'VOIDED'],
+  'OUT_FOR_DELIVERY': ['DELIVERED', 'STAFF_HOLD', 'VOIDED'],
+  'DELIVERED': ['ACTIVE', 'STAFF_HOLD', 'VOIDED'],
+  'ACTIVE': ['CLOSE_PENDING', 'STAFF_HOLD'], // PAUSE_SESSION and REQUEST_REFILL are actions, not direct status transitions
+  'CLOSE_PENDING': ['CLOSED', 'STAFF_HOLD', 'REFUND_REQUESTED'],
+  'CLOSED': [],
+  'STAFF_HOLD': ['ACTIVE', 'VOIDED'], // RESOLVE_HOLD is an action
+  'STOCK_BLOCKED': ['PREP_IN_PROGRESS', 'VOIDED'],
+  'REMAKE': ['PREP_IN_PROGRESS', 'VOIDED'],
+  'REFUND_REQUESTED': ['REFUNDED', 'VOIDED'],
+  'REFUNDED': [],
+  'FAILED_PAYMENT': ['PAID_CONFIRMED', 'VOIDED'],
+  'VOIDED': [],
+};
+
+// Role-based permissions
+const ROLE_PERMISSIONS: Record<UserRole, SessionAction[]> = {
+  'BOH': ['CLAIM_PREP', 'HEAT_UP', 'READY_FOR_DELIVERY', 'REQUEST_REMAKE', 'PUT_ON_HOLD', 'RESOLVE_HOLD'],
+  'FOH': ['DELIVER_NOW', 'MARK_DELIVERED', 'START_ACTIVE', 'PAUSE_SESSION', 'RESUME_SESSION', 'REQUEST_REFILL', 'COMPLETE_REFILL', 'CLOSE_SESSION', 'PUT_ON_HOLD', 'RESOLVE_HOLD', 'PROCESS_REFUND'],
+  'MANAGER': ['CLAIM_PREP', 'HEAT_UP', 'READY_FOR_DELIVERY', 'DELIVER_NOW', 'MARK_DELIVERED', 'START_ACTIVE', 'PAUSE_SESSION', 'RESUME_SESSION', 'REQUEST_REFILL', 'COMPLETE_REFILL', 'CLOSE_SESSION', 'PUT_ON_HOLD', 'RESOLVE_HOLD', 'REQUEST_REMAKE', 'PROCESS_REFUND', 'VOID_SESSION'],
+  'ADMIN': ['CLAIM_PREP', 'HEAT_UP', 'READY_FOR_DELIVERY', 'DELIVER_NOW', 'MARK_DELIVERED', 'START_ACTIVE', 'PAUSE_SESSION', 'RESUME_SESSION', 'REQUEST_REFILL', 'COMPLETE_REFILL', 'CLOSE_SESSION', 'PUT_ON_HOLD', 'RESOLVE_HOLD', 'REQUEST_REMAKE', 'PROCESS_REFUND', 'VOID_SESSION'],
+};
+
+// Helper functions
+const canPerformAction = (userRole: UserRole, action: SessionAction): boolean => {
+  return ROLE_PERMISSIONS[userRole].includes(action);
+};
+
+const isValidTransition = (currentStatus: SessionStatus, targetStatus: SessionStatus): boolean => {
+  return VALID_TRANSITIONS[currentStatus]?.includes(targetStatus) || false;
+};
+
+const calculateRemainingTime = (session: FireSession): number => {
+  if (!session.sessionTimer) return 0;
+  const { totalDuration, status, timerStartedAt, timerPausedAt, timerPausedDuration } = session.sessionTimer;
+
+  if (status === 'stopped') return 0;
+
+  const now = Date.now();
+  let elapsed = 0;
+
+  if (timerStartedAt) {
+    elapsed = (now - new Date(timerStartedAt).getTime()) / 1000; // in seconds
+  }
+
+  if (timerPausedDuration) {
+    elapsed -= timerPausedDuration;
+  }
+
+  if (status === 'paused' && timerPausedAt) {
+    elapsed -= (now - new Date(timerPausedAt).getTime()) / 1000;
+  }
+
+  const remaining = Math.max(0, totalDuration - elapsed);
+  return remaining;
+};
+
+const formatDuration = (seconds: number): string => {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+  return `${minutes}m ${remainingSeconds}s`;
+};
 
 // Enhanced State Machine - Complete Hookah Lounge Operations
 const ACTION_ICONS: Record<SessionAction, React.ReactNode> = {
@@ -238,57 +329,59 @@ const STATE_ICONS: Record<SessionStatus, React.ReactNode> = {
   'VOIDED': <Ban className="w-4 h-4" />
 };
 
-// Utility Functions
-const isValidTransition = (from: SessionStatus, to: SessionStatus): boolean => {
-  const validTransitions: Record<SessionStatus, SessionStatus[]> = {
-    'NEW': ['PAID_CONFIRMED', 'FAILED_PAYMENT', 'VOIDED'],
-    'PAID_CONFIRMED': ['PREP_IN_PROGRESS', 'VOIDED'],
-    'PREP_IN_PROGRESS': ['HEAT_UP', 'STAFF_HOLD', 'STOCK_BLOCKED'],
-    'HEAT_UP': ['READY_FOR_DELIVERY', 'STAFF_HOLD'],
-    'READY_FOR_DELIVERY': ['OUT_FOR_DELIVERY', 'STAFF_HOLD'],
-    'OUT_FOR_DELIVERY': ['DELIVERED', 'STAFF_HOLD'],
-    'DELIVERED': ['ACTIVE', 'STAFF_HOLD'],
-    'ACTIVE': ['CLOSE_PENDING', 'STAFF_HOLD'],
-    'CLOSE_PENDING': ['CLOSED', 'STAFF_HOLD'],
-    'CLOSED': [],
-    'STAFF_HOLD': ['ACTIVE', 'VOIDED'],
-    'STOCK_BLOCKED': ['PREP_IN_PROGRESS', 'VOIDED'],
-    'REMAKE': ['PREP_IN_PROGRESS', 'VOIDED'],
-    'REFUND_REQUESTED': ['REFUNDED', 'VOIDED'],
-    'REFUNDED': [],
-    'FAILED_PAYMENT': ['PAID_CONFIRMED', 'VOIDED'],
-    'VOIDED': []
-  };
+// Generate rich demo data for enhanced presentation
+const generateRichDemoData = (): FireSession[] => {
+  const customers = [
+    'Alex Johnson', 'Maria Garcia', 'David Kim', 'Jennifer Lee', 'Robert Taylor',
+    'Amanda White', 'Michael Brown', 'Sarah Davis', 'Christopher Wilson', 'Lisa Chen',
+    'James Rodriguez', 'Emily Martinez', 'Daniel Thompson', 'Jessica Anderson', 'Ryan Clark'
+  ];
   
-  return validTransitions[from]?.includes(to) || false;
-};
-
-const canPerformAction = (userRole: UserRole, action: SessionAction): boolean => {
-  const rolePermissions: Record<UserRole, SessionAction[]> = {
-    'BOH': ['CLAIM_PREP', 'HEAT_UP', 'READY_FOR_DELIVERY', 'PUT_ON_HOLD', 'RESOLVE_HOLD'],
-    'FOH': ['DELIVER_NOW', 'MARK_DELIVERED', 'START_ACTIVE', 'PAUSE_SESSION', 'RESUME_SESSION', 'REQUEST_REFILL', 'COMPLETE_REFILL', 'CLOSE_SESSION', 'PUT_ON_HOLD', 'RESOLVE_HOLD'],
-    'MANAGER': ['CLAIM_PREP', 'HEAT_UP', 'READY_FOR_DELIVERY', 'DELIVER_NOW', 'MARK_DELIVERED', 'START_ACTIVE', 'PAUSE_SESSION', 'RESUME_SESSION', 'REQUEST_REFILL', 'COMPLETE_REFILL', 'CLOSE_SESSION', 'PUT_ON_HOLD', 'RESOLVE_HOLD', 'REQUEST_REMAKE', 'PROCESS_REFUND'],
-    'ADMIN': ['CLAIM_PREP', 'HEAT_UP', 'READY_FOR_DELIVERY', 'DELIVER_NOW', 'MARK_DELIVERED', 'START_ACTIVE', 'PAUSE_SESSION', 'RESUME_SESSION', 'REQUEST_REFILL', 'COMPLETE_REFILL', 'CLOSE_SESSION', 'PUT_ON_HOLD', 'RESOLVE_HOLD', 'REQUEST_REMAKE', 'PROCESS_REFUND', 'VOID_SESSION']
-  };
+  const flavors = [
+    'Blue Mist + Mint', 'Strawberry Kiss', 'Mango Tango', 'Grape Mint', 'Peach Paradise',
+    'Watermelon Chill', 'Cherry Blossom', 'Lemon Mint', 'Double Apple', 'Pineapple Express',
+    'Vanilla Dream', 'Cinnamon Roll', 'Orange Cream', 'Berry Blast', 'Tropical Punch'
+  ];
   
-  return rolePermissions[userRole]?.includes(action) || false;
-};
+  const staff = [
+    'Sarah Chen', 'Emma Davis', 'Tom Anderson', 'Rachel Green', 'Mark Thompson',
+    'Samantha Lee', 'Daniel Kim', 'Michelle Chen', 'Brandon Lee', 'Jessica Park'
+  ];
 
-const calculateRemainingTime = (session: any): number => {
-  if (!session.sessionTimer) return 0;
-  const { remaining } = session.sessionTimer;
-  return remaining || 0;
-};
+  const statuses: SessionStatus[] = [
+    'ACTIVE', 'PREP_IN_PROGRESS', 'READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 
+    'DELIVERED', 'CLOSE_PENDING', 'STAFF_HOLD', 'HEAT_UP', 'PAID_CONFIRMED'
+  ];
 
-const formatDuration = (seconds: number): string => {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
-  
-  if (hours > 0) {
-    return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  }
-  return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  return Array.from({ length: 12 }, (_, i) => {
+    const customer = customers[i % customers.length];
+    const flavor = flavors[i % flavors.length];
+    const status = statuses[i % statuses.length];
+    const amount = 2500 + (i * 200); // $25.00 to $46.00
+    
+    return {
+      id: `session-${i + 1}`,
+      tableId: `T-${String(i + 1).padStart(3, '0')}`,
+      customerName: customer,
+      flavor: flavor,
+      amount: amount,
+      status: status,
+      sessionTimer: status === 'ACTIVE' ? {
+        remaining: 1800 + (i * 300), // 30-60 minutes remaining
+        totalDuration: 3600, // 60 minutes total
+        status: 'running' as const
+      } : undefined,
+      notes: i % 3 === 0 ? `${customer} prefers mild flavors` : 
+             i % 3 === 1 ? `VIP customer - premium service` : 
+             i % 3 === 2 ? `Regular customer - knows the menu well` : undefined,
+      assignedStaff: {
+        boh: staff[i % staff.length],
+        foh: staff[(i + 1) % staff.length]
+      },
+      coalStatus: status === 'ACTIVE' ? (i % 4 === 0 ? 'needs_refill' : 'active') : undefined,
+      refillStatus: status === 'ACTIVE' ? (i % 5 === 0 ? 'requested' : 'none') : undefined
+    };
+  });
 };
 
 export default function SimpleFSDDesign({ 
@@ -299,6 +392,9 @@ export default function SimpleFSDDesign({
 }: SimpleFSDDesignProps) {
   const [activeTab, setActiveTab] = useState('overview');
   const [hoveredAction, setHoveredAction] = useState<string | null>(null);
+
+  // Use demo data if no sessions provided
+  const displaySessions = sessions.length > 0 ? sessions : generateRichDemoData();
 
   const handleCreateSession = () => {
     window.dispatchEvent(new CustomEvent('openCreateSessionModal'));
@@ -399,6 +495,15 @@ export default function SimpleFSDDesign({
     return status.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
   };
 
+  // Calculate KPIs
+  const activeSessions = displaySessions.filter(s => getSessionStatus(s) === 'ACTIVE').length;
+  const totalRevenue = displaySessions.reduce((sum, s) => sum + (s.amount || 0), 0) / 100;
+  const avgSessionTime = displaySessions.reduce((sum, s) => {
+    const timer = s.sessionTimer;
+    return sum + (timer ? timer.totalDuration / 60 : 45); // Default 45 minutes
+  }, 0) / displaySessions.length;
+  const guestSatisfaction = 94; // Mock satisfaction score
+
   return (
     <div className={className}>
       {/* Header */}
@@ -408,8 +513,8 @@ export default function SimpleFSDDesign({
             <Flame className="w-6 h-6 text-orange-400" />
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-white">Enhanced Session Management</h2>
-            <p className="text-sm text-zinc-400">Manage active hookah sessions with full workflow control</p>
+            <h2 className="text-xl font-semibold text-white">Session Management</h2>
+            <p className="text-sm text-zinc-400">Manage active hookah sessions</p>
           </div>
         </div>
         
@@ -420,6 +525,49 @@ export default function SimpleFSDDesign({
           <Plus className="w-4 h-4" />
           <span>New Session</span>
         </button>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+          <div className="flex items-center">
+            <div className="text-2xl mr-3">🔥</div>
+            <div>
+              <div className="text-2xl font-bold text-white">{activeSessions}</div>
+              <div className="text-sm text-zinc-400">Active Sessions</div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+          <div className="flex items-center">
+            <div className="text-2xl mr-3">💰</div>
+            <div>
+              <div className="text-2xl font-bold text-white">${totalRevenue.toFixed(2)}</div>
+              <div className="text-sm text-zinc-400">Total Revenue</div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+          <div className="flex items-center">
+            <div className="text-2xl mr-3">⏱️</div>
+            <div>
+              <div className="text-2xl font-bold text-white">{Math.round(avgSessionTime)}m</div>
+              <div className="text-sm text-zinc-400">Avg Session Time</div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+          <div className="flex items-center">
+            <div className="text-2xl mr-3">⭐</div>
+            <div>
+              <div className="text-2xl font-bold text-white">{guestSatisfaction}%</div>
+              <div className="text-sm text-zinc-400">Guest Satisfaction</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -449,489 +597,116 @@ export default function SimpleFSDDesign({
       {/* Tab Content */}
       {activeTab === 'overview' && (
         <div className="space-y-4">
-        {sessions.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
-              <Flame className="w-8 h-8 text-zinc-600" />
-            </div>
-            <h3 className="text-lg font-medium text-zinc-300 mb-2">No Active Sessions</h3>
-            <p className="text-zinc-500 mb-4">Create your first session to get started</p>
-            <button
-              onClick={handleCreateSession}
-              className="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
-            >
-              Create Session
-            </button>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white">Active Sessions ({displaySessions.length})</h3>
           </div>
-        ) : (
-          sessions.map((session) => {
-            const sessionStatus = getSessionStatus(session);
-            const sessionStage = getSessionStage(session);
-            const availableActions = getAvailableActions(session);
-            const sessionId = session.id || session.session_id;
-            const displayName = getSessionDisplayName(sessionStatus);
-            const statusColor = STATUS_COLORS[sessionStatus];
-            const stateIcon = STATE_ICONS[sessionStatus];
-
-            return (
-              <div
-                key={sessionId}
-                className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4 hover:bg-zinc-800/70 transition-colors"
-              >
-                {/* Session Header */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    <div className={`p-2 rounded-lg ${statusColor}`}>
-                      {stateIcon}
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-white">
-                        {session.table_id || session.tableId || 'Table Unknown'}
-                      </h3>
-                      <p className="text-sm text-zinc-400">
-                        {session.customer_name || session.customerName || 'Guest Customer'}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${statusColor}`}>
-                      {displayName}
-                    </span>
-                    <span className="text-xs text-zinc-500">
-                      {sessionStage}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Enhanced State Description */}
-                <div className="mb-3 p-2 bg-zinc-900/50 rounded text-xs text-zinc-300">
-                  <div className="flex items-center space-x-1 mb-1">
-                    <Info className="w-3 h-3" />
-                    <span className="font-medium">Current State:</span>
-                  </div>
-                  <p>{STATE_DESCRIPTIONS[sessionStatus]}</p>
-                </div>
-
-                {/* Timer Display */}
-                {session.sessionTimer && (
-                  <div className="mb-3 p-2 bg-zinc-900/30 rounded text-xs text-zinc-300">
-                    <div className="flex items-center space-x-1 mb-1">
-                      <Timer className="w-3 h-3" />
-                      <span className="font-medium">Session Timer:</span>
-                    </div>
-                    <p className="text-lg font-mono">
-                      {formatDuration(calculateRemainingTime(session))}
-                    </p>
-                  </div>
-                )}
-
-                {/* Session Notes */}
-                {session.notes && (
-                  <div className="mb-3 p-2 bg-blue-900/20 border border-blue-600/30 rounded text-xs">
-                    <div className="flex items-center space-x-1 mb-1">
-                      <span className="text-blue-400">📝</span>
-                      <span className="font-medium text-blue-300">Session Notes:</span>
-                    </div>
-                    <p className="text-blue-200">{session.notes}</p>
-                  </div>
-                )}
-
-                {/* Available Actions */}
-                {availableActions.length > 0 && (
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-1 text-xs text-zinc-400">
-                      <Zap className="w-3 h-3" />
-                      <span className="font-medium">Available Actions:</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {availableActions.map((action) => {
-                        const canPerform = canUserPerformAction(action, userRole);
-                        return (
-                          <div key={action} className="relative">
-                            <button
-                              onClick={() => canPerform && handleSessionAction(action.toLowerCase(), sessionId)}
-                              disabled={!canPerform}
-                              onMouseEnter={() => setHoveredAction(action)}
-                              onMouseLeave={() => setHoveredAction(null)}
-                              className={`flex items-center space-x-1 px-3 py-1 rounded text-xs font-medium transition-colors ${
-                                canPerform 
-                                  ? ACTION_COLORS[action]
-                                  : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                              }`}
-                            >
-                              {ACTION_ICONS[action]}
-                              <span>{action.replace(/_/g, ' ')}</span>
-                              <Info className="w-3 h-3" />
-                            </button>
-                            
-                            {/* Enhanced Business Logic Tooltip */}
-                            {hoveredAction === action && (
-                              <div className="absolute bottom-full left-0 mb-2 w-64 p-3 bg-zinc-900 border border-zinc-700 rounded-lg shadow-lg z-10">
-                                <div className="flex items-center space-x-1 mb-2">
-                                  <Info className="w-3 h-3 text-blue-400" />
-                                  <span className="text-xs font-medium text-blue-400">Business Logic</span>
-                                </div>
-                                <p className="text-xs text-zinc-300 mb-2">{ACTION_DESCRIPTIONS[action]}</p>
-                                <div className="pt-2 border-t border-zinc-700">
-                                  <p className="text-xs text-zinc-400">
-                                    <span className="font-medium">Next State:</span> {getSessionDisplayName(ACTION_TO_STATUS[action])}
-                                  </p>
-                                  <p className="text-xs text-zinc-400">
-                                    <span className="font-medium">Stage:</span> {STATUS_TO_STAGE[ACTION_TO_STATUS[action]]}
-                                  </p>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                    
-                    {/* Intelligence Button */}
-                    <div className="mt-3 pt-3 border-t border-zinc-700">
-                      <button
-                        onClick={() => window.open(`/guest-intelligence?sessionId=${sessionId}`, '_blank')}
-                        className="flex items-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors w-full justify-center"
-                      >
-                        <Brain className="w-4 h-4" />
-                        <span className="text-sm font-medium">View Intelligence</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Enhanced Session Details */}
-                <div className="mt-3 pt-3 border-t border-zinc-700 space-y-2">
-                  {session.flavor && (
-                    <p className="text-sm text-zinc-400">
-                      <span className="font-medium">Flavor:</span> {session.flavor}
-                    </p>
-                  )}
-                  {session.amount && (
-                    <p className="text-sm text-zinc-400">
-                      <span className="font-medium">Amount:</span> ${(session.amount / 100).toFixed(2)}
-                    </p>
-                  )}
-                  {session.assignedStaff?.boh && (
-                    <p className="text-sm text-zinc-400">
-                      <span className="font-medium">BOH Staff:</span> {session.assignedStaff.boh}
-                    </p>
-                  )}
-                  {session.assignedStaff?.foh && (
-                    <p className="text-sm text-zinc-400">
-                      <span className="font-medium">FOH Staff:</span> {session.assignedStaff.foh}
-                    </p>
-                  )}
-                  {session.coalStatus && (
-                    <p className="text-sm text-zinc-400">
-                      <span className="font-medium">Coal Status:</span> {session.coalStatus.replace(/_/g, ' ')}
-                    </p>
-                  )}
-                  {session.refillStatus && session.refillStatus !== 'none' && (
-                    <p className="text-sm text-zinc-400">
-                      <span className="font-medium">Refill Status:</span> {session.refillStatus.replace(/_/g, ' ')}
-                    </p>
-                  )}
-                </div>
+          
+          {displaySessions.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
+                <Flame className="w-8 h-8 text-zinc-400" />
               </div>
-            );
-          })
-        )}
-        </div>
-      )}
-
-      {/* BOH Tab */}
-      {activeTab === 'boh' && (
-        <div className="space-y-4">
-          <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
-              <Package className="w-5 h-5 text-orange-400" />
-              <span>Back of House Operations</span>
-            </h3>
-            <div className="space-y-3">
-              {sessions.filter(s => ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(s.status || s.state)).map((session) => (
-                <div key={session.id} className="bg-zinc-900/50 border border-zinc-600 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium text-white">{session.tableId || 'Unknown Table'}</h4>
-                      <p className="text-sm text-zinc-400">{session.flavor || 'Custom Mix'}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm text-orange-400 font-medium">{session.status || session.state}</p>
-                      <p className="text-xs text-zinc-500">BOH Stage</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {sessions.filter(s => ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(s.status || s.state)).length === 0 && (
-                <p className="text-zinc-400 text-center py-8">No BOH sessions in progress</p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* FOH Tab */}
-      {activeTab === 'foh' && (
-        <div className="space-y-4">
-          <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
-              <Truck className="w-5 h-5 text-teal-400" />
-              <span>Front of House Operations</span>
-            </h3>
-            <div className="space-y-3">
-              {sessions.filter(s => ['OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(s.status || s.state)).map((session) => (
-                <div key={session.id} className="bg-zinc-900/50 border border-zinc-600 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium text-white">{session.tableId || 'Unknown Table'}</h4>
-                      <p className="text-sm text-zinc-400">{session.customerName || 'Guest Customer'}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm text-teal-400 font-medium">{session.status || session.state}</p>
-                      <p className="text-xs text-zinc-500">FOH Stage</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {sessions.filter(s => ['OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(s.status || s.state)).length === 0 && (
-                <p className="text-zinc-400 text-center py-8">No FOH sessions in progress</p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Waitlist Tab */}
-      {activeTab === 'waitlist' && (
-        <div className="space-y-4">
-          <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white flex items-center space-x-2">
-                <Clock className="w-5 h-5 text-yellow-400" />
-                <span>Customer Waitlist</span>
-              </h3>
-              <button className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center space-x-2">
-                <Plus className="w-4 h-4" />
-                <span>Add to Waitlist</span>
+              <h3 className="text-lg font-semibold text-white mb-2">No Active Sessions</h3>
+              <p className="text-zinc-400 mb-4">Start a new session to begin managing your hookah lounge operations.</p>
+              <button
+                onClick={handleCreateSession}
+                className="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
+              >
+                Create First Session
               </button>
             </div>
-            
-            {/* Search and Filters */}
-            <div className="flex space-x-4 mb-6">
-              <div className="flex-1">
-                <input
-                  type="text"
-                  placeholder="Search customers..."
-                  className="w-full px-4 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:border-yellow-500"
-                />
-              </div>
-              <select className="px-4 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:border-yellow-500">
-                <option value="waiting">Waiting</option>
-                <option value="seated">Seated</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-              <select className="px-4 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:border-yellow-500">
-                <option value="all">All Priority</option>
-                <option value="vip">VIP</option>
-                <option value="normal">Normal</option>
-              </select>
-            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {displaySessions.map((session) => {
+                const status = getSessionStatus(session);
+                const stage = getSessionStage(session);
+                const availableActions = getAvailableActions(session);
+                const remainingTime = calculateRemainingTime(session);
+                
+                return (
+                  <div key={session.id} className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20 hover:border-orange-500/50 transition-all duration-200">
+                    {/* Session Header */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center space-x-2">
+                        {STATE_ICONS[status]}
+                        <span className="font-semibold text-white">{session.tableId}</span>
+                      </div>
+                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[status]}`}>
+                        {getSessionDisplayName(status)}
+                      </div>
+                    </div>
 
-            {/* Waitlist Entries */}
-            <div className="space-y-3">
-              {/* Sample waitlist entries */}
-              <div className="bg-zinc-900/50 border border-zinc-600 rounded-lg p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                      1
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-white">Sarah Johnson</h4>
-                      <p className="text-sm text-zinc-400">4 people • +1-555-0123 • 25m wait</p>
-                      <p className="text-xs text-zinc-500">Booth preferred • Regular customer</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded-full">NORMAL</span>
-                    <span className="px-2 py-1 bg-orange-500/20 text-orange-400 text-xs rounded-full">WAITING</span>
-                    <button className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition-colors">
-                      Seat
-                    </button>
-                    <button className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors">
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-zinc-900/50 border border-zinc-600 rounded-lg p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                      2
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-white">Mike Chen</h4>
-                      <p className="text-sm text-zinc-400">2 people • +1-555-0456 • 15m wait</p>
-                      <p className="text-xs text-zinc-500">VIP member</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs rounded-full">VIP</span>
-                    <span className="px-2 py-1 bg-orange-500/20 text-orange-400 text-xs rounded-full">WAITING</span>
-                    <button className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition-colors">
-                      Seat
-                    </button>
-                    <button className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors">
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-zinc-900/50 border border-zinc-600 rounded-lg p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                      3
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-white">Alex Rodriguez</h4>
-                      <p className="text-sm text-zinc-400">6 people • +1-555-0789 • 45m wait</p>
-                      <p className="text-xs text-zinc-500">Large table needed • Birthday party</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded-full">NORMAL</span>
-                    <span className="px-2 py-1 bg-orange-500/20 text-orange-400 text-xs rounded-full">WAITING</span>
-                    <button className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition-colors">
-                      Seat
-                    </button>
-                    <button className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors">
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edge Cases Tab */}
-      {activeTab === 'edge' && (
-        <div className="space-y-4">
-          <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
-              <AlertTriangle className="w-5 h-5 text-red-400" />
-              <span>Edge Cases & Escalations</span>
-            </h3>
-            <div className="space-y-3">
-              {sessions.filter(s => ['STAFF_HOLD', 'STOCK_BLOCKED', 'REMAKE', 'REFUND_REQUESTED', 'FAILED_PAYMENT'].includes(s.status || s.state)).map((session) => (
-                <div key={session.id} className="bg-red-900/20 border border-red-600/30 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium text-white">{session.tableId || 'Unknown Table'}</h4>
-                      <p className="text-sm text-zinc-400">{session.customerName || 'Guest Customer'}</p>
+                    {/* Session Details */}
+                    <div className="space-y-2 mb-4">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-zinc-400">Customer:</span>
+                        <span className="text-white font-medium">{session.customerName}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-zinc-400">Flavor:</span>
+                        <span className="text-white">{session.flavor}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-zinc-400">Duration:</span>
+                        <span className="text-white">
+                          {remainingTime > 0 ? formatDuration(remainingTime) : 'N/A'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-zinc-400">Revenue:</span>
+                        <span className="text-white font-semibold">${(session.amount / 100).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-zinc-400">Staff:</span>
+                        <span className="text-white">{session.assignedStaff.foh}</span>
+                      </div>
                       {session.notes && (
-                        <p className="text-sm text-yellow-400 mt-1">📝 {session.notes}</p>
+                        <div className="text-xs text-zinc-400 italic">
+                          {session.notes}
+                        </div>
                       )}
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm text-red-400 font-medium">{session.status || session.state}</p>
-                      <p className="text-xs text-zinc-500">Requires Attention</p>
-                    </div>
-                  </div>
-                  <div className="mt-3 flex space-x-2">
-                    <button className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors">
-                      Escalate
-                    </button>
-                    <button className="px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white text-xs rounded transition-colors">
-                      Resolve
-                    </button>
-                  </div>
-                </div>
-              ))}
-              {sessions.filter(s => ['STAFF_HOLD', 'STOCK_BLOCKED', 'REMAKE', 'REFUND_REQUESTED', 'FAILED_PAYMENT'].includes(s.status || s.state)).length === 0 && (
-                <p className="text-zinc-400 text-center py-8">No edge cases requiring attention</p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Enhanced Stats with Workflow States */}
-      {sessions.length > 0 && (
-        <div className="mt-8 space-y-4">
-          {/* Main Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4">
-              <div className="flex items-center space-x-2">
-                <Users className="w-5 h-5 text-blue-400" />
-                <span className="text-sm text-zinc-400">Total Sessions</span>
-              </div>
-              <p className="text-2xl font-bold text-white mt-1">{sessions.length}</p>
-            </div>
-            
-            <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4">
-              <div className="flex items-center space-x-2">
-                <Play className="w-5 h-5 text-green-400" />
-                <span className="text-sm text-zinc-400">Active</span>
-              </div>
-              <p className="text-2xl font-bold text-white mt-1">
-                {sessions.filter(s => (s.status || s.state) === 'ACTIVE').length}
-              </p>
-            </div>
-            
-            <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4">
-              <div className="flex items-center space-x-2">
-                <Package className="w-5 h-5 text-orange-400" />
-                <span className="text-sm text-zinc-400">BOH Prep</span>
-              </div>
-              <p className="text-2xl font-bold text-white mt-1">
-                {sessions.filter(s => ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(s.status || s.state)).length}
-              </p>
-            </div>
-            
-            <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4">
-              <div className="flex items-center space-x-2">
-                <Truck className="w-5 h-5 text-teal-400" />
-                <span className="text-sm text-zinc-400">FOH Delivery</span>
-              </div>
-              <p className="text-2xl font-bold text-white mt-1">
-                {sessions.filter(s => ['OUT_FOR_DELIVERY', 'DELIVERED'].includes(s.status || s.state)).length}
-              </p>
-            </div>
-          </div>
-
-          {/* Workflow State Breakdown */}
-          <div className="bg-zinc-800/30 border border-zinc-700 rounded-lg p-4">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
-              <Timer className="w-5 h-5 text-purple-400" />
-              <span>Workflow State Breakdown</span>
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {Object.entries(STATUS_COLORS).map(([status, colorClass]) => {
-                const count = sessions.filter(s => (s.status || s.state) === status).length;
-                const displayName = getSessionDisplayName(status as SessionStatus);
-                const icon = STATE_ICONS[status as SessionStatus];
-                return (
-                  <div key={status} className="flex items-center space-x-2 p-2 rounded bg-zinc-900/50">
-                    <div className={`p-1 rounded ${colorClass}`}>
-                      {icon}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-zinc-300 truncate">{displayName}</p>
-                      <p className="text-lg font-bold text-white">{count}</p>
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap gap-2">
+                      {availableActions.slice(0, 3).map((action) => {
+                        if (!canUserPerformAction(action, userRole)) return null;
+                        
+                        return (
+                          <button
+                            key={action}
+                            onClick={() => handleSessionAction(action.toLowerCase(), session.id)}
+                            className={`px-3 py-1 rounded text-xs font-medium transition-colors flex items-center space-x-1 ${ACTION_COLORS[action]}`}
+                            onMouseEnter={() => setHoveredAction(action)}
+                            onMouseLeave={() => setHoveredAction(null)}
+                          >
+                            {ACTION_ICONS[action]}
+                            <span>{action.replace(/_/g, ' ')}</span>
+                          </button>
+                        );
+                      })}
+                      {availableActions.length > 3 && (
+                        <button className="px-3 py-1 rounded text-xs font-medium bg-zinc-600 hover:bg-zinc-500 text-white">
+                          +{availableActions.length - 3} more
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
               })}
             </div>
+          )}
+        </div>
+      )}
+
+      {/* Other tabs would show filtered sessions */}
+      {activeTab !== 'overview' && (
+        <div className="text-center py-12">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
+            <Flame className="w-8 h-8 text-zinc-400" />
           </div>
+          <h3 className="text-lg font-semibold text-white mb-2">{activeTab.toUpperCase()} View</h3>
+          <p className="text-zinc-400">Filtered session view coming soon...</p>
         </div>
       )}
     </div>
