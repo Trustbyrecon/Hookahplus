@@ -13,8 +13,8 @@
     "NEXT_PUBLIC_HARMONIC_SIGNATURE": "Delta-A7"
   },
   "functions": {
-    "app/api/**/*.ts": {
-      "runtime": "nodejs18.x"
+    "app/**/*.ts": {
+      "memory": 1024
     }
   }
 }
