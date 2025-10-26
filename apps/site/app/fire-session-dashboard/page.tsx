@@ -7,8 +7,14 @@ import {
   Flame, Brain, Play, X
 } from 'lucide-react';
 
+// Force dynamic rendering to bypass caching
+export const dynamic = 'force-dynamic';
+
 export default function FireSessionDashboardPage() {
   const [showIntelligence, setShowIntelligence] = useState(false);
+  
+  // Force re-render to bypass caching
+  const version = Date.now();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
@@ -110,15 +116,17 @@ export default function FireSessionDashboardPage() {
           </div>
         )}
 
-        {/* Enhanced Fire Session Dashboard */}
-        <SimpleFSDDesign 
-          sessions={[]} // Let the component generate its own demo data
-          userRole="MANAGER"
-          onSessionAction={(action, sessionId) => {
-            console.log(`Session action: ${action} on ${sessionId}`);
-          }}
-          className="w-full"
-        />
+        {/* Enhanced Fire Session Dashboard - Version 2.0 */}
+        <div key={`enhanced-dashboard-${version}`}>
+          <SimpleFSDDesign 
+            sessions={[]} // Let the component generate its own demo data
+            userRole="MANAGER"
+            onSessionAction={(action, sessionId) => {
+              console.log(`Session action: ${action} on ${sessionId}`);
+            }}
+            className="w-full"
+          />
+        </div>
       </div>
     </div>
   );
