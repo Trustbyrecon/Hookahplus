@@ -1,0 +1,249 @@
+[33medca362[m � Aliethia-Enhanced Vercel Dashboard Configuration Complete
+[33m95e88e0[m � Aliethia Type Safety Fix V4: SessionStage Clarity Through Proper Types
+[33m7d168cf[m � Aliethia Type Safety Fix V3: Final Clarity Through Complete Type Safety
+[33m7a1a3e4[m � Aliethia Type Safety Fix V2: Complete Clarity Through Proper Types
+[33md34a86a[m � Aliethia Type Safety Fix: Clarity Through Proper Types
+[33m69199f8[m � Aliethia Clarity Breach Fix: Module Resolution Corrected
+[33meeb6495[m � Aliethia-Enhanced Launch: Complete Clarity, Resonance, and Belonging Integration
+[33mba9698e[m Fix TypeScript Build Errors
+[33mf3828eb[m Complete QR Pathway Management & Fire Session Dashboard Enhancements
+[33m1c99f4f[m Fix App Build Issues & Add Staff Integration
+[33m355b51f[m Redesign Pre-order Page for QR Pathway Management
+[33m8c6f75d[m Fix Missing Zap Icon Import in QR Pathway Page
+[33m686eca3[m Fix QR Code URL Generation - Redirect to Guest Page
+[33m1f05f19[m Implement QR Admin & App Build Enhancements
+[33m59aee12[m Implement Hookah Tracker Flow & QR Code Generator
+[33m7cd95a0[m Fix TypeScript Error: Complete LoungeConfig Interface
+[33m00a4714[m Fix TypeScript Error: Add coordinates to TableConfig Interface
+[33mfd2e37b[m Integrate Cloud Lounge Demo Data Directly into Site QR Generator
+[33m87d4f6f[m Fix QR Generator Dropdown & Enhance QR Code History for Lounge Owners
+[33m17ab299[m Complete Site Enhancements: Support Center, API Docs, Contact Form & QR Generator
+[33mc1e5a5d[m Complete Site Build Updates: Support Center & API Documentation
+[33m0f8af1f[m Complete Phase 2: Enhanced Modals, Buttons & Operations Center
+[33m492378a[m Simplify Global Navigation & Add Site FSM Waitlist
+[33m3ee8d61[m Enhance Guest Intelligence Dashboard & Site Navigation
+[33m8a149d2[m Implement App Build Enhancements & FSD Waitlist Integration
+[33mcfbbd39[m Implement Enhanced Lounge ID Management & YAML Integration
+[33mf8ad14c[m Fix Guest Build & Complete QR Generator Implementation
+[33m41dcef7[m Fix Guest Build & Update Site Navigation
+[33mdf1289d[m Fix TypeScript compilation errors
+[33m22ca972[m Complete Site Build Updates - Zero Scrolling & HitTrust Integration
+[33m82453a2[m Implement Hookah Tracker - Pizza-style transparency system
+[33maa30a64[m Fix QRCodeScanner import - use named export instead of default
+[33me314a67[m Fix Vercel build errors and clean up Site navigation
+[33m3cca1f0[m commit
+[33m4b2813e[m complete qr code generation
+[33mf90c290[m fix: Resolve TypeScript errors for GA4 analytics implementation
+[33m66e503a[m feat: Complete Analytics Verification Implementation
+[33mc855c5a[m feat: Complete Site Support & Docs pages with AI-enhanced navigation
+[33m31d4ac7[m feat: Complete Site app Support & Docs pages with AI-enhanced Global Navigation
+[33m99a3a7f[m fix: Resolve TypeScript errors for webkit CSS properties
+[33m72cf1e3[m fix: Replace invalid Lucide React icons
+[33m93cc23b[m docs: Add Vercel build fix completion report
+[33m632046b[m fix: Resolve Vercel build errors
+[33m76011d4[m fix: Correct import paths for platform optimizations
+[33mfcd93b5[m fix: Add missing cn utility for platform optimizations
+[33m1272e3e[m feat: Add iOS and Android platform-specific optimizations
+[33me06f866[m complete mobile optimization
+[33m68e9c3e[m feat: Implement mobile optimization for Guest app
+[33m1cd9c61[m Remove unused vercel.json files from old app directories
+[33mf9fbace[m Remove builds property from root vercel.json
+[33me6936b1[m Remove builds property from all vercel.json files
+[33m8f495b9[m Update deployment trigger with Vercel dashboard configuration requirements
+[33m85685dc[m Fix import paths in site app pages
+[33mee95f75[m Fix duplicate export default statements in site app pages
+[33m7b167d2[m chore: Update deployment trigger after routes fix
+[33m650a787[m fix: Remove routes property from all vercel.json files
+[33mf669fef[m chore: Add deployment trigger for Vercel
+[33mf894de9[m fix: Remove functions property from all vercel.json files
+[33m1e5c28f[m commit dev.db
+[33m4fa1724[m refactor: Clean Vercel Monorepo Deployment Guide - Remove preorder confusion
+[33m24ceb46[m create deployment script
+[33m1821a44[m feat: Hookah+ Agent Orchestration Layer with Flow Constant (Λ∞)
+[33m4c1c11d[m feat: Mobile optimization for guest app - Enhanced FSD, touch interactions, and performance
+[33m5337fc8[m trigger: force deployment with updated Vercel monorepo configurations
+[33me8db07e[m create verify-deployments.js
+[33m9306962[m fix: update Vercel configurations for proper monorepo deployment
+[33mc228d17[m complete test page implementation
+[33mdfae009[m fix: create Campaign Pre-Orders page at correct /pre-order route to match button link
+[33m4458283[m fix: add missing export default statement to Campaign Pre-Orders page
+[33mea02199[m fix: revert site build config to standard Next.js structure for proper deployment
+[33me2b34eb[m trigger: force site build deployment with Campaign Pre-Orders feature
+[33m4ee8db7[m fix: correct site build configuration to deploy from monorepo root
+[33m39eeeec[m feat: implement Campaign Pre-Orders feature with comprehensive mock data and management interface
+[33me2dff10[m build: trigger site and guest deployments with timestamp 2025-10-16T17:20:00Z
+[33m68b8fcd[m trigger: deploy site and guest builds with proper Vercel alignment
+[33meaca09e[m fix: align Vercel deployment configuration for unified site build
+[33m681361e[m complete site build implementation
+[33mf9f4a4c[m commit: enhance session action functionality
+[33meb279d6[m commit for guest cart
+[33md908878[m commit: fix: update fire session dashboard to use new live session data
+[33m2cb324b[m commit: critical fix plan and validation complete summary
+[33m3ec5daf[m Fix Suspense boundary for useSearchParams in Guest Intelligence page
+[33mc282521[m Fix remaining sessions reference in Guest Intelligence API POST function
+[33m534bf98[m Fix API routing conflicts and import paths for Guest Intelligence Dashboard
+[33ma44ddff[m Implement Guest Intelligence Dashboard with PII Masking
+[33m7940efe[m Fix SessionStatus and SessionAction import in SessionStateTransition
+[33m598b757[m Fix import errors in SessionStateTransition and useLiveSessionData
+[33m05d3137[m Fix Prisma API routes to resolve events include errors
+[33mcf6aab4[m Implement API Integration for Enhanced State Machine
+[33m9098145[m Implement Enhanced State Machine with Complete Session Lifecycle
+[33m9d25de1[m Implement complete business logic framework with BOH/FOH workflow states
+[33m3c4c279[m Remove unused EnhancedFSDDesign.tsx to fix build error
+[33m8c49dc7[m Replace EnhancedFSDDesign with SimpleFSDDesign - working solution
+[33md0b9e46[m Fix JSX syntax error - remove sampleSessions array and clean up component structure
+[33m65a3897[m Fix JSX syntax error - correct indentation for totalPrice declaration
+[33m4beab28[m Fix JSX syntax error - convert arrow function to regular function in reduce
+[33m08f07a6[m Fix JSX syntax error - expand arrow function in reduce
+[33m887622e[m Fix JSX syntax error - remove unnecessary template literal from className
+[33m04c9b4c[m Fix syntax error in EnhancedFSDDesign - add optional chaining to selectedFlavors.reduce
+[33m63cf855[m commited dev.db
+[33mdfdd18d[m committed production setup
+[33mc7b8f37[m commit
+[33mad23d66[m commit
+[33m22e226b[m completed guest cart to enhanced fsd design
+[33m7c24b6e[m committed production setup
+[33m9324331[m committed production setup
+[33md58986a[m committed guest cart to enhanced fsd design
+[33mf7db452[m committed guest cart to enhanced fsd design
+[33mc394712[m commited guest cart to enhanced fsd design
+[33me269779[m completed guest cart to enhanced fsd design
+[33mb01a677[m commit
+[33m2ef192c[m commited audit deployment script
+[33mdbebf34[m committed guest cart to enhanced fsd design
+[33m3adca67[m committed guest cart to enhanced fsd design
+[33m0c488a9[m completed guest cart to enhanced fsd design
+[33m7ca0a8b[m completed guest cart to enhanced fsd design
+[33mf4035ab[m completed session state machine
+[33m4211a99[m completed guest cart to enhanced fsd design
+[33m7609cb2[m comit
+[33m9a15e6a[m completed session state machine
+[33m30cbf83[m completed session state machine
+[33mcb62345[m completed guest cart to enhanced fsd design
+[33mee5cdc6[m continue work on enhanced fsd design
+[33m601b4fa[m complete dynamic metrics dashboard
+[33mcd30ad9[m commit guest cart to enhanced fsd design
+[33mf201a54[m commit 4
+[33m51b78b4[m commit guest cart to enhanced fsd design
+[33m357e049[m commit
+[33md5eb675[m commit
+[33mb077fb3[m commit
+[33m1edb66f[m commit
+[33ma3908d5[m commit
+[33m1c6572a[m commit
+[33m57ae8b5[m completed enhanced fsd design
+[33m1354ad2[m changed EnhancedFSDDesign.tsx
+[33m81fa0ae[m completed the enhanced fsd design
+[33m07f4f96[m complete guest cart
+[33mee7ca40[m complete enhancement of the fire session dashboard
+[33m8cf61ad[m commit enhanced fsd design
+[33mc9ab3ed[m complete FSD design
+[33m303656c[m complete guest cart
+[33mf8996c5[m commit 2
+[33m47f2ec9[m combine flavor wheel selector
+[33mdba88cc[m commits
+[33m9f92d10[m commit for guests cart
+[33m46d1e5a[m completed guest cart
+[33m8a1e33d[m commit
+[33m1696634[m commit
+[33m601ef29[m complete flavor wheel selector
+[33m047f517[m commit
+[33m9122c2c[m correct cart
+[33m0a8e8d8[m commit guest cart
+[33m39f860f[m commit guest and site package.json
+[33m2291599[m completed flavor mix selector
+[33m971ecba[m feat: add pos-waitlist page and api route
+[33mb2b485a[m chore: update Vercel build fix complete
+[33mdb65d76[m complete payment server
+[33m07d8d64[m complete KTL4 implementation
+[33mfa44c23[m commit 3
+[33mf94a1ff[m commit 2
+[33mddba5d5[m Commit 1
+[33m1e23c19[m complete pricing intelligence implementation
+[33mc3811ef[m commit
+[33ma375553[m commit stripe seed
+[33m67548f9[m feat: Complete Toast Reflex Adapter Phase 1 Scaffolding
+[33m09b162b[m feat: Complete Vercel monorepo subdir configuration - zero deploy overlap
+[33mde5ceaa[m fix: Analytics Dashboard 404 - route to correct /fire-session-dashboard
+[33m9797177[m feat: Reframe Aliethia integration for business-practical lounge operator value
+[33m5be7057[m fix: TypeScript error - cast querySelector to HTMLButtonElement for disabled property
+[33m9b6cab1[m feat: Operationalize Operator Dashboard button flows with real integrations
+[33maf3904a[m feat: Add Operator Dashboard to main navigation and landing page pathways
+[33m40ae51c[m complete deployment guide
+[33mad7909d[m feat: Integrate Starter Operator Dashboard into main app - Option 2 deployment complete
+[33mde473a3[m complete deployment guide
+[33m4d3ab4d[m feat: Implement Starter Operator Dashboard with dark mode default - Enterprise-grade UI injection complete
+[33m9fd84e8[m commit hookahplus-v2-/app/operator/page.tsx
+[33m7bdd42b[m completed staff panel for guests
+[33m3d2cf54[m complete guest panel
+[33m206d7cc[m commit
+[33m1d66901[m complete staff panel for guests
+[33mf9bb662[m completed guest cart
+[33mc731e40[m complete guest cart
+[33m37457bd[m component for alietia layers
+[33mc8b257a[m complete layout preview
+[33m3ddeb8b[m correct layout preview
+[33m4f319be[m completed guest cart
+[33m0aaf80e[m completed dashboard page
+[33mb9891b6[m fix: convert site pages to Client Components to resolve Next.js event handler errors
+[33mcfed26f[m feat: operationalize all buttons across site pages - Sessions, Staff Ops, Staff Panel, and Admin with interactive functionality
+[33mc162aed[m fix: resolve TypeScript error and remove duplicate headers in guest build
+[33mb504572[m feat: optimize Fire Session Dashboard - remove navigation buttons, add dynamic role toggle, implement 4 lounge themes, consolidate timer sessions, reduce scrolling
+[33m5ea998c[m feat: create missing navigation pages for site app - sessions, staff-ops, staff-panel, and admin pages
+[33mc328d92[m fix: add explicit type annotation for parameter 'e' in map function to resolve TypeScript error
+[33me0702aa[m feat: enterprise UI/UX lift - add Reflex Score, sample data, elevated CTAs, stepper design, vitalized agents, and integration strip
+[33m1832d41[m fix: move createGhostLogEntry to utility file to resolve Next.js API route export error
+[33m0d1ee5c[m fix: remove extra closing brace causing site build syntax error
+[33maf8e94f[m feat: streamline site homepage - remove TLH badge, Trust-Lock, Live Status, and reduce scrolling from 6 pages to optimal length with focused operational workflow
+[33m2db5694[m fix: resolve TypeScript error in site build and remove duplicate header in guest build
+[33m9f48b4a[m fix: correct package.json JSON syntax error - missing comma and malformed scripts section
+[33meaa0b26[m com
+[33mfb302a3[m feat: add webhook status endpoint for professional testing suite
+[33mdb2194c[m fix: correct import path for createGhostLogEntry in checkout-complete endpoint
+[33maecd195[m feat: add missing test endpoints for professional testing suite
+[33m1f8c4fd[m fix: add createGhostLogEntry function to ghost-log API
+[33m6329a75[m fix: update Cypress configuration to target correct app build port
+[33mecf0ea9[m feat: implement missing API endpoints for professional testing suite
+[33m7f277b3[m complete guest to app golden path
+[33m267ce98[m feat: wire real APIs and configure test environment
+[33m1c9aeb2[m feat: implement professional grade testing suite
+[33m2accaaf[m fix: resolve all TypeScript compilation errors in guest build
+[33mf747979[m fix: add comprehensive type annotations to prevent TypeScript errors
+[33mdc10531[m trigger: force new Vercel build for guest TypeScript fix
+[33m0870821[m fix: add type annotation for badgeId parameter in rewards route
+[33m8bbc3d2[m fix: correct createGhostLogEntry call in referral/create route
+[33m4ccd003[m fix: resolve TypeScript indexing error in promo codes
+[33mfc284b8[m fix: correct createGhostLogEntry call in price/quote route
+[33mfd9d738[m fix: remove parameter from isPromosEnabled call in guest build
+[33ma6add24[m fix: resolve method name and function signature errors in both builds
+[33m1d704c3[m fix: resolve app build TypeScript and import errors
+[33m5fa6094[m fix: correct createGhostLogEntry call in mix/save route
+[33m7aaccb0[m fix: use absolute import paths for guest types
+[33m221680e[m fix: add missing UI components and dependencies for partnership program
+[33m15a0c8b[m fix: correct import paths for guest types in all API routes
+[33m980148e[m fix: correct createGhostLogEntry call in event log API
+[33m3be058d[m fix: add missing UI components and dependencies for partnership program
+[33mb0fa63f[m fix: handle undefined sessionId in hashGuestEvent call
+[33m55a1d35[m feat: implement comprehensive partnership program with progress tracking
+[33m0df7c35[m commit
+[33mc79ff3e[m fix: correct all import paths in guest app
+[33m337fc8f[m fix: add missing ghostlog and config files to guest app
+[33mff7a21f[m feat: implement Phase 1-3 identity and trust scaffolds
+[33m597a51a[m fix: correct import paths for ghostlog/hash in guest components
+[33m0cd1b44[m complete guest app
+[33m60a2697[m fix: force Vercel rebuild to pick up useEffect import fix
+[33mf321b53[m fix: add missing useEffect import in guest app page
+[33maba9374[m feat: operationalize buttons with App-Guest sync flow
+[33m8fa711f[m feat: comprehensive guest build improvements and fixes
+[33m47f026e[m feat: comprehensive guest build UI/UX improvements
+[33mca9b2ca[m fix: resolve TypeScript compilation error in rate-limit.ts
+[33m0d161f8[m fix: resolve Tailwind CSS PostCSS configuration issues
+[33m4b12f72[m fix: remove ALL pnpm references from vercel.json and package.json files
+[33m77078a6[m commit
+[33m34239d6[m fix: force npm usage by removing pnpm workspace config
+[33ma07828a[m fix: switch to npm for Vercel build reliability
+[33m5d549c7[m feat: improve Vercel build resilience for NPM registry issues
+[33m171fc5a[m fix: resolve critical build issues
+[33m9c61fc1[m complete partnership page
+[33mbdc8063[m feat: operationalize guest build and improve session management
+[33m6589045[m feat: implement Trust Lock architecture with cross-venue identity, loyalty binding, and immutable trust stamping
