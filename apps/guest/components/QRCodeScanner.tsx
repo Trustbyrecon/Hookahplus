@@ -118,6 +118,56 @@ export const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
     }
   };
 
+  // Simple demo scan - just confirm without full processing
+  const handleDemoScan = async () => {
+    setIsScanning(true);
+    setError(null);
+    
+    try {
+      // Simulate quick scan confirmation
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const loungeId = 'Cloud Nine Demo';
+      const tableId = 'T-001';
+      
+      // Set simple table data for confirmation
+      const mockTableData = {
+        tableId,
+        loungeId,
+        status: 'ready',
+        capacity: 4
+      };
+      
+      const mockLoungeData = {
+        id: loungeId,
+        name: 'Cloud Nine Demo',
+        address: '123 Demo St',
+        phone: '+1-555-0123'
+      };
+      
+      setCurrentTableData(mockTableData);
+      setCurrentLoungeData(mockLoungeData);
+      setScanResult(`Confirmed - Table ${tableId}`);
+      
+      // Notify parent that table is detected (this enables checkout button)
+      onTableDetected(mockTableData);
+      onLoungeDetected(mockLoungeData);
+      
+      // Track demo scan
+      if (typeof window !== 'undefined' && window.gtag) {
+        window.gtag('event', 'demo_qr_scan', {
+          event_category: 'demo',
+          event_label: `lounge:${loungeId},table:${tableId}`
+        });
+      }
+    } catch (err) {
+      console.error('Demo scan error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to confirm scan');
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
   const startCameraScan = async () => {
     if (cameraPermission === 'denied') {
       setError('Camera access denied. Please enable camera permissions in your browser settings.');
@@ -266,11 +316,11 @@ export const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
         )}
 
         <button
-          onClick={() => handleQRScan()}
+          onClick={handleDemoScan}
           disabled={isScanning}
-          className="w-full bg-zinc-700 hover:bg-zinc-600 disabled:bg-zinc-600 text-white py-2 px-4 rounded-lg transition-colors"
+          className="w-full bg-teal-600 hover:bg-teal-700 disabled:bg-zinc-600 text-white py-2 px-4 rounded-lg transition-colors"
         >
-          {isScanning ? 'Scanning...' : 'Demo Scan (T-001)'}
+          {isScanning ? 'Confirming...' : 'Demo Scan (Table T-001)'}
         </button>
       </div>
     </div>
