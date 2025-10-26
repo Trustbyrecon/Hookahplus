@@ -39,6 +39,9 @@ ScreenCoder/
 *.tsbuildinfo
 .vercel
 
+# Legacy root app directory (deprecated - use apps/site instead)
+/app/
+
 # Turbo daemon and cache files
 .turbo/
 .turbo-cache/
