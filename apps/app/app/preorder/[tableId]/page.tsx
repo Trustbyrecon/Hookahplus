@@ -317,7 +317,7 @@ function PreOrderPageContent() {
           <p className="text-xl text-zinc-400">
             Table {tableId} • VIP Booth • 6 People • Active
           </p>
-        </div>
+              </div>
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
@@ -347,8 +347,8 @@ function PreOrderPageContent() {
                         </option>
                       ))}
                     </select>
-                  </div>
-                  
+            </div>
+            
                   <div>
                     <label className="block text-sm font-medium text-zinc-300 mb-2">
                       Select Campaign
@@ -364,9 +364,9 @@ function PreOrderPageContent() {
                         </option>
                       ))}
                     </select>
-                  </div>
-                </div>
-              </div>
+          </div>
+        </div>
+      </div>
 
               {/* QR Code Display */}
               {qrCodeDataURL && (
@@ -463,7 +463,7 @@ function PreOrderPageContent() {
               <div className="text-center p-4 bg-zinc-700/50 rounded-lg">
                 <div className="text-2xl font-bold text-yellow-400">{pendingOrders}</div>
                 <div className="text-sm text-zinc-400">Pending Orders</div>
-              </div>
+                    </div>
               <div className="text-center p-4 bg-zinc-700/50 rounded-lg">
                 <div className="text-2xl font-bold text-green-400">{completedOrders}</div>
                 <div className="text-sm text-zinc-400">Completed Orders</div>
@@ -536,11 +536,11 @@ function PreOrderPageContent() {
                 <div>
                   <div className="font-semibold">Zone</div>
                   <div className="text-sm text-zinc-400">{tableData.zone}</div>
-                </div>
+                    </div>
                 <div className="text-right">
                   <div className="font-semibold">Status</div>
                   <div className="text-sm text-green-400 capitalize">{tableData.status}</div>
-                </div>
+                  </div>
               </div>
             </div>
             <div className="space-y-3">
@@ -590,19 +590,19 @@ function PreOrderPageContent() {
                   <span>Alert Staff - Order Ready</span>
                 </button>
                 
-                <button
+                  <button
                   onClick={() => alertStaff('session_complete', 'Session completed at table ' + tableId)}
                   disabled={isAlertingStaff}
                   className="w-full p-3 bg-purple-600 hover:bg-purple-700 disabled:bg-zinc-600 rounded-lg transition-colors flex items-center justify-center space-x-2"
                 >
                   <Flame className="w-4 h-4" />
                   <span>Alert Staff - Session Complete</span>
-                </button>
+                  </button>
               </div>
-            </div>
-            
+              </div>
+
             {/* Recent Alerts */}
-            <div className="space-y-4">
+              <div className="space-y-4">
               <h3 className="font-semibold text-lg">Recent Alerts</h3>
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {staffAlerts.length === 0 ? (
@@ -645,8 +645,8 @@ function PreOrderPageContent() {
                 <p className="text-sm text-zinc-400 mb-3">Using Stripe sandbox test card</p>
                 <div className="text-sm font-mono bg-zinc-800 p-2 rounded mb-3">pm_card_visa</div>
                 <p className="text-sm text-zinc-400">Automatic payment processing - no card input required</p>
-              </div>
-              
+            </div>
+
               {testResult && (
                 <div className={`p-4 rounded-lg ${
                   testResult.ok ? 'bg-green-500/20 border border-green-500/30' : 'bg-red-500/20 border border-red-500/30'
@@ -665,7 +665,7 @@ function PreOrderPageContent() {
                 </div>
               )}
             </div>
-            
+
             <div className="space-y-3">
               <button
                 onClick={handleTestMode}
