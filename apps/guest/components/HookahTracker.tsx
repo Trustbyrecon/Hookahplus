@@ -398,18 +398,18 @@ export const HookahTracker: React.FC<HookahTrackerProps> = ({
                 </motion.div>
                 
                 <h2 className="text-2xl font-bold text-green-400 mb-2">
-                  Enjoy Your Hookah!
+                  Your Hookah is on the Way!
                 </h2>
                 <p className="text-zinc-300 mb-6">
-                  Your hookah is ready and waiting at your table. 
+                  Your hookah is being delivered to your table. 
                   Have a great session!
                 </p>
                 
                 <button
                   onClick={() => setIsComplete(false)}
-                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors"
+                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors font-medium"
                 >
-                  Continue to Dashboard
+                  Got It
                 </button>
               </motion.div>
             </motion.div>

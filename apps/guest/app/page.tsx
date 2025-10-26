@@ -13,7 +13,6 @@ import { SessionTimerAwareness } from '../components/SessionTimerAwareness';
 import GlobalNavigation from '../components/GlobalNavigation';
 import { HookahTracker } from '../components/HookahTracker';
 import { QRCodeScanner } from '../components/QRCodeScanner';
-import { QRCodeGenerator } from '../components/QRCodeGenerator';
 import RealTimeSessionSync from '../components/RealTimeSessionSync';
 import GuestIntelligenceDashboard from '../components/EnhancedStaffPanel';
 import { sessionManager, SessionData } from '../lib/sessionManager';
@@ -279,9 +278,19 @@ export default function GuestPortal() {
     setFlavorMixPrice(total);
   };
 
+  // Handle table detection - enable checkout WITHOUT triggering Hookah Tracker
   const handleTableDetected = async (tableData: any) => {
     setTableData(tableData);
     console.log('Table detected:', tableData);
+    
+    // Don't start hookah tracking until payment is complete
+    // Just enable the checkout button for now
+  };
+
+  // Handle table detection with tracking (for real QR scans, not demo)
+  const handleTableDetectedWithTracking = async (tableData: any) => {
+    setTableData(tableData);
+    console.log('Table detected with tracking:', tableData);
     
     // Start hookah tracking
     const sessionId = `session_${Date.now()}`;
@@ -551,18 +560,6 @@ export default function GuestPortal() {
             {/* QR Scanner Section */}
             <div className="mb-4">
               <QRCodeScanner onTableDetected={handleTableDetected} onLoungeDetected={handleLoungeDetected} />
-            </div>
-            
-            {/* QR Code Generator for Testing */}
-            <div className="mb-4">
-              <QRCodeGenerator 
-                loungeId={tableData?.loungeId || 'lounge_001'}
-                tableId={tableData?.tableId || 'T-001'}
-                campaignRef="demo"
-                onQRGenerated={(qrData) => {
-                  console.log('QR Code generated for testing:', qrData);
-                }}
-              />
             </div>
             
             {/* Pricing Model Selection */}

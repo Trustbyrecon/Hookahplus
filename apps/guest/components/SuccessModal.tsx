@@ -16,8 +16,8 @@ export default function SuccessModal({
   isOpen,
   onClose,
   title = "Session Started Successfully!",
-  message = "Your hookah session has been created and is now active. You can view the live session in the Fire Session Dashboard.",
-  actionText = "Track My Session",
+  message = "Your coals are warming up! Complete your order to get started.",
+  actionText = undefined, // Don't show action button by default
   onAction
 }: SuccessModalProps) {
   const [animationStep, setAnimationStep] = useState(0);
@@ -133,7 +133,7 @@ export default function SuccessModal({
           <div className={`space-y-3 transition-all duration-500 delay-300 ${
             animationStep >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}>
-            {onAction && (
+            {onAction && actionText && (
               <button
                 onClick={onAction}
                 className="w-full px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-lg font-medium transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2 shadow-lg hover:shadow-green-500/25"
@@ -145,9 +145,9 @@ export default function SuccessModal({
             
             <button
               onClick={onClose}
-              className="w-full px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg text-sm font-medium transition-colors"
+              className="w-full px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-medium transition-colors"
             >
-              Continue Shopping
+              {actionText ? 'Continue Shopping' : 'Complete My Order'}
             </button>
           </div>
 
@@ -156,8 +156,8 @@ export default function SuccessModal({
             animationStep >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}>
             <div className="flex items-center justify-center gap-2 text-xs text-zinc-400">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-              <span>Session is now live and being tracked</span>
+              <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></div>
+              <span>Get ready - your session starts soon!</span>
             </div>
           </div>
         </div>
