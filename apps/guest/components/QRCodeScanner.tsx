@@ -130,19 +130,28 @@ export const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
       const loungeId = 'Cloud Nine Demo';
       const tableId = 'T-001';
       
-      // Set simple table data for confirmation
-      const mockTableData = {
+      // Set complete table data for confirmation
+      const mockTableData: TableData = {
         tableId,
         loungeId,
-        status: 'ready',
-        capacity: 4
+        loungeName: 'Cloud Nine Demo',
+        zone: 'Main Floor',
+        status: 'available',
+        capacity: 4,
+        qrCode: `${window.location.origin}/?loungeId=Cloud%20Nine%20Demo&tableId=${tableId}&ref=demo`,
+        lastUpdated: new Date()
       };
       
-      const mockLoungeData = {
-        id: loungeId,
+      const mockLoungeData: LoungeData = {
+        loungeId,
         name: 'Cloud Nine Demo',
         address: '123 Demo St',
-        phone: '+1-555-0123'
+        phone: '+1-555-0123',
+        hours: '11am - 2am',
+        features: ['Hookah Service', 'Full Bar', 'WiFi'],
+        timezone: 'America/New_York',
+        currency: 'USD',
+        taxRate: 0.08
       };
       
       setCurrentTableData(mockTableData);
