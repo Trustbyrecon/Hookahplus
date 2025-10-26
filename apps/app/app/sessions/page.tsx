@@ -73,6 +73,7 @@ import { SessionMonitor } from '../../components/SessionMonitor';
 import { StaffWorkflowAssistant } from '../../components/StaffWorkflowAssistant';
 import { FOHTimerInterface } from '../../components/FOHTimerInterface';
 import { ManagerTimerDashboard } from '../../components/ManagerTimerDashboard';
+import SimpleFSDDesign from '../../components/SimpleFSDDesign';
 
 export default function SessionsPage() {
   const [activeView, setActiveView] = useState('overview');
@@ -315,15 +316,25 @@ export default function SessionsPage() {
             />
           )}
           {(userRole === 'MANAGER' || userRole === 'ADMIN') && (
-            <ManagerTimerDashboard
-              allSessions={sessions}
-              onTimerAction={(sessionId, action) => {
-                console.log(`Manager timer action ${action} for session ${sessionId}`);
-              }}
-              onSessionComplete={(sessionId) => {
-                handleStateChange(sessionId, 'COMPLETED', 'Timer completed');
-              }}
-            />
+            <div className="space-y-6">
+              <div className="text-center">
+                <h2 className="text-2xl font-bold text-white mb-2">🚀 APP BUILD Enhanced Sessions Dashboard v2.0</h2>
+                <p className="text-zinc-400">ROUTE: /sessions (APP BUILD) - Enhanced card-based session management</p>
+              </div>
+              <SimpleFSDDesign
+                sessions={sessions}
+                userRole={userRole}
+                onSessionAction={(action, sessionId) => {
+                  console.log(`Session action: ${action} on ${sessionId}`);
+                  if (action === 'complete') {
+                    handleStateChange(sessionId, 'COMPLETED', 'Session completed');
+                  } else if (action === 'pause') {
+                    handleStateChange(sessionId, 'PAUSED', 'Session paused');
+                  }
+                }}
+                className="w-full"
+              />
+            </div>
           )}
         </div>
       );

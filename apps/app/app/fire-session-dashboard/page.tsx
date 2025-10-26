@@ -111,10 +111,10 @@ function FireSessionDashboardContent() {
               </div>
               <div>
                 <h1 className={`text-3xl font-bold text-${currentTheme.colors.text}`}>
-                  Fire Session Dashboard
+                  🚀 APP BUILD Fire Session Dashboard v2.0
                 </h1>
                 <p className={`text-sm text-${currentTheme.colors.textSecondary}`}>
-                  Real-time session management with intelligent workflow automation and staff coordination.
+                  Real-time session management with intelligent workflow automation and staff coordination. - ROUTE: /fire-session-dashboard (APP BUILD)
                 </p>
               </div>
             </div>
