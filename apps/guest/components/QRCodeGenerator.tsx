@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import QRCode from 'qrcode';
-import { QrCode, Download, Copy, CheckCircle, RefreshCw, Printer } from 'lucide-react';
+import { QrCode, Download, Copy, CheckCircle, RefreshCw } from 'lucide-react';
 
 interface QRCodeGeneratorProps {
   loungeId?: string;
@@ -12,7 +12,7 @@ interface QRCodeGeneratorProps {
 }
 
 export const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
-  loungeId = 'lounge_001',
+  loungeId = 'Cloud Nine Demo',
   tableId = 'T-001',
   campaignRef = 'demo',
   onQRGenerated
@@ -28,7 +28,8 @@ export const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
     try {
       // Create the URL for the QR code - point to Guest page with parameters
       const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://guest.hookahplus.net';
-      const qrUrl = `${baseUrl}/?loungeId=${loungeId}&tableId=${tableId}&ref=${campaignRef}`;
+      const encodedLoungeId = encodeURIComponent(loungeId);
+      const qrUrl = `${baseUrl}/?loungeId=${encodedLoungeId}&tableId=${tableId}&ref=${campaignRef}`;
       
       // Generate QR code as data URL
       const qrDataURL = await QRCode.toDataURL(qrUrl, {
@@ -193,7 +194,7 @@ export const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
       )}
 
       {/* Action Buttons */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2">
         <button
           onClick={generateQRCode}
           disabled={isGenerating}
@@ -204,23 +205,13 @@ export const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
         </button>
         
         {qrCodeDataURL && (
-          <>
-            <button
-              onClick={downloadQRCode}
-              className="bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-lg transition-colors flex items-center justify-center space-x-1 text-sm"
-            >
-              <Download className="w-4 h-4" />
-              <span>Download</span>
-            </button>
-            
-            <button
-              onClick={printQRCode}
-              className="bg-purple-600 hover:bg-purple-700 text-white py-2 px-3 rounded-lg transition-colors flex items-center justify-center space-x-1 text-sm"
-            >
-              <Printer className="w-4 h-4" />
-              <span>Print</span>
-            </button>
-          </>
+          <button
+            onClick={downloadQRCode}
+            className="bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-lg transition-colors flex items-center justify-center space-x-1 text-sm"
+          >
+            <Download className="w-4 h-4" />
+            <span>Download</span>
+          </button>
         )}
       </div>
 

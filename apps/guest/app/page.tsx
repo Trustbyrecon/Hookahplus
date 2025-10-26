@@ -773,7 +773,7 @@ export default function GuestPortal() {
                     onClick={handleFireSession}
                     disabled={isStartingSession || !tableData}
                   >
-                    {isStartingSession ? 'Starting...' : '🔥 Fire Session'}
+                    {isStartingSession ? 'Starting...' : 'Checkout'}
                   </Button>
                   
                   <div className="grid grid-cols-2 gap-2">

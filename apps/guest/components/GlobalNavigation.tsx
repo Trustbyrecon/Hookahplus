@@ -25,13 +25,12 @@ export const GlobalNavigation: React.FC<GlobalNavigationProps> = ({
       <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
         {/* Main Navigation */}
         <div className="flex items-center justify-between">
-          {/* Left Side - Logo and Flow Status */}
+          {/* Left Side - Logo */}
           <div className="flex items-center space-x-6">
             <div className="flex items-center space-x-2">
               <div className="text-2xl">🍃</div>
               <div>
-                <div className="text-lg font-bold text-white">H+ HOOKAH+ GUEST</div>
-                <div className="text-xs text-zinc-400">Flow Status: {flowStatus}%</div>
+                <div className="text-lg font-bold text-white">H+ Guest</div>
               </div>
             </div>
           </div>
@@ -60,17 +59,8 @@ export const GlobalNavigation: React.FC<GlobalNavigationProps> = ({
             })}
           </div>
 
-          {/* Right Side - Trust-Lock, Support, Docs */}
+          {/* Right Side - Support and Docs */}
           <div className="flex items-center space-x-4">
-            {/* Trust-Lock with Shield */}
-            <div className="flex items-center space-x-2">
-              <Shield className="w-5 h-5 text-teal-400" />
-              <div className="flex items-center space-x-1">
-                <span className="text-sm font-medium text-white">Trust-Lock</span>
-                <div className="w-2 h-2 bg-green-400 rounded-full" />
-              </div>
-            </div>
-
             {/* Support and Docs */}
             <div className="flex items-center space-x-3">
               <Link
@@ -82,10 +72,9 @@ export const GlobalNavigation: React.FC<GlobalNavigationProps> = ({
               </Link>
               <Link
                 href="/docs"
-                className="flex items-center space-x-1 text-sm text-zinc-300 hover:text-white transition-colors"
+                className="text-sm text-zinc-300 hover:text-white transition-colors"
               >
                 <FileText className="w-4 h-4" />
-                <span>Docs</span>
               </Link>
             </div>
 
