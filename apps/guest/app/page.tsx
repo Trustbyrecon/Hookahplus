@@ -530,28 +530,12 @@ export default function GuestPortal() {
     { name: 'Desserts', count: 1, active: false }
   ];
 
-  // Platform-specific wrapper component
-  const PlatformWrapper = ({ children }: { children: React.ReactNode }) => {
-    if (platform.isIOS) {
-      return (
-        <IOSOptimized enableBiometrics={true} enableHaptics={true} enableSafeArea={true}>
-          {children}
-        </IOSOptimized>
-      );
-    } else if (platform.isAndroid) {
-      return (
-        <AndroidOptimized enableBiometrics={true} enableHaptics={true} enableMaterialDesign={true}>
-          {children}
-        </AndroidOptimized>
-      );
-    }
-    return <>{children}</>;
-  };
-
-  return (
-    <PlatformWrapper>
-      {/* Hookah Tracker - Show when tracking is active */}
-      {showHookahTracker && trackingSessionId && tableData && (
+  // Platform wrapper logic
+  const renderContent = () => {
+    const content = (
+      <>
+        {/* Hookah Tracker - Show when tracking is active */}
+        {showHookahTracker && trackingSessionId && tableData && (
         <HookahTracker
           sessionId={trackingSessionId}
           loungeId={tableData.loungeId || 'lounge_001'}
@@ -930,8 +914,18 @@ export default function GuestPortal() {
           }}
         />
         </div>
-      </div>
+        </div>
       )}
-    </PlatformWrapper>
-  );
+      </>
+    );
+
+    if (platform.isIOS) {
+      return <IOSOptimized enableBiometrics={true} enableHaptics={true} enableSafeArea={true}>{content}</IOSOptimized>;
+    } else if (platform.isAndroid) {
+      return <AndroidOptimized enableBiometrics={true} enableHaptics={true} enableMaterialDesign={true}>{content}</AndroidOptimized>;
+    }
+    return content;
+  };
+
+  return renderContent();
 }
