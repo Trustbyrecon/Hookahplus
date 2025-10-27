@@ -587,7 +587,11 @@ export default function GuestPortal() {
 
             {showEnhancedStaffPanel && (
               <div className="mt-6">
-                <GuestIntelligenceDashboard />
+                <GuestIntelligenceDashboard 
+                  sessionId={trackingSessionId || undefined}
+                  tableId={tableData?.tableId || undefined}
+                  onClose={() => setShowEnhancedStaffPanel(false)}
+                />
               </div>
             )}
           </div>
