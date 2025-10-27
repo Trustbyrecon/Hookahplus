@@ -530,13 +530,12 @@ export default function GuestPortal() {
     { name: 'Desserts', count: 1, active: false }
   ];
 
-  // Platform wrapper logic
-  const renderContent = () => {
-    return (
-      <>
-        {/* Hookah Tracker - Show when tracking is active */}
-        {showHookahTracker && trackingSessionId && tableData && (
-        <HookahTracker
+  // Return content directly with platform wrapper
+  let content = (
+    <>
+      {/* Hookah Tracker - Show when tracking is active */}
+      {showHookahTracker && trackingSessionId && tableData && (
+      <HookahTracker
           sessionId={trackingSessionId}
           loungeId={tableData.loungeId || 'lounge_001'}
           tableId={tableData.tableId || 'T-001'}
@@ -916,10 +915,8 @@ export default function GuestPortal() {
         </div>
         </div>
       )}
-    );
-  };
-
-  const content = renderContent();
+    </>
+  );
 
   if (platform.isIOS) {
     return <IOSOptimized enableBiometrics={true} enableHaptics={true} enableSafeArea={true}>{content}</IOSOptimized>;
