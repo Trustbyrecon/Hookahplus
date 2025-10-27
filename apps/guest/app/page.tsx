@@ -530,12 +530,12 @@ export default function GuestPortal() {
     { name: 'Desserts', count: 1, active: false }
   ];
 
-  // Return content directly with platform wrapper
-  let content = (
+  // Render content with platform-specific wrappers
+  const mainContent = (
     <>
       {/* Hookah Tracker - Show when tracking is active */}
       {showHookahTracker && trackingSessionId && tableData && (
-      <HookahTracker
+        <HookahTracker
           sessionId={trackingSessionId}
           loungeId={tableData.loungeId || 'lounge_001'}
           tableId={tableData.tableId || 'T-001'}
@@ -918,10 +918,12 @@ export default function GuestPortal() {
     </>
   );
 
+  // Apply platform-specific optimizations
   if (platform.isIOS) {
-    return <IOSOptimized enableBiometrics={true} enableHaptics={true} enableSafeArea={true}>{content}</IOSOptimized>;
-  } else if (platform.isAndroid) {
-    return <AndroidOptimized enableBiometrics={true} enableHaptics={true} enableMaterialDesign={true}>{content}</AndroidOptimized>;
+    return <IOSOptimized enableBiometrics={true} enableHaptics={true} enableSafeArea={true}>{mainContent}</IOSOptimized>;
   }
-  return content;
+  if (platform.isAndroid) {
+    return <AndroidOptimized enableBiometrics={true} enableHaptics={true} enableMaterialDesign={true}>{mainContent}</AndroidOptimized>;
+  }
+  return mainContent;
 }
