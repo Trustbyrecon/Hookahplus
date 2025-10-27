@@ -532,8 +532,8 @@ export default function GuestPortal() {
 
   // Platform wrapper logic
   const renderContent = () => {
-    const content = (
-      <Fragment>
+    return (
+      <>
         {/* Hookah Tracker - Show when tracking is active */}
         {showHookahTracker && trackingSessionId && tableData && (
         <HookahTracker
