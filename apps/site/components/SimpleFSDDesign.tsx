@@ -396,6 +396,20 @@ export default function SimpleFSDDesign({
 
   // Use demo data if no sessions provided
   const displaySessions = sessions.length > 0 ? sessions : generateRichDemoData();
+  
+  // Calculate active session counts per tab
+  const getActiveSessionCount = () => {
+    if (activeTab === 'boh') {
+      return displaySessions.filter(s => s.status === 'PREP_IN_PROGRESS' || s.status === 'HEAT_UP').length;
+    } else if (activeTab === 'foh') {
+      return displaySessions.filter(s => s.status === 'READY_FOR_DELIVERY' || s.status === 'OUT_FOR_DELIVERY' || s.status === 'DELIVERED' || s.status === 'ACTIVE').length;
+    } else if (activeTab === 'edge') {
+      return displaySessions.filter(s => s.status === 'STOCK_BLOCKED' || s.status === 'REMAKE' || s.status === 'STAFF_HOLD').length;
+    }
+    return displaySessions.length; // Overview shows all
+  };
+  
+  const activeSessions = getActiveSessionCount();
 
   const handleCreateSession = () => {
     window.dispatchEvent(new CustomEvent('openCreateSessionModal'));
@@ -535,7 +549,7 @@ export default function SimpleFSDDesign({
             <div className="text-2xl mr-3">🔥</div>
             <div>
               <div className="text-2xl font-bold text-white">{activeSessions}</div>
-              <div className="text-sm text-zinc-400">Active Sessions</div>
+              <div className="text-sm text-zinc-400">Active Sessions {activeTab !== 'overview' ? `(${activeTab.toUpperCase()})` : ''}</div>
             </div>
           </div>
         </div>
@@ -599,7 +613,7 @@ export default function SimpleFSDDesign({
       {activeTab === 'overview' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white">Active Sessions ({displaySessions.length})</h3>
+            <h3 className="text-lg font-semibold text-white">Active Sessions ({activeSessions})</h3>
           </div>
           
           {displaySessions.length === 0 ? (

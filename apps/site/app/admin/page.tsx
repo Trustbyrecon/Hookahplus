@@ -289,8 +289,12 @@ export default function AdminPage() {
               variant="outline" 
               className="flex items-center gap-2"
               onClick={() => {
-                console.log('Generating reports');
-                alert('Performance Reports\n\nGenerating system performance reports...\n\n• Usage statistics\n• Performance metrics\n• Error logs\n• User activity');
+                console.log('Opening reports panel with QR campaign analysis');
+                // Dispatch custom event to open enhanced reports modal
+                window.dispatchEvent(new CustomEvent('openReportsPanel', { 
+                  detail: { section: 'qrcampaigns' } 
+                }));
+                alert('Reports Dashboard\n\nAvailable Reports:\n\n• Performance Metrics\n• User Activity Analytics\n• System Health Reports\n• QR Campaign Analysis\n\nSelect "QR Campaigns" for detailed analytics on QR code performance, seating patterns, and conversion rates.');
               }}
             >
               <BarChart3 className="w-4 h-4" />
