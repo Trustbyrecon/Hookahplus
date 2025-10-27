@@ -916,16 +916,15 @@ export default function GuestPortal() {
         </div>
         </div>
       )}
-      </Fragment>
     );
-
-    if (platform.isIOS) {
-      return <IOSOptimized enableBiometrics={true} enableHaptics={true} enableSafeArea={true}>{content}</IOSOptimized>;
-    } else if (platform.isAndroid) {
-      return <AndroidOptimized enableBiometrics={true} enableHaptics={true} enableMaterialDesign={true}>{content}</AndroidOptimized>;
-    }
-    return content;
   };
 
-  return renderContent();
+  const content = renderContent();
+
+  if (platform.isIOS) {
+    return <IOSOptimized enableBiometrics={true} enableHaptics={true} enableSafeArea={true}>{content}</IOSOptimized>;
+  } else if (platform.isAndroid) {
+    return <AndroidOptimized enableBiometrics={true} enableHaptics={true} enableMaterialDesign={true}>{content}</AndroidOptimized>;
+  }
+  return content;
 }
