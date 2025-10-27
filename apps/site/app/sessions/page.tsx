@@ -34,25 +34,10 @@ export default function SessionsPage() {
         <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-white">📊 Enhanced Sessions Page v2.0</h1>
-              <p className="text-zinc-400 mt-2">Advanced session controls with workflow management - ROUTE: /sessions</p>
+              <h1 className="text-3xl font-bold text-white">🔥 Fire Session Operations</h1>
+              <p className="text-zinc-400 mt-2">Real-time session monitoring and control center - SITE BUILD</p>
             </div>
             <div className="flex items-center space-x-4">
-              <Button 
-                variant="primary" 
-                className="flex items-center gap-2 bg-gradient-to-r from-orange-500/10 to-red-500/10 border-orange-500/30 text-orange-400 hover:from-orange-500/20 hover:to-red-500/20 hover:border-orange-400 transition-all duration-200 transform hover:scale-105"
-                onClick={() => {
-                  console.log('Starting new session');
-                  const confirmed = window.confirm('Ready to start a new hookah session? This will create a new session in the current dashboard.');
-                  if (confirmed) {
-                    // Dispatch event to open create session modal
-                    window.dispatchEvent(new CustomEvent('openCreateSessionModal'));
-                  }
-                }}
-              >
-                <Play className="w-4 h-4" />
-                Start New Session
-              </Button>
               <Button 
                 variant="outline" 
                 className="flex items-center gap-2"
