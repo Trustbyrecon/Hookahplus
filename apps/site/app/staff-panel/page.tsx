@@ -1,11 +1,14 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
+import StaffDetailsModal from '../../components/StaffDetailsModal';
 import { Users, Clock, TrendingUp, BarChart3, Settings, UserCheck, Brain, Shield, CreditCard, ArrowRight, Play, CheckCircle, Zap, Activity, Heart, Star, ChefHat, Bell, Target, Award } from 'lucide-react';
 
 export default function StaffPanelPage() {
+  const [selectedStaff, setSelectedStaff] = useState<any>(null);
+  const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
   const staffPerformance = [
     {
       id: 'staff_001',
@@ -207,8 +210,8 @@ export default function StaffPanelPage() {
                         variant="outline" 
                         size="sm"
                         onClick={() => {
-                          console.log(`Viewing details for staff ${staff.id}`);
-                          alert(`Staff Performance Details:\n\nName: ${staff.name}\nRole: ${staff.role}\nRating: ${staff.rating}/5\nTasks Completed: ${staff.tasksCompleted}\nEfficiency: ${staff.efficiency}%\nRevenue Generated: ${staff.revenue}`);
+                          setSelectedStaff(staff);
+                          setIsStaffModalOpen(true);
                         }}
                       >
                         View Details
@@ -269,6 +272,13 @@ export default function StaffPanelPage() {
           </div>
         </div>
       </div>
+
+      {/* Staff Details Modal */}
+      <StaffDetailsModal
+        isOpen={isStaffModalOpen}
+        onClose={() => setIsStaffModalOpen(false)}
+        staff={selectedStaff}
+      />
     </div>
   );
 }

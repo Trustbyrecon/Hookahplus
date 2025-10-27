@@ -1,11 +1,14 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
+import TaskDetailsModal from '../../components/TaskDetailsModal';
 import { Users, Clock, TrendingUp, BarChart3, Settings, UserCheck, Brain, Shield, CreditCard, ArrowRight, Play, CheckCircle, Zap, Activity, Heart, Star, ChefHat, Bell } from 'lucide-react';
 
 export default function StaffOpsPage() {
+  const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const staffMembers = [
     {
       id: 'staff_001',
@@ -254,8 +257,8 @@ export default function StaffOpsPage() {
                           size="sm" 
                           className="flex-1"
                           onClick={() => {
-                            console.log(`Viewing details for task ${task.id}`);
-                            alert(`Task Details: ${task.title}\nAssigned to: ${task.assignedTo}\nEstimated Time: ${task.estimatedTime}\nPriority: ${task.priority}`);
+                            setSelectedTask(task);
+                            setIsTaskModalOpen(true);
                           }}
                         >
                           View Details
@@ -266,7 +269,8 @@ export default function StaffOpsPage() {
                           className="flex-1"
                           onClick={() => {
                             console.log(`Managing task ${task.id}`);
-                            alert(`Managing Task: ${task.title}\nStatus: ${task.status}\nAction: ${task.status === 'completed' ? 'Reviewing completed task' : 'Managing active task'}`);
+                            setSelectedTask(task);
+                            setIsTaskModalOpen(true);
                           }}
                         >
                           {task.status === 'completed' ? 'Review' : 'Manage'}
@@ -280,6 +284,13 @@ export default function StaffOpsPage() {
           </div>
         </div>
       </div>
+
+      {/* Task Details Modal */}
+      <TaskDetailsModal
+        isOpen={isTaskModalOpen}
+        onClose={() => setIsTaskModalOpen(false)}
+        task={selectedTask}
+      />
     </div>
   );
 }
