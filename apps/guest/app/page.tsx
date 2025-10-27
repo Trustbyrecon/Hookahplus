@@ -920,15 +920,16 @@ export default function GuestPortal() {
         />
       )}
 
-      {/* Success Modal */}
-      <SuccessModal
-        isOpen={showSuccessModal}
-        onClose={() => setShowSuccessModal(false)}
-        onAction={() => {
-          setShowSuccessModal(false);
-          window.open('https://hookahplus-iursz2jf6-dwaynes-projects-1c5c280a.vercel.app/fire-session-dashboard', '_blank');
-        }}
-      />
+        {/* Success Modal */}
+        <SuccessModal
+          isOpen={showSuccessModal}
+          onClose={() => setShowSuccessModal(false)}
+          onAction={() => {
+            setShowSuccessModal(false);
+            window.open('https://hookahplus-iursz2jf6-dwaynes-projects-1c5c280a.vercel.app/fire-session-dashboard', '_blank');
+          }}
+        />
+        </div>
       </div>
       )}
     </PlatformWrapper>
