@@ -2,7 +2,7 @@
 
 // Guest build deployment trigger - updated for proper Vercel alignment
 // Build timestamp: 2025-10-16T17:20:00Z
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Fragment } from 'react';
 import Card from '../components/Card';
 import DollarTestButton from '../components/DollarTestButton';
 import Button from '../components/Button';
@@ -533,7 +533,7 @@ export default function GuestPortal() {
   // Platform wrapper logic
   const renderContent = () => {
     const content = (
-      <>
+      <Fragment>
         {/* Hookah Tracker - Show when tracking is active */}
         {showHookahTracker && trackingSessionId && tableData && (
         <HookahTracker
@@ -916,7 +916,7 @@ export default function GuestPortal() {
         </div>
         </div>
       )}
-      </>
+      </Fragment>
     );
 
     if (platform.isIOS) {
