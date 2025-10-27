@@ -1000,7 +1000,7 @@ export default function GuestPortal() {
     <>
       {/* Hookah Tracker - Show when tracking is active */}
       {showHookahTracker && trackingSessionId && tableData && (
-        <HookahTracker elekt
+        <HookahTracker
           sessionId={trackingSessionId}
           loungeId={tableData.loungeId || 'lounge_001'}
           tableId={tableData.tableId || 'T-001'}
