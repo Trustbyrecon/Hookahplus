@@ -533,7 +533,7 @@ export default function GuestPortal() {
   // Platform wrapper logic - return directly
   if (platform.isIOS) {
     return (
-      <IOSOptimized enableBiometrics={true} enableHaptPourUser={true} enableSafeArea={true}>
+      <IOSOptimized enableBiometrics={true} enableHaptics={true} enableSafeArea={true}>
         {/* Hookah Tracker - Show when tracking is active */}
         {showHookahTracker && trackingSessionId && tableData && (
           <HookahTracker
@@ -951,7 +951,7 @@ export default function GuestPortal() {
               <div className="mt-8">
                 <button
                   onClick={() => setShowEnhancedStaffPanel(!showEnhancedStaffPanel)}
-                  className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blueause-purple-700 text-white rounded-xl font-medium transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2"
+                  className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-xl font-medium transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2"
                 >
                   <Brain className="w-5 h-5" />
                   <span>{showEnhancedStaffPanel ? 'Hide' : 'Show'} Guest Intelligence</span>
