@@ -390,6 +390,7 @@ export default function SimpleFSDDesign({
   onSessionAction,
   className = ''
 }: SimpleFSDDesignProps) {
+  const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [hoveredAction, setHoveredAction] = useState<string | null>(null);
 
@@ -652,10 +653,12 @@ export default function SimpleFSDDesign({
                           {remainingTime > 0 ? formatDuration(remainingTime) : 'N/A'}
                         </span>
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-zinc-400">Revenue:</span>
-                        <span className="text-white font-semibold">${(session.amount / 100).toFixed(2)}</span>
-                      </div>
+                      {userRole === 'ADMIN' && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-zinc-400">Revenue:</span>
+                          <span className="text-white font-semibold">${(session.amount / 100).toFixed(2)}</span>
+                        </div>
+                      )}
                       <div className="flex justify-between text-sm">
                         <span className="text-zinc-400">Staff:</span>
                         <span className="text-white">{session.assignedStaff.foh}</span>
@@ -686,10 +689,34 @@ export default function SimpleFSDDesign({
                         );
                       })}
                       {availableActions.length > 3 && (
-                        <button className="px-3 py-1 rounded text-xs font-medium bg-zinc-600 hover:bg-zinc-500 text-white">
-                          +{availableActions.length - 3} more
+                        <button 
+                          onClick={() => setExpandedSessionId(expandedSessionId === session.id ? null : session.id)}
+                          className="px-3 py-1 rounded text-xs font-medium bg-zinc-600 hover:bg-zinc-500 text-white transition-all"
+                        >
+                          {expandedSessionId === session.id ? 'Show Less' : `+${availableActions.length - 3} more`}
                         </button>
                       )}
+                    </div>
+
+                    {/* Expanded Actions (shown when clicked) */}
+                    {expandedSessionId === session.id && availableActions.length > 3 && (
+                      <div className="mt-2 pt-2 border-t border-zinc-700 flex flex-wrap gap-2 animate-in slide-in-from-top-2 duration-200">
+                        {availableActions.slice(3).map((action) => {
+                          if (!canUserPerformAction(action, userRole)) return null;
+                          
+                          return (
+                            <button
+                              key={action}
+                              onClick={() => handleSessionAction(action.toLowerCase(), session.id)}
+                              className={`px-3 py-1 rounded text-xs font-medium transition-colors flex items-center space-x-1 ${ACTION_COLORS[action]}`}
+                            >
+                              {ACTION_ICONS[action]}
+                              <span>{action.replace(/_/g, ' ')}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                     </div>
                   </div>
                 );

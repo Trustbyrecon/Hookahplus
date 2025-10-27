@@ -35,7 +35,7 @@ export default function SessionsPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-white">🔥 Fire Session Operations</h1>
-              <p className="text-zinc-400 mt-2">Real-time session monitoring and control center - SITE BUILD</p>
+              <p className="text-zinc-400 mt-2">Real-time session monitoring and control center</p>
             </div>
             <div className="flex items-center space-x-4">
               <Button 
