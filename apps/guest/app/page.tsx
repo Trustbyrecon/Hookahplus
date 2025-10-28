@@ -925,8 +925,9 @@ export default function GuestPortal() {
   if (platform.isAndroid) {
     return (
       <AndroidOptimized enableBiometrics={true} enableHaptics={true} enableMaterialDesign={true}>
-        {/* Hookah Tracker - Show when tracking is active */}
-        {showHookahTracker && trackingSessionId && tableData && (
+        <>
+          {/* Hookah Tracker - Show when tracking is active */}
+          {showHookahTracker && trackingSessionId && tableData && (
           <HookahTracker
             sessionId={trackingSessionId}
             loungeId={tableData.loungeId || 'lounge_001'}
@@ -993,6 +994,7 @@ export default function GuestPortal() {
             />
           </div>
         )}
+        </>
       </AndroidOptimized>
     );
   }
