@@ -921,10 +921,6 @@ export default function GuestPortal() {
     </div>
   );
 }
-        <>
-          {/* Hookah Tracker - Show when tracking is active */}
-          {showHookahTracker && trackingSessionId && tableData && (
-          <HookahTracker
             sessionId={trackingSessionId}
             loungeId={tableData.loungeId || 'lounge_001'}
             tableId={tableData.tableId || 'T-001'}
