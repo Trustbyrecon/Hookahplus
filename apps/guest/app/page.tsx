@@ -488,6 +488,7 @@ export default function GuestPortal() {
       window.open('https://hookahplus.net/operator', '_blank');
     }
   };
+
   const menuItems = [
     {
       id: 1,
