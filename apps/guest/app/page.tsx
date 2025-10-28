@@ -919,4 +919,3 @@ export default function GuestPortal() {
     </div>
   );
 }
-            sessionId={trackingSessionId}
