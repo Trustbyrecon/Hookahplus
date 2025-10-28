@@ -1037,6 +1037,6 @@ export default function GuestPortal() {
           window.open('https://hookahplus-iursz2jf6-dwaynes-projects-1c5c280a.vercel.app/fire-session-dashboard', '_blank');
         }}
       />
-    </React.Fragment>
+    </>
   );
 }
