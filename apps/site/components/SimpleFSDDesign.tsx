@@ -748,8 +748,6 @@ export default function SimpleFSDDesign({
             })}
           </div>
         )}
-        </div>
-      )}
 
       {/* Other tabs would show filtered sessions */}
       {activeTab !== 'overview' && (
