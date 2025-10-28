@@ -342,14 +342,6 @@ const GlobalNavigation: React.FC = () => {
               <span className="text-sm">Support Docs</span>
             </button>
 
-            {/* $1 Test Button */}
-            <Link
-              href="/preorder/T-001"
-              className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
-            >
-              $1 Test
-            </Link>
-
             {/* Role Dropdown */}
             <div className="flex items-center space-x-2">
               <span className="text-sm text-zinc-400">Role:</span>

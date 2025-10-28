@@ -111,10 +111,10 @@ function FireSessionDashboardContent() {
               </div>
               <div>
                 <h1 className={`text-3xl font-bold text-${currentTheme.colors.text}`}>
-                  🚀 APP BUILD Fire Session Dashboard v2.0
+                  Fire Session Operations
                 </h1>
                 <p className={`text-sm text-${currentTheme.colors.textSecondary}`}>
-                  Real-time session management with intelligent workflow automation and staff coordination. - ROUTE: /fire-session-dashboard (APP BUILD)
+                  Real-time session management with intelligent workflow automation
                 </p>
               </div>
             </div>
@@ -133,7 +133,6 @@ function FireSessionDashboardContent() {
                   <option value="FOH">FOH</option>
                   <option value="ADMIN">ADMIN</option>
                 </select>
-                <span className={`text-xs text-${currentTheme.colors.textSecondary}`}>(FOH View)</span>
               </div>
             </div>
           </div>
