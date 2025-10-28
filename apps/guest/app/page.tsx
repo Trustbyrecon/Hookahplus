@@ -534,8 +534,7 @@ export default function GuestPortal() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
       <GlobalNavigation currentPage="home" />
-      <>
-        {/* Hookah Tracker - Show when tracking is active */}
+      {/* Hookah Tracker - Show when tracking is active */}
           {showHookahTracker && trackingSessionId && tableData && (
             <HookahTracker
             sessionId={trackingSessionId}
@@ -917,7 +916,6 @@ export default function GuestPortal() {
         </div>
         </div>
       )}
-      </>
     </div>
   );
 }
