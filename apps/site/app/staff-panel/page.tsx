@@ -3,12 +3,9 @@
 import React, { useState } from 'react';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
-import StaffDetailsModal from '../../components/StaffDetailsModal';
 import { Users, Clock, TrendingUp, BarChart3, Settings, UserCheck, Brain, Shield, CreditCard, ArrowRight, Play, CheckCircle, Zap, Activity, Heart, Star, ChefHat, Bell, Target, Award } from 'lucide-react';
 
 export default function StaffPanelPage() {
-  const [selectedStaff, setSelectedStaff] = useState<any>(null);
-  const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
   const staffPerformance = [
     {
       id: 'staff_001',
@@ -210,8 +207,7 @@ export default function StaffPanelPage() {
                         variant="outline" 
                         size="sm"
                         onClick={() => {
-                          setSelectedStaff(staff);
-                          setIsStaffModalOpen(true);
+                          alert(`Viewing details for ${staff.name}`);
                         }}
                       >
                         View Details
@@ -272,13 +268,6 @@ export default function StaffPanelPage() {
           </div>
         </div>
       </div>
-
-      {/* Staff Details Modal */}
-      <StaffDetailsModal
-        isOpen={isStaffModalOpen}
-        onClose={() => setIsStaffModalOpen(false)}
-        staff={selectedStaff}
-      />
     </div>
   );
 }
