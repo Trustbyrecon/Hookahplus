@@ -9,7 +9,7 @@ interface QRCodeScannerProps {
   onLoungeDetected: (loungeData: LoungeData) => void;
 }
 
-export const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
+const QRCodeScannerComponent: React.FC<QRCodeScannerProps> = ({
   onTableDetected,
   onLoungeDetected
 }) => {
@@ -335,3 +335,5 @@ export const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
     </div>
   );
 };
+
+export default QRCodeScannerComponent;
