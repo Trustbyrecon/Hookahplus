@@ -535,18 +535,18 @@ export default function GuestPortal() {
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
       <GlobalNavigation currentPage="home" />
       {/* Hookah Tracker - Show when tracking is active */}
-          {showHookahTracker && trackingSessionId && tableData && (
-            <HookahTracker
-            sessionId={trackingSessionId}
-            loungeId={tableData.loungeId || 'lounge_001'}
-            tableId={tableData.tableId || 'T-001'}
-            onComplete={handleTrackingComplete}
-          />
-        )}
-        
-        {/* Session Controls - Show after tracker completes */}
-        {showSessionControls && isSessionActive && !showHookahTracker && (
-        <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white p-4">
+      {showHookahTracker && trackingSessionId && tableData && (
+        <HookahTracker
+          sessionId={trackingSessionId}
+          loungeId={tableData.loungeId || 'lounge_001'}
+          tableId={tableData.tableId || 'T-001'}
+          onComplete={handleTrackingComplete}
+        />
+      )}
+      
+      {/* Session Controls - Show after tracker completes */}
+      {showSessionControls && isSessionActive && !showHookahTracker && (
+        <div className="p-4">
           <GlobalNavigation currentPage="home" />
           <div className="max-w-4xl mx-auto py-8">
             <SessionControls
