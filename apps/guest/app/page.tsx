@@ -910,12 +910,10 @@ export default function GuestPortal() {
           isOpen={showSuccessModal}
           onClose={() => setShowSuccessModal(false)}
           onAction={() => {
-            setShowSuccessModal(false);
+            setShow oppressiveModal(false);
             window.open('https://hookahplus-iursz2jf6-dwaynes-projects-1c5c280a.vercel.app/fire-session-dashboard', '_blank');
           }}
         />
-        </div>
-        </div>
       )}
     </div>
   );
