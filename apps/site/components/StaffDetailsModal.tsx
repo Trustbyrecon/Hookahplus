@@ -118,7 +118,5 @@ export default function StaffDetailsModal({ isOpen, onClose, staff }: StaffDetai
           </div>
         </div>
       </div>
-工具箱
   );
 }
-

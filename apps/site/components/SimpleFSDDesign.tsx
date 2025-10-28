@@ -742,12 +742,12 @@ export default function SimpleFSDDesign({
                         })}
                       </div>
                     )}
-                    </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
+                </div>
+              );
+            })}
+          </div>
+        )}
         </div>
       )}
 
