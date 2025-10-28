@@ -2,52 +2,21 @@
 
 // Guest build deployment trigger - updated for proper Vercel alignment
 // Build timestamp: 2025-10-16T17:20:00Z
-import React, { useState, useEffect, Fragment } from 'react';
+import React, { useState, useEffect } from 'react';
 import Card from '../components/Card';
-import DollarTestButton from '../components/DollarTestButton';
+import DollarTestButton from '@/components/DollarTestButton';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
 import { StatusIndicator } from '../components/StatusIndicator';
-import { useCart } from '../components/cart/CartProvider';
+import { useCart } from '@/components/cart/CartProvider';
 import { SessionTimerAwareness } from '../components/SessionTimerAwareness';
 import GlobalNavigation from '../components/GlobalNavigation';
-import { HookahTracker } from '../components/HookahTracker';
-import { QRCodeScanner } from '../components/QRCodeScanner';
+import QRCodeScanner from '../components/QRCodeScanner';
 import RealTimeSessionSync from '../components/RealTimeSessionSync';
 import GuestIntelligenceDashboard from '../components/EnhancedStaffPanel';
-import SessionControls from '../components/SessionControls';
 import { sessionManager, SessionData } from '../lib/sessionManager';
-import MobileFlavorMixSelector from '../components/customer/MobileFlavorMixSelector';
-import MobileFireSessionDashboard from '../components/customer/MobileFireSessionDashboard';
-import MobileTouchHandler from '../components/customer/MobileTouchHandler';
-import MobilePerformanceOptimizer from '../components/customer/MobilePerformanceOptimizer';
-import IOSOptimized from '../components/platform/IOSOptimized';
-import AndroidOptimized from '../components/platform/AndroidOptimized';
-import { usePlatformDetection } from '../utils/platformDetection';
+import FlavorMixSelector from '../components/customer/FlavorMixSelector';
 import SuccessModal from '../components/SuccessModal';
-
-// Analytics tracking functions
-const trackConversion = (eventName: string, value?: number) => {
-  if (typeof window !== 'undefined' && window.gtag) {
-    window.gtag('event', 'conversion', {
-      event_category: 'conversion',
-      event_label: eventName,
-      value: value || 0,
-      currency: 'USD'
-    });
-    console.log(`[Analytics] 💰 Conversion tracked: ${eventName}`);
-  }
-};
-
-const trackEngagement = (action: string, component: string) => {
-  if (typeof window !== 'undefined' && window.gtag) {
-    window.gtag('event', 'engagement', {
-      event_category: 'user_interaction',
-      event_label: `${component}:${action}`
-    });
-    console.log(`[Analytics] 📊 Engagement tracked: ${component}:${action}`);
-  }
-};
 
 // Flavor categories for the FlavorMixSelector
 const FLAVOR_CATEGORIES = [
@@ -139,9 +108,7 @@ import {
   Brain,
   Shield,
   CreditCard,
-  QrCode,
-  MessageCircle,
-  Users
+  QrCode
 } from 'lucide-react';
 
 export default function GuestPortal() {
@@ -150,97 +117,14 @@ export default function GuestPortal() {
   const [sessionMetadata, setSessionMetadata] = useState<any>(null);
   const [currentSession, setCurrentSession] = useState<SessionData | null>(null);
   const [isStartingSession, setIsStartingSession] = useState(false);
-  const [showHookahTracker, setShowHookahTracker] = useState(false);
-  const [trackingSessionId, setTrackingSessionId] = useState<string | null>(null);
   const [showEnhancedStaffPanel, setShowEnhancedStaffPanel] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [showSessionControls, setShowSessionControls] = useState(false);
-  const [currentSessionDuration, setCurrentSessionDuration] = useState(3600); // 60 minutes in seconds
-  const [isSessionActive, setIsSessionActive] = useState(false);
   const [pricingModel, setPricingModel] = useState<'flat' | 'time-based'>('flat');
   const [sessionDuration, setSessionDuration] = useState(60); // Default 60 minutes
   
   // FlavorMixSelector state
   const [selectedFlavors, setSelectedFlavors] = useState<string[]>([]);
   const [flavorMixPrice, setFlavorMixPrice] = useState(0);
-  
-  // Platform detection
-  const platform = usePlatformDetection();
-  
-  // Staff alert functionality
-  const alertStaff = async (alertType: string, message: string) => {
-    try {
-      const response = await fetch('/api/staff/alerts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          tableId: tableData?.tableId || 'unknown',
-          alertType,
-          message,
-          timestamp: new Date().toISOString(),
-          priority: 'normal'
-        })
-      });
-
-      if (response.ok) {
-        console.log('Staff alert sent successfully:', alertType);
-      }
-    } catch (error) {
-      console.error('Failed to alert staff:', error);
-    }
-  };
-  
-  // Handle URL parameters for QR code scanning
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const loungeId = urlParams.get('loungeId');
-    const tableId = urlParams.get('tableId');
-    const ref = urlParams.get('ref');
-    const mode = urlParams.get('mode');
-    
-    if (loungeId && tableId) {
-      console.log('QR Code parameters detected:', { loungeId, tableId, ref, mode });
-      
-      // Create table data from URL parameters
-      const tableData = {
-        loungeId,
-        tableId,
-        ref: ref || 'demo',
-        status: 'ready',
-        capacity: 4,
-        zone: 'Main Floor',
-        type: 'table'
-      };
-      
-      // Set table data and trigger QR scan success
-      setTableData(tableData);
-      
-      // Track QR scan event
-      if (typeof window !== 'undefined' && window.gtag) {
-        window.gtag('event', 'qr_scan', {
-          event_category: 'engagement',
-          event_label: `lounge:${loungeId},table:${tableId},ref:${ref || 'none'},mode:${mode || 'default'}`
-        });
-      }
-      
-      // If mode is flavor-wheel, automatically open flavor wheel
-      if (mode === 'flavor-wheel') {
-        console.log('Auto-opening flavor wheel for QR scan');
-        // Trigger flavor wheel opening after a short delay
-        setTimeout(() => {
-          const flavorWheelButton = document.querySelector('[data-flavor-wheel-trigger]') as HTMLButtonElement;
-          if (flavorWheelButton) {
-            flavorWheelButton.click();
-          }
-        }, 1000);
-      }
-      
-      // Clear URL parameters to clean up the address bar
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, []);
   
   const addToCart = (item: { id: number; name: string; price: number }) => {
     add({ id: String(item.id), name: item.name, price: Math.round(item.price * 100), qty: 1 });
@@ -282,78 +166,13 @@ export default function GuestPortal() {
     setFlavorMixPrice(total);
   };
 
-  // Handle table detection - enable checkout WITHOUT triggering Hookah Tracker
-  const handleTableDetected = async (tableData: any) => {
+  const handleTableDetected = (tableData: any) => {
     setTableData(tableData);
     console.log('Table detected:', tableData);
-    
-    // Don't start hookah tracking until payment is complete
-    // Just enable the checkout button for now
-  };
-
-  // Handle table detection with tracking (for real QR scans, not demo)
-  const handleTableDetectedWithTracking = async (tableData: any) => {
-    setTableData(tableData);
-    console.log('Table detected with tracking:', tableData);
-    
-    // Start hookah tracking
-    const sessionId = `session_${Date.now()}`;
-    setTrackingSessionId(sessionId);
-    
-    try {
-      const response = await fetch('/api/tracking', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sessionId,
-          loungeId: tableData.loungeId || 'lounge_001',
-          tableId: tableData.tableId || 'T-001',
-          action: 'start'
-        })
-      });
-      
-      if (response.ok) {
-        setShowHookahTracker(true);
-        trackEngagement('qr_scan_success', 'hookah_tracker');
-      }
-    } catch (error) {
-      console.error('Failed to start tracking:', error);
-    }
   };
 
   const handleLoungeDetected = (loungeData: any) => {
     console.log('Lounge detected:', loungeData);
-    // Handle lounge detection if needed
-  };
-
-  const handleTrackingComplete = () => {
-    setShowHookahTracker(false);
-    setIsSessionActive(true);
-    setShowSessionControls(true);
-    trackConversion('hookah_delivered', 25); // Track successful delivery
-  };
-
-  // Session control handlers
-  const handleRequestRefill = () => {
-    console.log('Refill requested');
-    trackEngagement('request_refill', 'session_controls');
-  };
-
-  const handleRequestCoals = () => {
-    console.log('New coals requested');
-    trackEngagement('request_coals', 'session_controls');
-  };
-
-  const handleRequestFlavorChange = () => {
-    console.log('Flavor change requested');
-    trackEngagement('request_flavor_change', 'session_controls');
-    setShowSessionControls(false);
-    // Could show flavor selector here
-  };
-
-  const handleRequestStaff = () => {
-    console.log('Staff assistance requested');
-    trackEngagement('request_staff', 'session_controls');
   };
 
   const handleSessionUpdate = (metadata: any) => {
@@ -412,7 +231,7 @@ export default function GuestPortal() {
     return unsubscribe;
   }, []);
 
-  // Handle Fire Session button click  
+  // Handle Fire Session button click
   const handleFireSession = async () => {
     try {
       setIsStartingSession(true);
@@ -444,14 +263,7 @@ export default function GuestPortal() {
         const result = await response.json();
         console.log('✅ Session created successfully:', result);
         
-        // Start Hookah Tracker instead of just showing success modal
-        const sessionId = result.session?.id || `session_${Date.now()}`;
-        const loungeId = tableData?.loungeId || 'lounge_001';
-        const tableId = tableData?.tableId || 'T-001';
-        
-        // Open Hookah Tracker in new window
-        const trackerUrl = `/hookah-tracker?sessionId=${sessionId}&loungeId=${loungeId}&tableId=${tableId}`;
-        window.open(trackerUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+        setShowSuccessModal(true);
         
         // Clear cart after successful session start
         items.forEach(item => remove(item.id));
@@ -488,7 +300,6 @@ export default function GuestPortal() {
       window.open('https://hookahplus.net/operator', '_blank');
     }
   };
-
   const menuItems = [
     {
       id: 1,
@@ -531,62 +342,9 @@ export default function GuestPortal() {
     { name: 'Desserts', count: 1, active: false }
   ];
 
-  // Simplified return without platform wrappers
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
       <GlobalNavigation currentPage="home" />
-      {/* Hookah Tracker - Show when tracking is active */}
-      {showHookahTracker && trackingSessionId && tableData && (
-        <HookahTracker
-          sessionId={trackingSessionId}
-          loungeId={tableData.loungeId || 'lounge_001'}
-          tableId={tableData.tableId || 'T-001'}
-          onComplete={handleTrackingComplete}
-        />
-      )}
-      
-      {/* Session Controls - Show after tracker completes */}
-      {showSessionControls && isSessionActive && !showHookahTracker && (
-        <div className="p-4">
-          <GlobalNavigation currentPage="home" />
-          <div className="max-w-4xl mx-auto py-8">
-            <SessionControls
-              sessionId={trackingSessionId || 'current-session'}
-              sessionDuration={currentSessionDuration}
-              onRequestRefill={handleRequestRefill}
-              onRequestCoals={handleRequestCoals}
-              onRequestFlavorChange={handleRequestFlavorChange}
-              onRequestStaff={handleRequestStaff}
-            />
-            
-            {/* Guest Intelligence Dashboard Toggle */}
-            <div className="mt-8">
-              <button
-                onClick={() => setShowEnhancedStaffPanel(!showEnhancedStaffPanel)}
-                className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-xl font-medium transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2"
-              >
-                <Brain className="w-5 h-5" />
-                <span>{showEnhancedStaffPanel ? 'Hide' : 'Show'} Guest Intelligence</span>
-              </button>
-            </div>
-
-            {showEnhancedStaffPanel && (
-              <div className="mt-6">
-                <GuestIntelligenceDashboard 
-                  sessionId={trackingSessionId || undefined}
-                  tableId={tableData?.tableId || undefined}
-                  onClose={() => setShowEnhancedStaffPanel(false)}
-                />
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Main Guest Portal - Show when not tracking and not in session controls */}
-      {!showHookahTracker && !showSessionControls && (
-        <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white platform-optimized">
-        <GlobalNavigation currentPage="home" />
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
         {/* QR Scanner & Table Status with Pricing Options */}
@@ -696,28 +454,14 @@ export default function GuestPortal() {
           </div>
         )}
         
-        {/* Mobile-Optimized Flavor Mix Selector - Wheel/Guided Mode */}
+        {/* Flavor Mix Selector - Wheel/Guided Mode */}
         <div className="mb-6">
-          <MobilePerformanceOptimizer enableLazyLoading={true} enablePerformanceTracking={true}>
-            <MobileTouchHandler
-              onSwipe={(direction, distance) => {
-                console.log(`Swipe ${direction} detected with distance ${distance}`);
-              }}
-              onTap={(position) => {
-                console.log(`Tap detected at ${position.x}, ${position.y}`);
-              }}
-              onDoubleTap={(position) => {
-                console.log(`Double tap detected at ${position.x}, ${position.y}`);
-              }}
-            >
-              <MobileFlavorMixSelector
-                selectedFlavors={selectedFlavors}
-                onSelectionChange={handleFlavorSelectionChange}
-                maxSelections={4}
-                onPriceUpdate={handleFlavorPriceUpdate}
-              />
-            </MobileTouchHandler>
-          </MobilePerformanceOptimizer>
+          <FlavorMixSelector
+            selectedFlavors={selectedFlavors}
+            onSelectionChange={handleFlavorSelectionChange}
+            maxSelections={4}
+            onPriceUpdate={handleFlavorPriceUpdate}
+          />
         </div>
 
         {/* Order Summary & Actions */}
@@ -821,7 +565,7 @@ export default function GuestPortal() {
                     onClick={handleFireSession}
                     disabled={isStartingSession || !tableData}
                   >
-                    {isStartingSession ? 'Starting...' : 'Checkout'}
+                    {isStartingSession ? 'Starting...' : '🔥 Fire Session'}
                   </Button>
                   
                   <div className="grid grid-cols-2 gap-2">
@@ -839,17 +583,10 @@ export default function GuestPortal() {
                       size="sm"
                       leftIcon={<BarChart3 className="w-3 h-3" />}
                     onClick={() => {
-                        // Open Hookah Tracker instead of old operator link
-                        const sessionId = `session_${Date.now()}`;
-                        const loungeId = tableData?.loungeId || 'lounge_001';
-                        const tableId = tableData?.tableId || 'T-001';
-                        
-                        // Create a new window with Hookah Tracker
-                        const trackerUrl = `/hookah-tracker?sessionId=${sessionId}&loungeId=${loungeId}&tableId=${tableId}`;
-                        window.open(trackerUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+                        window.open('https://hookahplus.net/operator', '_blank');
                     }}
                   >
-                      Hookah Tracker
+                      Dashboard
                   </Button>
                   </div>
                 </div>
@@ -857,43 +594,6 @@ export default function GuestPortal() {
             </Card>
           </div>
         </div>
-
-        {/* Staff Contact Section */}
-        <Card className="mt-6">
-          <div className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
-                  <Users className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg">Need Help?</h3>
-                  <p className="text-sm text-zinc-400">Our staff is here to assist you</p>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => alertStaff('help_request', 'Guest needs assistance with ordering')}
-                  className="flex items-center gap-2"
-                >
-                  <AlertCircle className="w-4 h-4" />
-                  Contact Staff
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => alertStaff('order_question', 'Guest has questions about their order')}
-                  className="flex items-center gap-2"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  Ask Question
-                </Button>
-              </div>
-            </div>
-          </div>
-        </Card>
       </div>
 
       {/* Guest Intelligence Dashboard Modal */}
@@ -905,16 +605,15 @@ export default function GuestPortal() {
         />
       )}
 
-        {/* Success Modal */}
-        <SuccessModal
-          isOpen={showSuccessModal}
-          onClose={() => setShowSuccessModal(false)}
-          onAction={() => {
-            setShowSuccessModal(false);
-            window.open('https://hookahplus-iursz2jf6-dwaynes-projects-1c5c280a.vercel.app/fire-session-dashboard', '_blank');
-          }}
-        />
-      )}
+      {/* Success Modal */}
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        onAction={() => {
+          setShowSuccessModal(false);
+          window.open('https://hookahplus-iursz2jf6-dwaynes-projects-1c5c280a.vercel.app/fire-session-dashboard', '_blank');
+        }}
+      />
     </div>
   );
 }
