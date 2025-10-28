@@ -530,7 +530,6 @@ export default function SimpleFSDDesign({
   }, 0) / displaySessions.length;
   const guestSatisfaction = 94; // Mock satisfaction score
 
-  }; // Extra closing brace for missing opening brace
   return (
     <div className={className}>
       {/* Header */}
