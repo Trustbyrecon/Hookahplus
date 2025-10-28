@@ -534,7 +534,7 @@ export default function GuestPortal() {
   if (platform.isIOS) {
     return (
       <IOSOptimized enableBiometrics={true} enableHaptics={true} enableSafeArea={true}>
-        <>
+        <React.Fragment>
           {/* Hookah Tracker - Show when tracking is active */}
           {showHookahTracker && trackingSessionId && tableData && (
             <HookahTracker
@@ -917,7 +917,7 @@ export default function GuestPortal() {
         </div>
         </div>
       )}
-        </>
+        </React.Fragment>
       </IOSOptimized>
     );
   }
@@ -925,7 +925,7 @@ export default function GuestPortal() {
   if (platform.isAndroid) {
     return (
       <AndroidOptimized enableBiometrics={true} enableHaptics={true} enableMaterialDesign={true}>
-        <>
+        <React.Fragment>
           {/* Hookah Tracker - Show when tracking is active */}
           {showHookahTracker && trackingSessionId && tableData && (
           <HookahTracker
@@ -994,14 +994,14 @@ export default function GuestPortal() {
             />
           </div>
         )}
-        </>
+        </React.Fragment>
       </AndroidOptimized>
     );
   }
 
   // Default web render
   return (
-    <>
+    <React.Fragment>
       {/* Hookah Tracker - Show when tracking is active */}
       {showHookahTracker && trackingSessionId && tableData && (
         <HookahTracker
@@ -1031,6 +1031,6 @@ export default function GuestPortal() {
           window.open('https://hookahplus-iursz2jf6-dwaynes-projects-1c5c280a.vercel.app/fire-session-dashboard', '_blank');
         }}
       />
-    </>
+    </React.Fragment>
   );
 }
