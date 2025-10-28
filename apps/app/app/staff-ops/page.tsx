@@ -302,6 +302,7 @@ export default function StaffOpsDashboard() {
         </div>
 
         {/* Main Content */}
+        {activeTab === 'tasks' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Floor Tasks */}
           <div className="space-y-6">
@@ -482,6 +483,93 @@ export default function StaffOpsDashboard() {
             </div>
           </div>
         </div>
+        )}
+
+        {activeTab === 'staff' && (
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold">Staff Management</h2>
+            <div className="bg-zinc-800/50 rounded-lg p-6 border border-zinc-700">
+              <div className="space-y-4">
+                {staff.map(member => (
+                  <div key={member.id} className="flex items-center justify-between p-4 bg-zinc-700/50 rounded-lg">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 bg-zinc-600 rounded-full flex items-center justify-center">
+                        <Users className="w-6 h-6 text-zinc-400" />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-lg">{member.name}</div>
+                        <div className="text-sm text-zinc-400">{member.role} • {member.currentTask || 'Available'}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStaffStatusColor(member.status)}`}>
+                        {member.status.toUpperCase()}
+                      </span>
+                      <div className="text-right">
+                        <div className="text-xs text-zinc-400">Last active</div>
+                        <div className="text-sm text-white">{member.lastActive.toLocaleTimeString()}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'analytics' && (
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold">Staff Analytics</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-zinc-800/50 rounded-lg p-6 border border-zinc-700">
+                <div className="flex items-center justify-between mb-4">
+                  <Clock className="w-8 h-8 text-blue-400" />
+                  <span className="text-3xl font-bold text-white">87%</span>
+                </div>
+                <div className="text-sm text-zinc-400">Avg Efficiency</div>
+                <div className="text-xs text-green-400 mt-2">+3% from last week</div>
+              </div>
+              <div className="bg-zinc-800/50 rounded-lg p-6 border border-zinc-700">
+                <div className="flex items-center justify-between mb-4">
+                  <CheckCircle className="w-8 h-8 text-green-400" />
+                  <span className="text-3xl font-bold text-white">142</span>
+                </div>
+                <div className="text-sm text-zinc-400">Tasks Completed</div>
+                <div className="text-xs text-green-400 mt-2">+12 from last week</div>
+              </div>
+              <div className="bg-zinc-800/50 rounded-lg p-6 border border-zinc-700">
+                <div className="flex items-center justify-between mb-4">
+                  <Users className="w-8 h-8 text-purple-400" />
+                  <span className="text-3xl font-bold text-white">2.3m</span>
+                </div>
+                <div className="text-sm text-zinc-400">Avg Response Time</div>
+                <div className="text-xs text-green-400 mt-2">-0.5m improvement</div>
+              </div>
+            </div>
+            
+            <div className="bg-zinc-800/50 rounded-lg p-6 border border-zinc-700">
+              <h3 className="font-semibold mb-4">Top Performing Staff</h3>
+              <div className="space-y-3">
+                {staff.sort((a, b) => (a.currentTask ? 1 : 0) - (b.currentTask ? 1 : 0)).map((member, idx) => (
+                  <div key={member.id} className="flex items-center justify-between p-3 bg-zinc-700/50 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className="text-2xl font-bold text-zinc-500">#{idx + 1}</div>
+                      <div>
+                        <div className="font-medium">{member.name}</div>
+                        <div className="text-xs text-zinc-400">{member.role}</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-semibold text-green-400">
+                        {member.currentTask ? 'Active' : 'Available'}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* New Task Modal */}
