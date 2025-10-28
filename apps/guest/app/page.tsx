@@ -145,7 +145,8 @@ import {
 } from 'lucide-react';
 
 export default function GuestPortal() {
-  const { add, remove, items, subtotal } = useCart() as { add: any; remove: any; items: any[]; subtotal: number };
+  const cart = useCart() as any;
+  const { add, remove, items, subtotal } = cart;
   const [tableData, setTableData] = useState<any>(null);
   const [sessionMetadata, setSessionMetadata] = useState<any>(null);
   const [currentSession, setCurrentSession] = useState<SessionData | null>(null);
