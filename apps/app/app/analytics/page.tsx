@@ -403,11 +403,245 @@ export default function AnalyticsPage() {
       case 'overview': return renderOverview();
       case 'revenue': return renderRevenue();
       case 'sessions': return renderSessions();
-      case 'customers': return <div className="text-center py-12 text-zinc-400">Customer Analytics Coming Soon</div>;
-      case 'performance': return <div className="text-center py-12 text-zinc-400">Performance Analytics Coming Soon</div>;
+      case 'customers': return renderCustomers();
+      case 'performance': return renderPerformance();
       default: return renderOverview();
     }
   };
+
+  const renderCustomers = () => (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-zinc-400">Total Customers</p>
+              <p className="text-2xl font-bold text-white">2,847</p>
+              <p className="text-xs text-green-400 mt-1">+12% this month</p>
+            </div>
+            <Users className="w-8 h-8 text-blue-400" />
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-zinc-400">New Customers</p>
+              <p className="text-2xl font-bold text-white">342</p>
+              <p className="text-xs text-green-400 mt-1">+8% this month</p>
+            </div>
+            <Users className="w-8 h-8 text-green-400" />
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-zinc-400">Return Rate</p>
+              <p className="text-2xl font-bold text-white">68%</p>
+              <p className="text-xs text-green-400 mt-1">+5% this month</p>
+            </div>
+            <TrendingUp className="w-8 h-8 text-yellow-400" />
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-zinc-400">Avg Lifetime Value</p>
+              <p className="text-2xl font-bold text-white">$284</p>
+              <p className="text-xs text-green-400 mt-1">+$12 this month</p>
+            </div>
+            <DollarSign className="w-8 h-8 text-purple-400" />
+          </div>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="p-6">
+          <h3 className="text-lg font-semibold text-white mb-4">Top Customers</h3>
+          <div className="space-y-4">
+            {[
+              { name: 'Alex Martinez', visits: 34, spend: '$4,820', lastVisit: '2 days ago', avatar: 'AM' },
+              { name: 'Jordan Lee', visits: 28, spend: '$3,940', lastVisit: '1 week ago', avatar: 'JL' },
+              { name: 'Sam Cooper', visits: 25, spend: '$3,750', lastVisit: '3 days ago', avatar: 'SC' },
+              { name: 'Morgan Kim', visits: 22, spend: '$3,120', lastVisit: '5 days ago', avatar: 'MK' },
+              { name: 'Casey Brown', visits: 20, spend: '$2,980', lastVisit: '4 days ago', avatar: 'CB' }
+            ].map((customer, index) => (
+              <div key={index} className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg hover:bg-zinc-700/50 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-teal-500/20 rounded-full flex items-center justify-center">
+                    <span className="text-teal-400 font-semibold text-sm">{customer.avatar}</span>
+                  </div>
+                  <div>
+                    <p className="text-white font-medium">{customer.name}</p>
+                    <p className="text-xs text-zinc-400">{customer.lastVisit}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-white font-semibold">{customer.spend}</p>
+                  <p className="text-xs text-zinc-400">{customer.visits} visits</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <h3 className="text-lg font-semibold text-white mb-4">Customer Segments</h3>
+          <div className="space-y-4">
+            {[
+              { segment: 'VIP Loyalists', count: 234, percentage: 43, color: 'bg-yellow-500' },
+              { segment: 'Regular Visitors', count: 892, percentage: 68, color: 'bg-green-500' },
+              { segment: 'New Customers', count: 342, percentage: 12, color: 'bg-blue-500' },
+              { segment: 'At Risk', count: 89, percentage: 3, color: 'bg-red-500' }
+            ].map((segment, index) => (
+              <div key={index} className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-white font-medium">{segment.segment}</span>
+                  <span className="text-white">{segment.count}</span>
+                </div>
+                <div className="w-full bg-zinc-700 rounded-full h-3">
+                  <div 
+                    className={`${segment.color} h-3 rounded-full transition-all duration-500`}
+                    style={{ width: `${segment.percentage}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+
+  const renderPerformance = () => (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-zinc-400">Peak Hours</p>
+              <p className="text-2xl font-bold text-white">8-10 PM</p>
+              <p className="text-xs text-zinc-400 mt-1">Busiest period</p>
+            </div>
+            <Clock className="w-8 h-8 text-orange-400" />
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-zinc-400">Avg Service Time</p>
+              <p className="text-2xl font-bold text-white">12 min</p>
+              <p className="text-xs text-green-400 mt-1">-2 min vs last month</p>
+            </div>
+            <Zap className="w-8 h-8 text-green-400" />
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-zinc-400">Customer Satisfaction</p>
+              <p className="text-2xl font-bold text-white">4.8/5</p>
+              <p className="text-xs text-green-400 mt-1">+0.2 this month</p>
+            </div>
+            <Star className="w-8 h-8 text-yellow-400" />
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-zinc-400">Staff Efficiency</p>
+              <p className="text-2xl font-bold text-white">91%</p>
+              <p className="text-xs text-green-400 mt-1">+4% this month</p>
+            </div>
+            <Activity className="w-8 h-8 text-blue-400" />
+          </div>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="p-6">
+          <h3 className="text-lg font-semibold text-white mb-4">Busiest Hours</h3>
+          <div className="space-y-3">
+            {[
+              { hour: '6 PM', sessions: 24, revenue: '$1,920' },
+              { hour: '7 PM', sessions: 32, revenue: '$2,560' },
+              { hour: '8 PM', sessions: 45, revenue: '$3,600' },
+              { hour: '9 PM', sessions: 48, revenue: '$3,840' },
+              { hour: '10 PM', sessions: 41, revenue: '$3,280' },
+              { hour: '11 PM', sessions: 28, revenue: '$2,240' }
+            ].map((data, index) => (
+              <div key={index} className="flex items-center gap-3">
+                <div className="w-16 text-sm text-zinc-400 font-medium">{data.hour}</div>
+                <div className="flex-1 bg-zinc-800 rounded-full h-6 relative overflow-hidden">
+                  <div 
+                    className="bg-teal-500 h-6 rounded-full flex items-center justify-end pr-2 transition-all duration-500"
+                    style={{ width: `${(data.sessions / 50) * 100}%` }}
+                  >
+                    <span className="text-xs text-white font-medium">{data.sessions}</span>
+                  </div>
+                </div>
+                <div className="w-20 text-sm text-right text-white font-medium">{data.revenue}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <h3 className="text-lg font-semibold text-white mb-4">Performance Trends</h3>
+          <div className="space-y-4">
+            <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-green-400 font-semibold flex items-center gap-2">
+                  <ArrowUp className="w-4 h-4" />
+                  Session Completion Rate
+                </span>
+                <span className="text-white font-bold">+8%</span>
+              </div>
+              <p className="text-sm text-zinc-400">Now at 94% - significantly above target</p>
+            </div>
+
+            <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-blue-400 font-semibold flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4" />
+                  Revenue Per Session
+                </span>
+                <span className="text-white font-bold">+$12</span>
+              </div>
+              <p className="text-sm text-zinc-400">Average up to $92 per session</p>
+            </div>
+
+            <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-yellow-400 font-semibold flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Wait Time Improvement
+                </span>
+                <span className="text-white font-bold">-18%</span>
+              </div>
+              <p className="text-sm text-zinc-400">Average wait time now 12 minutes</p>
+            </div>
+
+            <div className="p-4 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-purple-400 font-semibold flex items-center gap-2">
+                  <Target className="w-4 h-4" />
+                  Upsell Success
+                </span>
+                <span className="text-white font-bold">+15%</span>
+              </div>
+              <p className="text-sm text-zinc-400">68% of sessions include add-ons</p>
+            </div>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
