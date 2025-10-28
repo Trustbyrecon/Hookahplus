@@ -28,6 +28,7 @@ import {
   Ban,
   Brain
 } from 'lucide-react';
+import CreateSessionModal from './CreateSessionModal';
 
 // Enhanced Session Types
 type SessionStatus = 
@@ -393,6 +394,7 @@ export default function SimpleFSDDesign({
   const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [hoveredAction, setHoveredAction] = useState<string | null>(null);
+  const [isCreateSessionModalOpen, setIsCreateSessionModalOpen] = useState(false);
 
   // Use demo data if no sessions provided
   const displaySessions = sessions.length > 0 ? sessions : generateRichDemoData();
@@ -412,8 +414,18 @@ export default function SimpleFSDDesign({
   const activeSessions = getActiveSessionCount();
 
   const handleCreateSession = () => {
-    window.dispatchEvent(new CustomEvent('openCreateSessionModal'));
+    setIsCreateSessionModalOpen(true);
   };
+
+  // Listen for custom event from other components
+  React.useEffect(() => {
+    const handleOpenModal = () => {
+      setIsCreateSessionModalOpen(true);
+    };
+    
+    window.addEventListener('openCreateSessionModal', handleOpenModal);
+    return () => window.removeEventListener('openCreateSessionModal', handleOpenModal);
+  }, []);
 
   const handleSessionAction = async (action: string, sessionId: string) => {
     console.log(`Action: ${action} on session: ${sessionId}`);
@@ -750,6 +762,16 @@ export default function SimpleFSDDesign({
           <p className="text-zinc-400">Filtered session view coming soon...</p>
         </div>
       )}
+
+      {/* Create Session Modal */}
+      <CreateSessionModal
+        isOpen={isCreateSessionModalOpen}
+        onClose={() => setIsCreateSessionModalOpen(false)}
+        onSave={(data) => {
+          console.log('Creating new session:', data);
+          alert(`Session created successfully!\n\nTable: ${data.table}\nCustomer: ${data.customerName}\nTotal: $${(data.basePrice + data.addons.length * 2).toFixed(2)}`);
+        }}
+      />
     </div>
   );
 }
