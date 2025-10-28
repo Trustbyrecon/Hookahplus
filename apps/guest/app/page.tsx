@@ -531,7 +531,7 @@ export default function GuestPortal() {
     { name: 'Food', count: 1, active: false },
     { name: 'Desserts', count: 1, active: false }
   ];
-
+}
   // Simplified return without platform wrappers
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
