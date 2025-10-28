@@ -530,11 +530,12 @@ export default function GuestPortal() {
     { name: 'Desserts', count: 1, active: false }
   ];
 
-  // Platform wrapper logic - return directly
-  if (platform.isIOS) {
-    const iosContent = (
+  // Simplified return without platform wrappers
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
+      <GlobalNavigation currentPage="home" />
       <>
-          {/* Hookah Tracker - Show when tracking is active */}
+        {/* Hookah Tracker - Show when tracking is active */}
           {showHookahTracker && trackingSessionId && tableData && (
             <HookahTracker
             sessionId={trackingSessionId}
@@ -917,17 +918,10 @@ export default function GuestPortal() {
         </div>
       )}
       </>
-    );
-    return (
-      <IOSOptimized enableBiometrics={true} enableHaptics={true} enableSafeArea={true}>
-        {iosContent}
-      </IOSOptimized>
-    );
-  }
-  
-  if (platform.isAndroid) {
-    const androidContent = (
-      <>
+    </div>
+  );
+}
+        <>
           {/* Hookah Tracker - Show when tracking is active */}
           {showHookahTracker && trackingSessionId && tableData && (
           <HookahTracker
@@ -996,11 +990,7 @@ export default function GuestPortal() {
             />
           </div>
         )}
-      </>
-    );
-    return (
-      <AndroidOptimized enableBiometrics={true} enableHaptics={true} enableMaterialDesign={true}>
-        {androidContent}
+        </>
       </AndroidOptimized>
     );
   }
