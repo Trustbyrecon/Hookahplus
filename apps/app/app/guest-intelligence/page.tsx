@@ -353,8 +353,8 @@ export default function GuestIntelligencePage() {
                       <span className="text-white">45 minutes</span>
                     </div>
                   </div>
-                </div>
-              </div>
+        </div>
+      </div>
 
               {/* Typical Order Pattern */}
               <div>
@@ -368,7 +368,7 @@ export default function GuestIntelligencePage() {
                       </li>
                     ))}
                   </ul>
-                </div>
+          </div>
         </div>
       </div>
           )}
@@ -393,7 +393,7 @@ export default function GuestIntelligencePage() {
             </div>
           )}
         </div>
+        </div>
       </div>
-    </div>
   );
 }
