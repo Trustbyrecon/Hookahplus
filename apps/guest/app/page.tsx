@@ -532,9 +532,8 @@ export default function GuestPortal() {
 
   // Platform wrapper logic - return directly
   if (platform.isIOS) {
-    return (
-      <IOSOptimized enableBiometrics={true} enableHaptics={true} enableSafeArea={true}>
-        <React.Fragment>
+    const iosContent = (
+      <>
           {/* Hookah Tracker - Show when tracking is active */}
           {showHookahTracker && trackingSessionId && tableData && (
             <HookahTracker
@@ -917,15 +916,18 @@ export default function GuestPortal() {
         </div>
         </div>
       )}
-        </React.Fragment>
+      </>
+    );
+    return (
+      <IOSOptimized enableBiometrics={true} enableHaptics={true} enableSafeArea={true}>
+        {iosContent}
       </IOSOptimized>
     );
   }
   
   if (platform.isAndroid) {
-    return (
-      <AndroidOptimized enableBiometrics={true} enableHaptics={true} enableMaterialDesign={true}>
-        <React.Fragment>
+    const androidContent = (
+      <>
           {/* Hookah Tracker - Show when tracking is active */}
           {showHookahTracker && trackingSessionId && tableData && (
           <HookahTracker
@@ -994,14 +996,18 @@ export default function GuestPortal() {
             />
           </div>
         )}
-        </React.Fragment>
+      </>
+    );
+    return (
+      <AndroidOptimized enableBiometrics={true} enableHaptics={true} enableMaterialDesign={true}>
+        {androidContent}
       </AndroidOptimized>
     );
   }
 
   // Default web render
   return (
-    <React.Fragment>
+    <>
       {/* Hookah Tracker - Show when tracking is active */}
       {showHookahTracker && trackingSessionId && tableData && (
         <HookahTracker
