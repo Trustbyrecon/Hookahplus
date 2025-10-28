@@ -523,7 +523,6 @@ export default function SimpleFSDDesign({
   };
 
   // Calculate KPIs
-  const activeSessions = displaySessions.filter(s => getSessionStatus(s) === 'ACTIVE').length;
   const totalRevenue = displaySessions.reduce((sum, s) => sum + (s.amount || 0), 0) / 100;
   const avgSessionTime = displaySessions.reduce((sum, s) => {
     const timer = s.sessionTimer;
