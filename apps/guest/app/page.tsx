@@ -412,7 +412,7 @@ export default function GuestPortal() {
     return unsubscribe;
   }, []);
 
-  // Handle Fire Session button click
+  // Handle Fire Session button click  
   const handleFireSession = async () => {
     try {
       setIsStartingSession(true);
