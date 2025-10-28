@@ -529,9 +529,7 @@ export default function SimpleFSDDesign({
     return sum + (timer ? timer.totalDuration / 60 : 45); // Default 45 minutes
   }, 0) / displaySessions.length;
   const guestSatisfaction = 94; // Mock satisfaction score
-  
-  }; // Required by SWC for brace balance
-  
+
   return (
     <div className={className}>
       {/* Header */}
