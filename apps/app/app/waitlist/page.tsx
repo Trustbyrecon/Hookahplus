@@ -438,8 +438,8 @@ export default function WaitlistPage() {
             <div className="flex items-start space-x-3">
               <DollarSign className="w-6 h-6 text-green-400 mt-1" />
               <div>
-                <h4 className="font-semibold text-white">Revenue Share</h4>
-                <p className="text-sm text-zinc-400">5% of revenue share for 1 year for every lounge you bring to Hookah+</p>
+                <h4 className="font-semibold text-white">Flat Payout Structure</h4>
+                <p className="text-sm text-zinc-400">$500 flat payout after 90 days for every lounge you bring to Hookah+</p>
               </div>
             </div>
             <div className="flex items-start space-x-3">
@@ -468,7 +468,10 @@ export default function WaitlistPage() {
             <div className="bg-zinc-800/50 rounded-lg p-6">
               <h4 className="font-semibold text-white mb-2">Apply Now</h4>
               <p className="text-sm text-zinc-400 mb-4">Join the movement. Shape the culture.</p>
-              <Button className="w-full">
+              <Button 
+                className="w-full"
+                onClick={() => window.open('https://forms.hookahplus.net/become-connector', '_blank')}
+              >
                 <Star className="w-4 h-4 mr-2" />
                 Become a Connector
               </Button>
