@@ -533,6 +533,7 @@ export default function GuestPortal() {
   ];
 
   // Simplified return without platform wrappers
+  }; // Close an extra opening brace
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
       <GlobalNavigation currentPage="home" />
