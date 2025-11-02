@@ -27,7 +27,7 @@ import {
   Star,
   Gift
 } from 'lucide-react';
-import Image from 'next/image';
+import ImageWithFallback from '../components/ImageWithFallback';
 
 export default function Home() {
   const metrics = [
@@ -205,12 +205,13 @@ export default function Home() {
           {/* Hero Section: Master Lounge Operations */}
           <div className="relative mb-12 rounded-xl overflow-hidden bg-gradient-to-br from-zinc-900 to-zinc-950 border border-teal-500/20">
             <div className="relative h-[400px]">
-              <Image
+              <ImageWithFallback
                 src="/images/operational-workflow/master-lounge-operations.jpg"
                 alt="Master Lounge Operations - Real-time data insights for staff and session optimization"
                 fill
                 className="object-cover opacity-40"
                 priority
+                fallbackText="Master Lounge Operations Hero Image"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/80 to-transparent" />
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 z-10">
@@ -234,11 +235,12 @@ export default function Home() {
           {/* Take Control Section */}
           <div className="mb-12 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
             <div className="relative h-[500px] rounded-xl overflow-hidden border border-teal-500/20">
-              <Image
+              <ImageWithFallback
                 src="/images/operational-workflow/take-control-lounge.jpg"
                 alt="Take control of your lounge with intelligent tools"
                 fill
                 className="object-cover"
+                fallbackText="Staff using tablet in modern lounge"
               />
             </div>
             <div>
@@ -262,11 +264,12 @@ export default function Home() {
             
             <div className="relative mb-8 rounded-xl overflow-hidden border border-teal-500/20 bg-zinc-900/50 p-8">
               <div className="relative h-[500px]">
-                <Image
+                <ImageWithFallback
                   src="/images/operational-workflow/automate-operations.jpg"
                   alt="Automate operations workflow from session start to inventory updated"
                   fill
                   className="object-contain"
+                  fallbackText="Workflow: Session Start → Inventory Updated"
                 />
               </div>
             </div>
@@ -287,11 +290,12 @@ export default function Home() {
               </p>
             </div>
             <div className="relative h-[500px] rounded-xl overflow-hidden border border-teal-500/20">
-              <Image
+              <ImageWithFallback
                 src="/images/operational-workflow/operational-flow-simplified.jpg"
                 alt="Operational flow simplified dashboard interface"
                 fill
                 className="object-contain bg-zinc-900"
+                fallbackText="Hookah+ Dashboard Interface"
               />
             </div>
           </div>
@@ -352,11 +356,12 @@ export default function Home() {
           {/* Maximize Performance Section */}
           <div className="mb-12 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
             <div className="relative h-[500px] rounded-xl overflow-hidden border border-teal-500/20">
-              <Image
+              <ImageWithFallback
                 src="/images/operational-workflow/maximize-performance.jpg"
                 alt="Maximize lounge performance with data analytics"
                 fill
                 className="object-contain bg-zinc-900"
+                fallbackText="Performance Analytics Dashboard"
               />
             </div>
             <div>
@@ -390,11 +395,12 @@ export default function Home() {
               </p>
             </div>
             <div className="relative h-[500px] rounded-xl overflow-hidden border border-teal-500/20">
-              <Image
+              <ImageWithFallback
                 src="/images/operational-workflow/boost-profitability.jpg"
                 alt="Boost profitability with data-driven pricing decisions"
                 fill
                 className="object-cover"
+                fallbackText="Pricing & Profitability Dashboard"
               />
             </div>
           </div>
@@ -402,11 +408,12 @@ export default function Home() {
           {/* Coordinate Staff Seamlessly Section */}
           <div className="mb-12 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
             <div className="relative h-[500px] rounded-xl overflow-hidden border border-teal-500/20">
-              <Image
+              <ImageWithFallback
                 src="/images/operational-workflow/coordinate-staff.jpg"
                 alt="Coordinate staff seamlessly with task management"
                 fill
                 className="object-cover"
+                fallbackText="Staff Coordination Interface"
               />
             </div>
             <div>
