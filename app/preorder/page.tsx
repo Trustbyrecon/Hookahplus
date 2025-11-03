@@ -6,8 +6,8 @@ import PreorderEntry from '../../components/PreorderEntry';
 export default function PreorderPage() {
   const handleCheckout = async (data: { flavors: string[]; price: number; table?: string }) => {
     try {
-      // Call Netlify function to create Stripe checkout session
-      const response = await fetch('/.netlify/functions/createCheckout', {
+      // Call Vercel API route to create Stripe checkout session
+      const response = await fetch('/api/checkout/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

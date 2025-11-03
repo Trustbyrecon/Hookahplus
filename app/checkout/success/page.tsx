@@ -20,7 +20,7 @@ export default function Success() {
 
       try {
         // Fetch checkout session details from Stripe
-        const stripeResponse = await fetch(`/.netlify/functions/getSessionNotes?checkoutSessionId=${checkoutSessionId}`);
+        const stripeResponse = await fetch(`/api/checkout/session-notes?checkoutSessionId=${checkoutSessionId}`);
         
         // Create session in our database
         const sessionResponse = await fetch('/api/sessions', {
