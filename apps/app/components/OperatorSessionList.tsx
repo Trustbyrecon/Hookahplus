@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import SessionCard from '../../components/SessionCard';
 
 interface Session {
   id: number;
@@ -264,7 +263,7 @@ function SessionNotesModal({
                 onClick={() => removeNote(idx)}
                 className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded"
               >
-                ×
+                ?
               </button>
             </div>
           ))}

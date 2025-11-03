@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query } from '../../api/db';
+import { query } from '../../db';
 
 // API endpoint to create session after payment success
 export async function POST(req: Request) {
