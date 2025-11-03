@@ -58,6 +58,7 @@ async function testReconciliation() {
     console.log(`✅ Created ${testTickets.length} test POS tickets`);
 
     // Create mock Stripe charges that match the POS tickets
+    // Using Partial<Stripe.Charge> and casting via unknown for TypeScript compatibility
     console.log('\nStep 2: Creating mock Stripe charges...');
     const now = Math.floor(Date.now() / 1000);
     const mockCharges: Stripe.Charge[] = [
@@ -72,7 +73,7 @@ async function testReconciliation() {
         metadata: {
           sessionId: 'test-session-001',
         },
-      } as Stripe.Charge,
+      } as unknown as Stripe.Charge,
       {
         id: 'ch_test_match_002',
         object: 'charge',
@@ -84,7 +85,7 @@ async function testReconciliation() {
         metadata: {
           sessionId: 'test-session-002',
         },
-      } as Stripe.Charge,
+      } as unknown as Stripe.Charge,
       {
         id: 'ch_test_orphan_001',
         object: 'charge',
@@ -94,7 +95,7 @@ async function testReconciliation() {
         paid: true,
         status: 'succeeded',
         metadata: {},
-      } as Stripe.Charge,
+      } as unknown as Stripe.Charge,
     ];
 
     console.log(`✅ Created ${mockCharges.length} mock Stripe charges`);
