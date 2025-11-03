@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { Download, RefreshCw } from 'lucide-react';
-import RevenueMetrics from '../components/RevenueMetrics';
-import RevenueChart from '../components/RevenueChart';
-import DateRangeSelector from '../components/DateRangeSelector';
-import Card from '../components/Card';
-import GlobalNavigation from '../components/GlobalNavigation';
+import RevenueMetrics from '../../components/RevenueMetrics';
+import RevenueChart from '../../components/RevenueChart';
+import DateRangeSelector from '../../components/DateRangeSelector';
+import Card from '../../components/Card';
+import GlobalNavigation from '../../components/GlobalNavigation';
 
 interface RevenueData {
   today: number;
