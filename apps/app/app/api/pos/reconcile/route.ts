@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { runReconciliationJob } from '../../../../../jobs/settle';
+import { runReconciliationJob } from '../../../../lib/reconciliation';
 
 /**
  * POS Reconciliation API Endpoint
