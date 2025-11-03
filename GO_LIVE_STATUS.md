@@ -33,7 +33,7 @@
 2. **Make sure you're in LIVE mode** (top right)
 3. Verify webhook endpoint exists: `https://hookahplus.net/api/webhooks/stripe`
    - If doesn't exist → Create it (see instructions below)
-4. Verify webhook secret matches: `whsec_9K2kuNQOaIW62Ojm8RvmET79lssZ7NbI`
+4. Verify webhook secret matches: `whsec_YOUR_WEBHOOK_SECRET_HERE`
 
 **If webhook doesn't exist:**
 - Click **"Add endpoint"**

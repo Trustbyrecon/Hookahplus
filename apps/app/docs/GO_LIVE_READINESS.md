@@ -45,7 +45,7 @@
 2. **Make sure you're in LIVE mode**
 3. Check if webhook endpoint exists: `https://hookahplus.net/api/webhooks/stripe`
    - If not, create it (see Step 2 below)
-4. Verify webhook secret matches Vercel: `whsec_9K2kuNQOaIW62Ojm8RvmET79lssZ7NbI`
+4. Verify webhook secret matches Vercel: `whsec_YOUR_WEBHOOK_SECRET_HERE`
 
 **If webhook doesn't exist:**
 - Click **"Add endpoint"**
@@ -260,7 +260,7 @@ Before full launch, verify:
 # Check Stripe Dashboard
 # Go to: https://dashboard.stripe.com/webhooks
 # Verify endpoint exists: https://hookahplus.net/api/webhooks/stripe
-# Verify secret matches: whsec_9K2kuNQOaIW62Ojm8RvmET79lssZ7NbI
+# Verify secret matches: whsec_YOUR_WEBHOOK_SECRET_HERE
 ```
 
 ### **Step 2: Test $1 Transaction** (5 min)
