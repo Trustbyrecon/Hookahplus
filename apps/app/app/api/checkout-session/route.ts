@@ -72,6 +72,49 @@ export async function POST(request: NextRequest) {
 
     console.log('[Checkout API] Creating Stripe session with amount:', amountInCents);
 
+    // Get base URL from request headers or environment variable
+    const getBaseUrl = () => {
+      // Try environment variable first
+      if (process.env.NEXT_PUBLIC_APP_URL) {
+        return process.env.NEXT_PUBLIC_APP_URL;
+      }
+      
+      // Fallback to request origin
+      const origin = request.headers.get('origin') || request.headers.get('host');
+      if (origin) {
+        // Handle both cases: full URL or just host
+        if (origin.startsWith('http')) {
+          return origin;
+        }
+        return `https://${origin}`;
+      }
+      
+      // Last resort: localhost
+      return 'http://localhost:3002';
+    };
+
+    const baseUrl = getBaseUrl();
+    
+    // Validate URL
+    try {
+      new URL(baseUrl);
+    } catch (e) {
+      console.error('[Checkout API] Invalid base URL:', baseUrl);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid URL configuration',
+          details: `Base URL "${baseUrl}" is not a valid URL. Please set NEXT_PUBLIC_APP_URL environment variable.`,
+        },
+        { status: 500 }
+      );
+    }
+
+    const successUrl = `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = `${baseUrl}/checkout/cancel`;
+
+    console.log('[Checkout API] URLs:', { baseUrl, successUrl, cancelUrl });
+
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
@@ -89,8 +132,8 @@ export async function POST(request: NextRequest) {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/checkout/cancel`,
+      success_url: successUrl,
+      cancel_url: cancelUrl,
       metadata: {
         flavors: JSON.stringify(flavors),
         addOns: JSON.stringify(addOns || []),
