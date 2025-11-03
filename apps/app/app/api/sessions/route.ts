@@ -30,6 +30,13 @@ function mapPrismaStateToFireSession(state: string): SessionStatus {
     'COMPLETED': 'CLOSED',
     'CANCELLED': 'VOIDED',
     'FAILED_PAYMENT': 'FAILED_PAYMENT',
+    // Additional states that may exist in FireSession but map to Prisma equivalents
+    'PAID_CONFIRMED': 'PAID_CONFIRMED',
+    'CLOSE_PENDING': 'CLOSE_PENDING',
+    'STOCK_BLOCKED': 'STOCK_BLOCKED',
+    'REMAKE': 'REMAKE',
+    'REFUND_REQUESTED': 'REFUND_REQUESTED',
+    'REFUNDED': 'REFUNDED',
   };
   return stateMap[state] || 'NEW';
 }
@@ -333,7 +340,7 @@ export async function PATCH(req: NextRequest) {
       );
 
       // Map FireSession status back to Prisma state
-      const stateMap: Record<SessionStatus, string> = {
+      const stateMap: Partial<Record<SessionStatus, string>> = {
         'NEW': 'NEW',
         'ACTIVE': 'ACTIVE',
         'PREP_IN_PROGRESS': 'PREP_IN_PROGRESS',
@@ -345,6 +352,12 @@ export async function PATCH(req: NextRequest) {
         'CLOSED': 'COMPLETED',
         'VOIDED': 'CANCELLED',
         'FAILED_PAYMENT': 'FAILED_PAYMENT',
+        'PAID_CONFIRMED': 'NEW', // Maps to NEW as payment is confirmed
+        'CLOSE_PENDING': 'NEW', // Maps to NEW for pending close
+        'STOCK_BLOCKED': 'NEW', // Maps to NEW for stock issues
+        'REMAKE': 'NEW', // Maps to NEW for remake
+        'REFUND_REQUESTED': 'NEW', // Maps to NEW for refund requests
+        'REFUNDED': 'CANCELLED', // Maps to CANCELLED for refunded
       };
 
       const newState = stateMap[updatedSession.status] || dbSession.state;
