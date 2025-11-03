@@ -17,6 +17,12 @@ import { PrismaClient } from '@prisma/client';
 import Stripe from 'stripe';
 import { FEATURE_FLAGS, validateReconciliationRate, setPosSyncReady } from '../lib/config';
 import { issueLoyaltyCredits, calculateLoyaltyAmount } from '../lib/loyalty/issue-helper';
+import { join } from 'path';
+
+// Set default DATABASE_URL for local development if not set
+if (!process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = `file:${join(process.cwd(), 'prisma/dev.db')}`;
+}
 
 const prisma = new PrismaClient();
 
@@ -391,7 +397,10 @@ export async function runReconciliationJob(options?: { testMode?: boolean }): Pr
 
 // CLI execution
 if (require.main === module) {
-  runReconciliationJob()
+  // Allow test mode via environment variable or command line arg
+  const testMode = process.env.TEST_MODE === 'true' || process.argv.includes('--test-mode');
+  
+  runReconciliationJob({ testMode })
     .then((result) => {
       console.log('Reconciliation job completed successfully');
       process.exit(0);
