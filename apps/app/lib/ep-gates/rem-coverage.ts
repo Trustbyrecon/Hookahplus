@@ -1,0 +1,2 @@
+export { checkREMCoverage } from './runner';
+
