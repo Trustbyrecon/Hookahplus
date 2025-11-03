@@ -26,7 +26,8 @@ import {
   RotateCcw,
   CreditCard,
   Ban,
-  Brain
+  Brain,
+  Shield
 } from 'lucide-react';
 import { 
   SessionStatus, 
@@ -46,6 +47,8 @@ import {
   STATE_DESCRIPTIONS,
   ACTION_DESCRIPTIONS
 } from '../lib/sessionStateMachine';
+import { calculateSingleSessionTrustScore, getTrustScoreColor } from '../lib/trustScoring';
+import SessionDetailModal from './SessionDetailModal';
 
 interface SimpleFSDDesignProps {
   sessions?: any[];
@@ -121,6 +124,8 @@ export default function SimpleFSDDesign({
 }: SimpleFSDDesignProps) {
   const [activeTab, setActiveTab] = useState('overview');
   const [hoveredAction, setHoveredAction] = useState<string | null>(null);
+  const [selectedSession, setSelectedSession] = useState<FireSession | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleCreateSession = () => {
     window.dispatchEvent(new CustomEvent('openCreateSessionModal'));
@@ -296,10 +301,17 @@ export default function SimpleFSDDesign({
             const statusColor = STATUS_COLORS[sessionStatus];
             const stateIcon = STATE_ICONS[sessionStatus];
 
+            const trustScore = calculateSingleSessionTrustScore(session as FireSession);
+            const trustScoreColor = getTrustScoreColor(trustScore);
+
             return (
               <div
                 key={sessionId}
-                className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4 hover:bg-zinc-800/70 transition-colors"
+                className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4 hover:bg-zinc-800/70 transition-colors cursor-pointer"
+                onClick={() => {
+                  setSelectedSession(session as FireSession);
+                  setIsModalOpen(true);
+                }}
               >
                 {/* Session Header */}
                 <div className="flex items-center justify-between mb-3">
@@ -324,6 +336,12 @@ export default function SimpleFSDDesign({
                     <span className="text-xs text-zinc-500">
                       {sessionStage}
                     </span>
+                    <div className="flex items-center gap-1 px-2 py-1 bg-zinc-900/50 rounded">
+                      <Shield className="w-3 h-3 text-zinc-400" />
+                      <span className={`text-xs font-semibold ${trustScoreColor}`}>
+                        {trustScore}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -373,7 +391,10 @@ export default function SimpleFSDDesign({
                         return (
                           <div key={action} className="relative">
                             <button
-                              onClick={() => canPerform && handleSessionAction(action.toLowerCase(), sessionId)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                canPerform && handleSessionAction(action.toLowerCase(), sessionId);
+                              }}
                               disabled={!canPerform}
                               onMouseEnter={() => setHoveredAction(action)}
                               onMouseLeave={() => setHoveredAction(null)}
@@ -414,7 +435,10 @@ export default function SimpleFSDDesign({
                     {/* Intelligence Button */}
                     <div className="mt-3 pt-3 border-t border-zinc-700">
                       <button
-                        onClick={() => window.open(`/guest-intelligence?sessionId=${sessionId}`, '_blank')}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.open(`/guest-intelligence?sessionId=${sessionId}`, '_blank');
+                        }}
                         className="flex items-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors w-full justify-center"
                       >
                         <Brain className="w-4 h-4" />
@@ -757,6 +781,16 @@ export default function SimpleFSDDesign({
           </div>
         </div>
       )}
+      
+      {/* Session Detail Modal */}
+      <SessionDetailModal
+        session={selectedSession}
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedSession(null);
+        }}
+      />
     </div>
   );
 }

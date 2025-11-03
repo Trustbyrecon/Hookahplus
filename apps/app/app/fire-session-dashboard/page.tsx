@@ -10,7 +10,8 @@ import { ThemeProvider, useTheme } from '../../contexts/ThemeContext';
 import { useLiveSessionData } from '../../hooks/useLiveSessionData';
 import { 
   Flame, 
-  AlertCircle
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react';
 import { SessionStatus } from '../../types/session';
 
@@ -115,11 +116,20 @@ function FireSessionDashboardContent() {
                 </h1>
                 <p className={`text-sm text-${currentTheme.colors.textSecondary}`}>
                   Real-time session management with intelligent workflow automation
+                  {loading && <span className="ml-2 text-teal-400">• Auto-refreshing...</span>}
                 </p>
               </div>
             </div>
             
             <div className="flex items-center space-x-4">
+              <button
+                onClick={() => refreshSessions()}
+                className={`px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors flex items-center gap-2`}
+                disabled={loading}
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                <span>Refresh</span>
+              </button>
               <DollarTestButton />
               <div className="flex items-center space-x-2">
                 <span className={`text-sm text-${currentTheme.colors.textSecondary}`}>Role:</span>
