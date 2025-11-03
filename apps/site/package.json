@@ -1,0 +1,10 @@
+{
+  "name": "@hookahplus/site",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'Site app - coming soon'",
+    "build": "echo 'Site app - coming soon'",
+    "start": "echo 'Site app - coming soon'"
+  }
+}

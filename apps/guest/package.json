@@ -1,0 +1,10 @@
+{
+  "name": "@hookahplus/guest",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'Guest app - coming soon'",
+    "build": "echo 'Guest app - coming soon'",
+    "start": "echo 'Guest app - coming soon'"
+  }
+}
