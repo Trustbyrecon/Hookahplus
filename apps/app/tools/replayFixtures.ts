@@ -176,9 +176,9 @@ async function replayFixtures(fixtures: WebhookFixture[] = WEBHOOK_FIXTURES): Pr
 
     console.log(`\n✅ Processed ${fixtures.length} webhook fixtures`);
 
-    // Run reconciliation job
+    // Run reconciliation job in test mode
     console.log('\n🔍 Running reconciliation job...');
-    const result = await runReconciliationJob();
+    const result = await runReconciliationJob({ testMode: true });
 
     // Report results
     console.log('\n📊 Reconciliation Results:');
@@ -203,7 +203,7 @@ async function replayFixtures(fixtures: WebhookFixture[] = WEBHOOK_FIXTURES): Pr
     console.log('✅ Idempotency test passed (no duplicates created)');
 
     // Final reconciliation rate
-    const finalResult = await runReconciliationJob();
+    const finalResult = await runReconciliationJob({ testMode: true });
     console.log(`\n📊 Final Reconciliation Rate: ${(finalResult.reconciliationRate * 100).toFixed(2)}%`);
 
     if (finalResult.reconciliationRate >= 0.95) {

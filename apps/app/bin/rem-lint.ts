@@ -80,7 +80,9 @@ async function checkCoverage(): Promise<void> {
     if (!event.payload) return false;
     try {
       const payload = JSON.parse(event.payload);
-      return payload.actor?.anon_hash && payload.effect?.loyalty_delta !== undefined;
+      // Use validateTrustEvent to properly check REM compliance
+      const validation = validateTrustEvent(payload);
+      return validation.valid;
     } catch {
       return false;
     }

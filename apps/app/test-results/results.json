@@ -1,7 +1,7 @@
 {
   "config": {
     "configFile": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\playwright.config.ts",
-    "rootDir": "C:/Users/Dwayne Clark/Projects/Hookahplus/apps/app/tests/e2e",
+    "rootDir": "C:/Users/Dwayne Clark/Projects/Hookahplus/apps/app/e2e",
     "forbidOnly": false,
     "fullyParallel": true,
     "globalSetup": null,
@@ -43,7 +43,7 @@
         "metadata": {},
         "id": "chromium",
         "name": "chromium",
-        "testDir": "C:/Users/Dwayne Clark/Projects/Hookahplus/apps/app/tests/e2e",
+        "testDir": "C:/Users/Dwayne Clark/Projects/Hookahplus/apps/app/e2e",
         "testIgnore": [],
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
@@ -57,7 +57,7 @@
         "metadata": {},
         "id": "firefox",
         "name": "firefox",
-        "testDir": "C:/Users/Dwayne Clark/Projects/Hookahplus/apps/app/tests/e2e",
+        "testDir": "C:/Users/Dwayne Clark/Projects/Hookahplus/apps/app/e2e",
         "testIgnore": [],
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
@@ -71,7 +71,7 @@
         "metadata": {},
         "id": "webkit",
         "name": "webkit",
-        "testDir": "C:/Users/Dwayne Clark/Projects/Hookahplus/apps/app/tests/e2e",
+        "testDir": "C:/Users/Dwayne Clark/Projects/Hookahplus/apps/app/e2e",
         "testIgnore": [],
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
@@ -85,7 +85,7 @@
         "metadata": {},
         "id": "Mobile Chrome",
         "name": "Mobile Chrome",
-        "testDir": "C:/Users/Dwayne Clark/Projects/Hookahplus/apps/app/tests/e2e",
+        "testDir": "C:/Users/Dwayne Clark/Projects/Hookahplus/apps/app/e2e",
         "testIgnore": [],
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
@@ -99,7 +99,7 @@
         "metadata": {},
         "id": "Mobile Safari",
         "name": "Mobile Safari",
-        "testDir": "C:/Users/Dwayne Clark/Projects/Hookahplus/apps/app/tests/e2e",
+        "testDir": "C:/Users/Dwayne Clark/Projects/Hookahplus/apps/app/e2e",
         "testIgnore": [],
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
@@ -119,18 +119,648 @@
       "timeout": 120000
     }
   },
-  "suites": [],
-  "errors": [
+  "suites": [
     {
-      "message": "Error: Timed out waiting 120000ms from config.webServer.",
-      "stack": "Error: Timed out waiting 120000ms from config.webServer."
+      "title": "flows\\guardrail-enforcement.spec.ts",
+      "file": "flows/guardrail-enforcement.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Guardrail Enforcement E2E",
+          "file": "flows/guardrail-enforcement.spec.ts",
+          "line": 10,
+          "column": 6,
+          "specs": [
+            {
+              "title": "G1: EP.POS.Ready gate checks QR-only changes",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2827b16502e24fab97ff-87373ab7f77a9ab1882f",
+              "file": "flows/guardrail-enforcement.spec.ts",
+              "line": 11,
+              "column": 7
+            },
+            {
+              "title": "G3: EP.REM.Coverage gate validates REM format",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2827b16502e24fab97ff-99d2f0c6682eb6124002",
+              "file": "flows/guardrail-enforcement.spec.ts",
+              "line": 24,
+              "column": 7
+            },
+            {
+              "title": "G5: EP.Drift.Alert gate monitors Reflex uplift",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2827b16502e24fab97ff-f13b700478499a969cb0",
+              "file": "flows/guardrail-enforcement.spec.ts",
+              "line": 52,
+              "column": 7
+            },
+            {
+              "title": "G1: EP.POS.Ready gate checks QR-only changes",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2827b16502e24fab97ff-fe212aa1e7eb48d1b870",
+              "file": "flows/guardrail-enforcement.spec.ts",
+              "line": 11,
+              "column": 7
+            },
+            {
+              "title": "G3: EP.REM.Coverage gate validates REM format",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2827b16502e24fab97ff-706cadb57fbf427d7464",
+              "file": "flows/guardrail-enforcement.spec.ts",
+              "line": 24,
+              "column": 7
+            },
+            {
+              "title": "G5: EP.Drift.Alert gate monitors Reflex uplift",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2827b16502e24fab97ff-f0a3a5c4ac8b895d2534",
+              "file": "flows/guardrail-enforcement.spec.ts",
+              "line": 52,
+              "column": 7
+            },
+            {
+              "title": "G1: EP.POS.Ready gate checks QR-only changes",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2827b16502e24fab97ff-6e585dac76e5c96dc286",
+              "file": "flows/guardrail-enforcement.spec.ts",
+              "line": 11,
+              "column": 7
+            },
+            {
+              "title": "G3: EP.REM.Coverage gate validates REM format",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2827b16502e24fab97ff-fc7b4ee18ccb4e980716",
+              "file": "flows/guardrail-enforcement.spec.ts",
+              "line": 24,
+              "column": 7
+            },
+            {
+              "title": "G5: EP.Drift.Alert gate monitors Reflex uplift",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2827b16502e24fab97ff-f2f578cc5602a59a561f",
+              "file": "flows/guardrail-enforcement.spec.ts",
+              "line": 52,
+              "column": 7
+            },
+            {
+              "title": "G1: EP.POS.Ready gate checks QR-only changes",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2827b16502e24fab97ff-713ff43a20e96558df4c",
+              "file": "flows/guardrail-enforcement.spec.ts",
+              "line": 11,
+              "column": 7
+            },
+            {
+              "title": "G3: EP.REM.Coverage gate validates REM format",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2827b16502e24fab97ff-124cce13b0f3447da68c",
+              "file": "flows/guardrail-enforcement.spec.ts",
+              "line": 24,
+              "column": 7
+            },
+            {
+              "title": "G5: EP.Drift.Alert gate monitors Reflex uplift",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2827b16502e24fab97ff-72d894f46d55ec340a6d",
+              "file": "flows/guardrail-enforcement.spec.ts",
+              "line": 52,
+              "column": 7
+            },
+            {
+              "title": "G1: EP.POS.Ready gate checks QR-only changes",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2827b16502e24fab97ff-6d14d0929c048e5c708b",
+              "file": "flows/guardrail-enforcement.spec.ts",
+              "line": 11,
+              "column": 7
+            },
+            {
+              "title": "G3: EP.REM.Coverage gate validates REM format",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2827b16502e24fab97ff-ae5b34e25c1459c3f9d8",
+              "file": "flows/guardrail-enforcement.spec.ts",
+              "line": 24,
+              "column": 7
+            },
+            {
+              "title": "G5: EP.Drift.Alert gate monitors Reflex uplift",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2827b16502e24fab97ff-ff38d2f5a8f8d6db75c4",
+              "file": "flows/guardrail-enforcement.spec.ts",
+              "line": 52,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "flows\\pos-to-ui.spec.ts",
+      "file": "flows/pos-to-ui.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "POS to UI E2E Flow",
+          "file": "flows/pos-to-ui.spec.ts",
+          "line": 11,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Complete flow: POS order → SDK event → Ledger credit → UI display",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "f8f7aebe5fb801ef336b-753cc0eaab06a10c28a2",
+              "file": "flows/pos-to-ui.spec.ts",
+              "line": 12,
+              "column": 7
+            },
+            {
+              "title": "EP.POS.Ready gate blocks QR-only changes",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "f8f7aebe5fb801ef336b-376d4ed263e87f7c8c10",
+              "file": "flows/pos-to-ui.spec.ts",
+              "line": 54,
+              "column": 7
+            },
+            {
+              "title": "EP.REM.Coverage gate validates event format",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "f8f7aebe5fb801ef336b-ee89f3e6095308b9a69a",
+              "file": "flows/pos-to-ui.spec.ts",
+              "line": 67,
+              "column": 7
+            },
+            {
+              "title": "Complete flow: POS order → SDK event → Ledger credit → UI display",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "f8f7aebe5fb801ef336b-3c1a03384d4c3c3ccdd3",
+              "file": "flows/pos-to-ui.spec.ts",
+              "line": 12,
+              "column": 7
+            },
+            {
+              "title": "EP.POS.Ready gate blocks QR-only changes",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "f8f7aebe5fb801ef336b-dcefa955c300343e511e",
+              "file": "flows/pos-to-ui.spec.ts",
+              "line": 54,
+              "column": 7
+            },
+            {
+              "title": "EP.REM.Coverage gate validates event format",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "f8f7aebe5fb801ef336b-1fee42028a5c9b6c896b",
+              "file": "flows/pos-to-ui.spec.ts",
+              "line": 67,
+              "column": 7
+            },
+            {
+              "title": "Complete flow: POS order → SDK event → Ledger credit → UI display",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "f8f7aebe5fb801ef336b-e12e9e7c45675b6c09ab",
+              "file": "flows/pos-to-ui.spec.ts",
+              "line": 12,
+              "column": 7
+            },
+            {
+              "title": "EP.POS.Ready gate blocks QR-only changes",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "f8f7aebe5fb801ef336b-c1d27e6c5423556f1606",
+              "file": "flows/pos-to-ui.spec.ts",
+              "line": 54,
+              "column": 7
+            },
+            {
+              "title": "EP.REM.Coverage gate validates event format",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "f8f7aebe5fb801ef336b-d99e46e8617068ed5d40",
+              "file": "flows/pos-to-ui.spec.ts",
+              "line": 67,
+              "column": 7
+            },
+            {
+              "title": "Complete flow: POS order → SDK event → Ledger credit → UI display",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "f8f7aebe5fb801ef336b-3911e3a2773ba10c1638",
+              "file": "flows/pos-to-ui.spec.ts",
+              "line": 12,
+              "column": 7
+            },
+            {
+              "title": "EP.POS.Ready gate blocks QR-only changes",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "f8f7aebe5fb801ef336b-b594a490d3e5d55007e6",
+              "file": "flows/pos-to-ui.spec.ts",
+              "line": 54,
+              "column": 7
+            },
+            {
+              "title": "EP.REM.Coverage gate validates event format",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "f8f7aebe5fb801ef336b-7c56a962c5fbb1d2ca8a",
+              "file": "flows/pos-to-ui.spec.ts",
+              "line": 67,
+              "column": 7
+            },
+            {
+              "title": "Complete flow: POS order → SDK event → Ledger credit → UI display",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "f8f7aebe5fb801ef336b-d34863167c28253ecab4",
+              "file": "flows/pos-to-ui.spec.ts",
+              "line": 12,
+              "column": 7
+            },
+            {
+              "title": "EP.POS.Ready gate blocks QR-only changes",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "f8f7aebe5fb801ef336b-9183ebaabd5e3f75e040",
+              "file": "flows/pos-to-ui.spec.ts",
+              "line": 54,
+              "column": 7
+            },
+            {
+              "title": "EP.REM.Coverage gate validates event format",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "f8f7aebe5fb801ef336b-ab51c396c50421702b83",
+              "file": "flows/pos-to-ui.spec.ts",
+              "line": 67,
+              "column": 7
+            }
+          ]
+        }
+      ]
     }
   ],
+  "errors": [],
   "stats": {
-    "startTime": "2025-11-03T18:35:24.336Z",
-    "duration": 120730.758,
+    "startTime": "2025-11-03T18:50:55.976Z",
+    "duration": 92.54999999999995,
     "expected": 0,
-    "skipped": 0,
+    "skipped": 30,
     "unexpected": 0,
     "flaky": 0
   }

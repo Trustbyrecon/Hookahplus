@@ -7,8 +7,9 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import { runReconciliationJob } from '../jobs/settle';
+import { reconcilePosSettlements } from '../jobs/settle';
 import { join } from 'path';
+import Stripe from 'stripe';
 
 // Set default DATABASE_URL for local development if not set
 if (!process.env.DATABASE_URL) {
@@ -56,9 +57,57 @@ async function testReconciliation() {
 
     console.log(`✅ Created ${testTickets.length} test POS tickets`);
 
-    // Run reconciliation job
-    console.log('\nStep 2: Running reconciliation job...');
-    const result = await runReconciliationJob();
+    // Create mock Stripe charges that match the POS tickets
+    console.log('\nStep 2: Creating mock Stripe charges...');
+    const now = Math.floor(Date.now() / 1000);
+    const mockCharges: Stripe.Charge[] = [
+      {
+        id: 'ch_test_match_001',
+        object: 'charge',
+        amount: 3500, // Matches first POS ticket
+        currency: 'usd',
+        created: now,
+        paid: true,
+        status: 'succeeded',
+        metadata: {
+          sessionId: 'test-session-001',
+        },
+      } as Stripe.Charge,
+      {
+        id: 'ch_test_match_002',
+        object: 'charge',
+        amount: 4200, // Matches second POS ticket
+        currency: 'usd',
+        created: now,
+        paid: true,
+        status: 'succeeded',
+        metadata: {
+          sessionId: 'test-session-002',
+        },
+      } as Stripe.Charge,
+      {
+        id: 'ch_test_orphan_001',
+        object: 'charge',
+        amount: 5000, // Orphaned charge (no matching POS ticket)
+        currency: 'usd',
+        created: now,
+        paid: true,
+        status: 'succeeded',
+        metadata: {},
+      } as Stripe.Charge,
+    ];
+
+    console.log(`✅ Created ${mockCharges.length} mock Stripe charges`);
+
+    // Run reconciliation job in test mode with mock charges
+    console.log('\nStep 3: Running reconciliation job...');
+    const result = await reconcilePosSettlements({
+      amountTolerance: 10,
+      timeWindowMinutes: 5,
+      sessionIdMatch: false,
+      testMode: true,
+      mockStripeCharges: mockCharges,
+    });
 
     console.log('\n📊 Reconciliation Results:');
     console.log(`  Total Stripe Charges: ${result.totalStripeCharges}`);
