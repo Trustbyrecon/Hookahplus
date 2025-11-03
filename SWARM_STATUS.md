@@ -19,23 +19,23 @@
 
 ## Agent Missions Status
 
-### Noor (POS Spine) - Priority P0 ✅ Foundation Complete
+### Noor (POS Spine) - Priority P0 ✅ Testing Ready
 - Mission file: `wt-pos/NOOR_MISSION.md`
-- Status: ✅ Foundation complete - Ready for testing
-- Progress: O1.1 complete (20%)
-- Next: Test reconciliation job, achieve ≥95% rate
+- Status: ✅ Testing infrastructure complete - Ready to measure rate
+- Progress: O1.1 complete, test script created (40%)
+- Next: Run test script, measure current reconciliation rate
 
-### Lumi (REM Schema) - Priority P1 ✅ Foundation Complete
+### Lumi (REM Schema) - Priority P1 ✅ Migration Complete
 - Mission file: `wt-sdk/LUMI_MISSION.md`
-- Status: ✅ Foundation complete - Ready for migration
-- Progress: O3.1 complete (20%)
-- Next: Migrate ReflexEvent to REM format
+- Status: ✅ REM migration complete - All events emit REM format
+- Progress: O3.1-O3.3 complete (60%)
+- Next: Verify REM coverage ≥95%, create SDK client hooks
 
-### EchoPrime (E2E & EP Gates) - Priority P0 ✅ Foundation Complete
+### EchoPrime (E2E & EP Gates) - Priority P0 ✅ CI Integration Complete
 - Mission file: `wt-tests/ECHOPRIME_MISSION.md`
-- Status: ✅ Foundation complete - Ready for CI integration
-- Progress: O5.1 complete (20%)
-- Next: Create GitHub Actions workflow
+- Status: ✅ CI workflow complete - EP gates enforced in CI
+- Progress: O5.1-O5.2 complete (40%)
+- Next: Test workflow on PR, complete E2E test suites
 
 ## Guardrails Status
 

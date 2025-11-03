@@ -1,0 +1,161 @@
+name: EP Gates CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - stable-production
+  push:
+    branches:
+      - main
+      - stable-production
+  workflow_dispatch:
+
+jobs:
+  ep-gates:
+    name: EchoPrime Trust Gates
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Full history for diff checking
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          cd apps/app
+          npm ci
+
+      - name: Setup database
+        run: |
+          cd apps/app
+          export DATABASE_URL="file:./prisma/dev.db"
+          npx prisma generate
+          npx prisma migrate deploy
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v42
+        with:
+          files: |
+            apps/app/**
+          files_ignore: |
+            apps/app/node_modules/**
+            apps/app/.next/**
+
+      - name: Run EP.POS.Ready Gate
+        id: pos-ready
+        run: |
+          cd apps/app
+          export DATABASE_URL="file:./prisma/dev.db"
+          node -e "
+          import('./lib/ep-gates/runner.js').then(async (m) => {
+            const changedFiles = '${{ steps.changed-files.outputs.all_changed_files }}'.split(' ');
+            const result = await m.checkPosReady(changedFiles);
+            console.log(JSON.stringify(result));
+            process.exit(result.passed ? 0 : 1);
+          }).catch(e => { console.error(e); process.exit(1); });
+          "
+
+      - name: Run EP.REM.Coverage Gate
+        id: rem-coverage
+        run: |
+          cd apps/app
+          export DATABASE_URL="file:./prisma/dev.db"
+          node -e "
+          import('./lib/ep-gates/runner.js').then(async (m) => {
+            const result = await m.checkREMCoverage();
+            console.log(JSON.stringify(result));
+            process.exit(result.passed ? 0 : 1);
+          }).catch(e => { console.error(e); process.exit(1); });
+          "
+
+      - name: Run EP.Drift.Alert Gate
+        id: drift-alert
+        run: |
+          cd apps/app
+          export DATABASE_URL="file:./prisma/dev.db"
+          node -e "
+          import('./lib/ep-gates/runner.js').then(async (m) => {
+            const result = await m.checkDriftAlert();
+            console.log(JSON.stringify(result));
+            process.exit(result.passed ? 0 : 1);
+          }).catch(e => { console.error(e); process.exit(1); });
+          "
+
+      - name: Run All EP Gates
+        id: all-gates
+        run: |
+          cd apps/app
+          export DATABASE_URL="file:./prisma/dev.db"
+          node -e "
+          import('./lib/ep-gates/runner.js').then(async (m) => {
+            const changedFiles = '${{ steps.changed-files.outputs.all_changed_files }}'.split(' ').filter(f => f);
+            const result = await m.runEPGates(changedFiles);
+            console.log('\n=== EP Gates Summary ===');
+            console.log('All Passed:', result.allPassed);
+            console.log('Failed Gates:', result.failedGates.join(', ') || 'None');
+            result.gates.forEach(gate => {
+              console.log(\`\${gate.passed ? '✅' : '❌'} \${gate.gateId}: \${gate.message}\`);
+            });
+            process.exit(result.allPassed ? 0 : 1);
+          }).catch(e => { console.error(e); process.exit(1); });
+          "
+
+      - name: EP Gates Summary
+        if: always()
+        run: |
+          echo "## EP Gates Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### EP.POS.Ready: ${{ steps.pos-ready.outcome == 'success' && '✅ PASS' || '❌ FAIL' }}" >> $GITHUB_STEP_SUMMARY
+          echo "### EP.REM.Coverage: ${{ steps.rem-coverage.outcome == 'success' && '✅ PASS' || '❌ FAIL' }}" >> $GITHUB_STEP_SUMMARY
+          echo "### EP.Drift.Alert: ${{ steps.drift-alert.outcome == 'success' && '✅ PASS' || '❌ FAIL' }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Overall:** ${{ steps.all-gates.outcome == 'success' && '✅ All gates passed' || '❌ Some gates failed' }}" >> $GITHUB_STEP_SUMMARY
+
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: ep-gates
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          cd apps/app
+          npm ci
+
+      - name: Install Playwright
+        run: |
+          cd apps/app
+          npx playwright install --with-deps
+
+      - name: Run E2E tests
+        run: |
+          cd apps/app
+          export DATABASE_URL="file:./prisma/dev.db"
+          npx playwright test e2e/
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/app/playwright-report/
+          retention-days: 30
+
