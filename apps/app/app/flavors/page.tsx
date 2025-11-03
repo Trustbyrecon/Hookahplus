@@ -12,21 +12,36 @@ import {
 
 export default function FlavorsPage() {
   const filePath = path.join(process.cwd(), 'data', 'flavor_profiles.yaml');
-  const fileContents = fs.readFileSync(filePath, 'utf8');
-  const flavors = yaml.load(fileContents) as { name: string; notes: string }[];
+  let flavors: { name: string; notes: string }[] = [];
+  try {
+    const fileContents = fs.readFileSync(filePath, 'utf8');
+    flavors = yaml.load(fileContents) as { name: string; notes: string }[];
+  } catch (err) {
+    console.error('Failed to load flavor profiles:', err);
+  }
 
   const leaderboardPath = path.join(
     process.cwd(),
     'data',
     'flavor_leaderboard.yaml'
   );
-  const leaderboardContents = fs.readFileSync(leaderboardPath, 'utf8');
-  const leaderboard = yaml.load(leaderboardContents) as {
+  let leaderboard: {
     name: string;
     sales: number;
     loyalty: number;
     burnout: number;
-  }[];
+  }[] = [];
+  try {
+    const leaderboardContents = fs.readFileSync(leaderboardPath, 'utf8');
+    leaderboard = yaml.load(leaderboardContents) as {
+      name: string;
+      sales: number;
+      loyalty: number;
+      burnout: number;
+    }[];
+  } catch (err) {
+    console.error('Failed to load leaderboard:', err);
+  }
 
   return (
     <div className="p-8 font-sans">
