@@ -131,7 +131,7 @@ async function verifyDatabase(): Promise<VerificationCheck> {
   };
 }
 
-async function verifyEnvironment(): Promise<VerificationCheck> {
+async function verifyNodeEnvironment(): Promise<VerificationCheck> {
   const nodeEnv = process.env.NODE_ENV;
 
   if (!nodeEnv) {
@@ -170,7 +170,7 @@ async function runVerification(): Promise<void> {
   results.push(await verifyWebhookSecret());
   results.push(await verifyAppUrl());
   results.push(await verifyDatabase());
-  results.push(await verifyEnvironment());
+  results.push(await verifyNodeEnvironment());
 
   // Display results
   console.log('\n📋 Verification Results:\n');
