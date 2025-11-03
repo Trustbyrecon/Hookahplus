@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, DollarSign, Sparkles, AlertCircle } from 'lucide-react';
-import FlavorSelector, { Flavor } from './customer/FlavorSelector';
+import { ShoppingCart, DollarSign, Sparkles, AlertCircle, Clock, Flame } from 'lucide-react';
+import FlavorWheelSelector from './FlavorWheelSelector';
 import Card from './Card';
 import Button from './Button';
 
@@ -12,68 +12,18 @@ export interface PreorderEntryProps {
   className?: string;
 }
 
-// Sample flavors data - in production, this would come from API
-const SAMPLE_FLAVORS: Flavor[] = [
-  {
-    id: 'blue-mist',
-    name: 'Blue Mist',
-    description: 'Cool and refreshing mint flavor',
-    category: 'tobacco',
-    intensity: 'light',
-    price: 0,
-    isPopular: true,
-  },
-  {
-    id: 'double-apple',
-    name: 'Double Apple',
-    description: 'Classic apple with hint of anise',
-    category: 'tobacco',
-    intensity: 'medium',
-    price: 0,
-    isPopular: true,
-  },
-  {
-    id: 'mint',
-    name: 'Mint',
-    description: 'Pure mint freshness',
-    category: 'tobacco',
-    intensity: 'light',
-    price: 0,
-    isPopular: true,
-  },
-  {
-    id: 'strawberry',
-    name: 'Strawberry',
-    description: 'Sweet strawberry flavor',
-    category: 'tobacco',
-    intensity: 'medium',
-    price: 0,
-    isPopular: true,
-  },
-  {
-    id: 'peach',
-    name: 'Peach',
-    description: 'Juicy peach flavor',
-    category: 'tobacco',
-    intensity: 'light',
-    price: 0,
-    isPopular: true,
-  },
-  {
-    id: 'watermelon',
-    name: 'Watermelon',
-    description: 'Fresh watermelon',
-    category: 'tobacco',
-    intensity: 'light',
-    price: 0,
-    isPopular: true,
-  },
-];
-
 const SAMPLE_ADDONS = [
   { id: 'extra-coals', name: 'Extra Coals', price: 5 },
   { id: 'premium-coals', name: 'Premium Coals', price: 10 },
   { id: 'flavor-boost', name: 'Flavor Boost', price: 5 },
+];
+
+const SESSION_DURATIONS = [
+  { value: 30, label: '30 min', price: 15 },
+  { value: 45, label: '45 min', price: 22.50 },
+  { value: 60, label: '60 min', price: 30 },
+  { value: 90, label: '90 min', price: 45 },
+  { value: 120, label: '2 hours', price: 60 },
 ];
 
 const PreorderEntry: React.FC<PreorderEntryProps> = ({
@@ -83,6 +33,9 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
 }) => {
   const [selectedFlavorIds, setSelectedFlavorIds] = useState<string[]>([]);
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
+  const [pricingModel, setPricingModel] = useState<'flat' | 'time-based'>('flat');
+  const [sessionDuration, setSessionDuration] = useState(60); // minutes
+  const [flavorPrice, setFlavorPrice] = useState(0); // Total flavor price from wheel
   const [pricing, setPricing] = useState<{
     basePrice: number;
     flavorAddons: number;
@@ -109,9 +62,7 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
         setLoading(true);
         setError(null);
 
-        const flavorNames = selectedFlavorIds.map(
-          (id) => SAMPLE_FLAVORS.find((f) => f.id === id)?.name || id
-        );
+        const flavorNames = selectedFlavorIds; // FlavorWheelSelector uses IDs directly
 
         const response = await fetch('/api/preorder/calculate-price', {
           method: 'POST',
@@ -123,6 +74,8 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
             addOns: selectedAddOns,
             tableId,
             loungeId,
+            pricingModel,
+            sessionDuration: pricingModel === 'time-based' ? sessionDuration : undefined,
           }),
         });
 
@@ -146,7 +99,13 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
     };
 
     calculatePrice();
-  }, [selectedFlavorIds, selectedAddOns, tableId, loungeId]);
+  }, [selectedFlavorIds, selectedAddOns, tableId, loungeId, pricingModel, sessionDuration]);
+
+  // Handle flavor selection from wheel
+  const handleFlavorSelection = (flavors: string[], totalPrice: number) => {
+    setSelectedFlavorIds(flavors);
+    setFlavorPrice(totalPrice);
+  };
 
   const handleCheckout = async () => {
     if (selectedFlavorIds.length === 0) {
@@ -159,10 +118,6 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
       return;
     }
 
-    const flavorNames = selectedFlavorIds.map(
-      (id) => SAMPLE_FLAVORS.find((f) => f.id === id)?.name || id
-    );
-
     try {
       setLoading(true);
       setError(null);
@@ -174,11 +129,13 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          flavors: flavorNames,
+          flavors: selectedFlavorIds,
           addOns: selectedAddOns,
           tableId,
           loungeId,
           total: pricing.total,
+          pricingModel,
+          sessionDuration: pricingModel === 'time-based' ? sessionDuration : undefined,
         }),
       });
 
@@ -219,16 +176,77 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
           Preorder Your Session
         </h2>
 
-        {/* Flavor Selection */}
+        {/* Session Pricing Model Selection */}
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold text-white mb-4">Session Pricing</h3>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <button
+              onClick={() => setPricingModel('flat')}
+              className={`p-4 rounded-lg border-2 transition-all text-left ${
+                pricingModel === 'flat'
+                  ? 'border-teal-500 bg-teal-500/20 text-teal-300'
+                  : 'border-zinc-700 bg-zinc-800 hover:border-zinc-600 text-zinc-300'
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <Flame className="w-5 h-5" />
+                <span className="font-medium">Flat Rate</span>
+              </div>
+              <div className="text-sm text-zinc-400">$30.00 fixed</div>
+            </button>
+            
+            <button
+              onClick={() => setPricingModel('time-based')}
+              className={`p-4 rounded-lg border-2 transition-all text-left ${
+                pricingModel === 'time-based'
+                  ? 'border-teal-500 bg-teal-500/20 text-teal-300'
+                  : 'border-zinc-700 bg-zinc-800 hover:border-zinc-600 text-zinc-300'
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <Clock className="w-5 h-5" />
+                <span className="font-medium">Time-Based</span>
+              </div>
+              <div className="text-sm text-zinc-400">$0.50/min</div>
+            </button>
+          </div>
+
+          {/* Session Duration Selector (only for time-based) */}
+          {pricingModel === 'time-based' && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-zinc-300 mb-2">
+                Session Duration
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {SESSION_DURATIONS.map((duration) => (
+                  <button
+                    key={duration.value}
+                    onClick={() => setSessionDuration(duration.value)}
+                    className={`p-3 rounded-lg border transition-all ${
+                      sessionDuration === duration.value
+                        ? 'border-teal-500 bg-teal-500/20 text-teal-300'
+                        : 'border-zinc-700 bg-zinc-800 text-zinc-300 hover:border-zinc-600'
+                    }`}
+                  >
+                    <div className="font-medium">{duration.label}</div>
+                    <div className="text-xs text-zinc-400">${duration.price.toFixed(2)}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Flavor Wheel Selection */}
         <div className="mb-6">
           <h3 className="text-lg font-semibold text-white mb-4">
-            Select Flavors
+            Select Flavors (Mint & Cool to Premium)
           </h3>
-          <FlavorSelector
-            flavors={SAMPLE_FLAVORS}
+          <FlavorWheelSelector
             selectedFlavors={selectedFlavorIds}
-            onSelectionChange={setSelectedFlavorIds}
+            onSelectionChange={handleFlavorSelection}
             maxSelections={4}
+            mode="customer"
           />
         </div>
 
@@ -242,17 +260,15 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
               <button
                 key={addon.id}
                 onClick={() => toggleAddOn(addon.id)}
-                className={`p-4 rounded-lg border-2 transition-all ${
+                className={`p-4 rounded-lg border-2 transition-all text-left ${
                   selectedAddOns.includes(addon.id)
                     ? 'border-teal-500 bg-teal-500/20'
                     : 'border-zinc-700 bg-zinc-800 hover:border-zinc-600'
                 }`}
               >
-                <div className="text-left">
-                  <div className="text-white font-medium">{addon.name}</div>
-                  <div className="text-sm text-zinc-400 mt-1">
-                    ${addon.price}
-                  </div>
+                <div className="text-white font-medium">{addon.name}</div>
+                <div className="text-sm text-zinc-400 mt-1">
+                  ${addon.price}
                 </div>
               </button>
             ))}
@@ -268,13 +284,26 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
             </h3>
             <div className="space-y-2">
               <div className="flex justify-between text-zinc-300">
-                <span>Base Price:</span>
+                <span>
+                  {pricingModel === 'flat' ? 'Base Session (Flat):' : `Session (${sessionDuration} min):`}
+                </span>
                 <span>${pricing.breakdown.base.toFixed(2)}</span>
               </div>
               {pricing.breakdown.addons > 0 && (
                 <div className="flex justify-between text-zinc-300">
-                  <span>Flavor Add-ons:</span>
+                  <span>Flavors:</span>
                   <span>+${pricing.breakdown.addons.toFixed(2)}</span>
+                </div>
+              )}
+              {selectedAddOns.length > 0 && (
+                <div className="flex justify-between text-zinc-300">
+                  <span>Add-ons:</span>
+                  <span>
+                    +${selectedAddOns.reduce((sum, id) => {
+                      const addon = SAMPLE_ADDONS.find(a => a.id === id);
+                      return sum + (addon?.price || 0);
+                    }, 0).toFixed(2)}
+                  </span>
                 </div>
               )}
               {pricing.breakdown.surge > 0 && (
@@ -286,7 +315,12 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
               <div className="border-t border-zinc-700 pt-2 mt-2">
                 <div className="flex justify-between text-white font-bold text-xl">
                   <span>Total:</span>
-                  <span>${pricing.total.toFixed(2)}</span>
+                  <span>
+                    ${(pricing.total + selectedAddOns.reduce((sum, id) => {
+                      const addon = SAMPLE_ADDONS.find(a => a.id === id);
+                      return sum + (addon?.price || 0);
+                    }, 0)).toFixed(2)}
+                  </span>
                 </div>
               </div>
             </div>
@@ -310,7 +344,10 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
           className="w-full py-4 bg-teal-600 hover:bg-teal-500 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           <ShoppingCart className="w-5 h-5" />
-          {loading ? 'Calculating...' : `Proceed to Checkout - $${pricing?.total.toFixed(2) || '0.00'}`}
+          {loading ? 'Calculating...' : `Proceed to Checkout - $${pricing ? (pricing.total + selectedAddOns.reduce((sum, id) => {
+            const addon = SAMPLE_ADDONS.find(a => a.id === id);
+            return sum + (addon?.price || 0);
+          }, 0)).toFixed(2) : '0.00'}`}
         </Button>
       </Card>
     </div>
@@ -318,4 +355,3 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
 };
 
 export default PreorderEntry;
-
