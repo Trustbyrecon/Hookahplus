@@ -122,6 +122,15 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
       setLoading(true);
       setError(null);
 
+      // Calculate add-ons total
+      const addOnsTotal = selectedAddOns.reduce((sum, id) => {
+        const addon = SAMPLE_ADDONS.find(a => a.id === id);
+        return sum + (addon?.price || 0);
+      }, 0);
+
+      // Calculate final total including add-ons
+      const finalTotal = pricing.total + addOnsTotal;
+
       // Create checkout session
       const response = await fetch('/api/checkout-session', {
         method: 'POST',
@@ -133,7 +142,7 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
           addOns: selectedAddOns,
           tableId,
           loungeId,
-          total: pricing.total,
+          total: finalTotal, // Include add-ons in total
           pricingModel,
           sessionDuration: pricingModel === 'time-based' ? sessionDuration : undefined,
         }),
@@ -141,7 +150,7 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
 
       if (!response.ok) {
         const result = await response.json();
-        throw new Error(result.error || 'Failed to create checkout session');
+        throw new Error(result.error || result.details || 'Failed to create checkout session');
       }
 
       const result = await response.json();
@@ -150,10 +159,11 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
         // Redirect to Stripe Checkout
         window.location.href = result.url;
       } else {
-        throw new Error('Invalid checkout response');
+        throw new Error(result.error || 'Invalid checkout response');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to start checkout');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to start checkout';
+      setError(errorMessage);
       console.error('Error creating checkout:', err);
     } finally {
       setLoading(false);

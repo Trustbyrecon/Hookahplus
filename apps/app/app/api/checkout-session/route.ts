@@ -10,32 +10,67 @@ const stripe = process.env.STRIPE_SECRET_KEY
 export async function POST(request: NextRequest) {
   try {
     if (!stripe) {
+      console.error('[Checkout API] Stripe not configured - STRIPE_SECRET_KEY missing');
       return NextResponse.json(
-        { error: 'Stripe not configured' },
+        { 
+          success: false,
+          error: 'Stripe not configured',
+          details: 'STRIPE_SECRET_KEY environment variable is missing'
+        },
         { status: 500 }
       );
     }
 
     const body = await request.json();
-    const { flavors, addOns, tableId, loungeId, amount, total } = body;
+    const { flavors, addOns, tableId, loungeId, amount, total, pricingModel, sessionDuration } = body;
+
+    console.log('[Checkout API] Request:', { 
+      flavors, 
+      addOns, 
+      tableId, 
+      total, 
+      amount,
+      pricingModel 
+    });
 
     // Validate required fields
     if (!flavors || !Array.isArray(flavors) || flavors.length === 0) {
       return NextResponse.json(
-        { error: 'At least one flavor is required' },
+        { 
+          success: false,
+          error: 'At least one flavor is required' 
+        },
         { status: 400 }
       );
     }
 
     if (!amount && !total) {
       return NextResponse.json(
-        { error: 'Amount is required' },
+        { 
+          success: false,
+          error: 'Amount is required' 
+        },
         { status: 400 }
       );
     }
 
     // Use total if provided, otherwise use amount (convert to cents)
     const amountInCents = total ? Math.round(total * 100) : amount;
+
+    // Validate amount is positive and valid
+    if (isNaN(amountInCents) || amountInCents <= 0) {
+      console.error('[Checkout API] Invalid amount:', { total, amount, amountInCents });
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Invalid amount',
+          details: `Amount must be a positive number. Received: total=${total}, amount=${amount}, cents=${amountInCents}`
+        },
+        { status: 400 }
+      );
+    }
+
+    console.log('[Checkout API] Creating Stripe session with amount:', amountInCents);
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
@@ -62,10 +97,14 @@ export async function POST(request: NextRequest) {
         tableId: tableId || '',
         loungeId: loungeId || 'default-lounge',
         flavorMix: flavors.join(' + '),
+        pricingModel: pricingModel || 'flat',
+        sessionDuration: sessionDuration ? String(sessionDuration) : '',
       },
       customer_email: undefined, // Let Stripe collect email
       billing_address_collection: 'auto',
     });
+
+    console.log('[Checkout API] Session created successfully:', session.id);
 
     return NextResponse.json({
       success: true,
@@ -74,11 +113,14 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('[Checkout API] Error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorDetails = error instanceof Error ? error.stack : String(error);
+    
     return NextResponse.json(
       {
         success: false,
         error: 'Failed to create checkout session',
-        details: error instanceof Error ? error.message : 'Unknown error',
+        details: errorMessage,
       },
       { status: 500 }
     );
