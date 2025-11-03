@@ -78,7 +78,6 @@ async function testEndToEndFlow() {
         prisma.session.create({
           data: {
             id: scenario.sessionId,
-            externalRef: scenario.stripeChargeId,
             source: 'QR',
             trustSignature: 'test-trust-signature',
             tableId: `table-${scenario.sessionId}`,
