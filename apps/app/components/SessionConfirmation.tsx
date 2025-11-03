@@ -26,14 +26,11 @@ const SessionConfirmation: React.FC<SessionConfirmationProps> = ({
   useEffect(() => {
     const generateQR = async () => {
       try {
-        // Generate QR code with session data
-        const qrData = JSON.stringify({
-          sessionId,
-          tableId,
-          type: 'hookah_session',
-        });
+        // Generate QR code with URL that routes to staff scan page
+        const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://app.hookahplus.net';
+        const qrUrl = `${baseUrl}/staff/scan/${sessionId}`;
         
-        const qrCodeUrl = await QRCode.toDataURL(qrData, {
+        const qrCodeDataUrl = await QRCode.toDataURL(qrUrl, {
           width: 200,
           margin: 2,
           color: {
@@ -42,7 +39,7 @@ const SessionConfirmation: React.FC<SessionConfirmationProps> = ({
           },
         });
         
-        setQrCodeDataUrl(qrCodeUrl);
+        setQrCodeDataUrl(qrCodeDataUrl);
       } catch (error) {
         console.error('Error generating QR code:', error);
       } finally {

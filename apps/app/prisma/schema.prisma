@@ -50,6 +50,7 @@ model Session {
   fohUserId       String?     // FOH staff assigned to this session
   specialRequests String?     // Customer special requests
   tableNotes      String?     // Notes specific to this table/session
+  qrCodeUrl       String?     // URL to QR code image/data URL for staff scanning (fraud prevention)
 
   @@map("sessions")
 }

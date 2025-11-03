@@ -98,8 +98,13 @@ export async function POST(req: Request) {
           },
         });
       } else {
+        // Generate QR code URL for staff scanning
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.hookahplus.net';
+        const sessionIdForQR = externalRef; // Use Stripe checkout session ID initially
+        const qrScanUrl = `${baseUrl}/staff/scan/${sessionIdForQR}`;
+        
         // Create new session
-        await prisma.session.create({
+        const newSession = await prisma.session.create({
           data: {
             loungeId,
             source: "QR",
@@ -113,6 +118,16 @@ export async function POST(req: Request) {
             state: "NEW",
             paymentIntent: paymentIntentId,
             paymentStatus: session.payment_status === 'paid' ? 'succeeded' : session.payment_status,
+            qrCodeUrl: qrScanUrl, // Store QR code URL for fraud prevention
+          },
+        });
+        
+        // Update QR code URL with actual session ID after creation
+        const actualQrScanUrl = `${baseUrl}/staff/scan/${newSession.id}`;
+        await prisma.session.update({
+          where: { id: newSession.id },
+          data: {
+            qrCodeUrl: actualQrScanUrl,
           },
         });
       }

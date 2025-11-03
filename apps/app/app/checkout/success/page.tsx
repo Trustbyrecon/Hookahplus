@@ -26,30 +26,42 @@ function CheckoutSuccessContent() {
       return;
     }
 
-    setSessionId(checkoutSessionId);
-
-    // Fetch session details from Stripe
+    // Fetch session details from Stripe and then find/create database session
     const fetchSessionDetails = async () => {
       try {
-        const response = await fetch(`/api/checkout-session/${checkoutSessionId}`);
+        // First get Stripe checkout session details
+        const stripeResponse = await fetch(`/api/checkout-session/${checkoutSessionId}`);
         
-        if (!response.ok) {
+        if (!stripeResponse.ok) {
           throw new Error('Failed to fetch session details');
         }
 
-        const result = await response.json();
+        const stripeResult = await stripeResponse.json();
         
-        if (result.success && result.session) {
-          const session = result.session;
+        if (stripeResult.success && stripeResult.session) {
+          const stripeSession = stripeResult.session;
+          
+          // Find database session by externalRef (Stripe checkout session ID)
+          const dbResponse = await fetch(`/api/sessions/${checkoutSessionId}`);
+          
+          let dbSessionId = checkoutSessionId; // Fallback to Stripe session ID
+          if (dbResponse.ok) {
+            const dbSession = await dbResponse.json();
+            dbSessionId = dbSession.id; // Use actual database session ID
+          }
+          
+          setSessionId(dbSessionId); // Use database session ID for QR code
+          
           setSessionData({
-            tableId: session.metadata?.tableId,
-            flavorMix: session.metadata?.flavorMix || session.metadata?.flavors,
-            amount: session.amount_total,
+            tableId: stripeSession.metadata?.tableId,
+            flavorMix: stripeSession.metadata?.flavorMix || stripeSession.metadata?.flavors,
+            amount: stripeSession.amount_total,
           });
         }
       } catch (err) {
         console.error('Error fetching session details:', err);
-        // Continue with basic display even if fetch fails
+        // Continue with Stripe session ID if database lookup fails
+        setSessionId(checkoutSessionId);
         setSessionData({
           tableId: undefined,
           flavorMix: undefined,
