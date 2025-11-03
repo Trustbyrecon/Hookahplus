@@ -75,8 +75,22 @@ export async function POST(request: NextRequest) {
     // Get base URL from request headers or environment variable
     const getBaseUrl = () => {
       // Try environment variable first
-      if (process.env.NEXT_PUBLIC_APP_URL) {
-        return process.env.NEXT_PUBLIC_APP_URL;
+      const envUrl = process.env.NEXT_PUBLIC_APP_URL;
+      if (envUrl) {
+        // Clean up any whitespace, backticks, quotes, or other unwanted characters
+        let cleanUrl = envUrl.trim().replace(/[`'"]/g, '');
+        // Remove any leading/trailing whitespace that might remain
+        cleanUrl = cleanUrl.trim();
+        
+        console.log('[Checkout API] Environment URL:', { 
+          original: envUrl, 
+          cleaned: cleanUrl,
+          length: cleanUrl.length 
+        });
+        
+        if (cleanUrl && cleanUrl.length > 0) {
+          return cleanUrl;
+        }
       }
       
       // Fallback to request origin
@@ -86,25 +100,46 @@ export async function POST(request: NextRequest) {
         if (origin.startsWith('http')) {
           return origin;
         }
-        return `https://${origin}`;
+        // Check if it's HTTPS or HTTP based on headers
+        const protocol = request.headers.get('x-forwarded-proto') || 'https';
+        return `${protocol}://${origin}`;
       }
       
       // Last resort: localhost
       return 'http://localhost:3002';
     };
 
-    const baseUrl = getBaseUrl();
+    let baseUrl = getBaseUrl();
+    const originalBaseUrl = baseUrl; // Keep for error message
     
-    // Validate URL
+    // Ensure URL doesn't end with a slash
+    baseUrl = baseUrl.replace(/\/$/, '');
+    
+    // Validate URL format
+    let isValidUrl = false;
+    let parsedUrl: URL | null = null;
     try {
-      new URL(baseUrl);
+      parsedUrl = new URL(baseUrl);
+      isValidUrl = parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:';
+      if (isValidUrl) {
+        baseUrl = parsedUrl.origin; // Normalize to just origin
+      }
     } catch (e) {
-      console.error('[Checkout API] Invalid base URL:', baseUrl);
+      isValidUrl = false;
+      console.error('[Checkout API] URL parsing error:', e);
+    }
+    
+    if (!isValidUrl || !parsedUrl) {
+      console.error('[Checkout API] Invalid base URL:', { 
+        original: originalBaseUrl,
+        cleaned: baseUrl,
+        envVar: process.env.NEXT_PUBLIC_APP_URL 
+      });
       return NextResponse.json(
         {
           success: false,
           error: 'Invalid URL configuration',
-          details: `Base URL "${baseUrl}" is not a valid URL. Please set NEXT_PUBLIC_APP_URL environment variable.`,
+          details: `Base URL "${baseUrl}" is not a valid URL. Please ensure NEXT_PUBLIC_APP_URL is set to a valid URL without quotes or backticks (e.g., https://app.hookahplus.net). Current value: "${process.env.NEXT_PUBLIC_APP_URL || 'not set'}"`,
         },
         { status: 500 }
       );
