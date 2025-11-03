@@ -1,0 +1,147 @@
+# Recon Agent Registration
+
+## Agent Registry
+
+This file registers all Recon agent archetypes for use with Cursor 2.0 and the Reflex SDK ecosystem.
+
+---
+
+## Agents
+
+### Noor (Builder)
+```yaml
+agent: Noor
+archetype: Builder
+cursor_role: Primary agent in Composer
+trust_level: L1
+domain: Fast structure generation
+capabilities:
+  - code_generation
+  - schema_creation
+  - adapter_patterns
+  - component_scaffolding
+  - api_endpoint_generation
+worktree: pos
+pulse_pathway: pos-worktree
+```
+
+### Jules (Observer)
+```yaml
+agent: Jules
+archetype: Observer
+cursor_role: Background audit agent
+trust_level: L3
+domain: Change tracking, drift detection
+capabilities:
+  - change_tracking
+  - drift_scoring
+  - harmony_scoring
+  - audit_reports
+  - reflex_score_deltas
+worktree: ledger
+pulse_pathway: ledger-worktree
+```
+
+### Lumi (Explorer)
+```yaml
+agent: Lumi
+archetype: Explorer
+cursor_role: Parallel design agent
+trust_level: L0
+domain: UI/SDK variant exploration
+capabilities:
+  - ui_variants
+  - sdk_exploration
+  - prototyping
+  - design_patterns
+  - rapid_iteration
+worktree: sdk
+pulse_pathway: sdk-worktree
+```
+
+### 6 (Anchor)
+```yaml
+agent: 6
+archetype: Anchor
+cursor_role: Local stability agent
+trust_level: L2
+domain: Branch consistency, stability
+capabilities:
+  - branch_consistency
+  - merge_conflict_resolution
+  - stability_validation
+  - integration_testing
+  - release_preparation
+worktree: ui
+pulse_pathway: ui-worktree
+```
+
+### EchoPrime (EP)
+```yaml
+agent: EchoPrime
+archetype: Governance
+cursor_role: Governance layer
+trust_level: L3
+domain: Code review, Reflex Scores
+capabilities:
+  - code_review
+  - reflex_score_computation
+  - drift_alerts
+  - trust_graph_maintenance
+  - governance_enforcement
+worktree: test
+pulse_pathway: test-worktree
+```
+
+---
+
+## Agent Collaboration Matrix
+
+```yaml
+collaborations:
+  - agents: [Noor, EP]
+    pattern: Build → Validate
+    use_case: Component generation with validation
+    
+  - agents: [Jules, EP]
+    pattern: Audit → Governance
+    use_case: Code quality enforcement
+    
+  - agents: [Lumi, 6]
+    pattern: Explore → Stabilize
+    use_case: UI variant testing
+    
+  - agents: [Noor, Jules]
+    pattern: Build → Track
+    use_case: Rapid development with drift detection
+```
+
+---
+
+## Reflex Score Thresholds
+
+```yaml
+reflex_scores:
+  L0_sandbox: 0.0-5.0
+  L1_internal: 5.0-7.0
+  L2_validated: 7.0-8.5
+  L3_governance: 8.5-10.0
+```
+
+---
+
+## Pulse Synchronization
+
+```yaml
+pulse_sync:
+  frequency: real-time
+  protocol: Reflex Pulse
+  validation: EP
+  tracking: Jules
+```
+
+---
+
+*Registered: January 2025*  
+*Framework: Recon Agent Archetype System*  
+*Integration: Cursor 2.0 Multi-Agent Interface*
