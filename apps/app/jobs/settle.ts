@@ -16,6 +16,7 @@
 import { PrismaClient } from '@prisma/client';
 import Stripe from 'stripe';
 import { FEATURE_FLAGS, validateReconciliationRate, setPosSyncReady } from '../lib/config';
+import { issueLoyaltyCredits, calculateLoyaltyAmount } from '../lib/loyalty/issue-helper';
 
 const prisma = new PrismaClient();
 
@@ -213,6 +214,67 @@ export async function reconcilePosSettlements(
           stripeChargeId: charge.id,
         },
       });
+
+      // Auto-issue loyalty credits for high-confidence matches (Jules integration)
+      if (bestMatch.confidence === 'high') {
+        try {
+          // Fetch session to get customer info
+          const sessionId = bestMatch.ticket.sessionId || charge.metadata?.sessionId;
+          let customerId: string | undefined;
+          let customerPhone: string | undefined;
+
+          if (sessionId) {
+            const session = await prisma.session.findUnique({
+              where: { id: sessionId },
+              select: {
+                customerRef: true,
+                customerPhone: true,
+              },
+            });
+
+            if (session) {
+              customerId = session.customerRef || undefined;
+              customerPhone = session.customerPhone || undefined;
+            }
+          }
+
+          // Extract customer info from Stripe charge metadata if session not found
+          if (!customerId && !customerPhone) {
+            customerId = charge.metadata?.customerId;
+            customerPhone = charge.metadata?.customerPhone || charge.billing_details?.phone;
+          }
+
+          // Issue loyalty credits if we have customer info
+          if (customerId || customerPhone) {
+            const loyaltyAmount = calculateLoyaltyAmount(charge.amount);
+            const loyaltyResult = await issueLoyaltyCredits({
+              customerId,
+              customerPhone,
+              amountCents: loyaltyAmount,
+              source: 'POS',
+              sessionId: sessionId || undefined,
+              posTicketId: bestMatch.ticket.ticketId,
+              stripeChargeId: charge.id,
+              metadata: {
+                reconciliationMatch: 'high',
+                transactionAmount: charge.amount,
+                loyaltyRate: 0.01,
+              },
+            });
+
+            if (loyaltyResult.success) {
+              console.log(`[Jules] Issued ${loyaltyAmount} cents loyalty credits for match ${charge.id} ↔ ${bestMatch.ticket.ticketId}`);
+            } else {
+              console.warn(`[Jules] Failed to issue loyalty credits: ${loyaltyResult.error}`);
+            }
+          } else {
+            console.log(`[Jules] Skipping loyalty credit issuance - no customer info for match ${charge.id} ↔ ${bestMatch.ticket.ticketId}`);
+          }
+        } catch (loyaltyError) {
+          // Don't fail reconciliation if loyalty issuance fails
+          console.error('[Jules] Error issuing loyalty credits:', loyaltyError);
+        }
+      }
 
       matchedPairs.push({
         stripeChargeId: charge.id,

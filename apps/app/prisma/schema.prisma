@@ -11,79 +11,79 @@ datasource db {
 }
 
 model Session {
-  id             String      @id @default(cuid())
-  externalRef    String?     // qrToken | reservationId | stripeCheckoutId
-  source         String      // QR | RESERVE | WALK_IN | POS
+  id             String    @id @default(cuid())
+  externalRef    String? // qrToken | reservationId | stripeCheckoutId
+  source         String // QR | RESERVE | WALK_IN | POS
   trustSignature String
   tableId        String
   customerRef    String?
   customerPhone  String?
   flavor         String?
-  flavorMix      String?     // JSON as string for SQLite compatibility
+  flavorMix      String? // JSON as string for SQLite compatibility
   loungeId       String?
   priceCents     Int
-  state          String       @default("NEW")
-  edgeCase       String?     // 'EQUIPMENT_ISSUE', 'CUSTOMER_NOT_FOUND', 'PAYMENT_FAILED', 'HEALTH_SAFETY', 'OTHER'
+  state          String    @default("NEW")
+  edgeCase       String? // 'EQUIPMENT_ISSUE', 'CUSTOMER_NOT_FOUND', 'PAYMENT_FAILED', 'HEALTH_SAFETY', 'OTHER'
   edgeNote       String?
   assignedBOHId  String?
   assignedFOHId  String?
-  startedAt      DateTime?   // set when state -> ACTIVE
-  endedAt        DateTime?   // set when state -> COMPLETED/CANCELLED
-  durationSecs   Int?        // compute on complete
-  paymentIntent  String?     // Stripe PI id
-  paymentStatus  String?     // requires "succeeded" to complete
-  orderItems     String?     // JSON as string for SQLite compatibility
-  posMode        String?     // POS integration mode
-  version        Int         @default(1)
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-  
+  startedAt      DateTime? // set when state -> ACTIVE
+  endedAt        DateTime? // set when state -> COMPLETED/CANCELLED
+  durationSecs   Int? // compute on complete
+  paymentIntent  String? // Stripe PI id
+  paymentStatus  String? // requires "succeeded" to complete
+  orderItems     String? // JSON as string for SQLite compatibility
+  posMode        String? // POS integration mode
+  version        Int       @default(1)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
   // Timer fields
-  timerDuration      Int?     // in minutes
-  timerStartedAt     DateTime?
-  timerPausedAt      DateTime?
-  timerPausedDuration Int?    // total paused time in seconds
-  timerStatus        String?  // 'stopped' | 'running' | 'paused' | 'completed'
+  timerDuration       Int? // in minutes
+  timerStartedAt      DateTime?
+  timerPausedAt       DateTime?
+  timerPausedDuration Int? // total paused time in seconds
+  timerStatus         String? // 'stopped' | 'running' | 'paused' | 'completed'
 
   // New fields for Pre-Order flow
-  zone            String?     // 'VIP', 'Standard', 'Patio', etc.
-  fohUserId       String?     // FOH staff assigned to this session
-  specialRequests String?     // Customer special requests
-  tableNotes      String?     // Notes specific to this table/session
-  qrCodeUrl       String?     // URL to QR code image/data URL for staff scanning (fraud prevention)
+  zone            String? // 'VIP', 'Standard', 'Patio', etc.
+  fohUserId       String? // FOH staff assigned to this session
+  specialRequests String? // Customer special requests
+  tableNotes      String? // Notes specific to this table/session
+  qrCodeUrl       String? // URL to QR code image/data URL for staff scanning (fraud prevention)
 
   @@map("sessions")
 }
 
 // Partnership Models
 model Partner {
-  id          String   @id @default(cuid())
-  name        String
-  email       String   @unique
-  tier        String   @default("bronze") // bronze|silver|gold|platinum
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  tier      String   @default("bronze") // bronze|silver|gold|platinum
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  referrals   Referral[]
-  payouts     Payout[]
-  stats       PartnerStats?
+  referrals Referral[]
+  payouts   Payout[]
+  stats     PartnerStats?
 
   @@map("partners")
 }
 
 model PartnerStats {
-  id              String   @id @default(cuid())
-  partnerId       String   @unique
-  totalReferrals  Int      @default(0)
-  activeLounges   Int      @default(0)
-  referralsLast30d Int     @default(0)
-  qualityScore    Float    @default(0.0)
-  lastUpdated     DateTime @default(now())
+  id               String   @id @default(cuid())
+  partnerId        String   @unique
+  totalReferrals   Int      @default(0)
+  activeLounges    Int      @default(0)
+  referralsLast30d Int      @default(0)
+  qualityScore     Float    @default(0.0)
+  lastUpdated      DateTime @default(now())
 
   // Relations
-  partner         Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  partner Partner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
 
   @@map("partner_stats")
 }
@@ -101,24 +101,24 @@ model Referral {
   activatedAt DateTime?
 
   // Relations
-  partner     Partner   @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  partner Partner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
 
   @@map("referrals")
 }
 
 model Payout {
-  id           String   @id @default(cuid())
-  partnerId    String
-  period       String   // e.g., "2025-01"
-  gross        Float
-  revSharePct  Float
-  net          Float
-  status       String   @default("pending") // pending|paid
-  createdAt    DateTime @default(now())
-  paidAt       DateTime?
+  id          String    @id @default(cuid())
+  partnerId   String
+  period      String // e.g., "2025-01"
+  gross       Float
+  revSharePct Float
+  net         Float
+  status      String    @default("pending") // pending|paid
+  createdAt   DateTime  @default(now())
+  paidAt      DateTime?
 
   // Relations
-  partner      Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  partner Partner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
 
   @@map("payouts")
 }
@@ -129,7 +129,7 @@ model User {
   id        String   @id @default(cuid())
   email     String   @unique
   name      String?
-  roles     String   // Comma-separated roles: "BOH,FOH,MANAGER,ADMIN"
+  roles     String // Comma-separated roles: "BOH,FOH,MANAGER,ADMIN"
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -137,14 +137,14 @@ model User {
 }
 
 model SessionTransition {
-  id          String   @id @default(cuid())
-  sessionId   String
-  fromState   String
-  toState     String
-  transition  String
-  userId      String
-  note        String?
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  sessionId  String
+  fromState  String
+  toState    String
+  transition String
+  userId     String
+  note       String?
+  createdAt  DateTime @default(now())
 
   @@map("session_transitions")
 }
@@ -154,7 +154,7 @@ model OrgSetting {
   key         String   @unique
   value       String
   description String?
-  category    String?  // 'pos', 'menu', 'timing', 'ui'
+  category    String? // 'pos', 'menu', 'timing', 'ui'
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -163,54 +163,54 @@ model OrgSetting {
 }
 
 model Category {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  displayOrder Int     @default(0)
-  isActive    Boolean  @default(true)
-  icon        String?  // Icon name or URL
-  color       String?  // Hex color code
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(cuid())
+  name         String
+  description  String?
+  displayOrder Int      @default(0)
+  isActive     Boolean  @default(true)
+  icon         String? // Icon name or URL
+  color        String? // Hex color code
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // Relations
-  items       Item[]
+  items Item[]
 
   @@map("categories")
 }
 
 model Item {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  priceCents  Int
-  categoryId  String
-  isActive    Boolean  @default(true)
-  displayOrder Int     @default(0)
-  imageUrl    String?
-  allergens   String   // Comma-separated allergen strings
-  isPopular   Boolean  @default(false)
-  prepTime    Int?     // Prep time in minutes
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(cuid())
+  name         String
+  description  String?
+  priceCents   Int
+  categoryId   String
+  isActive     Boolean  @default(true)
+  displayOrder Int      @default(0)
+  imageUrl     String?
+  allergens    String // Comma-separated allergen strings
+  isPopular    Boolean  @default(false)
+  prepTime     Int? // Prep time in minutes
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // Relations
-  category    Category @relation(fields: [categoryId], references: [id])
+  category Category @relation(fields: [categoryId], references: [id])
 
   @@map("items")
 }
 
 model ReflexEvent {
-  id             String   @id @default(cuid())
-  type           String
-  source         String   @default("ui") // ui | backend | agent
-  sessionId      String?  // lounge session id (if any)
-  paymentIntent  String?  // stripe PI (if any)
-  payload        String?  // JSON string for SQLite compatibility
-  payloadHash    String?  // SHA256 hash for deduplication
-  userAgent      String?
-  ip             String?
-  createdAt      DateTime @default(now())
+  id            String   @id @default(cuid())
+  type          String
+  source        String   @default("ui") // ui | backend | agent
+  sessionId     String? // lounge session id (if any)
+  paymentIntent String? // stripe PI (if any)
+  payload       String? // JSON string for SQLite compatibility
+  payloadHash   String? // SHA256 hash for deduplication
+  userAgent     String?
+  ip            String?
+  createdAt     DateTime @default(now())
 
   @@index([type, createdAt])
   @@map("reflex_events")
@@ -219,13 +219,13 @@ model ReflexEvent {
 // KTL-4 Keep-The-Lights-On Models
 model Ktl4HealthCheck {
   id          String   @id @default(cuid())
-  flowName    String   // 'payment_settlement', 'session_lifecycle', 'order_intake', 'pos_sync'
-  checkType   String   // 'heartbeat', 'reconciliation', 'latency', 'parity'
-  status      String   // 'healthy', 'degraded', 'critical', 'failed'
-  details     String?  // JSON string with check details
-  threshold   Int?     // Threshold that was checked
-  actualValue Int?     // Actual value that triggered status
-  operatorId  String?  // Operator who triggered manual check
+  flowName    String // 'payment_settlement', 'session_lifecycle', 'order_intake', 'pos_sync'
+  checkType   String // 'heartbeat', 'reconciliation', 'latency', 'parity'
+  status      String // 'healthy', 'degraded', 'critical', 'failed'
+  details     String? // JSON string with check details
+  threshold   Int? // Threshold that was checked
+  actualValue Int? // Actual value that triggered status
+  operatorId  String? // Operator who triggered manual check
   createdAt   DateTime @default(now())
 
   @@index([flowName, createdAt])
@@ -233,16 +233,16 @@ model Ktl4HealthCheck {
 }
 
 model SettlementReconciliation {
-  id              String   @id @default(cuid())
-  stripeChargeId  String?  // Stripe charge ID
-  posTicketId     String?  // POS ticket ID
-  sessionId       String?  // Associated session
-  amount          Int?     // Amount in cents
-  status          String   // 'pending', 'matched', 'orphaned', 'reconciled'
-  mismatchReason  String?  // Reason for mismatch if any
-  repairRunId     String?  // ID of repair run that fixed it
-  createdAt       DateTime @default(now())
-  reconciledAt    DateTime?
+  id             String    @id @default(cuid())
+  stripeChargeId String? // Stripe charge ID
+  posTicketId    String? // POS ticket ID
+  sessionId      String? // Associated session
+  amount         Int? // Amount in cents
+  status         String // 'pending', 'matched', 'orphaned', 'reconciled'
+  mismatchReason String? // Reason for mismatch if any
+  repairRunId    String? // ID of repair run that fixed it
+  createdAt      DateTime  @default(now())
+  reconciledAt   DateTime?
 
   @@index([stripeChargeId])
   @@index([posTicketId])
@@ -251,18 +251,18 @@ model SettlementReconciliation {
 }
 
 model PosTicket {
-  id              String   @id @default(cuid())
-  ticketId        String   @unique // External POS ticket ID
-  sessionId       String?  // Associated session
-  stripeChargeId  String?  // Associated Stripe charge
-  amountCents     Int      // Total amount in cents
-  items           String?  // JSON string of items
-  taxes           Int?     // Tax amount in cents
-  tips            Int?     // Tip amount in cents
-  status          String   // 'pending', 'paid', 'refunded', 'cancelled'
-  posSystem       String   // 'square', 'clover', 'toast'
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String   @id @default(cuid())
+  ticketId       String   @unique // External POS ticket ID
+  sessionId      String? // Associated session
+  stripeChargeId String? // Associated Stripe charge
+  amountCents    Int // Total amount in cents
+  items          String? // JSON string of items
+  taxes          Int? // Tax amount in cents
+  tips           Int? // Tip amount in cents
+  status         String // 'pending', 'paid', 'refunded', 'cancelled'
+  posSystem      String // 'square', 'clover', 'toast'
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@index([ticketId])
   @@index([sessionId])
@@ -271,14 +271,14 @@ model PosTicket {
 }
 
 model SessionHeartbeat {
-  id          String   @id @default(cuid())
-  sessionId   String
-  stationId   String?  // Physical station/table ID
-  status      String   // 'active', 'paused', 'stalled', 'completed'
-  elapsedSecs Int      // Elapsed time in seconds
-  remainingSecs Int?   // Remaining time in seconds
-  lastPing    DateTime @default(now())
-  createdAt   DateTime @default(now())
+  id            String   @id @default(cuid())
+  sessionId     String
+  stationId     String? // Physical station/table ID
+  status        String // 'active', 'paused', 'stalled', 'completed'
+  elapsedSecs   Int // Elapsed time in seconds
+  remainingSecs Int? // Remaining time in seconds
+  lastPing      DateTime @default(now())
+  createdAt     DateTime @default(now())
 
   @@index([sessionId, lastPing])
   @@map("session_heartbeats")
@@ -287,43 +287,106 @@ model SessionHeartbeat {
 model PricingLock {
   id              String   @id @default(cuid())
   sessionId       String   @unique
-  finalPriceCents Int      // Final locked price
-  priceHash       String   // Hash of pricing components
-  components      String?  // JSON string of price components
+  finalPriceCents Int // Final locked price
+  priceHash       String // Hash of pricing components
+  components      String? // JSON string of price components
   lockedAt        DateTime @default(now())
-  operatorId      String?  // Operator who locked pricing
-  auditNote       String?  // Manual override note if any
+  operatorId      String? // Operator who locked pricing
+  auditNote       String? // Manual override note if any
 
   @@index([sessionId])
   @@map("pricing_locks")
 }
 
 model Ktl4Alert {
-  id          String   @id @default(cuid())
-  priority    String   // 'P1', 'P2', 'P3'
-  flowName    String   // Which KTL-4 flow
-  alertType   String   // Type of alert
-  message     String   // Alert message
-  details     String?  // JSON string with alert details
-  status      String   // 'active', 'acknowledged', 'resolved'
+  id             String    @id @default(cuid())
+  priority       String // 'P1', 'P2', 'P3'
+  flowName       String // Which KTL-4 flow
+  alertType      String // Type of alert
+  message        String // Alert message
+  details        String? // JSON string with alert details
+  status         String // 'active', 'acknowledged', 'resolved'
   acknowledgedBy String? // Operator who acknowledged
-  resolvedAt  DateTime?
-  createdAt   DateTime @default(now())
+  resolvedAt     DateTime?
+  createdAt      DateTime  @default(now())
 
   @@index([priority, status, createdAt])
   @@map("ktl4_alerts")
 }
 
 model BreakGlassAction {
-  id          String   @id @default(cuid())
-  actionType  String   // 'freeze_station', 'degraded_mode', 'manual_override'
-  targetId    String?  // Station/session ID affected
-  operatorId  String   // Operator who took action
-  reason      String   // Reason for break-glass action
-  details     String?  // JSON string with action details
-  createdAt   DateTime @default(now())
-  resolvedAt  DateTime?
+  id         String    @id @default(cuid())
+  actionType String // 'freeze_station', 'degraded_mode', 'manual_override'
+  targetId   String? // Station/session ID affected
+  operatorId String // Operator who took action
+  reason     String // Reason for break-glass action
+  details    String? // JSON string with action details
+  createdAt  DateTime  @default(now())
+  resolvedAt DateTime?
 
   @@index([actionType, createdAt])
   @@map("break_glass_actions")
+}
+
+// Loyalty Ledger Models (Jules)
+// Non-crypto loyalty system with ACID compliance
+model LoyaltyAccount {
+  id                 String   @id @default(cuid())
+  customerId         String? // Customer reference (CUST-xxx format)
+  customerPhone      String? // Customer phone number (normalized format)
+  balanceCents       Int      @default(0) // Current balance in cents
+  totalEarnedCents   Int      @default(0) // Lifetime earned credits
+  totalRedeemedCents Int      @default(0) // Lifetime redeemed credits
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // Relations
+  transactions LoyaltyTransaction[]
+  wallet       LoyaltyWallet?
+
+  @@index([customerId])
+  @@index([customerPhone])
+  @@index([isActive, updatedAt])
+  @@map("loyalty_accounts")
+}
+
+model LoyaltyTransaction {
+  id                 String   @id @default(cuid())
+  accountId          String // Foreign key to LoyaltyAccount
+  type               String // 'ISSUE' | 'REDEEM' | 'ADJUST'
+  amountCents        Int // Transaction amount (positive for ISSUE, negative for REDEEM)
+  balanceBeforeCents Int // Balance before transaction
+  balanceAfterCents  Int // Balance after transaction
+  source             String // 'POS' | 'MANUAL' | 'REFUND' | 'ADJUSTMENT'
+  sessionId          String? // Associated session ID
+  posTicketId        String? // Associated POS ticket ID
+  stripeChargeId     String? // Associated Stripe charge ID
+  metadata           String? // JSON string with additional transaction metadata
+  version            Int      @default(1) // Optimistic locking version
+  createdAt          DateTime @default(now())
+
+  // Relations
+  account LoyaltyAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, createdAt])
+  @@index([sessionId])
+  @@index([posTicketId])
+  @@index([type, createdAt])
+  @@index([source, createdAt])
+  @@map("loyalty_transactions")
+}
+
+model LoyaltyWallet {
+  id                String   @id @default(cuid())
+  accountId         String   @unique // Foreign key to LoyaltyAccount (1:1)
+  balanceCents      Int      @default(0) // Cached balance for performance
+  lastTransactionId String? // Last transaction ID (for cache invalidation)
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  account LoyaltyAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+  @@map("loyalty_wallets")
 }
