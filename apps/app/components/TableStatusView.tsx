@@ -37,14 +37,14 @@ export default function TableStatusView() {
 
           // Map sessions to tables
           const activeSessions = sessionsData.filter((s: any) => !s.endTime);
-          const tablesWithStatus = defaultTables.map(table => {
+          const tablesWithStatus: Table[] = defaultTables.map(table => {
             const session = activeSessions.find((s: any) => s.table === table.number);
             if (session) {
               const duration = Date.now() - session.startTime;
               const hours = duration / (1000 * 60 * 60);
               return {
                 ...table,
-                status: hours > 2 ? 'needs_attention' : 'active',
+                status: (hours > 2 ? 'needs_attention' : 'active') as Table['status'],
                 sessionId: session.id,
               };
             }
