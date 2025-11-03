@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, QrCode, Calendar, MapPin, Sparkles } from 'lucide-react';
-import Card from '../../components/Card';
+import Card from './Card';
 import QRCode from 'qrcode';
 
 interface SessionConfirmationProps {

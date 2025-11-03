@@ -3,9 +3,8 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { CheckCircle, ArrowLeft } from 'lucide-react';
-import SessionConfirmation from '../../components/SessionConfirmation';
-import GlobalNavigation from '../../components/GlobalNavigation';
-import Stripe from 'stripe';
+import SessionConfirmation from '../../../components/SessionConfirmation';
+import GlobalNavigation from '../../../components/GlobalNavigation';
 
 function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
