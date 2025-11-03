@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { calculatePrice, isWeekend } from '../../../lib/pricing';
+import { calculatePrice, isWeekend } from '../../../../lib/pricing';
 
 export async function POST(request: NextRequest) {
   try {
