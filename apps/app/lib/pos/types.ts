@@ -41,6 +41,25 @@ export type AttachResult = {
   metadata?: Record<string, any>;
 };
 
+export type ReconciliationMatch = {
+  posTicketId: string;
+  stripeChargeId: string;
+  amountCents: number;
+  matchConfidence: 'high' | 'medium' | 'low';
+  matchReason?: string;
+};
+
+export type ReconciliationReport = {
+  totalPosTickets: number;
+  totalStripeCharges: number;
+  matched: number;
+  orphanedPosTickets: number;
+  orphanedStripeCharges: number;
+  reconciliationRate: number;
+  pricingParity: number;
+  matches: ReconciliationMatch[];
+};
+
 export interface PosAdapter {
   /** Create or attach to an open ticket in the POS for this table/order */
   attachOrder(hpOrder: HpOrder): Promise<AttachResult>;
@@ -53,4 +72,8 @@ export interface PosAdapter {
 
   /** Health check / capabilities */
   capabilities(): Promise<{ orderInjection: boolean; externalTender: boolean }>;
+
+  /** Reconciliation methods - match POS tickets with Stripe charges */
+  reconcileTicket?(posTicketId: string, stripeChargeId?: string): Promise<ReconciliationMatch | null>;
+  getReconciliationReport?(startDate: Date, endDate: Date): Promise<ReconciliationReport>;
 }

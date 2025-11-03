@@ -1,4 +1,11 @@
-import type { PosAdapter, HpItem, HpOrder, ExternalTender, AttachResult } from "./types";
+import type { PosAdapter, HpItem, HpOrder, ExternalTender, AttachResult, ReconciliationMatch, ReconciliationReport } from "./types";
+import Stripe from 'stripe';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2025-08-27.basil' as any })
+  : null;
 
 /** ENV:
  * SQUARE_ACCESS_TOKEN=<secret>
@@ -194,5 +201,146 @@ export class SquareAdapter implements PosAdapter {
     }
 
     return res.json();
+  }
+
+  /**
+   * Reconciliation: Match Square order with Stripe charge
+   * Agent: Noor - Objective O1.3
+   */
+  async reconcileTicket(posTicketId: string, stripeChargeId?: string): Promise<ReconciliationMatch | null> {
+    if (!stripe) {
+      throw new Error('Stripe not configured for reconciliation');
+    }
+
+    try {
+      // Get POS ticket from database
+      const posTicket = await prisma.posTicket.findUnique({
+        where: { ticketId: posTicketId },
+      });
+
+      if (!posTicket) {
+        return null;
+      }
+
+      // If Stripe charge ID provided, fetch and match directly
+      if (stripeChargeId) {
+        const charge = await stripe.charges.retrieve(stripeChargeId);
+        const amountDiff = Math.abs(charge.amount - posTicket.amountCents);
+
+        if (amountDiff <= 10) { // $0.10 tolerance
+          return {
+            posTicketId,
+            stripeChargeId,
+            amountCents: charge.amount,
+            matchConfidence: amountDiff === 0 ? 'high' : 'medium',
+            matchReason: `Amount match (diff: $${(amountDiff / 100).toFixed(2)})`,
+          };
+        }
+      }
+
+      // Search for matching Stripe charge by amount and timestamp
+      const order = await this.getOrder(posTicketId);
+      const orderCreatedTime = order.order?.created_at 
+        ? new Date(order.order.created_at).getTime() / 1000
+        : posTicket.createdAt.getTime() / 1000;
+
+      const charges = await stripe.charges.list({
+        limit: 10,
+        created: {
+          gte: Math.floor(orderCreatedTime - 300), // 5 minute window
+          lte: Math.floor(orderCreatedTime + 300),
+        },
+      });
+
+      for (const charge of charges.data) {
+        if (!charge.paid) continue;
+
+        const amountDiff = Math.abs(charge.amount - posTicket.amountCents);
+        if (amountDiff <= 10) {
+          return {
+            posTicketId,
+            stripeChargeId: charge.id,
+            amountCents: charge.amount,
+            matchConfidence: amountDiff === 0 ? 'high' : amountDiff <= 5 ? 'medium' : 'low',
+            matchReason: `Amount match within window (diff: $${(amountDiff / 100).toFixed(2)})`,
+          };
+        }
+      }
+
+      return null;
+    } catch (error) {
+      console.error('[Square] Reconciliation error:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get reconciliation report for date range
+   */
+  async getReconciliationReport(startDate: Date, endDate: Date): Promise<ReconciliationReport> {
+    if (!stripe) {
+      throw new Error('Stripe not configured for reconciliation');
+    }
+
+    try {
+      // Get POS tickets in date range
+      const posTickets = await prisma.posTicket.findMany({
+        where: {
+          posSystem: 'square',
+          createdAt: {
+            gte: startDate,
+            lte: endDate,
+          },
+          status: 'paid',
+        },
+      });
+
+      // Get Stripe charges in date range
+      const charges = await stripe.charges.list({
+        limit: 100,
+        created: {
+          gte: Math.floor(startDate.getTime() / 1000),
+          lte: Math.floor(endDate.getTime() / 1000),
+        },
+      });
+
+      const matches: ReconciliationMatch[] = [];
+      const matchedTicketIds = new Set<string>();
+      const matchedChargeIds = new Set<string>();
+
+      // Match tickets to charges
+      for (const ticket of posTickets) {
+        const match = await this.reconcileTicket(ticket.ticketId);
+        if (match) {
+          matches.push(match);
+          matchedTicketIds.add(ticket.ticketId);
+          matchedChargeIds.add(match.stripeChargeId);
+        }
+      }
+
+      const totalPosTickets = posTickets.length;
+      const totalStripeCharges = charges.data.filter((c) => c.paid).length;
+      const matched = matches.length;
+      const orphanedPosTickets = totalPosTickets - matched;
+      const orphanedStripeCharges = totalStripeCharges - matched;
+
+      const reconciliationRate = totalPosTickets > 0 ? matched / totalPosTickets : 0;
+      const exactMatches = matches.filter((m) => m.matchConfidence === 'high').length;
+      const pricingParity = matched > 0 ? exactMatches / matched : 0;
+
+      return {
+        totalPosTickets,
+        totalStripeCharges,
+        matched,
+        orphanedPosTickets,
+        orphanedStripeCharges,
+        reconciliationRate,
+        pricingParity,
+        matches,
+      };
+    } catch (error) {
+      console.error('[Square] Reconciliation report error:', error);
+      throw error;
+    }
   }
 }
