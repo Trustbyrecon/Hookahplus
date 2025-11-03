@@ -25,10 +25,15 @@ const SessionConfirmation: React.FC<SessionConfirmationProps> = ({
 
   useEffect(() => {
     const generateQR = async () => {
+      if (!sessionId) return;
+      
       try {
+        setQrLoading(true);
         // Generate QR code with URL that routes to staff scan page
         const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://app.hookahplus.net';
         const qrUrl = `${baseUrl}/staff/scan/${sessionId}`;
+        
+        console.log('[SessionConfirmation] Generating QR code for:', qrUrl);
         
         const qrCodeDataUrl = await QRCode.toDataURL(qrUrl, {
           width: 200,
@@ -40,15 +45,16 @@ const SessionConfirmation: React.FC<SessionConfirmationProps> = ({
         });
         
         setQrCodeDataUrl(qrCodeDataUrl);
+        console.log('[SessionConfirmation] QR code generated successfully');
       } catch (error) {
-        console.error('Error generating QR code:', error);
+        console.error('[SessionConfirmation] Error generating QR code:', error);
       } finally {
         setQrLoading(false);
       }
     };
 
     generateQR();
-  }, [sessionId, tableId]);
+  }, [sessionId]); // Only depend on sessionId, not tableId
 
   return (
     <Card className={`p-6 ${className}`}>

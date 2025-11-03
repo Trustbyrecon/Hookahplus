@@ -41,16 +41,38 @@ function CheckoutSuccessContent() {
         if (stripeResult.success && stripeResult.session) {
           const stripeSession = stripeResult.session;
           
-          // Find database session by externalRef (Stripe checkout session ID)
-          const dbResponse = await fetch(`/api/sessions/${checkoutSessionId}`);
+          // Poll for database session (webhook may still be processing)
+          let attempts = 0;
+          const maxAttempts = 10; // Try for up to 10 seconds (10 attempts * 1 second)
           
-          let dbSessionId = checkoutSessionId; // Fallback to Stripe session ID
-          if (dbResponse.ok) {
-            const dbSession = await dbResponse.json();
-            dbSessionId = dbSession.id; // Use actual database session ID
+          const pollForDatabaseSession = async (): Promise<string | null> => {
+            while (attempts < maxAttempts) {
+              // Find database session by externalRef (Stripe checkout session ID)
+              const dbResponse = await fetch(`/api/sessions/${checkoutSessionId}`);
+              
+              if (dbResponse.ok) {
+                const dbSession = await dbResponse.json();
+                return dbSession.id; // Use actual database session ID
+              }
+              
+              // Wait 1 second before retrying
+              attempts++;
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            return null; // Failed to find database session
+          };
+          
+          const dbSessionId = await pollForDatabaseSession();
+          
+          if (dbSessionId) {
+            setSessionId(dbSessionId); // Use database session ID for QR code
+            console.log('[Checkout Success] Found database session:', dbSessionId);
+          } else {
+            // Fallback to Stripe session ID (API endpoint can handle it)
+            console.warn('[Checkout Success] Database session not found after polling. Webhook may still be processing.');
+            setSessionId(checkoutSessionId);
+            // Note: The QR code will still work because the API endpoint handles externalRef lookup
           }
-          
-          setSessionId(dbSessionId); // Use database session ID for QR code
           
           setSessionData({
             tableId: stripeSession.metadata?.tableId,
