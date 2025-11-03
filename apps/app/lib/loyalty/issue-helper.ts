@@ -160,12 +160,15 @@ export async function issueLoyaltyCredits(
  * Calculate loyalty amount from transaction amount
  * 
  * Rules:
- * - 1% of transaction amount (configurable)
+ * - Configurable rate via LOYALTY_RATE_PERCENT env var (default: 1%)
  * - Minimum: 1 cent per transaction
  * - Round to nearest cent
  */
 export function calculateLoyaltyAmount(transactionAmountCents: number): number {
-  const loyaltyRate = 0.01; // 1% - can be made configurable via env var
+  // Get loyalty rate from environment variable (default: 1%)
+  const loyaltyRatePercent = parseFloat(process.env.LOYALTY_RATE_PERCENT || '1.0');
+  const loyaltyRate = loyaltyRatePercent / 100; // Convert percentage to decimal
+  
   const loyaltyAmount = Math.round(transactionAmountCents * loyaltyRate);
   return Math.max(1, loyaltyAmount); // Minimum 1 cent
 }
