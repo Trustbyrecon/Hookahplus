@@ -22,6 +22,19 @@ apps/*/.env.*
 *.pem
 *.key
 
+# Stripe Keys & Secrets (PROTECTED)
+# Never commit live Stripe keys!
+*sk_live_*
+*pk_live_*
+*whsec_*
+*stripe*.key
+*stripe*.secret
+*stripe*.env
+*STRIPE_KEYS*.md
+*STRIPE_KEYS*.txt
+*stripe-keys*.md
+*stripe-keys*.txt
+
 # Local Netlify folder
 .netlify
 
