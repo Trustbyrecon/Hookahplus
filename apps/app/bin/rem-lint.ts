@@ -18,6 +18,12 @@ import { join } from 'path';
 import { PrismaClient } from '@prisma/client';
 import { validateTrustEvent } from '../lib/reflex/rem-types';
 
+// Set default DATABASE_URL for local development if not set
+if (!process.env.DATABASE_URL) {
+  // When run from apps/app directory, this resolves to apps/app/prisma/dev.db
+  process.env.DATABASE_URL = `file:${join(process.cwd(), 'prisma/dev.db')}`;
+}
+
 const prisma = new PrismaClient();
 
 interface LintResult {
