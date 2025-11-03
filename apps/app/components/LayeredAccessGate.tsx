@@ -24,7 +24,7 @@ interface User {
 function LayerI() {
   return (
     <>
-      <PreorderEntry />
+        <PreorderEntry onCheckout={() => {}} />
       <FlavorSelector value="Mint" onChange={() => {}} />
       <SessionConfirmation flavor="Mint" />
       <LoyaltyBadge />
