@@ -1,78 +1,130 @@
-'use client';
+"use client";
 
-import { useEffect, useState, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { CheckCircle, ArrowLeft } from 'lucide-react';
+import SessionConfirmation from '../../components/SessionConfirmation';
+import GlobalNavigation from '../../components/GlobalNavigation';
+import Stripe from 'stripe';
 
 function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
-  const [orderId, setOrderId] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [amount, setAmount] = useState<string | null>(null);
-  const [stripeUrl, setStripeUrl] = useState<string | null>(null);
-  const [isSmokeTest, setIsSmokeTest] = useState(false);
+  const [sessionData, setSessionData] = useState<{
+    tableId?: string;
+    flavorMix?: string;
+    amount?: number;
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const order = searchParams.get('order');
-    const session = searchParams.get('session_id');
-    const amt = searchParams.get('amount');
-    const stripe = searchParams.get('stripe_url');
+    const checkoutSessionId = searchParams.get('session_id');
     
-    if (order) setOrderId(order);
-    if (session) setSessionId(session);
-    if (amt) setAmount(amt);
-    if (stripe) setStripeUrl(decodeURIComponent(stripe));
-    
-    // Check if this is a smoke test
-    if (session && session.includes('test') || amt === '100') {
-      setIsSmokeTest(true);
+    if (!checkoutSessionId) {
+      setError('No session ID found');
+      setLoading(false);
+      return;
     }
+
+    setSessionId(checkoutSessionId);
+
+    // Fetch session details from Stripe
+    const fetchSessionDetails = async () => {
+      try {
+        const response = await fetch(`/api/checkout-session/${checkoutSessionId}`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch session details');
+        }
+
+        const result = await response.json();
+        
+        if (result.success && result.session) {
+          const session = result.session;
+          setSessionData({
+            tableId: session.metadata?.tableId,
+            flavorMix: session.metadata?.flavorMix || session.metadata?.flavors,
+            amount: session.amount_total,
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching session details:', err);
+        // Continue with basic display even if fetch fails
+        setSessionData({
+          tableId: undefined,
+          flavorMix: undefined,
+          amount: undefined,
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSessionDetails();
   }, [searchParams]);
 
-  return (
-    <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
-      <div className="max-w-md mx-auto text-center">
-        <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
-          <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-zinc-400">Loading session details...</p>
         </div>
-        <h1 className="text-2xl font-bold mb-4">
-          {isSmokeTest ? '$1 Smoke Test Succeeded!' : 'Payment Successful!'}
-        </h1>
-        <p className="text-zinc-300 mb-6">
-          {isSmokeTest ? (
-            <>
-              RWO smoke test completed successfully!<br/>
-              Session ID: {sessionId || 'N/A'}<br/>
-              Amount: ${amount ? (parseInt(amount) / 100).toFixed(2) : '1.00'}
-            </>
-          ) : (
-            `Your hookah session has been confirmed. Order ID: ${orderId || 'N/A'}`
-          )}
-        </p>
-        <div className="space-y-4">
-          {isSmokeTest && stripeUrl && (
-            <a
-              href={stripeUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors mr-4"
-            >
-              View in Stripe Dashboard
-            </a>
-          )}
-          <a
-            href="/"
-            className="inline-block bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors"
-          >
-            Return to Dashboard
-          </a>
+      </div>
+    );
+  }
+
+  if (error || !sessionId) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white flex items-center justify-center">
+        <div className="max-w-md mx-auto text-center">
+          <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+            <span className="text-white text-2xl">!</span>
+          </div>
+          <h1 className="text-2xl font-bold mb-4">Payment Confirmed</h1>
+          <p className="text-zinc-300 mb-6">
+            {error || 'Your payment was successful. Session details will be available shortly.'}
+          </p>
           <a
             href="/fire-session-dashboard"
-            className="inline-block border border-zinc-600 text-zinc-300 px-6 py-3 rounded-lg hover:bg-zinc-800 transition-colors ml-4"
+            className="inline-block bg-teal-600 text-white px-6 py-3 rounded-lg hover:bg-teal-500 transition-colors"
           >
             View Sessions
           </a>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
+      <GlobalNavigation />
+      
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto">
+          <SessionConfirmation
+            sessionId={sessionId}
+            tableId={sessionData?.tableId}
+            flavorMix={sessionData?.flavorMix}
+            amount={sessionData?.amount}
+          />
+
+          <div className="mt-6 flex gap-4 justify-center">
+            <a
+              href="/fire-session-dashboard"
+              className="inline-flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              View All Sessions
+            </a>
+            <a
+              href="/"
+              className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white px-6 py-3 rounded-lg transition-colors"
+            >
+              Return to Dashboard
+            </a>
+          </div>
         </div>
       </div>
     </div>
@@ -81,7 +133,14 @@ function CheckoutSuccessContent() {
 
 export default function CheckoutSuccess() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">Loading...</div>}>
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-zinc-400">Loading...</p>
+        </div>
+      </div>
+    }>
       <CheckoutSuccessContent />
     </Suspense>
   );
