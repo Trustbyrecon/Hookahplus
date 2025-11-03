@@ -240,8 +240,8 @@ export async function reconcilePosSettlements(
 
           // Extract customer info from Stripe charge metadata if session not found
           if (!customerId && !customerPhone) {
-            customerId = charge.metadata?.customerId;
-            customerPhone = charge.metadata?.customerPhone || charge.billing_details?.phone;
+            customerId = charge.metadata?.customerId || undefined;
+            customerPhone = charge.metadata?.customerPhone || charge.billing_details?.phone || undefined;
           }
 
           // Issue loyalty credits if we have customer info
