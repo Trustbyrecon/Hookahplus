@@ -1,9 +1,19 @@
-import { Page } from "../../components/Page";
+'use client';
 
-export default function Operator() {
+import { Page } from '../../components/Page';
+import OperatorSessionList from '../../components/OperatorSessionList';
+import TableStatusView from '../../components/TableStatusView';
+
+export default function OperatorDashboard() {
   return (
-    <Page title="Operator">
-      <p>Tools tailored for day-to-day lounge management.</p>
+    <Page title="Operator Dashboard">
+      <div className="space-y-8">
+        {/* Table Status View */}
+        <TableStatusView />
+
+        {/* Active Sessions */}
+        <OperatorSessionList />
+      </div>
     </Page>
   );
 }

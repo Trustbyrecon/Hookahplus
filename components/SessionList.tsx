@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import SessionCard from '../components/SessionCard';
+import SessionCard from '../../components/SessionCard';
 
 interface Session {
   id: number;
@@ -25,9 +25,8 @@ export default function SessionList() {
       const data = await response.json();
       setSessions(data);
       setError(null);
-    } catch (err: any) {
-      setError(err.message);
-      console.error('Error fetching sessions:', err);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load sessions');
     } finally {
       setLoading(false);
     }
@@ -40,32 +39,40 @@ export default function SessionList() {
     return () => clearInterval(interval);
   }, []);
 
-  // Filter active sessions (no endTime)
-  const activeSessions = sessions.filter(s => !s.endTime);
-
   if (loading) {
-    return <div className="text-center py-8">Loading sessions...</div>;
+    return (
+      <div className="p-4 text-center text-gray-400">
+        Loading sessions...
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="text-center py-8 text-red-500">Error: {error}</div>;
+    return (
+      <div className="p-4 bg-red-900/20 border border-red-500/30 rounded-lg text-red-400">
+        Error: {error}
+      </div>
+    );
   }
+
+  const activeSessions = sessions.filter(s => !s.endTime);
+  const completedSessions = sessions.filter(s => s.endTime);
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-goldLumen">Active Sessions</h2>
+        <h2 className="text-2xl font-bold text-white">Active Sessions</h2>
         <span className="text-sm text-gray-400">
-          {activeSessions.length} active • {sessions.length} total
+          {activeSessions.length} active • {completedSessions.length} completed
         </span>
       </div>
 
       {activeSessions.length === 0 ? (
-        <div className="text-center py-8 text-gray-400">
-          No active sessions at this time
+        <div className="p-8 text-center text-gray-400 bg-gray-900/30 rounded-lg border border-gray-800">
+          No active sessions
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {activeSessions.map((session) => (
             <SessionCard
               key={session.id}
@@ -73,8 +80,27 @@ export default function SessionList() {
               flavor={session.flavors.join(', ')}
               startAt={new Date(session.startTime)}
               status="active"
+              href={`/dashboard/sessions/${session.id}`}
             />
           ))}
+        </div>
+      )}
+
+      {completedSessions.length > 0 && (
+        <div className="mt-8">
+          <h3 className="text-xl font-semibold text-white mb-4">Recent Sessions</h3>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {completedSessions.slice(0, 6).map((session) => (
+              <SessionCard
+                key={session.id}
+                title={`Table ${session.table}`}
+                flavor={session.flavors.join(', ')}
+                startAt={new Date(session.startTime)}
+                status="complete"
+                href={`/dashboard/sessions/${session.id}`}
+              />
+            ))}
+          </div>
         </div>
       )}
     </div>
