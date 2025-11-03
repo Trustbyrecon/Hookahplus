@@ -71,12 +71,14 @@ const OPTIONAL_VARS: EnvVar[] = [
   },
 ];
 
-function verifyEnvironment(): {
+interface VerifyResult {
   allRequired: boolean;
   passed: number;
   failed: number;
   warnings: number;
-} {
+}
+
+function verifyEnvironment(): VerifyResult {
   console.log('🔍 Verifying Production Environment Configuration\n');
   console.log('='.repeat(60));
 
