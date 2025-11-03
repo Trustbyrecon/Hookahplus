@@ -11,7 +11,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, AlertCircle, CheckCircle, Clock } from 'lucide-react';
-import Card from '../components/Card';
+import Card from '../../components/Card';
 
 interface ReconciliationMetrics {
   reconciliationRate: number;
