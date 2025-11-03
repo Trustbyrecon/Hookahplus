@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ShoppingCart, DollarSign, Sparkles, AlertCircle } from 'lucide-react';
-import FlavorSelector, { Flavor } from '../customer/FlavorSelector';
+import FlavorSelector, { Flavor } from './customer/FlavorSelector';
 import Card from './Card';
 import Button from './Button';
 
