@@ -43,7 +43,12 @@ async function generateSignature(): Promise<string> {
   // Browser: use Web Crypto API
   const array = new Uint8Array(32);
   crypto.getRandomValues(array);
-  const base64 = btoa(String.fromCharCode(...array));
+  // Convert Uint8Array to string - use apply for ES5 compatibility
+  const charCodes: number[] = [];
+  for (let i = 0; i < array.length; i++) {
+    charCodes.push(array[i]);
+  }
+  const base64 = btoa(String.fromCharCode.apply(null, charCodes));
   return `ed25519:${base64}`;
 }
 
