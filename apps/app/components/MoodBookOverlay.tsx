@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { moodBookThemes, applyMoodBook } from '../codex/Modules/moodbook_sora_overlay_v1';
+import { moodBookThemes, applyMoodBook } from '../../codex/Modules/moodbook_sora_overlay_v1';
 
 export default function MoodBookOverlay() {
   const [theme, setTheme] = useState(moodBookThemes[0].name);
