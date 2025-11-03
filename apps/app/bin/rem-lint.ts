@@ -16,7 +16,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { PrismaClient } from '@prisma/client';
-import { validateTrustEvent } from '../reflex/rem-types';
+import { validateTrustEvent } from '../lib/reflex/rem-types';
 
 const prisma = new PrismaClient();
 
