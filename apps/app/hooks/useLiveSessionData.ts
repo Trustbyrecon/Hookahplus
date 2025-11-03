@@ -269,36 +269,49 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
 
       if (sessionsResult.success) {
         // Convert Prisma API sessions to FireSession format
-        const fireSessions: FireSession[] = sessionsResult.sessions.map((session: any) => ({
-          id: session.id,
-          tableId: session.externalRef || 'Unknown',
-          customerName: session.customerRef || 'Anonymous',
-          customerPhone: session.customerPhone || '',
-          flavor: session.flavorMix || 'Custom Mix',
-          amount: session.priceCents || 0,
-          status: mapPrismaStateToFireSession(session.state),
-          currentStage: mapStateToStage(session.state),
-          assignedStaff: {
-            boh: session.assignedBOHId,
-            foh: session.assignedFOHId
-          },
-          createdAt: new Date(session.createdAt).getTime(),
-          updatedAt: new Date(session.updatedAt).getTime(),
-          sessionStartTime: session.startedAt ? new Date(session.startedAt).getTime() : undefined,
-          sessionDuration: session.durationSecs || 45 * 60,
-          coalStatus: 'active' as const,
-          refillStatus: 'none' as const,
-          notes: session.tableNotes || '',
-          edgeCase: session.edgeCase,
-          sessionTimer: session.timerStartedAt ? {
-            remaining: calculateRemainingTimeFromPrisma(session),
-            total: session.timerDuration || 45 * 60,
-            isActive: session.timerStatus === 'active',
-            startedAt: new Date(session.timerStartedAt).getTime()
-          } : undefined,
-          bohState: 'PREPARING' as const,
-          guestTimerDisplay: session.state === 'active'
-        }));
+        const fireSessions: FireSession[] = sessionsResult.sessions.map((session: any) => {
+          // Parse flavorMix if it's a JSON string
+          let flavorMix = session.flavorMix || 'Custom Mix';
+          if (typeof flavorMix === 'string') {
+            try {
+              const parsed = JSON.parse(flavorMix);
+              flavorMix = typeof parsed === 'string' ? parsed : parsed.join(' + ');
+            } catch {
+              // Keep as is if not valid JSON
+            }
+          }
+          
+          return {
+            id: session.id,
+            tableId: session.tableId || session.externalRef || 'Unknown',
+            customerName: session.customerRef || 'Anonymous',
+            customerPhone: session.customerPhone || '',
+            flavor: flavorMix,
+            amount: session.priceCents || 0,
+            status: mapPrismaStateToFireSession(session.state),
+            currentStage: mapStateToStage(session.state),
+            assignedStaff: {
+              boh: session.assignedBOHId,
+              foh: session.assignedFOHId
+            },
+            createdAt: new Date(session.createdAt).getTime(),
+            updatedAt: new Date(session.updatedAt).getTime(),
+            sessionStartTime: session.startedAt ? new Date(session.startedAt).getTime() : undefined,
+            sessionDuration: session.durationSecs || 45 * 60,
+            coalStatus: 'active' as const,
+            refillStatus: 'none' as const,
+            notes: session.tableNotes || '',
+            edgeCase: session.edgeCase,
+            sessionTimer: session.timerStartedAt ? {
+              remaining: calculateRemainingTimeFromPrisma(session),
+              total: session.timerDuration || 45 * 60,
+              isActive: session.timerStatus === 'active',
+              startedAt: new Date(session.timerStartedAt).getTime()
+            } : undefined,
+            bohState: 'PREPARING' as const,
+            guestTimerDisplay: session.state === 'ACTIVE'
+          };
+        });
 
         console.log('[useLiveSessionData] Successfully loaded sessions:', fireSessions.length);
         

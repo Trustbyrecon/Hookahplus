@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
 import { 
   FireSession, 
   SessionStatus, 
@@ -13,179 +14,102 @@ import {
   calculateRemainingTime 
 } from '../../../lib/sessionStateMachine';
 
-// Enhanced session storage with state machine integration
-let sessions: FireSession[] = [
-  // Sample sessions for testing
-  {
-    id: 'session_001',
-    tableId: 'T-001',
-    customerName: 'Alex Johnson',
-    customerPhone: '+1 (555) 123-4567',
-    flavor: 'Blue Mist + Mint',
-    amount: 3500, // in cents
-    status: 'ACTIVE',
-    currentStage: 'CUSTOMER',
-    assignedStaff: {
-      boh: 'Mike Rodriguez',
-      foh: 'Sarah Chen'
-    },
-    createdAt: Date.now() - 3600000, // 1 hour ago
-    updatedAt: Date.now(),
-    sessionStartTime: Date.now() - 3600000,
-    sessionDuration: 45 * 60, // 45 minutes in seconds
-    coalStatus: 'active',
-    refillStatus: 'none',
-    notes: 'Customer prefers mild flavors',
-    edgeCase: null,
-    sessionTimer: {
-      remaining: calculateRemainingTime({
-        sessionStartTime: Date.now() - 3600000,
-        sessionTimer: {
-          total: 45 * 60,
-          isActive: true,
-          startedAt: Date.now() - 3600000
-        }
-      } as FireSession),
-      total: 45 * 60,
-      isActive: true,
-      startedAt: Date.now() - 3600000
-    },
-    bohState: 'PICKED_UP',
-    guestTimerDisplay: true
-  },
-  {
-    id: 'session_002',
-    tableId: 'T-003',
-    customerName: 'Maria Garcia',
-    customerPhone: '+1 (555) 234-5678',
-    flavor: 'Strawberry + Mint + Lime',
-    amount: 2800, // in cents
-    status: 'PREP_IN_PROGRESS',
-    currentStage: 'BOH',
-    assignedStaff: {
-      boh: 'David Wilson',
-      foh: 'Emily Davis'
-    },
-    createdAt: Date.now() - 1800000, // 30 minutes ago
-    updatedAt: Date.now(),
-    sessionDuration: 60 * 60, // 60 minutes in seconds
-    coalStatus: 'active',
-    refillStatus: 'none',
-    notes: 'First-time customer, prefers mild flavors, table near window',
-    edgeCase: null,
-    bohState: 'PREPARING',
-    guestTimerDisplay: false
-  },
-  {
-    id: 'session_003',
-    tableId: 'T-005',
-    customerName: 'Ahmed Hassan',
-    customerPhone: '+1 (555) 345-6789',
-    flavor: 'Double Apple + Cardamom',
-    amount: 4200, // in cents
-    status: 'READY_FOR_DELIVERY',
-    currentStage: 'BOH',
-    assignedStaff: {
-      boh: 'Mike Rodriguez',
-      foh: 'James Brown'
-    },
-    createdAt: Date.now() - 900000, // 15 minutes ago
-    updatedAt: Date.now(),
-    sessionDuration: 90 * 60, // 90 minutes in seconds
-    coalStatus: 'active',
-    refillStatus: 'none',
-    notes: 'Regular customer, prefers strong flavors',
-    edgeCase: null,
-    bohState: 'READY_FOR_PICKUP',
-    guestTimerDisplay: false
-  },
-  {
-    id: 'session_004',
-    tableId: 'T-007',
-    customerName: 'Jennifer Lee',
-    customerPhone: '+1 (555) 456-7890',
-    flavor: 'Watermelon + Mint',
-    amount: 3200, // in cents
-    status: 'CLOSED',
-    currentStage: 'FOH',
-    assignedStaff: {
-      boh: 'David Wilson',
-      foh: 'Sarah Chen'
-    },
-    createdAt: Date.now() - 7200000, // 2 hours ago
-    updatedAt: Date.now() - 3600000, // 1 hour ago
-    sessionStartTime: Date.now() - 7200000,
-    sessionDuration: 60 * 60, // 60 minutes in seconds
-    coalStatus: 'burnt_out',
-    refillStatus: 'none',
-    notes: 'Completed session successfully',
-    edgeCase: null,
-    bohState: 'PICKED_UP',
-    guestTimerDisplay: false
-  },
-  {
-    id: 'session_005',
-    tableId: 'T-009',
-    customerName: 'Robert Kim',
-    customerPhone: '+1 (555) 567-8901',
-    flavor: 'Rose + Lavender',
-    amount: 4500, // in cents
-    status: 'STAFF_HOLD',
-    currentStage: 'BOH',
-    assignedStaff: {
-      boh: 'Mike Rodriguez',
-      foh: 'Emily Davis'
-    },
-    createdAt: Date.now() - 2700000, // 45 minutes ago
-    updatedAt: Date.now(),
-    sessionStartTime: Date.now() - 2700000,
-    sessionDuration: 90 * 60, // 90 minutes in seconds
-    coalStatus: 'needs_refill',
-    refillStatus: 'none',
-    notes: 'Customer stepped out for phone call, will return in 10 minutes',
-    edgeCase: 'Customer stepped out',
-    bohState: 'PREPARING',
-    guestTimerDisplay: true,
-    sessionTimer: {
-      remaining: calculateRemainingTime({
-        sessionStartTime: Date.now() - 2700000,
-        sessionTimer: {
-          total: 90 * 60,
-          isActive: false,
-          startedAt: Date.now() - 2700000,
-          pausedAt: Date.now() - 300000 // paused 5 minutes ago
-        }
-      } as FireSession),
-      total: 90 * 60,
-      isActive: false,
-      startedAt: Date.now() - 2700000,
-      pausedAt: Date.now() - 300000
-    }
-  },
-  {
-    id: 'session_006',
-    tableId: 'T-011',
-    customerName: 'Lisa Wang',
-    customerPhone: '+1 (555) 678-9012',
-    flavor: 'Double Apple',
-    amount: 0, // payment failed
-    status: 'FAILED_PAYMENT',
-    currentStage: 'CUSTOMER',
-    assignedStaff: {
-      boh: 'David Wilson',
-      foh: 'James Brown'
-    },
-    createdAt: Date.now() - 600000, // 10 minutes ago
-    updatedAt: Date.now(),
-    sessionDuration: 60 * 60, // 60 minutes in seconds
-    coalStatus: 'burnt_out',
-    refillStatus: 'none',
-    notes: 'Payment declined - card expired, customer needs to update payment method',
-    edgeCase: 'Payment failed',
-    bohState: 'PREPARING',
-    guestTimerDisplay: false
+const prisma = new PrismaClient();
+
+// Helper function to map Prisma session state to FireSession status
+function mapPrismaStateToFireSession(state: string): SessionStatus {
+  const stateMap: Record<string, SessionStatus> = {
+    'NEW': 'NEW',
+    'ACTIVE': 'ACTIVE',
+    'PREP_IN_PROGRESS': 'PREP_IN_PROGRESS',
+    'HEAT_UP': 'HEAT_UP',
+    'READY_FOR_DELIVERY': 'READY_FOR_DELIVERY',
+    'OUT_FOR_DELIVERY': 'OUT_FOR_DELIVERY',
+    'DELIVERED': 'DELIVERED',
+    'PAUSED': 'STAFF_HOLD',
+    'COMPLETED': 'CLOSED',
+    'CANCELLED': 'VOIDED',
+    'FAILED_PAYMENT': 'FAILED_PAYMENT',
+  };
+  return stateMap[state] || 'NEW';
+}
+
+// Helper function to map state to stage
+function mapStateToStage(state: string): 'BOH' | 'FOH' | 'CUSTOMER' {
+  switch (state) {
+    case 'NEW':
+    case 'ACTIVE':
+    case 'FAILED_PAYMENT':
+      return 'CUSTOMER';
+    case 'PREP_IN_PROGRESS':
+    case 'HEAT_UP':
+    case 'READY_FOR_DELIVERY':
+    case 'PAUSED':
+      return 'BOH';
+    case 'OUT_FOR_DELIVERY':
+    case 'DELIVERED':
+    case 'COMPLETED':
+    case 'CANCELLED':
+      return 'FOH';
+    default:
+      return 'CUSTOMER';
   }
-];
+}
+
+// Convert Prisma session to FireSession format
+function convertPrismaSessionToFireSession(session: any): FireSession {
+  const flavorMix = session.flavorMix ? (() => {
+    try {
+      const parsed = JSON.parse(session.flavorMix);
+      return typeof parsed === 'string' ? parsed : parsed.join(' + ');
+    } catch {
+      return session.flavorMix;
+    }
+  })() : (session.flavor || 'Custom Mix');
+
+  return {
+    id: session.id,
+    tableId: session.tableId || session.externalRef || 'Unknown',
+    customerName: session.customerRef || 'Anonymous',
+    customerPhone: session.customerPhone || '',
+    flavor: flavorMix,
+    amount: session.priceCents || 0,
+    status: mapPrismaStateToFireSession(session.state),
+    currentStage: mapStateToStage(session.state),
+    assignedStaff: {
+      boh: session.assignedBOHId || '',
+      foh: session.assignedFOHId || ''
+    },
+    createdAt: new Date(session.createdAt).getTime(),
+    updatedAt: new Date(session.updatedAt).getTime(),
+    sessionStartTime: session.startedAt ? new Date(session.startedAt).getTime() : undefined,
+    sessionDuration: session.durationSecs || 45 * 60,
+    coalStatus: 'active' as const,
+    refillStatus: 'none' as const,
+    notes: session.tableNotes || '',
+    edgeCase: session.edgeCase || null,
+    sessionTimer: session.timerStartedAt ? {
+      remaining: calculateRemainingTimeFromPrisma(session),
+      total: session.timerDuration || 45 * 60,
+      isActive: session.timerStatus === 'running',
+      startedAt: new Date(session.timerStartedAt).getTime()
+    } : undefined,
+    bohState: 'PREPARING' as const,
+    guestTimerDisplay: session.state === 'ACTIVE'
+  };
+}
+
+// Helper function to calculate remaining time from Prisma session
+function calculateRemainingTimeFromPrisma(session: any): number {
+  if (!session.timerStartedAt || !session.timerDuration) return 0;
+  
+  const now = Date.now();
+  const startedAt = new Date(session.timerStartedAt).getTime();
+  const elapsed = Math.floor((now - startedAt) / 1000);
+  const pausedTime = session.timerPausedDuration || 0;
+  
+  return Math.max(0, session.timerDuration - elapsed + pausedTime);
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -196,28 +120,47 @@ export async function GET(req: NextRequest) {
     const role = searchParams.get('role') as UserRole;
 
     if (sessionId) {
-      const session = sessions.find(s => s.id === sessionId || s.tableId === sessionId);
+      const session = await prisma.session.findFirst({
+        where: {
+          OR: [
+            { id: sessionId },
+            { externalRef: sessionId },
+            { tableId: sessionId }
+          ]
+        }
+      });
+      
       if (!session) {
         return NextResponse.json({ error: 'Session not found' }, { status: 404 });
       }
-      return NextResponse.json({ success: true, session });
+      
+      const fireSession = convertPrismaSessionToFireSession(session);
+      return NextResponse.json({ success: true, session: fireSession });
     }
 
+    // Fetch all sessions from database
+    let dbSessions = await prisma.session.findMany({
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    // Convert to FireSession format
+    let sessions = dbSessions.map(convertPrismaSessionToFireSession);
+
     // Filter by status if specified
-    let filteredSessions = sessions;
     if (status) {
-      filteredSessions = sessions.filter(s => s.status === status);
+      sessions = sessions.filter(s => s.status === status);
     }
 
     // Filter by stage if specified
     if (stage) {
-      filteredSessions = filteredSessions.filter(s => s.currentStage === stage);
+      sessions = sessions.filter(s => s.currentStage === stage);
     }
 
     // Filter by role permissions if specified
     if (role) {
-      filteredSessions = filteredSessions.filter(session => {
-        // Show sessions that the role can interact with
+      sessions = sessions.filter(session => {
         return session.currentStage === role || 
                session.currentStage === 'CUSTOMER' || 
                role === 'MANAGER' || 
@@ -228,17 +171,17 @@ export async function GET(req: NextRequest) {
     // Return filtered sessions with enhanced data
     return NextResponse.json({ 
       success: true, 
-      sessions: filteredSessions,
-      total: filteredSessions.length,
+      sessions: sessions,
+      total: sessions.length,
       stages: {
-        BOH: filteredSessions.filter(s => s.currentStage === 'BOH').length,
-        FOH: filteredSessions.filter(s => s.currentStage === 'FOH').length,
-        CUSTOMER: filteredSessions.filter(s => s.currentStage === 'CUSTOMER').length
+        BOH: sessions.filter(s => s.currentStage === 'BOH').length,
+        FOH: sessions.filter(s => s.currentStage === 'FOH').length,
+        CUSTOMER: sessions.filter(s => s.currentStage === 'CUSTOMER').length
       }
     });
 
   } catch (error) {
-    console.error('Error retrieving sessions:', error);
+    console.error('[Sessions API] Error retrieving sessions:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
