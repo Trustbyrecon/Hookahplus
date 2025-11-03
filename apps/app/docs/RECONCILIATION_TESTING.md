@@ -64,6 +64,65 @@ Step 3: Running reconciliation job...
   1. ch_test_orphan_001: $50.00 - No matching POS ticket found
 ```
 
+## Stripe Test Mode Setup (Recommended)
+
+**Use Stripe test mode for reconciliation testing** - Safe, free, and validates reconciliation logic.
+
+### Quick Setup
+
+```bash
+# 1. Get Stripe test key
+#    Go to: https://dashboard.stripe.com/apikeys
+#    Toggle to "Test mode" (top right)
+#    Copy "Secret key" (starts with sk_test_)
+
+# 2. Set environment variable
+export STRIPE_SECRET_KEY="sk_test_51ABC123..."  # Your test key
+
+# 3. Set database URL
+export DATABASE_URL="file:./prisma/dev.db"
+
+# 4. Run setup script (creates test charges + POS tickets)
+cd apps/app
+npx tsx scripts/setup-test-reconciliation.ts
+
+# 5. Run reconciliation job
+npx tsx jobs/settle.ts
+```
+
+### What the Setup Script Does
+
+1. **Verifies Stripe Connection** - Checks your API key is valid
+2. **Creates Test Stripe Charges** - 3 charges using test card `4242 4242 4242 4242`
+3. **Creates Matching POS Tickets** - 2 tickets that match 2 of the charges
+4. **Leaves 1 Orphaned Charge** - For testing orphan detection
+
+### Expected Results
+
+```
+📊 Summary:
+   - Stripe charges created: 3
+   - POS tickets created: 2
+   - Expected matches: 2
+   - Expected orphaned charges: 1
+   - Expected reconciliation rate: 66.67% (2/3)
+```
+
+**Note:** This initial rate is below 95% target. To achieve ≥95%, you need:
+- More matching charges (5+ charges with 95%+ match rate)
+- Or improve matching logic
+
+### Cleanup Test Data
+
+```bash
+# Remove test POS tickets and reconciliation records
+npx tsx scripts/setup-test-reconciliation.ts --cleanup
+```
+
+**Note:** Stripe charges cannot be deleted via API. They remain in your Stripe dashboard but won't affect future tests.
+
+---
+
 ## Production Mode (Real Stripe API)
 
 Production mode uses real Stripe charges from your Stripe account.
@@ -78,9 +137,9 @@ Production mode uses real Stripe charges from your Stripe account.
 
 ```bash
 # Set Stripe secret key
-export STRIPE_SECRET_KEY="sk_test_..."  # Test mode
+export STRIPE_SECRET_KEY="sk_test_..."  # Test mode (recommended)
 # OR
-export STRIPE_SECRET_KEY="sk_live_..."  # Live mode
+export STRIPE_SECRET_KEY="sk_live_..."  # Live mode (production only)
 
 # Set database URL
 export DATABASE_URL="file:./prisma/dev.db"
