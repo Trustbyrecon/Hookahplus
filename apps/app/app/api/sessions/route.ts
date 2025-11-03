@@ -197,7 +197,10 @@ export async function POST(req: NextRequest) {
       amount,
       assignedStaff,
       notes,
-      sessionDuration = 45 * 60 // Default 45 minutes
+      sessionDuration = 45 * 60, // Default 45 minutes
+      loungeId = 'default-lounge',
+      source = 'WALK_IN',
+      externalRef
     } = body;
 
     // Validate required fields
@@ -208,56 +211,78 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if session already exists for this table
-    const existingSession = sessions.find(s => s.tableId === tableId && s.status !== 'CLOSED');
+    const existingSession = await prisma.session.findFirst({
+      where: {
+        tableId: tableId,
+        state: {
+          notIn: ['COMPLETED', 'CANCELLED', 'CLOSED']
+        }
+      }
+    });
+
     if (existingSession) {
+      const fireSession = convertPrismaSessionToFireSession(existingSession);
       return NextResponse.json({ 
         error: 'Table already has an active session',
-        existingSession
+        existingSession: fireSession
       }, { status: 409 });
     }
 
-    // Create new session with enhanced state machine
-    const session: FireSession = {
-      id: `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      tableId,
-      customerName,
-      customerPhone: customerPhone || '',
-      flavor,
-      amount: amount || 3000, // Default $30.00 in cents
-      status: 'NEW',
-      currentStage: 'CUSTOMER',
-      assignedStaff: {
-        boh: assignedStaff?.boh || '',
-        foh: assignedStaff?.foh || ''
-      },
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      sessionDuration,
-      coalStatus: 'active',
-      refillStatus: 'none',
-      notes: notes || '',
-      edgeCase: null,
-      bohState: 'PREPARING',
-      guestTimerDisplay: false
-    };
+    // Create trust signature
+    const crypto = await import('crypto');
+    const seal = (o: unknown) =>
+      crypto.createHash("sha256").update(JSON.stringify(o)).digest("hex");
 
-    sessions.push(session);
+    const trustSignature = seal({
+      loungeId,
+      source,
+      externalRef: externalRef || `walk-in-${Date.now()}`,
+      customerPhone,
+      flavor
+    });
+
+    // Create new session in database
+    const newSession = await prisma.session.create({
+      data: {
+        loungeId,
+        source,
+        externalRef: externalRef || `walk-in-${Date.now()}`,
+        trustSignature,
+        tableId,
+        customerRef: customerName,
+        customerPhone: customerPhone || undefined,
+        flavor: typeof flavor === 'string' ? flavor : (Array.isArray(flavor) ? flavor[0] : 'Custom Mix'),
+        flavorMix: typeof flavor === 'string' ? flavor : JSON.stringify(flavor),
+        priceCents: amount || 3000, // Default $30.00 in cents
+        state: 'NEW',
+        assignedBOHId: assignedStaff?.boh || undefined,
+        assignedFOHId: assignedStaff?.foh || undefined,
+        tableNotes: notes || undefined,
+        durationSecs: sessionDuration,
+      }
+    });
+
+    const fireSession = convertPrismaSessionToFireSession(newSession);
 
     return NextResponse.json({ 
       success: true, 
-      session,
+      session: fireSession,
       message: 'Session created successfully',
       nextActions: ['CLAIM_PREP', 'PUT_ON_HOLD'],
       businessLogic: 'New session created - BOH can claim prep or put on hold'
     });
 
   } catch (error) {
-    console.error('Error creating session:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('[Sessions API] Error creating session:', error);
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
 
 // New PATCH endpoint for session actions
+// Note: This endpoint is kept for backward compatibility but should use /api/sessions/[id]/transition
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
@@ -277,13 +302,23 @@ export async function PATCH(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Find the session
-    const sessionIndex = sessions.findIndex(s => s.id === sessionId || s.tableId === sessionId);
-    if (sessionIndex === -1) {
+    // Find the session in database
+    const dbSession = await prisma.session.findFirst({
+      where: {
+        OR: [
+          { id: sessionId },
+          { externalRef: sessionId },
+          { tableId: sessionId }
+        ]
+      }
+    });
+
+    if (!dbSession) {
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
 
-    const currentSession = sessions[sessionIndex];
+    // Convert to FireSession format for state machine
+    const currentSession = convertPrismaSessionToFireSession(dbSession);
 
     try {
       // Use the state machine to transition the session
@@ -297,24 +332,54 @@ export async function PATCH(req: NextRequest) {
         userRole as UserRole
       );
 
-      // Update additional fields if provided
-      if (notes !== undefined) {
-        updatedSession.notes = notes;
-      }
-      if (edgeCase !== undefined) {
-        updatedSession.edgeCase = edgeCase;
+      // Map FireSession status back to Prisma state
+      const stateMap: Record<SessionStatus, string> = {
+        'NEW': 'NEW',
+        'ACTIVE': 'ACTIVE',
+        'PREP_IN_PROGRESS': 'PREP_IN_PROGRESS',
+        'HEAT_UP': 'HEAT_UP',
+        'READY_FOR_DELIVERY': 'READY_FOR_DELIVERY',
+        'OUT_FOR_DELIVERY': 'OUT_FOR_DELIVERY',
+        'DELIVERED': 'DELIVERED',
+        'STAFF_HOLD': 'PAUSED',
+        'CLOSED': 'COMPLETED',
+        'VOIDED': 'CANCELLED',
+        'FAILED_PAYMENT': 'FAILED_PAYMENT',
+      };
+
+      const newState = stateMap[updatedSession.status] || dbSession.state;
+
+      // Update session in database
+      const updateData: any = {
+        state: newState,
+        tableNotes: notes !== undefined ? notes : dbSession.tableNotes,
+        edgeCase: edgeCase !== undefined ? edgeCase : dbSession.edgeCase,
+      };
+
+      // Update startedAt if transitioning to ACTIVE
+      if (updatedSession.status === 'ACTIVE' && !dbSession.startedAt) {
+        updateData.startedAt = new Date();
       }
 
-      // Update the session in storage
-      sessions[sessionIndex] = updatedSession;
+      // Update endedAt if transitioning to COMPLETED/CANCELLED
+      if (['COMPLETED', 'CANCELLED'].includes(newState) && !dbSession.endedAt) {
+        updateData.endedAt = new Date();
+      }
+
+      const updatedDbSession = await prisma.session.update({
+        where: { id: dbSession.id },
+        data: updateData
+      });
+
+      const fireSession = convertPrismaSessionToFireSession(updatedDbSession);
 
       return NextResponse.json({ 
         success: true, 
-        session: updatedSession,
+        session: fireSession,
         message: `Session ${action} successful`,
         businessLogic: `Session transitioned from ${currentSession.status} to ${updatedSession.status}`,
-        nextActions: getAvailableActions(updatedSession),
-        stage: updatedSession.currentStage
+        nextActions: getAvailableActions(fireSession),
+        stage: fireSession.currentStage
       });
 
     } catch (stateMachineError) {
@@ -328,8 +393,11 @@ export async function PATCH(req: NextRequest) {
     }
 
   } catch (error) {
-    console.error('Error updating session:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('[Sessions API] Error updating session:', error);
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
 
