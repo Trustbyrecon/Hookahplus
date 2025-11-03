@@ -3,9 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { QrCode, Clock, MapPin, Sparkles, DollarSign, User, Calendar, AlertCircle, ArrowLeft } from 'lucide-react';
-import GlobalNavigation from '../../../components/GlobalNavigation';
-import Card from '../../../components/Card';
-import Button from '../../../components/Button';
+import GlobalNavigation from '../../../../components/GlobalNavigation';
+import Card from '../../../../components/Card';
+import Button from '../../../../components/Button';
 import Link from 'next/link';
 
 interface Session {
