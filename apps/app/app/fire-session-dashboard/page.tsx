@@ -3,7 +3,6 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import CreateSessionModal from '../../components/CreateSessionModal';
 import GlobalNavigation from '../../components/GlobalNavigation';
-import DollarTestButton from '../../components/DollarTestButton';
 import SimpleFSDDesign from '../../components/SimpleFSDDesign';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
 import { ThemeProvider, useTheme } from '../../contexts/ThemeContext';
@@ -130,7 +129,6 @@ function FireSessionDashboardContent() {
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                 <span>Refresh</span>
               </button>
-              <DollarTestButton />
               <div className="flex items-center space-x-2">
                 <span className={`text-sm text-${currentTheme.colors.textSecondary}`}>Role:</span>
                 <select 

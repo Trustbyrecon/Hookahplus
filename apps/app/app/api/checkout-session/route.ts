@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { flavors, addOns, tableId, loungeId, amount, total, pricingModel, sessionDuration } = body;
+    const { flavors, addOns, tableId, loungeId, amount, total, pricingModel, sessionDuration, dollarTestMode } = body;
 
     console.log('[Checkout API] Request:', { 
       flavors, 
@@ -30,7 +30,8 @@ export async function POST(request: NextRequest) {
       tableId, 
       total, 
       amount,
-      pricingModel 
+      pricingModel,
+      dollarTestMode: dollarTestMode ? 'ENABLED - Amount will be $1.00' : 'disabled'
     });
 
     // Validate required fields
@@ -55,7 +56,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Use total if provided, otherwise use amount (convert to cents)
-    const amountInCents = total ? Math.round(total * 100) : amount;
+    // If $1 test mode is enabled, force amount to $1.00 (100 cents)
+    const amountInCents = dollarTestMode ? 100 : (total ? Math.round(total * 100) : amount);
+    
+    if (dollarTestMode) {
+      console.log('[Checkout API] $1 Test Mode ENABLED - Original amount:', total || amount, '→ Forced to $1.00 (100 cents)');
+    }
 
     // Validate amount is positive and valid
     if (isNaN(amountInCents) || amountInCents <= 0) {
@@ -177,6 +183,8 @@ export async function POST(request: NextRequest) {
         flavorMix: flavors.join(' + '),
         pricingModel: pricingModel || 'flat',
         sessionDuration: sessionDuration ? String(sessionDuration) : '',
+        dollarTestMode: dollarTestMode ? 'true' : 'false', // Flag for webhook verification
+        originalAmount: dollarTestMode ? String(total || amount) : '', // Store original amount for reference
       },
       customer_email: undefined, // Let Stripe collect email
       billing_address_collection: 'auto',

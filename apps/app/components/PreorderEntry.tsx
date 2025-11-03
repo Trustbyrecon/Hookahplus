@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, DollarSign, Sparkles, AlertCircle, Clock, Flame } from 'lucide-react';
+import { ShoppingCart, DollarSign, Sparkles, AlertCircle, Clock, Flame, TestTube } from 'lucide-react';
 import FlavorWheelSelector from './FlavorWheelSelector';
 import Card from './Card';
 import Button from './Button';
@@ -36,6 +36,7 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
   const [pricingModel, setPricingModel] = useState<'flat' | 'time-based'>('flat');
   const [sessionDuration, setSessionDuration] = useState(60); // minutes
   const [flavorPrice, setFlavorPrice] = useState(0); // Total flavor price from wheel
+  const [dollarTestMode, setDollarTestMode] = useState(false); // $1 test mode toggle
   const [pricing, setPricing] = useState<{
     basePrice: number;
     flavorAddons: number;
@@ -129,7 +130,8 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
       }, 0);
 
       // Calculate final total including add-ons
-      const finalTotal = pricing.total + addOnsTotal;
+      // If $1 test mode is enabled, force total to $1.00
+      const finalTotal = dollarTestMode ? 1.00 : (pricing.total + addOnsTotal);
 
       // Create checkout session
       const response = await fetch('/api/checkout-session', {
@@ -142,9 +144,10 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
           addOns: selectedAddOns,
           tableId,
           loungeId,
-          total: finalTotal, // Include add-ons in total
+          total: finalTotal, // Include add-ons in total, or $1.00 if test mode
           pricingModel,
           sessionDuration: pricingModel === 'time-based' ? sessionDuration : undefined,
+          dollarTestMode: dollarTestMode, // Flag for webhook verification
         }),
       });
 
@@ -192,6 +195,31 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
           <Sparkles className="w-6 h-6 text-teal-400" />
           Preorder Your Session
         </h2>
+
+        {/* $1 Test Mode Toggle */}
+        <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <TestTube className="w-5 h-5 text-yellow-400" />
+              <div>
+                <h3 className="text-sm font-semibold text-yellow-300">$1 Test Mode</h3>
+                <p className="text-xs text-yellow-400/80 mt-1">
+                  Enable to test payment verification with $1.00 regardless of order total
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setDollarTestMode(!dollarTestMode)}
+              className={`px-4 py-2 rounded-lg transition-all ${
+                dollarTestMode
+                  ? 'bg-yellow-500 text-black font-semibold'
+                  : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'
+              }`}
+            >
+              {dollarTestMode ? 'ON' : 'OFF'}
+            </button>
+          </div>
+        </div>
 
         {/* Session Pricing Model Selection */}
         <div className="mb-6">
@@ -330,10 +358,15 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
                 </div>
               )}
               <div className="border-t border-zinc-700 pt-2 mt-2">
+                {dollarTestMode && (
+                  <div className="mb-2 p-2 bg-yellow-500/20 border border-yellow-500/30 rounded text-yellow-300 text-sm">
+                    ⚠️ Test Mode: Amount will be $1.00 for payment verification
+                  </div>
+                )}
                 <div className="flex justify-between text-white font-bold text-xl">
                   <span>Total:</span>
                   <span>
-                    ${(pricing.total + selectedAddOns.reduce((sum, id) => {
+                    ${dollarTestMode ? '1.00' : (pricing.total + selectedAddOns.reduce((sum, id) => {
                       const addon = SAMPLE_ADDONS.find(a => a.id === id);
                       return sum + (addon?.price || 0);
                     }, 0)).toFixed(2)}
@@ -361,10 +394,10 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
           className="w-full py-4 bg-teal-600 hover:bg-teal-500 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           <ShoppingCart className="w-5 h-5" />
-          {loading ? 'Calculating...' : `Proceed to Checkout - $${pricing ? (pricing.total + selectedAddOns.reduce((sum, id) => {
+          {loading ? 'Calculating...' : `Proceed to Checkout - $${dollarTestMode ? '1.00' : (pricing ? (pricing.total + selectedAddOns.reduce((sum, id) => {
             const addon = SAMPLE_ADDONS.find(a => a.id === id);
             return sum + (addon?.price || 0);
-          }, 0)).toFixed(2) : '0.00'}`}
+          }, 0)).toFixed(2) : '0.00')}`}
         </Button>
       </Card>
     </div>
