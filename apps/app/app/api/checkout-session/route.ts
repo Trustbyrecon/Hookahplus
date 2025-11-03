@@ -111,10 +111,47 @@ export async function POST(request: NextRequest) {
       sessionId: session.id,
       url: session.url,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('[Checkout API] Error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    const errorDetails = error instanceof Error ? error.stack : String(error);
+    
+    // Handle Stripe-specific errors
+    if (error?.type === 'StripeCardError') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Card error',
+          details: error.message || 'Your card was declined',
+        },
+        { status: 400 }
+      );
+    }
+    
+    if (error?.type === 'StripeInvalidRequestError') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid request',
+          details: error.message || 'Invalid Stripe request',
+        },
+        { status: 400 }
+      );
+    }
+    
+    // Handle Stripe API errors
+    if (error?.code) {
+      console.error('[Checkout API] Stripe error code:', error.code);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Stripe API error',
+          details: error.message || `Stripe error: ${error.code}`,
+          code: error.code,
+        },
+        { status: 500 }
+      );
+    }
+    
+    const errorMessage = error instanceof Error ? error.message : String(error);
     
     return NextResponse.json(
       {

@@ -150,7 +150,9 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
 
       if (!response.ok) {
         const result = await response.json();
-        throw new Error(result.error || result.details || 'Failed to create checkout session');
+        const errorMsg = result.details || result.error || 'Failed to create checkout session';
+        console.error('[PreorderEntry] Checkout API error:', result);
+        throw new Error(errorMsg);
       }
 
       const result = await response.json();
@@ -159,12 +161,17 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
         // Redirect to Stripe Checkout
         window.location.href = result.url;
       } else {
-        throw new Error(result.error || 'Invalid checkout response');
+        throw new Error(result.error || result.details || 'Invalid checkout response');
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to start checkout';
       setError(errorMessage);
-      console.error('Error creating checkout:', err);
+      console.error('[PreorderEntry] Error creating checkout:', err);
+      
+      // Log full error details for debugging
+      if (err instanceof Error && err.stack) {
+        console.error('[PreorderEntry] Error stack:', err.stack);
+      }
     } finally {
       setLoading(false);
     }
