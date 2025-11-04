@@ -17,16 +17,16 @@ export default function LoungeExperienceDemoPage() {
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
       {/* MOAT Hero Section */}
       <div className="bg-gradient-to-r from-teal-900/20 via-blue-900/20 to-purple-900/20 border-b border-teal-500/30">
-        <div className="max-w-7xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+        <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+          <div className="text-center mb-8">
             <div className="flex items-center justify-center gap-3 mb-4">
-              <Sparkles className="w-8 h-8 text-teal-400" />
-              <h1 className="text-5xl md:text-6xl font-bold">
+              <Sparkles className="w-6 h-6 text-teal-400" />
+              <h1 className="text-3xl md:text-4xl font-bold">
                 The Ritual of Flow,<br />
                 <span className="text-teal-400">Made Measurable</span>
               </h1>
             </div>
-            <p className="text-xl text-zinc-300 max-w-3xl mx-auto mb-8">
+            <p className="text-lg text-zinc-300 max-w-3xl mx-auto mb-6">
               Hookah+ transforms ordinary lounge sessions into <strong>living data loops</strong> of mood, 
               flavor, loyalty, and trust. Every session becomes a <strong>captured memory</strong> with 
               analytics and emotion stitched together.
@@ -81,53 +81,29 @@ export default function LoungeExperienceDemoPage() {
         </div>
       </div>
 
-      {/* MOAT Architecture Layers */}
-      <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+      {/* MOAT Architecture Layers - Reduced Size */}
+      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           <Card className="border-teal-500/30">
-            <div className="p-6">
-              <div className="w-12 h-12 bg-teal-500/20 rounded-lg flex items-center justify-center mb-4">
-                <Eye className="w-6 h-6 text-teal-400" />
+            <div className="p-4">
+              <div className="w-10 h-10 bg-teal-500/20 rounded-lg flex items-center justify-center mb-3">
+                <Eye className="w-5 h-5 text-teal-400" />
               </div>
-              <h3 className="font-semibold mb-2">Experience Layer</h3>
-              <p className="text-sm text-zinc-400">
+              <h3 className="font-semibold mb-1 text-sm">Experience Layer</h3>
+              <p className="text-xs text-zinc-400">
                 Intuitive session interface that staff and guests feel synced with
               </p>
             </div>
           </Card>
           
           <Card className="border-blue-500/30">
-            <div className="p-6">
-              <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center mb-4">
-                <Shield className="w-6 h-6 text-blue-400" />
+            <div className="p-4">
+              <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center mb-3">
+                <Shield className="w-5 h-5 text-blue-400" />
               </div>
-              <h3 className="font-semibold mb-2">Trust Layer</h3>
-              <p className="text-sm text-zinc-400">
+              <h3 className="font-semibold mb-1 text-sm">Trust Layer</h3>
+              <p className="text-xs text-zinc-400">
                 Reflex Logs capture customer patterns, ensuring continuity and care
-              </p>
-            </div>
-          </Card>
-          
-          <Card className="border-purple-500/30">
-            <div className="p-6">
-              <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mb-4">
-                <TrendingUp className="w-6 h-6 text-purple-400" />
-              </div>
-              <h3 className="font-semibold mb-2">Data Layer</h3>
-              <p className="text-sm text-zinc-400">
-                Session analytics turn ambient social data into predictive insights
-              </p>
-            </div>
-          </Card>
-          
-          <Card className="border-green-500/30">
-            <div className="p-6">
-              <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center mb-4">
-                <Heart className="w-6 h-6 text-green-400" />
-              </div>
-              <h3 className="font-semibold mb-2">Loyalty Layer</h3>
-              <p className="text-sm text-zinc-400">
-                Theta+ SessionNotes tie emotional resonance and preference memory
               </p>
             </div>
           </Card>
@@ -284,19 +260,6 @@ export default function LoungeExperienceDemoPage() {
               </div>
             </div>
           )}
-        </div>
-
-        {/* MOAT Narrative */}
-        <div className="mb-12 bg-gradient-to-r from-purple-900/20 to-blue-900/20 rounded-xl p-12 border border-purple-500/30">
-          <div className="text-center max-w-3xl mx-auto">
-            <h2 className="text-3xl font-bold mb-4">
-              H+ is hospitality-grade ritual intelligence platform
-            </h2>
-            <p className="text-xl text-zinc-300 mb-6">
-              That ensures every interaction becomes a captured moment in the trust architecture, 
-              making loyalty loops structurally unavoidable.
-            </p>
-          </div>
         </div>
 
         {/* CTA Section */}

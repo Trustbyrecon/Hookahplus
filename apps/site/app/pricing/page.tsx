@@ -243,47 +243,43 @@ export default function PricingPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
-        {/* How It Works - Reflex Upgrade Logic */}
+        {/* How It Works - Adaptive Learning Phase */}
         <div className="mb-12 bg-gradient-to-r from-purple-900/20 to-blue-900/20 rounded-xl p-8 border border-purple-500/30">
           <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
             <Settings className="w-6 h-6 text-purple-400" />
-            How It Works (Logic Flow)
+            How It Works (Adaptive Learning Flow)
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <div className="text-center">
+          
+          <div className="mb-6 p-4 bg-zinc-800/50 rounded-lg border border-zinc-700">
+            <p className="text-zinc-300 mb-4">
+              Hookah+ starts learning your lounge rhythm in just 3 days — but every lounge has its own pulse. 
+              The system keeps observing your busiest and slowest days over a few weeks. Within a month, it knows 
+              your true flow — how guests arrive, order, and linger — and starts refining prices, loyalty perks, 
+              and staff timing automatically. Think of it as training your digital manager to read your vibe.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="text-center p-4 bg-zinc-800/30 rounded-lg">
               <div className="w-12 h-12 bg-teal-500/20 rounded-lg flex items-center justify-center mx-auto mb-3 text-teal-400">
                 <Clock className="w-6 h-6" />
               </div>
-              <h3 className="text-sm font-semibold mb-2">1. Usage Tracking</h3>
-              <p className="text-xs text-zinc-400">Hookah+ monitors session_count, active_lounges, and data_volume daily</p>
+              <h3 className="text-sm font-semibold mb-2">Phase 1: Quick Calibration</h3>
+              <p className="text-xs text-zinc-400">3 days initial onboarding — quick insights, visible impact</p>
             </div>
-            <div className="text-center">
+            <div className="text-center p-4 bg-zinc-800/30 rounded-lg">
               <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center mx-auto mb-3 text-blue-400">
                 <TrendingUp className="w-6 h-6" />
               </div>
-              <h3 className="text-sm font-semibold mb-2">2. Threshold Engine</h3>
-              <p className="text-xs text-zinc-400">When thresholds cross preset values for 3 consecutive days, system emits a Reflex Alert</p>
+              <h3 className="text-sm font-semibold mb-2">Phase 2: Auto-Expansion</h3>
+              <p className="text-xs text-zinc-400">Expands to 2 weeks if daily variance exceeds ±15%</p>
             </div>
-            <div className="text-center">
+            <div className="text-center p-4 bg-zinc-800/30 rounded-lg">
               <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mx-auto mb-3 text-purple-400">
                 <Sparkles className="w-6 h-6" />
               </div>
-              <h3 className="text-sm font-semibold mb-2">3. Auto-Notify</h3>
-              <p className="text-xs text-zinc-400">Lounge operator receives an in-app prompt: "You've grown beyond your current plan. To maintain performance, we're activating Pro Mode next cycle."</p>
-            </div>
-            <div className="text-center">
-              <div className="w-12 h-12 bg-yellow-500/20 rounded-lg flex items-center justify-center mx-auto mb-3 text-yellow-400">
-                <Clock className="w-6 h-6" />
-              </div>
-              <h3 className="text-sm font-semibold mb-2">4. Grace Mode</h3>
-              <p className="text-xs text-zinc-400">72-hour delay before billing shift, allowing user to confirm or defer</p>
-            </div>
-            <div className="text-center">
-              <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center mx-auto mb-3 text-green-400">
-                <CheckCircle className="w-6 h-6" />
-              </div>
-              <h3 className="text-sm font-semibold mb-2">5. Upgrade</h3>
-              <p className="text-xs text-zinc-400">Reflex AI adjusts backend feature access and analytics limits instantly</p>
+              <h3 className="text-sm font-semibold mb-2">Phase 3: Trust Stabilization</h3>
+              <p className="text-xs text-zinc-400">Full 30-day reflection once stable trust feedback cycles detected</p>
             </div>
           </div>
         </div>

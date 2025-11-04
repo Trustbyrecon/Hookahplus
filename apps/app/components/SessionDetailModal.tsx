@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Clock, MapPin, Sparkles, Users, Calendar, DollarSign, Shield, AlertCircle } from 'lucide-react';
 import Card from './Card';
 import { FireSession } from '../types/enhancedSession';
@@ -18,6 +18,16 @@ const SessionDetailModal: React.FC<SessionDetailModalProps> = ({
   isOpen,
   onClose,
 }) => {
+  const [isEditingNotes, setIsEditingNotes] = useState(false);
+  const [editedNotes, setEditedNotes] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (session) {
+      setEditedNotes(session.notes || '');
+    }
+  }, [session]);
+
   if (!isOpen || !session) return null;
 
   const trustScore = calculateSingleSessionTrustScore(session);
@@ -41,6 +51,35 @@ const SessionDetailModal: React.FC<SessionDetailModalProps> = ({
   const elapsedTime = session.sessionStartTime
     ? Math.floor((Date.now() - session.sessionStartTime) / 1000 / 60)
     : 0;
+
+  const handleSaveNotes = async () => {
+    setIsSaving(true);
+    try {
+      const response = await fetch(`/api/sessions`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: session.id,
+          action: 'UPDATE_NOTES',
+          notes: editedNotes,
+          userRole: 'MANAGER'
+        })
+      });
+      
+      if (response.ok) {
+        setIsEditingNotes(false);
+        alert('Notes saved successfully!');
+      } else {
+        const error = await response.json().catch(() => ({ error: 'Failed to save notes' }));
+        alert(`Failed to save notes: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Failed to save notes:', error);
+      alert('Failed to save notes. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -215,12 +254,51 @@ const SessionDetailModal: React.FC<SessionDetailModalProps> = ({
         </div>
 
         {/* Notes */}
-        {session.notes && (
-          <div className="mb-6 p-4 bg-zinc-800 rounded-lg">
-            <span className="text-sm text-zinc-400 mb-2 block">Notes:</span>
-            <p className="text-white">{session.notes}</p>
+        <div className="mb-6 p-4 bg-zinc-800 rounded-lg">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-zinc-400 font-medium">Session Notes:</span>
+            {!isEditingNotes && (
+              <button
+                onClick={() => setIsEditingNotes(true)}
+                className="text-xs text-teal-400 hover:text-teal-300 transition-colors"
+              >
+                Edit
+              </button>
+            )}
           </div>
-        )}
+          {isEditingNotes ? (
+            <div className="space-y-2">
+              <textarea
+                value={editedNotes}
+                onChange={(e) => setEditedNotes(e.target.value)}
+                className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                rows={3}
+                placeholder="Add session notes..."
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSaveNotes}
+                  disabled={isSaving}
+                  className="px-3 py-1 bg-teal-600 hover:bg-teal-500 disabled:bg-teal-600/50 disabled:cursor-not-allowed text-white rounded text-sm transition-colors"
+                >
+                  {isSaving ? 'Saving...' : 'Save'}
+                </button>
+                <button
+                  onClick={() => {
+                    setEditedNotes(session.notes || '');
+                    setIsEditingNotes(false);
+                  }}
+                  disabled={isSaving}
+                  className="px-3 py-1 bg-zinc-700 hover:bg-zinc-600 text-white rounded text-sm transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-white">{session.notes || 'No notes added yet'}</p>
+          )}
+        </div>
 
         {/* Edge Case */}
         {session.edgeCase && (
@@ -248,4 +326,3 @@ const SessionDetailModal: React.FC<SessionDetailModalProps> = ({
 };
 
 export default SessionDetailModal;
-

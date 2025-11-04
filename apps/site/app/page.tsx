@@ -161,7 +161,7 @@ export default function Home() {
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-12">
             {[
               { title: 'Dashboard', icon: <BarChart3 className="w-5 h-5" />, href: '/sessions', color: 'teal' },
-              { title: 'QR Pathway', icon: <QrCode className="w-5 h-5" />, href: '/pre-order', color: 'blue' },
+              { title: 'Campaign Management', icon: <QrCode className="w-5 h-5" />, href: '/pre-order', color: 'blue' },
               { title: 'Fire Session', icon: <Flame className="w-5 h-5" />, href: '/fire-session-dashboard', color: 'orange' },
               { title: 'Hookah Tracker', icon: <Clock className="w-5 h-5" />, href: '/lounge-experience-demo', color: 'purple' },
               { title: 'Staff Ops', icon: <Users className="w-5 h-5" />, href: '/staff-ops', color: 'indigo' },

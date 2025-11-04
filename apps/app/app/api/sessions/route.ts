@@ -439,6 +439,13 @@ export async function PATCH(req: NextRequest) {
 
   } catch (error) {
     console.error('[Sessions API] Error updating session:', error);
+    console.error('[Sessions API] Error details:', {
+      sessionId,
+      action,
+      userRole,
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return NextResponse.json({ 
       error: 'Internal server error',
       details: error instanceof Error ? error.message : 'Unknown error'

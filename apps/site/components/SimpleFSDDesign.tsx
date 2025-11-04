@@ -30,6 +30,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import CreateSessionModal from './CreateSessionModal';
+import GuestIntelligenceModal from './GuestIntelligenceModal';
 import { mockSiteData } from '../lib/mockData';
 import { 
   SessionStatus, 
@@ -126,6 +127,8 @@ export default function SimpleFSDDesign({
   const [hoveredAction, setHoveredAction] = useState<string | null>(null);
   const [currentRole, setCurrentRole] = useState<string>(userRole || 'MANAGER');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showIntelligenceModal, setShowIntelligenceModal] = useState(false);
+  const [intelligenceSessionId, setIntelligenceSessionId] = useState<string>('');
 
   const handleSessionAction = async (action: string, sessionId: string) => {
     console.log(`Action: ${action} on session: ${sessionId}`);
@@ -508,8 +511,12 @@ export default function SimpleFSDDesign({
                     {/* Action Buttons Row */}
                     <div className="mt-3 pt-3 border-t border-zinc-700 flex gap-2">
                       <button
-                        onClick={() => window.open(`/guest-intelligence?sessionId=${sessionId}`, '_blank')}
-                        className="flex items-center space-x-1 px-2 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex-1 justify-center"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIntelligenceSessionId(sessionId);
+                          setShowIntelligenceModal(true);
+                        }}
+                        className="flex items-center space-x-1 px-2 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex-1 justify-center text-xs"
                       >
                         <Brain className="w-3 h-3" />
                         <span className="text-xs font-medium">Intelligence</span>
@@ -843,28 +850,54 @@ export default function SimpleFSDDesign({
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
               <Timer className="w-5 h-5 text-purple-400" />
               <span>Workflow State Breakdown</span>
+              <span className="text-xs text-zinc-400 ml-2">({currentRole} View)</span>
             </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {Object.entries(STATUS_COLORS).map(([status, colorClass]) => {
-                const count = filteredSessions.filter((s: any) => (s.status || s.state) === status).length;
-                const displayName = getSessionDisplayName(status as SessionStatus);
-                const icon = STATE_ICONS[status as SessionStatus];
-                return (
-                  <div key={status} className="flex items-center space-x-2 p-2 rounded bg-zinc-900/50">
-                    <div className={`p-1 rounded ${colorClass}`}>
-                      {icon}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-zinc-300 truncate">{displayName}</p>
-                      <p className="text-lg font-bold text-white">{count}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            {(() => {
+              const roleStatusMap: Record<string, SessionStatus[]> = {
+                'BOH': ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY', 'STAFF_HOLD', 'REMAKE'],
+                'FOH': ['OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE', 'CLOSE_PENDING', 'STAFF_HOLD'],
+                'MANAGER': Object.keys(STATUS_COLORS) as SessionStatus[],
+                'OWNER': Object.keys(STATUS_COLORS) as SessionStatus[],
+                'ADMIN': Object.keys(STATUS_COLORS) as SessionStatus[],
+              };
+              
+              const visibleStatuses = roleStatusMap[currentRole] || Object.keys(STATUS_COLORS) as SessionStatus[];
+              
+              return (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {visibleStatuses.map((status) => {
+                    const count = filteredSessions.filter((s: any) => (s.status || s.state) === status).length;
+                    const displayName = getSessionDisplayName(status);
+                    const icon = STATE_ICONS[status];
+                    const colorClass = STATUS_COLORS[status];
+                    return (
+                      <div key={status} className="flex items-center space-x-2 p-2 rounded bg-zinc-900/50">
+                        <div className={`p-1 rounded ${colorClass}`}>
+                          {icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-zinc-300 truncate">{displayName}</p>
+                          <p className="text-lg font-bold text-white">{count}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}
+      
+      {/* Guest Intelligence Modal */}
+      <GuestIntelligenceModal
+        isOpen={showIntelligenceModal}
+        onClose={() => {
+          setShowIntelligenceModal(false);
+          setIntelligenceSessionId('');
+        }}
+        sessionId={intelligenceSessionId}
+      />
     </div>
   );
 }

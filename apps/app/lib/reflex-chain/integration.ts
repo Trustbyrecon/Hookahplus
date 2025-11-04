@@ -31,7 +31,7 @@ export async function initializeReflexChain(session: FireSession): Promise<void>
       queueId: `queue_${session.id}`,
       priority: 1,
       estimatedPrepTime: 15, // minutes
-      flavors: session.flavorMix ? [session.flavorMix] : [],
+      flavors: session.flavor ? [session.flavor] : [],
       specialRequests: session.notes || undefined,
     },
     supplyTimer: {
@@ -126,17 +126,17 @@ export async function processFOHLayer(
         assignedStaff: staffId || 'unknown',
         tableId: session.tableId || '',
         zone: session.tableId?.includes('VIP') ? 'VIP' : 'Main',
-        flavorMix: session.flavorMix || 'Standard',
+        flavorMix: session.flavor || 'Standard',
       },
       posMetadata: {
         orderId: `order_${session.id}`,
         sessionId: session.id,
-        amount: session.priceCents || 0,
+        amount: session.amount || 0,
         items: [
           {
-            sku: `hookah.${session.flavorMix?.toLowerCase().replace(' ', '.') || 'standard'}`,
-            name: `Hookah Session - ${session.flavorMix || 'Standard'}`,
-            price: session.priceCents || 0,
+            sku: `hookah.${session.flavor?.toLowerCase().replace(' ', '.') || 'standard'}`,
+            name: `Hookah Session - ${session.flavor || 'Standard'}`,
+            price: session.amount || 0,
             quantity: 1,
           },
         ],
