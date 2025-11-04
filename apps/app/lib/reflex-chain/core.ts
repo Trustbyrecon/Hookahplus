@@ -239,7 +239,9 @@ export class ReflexChainEngine {
     const now = Date.now();
     let cleaned = 0;
 
-    for (const [sessionId, flow] of this.flows.entries()) {
+    // Use Array.from to avoid iteration issues
+    const entries = Array.from(this.flows.entries());
+    for (const [sessionId, flow] of entries) {
       if (flow.customer.completedAt && (now - flow.customer.completedAt) > maxAge) {
         this.flows.delete(sessionId);
         cleaned++;
