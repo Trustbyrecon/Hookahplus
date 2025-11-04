@@ -17,6 +17,7 @@ import GuestIntelligenceDashboard from '../components/EnhancedStaffPanel';
 import { sessionManager, SessionData } from '../lib/sessionManager';
 import FlavorMixSelector from '../components/customer/FlavorMixSelector';
 import SuccessModal from '../components/SuccessModal';
+import { HookahTracker } from '../components/HookahTracker';
 
 // Flavor categories for the FlavorMixSelector
 const FLAVOR_CATEGORIES = [
@@ -108,7 +109,8 @@ import {
   Brain,
   Shield,
   CreditCard,
-  QrCode
+  QrCode,
+  X
 } from 'lucide-react';
 
 export default function GuestPortal() {
@@ -119,6 +121,7 @@ export default function GuestPortal() {
   const [isStartingSession, setIsStartingSession] = useState(false);
   const [showEnhancedStaffPanel, setShowEnhancedStaffPanel] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showHookahTracker, setShowHookahTracker] = useState(false);
   const [pricingModel, setPricingModel] = useState<'flat' | 'time-based'>('flat');
   const [sessionDuration, setSessionDuration] = useState(60); // Default 60 minutes
   
@@ -510,7 +513,7 @@ export default function GuestPortal() {
           <div>
             <Card className="h-fit">
               <div className="p-4">
-                <h3 className="text-lg font-semibold mb-3">Hookah Tracker</h3>
+                <h3 className="text-lg font-semibold mb-3">Your Order</h3>
                 
                 {/* Base Hookah */}
                 <div className="mb-3 p-2 bg-zinc-800 rounded">
@@ -581,12 +584,12 @@ export default function GuestPortal() {
                   <Button 
                     variant="outline" 
                       size="sm"
-                      leftIcon={<BarChart3 className="w-3 h-3" />}
+                      leftIcon={<Clock className="w-3 h-3" />}
                     onClick={() => {
-                        window.open('https://hookahplus.net/operator', '_blank');
+                        setShowHookahTracker(true);
                     }}
                   >
-                      Dashboard
+                      Hookah Tracker
                   </Button>
                   </div>
                 </div>
@@ -603,6 +606,30 @@ export default function GuestPortal() {
           tableId={tableData?.tableId}
           onClose={() => setShowEnhancedStaffPanel(false)}
         />
+      )}
+
+      {/* Hookah Tracker Modal */}
+      {showHookahTracker && (
+        <div className="fixed inset-0 bg-black/90 z-50 overflow-y-auto">
+          <div className="min-h-screen">
+            <div className="flex justify-end p-4">
+              <button
+                onClick={() => setShowHookahTracker(false)}
+                className="text-zinc-400 hover:text-white transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <HookahTracker
+              sessionId={currentSession?.sessionId || 'demo-session'}
+              loungeId={tableData?.loungeId || 'demo-lounge'}
+              tableId={tableData?.tableId || 'T-001'}
+              onComplete={() => {
+                setShowHookahTracker(false);
+              }}
+            />
+          </div>
+        </div>
       )}
 
       {/* Success Modal */}

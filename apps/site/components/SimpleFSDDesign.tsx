@@ -29,6 +29,7 @@ import {
   Brain
 } from 'lucide-react';
 import CreateSessionModal from './CreateSessionModal';
+import { mockSiteData } from '../lib/mockData';
 import { 
   SessionStatus, 
   SessionAction, 
@@ -222,7 +223,7 @@ export default function SimpleFSDDesign({
   };
 
   // Generate demo sessions if none provided
-  const displaySessions = sessions.length > 0 ? sessions : require('../../lib/mockData').mockSiteData.sessions;
+  const displaySessions = sessions.length > 0 ? sessions : mockSiteData.sessions;
 
   // Filter sessions by role permissions
   const getFilteredSessions = () => {
