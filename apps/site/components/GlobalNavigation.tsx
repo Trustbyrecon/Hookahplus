@@ -469,38 +469,6 @@ const GlobalNavigation: React.FC = () => {
               </div> */}
             </div>
 
-            {/* AI Recommendations */}
-            {flowState.recommendations.length > 0 && (
-              <div className="hidden lg:flex items-center space-x-2">
-                <div className="relative group">
-                  <button className="flex items-center space-x-1 text-sm text-zinc-400 hover:text-white transition-colors">
-                    <Zap className="w-4 h-4 text-yellow-400" />
-                    <span>AI Insights</span>
-                  </button>
-                  
-                  {/* Simplified AI Recommendations Dropdown */}
-                  <div className="absolute top-full right-0 mt-2 w-64 bg-zinc-900 border border-zinc-700 rounded-lg p-4 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
-                    <div className="space-y-3">
-                      <h3 className="text-sm font-semibold text-white mb-2">AI Recommendations</h3>
-                      {flowState.recommendations.map((rec) => (
-                        <div key={rec.id} className="bg-zinc-800 border border-zinc-600 rounded p-3">
-                          <div className="flex items-center space-x-2 mb-1">
-                            {rec.icon}
-                            <span className="text-xs text-zinc-400">{rec.type}</span>
-                          </div>
-                          <p className="text-xs text-zinc-300">{rec.message}</p>
-                          {rec.action && (
-                            <a href={rec.action} className="text-xs text-primary-400 hover:text-primary-300 transition-colors">
-                              Take action →
-                            </a>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
 
 
           </div>
