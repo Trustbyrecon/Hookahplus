@@ -29,11 +29,23 @@ Fixing HTTP 500 error and making all buttons functional across the application.
 ## Implementation Plan
 
 1. ✅ Fix session action handler to use correct API endpoint
-2. ⏳ Extract session card rendering function
-3. ⏳ Update BOH, FOH, Edge Cases tabs to use full session cards
+2. ✅ Extract session card rendering function
+3. ✅ Update BOH, FOH, Edge Cases tabs to use full session cards
 4. ⏳ Verify Staff section buttons work
 5. ⏳ Implement Settings persistence
 6. ⏳ Fix Docs navigation
+
+## Completed ✅
+
+### Session Cards Operationalized
+- ✅ Extracted `renderSessionCard()` reusable function
+- ✅ Updated Overview tab to use reusable function
+- ✅ Updated BOH tab to show full session cards with buttons (filters: PREP_IN_PROGRESS, HEAT_UP, READY_FOR_DELIVERY)
+- ✅ Updated FOH tab to show full session cards with buttons (filters: OUT_FOR_DELIVERY, DELIVERED, ACTIVE)
+- ✅ Updated Edge Cases tab to show full session cards with buttons (filters: STAFF_HOLD, STOCK_BLOCKED, REMAKE, REFUND_REQUESTED, FAILED_PAYMENT, VOIDED)
+- ✅ All session action buttons (heat-up, pause, put on hold, request remake, etc.) now functional across all tabs
+- ✅ Action buttons properly call `/api/sessions` PATCH endpoint
+- ✅ Empty states added for each tab
 
 ## Files Modified
 - `apps/app/components/SimpleFSDDesign.tsx` - Fixed action handler

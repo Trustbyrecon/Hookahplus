@@ -236,6 +236,200 @@ export default function SimpleFSDDesign({
     return status.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
   };
 
+  // Reusable function to render a session card
+  const renderSessionCard = (session: any) => {
+    const sessionStatus = getSessionStatus(session);
+    const sessionStage = getSessionStage(session);
+    const availableActions = getAvailableActions(session);
+    const sessionId = session.id || session.session_id;
+    const displayName = getSessionDisplayName(sessionStatus);
+    const statusColor = STATUS_COLORS[sessionStatus];
+    const stateIcon = STATE_ICONS[sessionStatus];
+
+    const trustScore = calculateSingleSessionTrustScore(session as FireSession);
+    const trustScoreColor = getTrustScoreColor(trustScore);
+
+    return (
+      <div
+        key={sessionId}
+        className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4 hover:bg-zinc-800/70 transition-colors cursor-pointer"
+        onClick={() => {
+          setSelectedSession(session as FireSession);
+          setIsModalOpen(true);
+        }}
+      >
+        {/* Session Header */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center space-x-3">
+            <div className={`p-2 rounded-lg ${statusColor}`}>
+              {stateIcon}
+            </div>
+            <div>
+              <h3 className="font-medium text-white">
+                {session.table_id || session.tableId || 'Table Unknown'}
+              </h3>
+              <p className="text-sm text-zinc-400">
+                {session.customer_name || session.customerName || 'Guest Customer'}
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <span className={`px-2 py-1 rounded text-xs font-medium ${statusColor}`}>
+              {displayName}
+            </span>
+            <span className="text-xs text-zinc-500">
+              {sessionStage}
+            </span>
+            <div className="flex items-center gap-1 px-2 py-1 bg-zinc-900/50 rounded">
+              <Shield className="w-3 h-3 text-zinc-400" />
+              <span className={`text-xs font-semibold ${trustScoreColor}`}>
+                {trustScore}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Enhanced State Description */}
+        <div className="mb-3 p-2 bg-zinc-900/50 rounded text-xs text-zinc-300">
+          <div className="flex items-center space-x-1 mb-1">
+            <Info className="w-3 h-3" />
+            <span className="font-medium">Current State:</span>
+          </div>
+          <p>{STATE_DESCRIPTIONS[sessionStatus]}</p>
+        </div>
+
+        {/* Timer Display */}
+        {session.sessionTimer && (
+          <div className="mb-3 p-2 bg-zinc-900/30 rounded text-xs text-zinc-300">
+            <div className="flex items-center space-x-1 mb-1">
+              <Timer className="w-3 h-3" />
+              <span className="font-medium">Session Timer:</span>
+            </div>
+            <p className="text-lg font-mono">
+              {formatDuration(calculateRemainingTime(session))}
+            </p>
+          </div>
+        )}
+
+        {/* Session Notes */}
+        {session.notes && (
+          <div className="mb-3 p-2 bg-blue-900/20 border border-blue-600/30 rounded text-xs">
+            <div className="flex items-center space-x-1 mb-1">
+              <span className="text-blue-400">📝</span>
+              <span className="font-medium text-blue-300">Session Notes:</span>
+            </div>
+            <p className="text-blue-200">{session.notes}</p>
+          </div>
+        )}
+
+        {/* Available Actions */}
+        {availableActions.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center space-x-1 text-xs text-zinc-400">
+              <Zap className="w-3 h-3" />
+              <span className="font-medium">Available Actions:</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {availableActions.map((action) => {
+                const canPerform = canUserPerformAction(action, userRole);
+                return (
+                  <div key={action} className="relative">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        canPerform && handleSessionAction(action.toLowerCase(), sessionId);
+                      }}
+                      disabled={!canPerform}
+                      onMouseEnter={() => setHoveredAction(action)}
+                      onMouseLeave={() => setHoveredAction(null)}
+                      className={`flex items-center space-x-1 px-3 py-1 rounded text-xs font-medium transition-colors ${
+                        canPerform 
+                          ? ACTION_COLORS[action]
+                          : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                      }`}
+                    >
+                      {ACTION_ICONS[action]}
+                      <span>{action.replace(/_/g, ' ')}</span>
+                      <Info className="w-3 h-3" />
+                    </button>
+                    
+                    {/* Enhanced Business Logic Tooltip */}
+                    {hoveredAction === action && (
+                      <div className="absolute bottom-full left-0 mb-2 w-64 p-3 bg-zinc-900 border border-zinc-700 rounded-lg shadow-lg z-10">
+                        <div className="flex items-center space-x-1 mb-2">
+                          <Info className="w-3 h-3 text-blue-400" />
+                          <span className="text-xs font-medium text-blue-400">Business Logic</span>
+                        </div>
+                        <p className="text-xs text-zinc-300 mb-2">{ACTION_DESCRIPTIONS[action]}</p>
+                        <div className="pt-2 border-t border-zinc-700">
+                          <p className="text-xs text-zinc-400">
+                            <span className="font-medium">Next State:</span> {getSessionDisplayName(ACTION_TO_STATUS[action])}
+                          </p>
+                          <p className="text-xs text-zinc-400">
+                            <span className="font-medium">Stage:</span> {STATUS_TO_STAGE[ACTION_TO_STATUS[action]]}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            
+            {/* Intelligence Button */}
+            <div className="mt-3 pt-3 border-t border-zinc-700">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.open(`/guest-intelligence?sessionId=${sessionId}`, '_blank');
+                }}
+                className="flex items-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors w-full justify-center"
+              >
+                <Brain className="w-4 h-4" />
+                <span className="text-sm font-medium">View Intelligence</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Enhanced Session Details */}
+        <div className="mt-3 pt-3 border-t border-zinc-700 space-y-2">
+          {session.flavor && (
+            <p className="text-sm text-zinc-400">
+              <span className="font-medium">Flavor:</span> {session.flavor}
+            </p>
+          )}
+          {session.amount && (
+            <p className="text-sm text-zinc-400">
+              <span className="font-medium">Amount:</span> ${(session.amount / 100).toFixed(2)}
+            </p>
+          )}
+          {session.assignedStaff?.boh && (
+            <p className="text-sm text-zinc-400">
+              <span className="font-medium">BOH Staff:</span> {session.assignedStaff.boh}
+            </p>
+          )}
+          {session.assignedStaff?.foh && (
+            <p className="text-sm text-zinc-400">
+              <span className="font-medium">FOH Staff:</span> {session.assignedStaff.foh}
+            </p>
+          )}
+          {session.coalStatus && (
+            <p className="text-sm text-zinc-400">
+              <span className="font-medium">Coal Status:</span> {session.coalStatus.replace(/_/g, ' ')}
+            </p>
+          )}
+          {session.refillStatus && session.refillStatus !== 'none' && (
+            <p className="text-sm text-zinc-400">
+              <span className="font-medium">Refill Status:</span> {session.refillStatus.replace(/_/g, ' ')}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className={className}>
       {/* Header */}
@@ -286,214 +480,23 @@ export default function SimpleFSDDesign({
       {/* Tab Content */}
       {activeTab === 'overview' && (
         <div className="space-y-4">
-        {sessions.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
-              <Flame className="w-8 h-8 text-zinc-600" />
-            </div>
-            <h3 className="text-lg font-medium text-zinc-300 mb-2">No Active Sessions</h3>
-            <p className="text-zinc-500 mb-4">Create your first session to get started</p>
-            <button
-              onClick={handleCreateSession}
-              className="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
-            >
-              Create Session
-            </button>
-          </div>
-        ) : (
-          sessions.map((session) => {
-            const sessionStatus = getSessionStatus(session);
-            const sessionStage = getSessionStage(session);
-            const availableActions = getAvailableActions(session);
-            const sessionId = session.id || session.session_id;
-            const displayName = getSessionDisplayName(sessionStatus);
-            const statusColor = STATUS_COLORS[sessionStatus];
-            const stateIcon = STATE_ICONS[sessionStatus];
-
-            const trustScore = calculateSingleSessionTrustScore(session as FireSession);
-            const trustScoreColor = getTrustScoreColor(trustScore);
-
-            return (
-              <div
-                key={sessionId}
-                className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4 hover:bg-zinc-800/70 transition-colors cursor-pointer"
-                onClick={() => {
-                  setSelectedSession(session as FireSession);
-                  setIsModalOpen(true);
-                }}
-              >
-                {/* Session Header */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    <div className={`p-2 rounded-lg ${statusColor}`}>
-                      {stateIcon}
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-white">
-                        {session.table_id || session.tableId || 'Table Unknown'}
-                      </h3>
-                      <p className="text-sm text-zinc-400">
-                        {session.customer_name || session.customerName || 'Guest Customer'}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${statusColor}`}>
-                      {displayName}
-                    </span>
-                    <span className="text-xs text-zinc-500">
-                      {sessionStage}
-                    </span>
-                    <div className="flex items-center gap-1 px-2 py-1 bg-zinc-900/50 rounded">
-                      <Shield className="w-3 h-3 text-zinc-400" />
-                      <span className={`text-xs font-semibold ${trustScoreColor}`}>
-                        {trustScore}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Enhanced State Description */}
-                <div className="mb-3 p-2 bg-zinc-900/50 rounded text-xs text-zinc-300">
-                  <div className="flex items-center space-x-1 mb-1">
-                    <Info className="w-3 h-3" />
-                    <span className="font-medium">Current State:</span>
-                  </div>
-                  <p>{STATE_DESCRIPTIONS[sessionStatus]}</p>
-                </div>
-
-                {/* Timer Display */}
-                {session.sessionTimer && (
-                  <div className="mb-3 p-2 bg-zinc-900/30 rounded text-xs text-zinc-300">
-                    <div className="flex items-center space-x-1 mb-1">
-                      <Timer className="w-3 h-3" />
-                      <span className="font-medium">Session Timer:</span>
-                    </div>
-                    <p className="text-lg font-mono">
-                      {formatDuration(calculateRemainingTime(session))}
-                    </p>
-                  </div>
-                )}
-
-                {/* Session Notes */}
-                {session.notes && (
-                  <div className="mb-3 p-2 bg-blue-900/20 border border-blue-600/30 rounded text-xs">
-                    <div className="flex items-center space-x-1 mb-1">
-                      <span className="text-blue-400">📝</span>
-                      <span className="font-medium text-blue-300">Session Notes:</span>
-                    </div>
-                    <p className="text-blue-200">{session.notes}</p>
-                  </div>
-                )}
-
-                {/* Available Actions */}
-                {availableActions.length > 0 && (
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-1 text-xs text-zinc-400">
-                      <Zap className="w-3 h-3" />
-                      <span className="font-medium">Available Actions:</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {availableActions.map((action) => {
-                        const canPerform = canUserPerformAction(action, userRole);
-                        return (
-                          <div key={action} className="relative">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                canPerform && handleSessionAction(action.toLowerCase(), sessionId);
-                              }}
-                              disabled={!canPerform}
-                              onMouseEnter={() => setHoveredAction(action)}
-                              onMouseLeave={() => setHoveredAction(null)}
-                              className={`flex items-center space-x-1 px-3 py-1 rounded text-xs font-medium transition-colors ${
-                                canPerform 
-                                  ? ACTION_COLORS[action]
-                                  : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                              }`}
-                            >
-                              {ACTION_ICONS[action]}
-                              <span>{action.replace(/_/g, ' ')}</span>
-                              <Info className="w-3 h-3" />
-                            </button>
-                            
-                            {/* Enhanced Business Logic Tooltip */}
-                            {hoveredAction === action && (
-                              <div className="absolute bottom-full left-0 mb-2 w-64 p-3 bg-zinc-900 border border-zinc-700 rounded-lg shadow-lg z-10">
-                                <div className="flex items-center space-x-1 mb-2">
-                                  <Info className="w-3 h-3 text-blue-400" />
-                                  <span className="text-xs font-medium text-blue-400">Business Logic</span>
-                                </div>
-                                <p className="text-xs text-zinc-300 mb-2">{ACTION_DESCRIPTIONS[action]}</p>
-                                <div className="pt-2 border-t border-zinc-700">
-                                  <p className="text-xs text-zinc-400">
-                                    <span className="font-medium">Next State:</span> {getSessionDisplayName(ACTION_TO_STATUS[action])}
-                                  </p>
-                                  <p className="text-xs text-zinc-400">
-                                    <span className="font-medium">Stage:</span> {STATUS_TO_STAGE[ACTION_TO_STATUS[action]]}
-                                  </p>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                    
-                    {/* Intelligence Button */}
-                    <div className="mt-3 pt-3 border-t border-zinc-700">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          window.open(`/guest-intelligence?sessionId=${sessionId}`, '_blank');
-                        }}
-                        className="flex items-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors w-full justify-center"
-                      >
-                        <Brain className="w-4 h-4" />
-                        <span className="text-sm font-medium">View Intelligence</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Enhanced Session Details */}
-                <div className="mt-3 pt-3 border-t border-zinc-700 space-y-2">
-                  {session.flavor && (
-                    <p className="text-sm text-zinc-400">
-                      <span className="font-medium">Flavor:</span> {session.flavor}
-                    </p>
-                  )}
-                  {session.amount && (
-                    <p className="text-sm text-zinc-400">
-                      <span className="font-medium">Amount:</span> ${(session.amount / 100).toFixed(2)}
-                    </p>
-                  )}
-                  {session.assignedStaff?.boh && (
-                    <p className="text-sm text-zinc-400">
-                      <span className="font-medium">BOH Staff:</span> {session.assignedStaff.boh}
-                    </p>
-                  )}
-                  {session.assignedStaff?.foh && (
-                    <p className="text-sm text-zinc-400">
-                      <span className="font-medium">FOH Staff:</span> {session.assignedStaff.foh}
-                    </p>
-                  )}
-                  {session.coalStatus && (
-                    <p className="text-sm text-zinc-400">
-                      <span className="font-medium">Coal Status:</span> {session.coalStatus.replace(/_/g, ' ')}
-                    </p>
-                  )}
-                  {session.refillStatus && session.refillStatus !== 'none' && (
-                    <p className="text-sm text-zinc-400">
-                      <span className="font-medium">Refill Status:</span> {session.refillStatus.replace(/_/g, ' ')}
-                    </p>
-                  )}
-                </div>
+          {sessions.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
+                <Flame className="w-8 h-8 text-zinc-600" />
               </div>
-            );
-          })
-        )}
+              <h3 className="text-lg font-medium text-zinc-300 mb-2">No Active Sessions</h3>
+              <p className="text-zinc-500 mb-4">Create your first session to get started</p>
+              <button
+                onClick={handleCreateSession}
+                className="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
+              >
+                Create Session
+              </button>
+            </div>
+          ) : (
+            sessions.map(renderSessionCard)
+          )}
         </div>
       )}
 
@@ -505,23 +508,21 @@ export default function SimpleFSDDesign({
               <Package className="w-5 h-5 text-orange-400" />
               <span>Back of House Operations</span>
             </h3>
-            <div className="space-y-3">
-              {sessions.filter(s => ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(s.status || s.state)).map((session) => (
-                <div key={session.id} className="bg-zinc-900/50 border border-zinc-600 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium text-white">{session.tableId || 'Unknown Table'}</h4>
-                      <p className="text-sm text-zinc-400">{session.flavor || 'Custom Mix'}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm text-orange-400 font-medium">{session.status || session.state}</p>
-                      <p className="text-xs text-zinc-500">BOH Stage</p>
-                    </div>
-                  </div>
+            <div className="space-y-4">
+              {sessions.filter(s => {
+                const status = getSessionStatus(s);
+                return ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(status);
+              }).length === 0 ? (
+                <div className="text-center py-12">
+                  <Package className="w-16 h-16 mx-auto mb-4 text-zinc-600" />
+                  <h3 className="text-lg font-medium text-zinc-300 mb-2">No BOH Sessions</h3>
+                  <p className="text-zinc-500">No sessions currently in Back of House stage</p>
                 </div>
-              ))}
-              {sessions.filter(s => ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(s.status || s.state)).length === 0 && (
-                <p className="text-zinc-400 text-center py-8">No BOH sessions in progress</p>
+              ) : (
+                sessions.filter(s => {
+                  const status = getSessionStatus(s);
+                  return ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(status);
+                }).map(renderSessionCard)
               )}
             </div>
           </div>
@@ -536,23 +537,21 @@ export default function SimpleFSDDesign({
               <Truck className="w-5 h-5 text-teal-400" />
               <span>Front of House Operations</span>
             </h3>
-            <div className="space-y-3">
-              {sessions.filter(s => ['OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(s.status || s.state)).map((session) => (
-                <div key={session.id} className="bg-zinc-900/50 border border-zinc-600 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium text-white">{session.tableId || 'Unknown Table'}</h4>
-                      <p className="text-sm text-zinc-400">{session.customerName || 'Guest Customer'}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm text-teal-400 font-medium">{session.status || session.state}</p>
-                      <p className="text-xs text-zinc-500">FOH Stage</p>
-                    </div>
-                  </div>
+            <div className="space-y-4">
+              {sessions.filter(s => {
+                const status = getSessionStatus(s);
+                return ['OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(status);
+              }).length === 0 ? (
+                <div className="text-center py-12">
+                  <Truck className="w-16 h-16 mx-auto mb-4 text-zinc-600" />
+                  <h3 className="text-lg font-medium text-zinc-300 mb-2">No FOH Sessions</h3>
+                  <p className="text-zinc-500">No sessions currently in Front of House stage</p>
                 </div>
-              ))}
-              {sessions.filter(s => ['OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(s.status || s.state)).length === 0 && (
-                <p className="text-zinc-400 text-center py-8">No FOH sessions in progress</p>
+              ) : (
+                sessions.filter(s => {
+                  const status = getSessionStatus(s);
+                  return ['OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(status);
+                }).map(renderSessionCard)
               )}
             </div>
           </div>
@@ -685,34 +684,21 @@ export default function SimpleFSDDesign({
               <AlertTriangle className="w-5 h-5 text-red-400" />
               <span>Edge Cases & Escalations</span>
             </h3>
-            <div className="space-y-3">
-              {sessions.filter(s => ['STAFF_HOLD', 'STOCK_BLOCKED', 'REMAKE', 'REFUND_REQUESTED', 'FAILED_PAYMENT'].includes(s.status || s.state)).map((session) => (
-                <div key={session.id} className="bg-red-900/20 border border-red-600/30 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium text-white">{session.tableId || 'Unknown Table'}</h4>
-                      <p className="text-sm text-zinc-400">{session.customerName || 'Guest Customer'}</p>
-                      {session.notes && (
-                        <p className="text-sm text-yellow-400 mt-1">📝 {session.notes}</p>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm text-red-400 font-medium">{session.status || session.state}</p>
-                      <p className="text-xs text-zinc-500">Requires Attention</p>
-                    </div>
-                  </div>
-                  <div className="mt-3 flex space-x-2">
-                    <button className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors">
-                      Escalate
-                    </button>
-                    <button className="px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white text-xs rounded transition-colors">
-                      Resolve
-                    </button>
-                  </div>
+            <div className="space-y-4">
+              {sessions.filter(s => {
+                const status = getSessionStatus(s);
+                return ['STAFF_HOLD', 'STOCK_BLOCKED', 'REMAKE', 'REFUND_REQUESTED', 'FAILED_PAYMENT', 'VOIDED'].includes(status);
+              }).length === 0 ? (
+                <div className="text-center py-12">
+                  <AlertTriangle className="w-16 h-16 mx-auto mb-4 text-zinc-600" />
+                  <h3 className="text-lg font-medium text-zinc-300 mb-2">No Edge Cases</h3>
+                  <p className="text-zinc-500">All sessions are operating normally</p>
                 </div>
-              ))}
-              {sessions.filter(s => ['STAFF_HOLD', 'STOCK_BLOCKED', 'REMAKE', 'REFUND_REQUESTED', 'FAILED_PAYMENT'].includes(s.status || s.state)).length === 0 && (
-                <p className="text-zinc-400 text-center py-8">No edge cases requiring attention</p>
+              ) : (
+                sessions.filter(s => {
+                  const status = getSessionStatus(s);
+                  return ['STAFF_HOLD', 'STOCK_BLOCKED', 'REMAKE', 'REFUND_REQUESTED', 'FAILED_PAYMENT', 'VOIDED'].includes(status);
+                }).map(renderSessionCard)
               )}
             </div>
           </div>
