@@ -26,14 +26,18 @@ export default function PricingPage() {
     {
       name: 'Starter',
       price: {
-        monthly: 49,
-        annual: 490
+        monthly: 79,
+        annual: 790
       },
       description: 'Perfect for small lounges getting started',
       icon: <Zap className="w-6 h-6" />,
       color: 'teal',
+      autoUpgradeTrigger: '> 150 active sessions per month OR > 1 lounge activated',
+      nextTier: 'Pro ($249)',
+      upgradeNote: 'Keeps operations seamless; user notified with 3-day grace period',
       features: [
-        'Up to 5 active sessions',
+        'Up to 150 sessions/month',
+        '1 lounge activation',
         'Basic session management',
         'QR code generation',
         'Email support',
@@ -48,18 +52,24 @@ export default function PricingPage() {
       popular: false
     },
     {
-      name: 'Professional',
+      name: 'Pro',
       price: {
-        monthly: 149,
-        annual: 1490
+        monthly: 249,
+        annual: 2490
       },
       description: 'For growing lounges that need advanced features',
       icon: <BarChart3 className="w-6 h-6" />,
       color: 'blue',
+      autoUpgradeTrigger: '> 3 lounges or > 600 sessions per month',
+      nextTier: 'Trust+ ($499)',
+      upgradeNote: 'Adds loyalty scoring + staff memory',
       features: [
-        'Unlimited active sessions',
+        'Up to 600 sessions/month',
+        'Up to 3 lounges',
         'Advanced session management',
         'AI-powered flavor recommendations',
+        'Loyalty scoring system',
+        'Staff memory & tracking',
         'Priority email support',
         'Custom branding',
         'Advanced analytics & reporting',
@@ -73,24 +83,27 @@ export default function PricingPage() {
       popular: true
     },
     {
-      name: 'Enterprise',
+      name: 'Trust+',
       price: {
-        monthly: 399,
-        annual: 3990
+        monthly: 499,
+        annual: 4990
       },
       description: 'For large operations requiring custom solutions',
       icon: <Crown className="w-6 h-6" />,
       color: 'purple',
+      autoUpgradeTrigger: '> 7 lounges or > 1,200 sessions per month',
+      nextTier: 'Enterprise+ (Custom)',
+      upgradeNote: 'Switches to multi-location cloud scaling + custom support',
       features: [
-        'Everything in Professional',
-        'White-label solution',
-        'Dedicated account manager',
-        '24/7 phone support',
-        'Custom integrations',
+        'Unlimited sessions',
+        'Up to 7 lounges',
+        'Everything in Pro',
+        'Multi-location cloud scaling',
+        'Custom support channels',
         'Advanced API access',
         'Multi-location management',
         'Custom reporting & dashboards',
-        'On-site training',
+        'Dedicated account manager',
         'SLA guarantee'
       ],
       limitations: [],
@@ -193,8 +206,14 @@ export default function PricingPage() {
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
               Pricing Intelligence Board
             </h1>
-            <p className="text-xl text-zinc-400 max-w-3xl mx-auto mb-8">
-              Choose the perfect plan for your hookah lounge. Start with a free trial, upgrade anytime.
+            <p className="text-xl text-zinc-400 max-w-3xl mx-auto mb-4">
+              Smart Scaling — Hookah+ grows with your lounge
+            </p>
+            <p className="text-lg text-zinc-500 max-w-3xl mx-auto mb-8">
+              Pricing adapts automatically based on usage and operational volume — a "Reflex Upgrade." 
+              Instead of requiring manual tier changes, Hookah+ monitors usage thresholds and auto-rolls 
+              into the next tier when it detects consistent load increases. Keeps operations seamless with 
+              a 3-day grace period notification.
             </p>
             
             {/* Billing Cycle Toggle */}
@@ -224,10 +243,55 @@ export default function PricingPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
+        {/* How It Works - Reflex Upgrade Logic */}
+        <div className="mb-12 bg-gradient-to-r from-purple-900/20 to-blue-900/20 rounded-xl p-8 border border-purple-500/30">
+          <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+            <Settings className="w-6 h-6 text-purple-400" />
+            How It Works (Logic Flow)
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-teal-500/20 rounded-lg flex items-center justify-center mx-auto mb-3 text-teal-400">
+                <Clock className="w-6 h-6" />
+              </div>
+              <h3 className="text-sm font-semibold mb-2">1. Usage Tracking</h3>
+              <p className="text-xs text-zinc-400">Hookah+ monitors session_count, active_lounges, and data_volume daily</p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center mx-auto mb-3 text-blue-400">
+                <TrendingUp className="w-6 h-6" />
+              </div>
+              <h3 className="text-sm font-semibold mb-2">2. Threshold Engine</h3>
+              <p className="text-xs text-zinc-400">When thresholds cross preset values for 3 consecutive days, system emits a Reflex Alert</p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mx-auto mb-3 text-purple-400">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <h3 className="text-sm font-semibold mb-2">3. Auto-Notify</h3>
+              <p className="text-xs text-zinc-400">Lounge operator receives an in-app prompt: "You've grown beyond your current plan. To maintain performance, we're activating Pro Mode next cycle."</p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 bg-yellow-500/20 rounded-lg flex items-center justify-center mx-auto mb-3 text-yellow-400">
+                <Clock className="w-6 h-6" />
+              </div>
+              <h3 className="text-sm font-semibold mb-2">4. Grace Mode</h3>
+              <p className="text-xs text-zinc-400">72-hour delay before billing shift, allowing user to confirm or defer</p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center mx-auto mb-3 text-green-400">
+                <CheckCircle className="w-6 h-6" />
+              </div>
+              <h3 className="text-sm font-semibold mb-2">5. Upgrade</h3>
+              <p className="text-xs text-zinc-400">Reflex AI adjusts backend feature access and analytics limits instantly</p>
+            </div>
+          </div>
+        </div>
+
         {/* Subscription Tiers */}
         <div className="mb-16">
           <h2 className="text-3xl font-bold text-center mb-2">Subscription Tiers</h2>
-          <p className="text-center text-zinc-400 mb-8">Choose the plan that fits your lounge size and needs</p>
+          <p className="text-center text-zinc-400 mb-8">Smart Scaling — Hookah+ grows with your lounge</p>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {subscriptionTiers.map((tier, index) => (
@@ -253,7 +317,24 @@ export default function PricingPage() {
                   </div>
                   
                   <h3 className="text-2xl font-bold mb-2">{tier.name}</h3>
-                  <p className="text-zinc-400 text-sm mb-6">{tier.description}</p>
+                  <p className="text-zinc-400 text-sm mb-4">{tier.description}</p>
+                  
+                  {/* Auto-Upgrade Info */}
+                  <div className="mb-4 p-3 bg-zinc-800/50 rounded-lg border border-zinc-700">
+                    <div className="flex items-start gap-2 mb-2">
+                      <Zap className="w-4 h-4 text-teal-400 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <div className="text-xs font-semibold text-teal-400 mb-1">Auto-Upgrade Trigger</div>
+                        <div className="text-xs text-zinc-300">{tier.autoUpgradeTrigger}</div>
+                      </div>
+                    </div>
+                    <div className="text-xs text-zinc-400 mt-2">
+                      <span className="font-medium">Next Tier:</span> {tier.nextTier}
+                    </div>
+                    <div className="text-xs text-zinc-500 mt-1 italic">
+                      {tier.upgradeNote}
+                    </div>
+                  </div>
                   
                   <div className="mb-6">
                     <span className="text-4xl font-bold">${getPrice(tier.price)}</span>

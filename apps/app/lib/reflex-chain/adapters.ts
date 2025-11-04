@@ -186,7 +186,9 @@ export class SessionReplayAdapter {
   getZoneHeatmap(zone: string): SessionReplayReflex['heatmap'] {
     const allHeatmaps: SessionReplayReflex['heatmap'] = [];
     
-    for (const heatmap of this.heatmapData.values()) {
+    // Use Array.from to avoid iteration issues
+    const heatmapEntries = Array.from(this.heatmapData.values());
+    for (const heatmap of heatmapEntries) {
       allHeatmaps.push(...heatmap.filter(h => h.zone === zone));
     }
 
@@ -199,7 +201,9 @@ export class SessionReplayAdapter {
   getActiveSessions(): SessionReplayReflex[] {
     const active: SessionReplayReflex[] = [];
     
-    for (const [sessionId, heatmap] of this.heatmapData.entries()) {
+    // Use Array.from to avoid iteration issues
+    const entries = Array.from(this.heatmapData.entries());
+    for (const [sessionId, heatmap] of entries) {
       const latest = heatmap[heatmap.length - 1];
       if (latest && latest.status === 'active') {
         active.push({

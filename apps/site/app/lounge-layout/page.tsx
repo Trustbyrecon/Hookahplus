@@ -188,14 +188,77 @@ export default function LoungeLayoutPage() {
                     onClick={(e) => handleTableClick(table, e)}
                     onMouseDown={(e) => handleTableDragStart(table, e)}
                   >
-                    <div className={`w-16 h-16 rounded-lg flex flex-col items-center justify-center ${
-                      selectedTable === table.id
-                        ? 'bg-teal-500 text-white'
-                        : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'
-                    } transition-colors`}>
-                      <div className="text-xs font-semibold">{table.name}</div>
-                      <div className="text-xs">{table.capacity}</div>
-                    </div>
+                    {/* Distinctive shapes based on seating type */}
+                    {table.seatingType === 'Booth' && (
+                      <div className={`w-20 h-12 rounded-lg flex flex-col items-center justify-center border-2 ${
+                        selectedTable === table.id
+                          ? 'bg-teal-500 text-white border-teal-300'
+                          : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600 border-zinc-500'
+                      } transition-colors`}>
+                        <div className="text-xs font-semibold">{table.name}</div>
+                        <div className="text-xs">{table.capacity} • {table.seatingType}</div>
+                      </div>
+                    )}
+                    {table.seatingType === 'Couch' && (
+                      <div className={`w-24 h-16 rounded-xl flex flex-col items-center justify-center border-2 ${
+                        selectedTable === table.id
+                          ? 'bg-purple-500 text-white border-purple-300'
+                          : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600 border-purple-500'
+                      } transition-colors`}>
+                        <div className="text-xs font-semibold">{table.name}</div>
+                        <div className="text-xs">{table.capacity} • {table.seatingType}</div>
+                      </div>
+                    )}
+                    {table.seatingType === 'Bar Seating' && (
+                      <div className={`w-16 h-8 rounded-full flex flex-col items-center justify-center border-2 ${
+                        selectedTable === table.id
+                          ? 'bg-blue-500 text-white border-blue-300'
+                          : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600 border-blue-500'
+                      } transition-colors`}>
+                        <div className="text-xs font-semibold">{table.name}</div>
+                        <div className="text-xs">{table.capacity} • {table.seatingType}</div>
+                      </div>
+                    )}
+                    {table.seatingType === 'Outdoor' && (
+                      <div className={`w-20 h-20 rounded-full flex flex-col items-center justify-center border-2 border-dashed ${
+                        selectedTable === table.id
+                          ? 'bg-green-500 text-white border-green-300'
+                          : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600 border-green-500'
+                      } transition-colors`}>
+                        <div className="text-xs font-semibold">{table.name}</div>
+                        <div className="text-xs">{table.capacity} • {table.seatingType}</div>
+                      </div>
+                    )}
+                    {table.seatingType === 'VIP' && (
+                      <div className={`w-20 h-20 rounded-lg flex flex-col items-center justify-center border-2 ${
+                        selectedTable === table.id
+                          ? 'bg-yellow-500 text-white border-yellow-300'
+                          : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600 border-yellow-500'
+                      } transition-colors`}>
+                        <div className="text-xs font-semibold">{table.name}</div>
+                        <div className="text-xs">{table.capacity} • {table.seatingType}</div>
+                      </div>
+                    )}
+                    {table.seatingType === 'Private Room' && (
+                      <div className={`w-24 h-20 rounded-lg flex flex-col items-center justify-center border-2 ${
+                        selectedTable === table.id
+                          ? 'bg-red-500 text-white border-red-300'
+                          : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600 border-red-500'
+                      } transition-colors`}>
+                        <div className="text-xs font-semibold">{table.name}</div>
+                        <div className="text-xs">{table.capacity} • {table.seatingType}</div>
+                      </div>
+                    )}
+                    {!['Booth', 'Couch', 'Bar Seating', 'Outdoor', 'VIP', 'Private Room'].includes(table.seatingType) && (
+                      <div className={`w-16 h-16 rounded-lg flex flex-col items-center justify-center ${
+                        selectedTable === table.id
+                          ? 'bg-teal-500 text-white'
+                          : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'
+                      } transition-colors`}>
+                        <div className="text-xs font-semibold">{table.name}</div>
+                        <div className="text-xs">{table.capacity} • {table.seatingType}</div>
+                      </div>
+                    )}
                   </div>
                 ))}
                 
@@ -289,6 +352,9 @@ export default function LoungeLayoutPage() {
                         <option key={type} value={type}>{type}</option>
                       ))}
                     </select>
+                    <p className="text-xs text-zinc-400 mt-1">
+                      Current: {selectedTableData.seatingType}
+                    </p>
                   </div>
 
                   <div className="pt-4 border-t border-zinc-700">

@@ -290,30 +290,12 @@ export default function LoungeExperienceDemoPage() {
         <div className="mb-12 bg-gradient-to-r from-purple-900/20 to-blue-900/20 rounded-xl p-12 border border-purple-500/30">
           <div className="text-center max-w-3xl mx-auto">
             <h2 className="text-3xl font-bold mb-4">
-              Memory = Identity = Trust
+              H+ is hospitality-grade ritual intelligence platform
             </h2>
             <p className="text-xl text-zinc-300 mb-6">
-              "Hookah+ is the <strong>ritual of connection, quantified.</strong>"
+              That ensures every interaction becomes a captured moment in the trust architecture, 
+              making loyalty loops structurally unavoidable.
             </p>
-            <p className="text-lg text-zinc-400 mb-8">
-              The moat is not the product — it's the memory it protects. Our hospitality-grade 
-              ritual intelligence platform ensures that every interaction becomes a captured moment 
-              in the trust architecture, making loyalty loops structurally unavoidable.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-              <div>
-                <div className="text-4xl font-bold text-teal-400 mb-2">Memory</div>
-                <p className="text-sm text-zinc-400">Every session becomes data</p>
-              </div>
-              <div>
-                <div className="text-4xl font-bold text-blue-400 mb-2">Identity</div>
-                <p className="text-sm text-zinc-400">Customer patterns captured</p>
-              </div>
-              <div>
-                <div className="text-4xl font-bold text-purple-400 mb-2">Trust</div>
-                <p className="text-sm text-zinc-400">Continuity and care ensured</p>
-              </div>
-            </div>
           </div>
         </div>
 

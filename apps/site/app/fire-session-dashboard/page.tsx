@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Button from '../../components/Button';
 import SimpleFSDDesign from '../../components/SimpleFSDDesign';
 import { 
-  Flame, Brain, Play, X
+  Flame, Brain, Play, X, AlertTriangle
 } from 'lucide-react';
 
 // Force dynamic rendering to bypass caching
@@ -32,7 +32,16 @@ export default function FireSessionDashboardPage() {
                 className="flex items-center gap-2 bg-gradient-to-r from-orange-500/10 to-red-500/10 border-orange-500/30 text-orange-400 hover:from-orange-500/20 hover:to-red-500/20 hover:border-orange-400 transition-all duration-200 transform hover:scale-105"
                 onClick={() => {
                   console.log('Starting new session');
-                  const confirmed = window.confirm('Ready to start a new hookah session? This will create a new session in the current dashboard.');
+                  // Proper session creation info
+                  const confirmed = window.confirm(
+                    'Ready to start a new hookah session?\n\n' +
+                    'This will:\n' +
+                    '• Create a new session entry\n' +
+                    '• Initialize session state machine\n' +
+                    '• Generate QR code for customer\n' +
+                    '• Set up Reflex Chain flow\n\n' +
+                    'Continue?'
+                  );
                   if (confirmed) {
                     // Dispatch event to open create session modal
                     window.dispatchEvent(new CustomEvent('openCreateSessionModal'));
@@ -45,10 +54,10 @@ export default function FireSessionDashboardPage() {
               <Button 
                 variant="outline" 
                 className="flex items-center gap-2"
-                onClick={() => setShowIntelligence(!showIntelligence)}
+                onClick={() => window.location.href = '/manager-escalations'}
               >
-                <Brain className="w-4 h-4" />
-                {showIntelligence ? 'Hide' : 'Show'} Intelligence
+                <AlertTriangle className="w-4 h-4" />
+                Escalations
               </Button>
             </div>
           </div>
@@ -56,65 +65,7 @@ export default function FireSessionDashboardPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {/* Intelligence Panel */}
-        {showIntelligence && (
-          <div className="mb-8 bg-gradient-to-r from-purple-900/20 to-blue-900/20 border border-purple-500/30 rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-purple-300 flex items-center gap-2">
-                <Brain className="w-5 h-5" />
-                Guest Intelligence Dashboard
-              </h3>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setShowIntelligence(false)}
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-zinc-800/50 rounded-lg p-4">
-                <h4 className="text-sm font-semibold text-green-400 mb-2">Trust Score</h4>
-                <div className="text-2xl font-bold text-white">94%</div>
-                <div className="text-xs text-zinc-400">Average across all guests</div>
-              </div>
-              <div className="bg-zinc-800/50 rounded-lg p-4">
-                <h4 className="text-sm font-semibold text-blue-400 mb-2">Flavor Preferences</h4>
-                <div className="text-sm text-white">
-                  <div className="flex justify-between">
-                    <span>Blue Mist</span>
-                    <span className="text-zinc-400">32%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Strawberry</span>
-                    <span className="text-zinc-400">28%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Mango</span>
-                    <span className="text-zinc-400">24%</span>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-zinc-800/50 rounded-lg p-4">
-                <h4 className="text-sm font-semibold text-purple-400 mb-2">Loyalty Tiers</h4>
-                <div className="text-sm text-white">
-                  <div className="flex justify-between">
-                    <span>VIP</span>
-                    <span className="text-zinc-400">15%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Regular</span>
-                    <span className="text-zinc-400">65%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>New</span>
-                    <span className="text-zinc-400">20%</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Intelligence Panel - Removed to unblock New Session button */}
 
         {/* Enhanced Fire Session Dashboard - Version 2.0 */}
         <div key={`enhanced-dashboard-${version}`}>

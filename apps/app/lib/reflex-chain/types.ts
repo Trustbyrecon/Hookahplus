@@ -149,19 +149,19 @@ export interface DeliveryReflexOutput {
 // ============================================================================
 
 export interface CustomerReflexInput {
-  qrScan: {
+  qrScan?: {
     sessionId: string;
     scannedAt: number;
     customerId?: string;
     deviceId: string;
   };
-  sessionRating: {
+  sessionRating?: {
     sessionId: string;
     rating: number; // 1-5
     feedback?: string;
     submittedAt: number;
   };
-  flavorFeedback: {
+  flavorFeedback?: {
     sessionId: string;
     flavors: Array<{
       flavorId: string;
@@ -170,13 +170,13 @@ export interface CustomerReflexInput {
     }>;
     submittedAt: number;
   };
-  dwellTime: {
+  dwellTime?: {
     sessionId: string;
     startTime: number;
     endTime?: number;
     duration: number; // seconds
   };
-  reOrderPrompts: {
+  reOrderPrompts?: {
     sessionId: string;
     promptShown: boolean;
     promptType: 'extend' | 'reorder' | 'loyalty';

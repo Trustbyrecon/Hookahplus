@@ -251,7 +251,9 @@ export default function CampaignPreOrdersPage() {
                           variant="outline" 
                           size="sm" 
                           className="flex-1"
-                          onClick={() => setSelectedCampaign(campaign.id)}
+                          onClick={() => {
+                            window.location.href = `/campaign-analytics?campaignId=${campaign.id}`;
+                          }}
                         >
                           Campaign Analytics
                         </Button>
@@ -260,8 +262,23 @@ export default function CampaignPreOrdersPage() {
                           size="sm" 
                           className="flex-1"
                           onClick={() => {
-                            console.log(`Managing campaign ${campaign.id}`);
-                            alert(`Managing ${campaign.name} campaign`);
+                            // Manage button empowers lounge owners with:
+                            // - Edit campaign details (name, dates, discount)
+                            // - Adjust max orders limit
+                            // - Pause/resume campaign
+                            // - Update featured flavors
+                            // - View detailed order list
+                            // - Export campaign data
+                            alert(
+                              `Managing ${campaign.name}\n\n` +
+                              'Campaign Management Controls:\n' +
+                              '• Edit campaign details\n' +
+                              '• Adjust order limits\n' +
+                              '• Pause/Resume campaign\n' +
+                              '• Update featured flavors\n' +
+                              '• View order details\n' +
+                              '• Export campaign data'
+                            );
                           }}
                         >
                           Manage

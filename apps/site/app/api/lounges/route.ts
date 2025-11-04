@@ -330,12 +330,79 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/lounges - Create new lounge
+// POST /api/lounges - Create new lounge or save layout
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { lounge_name, session_price, seat_count, sections, slug } = body;
-    
+    const { action, lounge_name, session_price, seat_count, sections, slug, tables } = body;
+
+    // Handle save_layout action
+    if (action === 'save_layout' && tables) {
+      try {
+        // Load or create default lounge config
+        const defaultLoungeId = 'CLOUD_DEMO';
+        let config = loadLoungeConfig(defaultLoungeId);
+        
+        if (!config) {
+          // Create new config if it doesn't exist
+          config = {
+            lounge_id: defaultLoungeId,
+            lounge_name: 'Cloud Lounge Demo',
+            slug: 'cloud-lounge-demo',
+            session_price: 25.00,
+            reflex_enabled: true,
+            tables: [],
+            campaigns: [],
+            qr_settings: {
+              base_url: process.env.NEXT_PUBLIC_GUEST_URL || 'https://guest.hookahplus.net',
+              include_campaign: true,
+              include_table_info: true,
+              auto_generate: true,
+              bulk_generation: true
+            }
+          };
+        }
+
+        // Update tables with layout data
+        config.tables = tables.map((table: any) => ({
+          id: table.id,
+          name: table.name,
+          type: table.seatingType?.toLowerCase() || 'table',
+          capacity: table.capacity || 4,
+          zone: 'main_floor',
+          coordinates: {
+            x: table.x || 0,
+            y: table.y || 0,
+            width: 80,
+            height: 80
+          },
+          qr_enabled: true,
+          status: 'active' as const,
+          price_multiplier: 1.0,
+          description: `${table.seatingType || 'Table'} seating`
+        }));
+
+        const saved = saveLoungeConfig(config);
+        
+        if (saved) {
+          return NextResponse.json({
+            success: true,
+            message: 'Lounge layout saved successfully',
+            tables: config.tables.length
+          });
+        } else {
+          throw new Error('Failed to save layout');
+        }
+      } catch (error) {
+        console.error('Error saving layout:', error);
+        return NextResponse.json({ 
+          error: 'Failed to save layout',
+          details: error instanceof Error ? error.message : 'Unknown error'
+        }, { status: 500 });
+      }
+    }
+
+    // Original POST logic for creating lounges
     if (!lounge_name) {
       return NextResponse.json({ 
         error: 'Missing required field: lounge_name' 
@@ -421,12 +488,79 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// PUT /api/lounges - Update lounge configuration
+// PUT /api/lounges - Update lounge configuration or save layout
 export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();
-    const { lounge_id, updates } = body;
-    
+    const { action, lounge_id, updates, tables } = body;
+
+    // Handle save_layout action
+    if (action === 'save_layout' && tables) {
+      try {
+        // Load or create default lounge config
+        const defaultLoungeId = 'CLOUD_DEMO';
+        let config = loadLoungeConfig(defaultLoungeId);
+        
+        if (!config) {
+          // Create new config if it doesn't exist
+          config = {
+            lounge_id: defaultLoungeId,
+            lounge_name: 'Cloud Lounge Demo',
+            slug: 'cloud-lounge-demo',
+            session_price: 25.00,
+            reflex_enabled: true,
+            tables: [],
+            campaigns: [],
+            qr_settings: {
+              base_url: process.env.NEXT_PUBLIC_GUEST_URL || 'https://guest.hookahplus.net',
+              include_campaign: true,
+              include_table_info: true,
+              auto_generate: true,
+              bulk_generation: true
+            }
+          };
+        }
+
+        // Update tables with layout data
+        config.tables = tables.map((table: any) => ({
+          id: table.id,
+          name: table.name,
+          type: table.seatingType?.toLowerCase() || 'table',
+          capacity: table.capacity || 4,
+          zone: 'main_floor',
+          coordinates: {
+            x: table.x || 0,
+            y: table.y || 0,
+            width: 80,
+            height: 80
+          },
+          qr_enabled: true,
+          status: 'active' as const,
+          price_multiplier: 1.0,
+          description: `${table.seatingType || 'Table'} seating`
+        }));
+
+        const saved = saveLoungeConfig(config);
+        
+        if (saved) {
+          return NextResponse.json({
+            success: true,
+            message: 'Lounge layout saved successfully',
+            tables: config.tables.length
+          });
+        } else {
+          throw new Error('Failed to save layout');
+        }
+      } catch (error) {
+        console.error('Error saving layout:', error);
+        return NextResponse.json({ 
+          error: 'Failed to save layout',
+          details: error instanceof Error ? error.message : 'Unknown error'
+        }, { status: 500 });
+      }
+    }
+
+    // Original PUT logic for updates
     if (!lounge_id) {
       return NextResponse.json({ error: 'Missing lounge_id' }, { status: 400 });
     }
