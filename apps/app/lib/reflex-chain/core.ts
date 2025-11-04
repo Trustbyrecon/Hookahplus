@@ -77,7 +77,7 @@ export class ReflexChainEngine {
       flavorCombo: flow.boh.input.sessionQueue?.flavors || [],
       staffId: '', // Will be assigned in FoH
       tableId: '', // Will be set in FoH
-      bohReadySignal: output,
+      bohReadySignal: output.readyForService,
     });
 
     return flow;

@@ -13,7 +13,6 @@ import {
   ArrowLeft,
   Filter,
   Search,
-  Priority,
   Flame
 } from 'lucide-react';
 
