@@ -16,11 +16,14 @@ import {
   TrendingUp,
   Clock,
   Star,
-  ArrowRight
+  ArrowRight,
+  DollarSign,
+  Info
 } from 'lucide-react';
 
 export default function PricingPage() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+  const [hoveredAddon, setHoveredAddon] = useState<number | null>(null);
 
   const subscriptionTiers = [
     {
@@ -120,6 +123,8 @@ export default function PricingPage() {
       },
       description: 'AI-powered flavor preference learning and recommendations',
       icon: <Sparkles className="w-5 h-5" />,
+      highValueFeature: 'Guest preference tracking',
+      hoverText: 'Track individual guest preferences across sessions to personalize recommendations and increase repeat visits. Understand which flavor combinations drive loyalty.',
       features: [
         'Guest preference tracking',
         'Smart flavor pairings',
@@ -135,6 +140,8 @@ export default function PricingPage() {
       },
       description: 'Deep dive into performance metrics and insights',
       icon: <TrendingUp className="w-5 h-5" />,
+      highValueFeature: 'Revenue forecasting',
+      hoverText: 'Predict future revenue trends based on historical data and seasonal patterns. Make data-driven decisions about staffing, inventory, and pricing strategies.',
       features: [
         'Revenue forecasting',
         'Customer behavior analysis',
@@ -150,6 +157,8 @@ export default function PricingPage() {
       },
       description: 'Comprehensive staff management and performance tracking',
       icon: <Users className="w-5 h-5" />,
+      highValueFeature: 'Task assignment & tracking',
+      hoverText: 'Automatically assign tasks to staff based on workload and expertise. Track completion rates and identify bottlenecks in real-time for optimal efficiency.',
       features: [
         'Performance dashboards',
         'Task assignment & tracking',
@@ -165,6 +174,8 @@ export default function PricingPage() {
       },
       description: 'Seamless integration with your existing POS and systems',
       icon: <Settings className="w-5 h-5" />,
+      highValueFeature: 'POS system integration',
+      hoverText: 'Connect Hookah+ directly to your existing POS system (Stripe, Square, Toast, Clover) for seamless transaction flow and unified reporting.',
       features: [
         'POS system integration',
         'Accounting software sync',
@@ -180,6 +191,8 @@ export default function PricingPage() {
       },
       description: 'Fast-track support with guaranteed response times',
       icon: <Shield className="w-5 h-5" />,
+      highValueFeature: '2-hour response guarantee',
+      hoverText: 'Get urgent issues resolved within 2 hours with dedicated phone support and priority bug fixes. Minimize downtime and keep operations running smoothly.',
       features: [
         '2-hour response guarantee',
         'Phone support access',
@@ -243,6 +256,123 @@ export default function PricingPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
+        {/* Revenue Model Section - Lounge Owner Perspective */}
+        <div className="mb-12 bg-gradient-to-r from-teal-900/20 to-green-900/20 rounded-xl p-8 border border-teal-500/30">
+          <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+            <DollarSign className="w-6 h-6 text-teal-400" />
+            How We Make Money (Lounge Owner Perspective)
+          </h2>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-6">
+            {/* One Session: Micro-Economics */}
+            <div className="bg-zinc-800/50 rounded-lg p-6 border border-zinc-700">
+              <h3 className="text-xl font-bold mb-4 text-teal-400">💨 One Session: The Micro-Economics</h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex items-start gap-2">
+                  <span className="font-semibold text-white">1. Base Price:</span>
+                  <span className="text-zinc-300">Lounge charges $30 for a standard hookah session.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="font-semibold text-white">2. Add-Ons:</span>
+                  <span className="text-zinc-300">Guest selects add-ons (average $5–$10 per session). Average ticket: <strong>$35</strong></span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="font-semibold text-white">3. Transaction Flow:</span>
+                  <span className="text-zinc-300">Lounge keeps revenue ($35). Hookah+ collects transaction fee share (~$0.35 at 1%).</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="font-semibold text-white">4. Loyalty Upsell:</span>
+                  <span className="text-zinc-300">Guest joins Hookah+ Loyalty (QR Companion). System nudges with personalized recommendations.</span>
+                </div>
+                <div className="mt-4 p-3 bg-teal-500/10 rounded-lg border border-teal-500/30">
+                  <div className="text-xs text-zinc-400 mb-1">Hookah+ Revenue Per Session (Before Costs):</div>
+                  <div className="text-sm space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-zinc-300">SaaS amortized slice:</span>
+                      <span className="text-white">≈ $0.30–$0.50</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-zinc-300">Transaction fee:</span>
+                      <span className="text-white">≈ $0.35</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-zinc-300">Upsell/insights capture:</span>
+                      <span className="text-white">≈ $0.25–$0.50</span>
+                    </div>
+                    <div className="flex justify-between mt-2 pt-2 border-t border-zinc-700">
+                      <span className="font-semibold text-teal-400">Total:</span>
+                      <span className="font-bold text-teal-400">≈ $0.90–$1.35 per session</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Per Lounge: Macro-Economics */}
+            <div className="bg-zinc-800/50 rounded-lg p-6 border border-zinc-700">
+              <h3 className="text-xl font-bold mb-4 text-teal-400">🏬 Per Lounge: The Macro-Economics</h3>
+              <div className="space-y-3 text-sm">
+                <div className="space-y-2">
+                  <div className="text-zinc-400 text-xs">Assumptions:</div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-zinc-300">40 sessions/day × 25 days/month</span>
+                    <span className="text-white font-semibold">= 1,000 sessions/month</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-zinc-300">Average ticket:</span>
+                    <span className="text-white font-semibold">$35</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-zinc-300">Revenue per lounge:</span>
+                    <span className="text-white font-semibold">$35,000/month</span>
+                  </div>
+                </div>
+                <div className="mt-4 p-3 bg-teal-500/10 rounded-lg border border-teal-500/30">
+                  <div className="text-xs text-zinc-400 mb-1">Hookah+ Revenue Per Lounge:</div>
+                  <div className="text-sm space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-zinc-300">SaaS Subscription:</span>
+                      <span className="text-white">$300–$500/month</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-zinc-300">Transaction Fees:</span>
+                      <span className="text-white">~$350/month</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-zinc-300">Insights/Loyalty Tier:</span>
+                      <span className="text-white">$200–$400/month</span>
+                    </div>
+                    <div className="flex justify-between mt-2 pt-2 border-t border-zinc-700">
+                      <span className="font-semibold text-teal-400">Total per lounge:</span>
+                      <span className="font-bold text-teal-400">≈ $850–$1,250/month</span>
+                    </div>
+                    <div className="flex justify-between mt-1">
+                      <span className="text-zinc-400 text-xs">Annualized per lounge:</span>
+                      <span className="font-bold text-teal-400 text-xs">≈ $10k–$15k ARR</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-4 p-3 bg-zinc-900/50 rounded-lg">
+                  <div className="text-xs text-zinc-400 mb-2">🚦 Scaling:</div>
+                  <div className="text-xs space-y-1 text-zinc-300">
+                    <div>10 lounges = ~$100k–$150k ARR</div>
+                    <div>100 lounges = ~$1M–$1.5M ARR</div>
+                    <div>1,000 lounges = ~$10M–$15M ARR</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-zinc-900/50 rounded-lg p-4 border border-zinc-700">
+            <p className="text-sm text-zinc-300">
+              <strong className="text-teal-400">Note:</strong> Hookah+ doesn't take 30% of the lounge's total sales — that would be predatory and unsustainable. 
+              Instead, Hookah+ earns ~3–4% of a session's spend through SaaS subscription, transaction fee share, and upsell tiers. 
+              This translates to approximately $0.90–$1.35 revenue per session (before costs) for Hookah+.
+            </p>
+          </div>
+        </div>
+
         {/* How It Works - Adaptive Learning Phase */}
         <div className="mb-12 bg-gradient-to-r from-purple-900/20 to-blue-900/20 rounded-xl p-8 border border-purple-500/30">
           <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
@@ -255,7 +385,10 @@ export default function PricingPage() {
               Hookah+ starts learning your lounge rhythm in just 3 days — but every lounge has its own pulse. 
               The system keeps observing your busiest and slowest days over a few weeks. Within a month, it knows 
               your true flow — how guests arrive, order, and linger — and starts refining prices, loyalty perks, 
-              and staff timing automatically. Think of it as training your digital manager to read your vibe.
+              and staff timing automatically.
+            </p>
+            <p className="text-zinc-300 font-semibold text-center mt-4">
+              Think of it as training your digital manager to read your vibe.
             </p>
           </div>
           
@@ -384,7 +517,12 @@ export default function PricingPage() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {addOns.map((addon, index) => (
-              <Card key={index} className="border border-zinc-700 hover:border-teal-500/50 transition-colors">
+              <Card 
+                key={index} 
+                className="border border-zinc-700 hover:border-teal-500/50 transition-colors relative"
+                onMouseEnter={() => setHoveredAddon(index)}
+                onMouseLeave={() => setHoveredAddon(null)}
+              >
                 <div className="p-6">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-10 h-10 bg-teal-500/20 rounded-lg flex items-center justify-center text-teal-400">
@@ -401,11 +539,30 @@ export default function PricingPage() {
                   
                   <p className="text-sm text-zinc-400 mb-4">{addon.description}</p>
                   
+                  {/* High Value Feature Highlight */}
+                  {hoveredAddon === index && (
+                    <div className="mb-4 p-3 bg-teal-500/10 rounded-lg border border-teal-500/30 animate-in fade-in duration-200">
+                      <div className="flex items-start gap-2">
+                        <Star className="w-4 h-4 text-teal-400 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <div className="text-xs font-semibold text-teal-400 mb-1">
+                            High Value: {addon.highValueFeature}
+                          </div>
+                          <div className="text-xs text-zinc-300">
+                            {addon.hoverText}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
                   <div className="space-y-2 mb-4">
                     {addon.features.map((feature, idx) => (
                       <div key={idx} className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
-                        <span className="text-xs text-zinc-300">{feature}</span>
+                        <span className={`text-xs ${feature === addon.highValueFeature ? 'text-teal-400 font-semibold' : 'text-zinc-300'}`}>
+                          {feature}
+                        </span>
                       </div>
                     ))}
                   </div>

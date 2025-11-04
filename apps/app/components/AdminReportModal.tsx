@@ -187,16 +187,20 @@ export default function AdminReportModal({ isOpen, onClose, reportType, reportTi
             <div className="mb-6 p-4 bg-zinc-800 rounded-lg">
               <h3 className="text-lg font-semibold text-white mb-4">Breakdown</h3>
               <div className="space-y-2">
-                {reportData.breakdown.map((item, index) => (
+                {reportData.breakdown.map((item: any, index: number) => (
                   <div key={index} className="flex items-center justify-between p-2 bg-zinc-900 rounded">
-                    <span className="text-zinc-300">{item.role || item.period || item.item}</span>
+                    <span className="text-zinc-300">
+                      {(item as any).role || (item as any).period || (item as any).item}
+                    </span>
                     <div className="flex items-center gap-3">
-                      <span className="text-white font-medium">{item.count || item.sessions || item.orders}</span>
-                      {item.percentage && (
-                        <span className="text-zinc-400 text-sm">{item.percentage}%</span>
+                      <span className="text-white font-medium">
+                        {(item as any).count || (item as any).sessions || (item as any).orders}
+                      </span>
+                      {(item as any).percentage && (
+                        <span className="text-zinc-400 text-sm">{(item as any).percentage}%</span>
                       )}
-                      {item.revenue && (
-                        <span className="text-green-400 font-medium">${item.revenue}</span>
+                      {(item as any).revenue && (
+                        <span className="text-green-400 font-medium">${(item as any).revenue}</span>
                       )}
                     </div>
                   </div>
