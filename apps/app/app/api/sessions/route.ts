@@ -108,7 +108,8 @@ function convertPrismaSessionToFireSession(session: any): FireSession {
       startedAt: new Date(session.timerStartedAt).getTime()
     } : undefined,
     bohState: 'PREPARING' as const,
-    guestTimerDisplay: session.state === 'ACTIVE'
+    guestTimerDisplay: session.state === 'ACTIVE',
+    source: session.source // Include source from Prisma session
   };
 }
 

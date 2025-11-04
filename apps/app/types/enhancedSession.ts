@@ -55,6 +55,7 @@ export interface FireSession {
   sessionTimer?: SessionTimer;
   bohState?: 'PREPARING' | 'WARMING_UP' | 'READY_FOR_PICKUP' | 'PICKED_UP';
   guestTimerDisplay?: boolean;
+  source?: 'QR' | 'RESERVE' | 'WALK_IN' | 'POS' | string; // Session source from Prisma
 }
 
 // State transition validation

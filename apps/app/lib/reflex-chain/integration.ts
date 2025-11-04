@@ -17,6 +17,27 @@ import {
 } from './types';
 
 /**
+ * Map session source from Prisma format to Reflex Chain format
+ * Prisma: 'QR' | 'RESERVE' | 'WALK_IN' | 'POS'
+ * Reflex Chain: 'payment' | 'preorder' | 'walk-in'
+ */
+function mapSessionSourceToReflexSource(source?: string): 'payment' | 'preorder' | 'walk-in' {
+  if (!source) return 'walk-in';
+  
+  switch (source.toUpperCase()) {
+    case 'QR':
+      return 'preorder';
+    case 'RESERVE':
+      return 'preorder';
+    case 'POS':
+      return 'payment';
+    case 'WALK_IN':
+    default:
+      return 'walk-in';
+  }
+}
+
+/**
  * Initialize Reflex Chain when session is created/paid
  */
 export async function initializeReflexChain(session: FireSession): Promise<void> {
@@ -42,7 +63,7 @@ export async function initializeReflexChain(session: FireSession): Promise<void>
     sessionStartSignal: {
       sessionId: session.id,
       timestamp: Date.now(),
-      source: session.source === 'QR' ? 'preorder' : 'walk-in',
+      source: mapSessionSourceToReflexSource(session.source),
     },
   };
 
