@@ -251,7 +251,55 @@ export default function QRGeneratorAdmin() {
     setIsLoadingLounges(false);
     // Also try to load from API for additional lounges
     loadLounges();
+    
+    // Auto-generate demo QR code for lounge owners to see value
+    generateDemoQR();
   }, []);
+
+  const generateDemoQR = () => {
+    // Create a demo QR code that showcases value
+    const demoQR: QRCodeData = {
+      id: 'demo_qr_001',
+      loungeId: 'CLOUD_DEMO',
+      tableId: 'T-001',
+      campaignRef: 'WELCOME',
+      url: 'https://guest.hookahplus.net?loungeId=CLOUD_DEMO&tableId=T-001&ref=WELCOME',
+      qrCodeData: `data:image/svg+xml;base64,${btoa(`
+        <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+          <rect width="200" height="200" fill="white"/>
+          <rect x="20" y="20" width="160" height="160" fill="black"/>
+          <rect x="30" y="30" width="140" height="140" fill="white"/>
+          <rect x="40" y="40" width="120" height="120" fill="black"/>
+          <rect x="50" y="50" width="100" height="100" fill="white"/>
+          <rect x="60" y="60" width="80" height="80" fill="black"/>
+          <rect x="70" y="70" width="60" height="60" fill="white"/>
+          <rect x="80" y="80" width="40" height="40" fill="black"/>
+          <text x="100" y="190" text-anchor="middle" font-family="monospace" font-size="10" fill="black">
+            CLOUD_DEMO T-001
+          </text>
+        </svg>
+      `)}`,
+      createdAt: new Date().toISOString(),
+      usageCount: 47, // Demo usage count to show value
+      lastUsed: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+      status: 'active'
+    };
+    
+    // Add to history if not already present
+    setQrHistory(prev => {
+      const exists = prev.find(qr => qr.id === 'demo_qr_001');
+      if (!exists) {
+        return [demoQR, ...prev];
+      }
+      return prev;
+    });
+    
+    // Set as generated QR for preview
+    if (!generatedQR) {
+      setGeneratedQR(demoQR);
+      setShowPreview(true);
+    }
+  };
 
   // Load lounges when loungeId changes
   useEffect(() => {

@@ -261,7 +261,7 @@ export default function StaffOpsPage() {
                             setIsTaskModalOpen(true);
                           }}
                         >
-                          View Details
+                          {task.status === 'completed' ? 'Review Completion' : 'Task Details'}
                         </Button>
                         <Button 
                           variant="primary" 

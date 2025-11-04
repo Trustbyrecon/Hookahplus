@@ -207,10 +207,11 @@ export default function StaffPanelPage() {
                         variant="outline" 
                         size="sm"
                         onClick={() => {
-                          alert(`Viewing details for ${staff.name}`);
+                          // Professional action: Navigate to detailed performance metrics
+                          window.location.href = `/staff-performance?staff=${encodeURIComponent(staff.name)}`;
                         }}
                       >
-                        View Details
+                        Performance Metrics
                       </Button>
                     </div>
                   </div>

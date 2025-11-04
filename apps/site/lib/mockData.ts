@@ -552,6 +552,158 @@ export const mockSiteData = {
       },
       bohState: 'PICKED_UP',
       guestTimerDisplay: true
+    },
+    
+    // Edge Case Sessions (5) - 20% of total sessions
+    {
+      id: 'session_019',
+      tableId: 'T-006',
+      customerName: 'Jessica Martinez',
+      customerPhone: '+1 (555) 123-4567',
+      flavor: 'Blue Mist + Mint',
+      amount: 3500,
+      status: 'STAFF_HOLD',
+      currentStage: 'CUSTOMER',
+      assignedStaff: {
+        boh: 'Mike Rodriguez',
+        foh: 'Sarah Chen'
+      },
+      createdAt: Date.now() - 1800000, // 30 minutes ago
+      updatedAt: Date.now(),
+      sessionStartTime: Date.now() - 1800000,
+      sessionDuration: 60 * 60,
+      coalStatus: 'active',
+      refillStatus: 'none',
+      notes: 'Customer requested pause - checking ID concerns',
+      edgeCase: 'ID_VERIFICATION',
+      sessionTimer: {
+        remaining: 30 * 60,
+        total: 60 * 60,
+        isActive: false,
+        startedAt: Date.now() - 1800000
+      },
+      bohState: 'PICKED_UP',
+      guestTimerDisplay: false
+    },
+    {
+      id: 'session_020',
+      tableId: 'T-010',
+      customerName: 'Daniel Kim',
+      customerPhone: '+1 (555) 234-5678',
+      flavor: 'Strawberry Kiwi',
+      amount: 2800,
+      status: 'STOCK_BLOCKED',
+      currentStage: 'BOH',
+      assignedStaff: {
+        boh: 'James Wilson',
+        foh: 'Emma Davis'
+      },
+      createdAt: Date.now() - 900000, // 15 minutes ago
+      updatedAt: Date.now(),
+      sessionStartTime: null,
+      sessionDuration: 45 * 60,
+      coalStatus: 'unavailable',
+      refillStatus: 'none',
+      notes: 'Strawberry Kiwi out of stock - waiting for restock',
+      edgeCase: 'INVENTORY_SHORTAGE',
+      sessionTimer: {
+        remaining: 45 * 60,
+        total: 45 * 60,
+        isActive: false,
+        startedAt: null
+      },
+      bohState: 'BLOCKED',
+      guestTimerDisplay: false
+    },
+    {
+      id: 'session_021',
+      tableId: 'T-013',
+      customerName: 'Amanda Chen',
+      customerPhone: '+1 (555) 345-6789',
+      flavor: 'Mango Tango',
+      amount: 4200,
+      status: 'REMAKE',
+      currentStage: 'BOH',
+      assignedStaff: {
+        boh: 'Lisa Brown',
+        foh: 'Tom Anderson'
+      },
+      createdAt: Date.now() - 3600000, // 1 hour ago
+      updatedAt: Date.now(),
+      sessionStartTime: Date.now() - 3600000,
+      sessionDuration: 60 * 60,
+      coalStatus: 'active',
+      refillStatus: 'none',
+      notes: 'Customer dissatisfied with flavor mix - remaking entire hookah',
+      edgeCase: 'QUALITY_ISSUE',
+      sessionTimer: {
+        remaining: 60 * 60,
+        total: 60 * 60,
+        isActive: false,
+        startedAt: Date.now() - 3600000
+      },
+      bohState: 'REMAKING',
+      guestTimerDisplay: false
+    },
+    {
+      id: 'session_022',
+      tableId: 'T-017',
+      customerName: 'Robert Williams',
+      customerPhone: '+1 (555) 456-7890',
+      flavor: 'Peach Paradise',
+      amount: 3800,
+      status: 'REFUND_REQUESTED',
+      currentStage: 'CUSTOMER',
+      assignedStaff: {
+        boh: 'Carlos Martinez',
+        foh: 'Rachel Green'
+      },
+      createdAt: Date.now() - 2700000, // 45 minutes ago
+      updatedAt: Date.now(),
+      sessionStartTime: Date.now() - 2700000,
+      sessionDuration: 60 * 60,
+      coalStatus: 'active',
+      refillStatus: 'none',
+      notes: 'Customer requested refund - equipment malfunction reported',
+      edgeCase: 'EQUIPMENT_FAILURE',
+      sessionTimer: {
+        remaining: 15 * 60,
+        total: 60 * 60,
+        isActive: true,
+        startedAt: Date.now() - 2700000
+      },
+      bohState: 'PICKED_UP',
+      guestTimerDisplay: true
+    },
+    {
+      id: 'session_023',
+      tableId: 'T-021',
+      customerName: 'Michelle Taylor',
+      customerPhone: '+1 (555) 567-8901',
+      flavor: 'Grape Mint',
+      amount: 3200,
+      status: 'FAILED_PAYMENT',
+      currentStage: 'CUSTOMER',
+      assignedStaff: {
+        boh: 'Anna Johnson',
+        foh: 'Mark Thompson'
+      },
+      createdAt: Date.now() - 600000, // 10 minutes ago
+      updatedAt: Date.now(),
+      sessionStartTime: null,
+      sessionDuration: 45 * 60,
+      coalStatus: 'not_started',
+      refillStatus: 'none',
+      notes: 'Payment declined - card expired, customer updating payment method',
+      edgeCase: 'PAYMENT_ISSUE',
+      sessionTimer: {
+        remaining: 45 * 60,
+        total: 45 * 60,
+        isActive: false,
+        startedAt: null
+      },
+      bohState: 'NOT_STARTED',
+      guestTimerDisplay: false
     }
   ],
   

@@ -151,21 +151,6 @@ export default function Home() {
             Hospitality-grade ritual intelligence platform — transforming sessions into captured memories with analytics and emotion stitched together
           </p>
           
-          {/* Key Metrics - Simplified */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-8">
-            {metrics.filter(metric => metric.title !== 'System Health').map((metric, index) => (
-              <div key={index} className="text-center">
-                <div className={`inline-flex items-center justify-center w-12 h-12 rounded-lg ${metric.bgColor} mb-3`}>
-                  <div className={metric.color}>
-                    {metric.icon}
-                  </div>
-                </div>
-                <div className="text-2xl font-bold text-teal-400 mb-1">{metric.value}</div>
-                <div className="text-sm text-zinc-400">{metric.title}</div>
-                <div className="text-xs text-zinc-500 mt-1">{metric.change}</div>
-              </div>
-            ))}
-          </div>
         </div>
 
         {/* Quick Access - MOAT Modules */}
@@ -181,7 +166,7 @@ export default function Home() {
             {[
               { title: 'Dashboard', icon: <BarChart3 className="w-5 h-5" />, href: '/sessions', color: 'teal' },
               { title: 'QR Pathway', icon: <QrCode className="w-5 h-5" />, href: '/pre-order', color: 'blue' },
-              { title: 'Fire Session', icon: <Flame className="w-5 h-5" />, href: '/sessions', color: 'orange' },
+              { title: 'Fire Session', icon: <Flame className="w-5 h-5" />, href: '/fire-session-dashboard', color: 'orange' },
               { title: 'Hookah Tracker', icon: <Clock className="w-5 h-5" />, href: '/lounge-experience-demo', color: 'purple' },
               { title: 'Staff Ops', icon: <Users className="w-5 h-5" />, href: '/staff-ops', color: 'indigo' },
               { title: 'Guest Intelligence', icon: <Brain className="w-5 h-5" />, href: '/sessions', color: 'green' },

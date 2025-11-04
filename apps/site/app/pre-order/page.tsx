@@ -253,7 +253,7 @@ export default function CampaignPreOrdersPage() {
                           className="flex-1"
                           onClick={() => setSelectedCampaign(campaign.id)}
                         >
-                          View Details
+                          Campaign Analytics
                         </Button>
                         <Button 
                           variant="primary" 
@@ -357,11 +357,11 @@ export default function CampaignPreOrdersPage() {
                         size="sm" 
                         className="flex-1"
                         onClick={() => {
-                          console.log(`Viewing order ${order.id}`);
-                          alert(`Viewing order details for ${order.customerName}`);
+                          // Professional action: Navigate to order management
+                          window.location.href = `/order-management?order=${order.id}`;
                         }}
                       >
-                        View Details
+                        Order Management
                       </Button>
                       <Button 
                         variant="primary" 

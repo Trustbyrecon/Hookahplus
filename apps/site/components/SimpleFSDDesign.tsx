@@ -28,6 +28,7 @@ import {
   Ban,
   Brain
 } from 'lucide-react';
+import CreateSessionModal from './CreateSessionModal';
 import { 
   SessionStatus, 
   SessionAction, 
@@ -121,10 +122,8 @@ export default function SimpleFSDDesign({
 }: SimpleFSDDesignProps) {
   const [activeTab, setActiveTab] = useState('overview');
   const [hoveredAction, setHoveredAction] = useState<string | null>(null);
-
-  const handleCreateSession = () => {
-    window.dispatchEvent(new CustomEvent('openCreateSessionModal'));
-  };
+  const [currentRole, setCurrentRole] = useState<string>(userRole || 'MANAGER');
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const handleSessionAction = async (action: string, sessionId: string) => {
     console.log(`Action: ${action} on session: ${sessionId}`);
@@ -222,6 +221,62 @@ export default function SimpleFSDDesign({
     return status.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
   };
 
+  // Generate demo sessions if none provided
+  const displaySessions = sessions.length > 0 ? sessions : require('../../lib/mockData').mockSiteData.sessions;
+
+  // Filter sessions by role permissions
+  const getFilteredSessions = () => {
+    const allSessions = displaySessions;
+    
+    // Role-based filtering
+    if (currentRole === 'BOH') {
+      return allSessions.filter((s: any) => 
+        ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY', 'STOCK_BLOCKED', 'REMAKE'].includes(s.status)
+      );
+    } else if (currentRole === 'FOH') {
+      return allSessions.filter((s: any) => 
+        ['OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE', 'STAFF_HOLD', 'REFUND_REQUESTED'].includes(s.status)
+      );
+    } else if (currentRole === 'MANAGER' || currentRole === 'OWNER') {
+      return allSessions; // See all sessions
+    }
+    return allSessions;
+  };
+
+  const filteredSessions = getFilteredSessions();
+
+  const handleCreateSessionSave = async (sessionData: any) => {
+    try {
+      // Create session via API
+      const response = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tableId: sessionData.table,
+          customerName: sessionData.customerName,
+          customerPhone: sessionData.customerPhone,
+          flavor: sessionData.addons.length > 0 ? sessionData.addons.join(' + ') : 'Standard Mix',
+          amount: (sessionData.basePrice + sessionData.addons.reduce((sum: number, id: string) => {
+            const addon = [{ id: 'mint', price: 2.50 }, { id: 'mango', price: 2.00 }, { id: 'strawberry', price: 2.00 }, { id: 'peach', price: 2.50 }].find(a => a.id === id);
+            return sum + (addon?.price || 0);
+          }, 0)) * 100, // Convert to cents
+          sessionType: sessionData.sessionType
+        })
+      });
+
+      if (response.ok) {
+        window.location.reload(); // Refresh to show new session
+      } else {
+        const error = await response.json();
+        alert(`Failed to create session: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error creating session:', error);
+      alert('Failed to create session. Please try again.');
+    }
+    setShowCreateModal(false);
+  };
+
   return (
     <div className={className}>
       {/* Header */}
@@ -236,14 +291,37 @@ export default function SimpleFSDDesign({
           </div>
         </div>
         
-        <button
-          onClick={handleCreateSession}
-          className="flex items-center space-x-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          <span>New Session</span>
-        </button>
+        <div className="flex items-center space-x-3">
+          {/* Role Selector */}
+          <select
+            value={currentRole}
+            onChange={(e) => setCurrentRole(e.target.value)}
+            className="px-3 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+          >
+            <option value="OWNER">Owner</option>
+            <option value="MANAGER">Manager</option>
+            <option value="FOH">FOH</option>
+            <option value="BOH">BOH</option>
+          </select>
+          
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center space-x-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            <span>New Session</span>
+          </button>
+        </div>
       </div>
+
+      {/* Create Session Modal */}
+      {showCreateModal && (
+        <CreateSessionModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onSave={handleCreateSessionSave}
+        />
+      )}
 
       {/* Tabs */}
       <div className="flex space-x-1 mb-6">
@@ -272,7 +350,7 @@ export default function SimpleFSDDesign({
       {/* Tab Content */}
       {activeTab === 'overview' && (
         <div className="space-y-4">
-        {sessions.length === 0 ? (
+        {filteredSessions.length === 0 ? (
           <div className="text-center py-12">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
               <Flame className="w-8 h-8 text-zinc-600" />
@@ -280,14 +358,14 @@ export default function SimpleFSDDesign({
             <h3 className="text-lg font-medium text-zinc-300 mb-2">No Active Sessions</h3>
             <p className="text-zinc-500 mb-4">Create your first session to get started</p>
             <button
-              onClick={handleCreateSession}
+              onClick={() => setShowCreateModal(true)}
               className="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
             >
               Create Session
             </button>
           </div>
         ) : (
-          sessions.map((session) => {
+          filteredSessions.map((session: any) => {
             const sessionStatus = getSessionStatus(session);
             const sessionStage = getSessionStage(session);
             const availableActions = getAvailableActions(session);
@@ -473,7 +551,7 @@ export default function SimpleFSDDesign({
               <span>Back of House Operations</span>
             </h3>
             <div className="space-y-3">
-              {sessions.filter(s => ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(s.status || s.state)).map((session) => (
+              {filteredSessions.filter((s: any) => ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(s.status || s.state)).map((session: any) => (
                 <div key={session.id} className="bg-zinc-900/50 border border-zinc-600 rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -487,7 +565,7 @@ export default function SimpleFSDDesign({
                   </div>
                 </div>
               ))}
-              {sessions.filter(s => ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(s.status || s.state)).length === 0 && (
+              {filteredSessions.filter((s: any) => ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(s.status || s.state)).length === 0 && (
                 <p className="text-zinc-400 text-center py-8">No BOH sessions in progress</p>
               )}
             </div>
@@ -504,7 +582,7 @@ export default function SimpleFSDDesign({
               <span>Front of House Operations</span>
             </h3>
             <div className="space-y-3">
-              {sessions.filter(s => ['OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(s.status || s.state)).map((session) => (
+              {filteredSessions.filter((s: any) => ['OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(s.status || s.state)).map((session: any) => (
                 <div key={session.id} className="bg-zinc-900/50 border border-zinc-600 rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -518,7 +596,7 @@ export default function SimpleFSDDesign({
                   </div>
                 </div>
               ))}
-              {sessions.filter(s => ['OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(s.status || s.state)).length === 0 && (
+              {filteredSessions.filter((s: any) => ['OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(s.status || s.state)).length === 0 && (
                 <p className="text-zinc-400 text-center py-8">No FOH sessions in progress</p>
               )}
             </div>
@@ -653,7 +731,7 @@ export default function SimpleFSDDesign({
               <span>Edge Cases & Escalations</span>
             </h3>
             <div className="space-y-3">
-              {sessions.filter(s => ['STAFF_HOLD', 'STOCK_BLOCKED', 'REMAKE', 'REFUND_REQUESTED', 'FAILED_PAYMENT'].includes(s.status || s.state)).map((session) => (
+              {filteredSessions.filter((s: any) => ['STAFF_HOLD', 'STOCK_BLOCKED', 'REMAKE', 'REFUND_REQUESTED', 'FAILED_PAYMENT'].includes(s.status || s.state)).map((session: any) => (
                 <div key={session.id} className="bg-red-900/20 border border-red-600/30 rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -678,7 +756,7 @@ export default function SimpleFSDDesign({
                   </div>
                 </div>
               ))}
-              {sessions.filter(s => ['STAFF_HOLD', 'STOCK_BLOCKED', 'REMAKE', 'REFUND_REQUESTED', 'FAILED_PAYMENT'].includes(s.status || s.state)).length === 0 && (
+              {filteredSessions.filter((s: any) => ['STAFF_HOLD', 'STOCK_BLOCKED', 'REMAKE', 'REFUND_REQUESTED', 'FAILED_PAYMENT'].includes(s.status || s.state)).length === 0 && (
                 <p className="text-zinc-400 text-center py-8">No edge cases requiring attention</p>
               )}
             </div>
@@ -687,7 +765,7 @@ export default function SimpleFSDDesign({
       )}
 
       {/* Enhanced Stats with Workflow States */}
-      {sessions.length > 0 && (
+      {filteredSessions.length > 0 && (
         <div className="mt-8 space-y-4">
           {/* Main Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -696,7 +774,7 @@ export default function SimpleFSDDesign({
                 <Users className="w-5 h-5 text-blue-400" />
                 <span className="text-sm text-zinc-400">Total Sessions</span>
               </div>
-              <p className="text-2xl font-bold text-white mt-1">{sessions.length}</p>
+              <p className="text-2xl font-bold text-white mt-1">{filteredSessions.length}</p>
             </div>
             
             <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4">
@@ -705,7 +783,7 @@ export default function SimpleFSDDesign({
                 <span className="text-sm text-zinc-400">Active</span>
               </div>
               <p className="text-2xl font-bold text-white mt-1">
-                {sessions.filter(s => (s.status || s.state) === 'ACTIVE').length}
+                {filteredSessions.filter((s: any) => (s.status || s.state) === 'ACTIVE').length}
               </p>
             </div>
             
@@ -715,7 +793,7 @@ export default function SimpleFSDDesign({
                 <span className="text-sm text-zinc-400">BOH Prep</span>
               </div>
               <p className="text-2xl font-bold text-white mt-1">
-                {sessions.filter(s => ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(s.status || s.state)).length}
+                {filteredSessions.filter((s: any) => ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(s.status || s.state)).length}
               </p>
             </div>
             
@@ -725,7 +803,7 @@ export default function SimpleFSDDesign({
                 <span className="text-sm text-zinc-400">FOH Delivery</span>
               </div>
               <p className="text-2xl font-bold text-white mt-1">
-                {sessions.filter(s => ['OUT_FOR_DELIVERY', 'DELIVERED'].includes(s.status || s.state)).length}
+                {filteredSessions.filter((s: any) => ['OUT_FOR_DELIVERY', 'DELIVERED'].includes(s.status || s.state)).length}
               </p>
             </div>
           </div>
@@ -738,7 +816,7 @@ export default function SimpleFSDDesign({
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {Object.entries(STATUS_COLORS).map(([status, colorClass]) => {
-                const count = sessions.filter(s => (s.status || s.state) === status).length;
+                const count = filteredSessions.filter((s: any) => (s.status || s.state) === status).length;
                 const displayName = getSessionDisplayName(status as SessionStatus);
                 const icon = STATE_ICONS[status as SessionStatus];
                 return (

@@ -205,78 +205,6 @@ const GlobalNavigation: React.FC = () => {
       ]
     },
     {
-      label: 'Staff Operations',
-      color: 'text-purple-300',
-      bgColor: 'bg-purple-500/10',
-      flowState: 'active',
-      description: 'Staff management and operations',
-      aiInsight: 'AI agents optimizing staff coordination',
-      items: [
-        {
-          label: 'Staff Ops',
-          href: '/staff-ops',
-          icon: <Users className="w-4 h-4" />,
-          description: 'Staff operations center',
-          flowState: 'active',
-          nextAction: 'Coordinate staff activities',
-          aiRecommendation: 'Check staff assignments',
-          priority: 'high',
-          agentOptimized: true,
-          flowScore: 88,
-          usageFrequency: 78
-        },
-        {
-          label: 'Staff Panel',
-          href: '/staff-panel',
-          icon: <UserCheck className="w-4 h-4" />,
-          description: 'Staff management panel',
-          flowState: 'active',
-          nextAction: 'Manage staff assignments',
-          aiRecommendation: 'Review staff performance',
-          priority: 'medium',
-          agentOptimized: true,
-          flowScore: 82,
-          usageFrequency: 65
-        }
-      ]
-    },
-    {
-      label: 'Administration',
-      color: 'text-red-300',
-      bgColor: 'bg-red-500/10',
-      flowState: 'idle',
-      description: 'System administration and control',
-      aiInsight: 'Admin functions ready for reflexive optimization',
-      items: [
-        {
-          label: 'Admin',
-          href: '/admin',
-          icon: <Crown className="w-4 h-4" />,
-          description: 'Administrative control center',
-          flowState: 'idle',
-          nextAction: 'Access admin functions',
-          aiRecommendation: 'Review system settings',
-          priority: 'low',
-          agentOptimized: false,
-          flowScore: 45,
-          usageFrequency: 25
-        },
-        {
-          label: 'QR Generator',
-          href: '/admin/qr-generator',
-          icon: <QrCode className="w-4 h-4" />,
-          description: 'Generate QR codes for tables',
-          flowState: 'idle',
-          nextAction: 'Create QR codes for lounge',
-          aiRecommendation: 'Generate table QR codes',
-          priority: 'medium',
-          agentOptimized: true,
-          flowScore: 75,
-          usageFrequency: 40
-        }
-      ]
-    },
-    {
       label: 'Integration',
       color: 'text-purple-300',
       bgColor: 'bg-purple-500/10',
@@ -492,14 +420,6 @@ const GlobalNavigation: React.FC = () => {
               </div> */}
             </div>
 
-            {/* Trust Lock Status */}
-            <div className="hidden lg:flex items-center space-x-2">
-              <div className="flex items-center space-x-1">
-                <Shield className="w-4 h-4 text-orange-400" />
-                <span className="text-sm text-orange-400">Trust-Lock: TLH-v1::active</span>
-              </div>
-            </div>
-
             {/* AI Recommendations */}
             {flowState.recommendations.length > 0 && (
               <div className="hidden lg:flex items-center space-x-2">
@@ -533,21 +453,6 @@ const GlobalNavigation: React.FC = () => {
               </div>
             )}
 
-            {/* Support and Docs - Clean links */}
-            <div className="flex items-center space-x-2">
-              <a
-                href="/support"
-                className="text-sm text-zinc-400 hover:text-white transition-colors"
-              >
-                Support
-              </a>
-              <a
-                href="/docs"
-                className="text-sm text-zinc-400 hover:text-white transition-colors"
-              >
-                Docs
-              </a>
-            </div>
 
           </div>
         </div>
