@@ -135,56 +135,65 @@ export default function SimpleFSDDesign({
     console.log(`Action: ${action} on session: ${sessionId}`);
     
     try {
-      // Map action to root Prisma API command format
-      const commandMap: Record<string, string> = {
-        'claim_prep': 'PAYMENT_CONFIRMED',
-        'heat_up': 'PREP_STARTED',
+      // Map action to SessionAction format for PATCH endpoint
+      const actionMap: Record<string, string> = {
+        'claim_prep': 'CLAIM_PREP',
+        'heat_up': 'HEAT_UP',
         'ready_for_delivery': 'READY_FOR_DELIVERY',
-        'deliver_now': 'OUT_FOR_DELIVERY',
-        'mark_delivered': 'DELIVERED',
-        'start_active': 'ACTIVE',
-        'pause_session': 'PAUSE',
-        'resume_session': 'RESUME',
-        'request_refill': 'REFILL_REQUESTED',
-        'complete_refill': 'REFILL_COMPLETED',
-        'close_session': 'CLOSE',
-        'put_on_hold': 'HOLD',
+        'deliver_now': 'DELIVER_NOW',
+        'mark_delivered': 'MARK_DELIVERED',
+        'start_active': 'START_ACTIVE',
+        'pause_session': 'PAUSE_SESSION',
+        'resume_session': 'RESUME_SESSION',
+        'request_refill': 'REQUEST_REFILL',
+        'complete_refill': 'COMPLETE_REFILL',
+        'close_session': 'CLOSE_SESSION',
+        'put_on_hold': 'PUT_ON_HOLD',
         'resolve_hold': 'RESOLVE_HOLD',
-        'request_remake': 'REMAKE',
-        'process_refund': 'REFUND',
-        'void_session': 'VOID'
+        'request_remake': 'REQUEST_REMAKE',
+        'process_refund': 'PROCESS_REFUND',
+        'void_session': 'VOID_SESSION'
       };
 
-      const command = commandMap[action.toLowerCase()] || action.toUpperCase();
+      const mappedAction = actionMap[action.toLowerCase()] || action.toUpperCase();
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/sessions/${sessionId}/command`, {
-        method: 'POST',
+      // Use PATCH endpoint at /api/sessions
+      const response = await fetch(`/api/sessions`, {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          cmd: command,
-          actor: userRole?.toLowerCase() || 'manager',
-          data: {
-            notes: `Action ${action} executed by ${userRole || 'MANAGER'}`,
-            timestamp: Date.now()
-          }
+          sessionId,
+          action: mappedAction,
+          userRole: userRole || 'MANAGER',
+          operatorId: `user-${userRole?.toLowerCase() || 'manager'}`,
+          notes: `Action ${mappedAction} executed by ${userRole || 'MANAGER'}`
         }),
       });
 
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
       const result = await response.json();
 
-      if (result.ok) {
+      if (result.success) {
         console.log('Session action successful:', result);
-        // Refresh the page to show updated session state
-        window.location.reload();
+        // Trigger a custom event to refresh sessions
+        window.dispatchEvent(new CustomEvent('sessionUpdated', { detail: { sessionId, action: mappedAction } }));
+        // Also refresh the page after a short delay to show updated state
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
       } else {
-        console.error('Session action failed:', result);
-        alert(`Action failed: ${result.error || 'Unknown error'}`);
+        throw new Error(result.error || 'Action failed');
       }
     } catch (error) {
       console.error('Error executing session action:', error);
-      alert('Failed to execute action. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to execute action. Please try again.';
+      alert(`Error: ${errorMessage}`);
     }
 
     if (onSessionAction) {
