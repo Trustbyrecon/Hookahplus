@@ -149,15 +149,15 @@ const SupportPage = () => {
     {
       icon: <MessageCircle className="w-6 h-6" />,
       title: 'Live Chat',
-      description: 'Get instant help from our AI agents',
-      status: 'Online',
-      responseTime: '< 1 min',
-      color: 'text-green-400'
+      description: 'Coming Soon!',
+      status: 'Coming Soon',
+      responseTime: 'Soon',
+      color: 'text-yellow-400'
     },
     {
       icon: <Mail className="w-6 h-6" />,
       title: 'Email Support',
-      description: 'Detailed assistance via email',
+      description: 'hookahplusconnector@gmail.com',
       status: 'Available',
       responseTime: '< 2 hours',
       color: 'text-blue-400'
@@ -199,9 +199,9 @@ const SupportPage = () => {
     },
     {
       icon: <Zap className="w-5 h-5" />,
-      title: 'Join the list for a lounge demo',
-      description: 'Experience Hookah+ in your lounge',
-      href: '/hittrust'
+      title: 'Request a Demo',
+      description: 'Schedule a personalized demo for your lounge',
+      href: '/contact'
     }
   ];
 

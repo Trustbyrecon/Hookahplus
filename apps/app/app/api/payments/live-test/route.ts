@@ -88,17 +88,33 @@ export async function POST(req: NextRequest) {
       }, { status: 500 });
     }
 
+    // Check if we're in test mode or live mode
+    const isTestMode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_') ?? false;
+    
+    if (!isTestMode) {
+      console.error('[RWO:$1-smoke] ❌ Cannot use test payment methods in live mode');
+      return NextResponse.json({
+        ok: false,
+        error: 'This test endpoint only works in test mode. Use test API keys (sk_test_...) for testing. In live mode, use real payment methods via checkout sessions.',
+        debug: {
+          stripeKeyPrefix: process.env.STRIPE_SECRET_KEY?.substring(0, 10) + '...',
+          mode: 'live'
+        }
+      }, { status: 403 });
+    }
+
     const { cartTotal = 0, itemsCount = 0 } = await req.json();
 
-    console.log('[RWO:$1-smoke] 💳 Creating PaymentIntent with retry logic...');
+    console.log('[RWO:$1-smoke] 💳 Creating PaymentIntent with retry logic (TEST MODE ONLY)...');
     console.log('[RWO:$1-smoke] 🔗 Using return_url: https://hookahplus-app-prod.vercel.app/payment/return');
     
     // Create PaymentIntent with retry logic and enhanced metadata
+    // Only use test payment methods when in test mode
     const paymentIntent = await createPaymentWithRetry({
       amount: 100,
       currency: 'usd',
       confirm: true,
-      payment_method: 'pm_card_visa',
+      payment_method: 'pm_card_visa', // Only valid in test mode
       automatic_payment_methods: {
         enabled: true,
         allow_redirects: 'never'
@@ -110,7 +126,8 @@ export async function POST(req: NextRequest) {
         region: process.env.VERCEL_REGION || 'unknown',
         timestamp: new Date().toISOString(),
         rwo: 'RWO-STRIPE-001',
-        test_type: 'smoke_test'
+        test_type: 'smoke_test',
+        mode: 'test'
       }
     });
 

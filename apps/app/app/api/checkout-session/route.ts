@@ -156,7 +156,13 @@ export async function POST(request: NextRequest) {
 
     console.log('[Checkout API] URLs:', { baseUrl, successUrl, cancelUrl });
 
-    // Create Stripe checkout session
+    // Generate idempotency key for retry safety
+    const idempotencyKey = `checkout_${tableId || 'default'}_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    
+    // Determine if we're in test or live mode
+    const isTestMode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_') ?? false;
+    
+    // Create Stripe checkout session with production optimizations
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],
@@ -175,6 +181,7 @@ export async function POST(request: NextRequest) {
       ],
       success_url: successUrl,
       cancel_url: cancelUrl,
+      // Enhanced metadata for production tracking
       metadata: {
         flavors: JSON.stringify(flavors),
         addOns: JSON.stringify(addOns || []),
@@ -183,19 +190,56 @@ export async function POST(request: NextRequest) {
         flavorMix: flavors.join(' + '),
         pricingModel: pricingModel || 'flat',
         sessionDuration: sessionDuration ? String(sessionDuration) : '',
-        dollarTestMode: dollarTestMode ? 'true' : 'false', // Flag for webhook verification
-        originalAmount: dollarTestMode ? String(total || amount) : '', // Store original amount for reference
+        dollarTestMode: dollarTestMode ? 'true' : 'false',
+        originalAmount: dollarTestMode ? String(total || amount) : '',
+        source: 'checkout-session-api',
+        environment: isTestMode ? 'test' : 'live',
+        timestamp: new Date().toISOString(),
       },
-      customer_email: undefined, // Let Stripe collect email
+      // Customer email collection - let Stripe handle it securely
+      customer_email: undefined,
+      // Collect billing address for fraud prevention and receipts
       billing_address_collection: 'auto',
+      // Enable automatic tax calculation if configured
+      automatic_tax: {
+        enabled: false, // Set to true if you have Stripe Tax configured
+      },
+      // Collect customer phone number for SMS notifications
+      phone_number_collection: {
+        enabled: true,
+      },
+      // Allow promotion codes
+      allow_promotion_codes: true,
+      // Configure receipt email
+      payment_intent_data: {
+        description: `Hookah Session - ${flavors.join(' + ')}`,
+        metadata: {
+          tableId: tableId || '',
+          loungeId: loungeId || 'default-lounge',
+          flavorMix: flavors.join(' + '),
+        },
+      },
+      // Expire checkout sessions after 30 minutes
+      expires_at: Math.floor(Date.now() / 1000) + (30 * 60),
+    }, {
+      // Idempotency key for retry safety
+      idempotencyKey: idempotencyKey,
     });
 
-    console.log('[Checkout API] Session created successfully:', session.id);
+    console.log('[Checkout API] Session created successfully:', {
+      sessionId: session.id,
+      url: session.url,
+      amount: amountInCents,
+      mode: isTestMode ? 'test' : 'live',
+      expiresAt: new Date(session.expires_at * 1000).toISOString(),
+    });
 
     return NextResponse.json({
       success: true,
       sessionId: session.id,
       url: session.url,
+      expiresAt: session.expires_at,
+      mode: isTestMode ? 'test' : 'live',
     });
   } catch (error: any) {
     console.error('[Checkout API] Error:', error);

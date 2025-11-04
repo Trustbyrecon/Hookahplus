@@ -13,6 +13,12 @@ import {
   nextStateWithTrust,
   calculateRemainingTime 
 } from '../../../lib/sessionStateMachine';
+import {
+  initializeReflexChain,
+  processBOHLayer,
+  processFOHLayer,
+  processDeliveryLayer,
+} from '../../../lib/reflex-chain/integration';
 
 const prisma = new PrismaClient();
 
@@ -385,6 +391,32 @@ export async function PATCH(req: NextRequest) {
       });
 
       const fireSession = convertPrismaSessionToFireSession(updatedDbSession);
+
+      // Process Reflex Chain layers based on action
+      try {
+        // Initialize Reflex Chain if session is new
+        if (currentSession.status === 'NEW' && updatedSession.status !== 'NEW') {
+          await initializeReflexChain(fireSession);
+        }
+
+        // Process BoH layer for prep-related actions
+        if (['CLAIM_PREP', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(action)) {
+          await processBOHLayer(fireSession, action as SessionAction);
+        }
+
+        // Process FoH layer when session becomes active
+        if (action === 'START_ACTIVE') {
+          await processFOHLayer(fireSession, action as SessionAction, operatorId);
+        }
+
+        // Process Delivery layer when session is delivered
+        if (action === 'MARK_DELIVERED') {
+          await processDeliveryLayer(fireSession, action as SessionAction, operatorId);
+        }
+      } catch (reflexError) {
+        // Log but don't fail the request if Reflex Chain processing fails
+        console.error('[Reflex Chain] Error processing layer:', reflexError);
+      }
 
       return NextResponse.json({ 
         success: true, 

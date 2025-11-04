@@ -130,6 +130,24 @@ export async function POST(req: Request) {
             qrCodeUrl: actualQrScanUrl,
           },
         });
+
+        // Initialize Reflex Chain for new session
+        try {
+          const { initializeReflexChain } = await import('../../../../lib/reflex-chain/integration');
+          const fireSession = {
+            id: newSession.id,
+            status: 'NEW' as const,
+            flavorMix: flavorMix || undefined,
+            tableId: tableId || undefined,
+            source: 'QR' as const,
+            notes: undefined,
+          };
+          await initializeReflexChain(fireSession as any);
+          console.log('[Webhook] Reflex Chain initialized for session:', newSession.id);
+        } catch (reflexError) {
+          console.error('[Webhook] Failed to initialize Reflex Chain:', reflexError);
+          // Don't fail the webhook if Reflex Chain initialization fails
+        }
       }
     }
 
