@@ -83,8 +83,8 @@ const SupportPage = () => {
     },
     {
       id: '2',
-      question: 'Can I integrate Hookah+ with my existing POS system?',
-      answer: 'Yes! We offer seamless POS integration through our partnership program. Join our POS waitlist to get early access to integrations with major POS providers. Our system is designed to work alongside your existing setup.',
+      question: 'Can I integrate Hookah+ with my existing payment system?',
+      answer: 'Yes! Hookah+ connects seamlessly with your existing payment system. Our hospitality-grade ritual intelligence platform abstracts payment complexity while focusing on experience flow and trust capture. Join our waitlist to get early access to integration features.',
       category: 'integration'
     },
     {

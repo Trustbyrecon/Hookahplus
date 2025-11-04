@@ -125,7 +125,7 @@ export default function POSWaitlistPage() {
         <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-white">POS Integration Waitlist</h1>
+              <h1 className="text-3xl font-bold text-white">Payment System Integration Waitlist</h1>
               <p className="text-zinc-400 mt-2">Join the future of hookah lounge operations</p>
             </div>
             <div className="flex items-center gap-2 text-sm text-zinc-400">
@@ -145,16 +145,14 @@ export default function POSWaitlistPage() {
           </div>
           
           <h2 className="text-4xl md:text-6xl font-bold mb-6">
-            Seamless POS Integration
+            Smart Payment Architecture
             <span className="block text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-cyan-400">
               for Hookah Lounges
             </span>
           </h2>
           
           <p className="text-xl text-zinc-400 mb-8 max-w-3xl mx-auto">
-            Connect your existing POS system with Hookah+ for unified operations, 
-            real-time analytics, and streamlined workflows. Be among the first to experience 
-            the future of hookah lounge management.
+            Connect your existing payment system with Hookah+ for unified operations. Our hospitality-grade ritual intelligence platform abstracts payment complexity while focusing on experience flow and trust capture.
           </p>
 
           {/* Benefits Grid */}
@@ -162,7 +160,7 @@ export default function POSWaitlistPage() {
             <div className="bg-zinc-800/50 border border-zinc-700 rounded-xl p-6">
               <CreditCard className="w-8 h-8 text-teal-400 mb-4" />
               <h3 className="text-lg font-semibold mb-2">Unified Payments</h3>
-              <p className="text-zinc-400">Seamlessly integrate with Square, Clover, Toast, and Stripe</p>
+              <p className="text-zinc-400">Connects seamlessly with your existing payment system</p>
             </div>
             <div className="bg-zinc-800/50 border border-zinc-700 rounded-xl p-6">
               <TrendingUp className="w-8 h-8 text-green-400 mb-4" />
@@ -190,7 +188,7 @@ export default function POSWaitlistPage() {
                   <span className="text-green-400 font-medium">Successfully added to waitlist!</span>
                 </div>
                 <p className="text-green-300 text-sm mt-2">
-                  Our sales team will contact you within 24 hours to discuss your POS integration needs.
+                  Our sales team will contact you within 24 hours to discuss your payment system integration needs.
                 </p>
               </div>
             )}
@@ -282,19 +280,16 @@ export default function POSWaitlistPage() {
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-zinc-300 mb-2">
-                    Current POS System
+                    Current Payment System
                   </label>
                   <select
                     value={formData.currentPOS}
                     onChange={(e) => handleInputChange('currentPOS', e.target.value)}
                     className="w-full px-4 py-3 bg-zinc-900 border border-zinc-600 rounded-lg text-white focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
                   >
-                    <option value="">Select your current POS</option>
-                    <option value="square">Square</option>
-                    <option value="clover">Clover</option>
-                    <option value="toast">Toast</option>
-                    <option value="stripe">Stripe</option>
-                    <option value="other">Other</option>
+                    <option value="">Select your current payment system</option>
+                    <option value="existing">Existing Payment System</option>
+                    <option value="other">Other System</option>
                   </select>
                 </div>
                 <div>
@@ -375,7 +370,7 @@ export default function POSWaitlistPage() {
                   </>
                 ) : (
                   <>
-                    Join POS Integration Waitlist
+                    Join Payment Integration Waitlist
                     <ArrowRight className="w-5 h-5" />
                   </>
                 )}
@@ -393,7 +388,7 @@ export default function POSWaitlistPage() {
                   <CheckCircle className="w-5 h-5 text-green-400 mt-1 flex-shrink-0" />
                   <div>
                     <h4 className="font-semibold">Priority Access</h4>
-                    <p className="text-zinc-400 text-sm">Be first in line when POS integration launches</p>
+                    <p className="text-zinc-400 text-sm">Be first in line when payment integration launches</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -452,7 +447,7 @@ export default function POSWaitlistPage() {
             <div className="bg-gradient-to-r from-teal-500/10 to-cyan-500/10 border border-teal-500/20 rounded-xl p-8">
               <h3 className="text-2xl font-bold mb-4">Questions?</h3>
               <p className="text-zinc-300 mb-4">
-                Our team is here to help you understand how POS integration can transform your hookah lounge operations.
+                Our team is here to help you understand how our smart payment architecture can transform your hookah lounge operations while maintaining focus on experience flow and trust capture.
               </p>
               <div className="flex items-center gap-2 text-teal-400">
                 <Mail className="w-4 h-4" />

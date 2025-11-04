@@ -281,7 +281,7 @@ const GlobalNavigation: React.FC = () => {
       color: 'text-purple-300',
       bgColor: 'bg-purple-500/10',
       flowState: 'active',
-      description: 'POS integration and partnerships',
+      description: 'Smart payment architecture and partnerships',
       aiInsight: 'AI agents monitoring integration opportunities',
       items: [
         {

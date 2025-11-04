@@ -48,11 +48,52 @@ export default function ContactPage() {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setIsSubmitting(false);
-    setIsSubmitted(true);
+    try {
+      const response = await fetch('/api/demo-requests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'request_demo',
+          data: {
+            name: formData.name,
+            email: formData.email,
+            company: formData.company,
+            phone: formData.phone,
+            loungeName: formData.loungeName,
+            location: formData.location,
+            currentPOS: formData.currentPOS,
+            integrationType: formData.integrationType,
+            timeline: formData.timeline,
+            message: formData.message,
+            pricingModel: formData.pricingModel
+          }
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to submit demo request' }));
+        throw new Error(errorData.error || 'Failed to submit demo request');
+      }
+
+      const result = await response.json();
+      setIsSubmitting(false);
+      setIsSubmitted(true);
+      
+      // Track conversion
+      if (typeof window !== 'undefined' && window.gtag) {
+        window.gtag('event', 'demo_request_submitted', {
+          event_category: 'conversion',
+          event_label: 'contact_form'
+        });
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      setIsSubmitting(false);
+      // Show error message to user
+      alert(`Failed to submit request: ${error instanceof Error ? error.message : 'Please try again.'}`);
+    }
   };
 
   const pricingModels = [
@@ -90,10 +131,10 @@ export default function ContactPage() {
           <div className="flex items-start space-x-3">
             <AlertCircle className="w-6 h-6 text-yellow-400 flex-shrink-0 mt-1" />
             <div>
-              <h3 className="text-lg font-semibold text-yellow-400 mb-2">Integration Limitations</h3>
+              <h3 className="text-lg font-semibold text-yellow-400 mb-2">Smart Payment Architecture</h3>
               <p className="text-zinc-300 mb-3">
-                Currently, our POS integration is limited to <strong>time-based pricing</strong> and <strong>flat-rate pricing</strong> models only. 
-                Complex pricing structures and custom billing integrations are not available at this time.
+                Hookah+ connects seamlessly with your existing payment system, supporting <strong>time-based pricing</strong> and <strong>flat-rate pricing</strong> models. 
+                Our hospitality-grade ritual intelligence platform abstracts payment complexity while focusing on experience flow and trust capture.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {pricingModels.map((model) => (
@@ -272,7 +313,7 @@ export default function ContactPage() {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-zinc-300 mb-2">
-                        Current POS System
+                        Current Payment System
                       </label>
                       <select
                         name="currentPOS"
@@ -280,13 +321,10 @@ export default function ContactPage() {
                         onChange={handleInputChange}
                         className="w-full px-4 py-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:border-primary-500"
                       >
-                        <option value="">Select your current POS</option>
-                        <option value="square">Square</option>
-                        <option value="toast">Toast</option>
-                        <option value="clover">Clover</option>
-                        <option value="stripe">Stripe Terminal</option>
-                        <option value="other">Other</option>
-                        <option value="none">No current POS</option>
+                        <option value="">Select your current payment system</option>
+                        <option value="existing">Existing Payment System</option>
+                        <option value="other">Other System</option>
+                        <option value="none">No current payment system</option>
                       </select>
                     </div>
 
@@ -424,7 +462,7 @@ export default function ContactPage() {
                   <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-1" />
                   <div>
                     <p className="text-white font-medium">Integration Assessment</p>
-                    <p className="text-zinc-400 text-sm">We'll evaluate your current POS compatibility</p>
+                    <p className="text-zinc-400 text-sm">We'll evaluate your current payment system compatibility</p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-3">

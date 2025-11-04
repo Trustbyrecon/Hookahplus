@@ -25,7 +25,9 @@ import {
   Activity,
   Heart,
   Star,
-  Gift
+  Gift,
+  QrCode,
+  HelpCircle
 } from 'lucide-react';
 import ImageWithFallback from '../components/ImageWithFallback';
 
@@ -146,7 +148,7 @@ export default function Home() {
             Hookah+ Operations Center
           </h2>
           <p className="text-xl text-zinc-400 mb-8 max-w-3xl mx-auto">
-            Enterprise-grade lounge management with AI-powered personalization and secure transactions
+            Hospitality-grade ritual intelligence platform — transforming sessions into captured memories with analytics and emotion stitched together
           </p>
           
           {/* Key Metrics - Simplified */}
@@ -166,6 +168,46 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Quick Access - MOAT Modules */}
+        <div className="mb-12">
+          <h3 className="text-2xl font-bold text-center mb-4">
+            Quick Access
+          </h3>
+          <p className="text-center text-zinc-400 mb-8 max-w-2xl mx-auto">
+            Everything you need to manage your hookah lounge — hospitality-grade ritual intelligence platform
+          </p>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-12">
+            {[
+              { title: 'Dashboard', icon: <BarChart3 className="w-5 h-5" />, href: '/sessions', color: 'teal' },
+              { title: 'QR Pathway', icon: <QrCode className="w-5 h-5" />, href: '/pre-order', color: 'blue' },
+              { title: 'Fire Session', icon: <Flame className="w-5 h-5" />, href: '/sessions', color: 'orange' },
+              { title: 'Hookah Tracker', icon: <Clock className="w-5 h-5" />, href: '/lounge-experience-demo', color: 'purple' },
+              { title: 'Staff Ops', icon: <Users className="w-5 h-5" />, href: '/staff-ops', color: 'indigo' },
+              { title: 'Guest Intelligence', icon: <Brain className="w-5 h-5" />, href: '/sessions', color: 'green' },
+              { title: 'Waitlist', icon: <Clock className="w-5 h-5" />, href: '/pos-waitlist', color: 'yellow' },
+              { title: 'Analytics', icon: <TrendingUp className="w-5 h-5" />, href: '/analytics', color: 'emerald' },
+              { title: 'Settings', icon: <Settings className="w-5 h-5" />, href: '/admin', color: 'gray' },
+              { title: 'Help Center', icon: <HelpCircle className="w-5 h-5" />, href: '/support', color: 'pink' },
+            ].map((module, index) => (
+              <Card 
+                key={index}
+                className={`hover:border-${module.color}-500/50 transition-all cursor-pointer group`}
+                onClick={() => window.location.href = module.href}
+              >
+                <div className="p-6 text-center">
+                  <div className={`w-12 h-12 bg-${module.color}-500/20 rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:bg-${module.color}-500/30 transition-colors`}>
+                    <div className={`text-${module.color}-400`}>
+                      {module.icon}
+                    </div>
+                  </div>
+                  <h4 className="font-semibold text-sm">{module.title}</h4>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+
         {/* Enterprise CTA Section */}
         <div className="mb-12">
           <div className="text-center">
@@ -174,7 +216,7 @@ export default function Home() {
                 variant="primary" 
                 size="lg" 
                 className="flex items-center gap-2 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white px-8 py-4 text-lg font-semibold shadow-lg transform hover:scale-105 transition-all duration-200"
-                onClick={() => window.location.href = '/sessions'}
+                onClick={() => window.location.href = '/lounge-experience-demo'}
               >
                 <Play className="w-5 h-5" />
                 Lounge Experience Demo
@@ -438,12 +480,15 @@ export default function Home() {
         {/* Powered by Integration Strip */}
         <div className="mb-12">
           <div className="text-center mb-8">
-            <h3 className="text-lg font-semibold text-zinc-300 mb-4">Powered by Enterprise Integrations</h3>
+            <h3 className="text-lg font-semibold text-zinc-300 mb-4">Smart Payment Architecture</h3>
+            <p className="text-sm text-zinc-400 mb-4 max-w-2xl mx-auto">
+              Hookah+ connects seamlessly with your existing payment system, abstracting payment complexity 
+              while focusing on experience flow and trust capture.
+            </p>
             <div className="flex justify-center items-center gap-8 opacity-60">
-              <div className="text-sm font-medium">Stripe</div>
-              <div className="text-sm font-medium">Square</div>
-              <div className="text-sm font-medium">Toast</div>
-              <div className="text-sm font-medium">Clover</div>
+              <div className="text-sm font-medium">Secure Payments</div>
+              <div className="text-sm font-medium">Real-time Processing</div>
+              <div className="text-sm font-medium">Integrated Workflow</div>
             </div>
           </div>
         </div>
@@ -454,7 +499,7 @@ export default function Home() {
             Powered by Reflex Intelligence
           </h3>
           <p className="text-center text-zinc-400 text-lg mb-8">
-            AI agents working in perfect harmony
+            Memory = Identity = Trust. AI agents working in perfect harmony to protect the ritual.
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

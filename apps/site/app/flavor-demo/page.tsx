@@ -325,7 +325,7 @@ export default function FlavorWheelDemo() {
               <Sparkles className="w-8 h-8 text-cyan-400" />
             </div>
             <h3 className="text-xl font-semibold mb-2">Seamless Integration</h3>
-            <p className="text-zinc-400">Direct integration with POS systems and session management for streamlined operations.</p>
+            <p className="text-zinc-400">Connects seamlessly with your existing payment system, abstracting payment complexity while focusing on experience flow and trust capture.</p>
           </div>
         </div>
       </div>

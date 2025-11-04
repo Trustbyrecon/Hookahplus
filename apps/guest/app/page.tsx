@@ -510,7 +510,7 @@ export default function GuestPortal() {
           <div>
             <Card className="h-fit">
               <div className="p-4">
-                <h3 className="text-lg font-semibold mb-3">Your Order</h3>
+                <h3 className="text-lg font-semibold mb-3">Hookah Tracker</h3>
                 
                 {/* Base Hookah */}
                 <div className="mb-3 p-2 bg-zinc-800 rounded">

@@ -228,9 +228,9 @@ const DocsPage = () => {
       )
     },
     {
-      id: 'pos-integration',
-      title: 'POS Integration',
-      description: 'Connect Hookah+ with your existing POS system',
+      id: 'payment-integration',
+      title: 'Smart Payment Architecture',
+      description: 'Connect Hookah+ seamlessly with your existing payment system',
       icon: <Database className="w-5 h-5" />,
       category: 'integration',
       difficulty: 'advanced',
@@ -238,7 +238,7 @@ const DocsPage = () => {
       content: (
         <div className="space-y-6">
           <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-white mb-4">Supported POS Systems</h3>
+            <h3 className="text-lg font-semibold text-white mb-4">Payment System Integration</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-zinc-900 border border-zinc-600 rounded-lg p-4">
                 <h4 className="text-sm font-medium text-white mb-2">Square</h4>
@@ -283,8 +283,8 @@ const DocsPage = () => {
                   1
                 </div>
                 <div>
-                  <h4 className="text-sm font-medium text-white mb-1">Connect Your POS</h4>
-                  <p className="text-sm text-zinc-300">Use our secure OAuth flow to connect your POS system</p>
+                  <h4 className="text-sm font-medium text-white mb-1">Connect Your Payment System</h4>
+                  <p className="text-sm text-zinc-300">Use our secure integration flow to connect your existing payment system</p>
                 </div>
               </div>
               <div className="flex items-start">

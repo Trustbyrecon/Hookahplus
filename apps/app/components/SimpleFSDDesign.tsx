@@ -192,8 +192,38 @@ export default function SimpleFSDDesign({
       }
     } catch (error) {
       console.error('Error executing session action:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to execute action. Please try again.';
+      
+      // Parse specific error messages
+      let errorMessage = 'Failed to execute action. Please try again.';
+      
+      if (error instanceof Error) {
+        // Check for specific error types
+        if (error.message.includes('Session not found')) {
+          errorMessage = 'Session not found. It may have been closed or removed.';
+        } else if (error.message.includes('Invalid transition') || error.message.includes('not available')) {
+          errorMessage = 'This action is not available for the current session state.';
+        } else if (error.message.includes('Permission denied') || error.message.includes('403')) {
+          errorMessage = 'You do not have permission to perform this action.';
+        } else if (error.message.includes('Network') || error.message.includes('Failed to fetch')) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        } else if (error.message.includes('500') || error.message.includes('Internal server')) {
+          errorMessage = 'Server error. Please try again in a moment.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      // Show user-friendly error with actionable message
       alert(`Error: ${errorMessage}`);
+      
+      // Log to analytics
+      if (typeof window !== 'undefined' && window.gtag) {
+        window.gtag('event', 'session_action_error', {
+          event_category: 'error',
+          event_label: action,
+          error_message: errorMessage
+        });
+      }
     }
 
     if (onSessionAction) {
