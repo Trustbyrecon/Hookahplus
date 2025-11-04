@@ -6,7 +6,7 @@
 
 import { reflexChainEngine } from './core';
 import { posAdapter, loyaltyAdapter, sessionReplayAdapter } from './adapters';
-import { FireSession, SessionStatus, SessionAction } from '../types/enhancedSession';
+import { FireSession, SessionStatus, SessionAction } from '../../types/enhancedSession';
 import {
   BOHReflexInput,
   BOHReflexOutput,
