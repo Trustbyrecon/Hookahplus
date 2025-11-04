@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import CreateSessionModal from './CreateSessionModal';
 import GuestIntelligenceModal from './GuestIntelligenceModal';
+import SessionDetailModal from './SessionDetailModal';
 import { mockSiteData } from '../lib/mockData';
 import { 
   SessionStatus, 
@@ -129,6 +130,8 @@ export default function SimpleFSDDesign({
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showIntelligenceModal, setShowIntelligenceModal] = useState(false);
   const [intelligenceSessionId, setIntelligenceSessionId] = useState<string>('');
+  const [selectedSession, setSelectedSession] = useState<FireSession | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleSessionAction = async (action: string, sessionId: string) => {
     console.log(`Action: ${action} on session: ${sessionId}`);
@@ -382,7 +385,11 @@ export default function SimpleFSDDesign({
             return (
               <div
                 key={sessionId}
-                className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4 hover:bg-zinc-800/70 transition-colors"
+                className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4 hover:bg-zinc-800/70 transition-colors cursor-pointer"
+                onClick={() => {
+                  setSelectedSession(session as FireSession);
+                  setIsModalOpen(true);
+                }}
               >
                 {/* Session Header */}
                 <div className="flex items-center justify-between mb-3">
@@ -897,6 +904,16 @@ export default function SimpleFSDDesign({
           setIntelligenceSessionId('');
         }}
         sessionId={intelligenceSessionId}
+      />
+      
+      {/* Session Detail Modal */}
+      <SessionDetailModal
+        session={selectedSession}
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedSession(null);
+        }}
       />
     </div>
   );

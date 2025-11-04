@@ -137,35 +137,29 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {/* Hero Section */}
-        <div className="text-center mb-12">
-          <h2 className="text-4xl md:text-6xl font-bold mb-6">
+      <div className="max-w-7xl mx-auto px-4 py-2 sm:px-6 lg:px-8">
+        {/* Hero Section - Reduced Size */}
+        <div className="text-center mb-4">
+          <h2 className="text-xl md:text-2xl font-bold mb-2">
             Hookah+ Operations Center
           </h2>
-          <p className="text-xl text-zinc-400 mb-8 max-w-3xl mx-auto">
-            Hospitality-grade ritual intelligence platform — transforming sessions into captured memories with analytics and emotion stitched together
-          </p>
           
         </div>
 
         {/* Quick Access - MOAT Modules */}
-        <div className="mb-12">
-          <h3 className="text-2xl font-bold text-center mb-4">
+        <div className="mb-8">
+          <h3 className="text-xl font-bold text-center mb-2">
             Quick Access
           </h3>
-          <p className="text-center text-zinc-400 mb-8 max-w-2xl mx-auto">
-            Everything you need to manage your hookah lounge — hospitality-grade ritual intelligence platform
-          </p>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-12">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
             {[
               { title: 'Dashboard', icon: <BarChart3 className="w-5 h-5" />, href: '/sessions', color: 'teal' },
               { title: 'Campaign Management', icon: <QrCode className="w-5 h-5" />, href: '/pre-order', color: 'blue' },
               { title: 'Fire Session', icon: <Flame className="w-5 h-5" />, href: '/fire-session-dashboard', color: 'orange' },
               { title: 'Hookah Tracker', icon: <Clock className="w-5 h-5" />, href: '/lounge-experience-demo', color: 'purple' },
               { title: 'Staff Ops', icon: <Users className="w-5 h-5" />, href: '/staff-ops', color: 'indigo' },
-              { title: 'Guest Intelligence', icon: <Brain className="w-5 h-5" />, href: '/sessions', color: 'green' },
+              { title: 'Guest Intelligence', icon: <Brain className="w-5 h-5" />, href: '/guest-intelligence', color: 'green' },
               { title: 'Waitlist', icon: <Clock className="w-5 h-5" />, href: '/pos-waitlist', color: 'yellow' },
               { title: 'Analytics', icon: <TrendingUp className="w-5 h-5" />, href: '/analytics', color: 'emerald' },
               { title: 'Settings', icon: <Settings className="w-5 h-5" />, href: '/admin', color: 'gray' },

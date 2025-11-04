@@ -13,37 +13,105 @@ interface GuestIntelligenceModalProps {
 export default function GuestIntelligenceModal({ isOpen, onClose, sessionId = 'demo-session-001' }: GuestIntelligenceModalProps) {
   if (!isOpen) return null;
 
-  const intelligenceData = {
-    sessionId,
-    trustScore: 94,
-    flavorPreferences: [
-      { name: 'Blue Mist', percentage: 32 },
-      { name: 'Strawberry', percentage: 28 },
-      { name: 'Mango', percentage: 24 },
-      { name: 'Mint', percentage: 16 },
-    ],
-    loyaltyTier: 'Gold',
-    visitFrequency: '3x/month',
-    averageSpend: '$45.00',
-    preferredTime: 'Evening (7-10 PM)',
-    sessionHistory: [
-      { date: '2024-11-01', duration: '45 min', rating: 5, flavors: ['Blue Mist', 'Mint'] },
-      { date: '2024-10-28', duration: '60 min', rating: 5, flavors: ['Strawberry', 'Mango'] },
-      { date: '2024-10-20', duration: '45 min', rating: 4, flavors: ['Blue Mist'] },
-    ],
-    behaviorPatterns: {
-      arrivalTime: 'Consistent (within 15 min window)',
-      groupSize: '2-3 people',
-      sessionExtension: '30% rate',
-      refillRequests: 'Average 1 per session',
-    },
-    recommendations: [
-      'Suggest Blue Mist + Mint combo (favorite)',
-      'Offer loyalty upgrade at 95% trust score',
-      'Prime time: 7-10 PM',
-      'Group bookings: Recommend table for 3',
-    ],
+  // Generate varied demo data based on sessionId
+  const generateIntelligenceData = (id: string) => {
+    const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const variants = [
+      {
+        trustScore: 94,
+        flavorPreferences: [
+          { name: 'Blue Mist', percentage: 32 },
+          { name: 'Strawberry', percentage: 28 },
+          { name: 'Mango', percentage: 24 },
+          { name: 'Mint', percentage: 16 },
+        ],
+        loyaltyTier: 'Gold',
+        visitFrequency: '3x/month',
+        averageSpend: '$45.00',
+        preferredTime: 'Evening (7-10 PM)',
+        sessionHistory: [
+          { date: '2024-11-01', duration: '45 min', rating: 5, flavors: ['Blue Mist', 'Mint'] },
+          { date: '2024-10-28', duration: '60 min', rating: 5, flavors: ['Strawberry', 'Mango'] },
+          { date: '2024-10-20', duration: '45 min', rating: 4, flavors: ['Blue Mist'] },
+        ],
+        behaviorPatterns: {
+          arrivalTime: 'Consistent (within 15 min window)',
+          groupSize: '2-3 people',
+          sessionExtension: '30% rate',
+          refillRequests: 'Average 1 per session',
+        },
+        recommendations: [
+          'Suggest Blue Mist + Mint combo (favorite)',
+          'Offer loyalty upgrade at 95% trust score',
+          'Prime time: 7-10 PM',
+          'Group bookings: Recommend table for 3',
+        ],
+      },
+      {
+        trustScore: 78,
+        flavorPreferences: [
+          { name: 'Watermelon', percentage: 42 },
+          { name: 'Grape', percentage: 28 },
+          { name: 'Apple', percentage: 20 },
+          { name: 'Lemon', percentage: 10 },
+        ],
+        loyaltyTier: 'Silver',
+        visitFrequency: '2x/month',
+        averageSpend: '$38.50',
+        preferredTime: 'Late Night (10 PM - 1 AM)',
+        sessionHistory: [
+          { date: '2024-11-02', duration: '50 min', rating: 4, flavors: ['Watermelon', 'Grape'] },
+          { date: '2024-10-25', duration: '55 min', rating: 4, flavors: ['Watermelon'] },
+          { date: '2024-10-15', duration: '40 min', rating: 3, flavors: ['Apple', 'Lemon'] },
+        ],
+        behaviorPatterns: {
+          arrivalTime: 'Variable (30-60 min window)',
+          groupSize: '4-5 people',
+          sessionExtension: '15% rate',
+          refillRequests: 'Average 0.5 per session',
+        },
+        recommendations: [
+          'Watermelon is top preference - stock up',
+          'Tends to visit in larger groups - prepare for group seating',
+          'Late night customer - ensure availability',
+          'Consider loyalty rewards to increase visit frequency',
+        ],
+      },
+      {
+        trustScore: 87,
+        flavorPreferences: [
+          { name: 'Double Apple', percentage: 38 },
+          { name: 'Mint', percentage: 30 },
+          { name: 'Rose', percentage: 22 },
+          { name: 'Gum Mastic', percentage: 10 },
+        ],
+        loyaltyTier: 'Gold',
+        visitFrequency: '4x/month',
+        averageSpend: '$52.00',
+        preferredTime: 'Weekend Afternoon (2-5 PM)',
+        sessionHistory: [
+          { date: '2024-11-03', duration: '65 min', rating: 5, flavors: ['Double Apple', 'Mint'] },
+          { date: '2024-10-29', duration: '60 min', rating: 5, flavors: ['Double Apple', 'Rose'] },
+          { date: '2024-10-22', duration: '55 min', rating: 5, flavors: ['Mint', 'Gum Mastic'] },
+        ],
+        behaviorPatterns: {
+          arrivalTime: 'Very consistent (within 10 min window)',
+          groupSize: '1-2 people',
+          sessionExtension: '45% rate',
+          refillRequests: 'Average 1.5 per session',
+        },
+        recommendations: [
+          'High-value customer - VIP treatment recommended',
+          'Double Apple + Mint is favorite combo',
+          'Weekend regular - ensure premium service',
+          'High extension rate - offer longer session packages',
+        ],
+      },
+    ];
+    return variants[hash % variants.length];
   };
+
+  const intelligenceData = generateIntelligenceData(sessionId);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">

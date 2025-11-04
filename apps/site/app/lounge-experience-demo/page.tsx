@@ -17,19 +17,18 @@ export default function LoungeExperienceDemoPage() {
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
       {/* MOAT Hero Section */}
       <div className="bg-gradient-to-r from-teal-900/20 via-blue-900/20 to-purple-900/20 border-b border-teal-500/30">
-        <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-          <div className="text-center mb-8">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <Sparkles className="w-6 h-6 text-teal-400" />
-              <h1 className="text-3xl md:text-4xl font-bold">
+        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-4">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Sparkles className="w-5 h-5 text-teal-400" />
+              <h1 className="text-2xl md:text-3xl font-bold">
                 The Ritual of Flow,<br />
                 <span className="text-teal-400">Made Measurable</span>
               </h1>
             </div>
-            <p className="text-lg text-zinc-300 max-w-3xl mx-auto mb-6">
+            <p className="text-sm text-zinc-300 max-w-2xl mx-auto mb-4">
               Hookah+ transforms ordinary lounge sessions into <strong>living data loops</strong> of mood, 
-              flavor, loyalty, and trust. Every session becomes a <strong>captured memory</strong> with 
-              analytics and emotion stitched together.
+              flavor, loyalty, and trust.
             </p>
             <div className="flex flex-wrap justify-center gap-4 text-sm text-zinc-400">
               <div className="flex items-center gap-2">

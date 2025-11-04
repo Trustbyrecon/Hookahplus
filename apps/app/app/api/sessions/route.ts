@@ -297,12 +297,16 @@ export async function POST(req: NextRequest) {
 // New PATCH endpoint for session actions
 // Note: This endpoint is kept for backward compatibility but should use /api/sessions/[id]/transition
 export async function PATCH(req: NextRequest) {
+  let sessionId: string | undefined;
+  let action: string | undefined;
+  let userRole: string | undefined;
+  
   try {
     const body = await req.json();
+    sessionId = body.sessionId;
+    action = body.action;
+    userRole = body.userRole;
     const { 
-      sessionId, 
-      action, 
-      userRole, 
       operatorId,
       notes,
       edgeCase 

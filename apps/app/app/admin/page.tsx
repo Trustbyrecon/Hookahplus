@@ -40,6 +40,7 @@ import {
 } from 'lucide-react';
 import Button from '../../components/Button';
 import GlobalNavigation from '../../components/GlobalNavigation';
+import AdminReportModal from '../../components/AdminReportModal';
 
 interface SystemMetric {
   id: string;
@@ -68,6 +69,8 @@ export default function AdminPage() {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [systemStatus, setSystemStatus] = useState('operational');
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [selectedReport, setSelectedReport] = useState<{ type: string; title: string } | null>(null);
   
   const [newUser, setNewUser] = useState({
     name: '',
@@ -254,29 +257,36 @@ export default function AdminPage() {
               <h3 className="text-xl font-semibold mb-6">Administration Tools</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {adminActions.map((action) => (
-                  <Link key={action.id} href={action.href}>
-                    <div className="p-4 rounded-lg border border-zinc-700 hover:border-zinc-600 transition-colors cursor-pointer">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <div className={`p-2 rounded-lg bg-zinc-800 ${action.color}`}>
-                          {action.icon}
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-white">{action.title}</h4>
-                          <p className="text-sm text-zinc-400">{action.description}</p>
-                        </div>
+                  <div
+                    key={action.id}
+                    onClick={() => {
+                      setSelectedReport({ type: action.id, title: action.title });
+                      setShowReportModal(true);
+                    }}
+                    className="p-4 rounded-lg border border-zinc-700 hover:border-zinc-600 transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center space-x-3 mb-2">
+                      <div className={`p-2 rounded-lg bg-zinc-800 ${action.color}`}>
+                        {action.icon}
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className={`text-xs px-2 py-1 rounded-full ${
-                          action.status === 'active' ? 'bg-green-500/20 text-green-400' :
-                          action.status === 'inactive' ? 'bg-red-500/20 text-red-400' :
-                          'bg-yellow-500/20 text-yellow-400'
-                        }`}>
-                          {action.status}
-                        </span>
-                        <ChevronRight className="w-4 h-4 text-zinc-400" />
+                      <div>
+                        <h4 className="font-semibold text-white">{action.title}</h4>
+                        <p className="text-sm text-zinc-400">{action.description}</p>
                       </div>
                     </div>
-                  </Link>
+                    <div className="flex items-center justify-between">
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        action.status === 'active' ? 'bg-green-500/20 text-green-400' :
+                        action.status === 'inactive' ? 'bg-red-500/20 text-red-400' :
+                        'bg-yellow-500/20 text-yellow-400'
+                      }`}>
+                        {action.status}
+                      </span>
+                      <button className="text-xs text-teal-400 hover:text-teal-300">
+                        View Report
+                      </button>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -436,6 +446,19 @@ export default function AdminPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Admin Report Modal */}
+      {selectedReport && (
+        <AdminReportModal
+          isOpen={showReportModal}
+          onClose={() => {
+            setShowReportModal(false);
+            setSelectedReport(null);
+          }}
+          reportType={selectedReport.type}
+          reportTitle={selectedReport.title}
+        />
       )}
     </div>
   );
