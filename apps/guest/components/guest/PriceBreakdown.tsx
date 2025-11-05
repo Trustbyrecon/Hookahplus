@@ -200,10 +200,7 @@ export default function PriceBreakdown({
           timestamp: new Date().toISOString()
         };
 
-        const ghostLogEntry = createGhostLogEntry({
-          eventType: 'checkout.completed',
-          ...eventPayload
-        });
+        const ghostLogEntry = createGhostLogEntry('checkout.completed', eventPayload);
         console.log('Checkout completed logged:', ghostLogEntry);
       }
 
