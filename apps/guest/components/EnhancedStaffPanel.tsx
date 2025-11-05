@@ -28,6 +28,9 @@ import {
   Flame,
   X
 } from 'lucide-react';
+import RewardsBadgeStrip from './RewardsBadgeStrip';
+import MemoryBreadcrumbs from './MemoryBreadcrumbs';
+import ReferralQR from './ReferralQR';
 
 interface BehavioralMemory {
   guestId: string;
@@ -139,10 +142,12 @@ interface AchievementProgress {
 interface GuestIntelligenceDashboardProps {
   sessionId?: string;
   tableId?: string;
+  guestProfile?: any; // Add guestProfile prop
+  flags?: any; // Add flags prop
   onClose: () => void;
 }
 
-export default function GuestIntelligenceDashboard({ sessionId, tableId, onClose }: GuestIntelligenceDashboardProps) {
+export default function GuestIntelligenceDashboard({ sessionId, tableId, guestProfile, flags, onClose }: GuestIntelligenceDashboardProps) {
   const [behavioralMemory, setBehavioralMemory] = useState<BehavioralMemory | null>(null);
   const [sessionNotes, setSessionNotes] = useState<SessionNote[]>([]);
   const [piiMaskingEnabled, setPiiMaskingEnabled] = useState(true);
@@ -763,6 +768,37 @@ export default function GuestIntelligenceDashboard({ sessionId, tableId, onClose
 
           {activeTab === 'achievements' && behavioralMemory && (
             <div className="space-y-6">
+              {/* Integrated Rewards Components from Image 2 */}
+              {guestProfile && flags && (
+                <>
+                  {/* Your Rewards Section */}
+                  <RewardsBadgeStrip
+                    guestProfile={guestProfile}
+                    flags={flags}
+                    onBadgeUpdate={() => {
+                      // Handle badge updates
+                    }}
+                  />
+
+                  {/* Last Session Section */}
+                  <MemoryBreadcrumbs
+                    guestProfile={guestProfile}
+                    flags={flags}
+                  />
+
+                  {/* Invite Friends / Referral Section */}
+                  <ReferralQR
+                    guestProfile={guestProfile}
+                    loungeId={tableId || 'default-lounge'}
+                    flags={flags}
+                    onReferralCreate={() => {
+                      // Handle referral creation
+                    }}
+                  />
+                </>
+              )}
+
+              {/* Existing Badges Section */}
               <div className="bg-zinc-800 rounded-lg p-6">
                 <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
                   <Award className="w-5 h-5 text-yellow-400" />

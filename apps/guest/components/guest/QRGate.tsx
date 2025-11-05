@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { QRData, GuestProfile, FeatureFlags } from '@guest-types';
 import { createGhostLogEntry } from '../../libs/ghostlog/hash';
-import { Shield, User, Smartphone, Clock, CheckCircle } from 'lucide-react';
+import { Shield, User, Smartphone, Clock, CheckCircle, UserPlus } from 'lucide-react';
+import Link from 'next/link';
 
 interface QRGateProps {
   qrData: QRData;
@@ -113,6 +114,32 @@ export default function QRGate({ qrData, guestProfile, flags, onProfileUpdate }:
         </div>
       </div>
 
+      {/* Register Prompt - Above Table ID */}
+      {guestProfile.anon && (
+        <div className="mb-6 bg-gradient-to-r from-teal-900/20 to-cyan-900/20 border border-teal-500/30 rounded-xl p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0">
+              <UserPlus className="w-5 h-5 text-teal-400 mt-0.5" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-base font-semibold text-white mb-1">
+                Register to Remember
+              </h3>
+              <p className="text-xs text-zinc-300 mb-3">
+                Save your preferences and rewards for next time.
+              </p>
+              <Link
+                href={`/register?loungeId=${encodeURIComponent(qrData.loungeId)}&return=${encodeURIComponent(`/guest/${qrData.loungeId}`)}`}
+                className="inline-flex items-center gap-2 px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-medium transition-colors"
+              >
+                <UserPlus className="w-3 h-3" />
+                Register Now
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Guest Status */}
       <div className="mb-6">
         <div className="flex items-center space-x-3 p-4 bg-zinc-700/50 rounded-lg">
@@ -131,7 +158,7 @@ export default function QRGate({ qrData, guestProfile, flags, onProfileUpdate }:
               )}
             </div>
             <p className="text-xs text-zinc-400">
-              ID: {guestProfile.guestId}
+              {qrData.tableId ? `Table: ${qrData.tableId}` : 'ID: ' + guestProfile.guestId}
             </p>
           </div>
         </div>

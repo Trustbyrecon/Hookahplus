@@ -16,7 +16,8 @@ import MobileOptimizedLayout from '../../../components/guest/MobileOptimizedLayo
 import MobileQRScanner from '../../../components/guest/MobileQRScanner';
 import MobileFlavorSelector, { MOCK_FLAVORS } from '../../../components/guest/MobileFlavorSelector';
 import SessionPricing from '../../../components/guest/SessionPricing';
-import { UserPlus } from 'lucide-react';
+import GuestIntelligenceDashboard from '../../../components/EnhancedStaffPanel';
+import { UserPlus, Brain } from 'lucide-react';
 
 export default function GuestLoungePage() {
   const params = useParams();
@@ -37,6 +38,7 @@ export default function GuestLoungePage() {
   const [specialInstructions, setSpecialInstructions] = useState<string>('');
   const [flavorMixPrice, setFlavorMixPrice] = useState<number>(0);
   const [sessionStarted, setSessionStarted] = useState<boolean>(false); // Track if session started after payment
+  const [showIntelligenceDashboard, setShowIntelligenceDashboard] = useState(false);
 
   useEffect(() => {
     initializeGuest();
@@ -550,9 +552,33 @@ export default function GuestLoungePage() {
                 }}
               />
             )}
+
+            {/* Guest Intelligence Dashboard Button */}
+            {guestProfile && !guestProfile.anon && (
+              <div className="bg-zinc-800/50 backdrop-blur-sm border border-zinc-700 rounded-xl p-6">
+                <button
+                  onClick={() => setShowIntelligenceDashboard(true)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg font-medium transition-all"
+                >
+                  <Brain className="w-5 h-5" />
+                  <span>Guest Intelligence Dashboard</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Guest Intelligence Dashboard Modal */}
+      {showIntelligenceDashboard && guestProfile && flags && (
+        <GuestIntelligenceDashboard
+          sessionId={sessionStarted ? 'current-session' : undefined}
+          tableId={qrData?.tableId}
+          guestProfile={guestProfile}
+          flags={flags}
+          onClose={() => setShowIntelligenceDashboard(false)}
+        />
+      )}
     </div>
   );
 }
