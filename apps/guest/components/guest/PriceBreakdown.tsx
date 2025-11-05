@@ -9,21 +9,107 @@ interface PriceBreakdownProps {
   guestProfile: GuestProfile;
   flags: FeatureFlags;
   onPriceUpdate: () => void;
+  selectedFlavors?: string[];
+  specialInstructions?: string;
+  loungeId?: string;
+  tableId?: string;
+  zone?: string;
+  onCheckoutSuccess?: (sessionId: string) => void;
 }
 
-export default function PriceBreakdown({ guestProfile, flags, onPriceUpdate }: PriceBreakdownProps) {
+export default function PriceBreakdown({ 
+  guestProfile, 
+  flags, 
+  onPriceUpdate,
+  selectedFlavors = [],
+  specialInstructions = '',
+  loungeId = 'default-lounge',
+  tableId,
+  zone,
+  onCheckoutSuccess
+}: PriceBreakdownProps) {
   const [priceData, setPriceData] = useState<PriceQuoteResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [promoCode, setPromoCode] = useState('');
   const [promoError, setPromoError] = useState<string | null>(null);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
 
   useEffect(() => {
-    // Load initial price quote
-    loadPriceQuote();
-  }, []);
+    // Load price quote when flavors change
+    if (selectedFlavors.length > 0) {
+      createSessionAndLoadPrice();
+    } else {
+      setPriceData(null);
+      setCurrentSessionId(null);
+    }
+  }, [selectedFlavors, specialInstructions]);
+
+  const createSessionAndLoadPrice = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // First, create a session with selected flavors
+      const createResponse = await fetch('/api/guest/session/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          guestId: guestProfile.guestId,
+          loungeId,
+          flavors: selectedFlavors,
+          specialInstructions,
+          tableId,
+          zone
+        })
+      });
+
+      if (!createResponse.ok) {
+        const errorData = await createResponse.json();
+        throw new Error(errorData.error || 'Failed to create session');
+      }
+
+      const createData = await createResponse.json();
+      const sessionId = createData.sessionId;
+      setCurrentSessionId(sessionId);
+
+      // Then get price quote
+      const quoteResponse = await fetch('/api/guest/price/quote', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sessionId,
+          promoCode: promoCode || undefined
+        })
+      });
+
+      if (!quoteResponse.ok) {
+        const errorData = await quoteResponse.json();
+        throw new Error(errorData.error || 'Failed to get price quote');
+      }
+
+      const quoteData = await quoteResponse.json();
+      setPriceData(quoteData);
+      onPriceUpdate();
+
+    } catch (err) {
+      console.error('Session/price error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create session or get price');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const loadPriceQuote = async () => {
+    if (!currentSessionId) {
+      await createSessionAndLoadPrice();
+      return;
+    }
+
     try {
       setIsLoading(true);
       setError(null);
@@ -34,7 +120,7 @@ export default function PriceBreakdown({ guestProfile, flags, onPriceUpdate }: P
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          sessionId: 'temp_session', // In production, get from session context
+          sessionId: currentSessionId,
           promoCode: promoCode || undefined
         })
       });
@@ -70,14 +156,27 @@ export default function PriceBreakdown({ guestProfile, flags, onPriceUpdate }: P
   };
 
   const handleCheckout = async () => {
+    if (!currentSessionId) {
+      setError('Please select flavors first');
+      return;
+    }
+
+    if (!priceData) {
+      setError('Price data not available');
+      return;
+    }
+
     try {
+      setIsLoading(true);
+      setError(null);
+
       const response = await fetch('/api/guest/checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          sessionId: 'temp_session', // In production, get from session context
+          sessionId: currentSessionId,
           method: 'card', // In production, let user choose
           promoCode: promoCode || undefined
         })
@@ -93,7 +192,7 @@ export default function PriceBreakdown({ guestProfile, flags, onPriceUpdate }: P
       // Log checkout completion event
       if (flags.ghostlog.lite) {
         const eventPayload = {
-          sessionId: 'temp_session',
+          sessionId: currentSessionId,
           guestId: guestProfile.guestId,
           total: priceData?.total || 0,
           method: 'card',
@@ -101,16 +200,26 @@ export default function PriceBreakdown({ guestProfile, flags, onPriceUpdate }: P
           timestamp: new Date().toISOString()
         };
 
-        const ghostLogEntry = createGhostLogEntry('checkout.completed', eventPayload);
+        const ghostLogEntry = createGhostLogEntry({
+          eventType: 'checkout.completed',
+          ...eventPayload
+        });
         console.log('Checkout completed logged:', ghostLogEntry);
       }
 
       // Show success message
       alert(`Checkout successful! Receipt: ${data.receiptId}\nPoints earned: ${data.pointsEarned}`);
 
+      // Call success callback
+      if (onCheckoutSuccess) {
+        onCheckoutSuccess(currentSessionId);
+      }
+
     } catch (err) {
       console.error('Checkout error:', err);
       setError(err instanceof Error ? err.message : 'Checkout failed');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -161,18 +270,12 @@ export default function PriceBreakdown({ guestProfile, flags, onPriceUpdate }: P
     );
   }
 
-  if (!priceData) {
+  if (!priceData && !isLoading) {
     return (
       <div className="bg-zinc-800/50 backdrop-blur-sm border border-zinc-700 rounded-xl p-6">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-white mb-2">No Price Data</h2>
-          <p className="text-sm text-zinc-400 mb-4">Select flavors to see pricing</p>
-          <button
-            onClick={loadPriceQuote}
-            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-          >
-            Refresh
-          </button>
+          <h2 className="text-xl font-semibold text-white mb-2">Your Order</h2>
+          <p className="text-sm text-zinc-400 mb-4">Select flavors to see pricing and checkout</p>
         </div>
       </div>
     );

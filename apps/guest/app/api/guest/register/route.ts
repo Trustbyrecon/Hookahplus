@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GuestProfile } from "@guest-types";
 import { createGhostLogEntry } from '../enter/hash';
 import { v4 as uuidv4 } from 'uuid';
-
-// Mock data store (in production, this would be a database)
-const guestProfiles = new Map<string, GuestProfile>();
+import { getGuestProfile, setGuestProfile } from './shared-storage';
 
 /**
  * POST /api/guest/register
@@ -35,7 +33,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Get existing profile or create new
-    let profile = guestProfiles.get(profileId);
+    let profile = getGuestProfile(profileId);
 
     if (!profile) {
       // Create new profile
@@ -64,8 +62,8 @@ export async function POST(req: NextRequest) {
       profile.updatedAt = new Date().toISOString();
     }
 
-    // Store profile
-    guestProfiles.set(profileId, profile);
+    // Store profile in shared storage
+    setGuestProfile(profileId, profile);
 
     // Log registration event
     const eventPayload = {

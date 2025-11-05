@@ -230,6 +230,85 @@ export default function GuestLoungePage() {
     setSelectedFlavors(prev => prev.filter(flavorId => flavorId !== id));
   };
 
+  const handleMobileCheckout = async () => {
+    if (!guestProfile || selectedFlavors.length === 0) {
+      alert('Please select flavors first');
+      return;
+    }
+
+    try {
+      // Create session
+      const createResponse = await fetch('/api/guest/session/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          guestId: guestProfile.guestId,
+          loungeId,
+          flavors: selectedFlavors,
+          specialInstructions,
+          tableId: qrData?.tableId,
+          zone: qrData?.zone
+        })
+      });
+
+      if (!createResponse.ok) {
+        const errorData = await createResponse.json();
+        throw new Error(errorData.error || 'Failed to create session');
+      }
+
+      const createData = await createResponse.json();
+      const sessionId = createData.sessionId;
+
+      // Get price quote
+      const quoteResponse = await fetch('/api/guest/price/quote', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sessionId
+        })
+      });
+
+      if (!quoteResponse.ok) {
+        throw new Error('Failed to get price quote');
+      }
+
+      const quoteData = await quoteResponse.json();
+
+      // Process checkout
+      const checkoutResponse = await fetch('/api/guest/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sessionId,
+          method: 'card'
+        })
+      });
+
+      if (!checkoutResponse.ok) {
+        const errorData = await checkoutResponse.json();
+        throw new Error(errorData.error || 'Checkout failed');
+      }
+
+      const checkoutData = await checkoutResponse.json();
+
+      // Show success
+      alert(`Checkout successful! Receipt: ${checkoutData.receiptId}\nPoints earned: ${checkoutData.pointsEarned}`);
+
+      // Start session
+      setSessionStarted(true);
+
+    } catch (err) {
+      console.error('Mobile checkout error:', err);
+      alert(err instanceof Error ? err.message : 'Checkout failed');
+    }
+  };
+
   const handleQRScanned = (data: string) => {
     // Parse QR data and update state
     const url = new URL(data, window.location.origin);
@@ -341,7 +420,7 @@ export default function GuestLoungePage() {
               items={cartItems}
               onUpdateQuantity={handleUpdateQuantity}
               onRemoveItem={handleRemoveItem}
-              onCheckout={() => console.log('Checkout')}
+              onCheckout={handleMobileCheckout}
               basePrice={3000}
               sessionType={sessionType}
               onSessionTypeChange={setSessionType}
@@ -486,14 +565,26 @@ export default function GuestLoungePage() {
               )}
             </div>
 
-            {/* Price Breakdown */}
-            <PriceBreakdown
-              guestProfile={guestProfile}
-              flags={flags}
-              onPriceUpdate={() => {
-                // Handle price updates
-              }}
-            />
+            {/* Price Breakdown & Checkout */}
+            {selectedFlavors.length > 0 && (
+              <PriceBreakdown
+                guestProfile={guestProfile}
+                flags={flags}
+                selectedFlavors={selectedFlavors}
+                specialInstructions={specialInstructions}
+                loungeId={loungeId}
+                tableId={qrData?.tableId}
+                zone={qrData?.zone}
+                onPriceUpdate={() => {
+                  // Handle price updates
+                }}
+                onCheckoutSuccess={(sessionId) => {
+                  // Start session after successful checkout
+                  setSessionStarted(true);
+                  console.log('Session started after checkout:', sessionId);
+                }}
+              />
+            )}
           </div>
 
           {/* Right Column - Rewards & Social */}

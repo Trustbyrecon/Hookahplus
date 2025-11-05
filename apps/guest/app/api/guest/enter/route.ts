@@ -3,10 +3,7 @@ import { GuestEnterRequest, GuestEnterResponse, GuestProfile, QRData } from "@gu
 import { featureFlags } from './flags';
 import { createGhostLogEntry, hashGuestEvent } from './hash';
 import { v4 as uuidv4 } from 'uuid';
-
-// Mock data store (in production, this would be a database)
-const guestProfiles = new Map<string, GuestProfile>();
-const sessions = new Map<string, any>();
+import { getGuestProfile, setGuestProfile, sharedSessions } from './shared-storage';
 
 /**
  * POST /api/guest/enter
@@ -47,15 +44,15 @@ export async function POST(req: NextRequest) {
     if (u) {
       // Existing guest with token
       guestId = u;
-      existingProfile = guestProfiles.get(guestId);
+      existingProfile = getGuestProfile(guestId);
     } else if (providedGuestId) {
       // Registered guest with guestId from localStorage
       guestId = providedGuestId;
-      existingProfile = guestProfiles.get(guestId);
+      existingProfile = getGuestProfile(guestId);
     } else if (deviceId) {
       // Anonymous guest with device ID
       guestId = `anon_${deviceId}`;
-      existingProfile = guestProfiles.get(guestId);
+      existingProfile = getGuestProfile(guestId);
     } else {
       // New anonymous guest
       guestId = `anon_${uuidv4()}`;
@@ -81,21 +78,21 @@ export async function POST(req: NextRequest) {
         }
       };
       
-      guestProfiles.set(guestId, newProfile);
+      setGuestProfile(guestId, newProfile);
       existingProfile = newProfile;
       isNewGuest = true;
     } else {
       // Update existing profile
       existingProfile.lastLoungeId = loungeId;
       existingProfile.updatedAt = new Date().toISOString();
-      guestProfiles.set(guestId, existingProfile);
+      setGuestProfile(guestId, existingProfile);
     }
 
     // Create session if not pre-seeded
     let sessionId: string | undefined;
     if (!body.u) {
       sessionId = `session_${uuidv4()}`;
-      sessions.set(sessionId, {
+      sharedSessions.set(sessionId, {
         sessionId,
         loungeId,
         guestId,

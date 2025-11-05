@@ -2,10 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PriceQuoteRequest, PriceQuoteResponse } from "@guest-types";
 import { featureFlags, isDynamicPricingEnabled, isPromosEnabled } from './flags';
 import { createGhostLogEntry } from './hash';
-
-// Mock data stores
-const sessions = new Map<string, any>();
-const promoCodes = new Map<string, any>();
+import { sharedSessions } from './shared-storage';
 
 // Mock flavor pricing
 const FLAVOR_PRICES: Record<string, number> = {
@@ -46,8 +43,8 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Get session
-    const session = sessions.get(sessionId);
+    // Get session from shared storage
+    const session = sharedSessions.get(sessionId);
     if (!session) {
       return NextResponse.json({
         ok: false,

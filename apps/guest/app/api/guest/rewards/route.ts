@@ -2,10 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { RewardsResponse, BadgeDefinition, LoyaltyEvent } from "@guest-types";
 import { featureFlags } from './flags';
 import { createGhostLogEntry } from './hash';
-
-// Mock data stores
-const guestProfiles = new Map<string, any>();
-const loyaltyEvents = new Map<string, LoyaltyEvent>();
+import { getGuestProfile, sharedLoyaltyEvents } from './shared-storage';
 
 // Badge definitions
 const BADGE_DEFINITIONS: Record<string, BadgeDefinition> = {
@@ -91,8 +88,8 @@ export async function GET(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Get guest profile
-    const guestProfile = guestProfiles.get(guestId);
+    // Get guest profile from shared storage
+    const guestProfile = getGuestProfile(guestId);
     if (!guestProfile) {
       return NextResponse.json({
         ok: false,
@@ -272,7 +269,7 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    const guestProfile = guestProfiles.get(guestId);
+    const guestProfile = getGuestProfile(guestId);
     if (!guestProfile) {
       return NextResponse.json({
         ok: false,

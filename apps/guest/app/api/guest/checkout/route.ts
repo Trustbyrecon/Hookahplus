@@ -3,12 +3,7 @@ import { CheckoutRequest, CheckoutResponse, LoyaltyEvent } from "@guest-types";
 import { featureFlags } from './flags';
 import { createGhostLogEntry, hashGuestEvent } from './hash';
 import { v4 as uuidv4 } from 'uuid';
-
-// Mock data stores
-const sessions = new Map<string, any>();
-const guestProfiles = new Map<string, any>();
-const loyaltyEvents = new Map<string, LoyaltyEvent>();
-const receipts = new Map<string, any>();
+import { getGuestProfile, setGuestProfile, sharedSessions, sharedLoyaltyEvents, sharedReceipts } from './shared-storage';
 
 /**
  * POST /api/guest/checkout
@@ -28,8 +23,8 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Get session
-    const session = sessions.get(sessionId);
+    // Get session from shared storage
+    const session = sharedSessions.get(sessionId);
     if (!session) {
       return NextResponse.json({
         ok: false,
@@ -65,7 +60,7 @@ export async function POST(req: NextRequest) {
         break;
       case 'points':
         // Points payment - check if guest has enough points
-        const guestProfile = guestProfiles.get(session.guestId);
+        const guestProfile = getGuestProfile(session.guestId);
         if (!guestProfile || guestProfile.points < session.price.total) {
           return NextResponse.json({
             ok: false,
@@ -74,7 +69,7 @@ export async function POST(req: NextRequest) {
         }
         // Deduct points
         guestProfile.points -= session.price.total;
-        guestProfiles.set(session.guestId, guestProfile);
+        setGuestProfile(session.guestId, guestProfile);
         break;
       default:
         return NextResponse.json({
@@ -83,9 +78,9 @@ export async function POST(req: NextRequest) {
         }, { status: 400 });
     }
 
-    // Update session status
-    session.status = 'closed';
-    session.ts.closedAt = new Date().toISOString();
+    // Update session status to 'in_progress' after successful payment
+    session.status = 'in_progress';
+    session.ts.startedAt = new Date().toISOString();
 
     // Generate receipt
     const receiptId = `receipt_${uuidv4()}`;
@@ -101,15 +96,15 @@ export async function POST(req: NextRequest) {
       items: session.mix.flavors,
       promoCode
     };
-    receipts.set(receiptId, receipt);
+    sharedReceipts.set(receiptId, receipt);
 
     // Update guest profile with points
     if (pointsEarned > 0) {
-      const guestProfile = guestProfiles.get(session.guestId);
+      const guestProfile = getGuestProfile(session.guestId);
       if (guestProfile) {
         guestProfile.points += pointsEarned;
         guestProfile.updatedAt = new Date().toISOString();
-        guestProfiles.set(session.guestId, guestProfile);
+        setGuestProfile(session.guestId, guestProfile);
 
         // Create loyalty event
         const loyaltyEvent: LoyaltyEvent = {
@@ -126,7 +121,7 @@ export async function POST(req: NextRequest) {
             total: session.price.total
           }).ghostHash
         };
-        loyaltyEvents.set(loyaltyEvent.eventId, loyaltyEvent);
+        sharedLoyaltyEvents.set(loyaltyEvent.eventId, loyaltyEvent);
       }
     }
 
@@ -177,7 +172,7 @@ export async function POST(req: NextRequest) {
  * Check and award badges based on guest activity
  */
 async function checkAndAwardBadges(guestId: string, loungeId: string, sessionId: string): Promise<void> {
-  const guestProfile = guestProfiles.get(guestId);
+  const guestProfile = getGuestProfile(guestId);
   if (!guestProfile) return;
 
   const badges = guestProfile.badges || [];
@@ -188,7 +183,7 @@ async function checkAndAwardBadges(guestId: string, loungeId: string, sessionId:
   if (!badges.includes('Regular') && sessions.length >= 3) {
     const recentSessions = sessions.slice(0, 3);
     const sameLoungeSessions = recentSessions.filter((s: string) => {
-      const session = sessions.get(s);
+      const session = sharedSessions.get(s);
       return session && session.loungeId === loungeId;
     });
     
@@ -211,12 +206,12 @@ async function checkAndAwardBadges(guestId: string, loungeId: string, sessionId:
   if (!badges.includes('Explorer')) {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const recentSessions = sessions.slice(0, 10).filter((s: string) => {
-      const session = sessions.get(s);
+      const session = sharedSessions.get(s);
       return session && new Date(session.ts.startedAt) > thirtyDaysAgo;
     });
     
     const uniqueLounges = new Set(recentSessions.map((s: string) => {
-      const session = sessions.get(s);
+      const session = sharedSessions.get(s);
       return session?.loungeId;
     }).filter(Boolean));
     
@@ -230,7 +225,7 @@ async function checkAndAwardBadges(guestId: string, loungeId: string, sessionId:
  * Award a badge to a guest
  */
 async function awardBadge(guestId: string, loungeId: string, badgeId: string, sessionId: string): Promise<void> {
-  const guestProfile = guestProfiles.get(guestId);
+  const guestProfile = getGuestProfile(guestId);
   if (!guestProfile) return;
 
   // Add badge to profile
@@ -239,7 +234,7 @@ async function awardBadge(guestId: string, loungeId: string, badgeId: string, se
   }
   guestProfile.badges.push(badgeId);
   guestProfile.updatedAt = new Date().toISOString();
-  guestProfiles.set(guestId, guestProfile);
+  setGuestProfile(guestId, guestProfile);
 
   // Create loyalty event
   const loyaltyEvent: LoyaltyEvent = {
@@ -256,7 +251,7 @@ async function awardBadge(guestId: string, loungeId: string, badgeId: string, se
       badgeId
     }).ghostHash
   };
-  loyaltyEvents.set(loyaltyEvent.eventId, loyaltyEvent);
+    sharedLoyaltyEvents.set(loyaltyEvent.eventId, loyaltyEvent);
 
   console.log(`Badge awarded: ${badgeId} to guest ${guestId}`);
 }
