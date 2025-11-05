@@ -16,30 +16,53 @@ const seal = (o: unknown) =>
   crypto.createHash("sha256").update(JSON.stringify(o)).digest("hex");
 
 async function readRawBody(req: Request): Promise<string> {
-  return req.text();
+  // For Stripe webhook signature verification, we need the raw body
+  // as a Buffer to preserve exact formatting (including newlines and whitespace)
+  const arrayBuffer = await req.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  return buffer.toString('utf8');
 }
 
 export async function POST(req: Request) {
   try {
     if (!stripe) {
+      console.error('[Stripe Webhook] Stripe not configured - missing STRIPE_SECRET_KEY');
       return Response.json({ error: "Stripe not configured" }, { status: 500 });
+    }
+
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    if (!webhookSecret || webhookSecret === 'whsec_placeholder') {
+      console.error('[Stripe Webhook] Webhook secret not configured');
+      return Response.json({ error: "Webhook secret not configured" }, { status: 500 });
     }
 
     const sig = req.headers.get("stripe-signature");
     if (!sig) {
+      console.error('[Stripe Webhook] Missing stripe-signature header');
       return Response.json("Missing stripe-signature header", { status: 400 });
     }
 
+    // Read raw body - must be exact bytes as sent by Stripe
     const raw = await readRawBody(req);
+    
+    if (!raw || raw.length === 0) {
+      console.error('[Stripe Webhook] Empty request body');
+      return Response.json("Empty request body", { status: 400 });
+    }
+
     let event: Stripe.Event;
 
     try {
       event = stripe.webhooks.constructEvent(
         raw,
         sig,
-        process.env.STRIPE_WEBHOOK_SECRET || 'whsec_placeholder'
+        webhookSecret
       );
+      console.log('[Stripe Webhook] Verified event:', event.id, event.type);
     } catch (err: any) {
+      console.error('[Stripe Webhook] Signature verification failed:', err.message);
+      console.error('[Stripe Webhook] Body length:', raw.length);
+      console.error('[Stripe Webhook] Signature header:', sig.substring(0, 20) + '...');
       return Response.json(`Webhook Error: ${err.message}`, { status: 400 });
     }
 
