@@ -16,7 +16,6 @@ import MobileOptimizedLayout from '../../../components/guest/MobileOptimizedLayo
 import MobileQRScanner from '../../../components/guest/MobileQRScanner';
 import MobileFlavorSelector, { MOCK_FLAVORS } from '../../../components/guest/MobileFlavorSelector';
 import MobileCart from '../../../components/guest/MobileCart';
-import { createGhostLogEntry } from '../../../libs/ghostlog/hash';
 import { UserPlus } from 'lucide-react';
 
 export default function GuestLoungePage() {
@@ -112,7 +111,7 @@ export default function GuestLoungePage() {
 
       setGuestProfile(enterData.existingProfile);
 
-      // Log guest entry event
+      // Log guest entry event (client-side logging only - server-side logging happens in API)
       if (loungeFlags.ghostlog.lite) {
         const eventPayload = {
           loungeId,
@@ -122,8 +121,8 @@ export default function GuestLoungePage() {
           timestamp: new Date().toISOString()
         };
 
-        const ghostLogEntry = createGhostLogEntry('guest.entered', eventPayload);
-        console.log('Guest entry logged:', ghostLogEntry);
+        // Client-side logging only - actual ghostlog entry is created server-side in /api/guest/enter
+        console.log('Guest entry:', eventPayload);
       }
 
     } catch (err) {
