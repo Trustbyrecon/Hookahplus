@@ -136,7 +136,7 @@ export default function LandingPage() {
       title: 'Lounge Onboarding',
       description: 'Physical lounge digitization',
       icon: <Eye className="w-6 h-6 text-indigo-400" />,
-      href: '/layout-preview',
+      href: '/lounge-layout',
       color: 'from-indigo-500/20 to-purple-500/20',
       borderColor: 'border-indigo-500/30'
     },
@@ -171,31 +171,6 @@ export default function LandingPage() {
       href: '/help',
       color: 'from-pink-500/20 to-rose-500/20',
       borderColor: 'border-pink-500/30'
-    }
-  ];
-
-  // Powered by Reflex Cards
-  const reflexCards = [
-    {
-      title: 'Aletheia',
-      description: 'AI-Powered Session Intelligence',
-      icon: <Brain className="w-8 h-8 text-teal-400" />,
-      color: 'from-teal-500/20 to-cyan-500/20',
-      borderColor: 'border-teal-500/30'
-    },
-    {
-      title: 'HiTrust Sentinel',
-      description: 'Advanced Security & Trust Management',
-      icon: <Shield className="w-8 h-8 text-blue-400" />,
-      color: 'from-blue-500/20 to-indigo-500/20',
-      borderColor: 'border-blue-500/30'
-    },
-    {
-      title: 'EP Payments',
-      description: 'Secure Payment Processing',
-      icon: <CreditCard className="w-8 h-8 text-green-400" />,
-      color: 'from-green-500/20 to-emerald-500/20',
-      borderColor: 'border-green-500/30'
     }
   ];
 
@@ -311,7 +286,7 @@ export default function LandingPage() {
               </span>
             </div>
             <p className="text-zinc-400 text-sm">
-              © 2025 HookahPlus. All rights reserved. Built with Reflex Intelligence.
+              © 2025 HookahPlus. All rights reserved. Powered by H+ Labs.
             </p>
           </div>
         </div>

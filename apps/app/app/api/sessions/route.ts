@@ -320,6 +320,40 @@ export async function PATCH(req: NextRequest) {
       }, { status: 400 });
     }
 
+    // Handle UPDATE_NOTES as a special case (no state transition needed)
+    if (action === 'UPDATE_NOTES') {
+      const dbSession = await prisma.session.findFirst({
+        where: {
+          OR: [
+            { id: sessionId },
+            { externalRef: sessionId },
+            { tableId: sessionId }
+          ]
+        }
+      });
+
+      if (!dbSession) {
+        return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+      }
+
+      // Update only notes
+      const updatedDbSession = await prisma.session.update({
+        where: { id: dbSession.id },
+        data: {
+          tableNotes: notes !== undefined ? notes : dbSession.tableNotes
+        }
+      });
+
+      const fireSession = convertPrismaSessionToFireSession(updatedDbSession);
+      
+      return NextResponse.json({ 
+        success: true, 
+        session: fireSession,
+        message: 'Notes updated successfully',
+        businessLogic: 'Session notes updated without state change'
+      });
+    }
+
     // Find the session in database
     const dbSession = await prisma.session.findFirst({
       where: {
