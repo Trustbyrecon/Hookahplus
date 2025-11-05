@@ -13,14 +13,16 @@ ALTER TABLE IF EXISTS public.sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."Session" ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Service role has full access (for Prisma/webhooks)
-CREATE POLICY IF NOT EXISTS "Service role can manage sessions"
+DROP POLICY IF EXISTS "Service role can manage sessions" ON public.sessions;
+CREATE POLICY "Service role can manage sessions"
 ON public.sessions
 FOR ALL
 USING (auth.role() = 'service_role')
 WITH CHECK (auth.role() = 'service_role');
 
 -- Policy: Authenticated users can read their own sessions (for sessions table)
-CREATE POLICY IF NOT EXISTS "Users can read own sessions"
+DROP POLICY IF EXISTS "Users can read own sessions" ON public.sessions;
+CREATE POLICY "Users can read own sessions"
 ON public.sessions
 FOR SELECT
 USING (
@@ -39,7 +41,8 @@ USING (
 );
 
 -- Policy: Authenticated users can read their own sessions (for Session table)
-CREATE POLICY IF NOT EXISTS "Users can read own sessions alt"
+DROP POLICY IF EXISTS "Users can read own sessions alt" ON public."Session";
+CREATE POLICY "Users can read own sessions alt"
 ON public."Session"
 FOR SELECT
 USING (
@@ -63,21 +66,24 @@ ALTER TABLE IF EXISTS public."SessionEvent" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.session_events ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Service role has full access (for SessionEvent)
-CREATE POLICY IF NOT EXISTS "Service role can manage session events"
+DROP POLICY IF EXISTS "Service role can manage session events" ON public."SessionEvent";
+CREATE POLICY "Service role can manage session events"
 ON public."SessionEvent"
 FOR ALL
 USING (auth.role() = 'service_role')
 WITH CHECK (auth.role() = 'service_role');
 
 -- Policy: Service role has full access (for session_events)
-CREATE POLICY IF NOT EXISTS "Service role can manage session events alt"
+DROP POLICY IF EXISTS "Service role can manage session events alt" ON public.session_events;
+CREATE POLICY "Service role can manage session events alt"
 ON public.session_events
 FOR ALL
 USING (auth.role() = 'service_role')
 WITH CHECK (auth.role() = 'service_role');
 
 -- Policy: Users can read events for sessions they have access to
-CREATE POLICY IF NOT EXISTS "Users can read session events"
+DROP POLICY IF EXISTS "Users can read session events" ON public."SessionEvent";
+CREATE POLICY "Users can read session events"
 ON public."SessionEvent"
 FOR SELECT
 USING (
@@ -105,14 +111,16 @@ ALTER TABLE IF EXISTS public."Badge" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.badges ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Service role has full access
-CREATE POLICY IF NOT EXISTS "Service role can manage badges"
+DROP POLICY IF EXISTS "Service role can manage badges" ON public."Badge";
+CREATE POLICY "Service role can manage badges"
 ON public."Badge"
 FOR ALL
 USING (auth.role() = 'service_role')
 WITH CHECK (auth.role() = 'service_role');
 
 -- Policy: Authenticated users can read active badges (for Badge table)
-CREATE POLICY IF NOT EXISTS "Users can read active badges"
+DROP POLICY IF EXISTS "Users can read active badges" ON public."Badge";
+CREATE POLICY "Users can read active badges"
 ON public."Badge"
 FOR SELECT
 USING (
@@ -121,7 +129,8 @@ USING (
 );
 
 -- Policy: Authenticated users can read active badges (for badges table)
-CREATE POLICY IF NOT EXISTS "Users can read active badges alt"
+DROP POLICY IF EXISTS "Users can read active badges alt" ON public.badges;
+CREATE POLICY "Users can read active badges alt"
 ON public.badges
 FOR SELECT
 USING (
@@ -137,14 +146,16 @@ ALTER TABLE IF EXISTS public."Event" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.events ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Service role has full access
-CREATE POLICY IF NOT EXISTS "Service role can manage events"
+DROP POLICY IF EXISTS "Service role can manage events" ON public."Event";
+CREATE POLICY "Service role can manage events"
 ON public."Event"
 FOR ALL
 USING (auth.role() = 'service_role')
 WITH CHECK (auth.role() = 'service_role');
 
 -- Policy: Users can read their own events (for Event table)
-CREATE POLICY IF NOT EXISTS "Users can read own events"
+DROP POLICY IF EXISTS "Users can read own events" ON public."Event";
+CREATE POLICY "Users can read own events"
 ON public."Event"
 FOR SELECT
 USING (
@@ -160,7 +171,8 @@ USING (
 );
 
 -- Policy: Users can read their own events (for events table)
-CREATE POLICY IF NOT EXISTS "Users can read own events alt"
+DROP POLICY IF EXISTS "Users can read own events alt" ON public.events;
+CREATE POLICY "Users can read own events alt"
 ON public.events
 FOR SELECT
 USING (
@@ -183,14 +195,16 @@ ALTER TABLE IF EXISTS public."Award" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.awards ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Service role has full access
-CREATE POLICY IF NOT EXISTS "Service role can manage awards"
+DROP POLICY IF EXISTS "Service role can manage awards" ON public."Award";
+CREATE POLICY "Service role can manage awards"
 ON public."Award"
 FOR ALL
 USING (auth.role() = 'service_role')
 WITH CHECK (auth.role() = 'service_role');
 
 -- Policy: Users can read their own awards (for Award table)
-CREATE POLICY IF NOT EXISTS "Users can read own awards"
+DROP POLICY IF EXISTS "Users can read own awards" ON public."Award";
+CREATE POLICY "Users can read own awards"
 ON public."Award"
 FOR SELECT
 USING (
@@ -206,7 +220,8 @@ USING (
 );
 
 -- Policy: Users can read their own awards (for awards table)
-CREATE POLICY IF NOT EXISTS "Users can read own awards alt"
+DROP POLICY IF EXISTS "Users can read own awards alt" ON public.awards;
+CREATE POLICY "Users can read own awards alt"
 ON public.awards
 FOR SELECT
 USING (
