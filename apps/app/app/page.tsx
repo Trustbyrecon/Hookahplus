@@ -225,30 +225,6 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* Powered by Reflex Intelligence */}
-      <div className="max-w-7xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4">Powered by Reflex Intelligence</h2>
-          <p className="text-zinc-400 text-lg">Advanced AI systems working together to optimize your lounge experience</p>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-          {reflexCards.map((card, index) => (
-            <div key={index} className={`reflex-card bg-gradient-to-br ${card.color} border ${card.borderColor} rounded-xl p-6`}>
-              <div className="flex items-start mb-4">
-                <div className="p-3 bg-white/10 rounded-lg">
-                  {card.icon}
-                </div>
-              </div>
-              <div>
-                <h3 className="text-xl font-bold mb-2">{card.title}</h3>
-                <p className="text-zinc-300 text-sm">{card.description}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* Quick Access Grid */}
       <div className="max-w-7xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
