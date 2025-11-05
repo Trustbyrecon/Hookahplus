@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { GuestProfile, FeatureFlags, RewardsResponse, BadgeDefinition } from '@guest-types';
-import { createGhostLogEntry } from '../../libs/ghostlog/hash';
 import { Trophy, Star, Gift, Target, Crown, Zap } from 'lucide-react';
 
 interface RewardsBadgeStripProps {
@@ -36,7 +35,7 @@ export default function RewardsBadgeStrip({ guestProfile, flags, onBadgeUpdate }
       setRewards(data);
       onBadgeUpdate();
 
-      // Log rewards view event
+      // Log rewards view event (client-side logging only - server-side logging happens in API)
       if (flags.ghostlog.lite) {
         const eventPayload = {
           guestId: guestProfile.guestId,
@@ -46,8 +45,8 @@ export default function RewardsBadgeStrip({ guestProfile, flags, onBadgeUpdate }
           timestamp: new Date().toISOString()
         };
 
-        const ghostLogEntry = createGhostLogEntry('rewards.viewed', eventPayload);
-        console.log('Rewards view logged:', ghostLogEntry);
+        // Client-side logging only - actual ghostlog entry is created server-side in /api/guest/rewards
+        console.log('Rewards view:', eventPayload);
       }
 
     } catch (err) {

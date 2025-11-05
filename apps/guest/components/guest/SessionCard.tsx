@@ -1,14 +1,12 @@
-'use client';
-
 import React, { useState, useEffect } from 'react';
 import { GuestProfile, FeatureFlags } from '@guest-types';
-import { createGhostLogEntry } from '../../libs/ghostlog/hash';
 import { Clock, Play, Pause, RotateCcw, CheckCircle, AlertCircle } from 'lucide-react';
 
 interface SessionCardProps {
   guestProfile: GuestProfile;
   flags: FeatureFlags;
   onSessionUpdate: () => void;
+  showSession?: boolean; // Only show after payment confirmation
 }
 
 interface SessionState {
@@ -23,15 +21,18 @@ interface SessionState {
   };
 }
 
-export default function SessionCard({ guestProfile, flags, onSessionUpdate }: SessionCardProps) {
+export default function SessionCard({ guestProfile, flags, onSessionUpdate, showSession = false }: SessionCardProps) {
   const [session, setSession] = useState<SessionState | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // Don't auto-load
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadSession();
-  }, [guestProfile.guestId]);
+    // Only load session if showSession is true (after payment confirmation)
+    if (showSession && !session) {
+      loadSession();
+    }
+  }, [guestProfile.guestId, showSession]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -55,23 +56,33 @@ export default function SessionCard({ guestProfile, flags, onSessionUpdate }: Se
       setIsLoading(true);
       setError(null);
 
-      // In production, this would fetch the actual session
-      // For now, we'll simulate a session
-      const mockSession: SessionState = {
-        sessionId: `session_${Date.now()}`,
-        status: 'started',
-        startedAt: new Date().toISOString(),
-        estimatedWait: 5,
-        tableId: 'T-001'
-      };
-
-      setSession(mockSession);
+      // Fetch actual session from API after payment confirmation
+      const response = await fetch(`/api/guest/session/status?guestId=${guestProfile.guestId}`);
       
-      // Simulate session progression
-      setTimeout(() => {
-        setSession(prev => prev ? { ...prev, status: 'in_progress' } : null);
-        setTimeRemaining(1800); // 30 minutes
-      }, 2000);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to load session');
+      }
+
+      const sessionData = await response.json();
+      
+      if (sessionData.session) {
+        setSession({
+          sessionId: sessionData.session.sessionId,
+          status: sessionData.session.status || 'started',
+          startedAt: sessionData.session.startedAt || new Date().toISOString(),
+          estimatedWait: sessionData.session.estimatedWait,
+          tableId: sessionData.session.tableId
+        });
+        
+        // Start timer if session is in progress
+        if (sessionData.session.status === 'in_progress' && sessionData.session.timeRemaining) {
+          setTimeRemaining(sessionData.session.timeRemaining);
+        }
+      } else {
+        // No active session - session starts after payment
+        setSession(null);
+      }
 
     } catch (err) {
       console.error('Load session error:', err);
@@ -186,7 +197,12 @@ export default function SessionCard({ guestProfile, flags, onSessionUpdate }: Se
     );
   }
 
-  if (!session) {
+  // Don't show session card until payment is confirmed
+  if (!showSession) {
+    return null;
+  }
+
+  if (!session && !isLoading) {
     return (
       <div className="bg-zinc-800/50 backdrop-blur-sm border border-zinc-700 rounded-xl p-6">
         <div className="flex items-center space-x-3 mb-6">
@@ -194,18 +210,10 @@ export default function SessionCard({ guestProfile, flags, onSessionUpdate }: Se
             <Clock className="w-6 h-6 text-blue-400" />
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-white">Start Your Session</h2>
-            <p className="text-sm text-zinc-400">Ready to begin your hookah experience</p>
+            <h2 className="text-xl font-semibold text-white">Session Starting</h2>
+            <p className="text-sm text-zinc-400">Your session will begin shortly...</p>
           </div>
         </div>
-        
-        <button
-          onClick={handleStartSession}
-          className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-        >
-          <Play className="w-5 h-5" />
-          <span>Start Session</span>
-        </button>
       </div>
     );
   }

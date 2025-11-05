@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { QRData, GuestProfile, FeatureFlags } from '@guest-types';
 import { featureFlags } from '../../../config/flags';
 import QRGate from '../../../components/guest/QRGate';
-import FlavorComposer from '../../../components/guest/FlavorComposer';
+import FlavorMixSelector from '../../../components/customer/FlavorMixSelector';
 import SessionCard from '../../../components/guest/SessionCard';
 import PriceBreakdown from '../../../components/guest/PriceBreakdown';
 import RewardsBadgeStrip from '../../../components/guest/RewardsBadgeStrip';
@@ -35,6 +35,9 @@ export default function GuestLoungePage() {
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [sessionType, setSessionType] = useState<'flat' | 'time-based'>('flat');
   const [showQRScanner, setShowQRScanner] = useState(false);
+  const [specialInstructions, setSpecialInstructions] = useState<string>('');
+  const [flavorMixPrice, setFlavorMixPrice] = useState<number>(0);
+  const [sessionStarted, setSessionStarted] = useState<boolean>(false); // Track if session started after payment
 
   useEffect(() => {
     initializeGuest();
@@ -397,7 +400,7 @@ export default function GuestLoungePage() {
               <div className="text-2xl">🍃</div>
               <div>
                 <h1 className="text-xl font-bold">Hookah+ Guest</h1>
-                <p className="text-sm text-zinc-400">Lounge: {loungeId}</p>
+                <p className="text-sm text-zinc-400">Light the Flame. Feel the Flow.</p>
               </div>
             </div>
             
@@ -424,23 +427,64 @@ export default function GuestLoungePage() {
               onProfileUpdate={setGuestProfile}
             />
 
-            {/* Session Card */}
-            <SessionCard
-              guestProfile={guestProfile}
-              flags={flags}
-              onSessionUpdate={() => {
-                // Handle session updates
-              }}
-            />
+            {/* Session Card - Only show after payment confirmation */}
+            {sessionStarted && (
+              <SessionCard
+                guestProfile={guestProfile}
+                flags={flags}
+                showSession={sessionStarted}
+                onSessionUpdate={() => {
+                  // Handle session updates
+                }}
+              />
+            )}
 
-            {/* Flavor Composer */}
-            <FlavorComposer
-              guestProfile={guestProfile}
-              flags={flags}
-              onMixUpdate={() => {
-                // Handle mix updates
-              }}
-            />
+            {/* Flavor Wheel with Special Instructions */}
+            <div className="bg-zinc-800/50 backdrop-blur-sm border border-zinc-700 rounded-xl p-6">
+              <div className="mb-6">
+                <h2 className="text-xl font-semibold text-white mb-2">Choose Your Flavors</h2>
+                <p className="text-sm text-zinc-400">Select up to 4 flavors for your perfect mix</p>
+              </div>
+              
+              <FlavorMixSelector
+                selectedFlavors={selectedFlavors}
+                onSelectionChange={setSelectedFlavors}
+                maxSelections={4}
+                onPriceUpdate={setFlavorMixPrice}
+              />
+              
+              {/* Special Instructions */}
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-white mb-2">
+                  Special Instructions
+                </label>
+                <textarea
+                  value={specialInstructions}
+                  onChange={(e) => setSpecialInstructions(e.target.value)}
+                  placeholder="Any special requests or notes for your mix (e.g., extra ice, light flavor, strong mix)..."
+                  className="w-full px-4 py-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  rows={3}
+                />
+              </div>
+              
+              {selectedFlavors.length > 0 && (
+                <div className="mt-4 p-4 bg-teal-500/10 border border-teal-500/30 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-medium text-white mb-1">
+                        Selected: {selectedFlavors.length > 0 ? selectedFlavors.join(', ') : 'None'}
+                      </div>
+                      <div className="text-xs text-zinc-400">
+                        {specialInstructions || 'No special instructions'}
+                      </div>
+                    </div>
+                    <div className="text-lg font-bold text-teal-400">
+                      ${flavorMixPrice.toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Price Breakdown */}
             <PriceBreakdown

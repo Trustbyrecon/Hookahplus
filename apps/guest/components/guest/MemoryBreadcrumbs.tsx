@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { GuestProfile, FeatureFlags } from '@guest-types';
-import { createGhostLogEntry } from '../../libs/ghostlog/hash';
 import { History, Clock, MapPin, Star, Flame, Calendar } from 'lucide-react';
 
 interface MemoryBreadcrumbsProps {
@@ -72,7 +71,7 @@ export default function MemoryBreadcrumbs({ guestProfile, flags }: MemoryBreadcr
 
       setMemories(mockMemories);
 
-      // Log memory view event
+      // Log memory view event (client-side logging only - server-side logging happens in API)
       if (flags.ghostlog.lite) {
         const eventPayload = {
           guestId: guestProfile.guestId,
@@ -80,8 +79,8 @@ export default function MemoryBreadcrumbs({ guestProfile, flags }: MemoryBreadcr
           timestamp: new Date().toISOString()
         };
 
-        const ghostLogEntry = createGhostLogEntry('memory.viewed', eventPayload);
-        console.log('Memory view logged:', ghostLogEntry);
+        // Client-side logging only - actual ghostlog entry is created server-side
+        console.log('Memory view:', eventPayload);
       }
 
     } catch (err) {

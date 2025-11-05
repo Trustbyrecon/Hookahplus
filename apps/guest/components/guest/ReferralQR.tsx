@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { GuestProfile, FeatureFlags, ReferralCreateResponse } from '@guest-types';
-import { createGhostLogEntry } from '../../libs/ghostlog/hash';
-import { QrCode, Share2, Copy, Users, Gift, ExternalLink } from 'lucide-react';
+import { QrCode, Share2, Copy, Users, Gift, ExternalLink, Trophy, Target, TrendingUp, Zap } from 'lucide-react';
 
 interface ReferralQRProps {
   guestProfile: GuestProfile;
@@ -12,15 +11,110 @@ interface ReferralQRProps {
   onReferralCreate: () => void;
 }
 
+interface ReferralProgress {
+  totalReferrals: number;
+  totalClicks: number;
+  totalJoins: number;
+  totalRewards: number;
+  conversionRate: number;
+  referrals: Array<{
+    code: string;
+    clicks: number;
+    joins: number;
+    rewards: number;
+    createdAt: string;
+    isActive: boolean;
+  }>;
+}
+
+interface ReferralBadge {
+  id: string;
+  name: string;
+  description: string;
+  goal: number;
+  current: number;
+  unlocked: boolean;
+  icon: React.ReactNode;
+  color: string;
+}
+
 export default function ReferralQR({ guestProfile, loungeId, flags, onReferralCreate }: ReferralQRProps) {
   const [referralData, setReferralData] = useState<ReferralCreateResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [progress, setProgress] = useState<ReferralProgress | null>(null);
+  const [badges, setBadges] = useState<ReferralBadge[]>([]);
+  const [isLoadingProgress, setIsLoadingProgress] = useState(false);
 
   useEffect(() => {
-    // Don't auto-create referral, let user initiate
-  }, []);
+    // Load referral progress and badges
+    if (referralData) {
+      loadReferralProgress();
+    }
+  }, [referralData, guestProfile.guestId]);
+
+  const loadReferralProgress = async () => {
+    try {
+      setIsLoadingProgress(true);
+      const response = await fetch(`/api/guest/referral/create?guestId=${guestProfile.guestId}&loungeId=${loungeId}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setProgress(data.analytics);
+        
+        // Calculate badges based on progress
+        const calculatedBadges: ReferralBadge[] = [
+          {
+            id: 'sharer',
+            name: 'Social Butterfly',
+            description: 'Share your referral link',
+            goal: 1,
+            current: data.analytics.totalReferrals,
+            unlocked: data.analytics.totalReferrals >= 1,
+            icon: <Share2 className="w-4 h-4" />,
+            color: 'from-purple-500 to-pink-500'
+          },
+          {
+            id: 'connector',
+            name: 'Community Connector',
+            description: 'Refer 3+ friends',
+            goal: 3,
+            current: data.analytics.totalJoins,
+            unlocked: data.analytics.totalJoins >= 3,
+            icon: <Users className="w-4 h-4" />,
+            color: 'from-blue-500 to-cyan-500'
+          },
+          {
+            id: 'influencer',
+            name: 'Hookah+ Influencer',
+            description: 'Refer 10+ friends',
+            goal: 10,
+            current: data.analytics.totalJoins,
+            unlocked: data.analytics.totalJoins >= 10,
+            icon: <Trophy className="w-4 h-4" />,
+            color: 'from-yellow-500 to-orange-500'
+          },
+          {
+            id: 'evangelist',
+            name: 'Brand Evangelist',
+            description: 'Refer 25+ friends',
+            goal: 25,
+            current: data.analytics.totalJoins,
+            unlocked: data.analytics.totalJoins >= 25,
+            icon: <Zap className="w-4 h-4" />,
+            color: 'from-green-500 to-teal-500'
+          }
+        ];
+        
+        setBadges(calculatedBadges);
+      }
+    } catch (err) {
+      console.error('Failed to load referral progress:', err);
+    } finally {
+      setIsLoadingProgress(false);
+    }
+  };
 
   const createReferral = async () => {
     try {
@@ -47,7 +141,7 @@ export default function ReferralQR({ guestProfile, loungeId, flags, onReferralCr
       setReferralData(data);
       onReferralCreate();
 
-      // Log referral creation event
+      // Log referral creation event (client-side logging only - server-side logging happens in API)
       if (flags.ghostlog.lite) {
         const eventPayload = {
           code: data.code,
@@ -57,9 +151,12 @@ export default function ReferralQR({ guestProfile, loungeId, flags, onReferralCr
           timestamp: new Date().toISOString()
         };
 
-        const ghostLogEntry = createGhostLogEntry('referral.created', eventPayload);
-        console.log('Referral creation logged:', ghostLogEntry);
+        // Client-side logging only - actual ghostlog entry is created server-side in /api/guest/referral/create
+        console.log('Referral created:', eventPayload);
       }
+      
+      // Load progress after creating referral
+      loadReferralProgress();
 
     } catch (err) {
       console.error('Create referral error:', err);
@@ -258,6 +355,104 @@ export default function ReferralQR({ guestProfile, loungeId, flags, onReferralCr
         </button>
       </div>
 
+      {/* Progress & Future Rewards */}
+      {progress && (
+        <div className="mt-6 space-y-4">
+          <div className="flex items-center space-x-2 mb-4">
+            <Target className="w-5 h-5 text-purple-400" />
+            <h3 className="text-lg font-semibold text-white">Progress & Future Rewards</h3>
+          </div>
+          
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="text-center p-3 bg-zinc-700/50 rounded-lg">
+              <div className="text-lg font-bold text-white">{progress.totalClicks}</div>
+              <div className="text-xs text-zinc-400">Clicks</div>
+            </div>
+            <div className="text-center p-3 bg-zinc-700/50 rounded-lg">
+              <div className="text-lg font-bold text-teal-400">{progress.totalJoins}</div>
+              <div className="text-xs text-zinc-400">Joined</div>
+            </div>
+            <div className="text-center p-3 bg-zinc-700/50 rounded-lg">
+              <div className="text-lg font-bold text-yellow-400">{progress.totalRewards}</div>
+              <div className="text-xs text-zinc-400">Points</div>
+            </div>
+          </div>
+
+          {/* Referral Progress Bar */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-zinc-300">Referral Progress</span>
+              <span className="text-teal-400 font-medium">
+                {progress.totalJoins} friends joined
+              </span>
+            </div>
+            <div className="w-full bg-zinc-700 rounded-full h-3">
+              <div
+                className="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-500"
+                style={{ width: `${Math.min(100, (progress.totalJoins / 10) * 100)}%` }}
+              />
+            </div>
+            <div className="text-xs text-zinc-400">
+              {progress.totalJoins < 10 
+                ? `${10 - progress.totalJoins} more referrals to unlock "Hookah+ Influencer" badge`
+                : '🎉 You\'ve unlocked the "Hookah+ Influencer" badge!'}
+            </div>
+          </div>
+
+          {/* Badges for Sharers */}
+          {badges.length > 0 && (
+            <div className="mt-4">
+              <h4 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
+                <Trophy className="w-4 h-4 text-yellow-400" />
+                Your Badges
+              </h4>
+              <div className="grid grid-cols-2 gap-2">
+                {badges.map((badge) => (
+                  <div
+                    key={badge.id}
+                    className={`p-3 rounded-lg border-2 transition-all ${
+                      badge.unlocked
+                        ? `bg-gradient-to-br ${badge.color}/20 ${badge.id === 'sharer' ? 'border-purple-500/50' : badge.id === 'connector' ? 'border-blue-500/50' : badge.id === 'influencer' ? 'border-yellow-500/50' : 'border-green-500/50'}`
+                        : 'bg-zinc-700/50 border-zinc-600 opacity-60'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-2 mb-1">
+                      <div className={`${badge.unlocked ? 'text-white' : 'text-zinc-500'}`}>
+                        {badge.icon}
+                      </div>
+                      <span className={`text-xs font-medium ${badge.unlocked ? 'text-white' : 'text-zinc-500'}`}>
+                        {badge.name}
+                      </span>
+                    </div>
+                    <div className="text-xs text-zinc-400 mb-2">{badge.description}</div>
+                    {!badge.unlocked && (
+                      <div className="mt-2">
+                        <div className="w-full bg-zinc-600 rounded-full h-1.5">
+                          <div
+                            className="bg-gradient-to-r from-purple-500 to-pink-500 h-1.5 rounded-full"
+                            style={{ width: `${Math.min(100, (badge.current / badge.goal) * 100)}%` }}
+                          />
+                        </div>
+                        <div className="text-xs text-zinc-500 mt-1">
+                          {badge.current}/{badge.goal}
+                        </div>
+                      </div>
+                    )}
+                    {badge.unlocked && (
+                      <div className="flex items-center space-x-1 mt-1">
+                        <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                        <span className="text-xs text-green-400">Unlocked!</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Rewards Info */}
       <div className="mt-6 p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
         <div className="flex items-center space-x-2 mb-2">
@@ -268,6 +463,14 @@ export default function ReferralQR({ guestProfile, loungeId, flags, onReferralCr
           Get 50 points for each friend who joins using your link. 
           They'll also get a welcome bonus!
         </p>
+        {progress && progress.totalRewards > 0 && (
+          <div className="mt-2 pt-2 border-t border-green-500/20">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-zinc-400">Total Points Earned:</span>
+              <span className="text-sm font-bold text-yellow-400">{progress.totalRewards} pts</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Trust Lock Indicator */}
