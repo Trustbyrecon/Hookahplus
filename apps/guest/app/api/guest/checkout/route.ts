@@ -193,7 +193,7 @@ async function checkAndAwardBadges(guestId: string, loungeId: string, sessionId:
   }
 
   // Mix Master badge: 5 unique mixes saved
-  if (!badges.includes('MixMaster') && guestProfile.preferences?.savedMixes?.length >= 5) {
+  if (!badges.includes('MixMaster') && (guestProfile.preferences?.savedMixes?.length || 0) >= 5) {
     await awardBadge(guestId, loungeId, 'MixMaster', sessionId);
   }
 
