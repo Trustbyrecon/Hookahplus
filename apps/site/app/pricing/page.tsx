@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
+import ROICalculator from '../../components/ROICalculator';
 import { 
   CheckCircle, 
   X, 
@@ -256,122 +257,8 @@ export default function PricingPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
-        {/* Revenue Model Section - Lounge Owner Perspective */}
-        <div className="mb-12 bg-gradient-to-r from-teal-900/20 to-green-900/20 rounded-xl p-8 border border-teal-500/30">
-          <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-            <DollarSign className="w-6 h-6 text-teal-400" />
-            How We Make Money (Lounge Owner Perspective)
-          </h2>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-6">
-            {/* One Session: Micro-Economics */}
-            <div className="bg-zinc-800/50 rounded-lg p-6 border border-zinc-700">
-              <h3 className="text-xl font-bold mb-4 text-teal-400">💨 One Session: The Micro-Economics</h3>
-              <div className="space-y-3 text-sm">
-                <div className="flex items-start gap-2">
-                  <span className="font-semibold text-white">1. Base Price:</span>
-                  <span className="text-zinc-300">Lounge charges $30 for a standard hookah session.</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="font-semibold text-white">2. Add-Ons:</span>
-                  <span className="text-zinc-300">Guest selects add-ons (average $5–$10 per session). Average ticket: <strong>$35</strong></span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="font-semibold text-white">3. Transaction Flow:</span>
-                  <span className="text-zinc-300">Lounge keeps revenue ($35). Hookah+ collects transaction fee share (~$0.35 at 1%).</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="font-semibold text-white">4. Loyalty Upsell:</span>
-                  <span className="text-zinc-300">Guest joins Hookah+ Loyalty (QR Companion). System nudges with personalized recommendations.</span>
-                </div>
-                <div className="mt-4 p-3 bg-teal-500/10 rounded-lg border border-teal-500/30">
-                  <div className="text-xs text-zinc-400 mb-1">Hookah+ Revenue Per Session (Before Costs):</div>
-                  <div className="text-sm space-y-1">
-                    <div className="flex justify-between">
-                      <span className="text-zinc-300">SaaS amortized slice:</span>
-                      <span className="text-white">≈ $0.30–$0.50</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-300">Transaction fee:</span>
-                      <span className="text-white">≈ $0.35</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-300">Upsell/insights capture:</span>
-                      <span className="text-white">≈ $0.25–$0.50</span>
-                    </div>
-                    <div className="flex justify-between mt-2 pt-2 border-t border-zinc-700">
-                      <span className="font-semibold text-teal-400">Total:</span>
-                      <span className="font-bold text-teal-400">≈ $0.90–$1.35 per session</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Per Lounge: Macro-Economics */}
-            <div className="bg-zinc-800/50 rounded-lg p-6 border border-zinc-700">
-              <h3 className="text-xl font-bold mb-4 text-teal-400">🏬 Per Lounge: The Macro-Economics</h3>
-              <div className="space-y-3 text-sm">
-                <div className="space-y-2">
-                  <div className="text-zinc-400 text-xs">Assumptions:</div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-zinc-300">40 sessions/day × 25 days/month</span>
-                    <span className="text-white font-semibold">= 1,000 sessions/month</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-zinc-300">Average ticket:</span>
-                    <span className="text-white font-semibold">$35</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-zinc-300">Revenue per lounge:</span>
-                    <span className="text-white font-semibold">$35,000/month</span>
-                  </div>
-                </div>
-                <div className="mt-4 p-3 bg-teal-500/10 rounded-lg border border-teal-500/30">
-                  <div className="text-xs text-zinc-400 mb-1">Hookah+ Revenue Per Lounge:</div>
-                  <div className="text-sm space-y-1">
-                    <div className="flex justify-between">
-                      <span className="text-zinc-300">SaaS Subscription:</span>
-                      <span className="text-white">$300–$500/month</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-300">Transaction Fees:</span>
-                      <span className="text-white">~$350/month</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-300">Insights/Loyalty Tier:</span>
-                      <span className="text-white">$200–$400/month</span>
-                    </div>
-                    <div className="flex justify-between mt-2 pt-2 border-t border-zinc-700">
-                      <span className="font-semibold text-teal-400">Total per lounge:</span>
-                      <span className="font-bold text-teal-400">≈ $850–$1,250/month</span>
-                    </div>
-                    <div className="flex justify-between mt-1">
-                      <span className="text-zinc-400 text-xs">Annualized per lounge:</span>
-                      <span className="font-bold text-teal-400 text-xs">≈ $10k–$15k ARR</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-4 p-3 bg-zinc-900/50 rounded-lg">
-                  <div className="text-xs text-zinc-400 mb-2">🚦 Scaling:</div>
-                  <div className="text-xs space-y-1 text-zinc-300">
-                    <div>10 lounges = ~$100k–$150k ARR</div>
-                    <div>100 lounges = ~$1M–$1.5M ARR</div>
-                    <div>1,000 lounges = ~$10M–$15M ARR</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-zinc-900/50 rounded-lg p-4 border border-zinc-700">
-            <p className="text-sm text-zinc-300">
-              <strong className="text-teal-400">Note:</strong> Hookah+ doesn't take 30% of the lounge's total sales — that would be predatory and unsustainable. 
-              Instead, Hookah+ earns ~3–4% of a session's spend through SaaS subscription, transaction fee share, and upsell tiers. 
-              This translates to approximately $0.90–$1.35 revenue per session (before costs) for Hookah+.
-            </p>
-          </div>
-        </div>
+        {/* ROI Calculator Section */}
+        <ROICalculator />
 
         {/* How It Works - Adaptive Learning Phase */}
         <div className="mb-12 bg-gradient-to-r from-purple-900/20 to-blue-900/20 rounded-xl p-8 border border-purple-500/30">

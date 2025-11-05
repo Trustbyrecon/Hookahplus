@@ -138,6 +138,67 @@ export default function Home() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-2 sm:px-6 lg:px-8">
+        {/* What H+ Does Section */}
+        <div className="mb-12 bg-gradient-to-r from-teal-900/20 to-cyan-900/20 rounded-xl p-8 border border-teal-500/30">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              What <span className="text-teal-400">Hookah+</span> Does
+            </h2>
+            <p className="text-lg text-zinc-300 max-w-3xl mx-auto mb-8">
+              Hookah+ is an intelligent operations platform that transforms how hookah lounges manage sessions, 
+              engage guests, and maximize revenue through AI-powered insights and seamless workflows.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="border border-zinc-700 bg-zinc-800/50 hover:border-teal-500/50 transition-colors">
+              <div className="p-6 text-center">
+                <div className="w-16 h-16 bg-teal-500/20 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <Clock className="w-8 h-8 text-teal-400" />
+                </div>
+                <h3 className="text-xl font-semibold mb-3 text-teal-300">Session Management</h3>
+                <p className="text-zinc-400 text-sm">
+                  Track active sessions in real-time, manage table assignments, and optimize flow with intelligent timing and notifications.
+                </p>
+              </div>
+            </Card>
+
+            <Card className="border border-zinc-700 bg-zinc-800/50 hover:border-teal-500/50 transition-colors">
+              <div className="p-6 text-center">
+                <div className="w-16 h-16 bg-cyan-500/20 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <QrCode className="w-8 h-8 text-cyan-400" />
+                </div>
+                <h3 className="text-xl font-semibold mb-3 text-cyan-300">Guest Experience</h3>
+                <p className="text-zinc-400 text-sm">
+                  Enable seamless QR-based payments, personalized flavor recommendations, and loyalty programs that keep guests coming back.
+                </p>
+              </div>
+            </Card>
+
+            <Card className="border border-zinc-700 bg-zinc-800/50 hover:border-teal-500/50 transition-colors">
+              <div className="p-6 text-center">
+                <div className="w-16 h-16 bg-purple-500/20 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <TrendingUp className="w-8 h-8 text-purple-400" />
+                </div>
+                <h3 className="text-xl font-semibold mb-3 text-purple-300">Revenue Intelligence</h3>
+                <p className="text-zinc-400 text-sm">
+                  Drive revenue growth through AI-powered insights, predictive analytics, and smart pricing that adapts to your lounge's unique patterns.
+                </p>
+              </div>
+            </Card>
+          </div>
+
+          <div className="mt-8 text-center">
+            <div className="inline-flex items-center gap-4 bg-zinc-900/50 rounded-lg px-6 py-4 border border-zinc-700">
+              <div className="text-sm text-zinc-400">
+                <span className="text-teal-400 font-semibold">Result:</span> Lounges typically see
+              </div>
+              <div className="text-2xl font-bold text-teal-400">20% Revenue Uplift</div>
+              <div className="text-sm text-zinc-400">in the first month</div>
+            </div>
+          </div>
+        </div>
+
         {/* Hero Section - Reduced Size */}
         <div className="text-center mb-4">
           <h2 className="text-xl md:text-2xl font-bold mb-2">
