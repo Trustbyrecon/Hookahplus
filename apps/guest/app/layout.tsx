@@ -2,6 +2,7 @@ import './globals.css'
 import '../styles/mobile.css'
 import '../styles/platform-optimizations.css'
 import GlobalNavigation from '../components/GlobalNavigation'
+import { CartProvider } from '../components/cart/CartProvider'
 import AnalyticsScript from '../components/AnalyticsScript'
 import ScrollManager from '../components/ScrollManager'
 
@@ -23,7 +24,9 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-zinc-950 text-white mobile-content-container">
         <ScrollManager />
-        {children}
+        <CartProvider>
+          {children}
+        </CartProvider>
       </body>
     </html>
   );
