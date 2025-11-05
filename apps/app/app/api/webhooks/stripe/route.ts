@@ -39,6 +39,16 @@ export async function POST(req: Request) {
       return Response.json({ error: "Webhook secret not configured" }, { status: 500 });
     }
 
+    // Check DATABASE_URL is configured
+    if (!process.env.DATABASE_URL) {
+      console.error('[Stripe Webhook] DATABASE_URL not configured');
+      console.error('[Stripe Webhook] Make sure DATABASE_URL is set for Production environment in Vercel');
+      return Response.json({ 
+        error: "Database not configured",
+        details: "DATABASE_URL environment variable is missing. Please add it to Vercel Production environment variables."
+      }, { status: 500 });
+    }
+
     const sig = req.headers.get("stripe-signature");
     if (!sig) {
       console.error('[Stripe Webhook] Missing stripe-signature header');
