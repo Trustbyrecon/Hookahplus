@@ -421,15 +421,15 @@ export default function GuestLoungePage() {
             />
 
             {/* Step 2: Session Pricing (replaces Live Mix Preview) */}
-            {qrData?.tableId && (
+            {qrData && (
               <SessionPricing
                 sessionType={sessionType}
                 onSessionTypeChange={setSessionType}
               />
             )}
 
-            {/* Step 3: Flavor Selection */}
-            {qrData?.tableId && (
+            {/* Step 3: Flavor Selection - Always show after QRGate */}
+            {qrData && (
               <div className="bg-zinc-800/50 backdrop-blur-sm border border-zinc-700 rounded-xl p-6">
                 <div className="mb-6">
                   <h2 className="text-xl font-semibold text-white mb-2">Choose Your Flavors</h2>
@@ -479,6 +479,41 @@ export default function GuestLoungePage() {
                   console.log('Session started after checkout:', sessionId);
                 }}
               />
+            )}
+
+            {/* Order Cart Summary - Always visible when flavors are selected */}
+            {selectedFlavors.length > 0 && (
+              <div className="bg-zinc-800/50 backdrop-blur-sm border border-zinc-700 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-white mb-4">Your Order</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-zinc-300">Selected Flavors:</span>
+                    <span className="text-sm font-medium text-white">{selectedFlavors.length} selected</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedFlavors.map((flavor, index) => (
+                      <span
+                        key={index}
+                        className="px-3 py-1 bg-primary-500/20 text-primary-400 text-sm rounded-full border border-primary-500/30"
+                      >
+                        {flavor}
+                      </span>
+                    ))}
+                  </div>
+                  {specialInstructions && (
+                    <div className="mt-3 p-3 bg-zinc-700/50 rounded-lg">
+                      <span className="text-xs text-zinc-400">Special Instructions:</span>
+                      <p className="text-sm text-zinc-300 mt-1">{specialInstructions}</p>
+                    </div>
+                  )}
+                  <div className="pt-3 border-t border-zinc-700 flex items-center justify-between">
+                    <span className="text-lg font-semibold text-white">Estimated Total:</span>
+                    <span className="text-xl font-bold text-teal-400">
+                      ${flavorMixPrice > 0 ? (flavorMixPrice / 100).toFixed(2) : '30.00'}
+                    </span>
+                  </div>
+                </div>
+              </div>
             )}
 
             {/* Step 5: Session Status (only after payment) */}

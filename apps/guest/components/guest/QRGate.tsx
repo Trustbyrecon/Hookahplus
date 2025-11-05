@@ -187,15 +187,15 @@ export default function QRGate({ qrData, guestProfile, flags, onProfileUpdate }:
         )}
       </div>
 
-      {/* Session Start */}
-      {!sessionStarted ? (
+      {/* Session Start - Only show if tableId is missing */}
+      {!qrData.tableId && !sessionStarted ? (
         <div className="space-y-4">
           <div className="text-center">
             <h3 className="text-lg font-semibold text-white mb-2">
-              Ready to Start Your Session?
+              Scan Your Table QR Code
             </h3>
             <p className="text-sm text-zinc-400 mb-4">
-              {qrData.tableId ? `Table: ${qrData.tableId}` : 'Choose your table and flavors'}
+              Scan the QR code on your table to start your session
             </p>
           </div>
 
@@ -223,7 +223,17 @@ export default function QRGate({ qrData, guestProfile, flags, onProfileUpdate }:
             )}
           </button>
         </div>
-      ) : (
+      ) : qrData.tableId && !sessionStarted ? (
+        <div className="text-center space-y-4">
+          <div className="flex items-center justify-center space-x-2 text-green-400">
+            <CheckCircle className="w-6 h-6" />
+            <span className="text-lg font-semibold">Ready to Order!</span>
+          </div>
+          <p className="text-sm text-zinc-400">
+            Table {qrData.tableId} • Choose your flavors below
+          </p>
+        </div>
+      ) : sessionStarted ? (
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center space-x-2 text-green-400">
             <CheckCircle className="w-6 h-6" />
@@ -233,7 +243,7 @@ export default function QRGate({ qrData, guestProfile, flags, onProfileUpdate }:
             Your session is now active. Choose your flavors and customize your experience.
           </p>
         </div>
-      )}
+      ) : null}
 
       {/* QR Data Debug (only in development) */}
       {process.env.NODE_ENV === 'development' && (
