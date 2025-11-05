@@ -15,8 +15,7 @@ import MemoryBreadcrumbs from '../../../components/guest/MemoryBreadcrumbs';
 import MobileOptimizedLayout from '../../../components/guest/MobileOptimizedLayout';
 import MobileQRScanner from '../../../components/guest/MobileQRScanner';
 import MobileFlavorSelector, { MOCK_FLAVORS } from '../../../components/guest/MobileFlavorSelector';
-import MobileCart from '../../../components/guest/MobileCart';
-import { UserPlus } from 'lucide-react';
+import SessionPricing from '../../../components/guest/SessionPricing';
 
 export default function GuestLoungePage() {
   const params = useParams();
@@ -32,7 +31,6 @@ export default function GuestLoungePage() {
   // Mobile-specific state
   const [isMobile, setIsMobile] = useState(false);
   const [selectedFlavors, setSelectedFlavors] = useState<string[]>([]);
-  const [cartItems, setCartItems] = useState<any[]>([]);
   const [sessionType, setSessionType] = useState<'flat' | 'time-based'>('flat');
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [specialInstructions, setSpecialInstructions] = useState<string>('');
@@ -187,126 +185,12 @@ export default function GuestLoungePage() {
       const newSelection = prev.includes(flavorId)
         ? prev.filter(id => id !== flavorId)
         : [...prev, flavorId];
-      
-      // Update cart items
-      const flavor = MOCK_FLAVORS.find(f => f.id === flavorId);
-      if (flavor) {
-        if (newSelection.includes(flavorId)) {
-          setCartItems(prev => [...prev, {
-            id: flavorId,
-            name: flavor.name,
-            price: flavor.price,
-            quantity: 1,
-            type: 'flavor',
-            color: flavor.color
-          }]);
-        } else {
-          setCartItems(prev => prev.filter(item => item.id !== flavorId));
-        }
-      }
-      
       return newSelection;
     });
   };
 
   const handleClearAllFlavors = () => {
     setSelectedFlavors([]);
-    setCartItems(prev => prev.filter(item => item.type !== 'flavor'));
-  };
-
-  const handleUpdateQuantity = (id: string, quantity: number) => {
-    if (quantity <= 0) {
-      setCartItems(prev => prev.filter(item => item.id !== id));
-      setSelectedFlavors(prev => prev.filter(flavorId => flavorId !== id));
-    } else {
-      setCartItems(prev => prev.map(item => 
-        item.id === id ? { ...item, quantity } : item
-      ));
-    }
-  };
-
-  const handleRemoveItem = (id: string) => {
-    setCartItems(prev => prev.filter(item => item.id !== id));
-    setSelectedFlavors(prev => prev.filter(flavorId => flavorId !== id));
-  };
-
-  const handleMobileCheckout = async () => {
-    if (!guestProfile || selectedFlavors.length === 0) {
-      alert('Please select flavors first');
-      return;
-    }
-
-    try {
-      // Create session
-      const createResponse = await fetch('/api/guest/session/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          guestId: guestProfile.guestId,
-          loungeId,
-          flavors: selectedFlavors,
-          specialInstructions,
-          tableId: qrData?.tableId,
-          zone: qrData?.zone
-        })
-      });
-
-      if (!createResponse.ok) {
-        const errorData = await createResponse.json();
-        throw new Error(errorData.error || 'Failed to create session');
-      }
-
-      const createData = await createResponse.json();
-      const sessionId = createData.sessionId;
-
-      // Get price quote
-      const quoteResponse = await fetch('/api/guest/price/quote', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          sessionId
-        })
-      });
-
-      if (!quoteResponse.ok) {
-        throw new Error('Failed to get price quote');
-      }
-
-      const quoteData = await quoteResponse.json();
-
-      // Process checkout
-      const checkoutResponse = await fetch('/api/guest/checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          sessionId,
-          method: 'card'
-        })
-      });
-
-      if (!checkoutResponse.ok) {
-        const errorData = await checkoutResponse.json();
-        throw new Error(errorData.error || 'Checkout failed');
-      }
-
-      const checkoutData = await checkoutResponse.json();
-
-      // Show success
-      alert(`Checkout successful! Receipt: ${checkoutData.receiptId}\nPoints earned: ${checkoutData.pointsEarned}`);
-
-      // Start session
-      setSessionStarted(true);
-
-    } catch (err) {
-      console.error('Mobile checkout error:', err);
-      alert(err instanceof Error ? err.message : 'Checkout failed');
-    }
   };
 
   const handleQRScanned = (data: string) => {
@@ -407,24 +291,51 @@ export default function GuestLoungePage() {
             </div>
 
             {/* Flavor Selection */}
-            <MobileFlavorSelector
-              flavors={MOCK_FLAVORS}
-              selectedFlavors={selectedFlavors}
-              onFlavorToggle={handleFlavorToggle}
-              onClearAll={handleClearAllFlavors}
-              basePrice={3000} // $30.00 base price
-            />
+            {qrData?.tableId && (
+              <MobileFlavorSelector
+                flavors={MOCK_FLAVORS}
+                selectedFlavors={selectedFlavors}
+                onFlavorToggle={handleFlavorToggle}
+                onClearAll={handleClearAllFlavors}
+                basePrice={3000} // $30.00 base price
+              />
+            )}
 
-            {/* Cart */}
-            <MobileCart
-              items={cartItems}
-              onUpdateQuantity={handleUpdateQuantity}
-              onRemoveItem={handleRemoveItem}
-              onCheckout={handleMobileCheckout}
-              basePrice={3000}
-              sessionType={sessionType}
-              onSessionTypeChange={setSessionType}
-            />
+            {/* Session Pricing */}
+            {qrData?.tableId && (
+              <SessionPricing
+                sessionType={sessionType}
+                onSessionTypeChange={setSessionType}
+              />
+            )}
+
+            {/* Order Review & Checkout */}
+            {selectedFlavors.length > 0 && (
+              <PriceBreakdown
+                guestProfile={guestProfile}
+                flags={flags}
+                selectedFlavors={selectedFlavors}
+                specialInstructions={specialInstructions}
+                loungeId={loungeId}
+                tableId={qrData?.tableId}
+                zone={qrData?.zone}
+                sessionType={sessionType}
+                onPriceUpdate={() => {}}
+                onCheckoutSuccess={(sessionId) => {
+                  setSessionStarted(true);
+                }}
+              />
+            )}
+
+            {/* Session Status - Only after payment */}
+            {sessionStarted && (
+              <SessionCard
+                guestProfile={guestProfile}
+                flags={flags}
+                showSession={sessionStarted}
+                onSessionUpdate={() => {}}
+              />
+            )}
 
             {/* Registration Prompt for Anonymous Users - Mobile */}
             {guestProfile?.anon && (
@@ -496,9 +407,9 @@ export default function GuestLoungePage() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Main Flow */}
+          {/* Left Column - Main Flow (Step-by-Step Workflow) */}
           <div className="lg:col-span-2 space-y-6">
-            {/* QR Gate */}
+            {/* Step 1: QR Gate */}
             <QRGate
               qrData={qrData}
               guestProfile={guestProfile}
@@ -506,66 +417,46 @@ export default function GuestLoungePage() {
               onProfileUpdate={setGuestProfile}
             />
 
-            {/* Session Card - Only show after payment confirmation */}
-            {sessionStarted && (
-              <SessionCard
-                guestProfile={guestProfile}
-                flags={flags}
-                showSession={sessionStarted}
-                onSessionUpdate={() => {
-                  // Handle session updates
-                }}
+            {/* Step 2: Session Pricing (replaces Live Mix Preview) */}
+            {qrData?.tableId && (
+              <SessionPricing
+                sessionType={sessionType}
+                onSessionTypeChange={setSessionType}
               />
             )}
 
-            {/* Flavor Wheel with Special Instructions */}
-            <div className="bg-zinc-800/50 backdrop-blur-sm border border-zinc-700 rounded-xl p-6">
-              <div className="mb-6">
-                <h2 className="text-xl font-semibold text-white mb-2">Choose Your Flavors</h2>
-                <p className="text-sm text-zinc-400">Select up to 4 flavors for your perfect mix</p>
-              </div>
-              
-              <FlavorMixSelector
-                selectedFlavors={selectedFlavors}
-                onSelectionChange={setSelectedFlavors}
-                maxSelections={4}
-                onPriceUpdate={setFlavorMixPrice}
-              />
-              
-              {/* Special Instructions */}
-              <div className="mt-6">
-                <label className="block text-sm font-medium text-white mb-2">
-                  Special Instructions
-                </label>
-                <textarea
-                  value={specialInstructions}
-                  onChange={(e) => setSpecialInstructions(e.target.value)}
-                  placeholder="Any special requests or notes for your mix (e.g., extra ice, light flavor, strong mix)..."
-                  className="w-full px-4 py-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  rows={3}
-                />
-              </div>
-              
-              {selectedFlavors.length > 0 && (
-                <div className="mt-4 p-4 bg-teal-500/10 border border-teal-500/30 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-medium text-white mb-1">
-                        Selected: {selectedFlavors.length > 0 ? selectedFlavors.join(', ') : 'None'}
-                      </div>
-                      <div className="text-xs text-zinc-400">
-                        {specialInstructions || 'No special instructions'}
-                      </div>
-                    </div>
-                    <div className="text-lg font-bold text-teal-400">
-                      ${flavorMixPrice.toFixed(2)}
-                    </div>
-                  </div>
+            {/* Step 3: Flavor Selection */}
+            {qrData?.tableId && (
+              <div className="bg-zinc-800/50 backdrop-blur-sm border border-zinc-700 rounded-xl p-6">
+                <div className="mb-6">
+                  <h2 className="text-xl font-semibold text-white mb-2">Choose Your Flavors</h2>
+                  <p className="text-sm text-zinc-400">Select up to 4 flavors for your perfect mix</p>
                 </div>
-              )}
-            </div>
+                
+                <FlavorMixSelector
+                  selectedFlavors={selectedFlavors}
+                  onSelectionChange={setSelectedFlavors}
+                  maxSelections={4}
+                  onPriceUpdate={setFlavorMixPrice}
+                />
+                
+                {/* Special Instructions */}
+                <div className="mt-6">
+                  <label className="block text-sm font-medium text-white mb-2">
+                    Special Instructions
+                  </label>
+                  <textarea
+                    value={specialInstructions}
+                    onChange={(e) => setSpecialInstructions(e.target.value)}
+                    placeholder="Any special requests or notes for your mix (e.g., extra ice, light flavor, strong mix)..."
+                    className="w-full px-4 py-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    rows={3}
+                  />
+                </div>
+              </div>
+            )}
 
-            {/* Price Breakdown & Checkout */}
+            {/* Step 4: Order Review & Checkout */}
             {selectedFlavors.length > 0 && (
               <PriceBreakdown
                 guestProfile={guestProfile}
@@ -575,6 +466,7 @@ export default function GuestLoungePage() {
                 loungeId={loungeId}
                 tableId={qrData?.tableId}
                 zone={qrData?.zone}
+                sessionType={sessionType}
                 onPriceUpdate={() => {
                   // Handle price updates
                 }}
@@ -582,6 +474,18 @@ export default function GuestLoungePage() {
                   // Start session after successful checkout
                   setSessionStarted(true);
                   console.log('Session started after checkout:', sessionId);
+                }}
+              />
+            )}
+
+            {/* Step 5: Session Status (only after payment) */}
+            {sessionStarted && (
+              <SessionCard
+                guestProfile={guestProfile}
+                flags={flags}
+                showSession={sessionStarted}
+                onSessionUpdate={() => {
+                  // Handle session updates
                 }}
               />
             )}

@@ -14,6 +14,7 @@ interface PriceBreakdownProps {
   loungeId?: string;
   tableId?: string;
   zone?: string;
+  sessionType?: 'flat' | 'time-based';
   onCheckoutSuccess?: (sessionId: string) => void;
 }
 
@@ -26,6 +27,7 @@ export default function PriceBreakdown({
   loungeId = 'default-lounge',
   tableId,
   zone,
+  sessionType = 'flat',
   onCheckoutSuccess
 }: PriceBreakdownProps) {
   const [priceData, setPriceData] = useState<PriceQuoteResponse | null>(null);
@@ -34,6 +36,7 @@ export default function PriceBreakdown({
   const [promoCode, setPromoCode] = useState('');
   const [promoError, setPromoError] = useState<string | null>(null);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'card' | 'cash' | 'points'>('card');
 
   useEffect(() => {
     // Load price quote when flavors change
@@ -177,7 +180,7 @@ export default function PriceBreakdown({
         },
         body: JSON.stringify({
           sessionId: currentSessionId,
-          method: 'card', // In production, let user choose
+          method: selectedPaymentMethod, // Use selected payment method
           promoCode: promoCode || undefined
         })
       });
@@ -377,28 +380,50 @@ export default function PriceBreakdown({
       <div className="mb-6">
         <h3 className="text-sm font-medium text-white mb-3">Payment Method</h3>
         <div className="grid grid-cols-3 gap-2">
-          <button className="p-3 bg-zinc-700 hover:bg-zinc-600 rounded-lg text-center transition-colors">
-            <CreditCard className="w-5 h-5 text-white mx-auto mb-1" />
-            <div className="text-xs text-zinc-300">Card</div>
+          <button 
+            onClick={() => setSelectedPaymentMethod('card')}
+            className={`p-3 rounded-lg text-center transition-colors ${
+              selectedPaymentMethod === 'card'
+                ? 'bg-teal-600 border-2 border-teal-400'
+                : 'bg-zinc-700 hover:bg-zinc-600 border-2 border-transparent'
+            }`}
+          >
+            <CreditCard className={`w-5 h-5 mx-auto mb-1 ${selectedPaymentMethod === 'card' ? 'text-white' : 'text-zinc-300'}`} />
+            <div className={`text-xs ${selectedPaymentMethod === 'card' ? 'text-white font-medium' : 'text-zinc-300'}`}>Card</div>
           </button>
-          <button className="p-3 bg-zinc-700 hover:bg-zinc-600 rounded-lg text-center transition-colors">
-            <DollarSign className="w-5 h-5 text-white mx-auto mb-1" />
-            <div className="text-xs text-zinc-300">Cash</div>
+          <button 
+            onClick={() => setSelectedPaymentMethod('cash')}
+            className={`p-3 rounded-lg text-center transition-colors ${
+              selectedPaymentMethod === 'cash'
+                ? 'bg-teal-600 border-2 border-teal-400'
+                : 'bg-zinc-700 hover:bg-zinc-600 border-2 border-transparent'
+            }`}
+          >
+            <DollarSign className={`w-5 h-5 mx-auto mb-1 ${selectedPaymentMethod === 'cash' ? 'text-white' : 'text-zinc-300'}`} />
+            <div className={`text-xs ${selectedPaymentMethod === 'cash' ? 'text-white font-medium' : 'text-zinc-300'}`}>Cash</div>
           </button>
-          <button className="p-3 bg-zinc-700 hover:bg-zinc-600 rounded-lg text-center transition-colors">
-            <Clock className="w-5 h-5 text-white mx-auto mb-1" />
-            <div className="text-xs text-zinc-300">Points</div>
+          <button 
+            onClick={() => setSelectedPaymentMethod('points')}
+            className={`p-3 rounded-lg text-center transition-colors ${
+              selectedPaymentMethod === 'points'
+                ? 'bg-teal-600 border-2 border-teal-400'
+                : 'bg-zinc-700 hover:bg-zinc-600 border-2 border-transparent'
+            }`}
+          >
+            <Clock className={`w-5 h-5 mx-auto mb-1 ${selectedPaymentMethod === 'points' ? 'text-white' : 'text-zinc-300'}`} />
+            <div className={`text-xs ${selectedPaymentMethod === 'points' ? 'text-white font-medium' : 'text-zinc-300'}`}>Points</div>
           </button>
         </div>
       </div>
 
-      {/* Checkout Button */}
+      {/* Checkout Button - Green */}
       <button
         onClick={handleCheckout}
-        className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+        disabled={isLoading}
+        className="w-full flex items-center justify-center space-x-2 px-6 py-4 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white rounded-lg font-semibold transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <CreditCard className="w-5 h-5" />
-        <span>Checkout {formatPrice(priceData.total)}</span>
+        <span>{isLoading ? 'Processing...' : `Checkout ${formatPrice(priceData.total)}`}</span>
       </button>
 
       {/* Trust Indicators */}

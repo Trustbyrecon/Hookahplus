@@ -81,6 +81,7 @@ export async function POST(req: NextRequest) {
     // Update session status to 'in_progress' after successful payment
     session.status = 'in_progress';
     session.ts.startedAt = new Date().toISOString();
+    sharedSessions.set(sessionId, session);
 
     // Generate receipt
     const receiptId = `receipt_${uuidv4()}`;
@@ -97,6 +98,14 @@ export async function POST(req: NextRequest) {
       promoCode
     };
     sharedReceipts.set(receiptId, receipt);
+
+    // Send session to BOH workflow (app build) - after receipt generation
+    try {
+      await sendSessionToBOH(session, receiptId);
+    } catch (bohError) {
+      console.error('Failed to send session to BOH workflow:', bohError);
+      // Don't fail checkout if BOH notification fails
+    }
 
     // Update guest profile with points
     if (pointsEarned > 0) {
@@ -165,6 +174,60 @@ export async function POST(req: NextRequest) {
       ok: false,
       error: 'Internal server error'
     }, { status: 500 });
+  }
+}
+
+/**
+ * Send session to BOH workflow after successful checkout
+ */
+async function sendSessionToBOH(session: any, receiptId: string): Promise<void> {
+  try {
+    // Get guest profile for customer info
+    const guestProfile = getGuestProfile(session.guestId);
+    
+    // Prepare session data for BOH workflow
+    const bohSessionData = {
+      sessionId: session.sessionId,
+      tableId: session.tableId || 'TBD',
+      state: 'PAID_CONFIRMED',
+      meta: {
+        customerId: guestProfile?.guestId || 'Guest',
+        customerName: guestProfile?.email || guestProfile?.phone || 'Guest',
+        phone: guestProfile?.phone || undefined,
+        email: guestProfile?.email || undefined,
+        flavors: session.mix?.flavors || [],
+        specialInstructions: session.mix?.specialInstructions || undefined,
+        totalAmount: session.price?.total || 0,
+        receiptId,
+        source: 'guest-app',
+        zone: session.zone || undefined
+      },
+      timers: {
+        createdAt: Date.now(),
+        paidAt: Date.now()
+      }
+    };
+
+    // In production, this would call the app build API endpoint
+    // For now, we'll log it - in production, use: fetch(`${process.env.APP_API_URL}/api/sessions`, ...)
+    console.log('📤 Sending session to BOH workflow:', bohSessionData);
+    
+    // TODO: Uncomment when app build API is available
+    // const response = await fetch(`${process.env.APP_API_URL || 'http://localhost:3001'}/api/sessions`, {
+    //   method: 'POST',
+    //   headers: {
+    //     'Content-Type': 'application/json',
+    //   },
+    //   body: JSON.stringify(bohSessionData)
+    // });
+    // 
+    // if (!response.ok) {
+    //   throw new Error(`BOH API error: ${response.statusText}`);
+    // }
+
+  } catch (error) {
+    console.error('Error sending session to BOH:', error);
+    throw error;
   }
 }
 
