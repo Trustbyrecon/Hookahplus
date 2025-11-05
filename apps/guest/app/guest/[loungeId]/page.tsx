@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { QRData, GuestProfile, FeatureFlags } from '@guest-types';
 import { featureFlags } from '../../../config/flags';
 import QRGate from '../../../components/guest/QRGate';
@@ -16,6 +17,7 @@ import MobileQRScanner from '../../../components/guest/MobileQRScanner';
 import MobileFlavorSelector, { MOCK_FLAVORS } from '../../../components/guest/MobileFlavorSelector';
 import MobileCart from '../../../components/guest/MobileCart';
 import { createGhostLogEntry } from '../../../libs/ghostlog/hash';
+import { UserPlus } from 'lucide-react';
 
 export default function GuestLoungePage() {
   const params = useParams();
@@ -298,6 +300,30 @@ export default function GuestLoungePage() {
               onSessionTypeChange={setSessionType}
             />
 
+            {/* Registration Prompt for Anonymous Users - Mobile */}
+            {guestProfile?.anon && (
+              <div className="bg-gradient-to-r from-teal-900/20 to-cyan-900/20 border border-teal-500/30 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <UserPlus className="w-5 h-5 text-teal-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <h3 className="text-base font-semibold text-white mb-1">
+                      Register to Remember
+                    </h3>
+                    <p className="text-xs text-zinc-300 mb-3">
+                      Save your preferences and rewards for next time.
+                    </p>
+                    <Link
+                      href={`/register?loungeId=${encodeURIComponent(loungeId)}&return=${encodeURIComponent(`/guest/${loungeId}`)}`}
+                      className="inline-flex items-center gap-2 px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-medium transition-colors"
+                    >
+                      <UserPlus className="w-3 h-3" />
+                      Register
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Trust Lock Indicator */}
             {flags.ghostlog.lite && (
               <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3">
@@ -384,6 +410,32 @@ export default function GuestLoungePage() {
 
           {/* Right Column - Rewards & Social */}
           <div className="space-y-6">
+            {/* Registration Prompt for Anonymous Users */}
+            {guestProfile?.anon && (
+              <div className="bg-gradient-to-r from-teal-900/20 to-cyan-900/20 border border-teal-500/30 rounded-xl p-6">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0">
+                    <UserPlus className="w-6 h-6 text-teal-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-white mb-2">
+                      Register to Remember
+                    </h3>
+                    <p className="text-sm text-zinc-300 mb-4">
+                      Quick registration saves your preferences, favorite flavors, and rewards so we can personalize your next visit.
+                    </p>
+                    <Link
+                      href={`/register?loungeId=${encodeURIComponent(loungeId)}&return=${encodeURIComponent(`/guest/${loungeId}`)}`}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-medium transition-colors"
+                    >
+                      <UserPlus className="w-4 h-4" />
+                      Register Now
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Rewards Badge Strip */}
             {flags.rewards.badges.v1 && (
               <RewardsBadgeStrip
