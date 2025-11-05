@@ -16,6 +16,7 @@ import MobileOptimizedLayout from '../../../components/guest/MobileOptimizedLayo
 import MobileQRScanner from '../../../components/guest/MobileQRScanner';
 import MobileFlavorSelector, { MOCK_FLAVORS } from '../../../components/guest/MobileFlavorSelector';
 import SessionPricing from '../../../components/guest/SessionPricing';
+import { UserPlus } from 'lucide-react';
 
 export default function GuestLoungePage() {
   const params = useParams();
