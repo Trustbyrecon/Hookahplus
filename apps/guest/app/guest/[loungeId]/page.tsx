@@ -41,6 +41,19 @@ export default function GuestLoungePage() {
     detectMobile();
   }, [loungeId]);
 
+  // Safety timeout - if loading takes too long, show error
+  useEffect(() => {
+    if (!isLoading) return;
+    
+    const timeoutId = setTimeout(() => {
+      console.error('Guest initialization timeout');
+      setError('Loading is taking longer than expected. Please refresh the page.');
+      setIsLoading(false);
+    }, 10000); // 10 second timeout
+    
+    return () => clearTimeout(timeoutId);
+  }, [isLoading]);
+
   const detectMobile = () => {
     const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
     const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
@@ -80,6 +93,17 @@ export default function GuestLoungePage() {
         return;
       }
 
+      // Get guest info from localStorage (if registered)
+      const guestInfoStr = localStorage.getItem('guestInfo');
+      let guestInfo: { guestId?: string; deviceId?: string } | null = null;
+      if (guestInfoStr) {
+        try {
+          guestInfo = JSON.parse(guestInfoStr);
+        } catch (e) {
+          console.warn('Failed to parse guestInfo from localStorage:', e);
+        }
+      }
+
       // Enter guest (create or retrieve profile)
       const enterResponse = await fetch('/api/guest/enter', {
         method: 'POST',
@@ -90,7 +114,8 @@ export default function GuestLoungePage() {
           loungeId,
           ref,
           u,
-          deviceId: localStorage.getItem('deviceId') || undefined
+          guestId: guestInfo?.guestId || undefined, // Send guestId if registered
+          deviceId: guestInfo?.deviceId || localStorage.getItem('deviceId') || undefined
         })
       });
 
@@ -103,13 +128,33 @@ export default function GuestLoungePage() {
       
       if (enterData.isNewGuest) {
         // Store device ID for anonymous tracking
-        if (!u) {
+        if (!u && enterData.guestId) {
           const deviceId = `device_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
           localStorage.setItem('deviceId', deviceId);
         }
       }
 
-      setGuestProfile(enterData.existingProfile);
+      // Set guest profile - use existingProfile or create a fallback from enterData
+      const profile = enterData.existingProfile || (enterData.guestId ? {
+        guestId: enterData.guestId,
+        anon: enterData.isNewGuest,
+        badges: [],
+        sessions: [],
+        points: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        preferences: {
+          favoriteFlavors: [],
+          savedMixes: [],
+          notifications: false
+        }
+      } : null);
+
+      if (profile) {
+        setGuestProfile(profile);
+      } else {
+        throw new Error('Failed to initialize guest profile');
+      }
 
       // Log guest entry event (client-side logging only - server-side logging happens in API)
       if (loungeFlags.ghostlog.lite) {

@@ -128,6 +128,7 @@ export type GuestEnterRequest = {
   loungeId: string;
   ref?: string;
   u?: string;
+  guestId?: string;      // registered guest ID from localStorage
   deviceId?: string;
 }
 

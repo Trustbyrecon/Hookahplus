@@ -18,7 +18,7 @@ const sessions = new Map<string, any>();
 export async function POST(req: NextRequest) {
   try {
     const body: GuestEnterRequest = await req.json();
-    const { loungeId, ref, u, deviceId } = body;
+    const { loungeId, ref, u, deviceId, guestId: providedGuestId } = body;
 
     // Validate required fields
     if (!loungeId) {
@@ -43,10 +43,14 @@ export async function POST(req: NextRequest) {
     let isNewGuest = false;
     let existingProfile: GuestProfile | undefined;
 
-    // Handle guest token or device ID
+    // Handle guest identification priority: u (token) > providedGuestId > deviceId > new anonymous
     if (u) {
       // Existing guest with token
       guestId = u;
+      existingProfile = guestProfiles.get(guestId);
+    } else if (providedGuestId) {
+      // Registered guest with guestId from localStorage
+      guestId = providedGuestId;
       existingProfile = guestProfiles.get(guestId);
     } else if (deviceId) {
       // Anonymous guest with device ID
@@ -147,7 +151,7 @@ export async function POST(req: NextRequest) {
       sessionId,
       flags,
       isNewGuest,
-      existingProfile: isNewGuest ? undefined : existingProfile
+      existingProfile: existingProfile // Always return profile (even if new)
     };
 
     return NextResponse.json({
