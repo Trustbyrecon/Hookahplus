@@ -46,23 +46,14 @@ USING (
 
 -- ============================================
 -- 2. Enable RLS on SessionEvent table
--- Note: Table name may vary - check actual table name in Supabase
+-- Table name: SessionEvent (PascalCase from original migration)
 -- ============================================
 ALTER TABLE IF EXISTS public."SessionEvent" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.session_events ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Service role has full access (for SessionEvent)
 DROP POLICY IF EXISTS "Service role can manage session events" ON public."SessionEvent";
 CREATE POLICY "Service role can manage session events"
 ON public."SessionEvent"
-FOR ALL
-USING (auth.role() = 'service_role')
-WITH CHECK (auth.role() = 'service_role');
-
--- Policy: Service role has full access (for session_events)
-DROP POLICY IF EXISTS "Service role can manage session events alt" ON public.session_events;
-CREATE POLICY "Service role can manage session events alt"
-ON public.session_events
 FOR ALL
 USING (auth.role() = 'service_role')
 WITH CHECK (auth.role() = 'service_role');
@@ -80,10 +71,9 @@ USING (
 
 -- ============================================
 -- 3. Enable RLS on Badge table
--- Table name: Badge (PascalCase from Prisma model)
+-- Table name: Badge (PascalCase from original migration)
 -- ============================================
 ALTER TABLE IF EXISTS public."Badge" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.badges ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Service role has full access
 DROP POLICY IF EXISTS "Service role can manage badges" ON public."Badge";
@@ -93,7 +83,7 @@ FOR ALL
 USING (auth.role() = 'service_role')
 WITH CHECK (auth.role() = 'service_role');
 
--- Policy: Authenticated users can read active badges (for Badge table)
+-- Policy: Authenticated users can read active badges
 DROP POLICY IF EXISTS "Users can read active badges" ON public."Badge";
 CREATE POLICY "Users can read active badges"
 ON public."Badge"
@@ -103,22 +93,11 @@ USING (
   AND active = true
 );
 
--- Policy: Authenticated users can read active badges (for badges table)
-DROP POLICY IF EXISTS "Users can read active badges alt" ON public.badges;
-CREATE POLICY "Users can read active badges alt"
-ON public.badges
-FOR SELECT
-USING (
-  auth.role() = 'authenticated'
-  AND active = true
-);
-
 -- ============================================
 -- 4. Enable RLS on Event table
--- Table name: Event (PascalCase from Prisma model)
+-- Table name: Event (PascalCase from original migration)
 -- ============================================
 ALTER TABLE IF EXISTS public."Event" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.events ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Service role has full access
 DROP POLICY IF EXISTS "Service role can manage events" ON public."Event";
@@ -128,7 +107,7 @@ FOR ALL
 USING (auth.role() = 'service_role')
 WITH CHECK (auth.role() = 'service_role');
 
--- Policy: Users can read their own events (for Event table)
+-- Policy: Users can read their own events
 DROP POLICY IF EXISTS "Users can read own events" ON public."Event";
 CREATE POLICY "Users can read own events"
 ON public."Event"
@@ -145,29 +124,11 @@ USING (
   )
 );
 
--- Policy: Users can read their own events (for events table)
-DROP POLICY IF EXISTS "Users can read own events alt" ON public.events;
-CREATE POLICY "Users can read own events alt"
-ON public.events
-FOR SELECT
-USING (
-  auth.role() = 'authenticated'
-  AND (
-    "profileId" = auth.uid()::text
-    OR EXISTS (
-      SELECT 1 FROM public.users 
-      WHERE id = auth.uid()::text 
-      AND (roles LIKE '%MANAGER%' OR roles LIKE '%ADMIN%')
-    )
-  )
-);
-
 -- ============================================
 -- 5. Enable RLS on Award table
--- Table name: Award (PascalCase from Prisma model)
+-- Table name: Award (PascalCase from original migration)
 -- ============================================
 ALTER TABLE IF EXISTS public."Award" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.awards ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Service role has full access
 DROP POLICY IF EXISTS "Service role can manage awards" ON public."Award";
@@ -177,27 +138,10 @@ FOR ALL
 USING (auth.role() = 'service_role')
 WITH CHECK (auth.role() = 'service_role');
 
--- Policy: Users can read their own awards (for Award table)
+-- Policy: Users can read their own awards
 DROP POLICY IF EXISTS "Users can read own awards" ON public."Award";
 CREATE POLICY "Users can read own awards"
 ON public."Award"
-FOR SELECT
-USING (
-  auth.role() = 'authenticated'
-  AND (
-    "profileId" = auth.uid()::text
-    OR EXISTS (
-      SELECT 1 FROM public.users 
-      WHERE id = auth.uid()::text 
-      AND (roles LIKE '%MANAGER%' OR roles LIKE '%ADMIN%')
-    )
-  )
-);
-
--- Policy: Users can read their own awards (for awards table)
-DROP POLICY IF EXISTS "Users can read own awards alt" ON public.awards;
-CREATE POLICY "Users can read own awards alt"
-ON public.awards
 FOR SELECT
 USING (
   auth.role() = 'authenticated'
