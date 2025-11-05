@@ -30,9 +30,12 @@ export async function POST(req: Request) {
       return Response.json({ error: "Stripe not configured" }, { status: 500 });
     }
 
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    // Check for both STRIPE_WEBHOOK_SECRET and STRIPE_WEBHOOK_SECRET_APP
+    // (some deployments use the _APP suffix for app-specific config)
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET_APP;
     if (!webhookSecret || webhookSecret === 'whsec_placeholder') {
       console.error('[Stripe Webhook] Webhook secret not configured');
+      console.error('[Stripe Webhook] Checked: STRIPE_WEBHOOK_SECRET, STRIPE_WEBHOOK_SECRET_APP');
       return Response.json({ error: "Webhook secret not configured" }, { status: 500 });
     }
 
