@@ -227,7 +227,7 @@ export default function SessionCard({ guestProfile, flags, onSessionUpdate, show
         <div>
           <h2 className="text-xl font-semibold text-white">Session Status</h2>
           <p className="text-sm text-zinc-400">
-            {session.tableId ? `Table ${session.tableId}` : 'Your session'}
+            {session?.tableId ? `Table ${session.tableId}` : 'Your session'}
           </p>
         </div>
       </div>
@@ -236,20 +236,20 @@ export default function SessionCard({ guestProfile, flags, onSessionUpdate, show
       <div className="mb-6">
         <div className="flex items-center justify-between p-4 bg-zinc-700/50 rounded-lg">
           <div className="flex items-center space-x-3">
-            <div className={`p-2 rounded-lg ${getStatusColor(session.status).replace('text-', 'bg-').replace('-400', '-500/20')}`}>
-              {getStatusIcon(session.status)}
+            <div className={`p-2 rounded-lg ${getStatusColor(session?.status || 'started').replace('text-', 'bg-').replace('-400', '-500/20')}`}>
+              {getStatusIcon(session?.status || 'started')}
             </div>
             <div>
-              <div className={`text-sm font-medium ${getStatusColor(session.status)}`}>
-                {session.status.charAt(0).toUpperCase() + session.status.slice(1).replace('_', ' ')}
+              <div className={`text-sm font-medium ${getStatusColor(session?.status || 'started')}`}>
+                {(session?.status || 'started').charAt(0).toUpperCase() + (session?.status || 'started').slice(1).replace('_', ' ')}
               </div>
               <div className="text-xs text-zinc-400">
-                Started: {new Date(session.startedAt).toLocaleTimeString()}
+                Started: {session?.startedAt ? new Date(session.startedAt).toLocaleTimeString() : 'N/A'}
               </div>
             </div>
           </div>
           
-          {session.status === 'in_progress' && timeRemaining !== null && (
+          {session?.status === 'in_progress' && timeRemaining !== null && (
             <div className="text-right">
               <div className="text-lg font-bold text-white">
                 {formatTime(timeRemaining)}
@@ -261,58 +261,60 @@ export default function SessionCard({ guestProfile, flags, onSessionUpdate, show
       </div>
 
       {/* Session Details */}
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <div className="text-xs text-zinc-400 mb-1">Session ID</div>
-            <div className="text-sm font-mono text-white">{session.sessionId}</div>
+      {session && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <div className="text-xs text-zinc-400 mb-1">Session ID</div>
+              <div className="text-sm font-mono text-white">{session.sessionId}</div>
+            </div>
+            <div>
+              <div className="text-xs text-zinc-400 mb-1">Table</div>
+              <div className="text-sm text-white">{session.tableId || 'TBD'}</div>
+            </div>
           </div>
-          <div>
-            <div className="text-xs text-zinc-400 mb-1">Table</div>
-            <div className="text-sm text-white">{session.tableId || 'TBD'}</div>
-          </div>
+
+          {session.estimatedWait && session.status === 'started' && (
+            <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <Clock className="w-4 h-4 text-yellow-400" />
+                <span className="text-sm text-yellow-400">
+                  Estimated wait time: {session.estimatedWait} minutes
+                </span>
+              </div>
+            </div>
+          )}
+
+          {session.staffAssigned && (
+            <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+              <div className="text-sm text-green-400">
+                Staff assigned: {session.staffAssigned.foh || 'TBD'} (FOH), {session.staffAssigned.boh || 'TBD'} (BOH)
+              </div>
+            </div>
+          )}
+
+          {/* Timer Progress Bar */}
+          {session.status === 'in_progress' && timeRemaining !== null && (
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs text-zinc-400">
+                <span>Session Progress</span>
+                <span>{formatTime(timeRemaining)} remaining</span>
+              </div>
+              <div className="w-full bg-zinc-700 rounded-full h-2">
+                <div
+                  className="bg-primary-500 h-2 rounded-full transition-all duration-1000"
+                  style={{
+                    width: `${Math.max(0, ((1800 - timeRemaining) / 1800) * 100)}%`
+                  }}
+                />
+              </div>
+            </div>
+          )}
         </div>
-
-        {session.estimatedWait && session.status === 'started' && (
-          <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-            <div className="flex items-center space-x-2">
-              <Clock className="w-4 h-4 text-yellow-400" />
-              <span className="text-sm text-yellow-400">
-                Estimated wait time: {session.estimatedWait} minutes
-              </span>
-            </div>
-          </div>
-        )}
-
-        {session.staffAssigned && (
-          <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-            <div className="text-sm text-green-400">
-              Staff assigned: {session.staffAssigned.foh || 'TBD'} (FOH), {session.staffAssigned.boh || 'TBD'} (BOH)
-            </div>
-          </div>
-        )}
-
-        {/* Timer Progress Bar */}
-        {session.status === 'in_progress' && timeRemaining !== null && (
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs text-zinc-400">
-              <span>Session Progress</span>
-              <span>{formatTime(timeRemaining)} remaining</span>
-            </div>
-            <div className="w-full bg-zinc-700 rounded-full h-2">
-              <div
-                className="bg-primary-500 h-2 rounded-full transition-all duration-1000"
-                style={{
-                  width: `${Math.max(0, ((1800 - timeRemaining) / 1800) * 100)}%`
-                }}
-              />
-            </div>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Actions */}
-      {session.status === 'started' && (
+      {session?.status === 'started' && (
         <div className="mt-6 flex space-x-2">
           <button
             onClick={() => {
@@ -327,7 +329,7 @@ export default function SessionCard({ guestProfile, flags, onSessionUpdate, show
         </div>
       )}
 
-      {session.status === 'in_progress' && (
+      {session?.status === 'in_progress' && (
         <div className="mt-6 flex space-x-2">
           <button
             onClick={() => {
