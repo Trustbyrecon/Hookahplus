@@ -199,6 +199,40 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Enterprise CTA Section */}
+        <div className="mb-12">
+          <div className="text-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+              <Button 
+                variant="primary" 
+                size="lg" 
+                className="flex items-center gap-2 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white px-8 py-4 text-lg font-semibold shadow-lg transform hover:scale-105 transition-all duration-200"
+                onClick={() => window.location.href = '/lounge-experience-demo'}
+              >
+                <Play className="w-5 h-5" />
+                Lounge Experience Demo
+              </Button>
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="px-6 py-3"
+                onClick={() => window.location.href = '/flavor-demo'}
+              >
+                Guest Experience
+              </Button>
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="px-6 py-3 border-orange-500/50 text-orange-400 hover:bg-orange-500/10 hover:border-orange-400"
+                onClick={() => window.location.href = '/contact'}
+              >
+                <Gift className="w-4 h-4 mr-2" />
+                Contact Us
+              </Button>
+            </div>
+          </div>
+        </div>
+
         {/* Hero Section - Reduced Size */}
         <div className="text-center mb-4">
           <h2 className="text-xl md:text-2xl font-bold mb-2">
@@ -241,40 +275,6 @@ export default function Home() {
                 </div>
               </Card>
             ))}
-          </div>
-        </div>
-
-        {/* Enterprise CTA Section */}
-        <div className="mb-12">
-          <div className="text-center">
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-              <Button 
-                variant="primary" 
-                size="lg" 
-                className="flex items-center gap-2 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white px-8 py-4 text-lg font-semibold shadow-lg transform hover:scale-105 transition-all duration-200"
-                onClick={() => window.location.href = '/lounge-experience-demo'}
-              >
-                <Play className="w-5 h-5" />
-                Lounge Experience Demo
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="px-6 py-3"
-                onClick={() => window.location.href = '/flavor-demo'}
-              >
-                Guest Experience
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="px-6 py-3 border-orange-500/50 text-orange-400 hover:bg-orange-500/10 hover:border-orange-400"
-                onClick={() => window.location.href = '/contact'}
-              >
-                <Gift className="w-4 h-4 mr-2" />
-                Contact Us
-              </Button>
-            </div>
           </div>
         </div>
 
