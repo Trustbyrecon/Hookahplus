@@ -278,6 +278,10 @@ export default function PriceBreakdown({
     );
   }
 
+  if (!priceData) {
+    return null; // Still loading or no data
+  }
+
   return (
     <div className="bg-zinc-800/50 backdrop-blur-sm border border-zinc-700 rounded-xl p-6">
       <div className="flex items-center space-x-3 mb-6">
