@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { sharedSessions, getGuestProfile } from '../../shared-storage';
-import { createGhostLogEntry } from '../hash';
-import { featureFlags } from '../flags';
+import { createGhostLogEntry } from '../../hash';
+import { featureFlags } from '../../flags';
 
 /**
  * POST /api/guest/session/create
