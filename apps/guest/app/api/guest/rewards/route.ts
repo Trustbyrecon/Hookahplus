@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { RewardsResponse, BadgeDefinition, LoyaltyEvent } from "@guest-types";
 import { featureFlags } from './flags';
 import { createGhostLogEntry } from './hash';
-import { getGuestProfile, sharedLoyaltyEvents } from '../shared-storage';
+import { getGuestProfile, sharedLoyaltyEvents, setGuestProfile, sharedSessions } from '../shared-storage';
 
 // Badge definitions
 const BADGE_DEFINITIONS: Record<string, BadgeDefinition> = {
@@ -185,7 +185,7 @@ function calculateNextBadge(guestProfile: any, earnedBadges: string[]): BadgeDef
           // Check sessions within timeframe
           const cutoffDate = new Date(Date.now() - requirements.timeframe * 24 * 60 * 60 * 1000);
           const recentSessions = sessions.filter((sessionId: string) => {
-            const session = sessions.get(sessionId);
+            const session = sharedSessions.get(sessionId);
             return session && new Date(session.ts.startedAt) > cutoffDate;
           });
           canEarn = recentSessions.length >= requirements.count;
@@ -199,11 +199,11 @@ function calculateNextBadge(guestProfile: any, earnedBadges: string[]): BadgeDef
         if (requirements.timeframe) {
           const cutoffDate = new Date(Date.now() - requirements.timeframe * 24 * 60 * 60 * 1000);
           const recentSessions = sessions.filter((sessionId: string) => {
-            const session = sessions.get(sessionId);
+            const session = sharedSessions.get(sessionId);
             return session && new Date(session.ts.startedAt) > cutoffDate;
           });
           const uniqueLounges = new Set(recentSessions.map((sessionId: string) => {
-            const session = sessions.get(sessionId);
+            const session = sharedSessions.get(sessionId);
             return session?.loungeId;
           }).filter(Boolean));
           canEarn = uniqueLounges.size >= requirements.count;
@@ -288,7 +288,7 @@ export async function POST(req: NextRequest) {
     // Deduct points
     guestProfile.points -= value;
     guestProfile.updatedAt = new Date().toISOString();
-    guestProfiles.set(guestId, guestProfile);
+    setGuestProfile(guestId, guestProfile);
 
     // Create loyalty event
     const loyaltyEvent: LoyaltyEvent = {
@@ -301,7 +301,7 @@ export async function POST(req: NextRequest) {
       ts: new Date().toISOString(),
       ghostHash: `hash_${Date.now()}`
     };
-    loyaltyEvents.set(loyaltyEvent.eventId, loyaltyEvent);
+    sharedLoyaltyEvents.set(loyaltyEvent.eventId, loyaltyEvent);
 
     return NextResponse.json({
       ok: true,
