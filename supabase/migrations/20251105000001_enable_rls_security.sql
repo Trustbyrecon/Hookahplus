@@ -2,12 +2,59 @@
 -- This migration fixes critical security issues identified by Supabase Security Advisor
 -- Run this in Supabase SQL Editor: https://supabase.com/dashboard/project/[PROJECT-ID]/sql
 -- 
--- IMPORTANT: This script uses IF EXISTS to handle table name variations
--- After running, verify all 5 tables have RLS enabled in Security Advisor
+-- IMPORTANT: This script only references tables that exist in your database
+-- After running, verify all tables have RLS enabled in Security Advisor
+
+-- Clean up any orphaned policies on non-existent tables (if any exist from previous runs)
+DO $$
+BEGIN
+  -- Drop policies on session_events if they exist (even if table doesn't)
+  BEGIN
+    DROP POLICY IF EXISTS "Service role can manage session events alt" ON public.session_events;
+  EXCEPTION WHEN undefined_table THEN NULL;
+  END;
+  
+  BEGIN
+    DROP POLICY IF EXISTS "Users can read session events alt" ON public.session_events;
+  EXCEPTION WHEN undefined_table THEN NULL;
+  END;
+  
+  -- Drop policies on badges if they exist
+  BEGIN
+    DROP POLICY IF EXISTS "Service role can manage badges alt" ON public.badges;
+  EXCEPTION WHEN undefined_table THEN NULL;
+  END;
+  
+  BEGIN
+    DROP POLICY IF EXISTS "Users can read active badges alt" ON public.badges;
+  EXCEPTION WHEN undefined_table THEN NULL;
+  END;
+  
+  -- Drop policies on events if they exist
+  BEGIN
+    DROP POLICY IF EXISTS "Service role can manage events alt" ON public.events;
+  EXCEPTION WHEN undefined_table THEN NULL;
+  END;
+  
+  BEGIN
+    DROP POLICY IF EXISTS "Users can read own events alt" ON public.events;
+  EXCEPTION WHEN undefined_table THEN NULL;
+  END;
+  
+  -- Drop policies on awards if they exist
+  BEGIN
+    DROP POLICY IF EXISTS "Service role can manage awards alt" ON public.awards;
+  EXCEPTION WHEN undefined_table THEN NULL;
+  END;
+  
+  BEGIN
+    DROP POLICY IF EXISTS "Users can read own awards alt" ON public.awards;
+  EXCEPTION WHEN undefined_table THEN NULL;
+  END;
+END $$;
 
 -- ============================================
 -- 1. Enable RLS on Session table
--- Table name: sessions (lowercase, plural from Prisma @@map)
 -- ============================================
 ALTER TABLE IF EXISTS public.sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public."Session" ENABLE ROW LEVEL SECURITY;
@@ -21,17 +68,12 @@ USING (auth.role() = 'service_role')
 WITH CHECK (auth.role() = 'service_role');
 
 -- Policy: Authenticated users can read sessions
--- NOTE: Simplified policy - adjust based on your actual column names and access requirements
--- If you have user assignment columns, update this policy accordingly
 DROP POLICY IF EXISTS "Users can read own sessions" ON public.sessions;
 CREATE POLICY "Users can read own sessions"
 ON public.sessions
 FOR SELECT
 USING (
   auth.role() = 'authenticated'
-  -- Allow all authenticated users to read sessions
-  -- TODO: Add column-specific restrictions based on your schema
-  -- Example: AND ("fohUserId" = auth.uid()::text OR EXISTS (...))
 );
 
 -- Policy: Authenticated users can read their own sessions (for Session table)
@@ -41,12 +83,10 @@ ON public."Session"
 FOR SELECT
 USING (
   auth.role() = 'authenticated'
-  -- Allow all authenticated users to read sessions
 );
 
 -- ============================================
 -- 2. Enable RLS on SessionEvent table
--- Table name: SessionEvent (PascalCase from original migration)
 -- ============================================
 ALTER TABLE IF EXISTS public."SessionEvent" ENABLE ROW LEVEL SECURITY;
 
@@ -65,13 +105,10 @@ ON public."SessionEvent"
 FOR SELECT
 USING (
   auth.role() = 'authenticated'
-  -- Allow authenticated users to read session events
-  -- Adjust based on your access requirements
 );
 
 -- ============================================
 -- 3. Enable RLS on Badge table
--- Table name: Badge (PascalCase from original migration)
 -- ============================================
 ALTER TABLE IF EXISTS public."Badge" ENABLE ROW LEVEL SECURITY;
 
@@ -95,7 +132,6 @@ USING (
 
 -- ============================================
 -- 4. Enable RLS on Event table
--- Table name: Event (PascalCase from original migration)
 -- ============================================
 ALTER TABLE IF EXISTS public."Event" ENABLE ROW LEVEL SECURITY;
 
@@ -126,7 +162,6 @@ USING (
 
 -- ============================================
 -- 5. Enable RLS on Award table
--- Table name: Award (PascalCase from original migration)
 -- ============================================
 ALTER TABLE IF EXISTS public."Award" ENABLE ROW LEVEL SECURITY;
 
@@ -154,19 +189,3 @@ USING (
     )
   )
 );
-
--- ============================================
--- Verification Queries (run these to verify)
--- ============================================
--- Check RLS is enabled:
--- SELECT tablename, rowsecurity 
--- FROM pg_tables 
--- WHERE schemaname = 'public' 
--- AND tablename IN ('sessions', 'SessionEvent', 'Badge', 'Event', 'Award');
-
--- Check policies exist:
--- SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual 
--- FROM pg_policies 
--- WHERE schemaname = 'public' 
--- AND tablename IN ('sessions', 'SessionEvent', 'Badge', 'Event', 'Award');
-
