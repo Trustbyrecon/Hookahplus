@@ -3,7 +3,7 @@ import { GuestEnterRequest, GuestEnterResponse, GuestProfile, QRData } from "@gu
 import { featureFlags } from './flags';
 import { createGhostLogEntry, hashGuestEvent } from './hash';
 import { v4 as uuidv4 } from 'uuid';
-import { getGuestProfile, setGuestProfile, sharedSessions } from './shared-storage';
+import { getGuestProfile, setGuestProfile, sharedSessions } from '../shared-storage';
 
 /**
  * POST /api/guest/enter

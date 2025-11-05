@@ -3,7 +3,7 @@ import { CheckoutRequest, CheckoutResponse, LoyaltyEvent } from "@guest-types";
 import { featureFlags } from './flags';
 import { createGhostLogEntry, hashGuestEvent } from './hash';
 import { v4 as uuidv4 } from 'uuid';
-import { getGuestProfile, setGuestProfile, sharedSessions, sharedLoyaltyEvents, sharedReceipts } from './shared-storage';
+import { getGuestProfile, setGuestProfile, sharedSessions, sharedLoyaltyEvents, sharedReceipts } from '../shared-storage';
 
 /**
  * POST /api/guest/checkout

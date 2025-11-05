@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PriceQuoteRequest, PriceQuoteResponse } from "@guest-types";
 import { featureFlags, isDynamicPricingEnabled, isPromosEnabled } from './flags';
 import { createGhostLogEntry } from './hash';
-import { sharedSessions } from './shared-storage';
+import { sharedSessions } from '../shared-storage';
 
 // Mock flavor pricing
 const FLAVOR_PRICES: Record<string, number> = {

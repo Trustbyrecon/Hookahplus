@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GuestProfile } from "@guest-types";
 import { createGhostLogEntry } from '../enter/hash';
 import { v4 as uuidv4 } from 'uuid';
-import { getGuestProfile, setGuestProfile } from './shared-storage';
+import { getGuestProfile, setGuestProfile } from '../shared-storage';
 
 /**
  * POST /api/guest/register

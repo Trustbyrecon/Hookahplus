@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { RewardsResponse, BadgeDefinition, LoyaltyEvent } from "@guest-types";
 import { featureFlags } from './flags';
 import { createGhostLogEntry } from './hash';
-import { getGuestProfile, sharedLoyaltyEvents } from './shared-storage';
+import { getGuestProfile, sharedLoyaltyEvents } from '../shared-storage';
 
 // Badge definitions
 const BADGE_DEFINITIONS: Record<string, BadgeDefinition> = {
