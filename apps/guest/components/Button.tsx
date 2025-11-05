@@ -9,6 +9,7 @@ export interface ButtonProps {
   rightIcon?: React.ReactNode;
   disabled?: boolean;
   onClick?: () => void;
+  type?: 'button' | 'submit' | 'reset';
 }
 
 const Button: React.FC<ButtonProps> = ({ 
@@ -19,7 +20,8 @@ const Button: React.FC<ButtonProps> = ({
   leftIcon,
   rightIcon,
   disabled = false,
-  onClick
+  onClick,
+  type = 'button'
 }) => {
   const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-900';
   
@@ -46,6 +48,7 @@ const Button: React.FC<ButtonProps> = ({
 
   return (
     <button
+      type={type}
       className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${disabledClasses} ${className}`}
       disabled={disabled}
       onClick={onClick}
