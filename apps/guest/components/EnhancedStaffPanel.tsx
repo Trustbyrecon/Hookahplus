@@ -28,9 +28,9 @@ import {
   Flame,
   X
 } from 'lucide-react';
-import RewardsBadgeStrip from './RewardsBadgeStrip';
-import MemoryBreadcrumbs from './MemoryBreadcrumbs';
-import ReferralQR from './ReferralQR';
+import RewardsBadgeStrip from './guest/RewardsBadgeStrip';
+import MemoryBreadcrumbs from './guest/MemoryBreadcrumbs';
+import ReferralQR from './guest/ReferralQR';
 
 interface BehavioralMemory {
   guestId: string;
