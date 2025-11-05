@@ -144,20 +144,15 @@ USING (auth.role() = 'service_role')
 WITH CHECK (auth.role() = 'service_role');
 
 -- Policy: Users can read their own events
+-- NOTE: Simplified - users can read events where profileId matches their auth.uid()
+-- Role-based access can be added later if public.users table exists
 DROP POLICY IF EXISTS "Users can read own events" ON public."Event";
 CREATE POLICY "Users can read own events"
 ON public."Event"
 FOR SELECT
 USING (
   auth.role() = 'authenticated'
-  AND (
-    "profileId" = auth.uid()::text
-    OR EXISTS (
-      SELECT 1 FROM public.users 
-      WHERE id = auth.uid()::text 
-      AND (roles LIKE '%MANAGER%' OR roles LIKE '%ADMIN%')
-    )
-  )
+  AND "profileId" = auth.uid()::text
 );
 
 -- ============================================
@@ -174,18 +169,13 @@ USING (auth.role() = 'service_role')
 WITH CHECK (auth.role() = 'service_role');
 
 -- Policy: Users can read their own awards
+-- NOTE: Simplified - users can read awards where profileId matches their auth.uid()
+-- Role-based access can be added later if public.users table exists
 DROP POLICY IF EXISTS "Users can read own awards" ON public."Award";
 CREATE POLICY "Users can read own awards"
 ON public."Award"
 FOR SELECT
 USING (
   auth.role() = 'authenticated'
-  AND (
-    "profileId" = auth.uid()::text
-    OR EXISTS (
-      SELECT 1 FROM public.users 
-      WHERE id = auth.uid()::text 
-      AND (roles LIKE '%MANAGER%' OR roles LIKE '%ADMIN%')
-    )
-  )
+  AND "profileId" = auth.uid()::text
 );
