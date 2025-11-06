@@ -11,6 +11,11 @@ import {
 
 // Trust validation function
 export function canPerformAction(userRole: UserRole, action: SessionAction): boolean {
+  // Defensive check: ensure role exists in permissions
+  if (!ROLE_PERMISSIONS[userRole]) {
+    console.warn(`Role ${userRole} not found in ROLE_PERMISSIONS. Available roles:`, Object.keys(ROLE_PERMISSIONS));
+    return false;
+  }
   return ROLE_PERMISSIONS[userRole].includes(action);
 }
 

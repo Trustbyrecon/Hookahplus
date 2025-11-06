@@ -54,17 +54,25 @@ export async function POST(req: NextRequest) {
 
     // Calculate base price based on session type
     let basePrice = 0;
+    const flavors = session.mix?.flavors || [];
+    
     if (session.sessionType === 'time-based') {
       // Time-based: $0.50 per minute (default 60 min session)
       const sessionDuration = session.duration || 60; // Default 60 minutes
       basePrice = Math.round(sessionDuration * 50); // $0.50 per minute = 50 cents
+      
+      // Add flavor costs for time-based sessions (flavors are add-ons)
+      const flavorPrices = flavors.map((flavor: string) => FLAVOR_PRICES[flavor] || 0);
+      const totalFlavorPrice = flavorPrices.reduce((sum, price) => sum + price, 0);
+      basePrice += totalFlavorPrice;
     } else {
-      // Flat fee: $30.00 base + highest flavor price
-      basePrice = 3000; // $30.00 base
-      const flavorPrices = (session.mix?.flavors || []).map((flavor: string) => FLAVOR_PRICES[flavor] || 0);
+      // Flat fee: Use highest flavor price, or $30.00 minimum
+      const flavorPrices = flavors.map((flavor: string) => FLAVOR_PRICES[flavor] || 0);
       if (flavorPrices.length > 0) {
         const highestFlavorPrice = Math.max(...flavorPrices);
-        basePrice = Math.max(basePrice, highestFlavorPrice); // Use highest flavor price if > $30
+        basePrice = Math.max(3000, highestFlavorPrice); // $30.00 minimum, or highest flavor price
+      } else {
+        basePrice = 3000; // Default $30.00 if no flavors selected
       }
     }
     
@@ -91,7 +99,7 @@ export async function POST(req: NextRequest) {
     const total = promo ? subtotal - promo.discount : subtotal;
 
     // Create price breakdown
-    const breakdown = createPriceBreakdown(session.mix.flavors, finalBasePrice, addons, promo);
+    const breakdown = createPriceBreakdown(flavors, finalBasePrice, addons, promo, session.sessionType);
 
     // Update session with pricing
     session.price = {
@@ -229,21 +237,48 @@ function applyPromoCode(code: string, subtotal: number): any {
 /**
  * Create detailed price breakdown
  */
-function createPriceBreakdown(flavors: string[], basePrice: number, addons: number, promo: any): any[] {
+function createPriceBreakdown(flavors: string[], basePrice: number, addons: number, promo: any, sessionType?: string): any[] {
   const breakdown: any[] = [];
   
-  // Add flavor prices
-  flavors.forEach(flavor => {
-    const price = FLAVOR_PRICES[flavor] || 0;
-    if (price > 0) {
-      breakdown.push({
-        item: flavor,
-        price
-      });
+  if (sessionType === 'time-based') {
+    // For time-based: Show session duration and flavor add-ons separately
+    breakdown.push({
+      item: 'Session (Time-based)',
+      price: basePrice - flavors.reduce((sum, flavor) => sum + (FLAVOR_PRICES[flavor] || 0), 0)
+    });
+    
+    // Add flavor prices as add-ons
+    flavors.forEach(flavor => {
+      const price = FLAVOR_PRICES[flavor] || 0;
+      if (price > 0) {
+        breakdown.push({
+          item: `Flavor: ${flavor}`,
+          price
+        });
+      }
+    });
+  } else {
+    // For flat fee: Show base session price (includes flavors)
+    breakdown.push({
+      item: 'Session (Flat Fee)',
+      price: basePrice
+    });
+    
+    // Optionally show flavor breakdown for transparency
+    if (flavors.length > 0) {
+      const flavorPrices = flavors.map((flavor: string) => FLAVOR_PRICES[flavor] || 0);
+      const highestPrice = Math.max(...flavorPrices);
+      if (highestPrice > 0 && highestPrice !== basePrice) {
+        breakdown.push({
+          item: `Selected Flavors (${flavors.length})`,
+          price: 0, // Already included in base price
+          note: 'Included in session price'
+        });
+      }
     }
-  });
+  }
   
-  // Add addons
+  // Add addons (premium table, extra time, etc.)
   if (addons > 0) {
     breakdown.push({
       item: 'Add-ons',

@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { GuestProfile, FeatureFlags } from '@guest-types';
 import { featureFlags } from '../../config/flags';
-import GlobalNavigation from '../../../components/GlobalNavigation';
+import GlobalNavigation from '../../components/GlobalNavigation';
 import RewardsBadgeStrip from '../../../components/guest/RewardsBadgeStrip';
 import MemoryBreadcrumbs from '../../../components/guest/MemoryBreadcrumbs';
 import ReferralQR from '../../../components/guest/ReferralQR';

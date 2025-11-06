@@ -47,7 +47,7 @@ interface Lead {
   currentPOS: string;
   pricingModel: string;
   preferredFeatures: string[];
-  stage: 'intake' | 'follow-up' | 'scheduled' | 'onboarding' | 'complete';
+  stage: 'new-leads' | 'intake' | 'follow-up' | 'scheduled' | 'onboarding' | 'complete';
   notes: Array<{
     id: string;
     content: string;
@@ -64,6 +64,7 @@ interface Lead {
 
 interface Stats {
   total: number;
+  newLeads: number;
   intake: number;
   followUp: number;
   scheduled: number;
@@ -75,6 +76,7 @@ export default function OperatorOnboardingPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [stats, setStats] = useState<Stats>({
     total: 0,
+    newLeads: 0,
     intake: 0,
     followUp: 0,
     scheduled: 0,
@@ -112,6 +114,7 @@ export default function OperatorOnboardingPage() {
       setLeads(data.leads || []);
       setStats(data.stats || {
         total: 0,
+        newLeads: 0,
         intake: 0,
         followUp: 0,
         scheduled: 0,
@@ -265,6 +268,7 @@ export default function OperatorOnboardingPage() {
 
   const getStageColor = (stage: Lead['stage']) => {
     switch (stage) {
+      case 'new-leads': return 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30';
       case 'intake': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
       case 'follow-up': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
       case 'scheduled': return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
@@ -276,6 +280,7 @@ export default function OperatorOnboardingPage() {
 
   const getStageIcon = (stage: Lead['stage']) => {
     switch (stage) {
+      case 'new-leads': return <Target className="w-4 h-4" />;
       case 'intake': return <Users className="w-4 h-4" />;
       case 'follow-up': return <Mail className="w-4 h-4" />;
       case 'scheduled': return <Calendar className="w-4 h-4" />;
@@ -335,10 +340,14 @@ export default function OperatorOnboardingPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-7 gap-4 mb-8">
           <div className="bg-zinc-800/50 backdrop-blur-sm border border-zinc-700 rounded-xl p-4">
             <div className="text-2xl font-bold text-white">{stats.total}</div>
             <div className="text-sm text-zinc-400">Total Leads</div>
+          </div>
+          <div className="bg-cyan-500/20 border border-cyan-500/30 rounded-xl p-4">
+            <div className="text-2xl font-bold text-cyan-400">{stats.newLeads}</div>
+            <div className="text-sm text-zinc-400">New Leads</div>
           </div>
           <div className="bg-blue-500/20 border border-blue-500/30 rounded-xl p-4">
             <div className="text-2xl font-bold text-blue-400">{stats.intake}</div>
@@ -369,7 +378,7 @@ export default function OperatorOnboardingPage() {
             <span className="text-sm text-zinc-400">Filter by Stage:</span>
           </div>
           <div className="flex gap-2 flex-wrap">
-            {(['all', 'intake', 'follow-up', 'scheduled', 'onboarding', 'complete'] as const).map((stage) => (
+            {(['all', 'new-leads', 'intake', 'follow-up', 'scheduled', 'onboarding', 'complete'] as const).map((stage) => (
               <button
                 key={stage}
                 onClick={() => setSelectedStage(stage)}
@@ -379,7 +388,7 @@ export default function OperatorOnboardingPage() {
                     : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
                 }`}
               >
-                {stage === 'all' ? 'All' : stage.charAt(0).toUpperCase() + stage.slice(1)}
+                {stage === 'all' ? 'All' : stage === 'new-leads' ? 'New Leads' : stage.charAt(0).toUpperCase() + stage.slice(1)}
               </button>
             ))}
           </div>

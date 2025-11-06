@@ -70,7 +70,8 @@ export async function GET(req: NextRequest) {
         preferredFeatures: data.preferredFeatures || [],
         
         // Stage tracking (stored in payload or default)
-        stage: payload.stage || data.stage || 'intake',
+        // If type is 'pos.waitlist.signup', default to 'new-leads', otherwise 'intake'
+        stage: payload.stage || data.stage || (event.type === 'pos.waitlist.signup' ? 'new-leads' : 'intake'),
         
         // Management fields
         notes: payload.notes || [],
@@ -98,6 +99,7 @@ export async function GET(req: NextRequest) {
     // Calculate statistics
     const stats = {
       total: leads.length,
+      newLeads: leads.filter(l => l.stage === 'new-leads').length,
       intake: leads.filter(l => l.stage === 'intake').length,
       followUp: leads.filter(l => l.stage === 'follow-up').length,
       scheduled: leads.filter(l => l.stage === 'scheduled').length,

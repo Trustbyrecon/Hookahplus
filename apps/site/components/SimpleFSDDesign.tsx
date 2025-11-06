@@ -136,6 +136,9 @@ export default function SimpleFSDDesign({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [timerKey, setTimerKey] = useState(0);
+  const [sessionFilter, setSessionFilter] = useState<'all' | 'active' | 'attention' | 'urgent'>('active');
+  const [showAllSessions, setShowAllSessions] = useState(false);
+  const [displayLimit, setDisplayLimit] = useState(10);
 
   // Fix hydration mismatch by only rendering time-dependent content after mount
   useEffect(() => {
@@ -267,7 +270,66 @@ export default function SimpleFSDDesign({
     return allSessions;
   };
 
-  const filteredSessions = getFilteredSessions();
+  const roleFilteredSessions = getFilteredSessions();
+
+  // Apply priority-based filtering to reduce cognitive load
+  const getPriorityFilteredSessions = () => {
+    if (sessionFilter === 'all' || showAllSessions) {
+      return roleFilteredSessions;
+    }
+
+    const urgent = roleFilteredSessions.filter((s: any) => {
+      const status = getSessionStatus(s);
+      return ['STAFF_HOLD', 'STOCK_BLOCKED', 'REMAKE', 'REFUND_REQUESTED'].includes(status);
+    });
+
+    const needsAttention = roleFilteredSessions.filter((s: any) => {
+      const status = getSessionStatus(s);
+      return ['READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(status);
+    });
+
+    const active = roleFilteredSessions.filter((s: any) => {
+      const status = getSessionStatus(s);
+      return ['ACTIVE', 'PREP_IN_PROGRESS', 'HEAT_UP'].includes(status);
+    });
+
+    // Combine based on filter
+    if (sessionFilter === 'urgent') {
+      return urgent;
+    } else if (sessionFilter === 'attention') {
+      return needsAttention;
+    } else if (sessionFilter === 'active') {
+      return [...urgent, ...needsAttention, ...active]; // Default: show urgent + attention + active
+    }
+
+    return roleFilteredSessions;
+  };
+
+  const priorityFilteredSessions = getPriorityFilteredSessions();
+
+  // Sort sessions by priority: urgent first, then needs attention, then active
+  const sortedSessions = [...priorityFilteredSessions].sort((a: any, b: any) => {
+    const statusA = getSessionStatus(a);
+    const statusB = getSessionStatus(b);
+    
+    const isUrgentA = ['STAFF_HOLD', 'STOCK_BLOCKED', 'REMAKE', 'REFUND_REQUESTED'].includes(statusA);
+    const isUrgentB = ['STAFF_HOLD', 'STOCK_BLOCKED', 'REMAKE', 'REFUND_REQUESTED'].includes(statusB);
+    
+    const needsAttentionA = ['READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(statusA);
+    const needsAttentionB = ['READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(statusB);
+    
+    if (isUrgentA && !isUrgentB) return -1;
+    if (!isUrgentA && isUrgentB) return 1;
+    if (needsAttentionA && !needsAttentionB) return -1;
+    if (!needsAttentionA && needsAttentionB) return 1;
+    return 0;
+  });
+
+  // Limit display
+  const displayedSessions = showAllSessions ? sortedSessions : sortedSessions.slice(0, displayLimit);
+  const hasMoreSessions = sortedSessions.length > displayLimit;
+
+  const filteredSessions = displayedSessions;
 
   // Calculate metrics for dashboard
   const calculateMetrics = () => {
@@ -392,6 +454,7 @@ export default function SimpleFSDDesign({
               className="px-3 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
             >
               <option value="OWNER">Owner</option>
+              <option value="ADMIN">Admin</option>
               <option value="MANAGER">Manager</option>
               <option value="FOH">FOH</option>
               <option value="BOH">BOH</option>
@@ -527,6 +590,50 @@ export default function SimpleFSDDesign({
           </button>
         ))}
       </div>
+
+      {/* Session Filter Controls */}
+      {activeTab === 'overview' && roleFilteredSessions.length > 0 && (
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <label className="text-sm text-zinc-400">Filter:</label>
+            <select
+              value={sessionFilter}
+              onChange={(e) => {
+                setSessionFilter(e.target.value as any);
+                setShowAllSessions(false);
+              }}
+              className="px-3 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+            >
+              <option value="active">Active + Attention + Urgent</option>
+              <option value="urgent">Urgent Only</option>
+              <option value="attention">Needs Attention</option>
+              <option value="all">All Sessions</option>
+            </select>
+            <span className="text-xs text-zinc-500">
+              Showing {displayedSessions.length} of {sortedSessions.length} sessions
+            </span>
+          </div>
+          {hasMoreSessions && !showAllSessions && (
+            <button
+              onClick={() => setShowAllSessions(true)}
+              className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 rounded-lg text-white text-sm transition-colors"
+            >
+              Show All ({sortedSessions.length})
+            </button>
+          )}
+          {showAllSessions && (
+            <button
+              onClick={() => {
+                setShowAllSessions(false);
+                setDisplayLimit(10);
+              }}
+              className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 rounded-lg text-white text-sm transition-colors"
+            >
+              Show Less
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Tab Content */}
       {activeTab === 'overview' && (

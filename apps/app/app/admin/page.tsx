@@ -165,18 +165,9 @@ export default function AdminPage() {
       status: 'active'
     },
     {
-      id: 'pos-waitlist',
-      title: 'POS Waitlist',
-      description: 'Manage POS integration and waitlist',
-      icon: <Building2 className="w-6 h-6" />,
-      color: 'text-cyan-400',
-      href: '/admin/pos-waitlist',
-      status: 'active'
-    },
-    {
       id: 'operator-onboarding',
       title: 'Operator Onboarding',
-      description: 'Manage intake, follow-up, scheduling, and onboarding',
+      description: 'Manage new leads, intake, follow-up, scheduling, and onboarding',
       icon: <Users className="w-6 h-6" />,
       color: 'text-teal-400',
       href: '/admin/operator-onboarding',

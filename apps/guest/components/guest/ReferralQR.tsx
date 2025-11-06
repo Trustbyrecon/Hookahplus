@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { GuestProfile, FeatureFlags, ReferralCreateResponse } from '@guest-types';
-import { QrCode, Share2, Copy, Users, Gift, ExternalLink, Trophy, Target, TrendingUp, Zap } from 'lucide-react';
+import { QrCode, Share2, Copy, Users, Gift, ExternalLink, Trophy, Target, TrendingUp, Zap, Building2, UserPlus } from 'lucide-react';
 
 interface ReferralQRProps {
   guestProfile: GuestProfile;
@@ -46,6 +46,7 @@ export default function ReferralQR({ guestProfile, loungeId, flags, onReferralCr
   const [progress, setProgress] = useState<ReferralProgress | null>(null);
   const [badges, setBadges] = useState<ReferralBadge[]>([]);
   const [isLoadingProgress, setIsLoadingProgress] = useState(false);
+  const [referralType, setReferralType] = useState<'friends' | 'lounge'>('friends');
 
   useEffect(() => {
     // Load referral progress and badges
@@ -128,7 +129,8 @@ export default function ReferralQR({ guestProfile, loungeId, flags, onReferralCr
         },
         body: JSON.stringify({
           loungeId,
-          inviterGuestId: guestProfile.guestId
+          inviterGuestId: guestProfile.guestId,
+          referralType: referralType // Include referral type
         })
       });
 
@@ -220,29 +222,83 @@ export default function ReferralQR({ guestProfile, loungeId, flags, onReferralCr
   if (!referralData) {
     return (
       <div className="bg-zinc-800/50 backdrop-blur-sm border border-zinc-700 rounded-xl p-6">
+        {/* Toggle for Referral Type */}
+        <div className="mb-6">
+          <div className="flex items-center justify-center gap-2 p-1 bg-zinc-700/50 rounded-lg">
+            <button
+              onClick={() => setReferralType('friends')}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all ${
+                referralType === 'friends'
+                  ? 'bg-purple-600 text-white shadow-lg'
+                  : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              <UserPlus className="w-4 h-4" />
+              <span className="text-sm font-medium">Invite Friends</span>
+            </button>
+            <button
+              onClick={() => setReferralType('lounge')}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all ${
+                referralType === 'lounge'
+                  ? 'bg-teal-600 text-white shadow-lg'
+                  : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              <Building2 className="w-4 h-4" />
+              <span className="text-sm font-medium">Invite a Lounge</span>
+            </button>
+          </div>
+        </div>
+
         <div className="flex items-center space-x-3 mb-6">
-          <div className="p-2 bg-purple-500/20 rounded-lg">
-            <QrCode className="w-6 h-6 text-purple-400" />
+          <div className={`p-2 rounded-lg ${referralType === 'friends' ? 'bg-purple-500/20' : 'bg-teal-500/20'}`}>
+            {referralType === 'friends' ? (
+              <QrCode className="w-6 h-6 text-purple-400" />
+            ) : (
+              <Building2 className="w-6 h-6 text-teal-400" />
+            )}
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-white">Invite Friends</h2>
-            <p className="text-sm text-zinc-400">Earn rewards for bringing friends</p>
+            <h2 className="text-xl font-semibold text-white">
+              {referralType === 'friends' ? 'Invite Friends' : 'Invite a Lounge'}
+            </h2>
+            <p className="text-sm text-zinc-400">
+              {referralType === 'friends' 
+                ? 'Earn rewards for bringing friends'
+                : 'Help other lounges discover Hookah+'}
+            </p>
           </div>
         </div>
 
         <div className="text-center space-y-4">
           <div className="p-4 bg-zinc-700/50 rounded-lg">
-            <Users className="w-8 h-8 text-purple-400 mx-auto mb-2" />
-            <h3 className="text-lg font-semibold text-white mb-2">Share the Experience</h3>
-            <p className="text-sm text-zinc-400 mb-4">
-              Create a referral link and earn 50 points for each friend who joins!
-            </p>
+            {referralType === 'friends' ? (
+              <>
+                <Users className="w-8 h-8 text-purple-400 mx-auto mb-2" />
+                <h3 className="text-lg font-semibold text-white mb-2">Share the Experience</h3>
+                <p className="text-sm text-zinc-400 mb-4">
+                  Create a referral link and earn 50 points for each friend who joins!
+                </p>
+              </>
+            ) : (
+              <>
+                <Building2 className="w-8 h-8 text-teal-400 mx-auto mb-2" />
+                <h3 className="text-lg font-semibold text-white mb-2">Spread the Word</h3>
+                <p className="text-sm text-zinc-400 mb-4">
+                  Share Hookah+ with other lounge owners. Help them transform their operations!
+                </p>
+              </>
+            )}
           </div>
 
           <button
             onClick={createReferral}
             disabled={isLoading}
-            className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className={`w-full flex items-center justify-center space-x-2 px-6 py-3 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
+              referralType === 'friends'
+                ? 'bg-purple-600 hover:bg-purple-700'
+                : 'bg-teal-600 hover:bg-teal-700'
+            }`}
           >
             {isLoading ? (
               <>
