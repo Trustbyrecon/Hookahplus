@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Button from './Button';
 import CalendlyEmbed from './CalendlyEmbed';
 import { Calendar, X } from 'lucide-react';
+import { trackDemoRequest } from '../lib/ctaTracking';
 
 export default function StickyCTA() {
   const [showCalendly, setShowCalendly] = useState(false);
@@ -16,7 +17,10 @@ export default function StickyCTA() {
           variant="primary"
           size="lg"
           className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white px-6 py-4 text-base font-semibold shadow-lg shadow-teal-500/30 rounded-full flex items-center gap-2 animate-pulse hover:animate-none"
-          onClick={() => setShowCalendly(true)}
+          onClick={() => {
+            trackDemoRequest('StickyCTA', { action: 'open_calendly_modal' });
+            setShowCalendly(true);
+          }}
         >
           <Calendar className="w-5 h-5" />
           Book 15-min Demo

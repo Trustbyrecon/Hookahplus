@@ -4,6 +4,7 @@ import React from 'react';
 import Card from './Card';
 import Button from './Button';
 import { Zap, BarChart3, Crown, Building2, ArrowRight, CheckCircle } from 'lucide-react';
+import { trackOnboardingSignup } from '../lib/ctaTracking';
 
 const tiers = [
   {
@@ -104,10 +105,8 @@ export default function PricingTeaser() {
             size="lg"
             className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white px-8 py-4 text-lg font-semibold shadow-lg shadow-teal-500/20"
             onClick={() => {
-              const demoSection = document.getElementById('demo');
-              if (demoSection) {
-                demoSection.scrollIntoView({ behavior: 'smooth' });
-              }
+              trackOnboardingSignup(undefined, { action: 'start_pilot', component: 'PricingTeaser' });
+              window.location.href = '/onboarding';
             }}
           >
             Start 30-day Pilot

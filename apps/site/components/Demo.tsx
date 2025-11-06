@@ -3,38 +3,57 @@
 import React from 'react';
 import ImageCarousel from './ImageCarousel';
 import { Play, Calendar, Clock } from 'lucide-react';
+import { trackContactForm } from '../lib/ctaTracking';
 
-// Demo images data - replace with actual image URLs when available
+// Demo images data - 60-second demo carousel
 const demoImages = [
   {
-    src: '/images/hero-staff-tablet.jpg',
-    alt: 'Staff member using Hookah+ tablet',
-    title: 'Take Control of Your Lounge',
-    description: 'Monitor every session in real-time with intelligent management tools'
+    src: '/images/demo/automate-operations.jpg',
+    alt: 'Automate Operations - Streamline inventory, re-fills, and table service',
+    title: 'AUTOMATE OPERATIONS',
+    description: 'Streamline complex inventory, re-fills, and table service into intuitive, data-driven workflows'
   },
   {
-    src: '/images/dashboard-performance.jpg',
-    alt: 'Performance dashboard showing growth',
-    title: 'Maximize Lounge Performance',
-    description: 'Analyze session data to optimize table turnover and increase daily revenue'
-  },
-  {
-    src: '/images/operational-flow.jpg',
-    alt: 'Operational flow dashboard',
-    title: 'Operational Flow, Simplified',
+    src: '/images/demo/operational-flow-simplified.jpg',
+    alt: 'Operational Flow Simplified - Monitor sessions in real-time',
+    title: 'OPERATIONAL FLOW, SIMPLIFIED',
     description: 'Monitor every session in real-time, reducing management friction by 40%'
   },
   {
-    src: '/images/before-after.jpg',
-    alt: 'Before and after transformation',
-    title: 'Reduce Management Friction by 40%',
-    description: 'Streamline staff, inventory, and table service into automated, data-driven workflows'
+    src: '/images/demo/maximize-lounge-performance.jpg',
+    alt: 'Maximize Lounge Performance - Analyze session data',
+    title: 'MAXIMIZE LOUNGE PERFORMANCE',
+    description: 'Analyze session data to optimize table turnover and increase daily revenue'
   },
   {
-    src: '/images/staff-coordination.jpg',
-    alt: 'Staff coordination interface',
-    title: 'Coordinate Staff Seamlessly',
+    src: '/images/demo/master-lounge-operations.jpg',
+    alt: 'Master Lounge Operations - Real-time data insights',
+    title: 'MASTER LOUNGE OPERATIONS',
+    description: 'Unlock real-time data insights to optimize your staff and sessions with Hookah+'
+  },
+  {
+    src: '/images/demo/boost-profitability.jpg',
+    alt: 'Boost Profitability - Pricing and session duration decisions',
+    title: 'STEP 3: BOOST PROFITABILITY',
+    description: 'Make smarter pricing and session duration decisions based on real-time business performance metrics'
+  },
+  {
+    src: '/images/demo/coordinate-staff-seamlessly.jpg',
+    alt: 'Coordinate Staff Seamlessly - Assign tasks instantly',
+    title: 'COORDINATE STAFF SEAMLESSLY',
     description: 'Assign tasks instantly and track completion—no more missed service calls'
+  },
+  {
+    src: '/images/demo/take-control-lounge.jpg',
+    alt: 'Take Control of Your Lounge - Intelligent management tools',
+    title: 'TAKE CONTROL OF YOUR LOUNGE',
+    description: 'Move beyond guesswork: intelligent tools for modern hookah lounge management'
+  },
+  {
+    src: '/images/demo/reduce-management-friction.jpg',
+    alt: 'Reduce Management Friction by 40% - Before and After',
+    title: 'Reduce Management Friction by 40%',
+    description: 'Streamline staff, inventory, and table service into automated, data-driven workflows'
   }
 ];
 
@@ -92,6 +111,7 @@ export default function Demo() {
                   </p>
                   <a
                     href="/contact"
+                    onClick={() => trackContactForm(undefined, { component: 'Demo', action: 'contact_form_fallback' })}
                     className="inline-flex items-center gap-2 px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-medium transition-colors"
                   >
                     Contact Us

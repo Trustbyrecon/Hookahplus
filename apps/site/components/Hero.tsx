@@ -4,6 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import Button from './Button';
 import { ArrowRight, TrendingDown, Users, Clock } from 'lucide-react';
+import { trackDemoRequest } from '../lib/ctaTracking';
 
 export default function Hero() {
   return (
@@ -65,6 +66,9 @@ export default function Hero() {
               size="lg"
               className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white px-8 py-4 text-lg font-semibold shadow-lg shadow-teal-500/20 transform hover:scale-105 transition-all duration-200"
               onClick={() => {
+                // Track CTA click
+                trackDemoRequest('Hero', { action: 'scroll_to_demo' });
+                
                 const demoSection = document.getElementById('demo');
                 if (demoSection) {
                   demoSection.scrollIntoView({ behavior: 'smooth' });

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import PageHero from '../../components/PageHero';
+import { trackOnboardingSignup } from '../../lib/ctaTracking';
 import { 
   CheckCircle, 
   ArrowRight, 
@@ -101,6 +102,21 @@ export default function OnboardingPage() {
 
   const handleSubmit = async () => {
     try {
+      // Track CTA event with form data
+      trackOnboardingSignup({
+        name: formData.ownerName,
+        email: formData.email,
+        phone: formData.phone,
+        businessName: formData.businessName,
+        location: formData.location
+      }, {
+        step: currentStep,
+        totalSteps: steps.length,
+        seatingTypes: formData.seatingTypes,
+        currentPOS: formData.currentPOS,
+        pricingModel: formData.pricingModel
+      });
+
       const response = await fetch('/api/demo-requests', {
         method: 'POST',
         headers: {

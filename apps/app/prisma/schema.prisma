@@ -211,8 +211,18 @@ model ReflexEvent {
   userAgent     String?
   ip            String?
   createdAt     DateTime @default(now())
+  
+  // CTA Tracking Fields
+  ctaSource     String? // 'website' | 'instagram' | 'linkedin' | 'email' | 'calendly'
+  ctaType       String? // 'demo_request' | 'onboarding_signup' | 'contact_form' | 'social_click'
+  referrer      String? // HTTP referrer or social media referrer
+  campaignId    String? // Marketing campaign identifier
+  metadata      String? // Additional JSON metadata for source-specific data
 
   @@index([type, createdAt])
+  @@index([ctaSource])
+  @@index([ctaType])
+  @@index([campaignId])
   @@map("reflex_events")
 }
 

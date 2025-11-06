@@ -18,19 +18,32 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const stage = searchParams.get('stage');
     const source = searchParams.get('source');
+    const ctaSource = searchParams.get('ctaSource'); // Filter by CTA source
 
-    // Query ReflexEvent for onboarding-related events
+    // Query ReflexEvent for onboarding-related events including CTAs
     const whereClause: any = {
       OR: [
         { type: 'pos.waitlist.signup' },
         { type: 'sync.optimize.onboarding' },
         { type: { contains: 'onboarding' } },
-        { type: { contains: 'demo' } }
+        { type: { contains: 'demo' } },
+        // Include CTA events
+        { type: 'cta.demo_request' },
+        { type: 'cta.onboarding_signup' },
+        { type: 'cta.contact_form' },
+        { type: 'cta.social_click' },
+        { type: 'cta.email' },
+        { type: { startsWith: 'cta.' } } // Catch-all for any CTA type
       ]
     };
 
     if (source) {
       whereClause.source = source;
+    }
+
+    // Filter by CTA source if provided
+    if (ctaSource) {
+      whereClause.ctaSource = ctaSource;
     }
 
     const events = await prisma.reflexEvent.findMany({
@@ -53,12 +66,18 @@ export async function GET(req: NextRequest) {
         source: event.source,
         type: event.type,
         
-        // Lead details from payload
-        businessName: data.businessName || data.loungeName || 'Unknown',
-        ownerName: data.ownerName || data.name || 'Unknown',
-        email: data.email || 'No email',
-        phone: data.phone || 'No phone',
-        location: data.location || data.city || 'Unknown',
+        // CTA tracking fields
+        ctaSource: event.ctaSource || null,
+        ctaType: event.ctaType || null,
+        referrer: event.referrer || null,
+        campaignId: event.campaignId || null,
+        
+        // Lead details from payload (prioritize payload.lead for CTA events)
+        businessName: payload.lead?.businessName || data.businessName || data.loungeName || 'Unknown',
+        ownerName: payload.lead?.name || data.ownerName || data.name || 'Unknown',
+        email: payload.lead?.email || data.email || 'No email',
+        phone: payload.lead?.phone || data.phone || 'No phone',
+        location: payload.lead?.location || data.location || data.city || 'Unknown',
         
         // Business details
         seatingTypes: data.seatingTypes || [],
@@ -70,8 +89,10 @@ export async function GET(req: NextRequest) {
         preferredFeatures: data.preferredFeatures || [],
         
         // Stage tracking (stored in payload or default)
-        // If type is 'pos.waitlist.signup', default to 'new-leads', otherwise 'intake'
-        stage: payload.stage || data.stage || (event.type === 'pos.waitlist.signup' ? 'new-leads' : 'intake'),
+        // CTA events have stage in payload, otherwise use defaults
+        stage: payload.stage || data.stage || 
+          (event.type === 'pos.waitlist.signup' ? 'new-leads' : 
+           event.type?.startsWith('cta.') ? 'new-leads' : 'intake'),
         
         // Management fields
         notes: payload.notes || [],
@@ -104,7 +125,15 @@ export async function GET(req: NextRequest) {
       followUp: leads.filter(l => l.stage === 'follow-up').length,
       scheduled: leads.filter(l => l.stage === 'scheduled').length,
       onboarding: leads.filter(l => l.stage === 'onboarding').length,
-      complete: leads.filter(l => l.stage === 'complete').length
+      complete: leads.filter(l => l.stage === 'complete').length,
+      // CTA source breakdown
+      byCtaSource: {
+        website: leads.filter(l => l.ctaSource === 'website').length,
+        instagram: leads.filter(l => l.ctaSource === 'instagram').length,
+        linkedin: leads.filter(l => l.ctaSource === 'linkedin').length,
+        email: leads.filter(l => l.ctaSource === 'email').length,
+        calendly: leads.filter(l => l.ctaSource === 'calendly').length
+      }
     };
 
     return NextResponse.json({
