@@ -172,6 +172,15 @@ export default function AdminPage() {
       color: 'text-cyan-400',
       href: '/admin/pos-waitlist',
       status: 'active'
+    },
+    {
+      id: 'operator-onboarding',
+      title: 'Operator Onboarding',
+      description: 'Manage intake, follow-up, scheduling, and onboarding',
+      icon: <Users className="w-6 h-6" />,
+      color: 'text-teal-400',
+      href: '/admin/operator-onboarding',
+      status: 'active'
     }
   ];
 
@@ -257,19 +266,16 @@ export default function AdminPage() {
               <h3 className="text-xl font-semibold mb-6">Administration Tools</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {adminActions.map((action) => (
-                  <div
+                  <Link
                     key={action.id}
-                    onClick={() => {
-                      setSelectedReport({ type: action.id, title: action.title });
-                      setShowReportModal(true);
-                    }}
+                    href={action.href}
                     className="p-4 rounded-lg border border-zinc-700 hover:border-zinc-600 transition-colors cursor-pointer"
                   >
                     <div className="flex items-center space-x-3 mb-2">
                       <div className={`p-2 rounded-lg bg-zinc-800 ${action.color}`}>
                         {action.icon}
                       </div>
-                      <div>
+                      <div className="flex-1">
                         <h4 className="font-semibold text-white">{action.title}</h4>
                         <p className="text-sm text-zinc-400">{action.description}</p>
                       </div>
@@ -282,11 +288,11 @@ export default function AdminPage() {
                       }`}>
                         {action.status}
                       </span>
-                      <button className="text-xs text-teal-400 hover:text-teal-300">
-                        View Report
-                      </button>
+                      <span className="text-xs text-teal-400 hover:text-teal-300 flex items-center gap-1">
+                        Open <ChevronRight className="w-3 h-3" />
+                      </span>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </div>

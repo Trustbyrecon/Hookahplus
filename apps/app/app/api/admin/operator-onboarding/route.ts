@@ -1,0 +1,260 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '../../../../lib/db';
+
+/**
+ * GET /api/admin/operator-onboarding
+ * 
+ * Fetches all onboarding leads from ReflexEvent table
+ * Only accessible to ADMIN role
+ */
+export async function GET(req: NextRequest) {
+  try {
+    // TODO: Add role-based authentication check
+    // const userRole = await getCurrentUserRole(req);
+    // if (userRole !== 'ADMIN') {
+    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    // }
+
+    const { searchParams } = new URL(req.url);
+    const stage = searchParams.get('stage');
+    const source = searchParams.get('source');
+
+    // Query ReflexEvent for onboarding-related events
+    const whereClause: any = {
+      OR: [
+        { type: 'pos.waitlist.signup' },
+        { type: 'sync.optimize.onboarding' },
+        { type: { contains: 'onboarding' } },
+        { type: { contains: 'demo' } }
+      ]
+    };
+
+    if (source) {
+      whereClause.source = source;
+    }
+
+    const events = await prisma.reflexEvent.findMany({
+      where: whereClause,
+      orderBy: {
+        createdAt: 'desc'
+      },
+      take: 100 // Limit to recent 100 entries
+    });
+
+    // Parse and format lead data
+    const leads = events.map(event => {
+      const payload = event.payload ? JSON.parse(event.payload) : {};
+      const data = payload.data || payload;
+
+      // Extract lead information
+      const lead = {
+        id: event.id,
+        createdAt: event.createdAt,
+        source: event.source,
+        type: event.type,
+        
+        // Lead details from payload
+        businessName: data.businessName || data.loungeName || 'Unknown',
+        ownerName: data.ownerName || data.name || 'Unknown',
+        email: data.email || 'No email',
+        phone: data.phone || 'No phone',
+        location: data.location || data.city || 'Unknown',
+        
+        // Business details
+        seatingTypes: data.seatingTypes || [],
+        totalCapacity: data.totalCapacity || '0',
+        numberOfTables: data.numberOfTables || '0',
+        averageSessionDuration: data.averageSessionDuration || '',
+        currentPOS: data.currentPOS || 'unknown',
+        pricingModel: data.pricingModel || 'unknown',
+        preferredFeatures: data.preferredFeatures || [],
+        
+        // Stage tracking (stored in payload or default)
+        stage: payload.stage || data.stage || 'intake',
+        
+        // Management fields
+        notes: payload.notes || [],
+        scheduledFollowUp: payload.scheduledFollowUp || null,
+        lastContacted: payload.lastContacted || null,
+        assignedTo: payload.assignedTo || null,
+        
+        // Metadata
+        selectedTier: payload.selectedTier || data.selectedTier || null,
+        conversionProbability: payload.conversionProbability || null,
+        
+        // Raw payload for reference
+        rawPayload: payload
+      };
+
+      return lead;
+    });
+
+    // Filter by stage if provided
+    let filteredLeads = leads;
+    if (stage && stage !== 'all') {
+      filteredLeads = leads.filter(lead => lead.stage === stage);
+    }
+
+    // Calculate statistics
+    const stats = {
+      total: leads.length,
+      intake: leads.filter(l => l.stage === 'intake').length,
+      followUp: leads.filter(l => l.stage === 'follow-up').length,
+      scheduled: leads.filter(l => l.stage === 'scheduled').length,
+      onboarding: leads.filter(l => l.stage === 'onboarding').length,
+      complete: leads.filter(l => l.stage === 'complete').length
+    };
+
+    return NextResponse.json({
+      success: true,
+      leads: filteredLeads,
+      stats,
+      total: filteredLeads.length
+    });
+
+  } catch (error) {
+    console.error('[Operator Onboarding] GET Error:', error);
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to fetch onboarding data',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
+  }
+}
+
+/**
+ * POST /api/admin/operator-onboarding
+ * 
+ * Updates lead stage, adds notes, schedules follow-ups
+ * Only accessible to ADMIN role
+ */
+export async function POST(req: NextRequest) {
+  try {
+    // TODO: Add role-based authentication check
+    const body = await req.json();
+    const { action, leadId, updates } = body;
+
+    if (!leadId || !action) {
+      return NextResponse.json({
+        success: false,
+        error: 'Missing required fields: leadId, action'
+      }, { status: 400 });
+    }
+
+    // Get existing event
+    const event = await prisma.reflexEvent.findUnique({
+      where: { id: leadId }
+    });
+
+    if (!event) {
+      return NextResponse.json({
+        success: false,
+        error: 'Lead not found'
+      }, { status: 404 });
+    }
+
+    // Parse existing payload
+    const existingPayload = event.payload ? JSON.parse(event.payload) : {};
+
+    let updatedPayload = { ...existingPayload };
+
+    switch (action) {
+      case 'update_stage':
+        updatedPayload.stage = updates.stage;
+        updatedPayload.stageUpdatedAt = new Date().toISOString();
+        updatedPayload.stageUpdatedBy = updates.updatedBy || 'admin';
+        break;
+
+      case 'add_note':
+        if (!updatedPayload.notes) {
+          updatedPayload.notes = [];
+        }
+        updatedPayload.notes.push({
+          id: `note_${Date.now()}`,
+          content: updates.note,
+          author: updates.author || 'admin',
+          createdAt: new Date().toISOString(),
+          type: updates.noteType || 'general'
+        });
+        break;
+
+      case 'schedule_followup':
+        updatedPayload.scheduledFollowUp = updates.scheduledDate;
+        updatedPayload.followUpNote = updates.note || '';
+        updatedPayload.scheduledBy = updates.scheduledBy || 'admin';
+        break;
+
+      case 'mark_contacted':
+        updatedPayload.lastContacted = new Date().toISOString();
+        updatedPayload.lastContactedBy = updates.contactedBy || 'admin';
+        updatedPayload.contactMethod = updates.contactMethod || 'email';
+        if (updates.note) {
+          if (!updatedPayload.notes) {
+            updatedPayload.notes = [];
+          }
+          updatedPayload.notes.push({
+            id: `note_${Date.now()}`,
+            content: updates.note,
+            author: updates.contactedBy || 'admin',
+            createdAt: new Date().toISOString(),
+            type: 'contact'
+          });
+        }
+        break;
+
+      case 'assign':
+        updatedPayload.assignedTo = updates.assignedTo;
+        updatedPayload.assignedAt = new Date().toISOString();
+        break;
+
+      case 'update_probability':
+        updatedPayload.conversionProbability = updates.probability;
+        break;
+
+      default:
+        return NextResponse.json({
+          success: false,
+          error: 'Invalid action'
+        }, { status: 400 });
+    }
+
+    // Update the event
+    await prisma.reflexEvent.update({
+      where: { id: leadId },
+      data: {
+        payload: JSON.stringify(updatedPayload)
+      }
+    });
+
+    // Create a new ReflexEvent for audit trail
+    await prisma.reflexEvent.create({
+      data: {
+        type: 'admin.operator_onboarding.update',
+        source: 'admin',
+        payload: JSON.stringify({
+          leadId,
+          action,
+          updates,
+          timestamp: new Date().toISOString()
+        }),
+        userAgent: req.headers.get('user-agent') || '',
+        ip: req.headers.get('x-forwarded-for')?.split(',')[0] || '0.0.0.0'
+      }
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Lead updated successfully',
+      leadId
+    });
+
+  } catch (error) {
+    console.error('[Operator Onboarding] POST Error:', error);
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to update lead',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
+  }
+}
+

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Shield, HelpCircle, FileText, Home, Clock } from 'lucide-react';
+import { Shield, HelpCircle, FileText, Home, Clock, Trophy } from 'lucide-react';
 
 interface GlobalNavigationProps {
   currentPage?: string;
@@ -17,6 +17,7 @@ export const GlobalNavigation: React.FC<GlobalNavigationProps> = ({
 }) => {
   const navigationItems = [
     { name: 'Home', href: '/', icon: Home, current: currentPage === 'home' },
+    { name: 'Your Rewards', href: '/rewards', icon: Trophy, current: currentPage === 'rewards' },
     { name: 'Extend Session', href: '/extend-session', icon: Clock, current: currentPage === 'extend-session' }
   ];
 
