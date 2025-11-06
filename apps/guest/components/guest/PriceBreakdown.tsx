@@ -65,7 +65,8 @@ export default function PriceBreakdown({
           flavors: selectedFlavors,
           specialInstructions,
           tableId,
-          zone
+          zone,
+          sessionType // Include session type
         })
       });
 

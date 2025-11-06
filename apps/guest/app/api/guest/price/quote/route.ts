@@ -52,8 +52,21 @@ export async function POST(req: NextRequest) {
       }, { status: 404 });
     }
 
-    // Calculate base price from flavors
-    const basePrice = calculateBasePrice(session.mix.flavors);
+    // Calculate base price based on session type
+    let basePrice = 0;
+    if (session.sessionType === 'time-based') {
+      // Time-based: $0.50 per minute (default 60 min session)
+      const sessionDuration = session.duration || 60; // Default 60 minutes
+      basePrice = Math.round(sessionDuration * 50); // $0.50 per minute = 50 cents
+    } else {
+      // Flat fee: $30.00 base + highest flavor price
+      basePrice = 3000; // $30.00 base
+      const flavorPrices = (session.mix?.flavors || []).map((flavor: string) => FLAVOR_PRICES[flavor] || 0);
+      if (flavorPrices.length > 0) {
+        const highestFlavorPrice = Math.max(...flavorPrices);
+        basePrice = Math.max(basePrice, highestFlavorPrice); // Use highest flavor price if > $30
+      }
+    }
     
     // Calculate addons (mock - could be premium flavors, extra time, etc.)
     const addons = calculateAddons(session);

@@ -17,7 +17,7 @@ import MobileQRScanner from '../../../components/guest/MobileQRScanner';
 import MobileFlavorSelector, { MOCK_FLAVORS } from '../../../components/guest/MobileFlavorSelector';
 import SessionPricing from '../../../components/guest/SessionPricing';
 import GuestIntelligenceDashboard from '../../../components/EnhancedStaffPanel';
-import { UserPlus, Brain } from 'lucide-react';
+import { UserPlus, Brain, CheckCircle } from 'lucide-react';
 
 export default function GuestLoungePage() {
   const params = useParams();
@@ -413,150 +413,309 @@ export default function GuestLoungePage() {
           {/* Left Column - Main Flow (Step-by-Step Workflow) */}
           <div className="lg:col-span-2 space-y-6">
             {/* Step 1: QR Gate */}
-            <QRGate
-              qrData={qrData}
-              guestProfile={guestProfile}
-              flags={flags}
-              onProfileUpdate={setGuestProfile}
-            />
-
-            {/* Step 2: Session Pricing (replaces Live Mix Preview) */}
-            {qrData && (
-              <SessionPricing
-                sessionType={sessionType}
-                onSessionTypeChange={setSessionType}
+            <div className="relative">
+              {/* Step Indicator */}
+              <div className="flex items-center mb-4">
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-teal-600 text-white font-bold text-sm mr-3">
+                  1
+                </div>
+                <div className="h-0.5 flex-1 bg-zinc-700"></div>
+                <div className="w-8 h-8 rounded-full bg-zinc-700 text-zinc-400 font-bold text-sm ml-3 flex items-center justify-center">
+                  2
+                </div>
+                <div className="h-0.5 flex-1 bg-zinc-700"></div>
+                <div className="w-8 h-8 rounded-full bg-zinc-700 text-zinc-400 font-bold text-sm ml-3 flex items-center justify-center">
+                  3
+                </div>
+                <div className="h-0.5 flex-1 bg-zinc-700"></div>
+                <div className="w-8 h-8 rounded-full bg-zinc-700 text-zinc-400 font-bold text-sm ml-3 flex items-center justify-center">
+                  4
+                </div>
+                <div className="h-0.5 flex-1 bg-zinc-700"></div>
+                <div className="w-8 h-8 rounded-full bg-zinc-700 text-zinc-400 font-bold text-sm ml-3 flex items-center justify-center">
+                  5
+                </div>
+              </div>
+              <QRGate
+                qrData={qrData}
+                guestProfile={guestProfile}
+                flags={flags}
+                onProfileUpdate={setGuestProfile}
               />
-            )}
+            </div>
 
-            {/* Step 3: Flavor Selection - Always show after QRGate */}
-            {qrData && (
-              <div className="bg-zinc-800/50 backdrop-blur-sm border border-zinc-700 rounded-xl p-6">
-                <div className="mb-6">
-                  <h2 className="text-xl font-semibold text-white mb-2">Choose Your Flavors</h2>
-                  <p className="text-sm text-zinc-400">Select up to 4 flavors for your perfect mix</p>
+            {/* Step 2: Register (for anonymous users) */}
+            {guestProfile?.anon && qrData && (
+              <div className="relative">
+                {/* Step Indicator */}
+                <div className="flex items-center mb-4">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-600 text-white font-bold text-sm mr-3">
+                    <CheckCircle className="w-5 h-5" />
+                  </div>
+                  <div className="h-0.5 flex-1 bg-teal-600"></div>
+                  <div className="w-8 h-8 rounded-full bg-teal-600 text-white font-bold text-sm ml-3 flex items-center justify-center shadow-lg shadow-teal-500/50">
+                    2
+                  </div>
+                  <div className="h-0.5 flex-1 bg-zinc-700"></div>
+                  <div className="w-8 h-8 rounded-full bg-zinc-700 text-zinc-400 font-bold text-sm ml-3 flex items-center justify-center">
+                    3
+                  </div>
+                  <div className="h-0.5 flex-1 bg-zinc-700"></div>
+                  <div className="w-8 h-8 rounded-full bg-zinc-700 text-zinc-400 font-bold text-sm ml-3 flex items-center justify-center">
+                    4
+                  </div>
+                  <div className="h-0.5 flex-1 bg-zinc-700"></div>
+                  <div className="w-8 h-8 rounded-full bg-zinc-700 text-zinc-400 font-bold text-sm ml-3 flex items-center justify-center">
+                    5
+                  </div>
                 </div>
                 
-                <FlavorMixSelector
-                  selectedFlavors={selectedFlavors}
-                  onSelectionChange={setSelectedFlavors}
-                  maxSelections={4}
-                  onPriceUpdate={setFlavorMixPrice}
-                />
-                
-                {/* Special Instructions */}
-                <div className="mt-6">
-                  <label className="block text-sm font-medium text-white mb-2">
-                    Special Instructions
-                  </label>
-                  <textarea
-                    value={specialInstructions}
-                    onChange={(e) => setSpecialInstructions(e.target.value)}
-                    placeholder="Any special requests or notes for your mix (e.g., extra ice, light flavor, strong mix)..."
-                    className="w-full px-4 py-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    rows={3}
-                  />
+                {/* Register Card */}
+                <div className="bg-gradient-to-r from-teal-900/20 to-cyan-900/20 border-2 border-teal-500/50 rounded-xl p-6 relative overflow-hidden">
+                  {/* Subtle Animation */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-teal-500/0 via-teal-500/10 to-teal-500/0 animate-pulse"></div>
+                  
+                  <div className="relative flex items-start gap-4">
+                    <div className="flex-shrink-0 p-3 bg-teal-600/20 rounded-lg border border-teal-500/30">
+                      <UserPlus className="w-6 h-6 text-teal-400" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="text-lg font-semibold text-white">Step 2: Register to Remember</h3>
+                        <span className="px-2 py-0.5 bg-teal-500/20 text-teal-400 text-xs rounded-full font-medium">Recommended</span>
+                      </div>
+                      <p className="text-sm text-zinc-300 mb-4">
+                        Save your preferences, favorite flavors, and rewards so we can personalize your next visit. Takes just 30 seconds!
+                      </p>
+                      <Link
+                        href={`/register?loungeId=${encodeURIComponent(loungeId)}&return=${encodeURIComponent(`/guest/${loungeId}`)}`}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-medium transition-all shadow-lg shadow-teal-500/20 hover:shadow-teal-500/30 transform hover:scale-105"
+                      >
+                        <UserPlus className="w-4 h-4" />
+                        Register Now
+                      </Link>
+                      <button
+                        onClick={() => {
+                          // Skip registration - just continue workflow
+                        }}
+                        className="ml-3 text-sm text-zinc-400 hover:text-zinc-300 transition-colors"
+                      >
+                        Skip for now
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* Step 4: Order Review & Checkout */}
-            {selectedFlavors.length > 0 && (
-              <PriceBreakdown
-                guestProfile={guestProfile}
-                flags={flags}
-                selectedFlavors={selectedFlavors}
-                specialInstructions={specialInstructions}
-                loungeId={loungeId}
-                tableId={qrData?.tableId}
-                zone={qrData?.zone}
-                sessionType={sessionType}
-                onPriceUpdate={() => {
-                  // Handle price updates
-                }}
-                onCheckoutSuccess={(sessionId) => {
-                  // Start session after successful checkout
-                  setSessionStarted(true);
-                  console.log('Session started after checkout:', sessionId);
-                }}
-              />
+            {/* Step 3: Session Pricing */}
+            {qrData && (
+              <div className="relative">
+                {/* Step Indicator */}
+                <div className="flex items-center mb-4">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-600 text-white font-bold text-sm mr-3">
+                    <CheckCircle className="w-5 h-5" />
+                  </div>
+                  <div className="h-0.5 flex-1 bg-green-600"></div>
+                  {guestProfile?.anon ? (
+                    <>
+                      <div className={`flex items-center justify-center w-8 h-8 rounded-full text-white font-bold text-sm ml-3 mr-3 ${
+                        guestProfile?.anon ? 'bg-green-600' : 'bg-zinc-700'
+                      }`}>
+                        {guestProfile?.anon ? <CheckCircle className="w-5 h-5" /> : '2'}
+                      </div>
+                      <div className="h-0.5 flex-1 bg-green-600"></div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-8 h-8 rounded-full bg-zinc-700 text-zinc-400 font-bold text-sm ml-3 mr-3 flex items-center justify-center">
+                        2
+                      </div>
+                      <div className="h-0.5 flex-1 bg-zinc-700"></div>
+                    </>
+                  )}
+                  <div className="w-8 h-8 rounded-full bg-teal-600 text-white font-bold text-sm ml-3 flex items-center justify-center shadow-lg shadow-teal-500/50">
+                    3
+                  </div>
+                  <div className="h-0.5 flex-1 bg-zinc-700"></div>
+                  <div className="w-8 h-8 rounded-full bg-zinc-700 text-zinc-400 font-bold text-sm ml-3 flex items-center justify-center">
+                    4
+                  </div>
+                  <div className="h-0.5 flex-1 bg-zinc-700"></div>
+                  <div className="w-8 h-8 rounded-full bg-zinc-700 text-zinc-400 font-bold text-sm ml-3 flex items-center justify-center">
+                    5
+                  </div>
+                </div>
+                <SessionPricing
+                  sessionType={sessionType}
+                  onSessionTypeChange={setSessionType}
+                />
+              </div>
             )}
 
-            {/* Order Cart Summary - Always visible when flavors are selected */}
-            {selectedFlavors.length > 0 && (
-              <div className="bg-zinc-800/50 backdrop-blur-sm border border-zinc-700 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-white mb-4">Your Order</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-zinc-300">Selected Flavors:</span>
-                    <span className="text-sm font-medium text-white">{selectedFlavors.length} selected</span>
+            {/* Step 4: Flavor Selection */}
+            {qrData && (
+              <div className="relative">
+                {/* Step Indicator */}
+                <div className="flex items-center mb-4">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-600 text-white font-bold text-sm mr-3">
+                    <CheckCircle className="w-5 h-5" />
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedFlavors.map((flavor, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 bg-primary-500/20 text-primary-400 text-sm rounded-full border border-primary-500/30"
-                      >
-                        {flavor}
-                      </span>
-                    ))}
+                  <div className="h-0.5 flex-1 bg-green-600"></div>
+                  <div className={`flex items-center justify-center w-8 h-8 rounded-full text-white font-bold text-sm ml-3 mr-3 ${
+                    guestProfile?.anon ? 'bg-green-600' : 'bg-zinc-700'
+                  }`}>
+                    {guestProfile?.anon ? <CheckCircle className="w-5 h-5" /> : '2'}
                   </div>
-                  {specialInstructions && (
-                    <div className="mt-3 p-3 bg-zinc-700/50 rounded-lg">
-                      <span className="text-xs text-zinc-400">Special Instructions:</span>
-                      <p className="text-sm text-zinc-300 mt-1">{specialInstructions}</p>
+                  <div className="h-0.5 flex-1 bg-green-600"></div>
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-600 text-white font-bold text-sm ml-3 mr-3">
+                    <CheckCircle className="w-5 h-5" />
+                  </div>
+                  <div className="h-0.5 flex-1 bg-teal-600"></div>
+                  <div className="w-8 h-8 rounded-full bg-teal-600 text-white font-bold text-sm ml-3 flex items-center justify-center shadow-lg shadow-teal-500/50">
+                    4
+                  </div>
+                  <div className="h-0.5 flex-1 bg-zinc-700"></div>
+                  <div className="w-8 h-8 rounded-full bg-zinc-700 text-zinc-400 font-bold text-sm ml-3 flex items-center justify-center">
+                    5
+                  </div>
+                </div>
+                
+                <div className="bg-zinc-800/50 backdrop-blur-sm border border-zinc-700 rounded-xl p-6">
+                  <div className="mb-6">
+                    <h2 className="text-xl font-semibold text-white mb-2">Choose Your Flavors</h2>
+                    <p className="text-sm text-zinc-400">Select up to 4 flavors for your perfect mix</p>
+                  </div>
+                  
+                  <FlavorMixSelector
+                    selectedFlavors={selectedFlavors}
+                    onSelectionChange={setSelectedFlavors}
+                    maxSelections={4}
+                    onPriceUpdate={setFlavorMixPrice}
+                  />
+                  
+                  {/* Special Instructions */}
+                  <div className="mt-6">
+                    <label className="block text-sm font-medium text-white mb-2">
+                      Special Instructions
+                    </label>
+                    <textarea
+                      value={specialInstructions}
+                      onChange={(e) => setSpecialInstructions(e.target.value)}
+                      placeholder="Any special requests or notes for your mix (e.g., extra ice, light flavor, strong mix)..."
+                      className="w-full px-4 py-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      rows={3}
+                    />
+                  </div>
+                  
+                  {/* Subtle Nudge */}
+                  {selectedFlavors.length === 0 && (
+                    <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                      <p className="text-xs text-blue-400 flex items-center gap-2">
+                        <span>💡</span>
+                        <span>Start by selecting your first flavor above</span>
+                      </p>
                     </div>
                   )}
-                  <div className="pt-3 border-t border-zinc-700 flex items-center justify-between">
-                    <span className="text-lg font-semibold text-white">Estimated Total:</span>
-                    <span className="text-xl font-bold text-teal-400">
-                      ${flavorMixPrice > 0 ? (flavorMixPrice / 100).toFixed(2) : '30.00'}
-                    </span>
-                  </div>
+                  {selectedFlavors.length > 0 && selectedFlavors.length < 4 && (
+                    <div className="mt-4 p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+                      <p className="text-xs text-purple-400 flex items-center gap-2">
+                        <span>✨</span>
+                        <span>You can add up to {4 - selectedFlavors.length} more flavor{4 - selectedFlavors.length > 1 ? 's' : ''} to your mix</span>
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
 
-            {/* Step 5: Session Status (only after payment) */}
+            {/* Step 5: Order Review & Checkout */}
+            {selectedFlavors.length > 0 && (
+              <div className="relative">
+                {/* Step Indicator */}
+                <div className="flex items-center mb-4">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-600 text-white font-bold text-sm mr-3">
+                    <CheckCircle className="w-5 h-5" />
+                  </div>
+                  <div className="h-0.5 flex-1 bg-green-600"></div>
+                  <div className={`flex items-center justify-center w-8 h-8 rounded-full text-white font-bold text-sm ml-3 mr-3 ${
+                    guestProfile?.anon ? 'bg-green-600' : 'bg-zinc-700'
+                  }`}>
+                    {guestProfile?.anon ? <CheckCircle className="w-5 h-5" /> : '2'}
+                  </div>
+                  <div className="h-0.5 flex-1 bg-green-600"></div>
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-600 text-white font-bold text-sm ml-3 mr-3">
+                    <CheckCircle className="w-5 h-5" />
+                  </div>
+                  <div className="h-0.5 flex-1 bg-green-600"></div>
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-600 text-white font-bold text-sm ml-3 mr-3">
+                    <CheckCircle className="w-5 h-5" />
+                  </div>
+                  <div className="h-0.5 flex-1 bg-teal-600"></div>
+                  <div className="w-8 h-8 rounded-full bg-teal-600 text-white font-bold text-sm ml-3 flex items-center justify-center shadow-lg shadow-teal-500/50">
+                    5
+                  </div>
+                </div>
+                <PriceBreakdown
+                  guestProfile={guestProfile}
+                  flags={flags}
+                  selectedFlavors={selectedFlavors}
+                  specialInstructions={specialInstructions}
+                  loungeId={loungeId}
+                  tableId={qrData?.tableId}
+                  zone={qrData?.zone}
+                  sessionType={sessionType}
+                  onPriceUpdate={() => {
+                    // Handle price updates
+                  }}
+                  onCheckoutSuccess={(sessionId) => {
+                    // Start session after successful checkout
+                    setSessionStarted(true);
+                    console.log('Session started after checkout:', sessionId);
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Step 6: Session Status (only after payment) */}
             {sessionStarted && (
-              <SessionCard
-                guestProfile={guestProfile}
-                flags={flags}
-                showSession={sessionStarted}
-                onSessionUpdate={() => {
-                  // Handle session updates
-                }}
-              />
+              <div className="relative">
+                {/* Step Indicator - All Complete */}
+                <div className="flex items-center mb-4">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-600 text-white font-bold text-sm mr-3">
+                    <CheckCircle className="w-5 h-5" />
+                  </div>
+                  <div className="h-0.5 flex-1 bg-green-600"></div>
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-600 text-white font-bold text-sm ml-3 mr-3">
+                    <CheckCircle className="w-5 h-5" />
+                  </div>
+                  <div className="h-0.5 flex-1 bg-green-600"></div>
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-600 text-white font-bold text-sm ml-3 mr-3">
+                    <CheckCircle className="w-5 h-5" />
+                  </div>
+                  <div className="h-0.5 flex-1 bg-green-600"></div>
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-600 text-white font-bold text-sm ml-3 mr-3">
+                    <CheckCircle className="w-5 h-5" />
+                  </div>
+                  <div className="h-0.5 flex-1 bg-green-600"></div>
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-600 text-white font-bold text-sm ml-3">
+                    <CheckCircle className="w-5 h-5" />
+                  </div>
+                </div>
+                <SessionCard
+                  guestProfile={guestProfile}
+                  flags={flags}
+                  showSession={sessionStarted}
+                  onSessionUpdate={() => {
+                    // Handle session updates
+                  }}
+                />
+              </div>
             )}
           </div>
 
           {/* Right Column - Rewards & Social */}
           <div className="space-y-6">
-            {/* Registration Prompt for Anonymous Users */}
-            {guestProfile?.anon && (
-              <div className="bg-gradient-to-r from-teal-900/20 to-cyan-900/20 border border-teal-500/30 rounded-xl p-6">
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0">
-                    <UserPlus className="w-6 h-6 text-teal-400" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-white mb-2">
-                      Register to Remember
-                    </h3>
-                    <p className="text-sm text-zinc-300 mb-4">
-                      Quick registration saves your preferences, favorite flavors, and rewards so we can personalize your next visit.
-                    </p>
-                    <Link
-                      href={`/register?loungeId=${encodeURIComponent(loungeId)}&return=${encodeURIComponent(`/guest/${loungeId}`)}`}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-medium transition-colors"
-                    >
-                      <UserPlus className="w-4 h-4" />
-                      Register Now
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Rewards Badge Strip */}
             {flags.rewards.badges.v1 && (
               <RewardsBadgeStrip

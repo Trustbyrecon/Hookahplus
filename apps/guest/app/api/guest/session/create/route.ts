@@ -13,7 +13,7 @@ import { featureFlags } from '../../flags';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { guestId, loungeId, flavors, specialInstructions, tableId, zone } = body;
+    const { guestId, loungeId, flavors, specialInstructions, tableId, zone, sessionType } = body;
 
     // Validate required fields
     if (!guestId || !loungeId) {
@@ -55,6 +55,7 @@ export async function POST(req: NextRequest) {
       loungeId,
       tableId: tableId || undefined,
       zone: zone || undefined,
+      sessionType: sessionType || 'flat', // Store session type for pricing
       status: 'pending', // Pending payment
       mix: {
         flavors: flavors || [],
