@@ -83,12 +83,30 @@ export default function ROICalculator() {
                   <input
                     type="number"
                     step={0.01}
-                    min={1}
-                    className="rounded-lg bg-zinc-900 border border-zinc-700 px-3 py-2 text-white focus:outline-none focus:border-teal-500 transition-colors"
+                    min={1.10}
+                    max={1.30}
+                    className={`rounded-lg bg-zinc-900 border px-3 py-2 text-white focus:outline-none focus:border-teal-500 transition-colors ${
+                      uplift < 1.10 || uplift > 1.30
+                        ? 'border-red-500 focus:border-red-500'
+                        : 'border-zinc-700'
+                    }`}
                     value={uplift}
-                    onChange={(e) => setUplift(Number(e.target.value))}
+                    onChange={(e) => {
+                      const value = Number(e.target.value);
+                      // Clamp to acceptable range
+                      const clampedValue = Math.max(1.10, Math.min(1.30, value));
+                      setUplift(clampedValue);
+                    }}
                   />
-                  <span className="text-xs text-zinc-500 mt-1">{(uplift - 1) * 100}% increase</span>
+                  <div className="flex items-center justify-between mt-1">
+                    <span className={`text-xs ${uplift < 1.10 || uplift > 1.30 ? 'text-red-400' : 'text-zinc-500'}`}>
+                      {(uplift - 1) * 100}% increase
+                    </span>
+                    {uplift < 1.10 || uplift > 1.30 ? (
+                      <span className="text-xs text-red-400">Range: 10-30%</span>
+                    ) : null}
+                  </div>
+                  <span className="text-xs text-zinc-600 mt-0.5">Acceptable range: 10-30% (1.10-1.30x)</span>
                 </label>
               </div>
 

@@ -93,6 +93,16 @@ export default function OperatorOnboardingPage() {
   const [newNote, setNewNote] = useState('');
   const [scheduleDate, setScheduleDate] = useState('');
   const [scheduleTime, setScheduleTime] = useState('');
+  const [showAddLeadModal, setShowAddLeadModal] = useState(false);
+  const [newLeadData, setNewLeadData] = useState({
+    businessName: '',
+    ownerName: '',
+    email: '',
+    phone: '',
+    location: '',
+    source: 'manual',
+    stage: 'new-leads' as Lead['stage']
+  });
 
   useEffect(() => {
     loadLeads();
@@ -234,6 +244,49 @@ export default function OperatorOnboardingPage() {
     } catch (err) {
       console.error('Schedule follow-up error:', err);
       alert('Failed to schedule follow-up. Please try again.');
+    }
+  };
+
+  const createManualLead = async () => {
+    if (!newLeadData.businessName || !newLeadData.email) {
+      alert('Please fill in required fields (Business Name and Email)');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/admin/operator-onboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create_lead',
+          leadData: {
+            ...newLeadData,
+            createdAt: new Date().toISOString(),
+            type: 'onboarding.signup',
+            source: 'manual'
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create lead');
+      }
+
+      // Reset form
+      setNewLeadData({
+        businessName: '',
+        ownerName: '',
+        email: '',
+        phone: '',
+        location: '',
+        source: 'manual',
+        stage: 'new-leads'
+      });
+      setShowAddLeadModal(false);
+      await loadLeads();
+    } catch (err) {
+      console.error('Create lead error:', err);
+      alert('Failed to create lead. Please try again.');
     }
   };
 
@@ -406,8 +459,15 @@ export default function OperatorOnboardingPage() {
 
         {/* Leads Table */}
         <div className="bg-zinc-800/50 backdrop-blur-sm border border-zinc-700 rounded-xl overflow-hidden">
-          <div className="p-6 border-b border-zinc-700">
+          <div className="p-6 border-b border-zinc-700 flex items-center justify-between">
             <h2 className="text-xl font-semibold text-white">Leads ({leads.length})</h2>
+            <button
+              onClick={() => setShowAddLeadModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Lead</span>
+            </button>
           </div>
           
           {leads.length === 0 ? (
@@ -622,6 +682,127 @@ export default function OperatorOnboardingPage() {
                   setScheduleDate('');
                   setScheduleTime('');
                   setNewNote('');
+                }}
+                variant="outline"
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Lead Modal */}
+      {showAddLeadModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-zinc-800 rounded-xl p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-white">Add New Lead</h3>
+              <button
+                onClick={() => {
+                  setShowAddLeadModal(false);
+                  setNewLeadData({
+                    businessName: '',
+                    ownerName: '',
+                    email: '',
+                    phone: '',
+                    location: '',
+                    source: 'manual',
+                    stage: 'new-leads'
+                  });
+                }}
+                className="text-zinc-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">Business Name *</label>
+                <input
+                  type="text"
+                  value={newLeadData.businessName}
+                  onChange={(e) => setNewLeadData({ ...newLeadData, businessName: e.target.value })}
+                  className="w-full px-4 py-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  placeholder="Enter business name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">Owner Name</label>
+                <input
+                  type="text"
+                  value={newLeadData.ownerName}
+                  onChange={(e) => setNewLeadData({ ...newLeadData, ownerName: e.target.value })}
+                  className="w-full px-4 py-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  placeholder="Enter owner name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">Email *</label>
+                <input
+                  type="email"
+                  value={newLeadData.email}
+                  onChange={(e) => setNewLeadData({ ...newLeadData, email: e.target.value })}
+                  className="w-full px-4 py-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  placeholder="Enter email address"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">Phone</label>
+                <input
+                  type="tel"
+                  value={newLeadData.phone}
+                  onChange={(e) => setNewLeadData({ ...newLeadData, phone: e.target.value })}
+                  className="w-full px-4 py-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  placeholder="Enter phone number"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">Location</label>
+                <input
+                  type="text"
+                  value={newLeadData.location}
+                  onChange={(e) => setNewLeadData({ ...newLeadData, location: e.target.value })}
+                  className="w-full px-4 py-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  placeholder="Enter location"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">Initial Stage</label>
+                <select
+                  value={newLeadData.stage}
+                  onChange={(e) => setNewLeadData({ ...newLeadData, stage: e.target.value as Lead['stage'] })}
+                  className="w-full px-4 py-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                >
+                  <option value="new-leads">New Leads</option>
+                  <option value="intake">Intake</option>
+                  <option value="follow-up">Follow-up</option>
+                  <option value="scheduled">Scheduled</option>
+                  <option value="onboarding">Onboarding</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <Button
+                onClick={createManualLead}
+                className="flex-1"
+                disabled={!newLeadData.businessName || !newLeadData.email}
+              >
+                Create Lead
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowAddLeadModal(false);
+                  setNewLeadData({
+                    businessName: '',
+                    ownerName: '',
+                    email: '',
+                    phone: '',
+                    location: '',
+                    source: 'manual',
+                    stage: 'new-leads'
+                  });
                 }}
                 variant="outline"
                 className="flex-1"

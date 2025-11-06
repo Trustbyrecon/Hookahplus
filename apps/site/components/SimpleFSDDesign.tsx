@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import CreateSessionModal from './CreateSessionModal';
 import SessionDetailModal from './SessionDetailModal';
+import GuestIntelligenceModal from './GuestIntelligenceModal';
 import { mockSiteData } from '../lib/mockData';
 import { 
   SessionStatus, 
@@ -133,6 +134,8 @@ export default function SimpleFSDDesign({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [timerKey, setTimerKey] = useState(0);
+  const [showIntelligenceModal, setShowIntelligenceModal] = useState(false);
+  const [intelligenceSessionId, setIntelligenceSessionId] = useState<string | null>(null);
 
   // Fix hydration mismatch by only rendering time-dependent content after mount
   useEffect(() => {
@@ -345,20 +348,33 @@ export default function SimpleFSDDesign({
 
   const metrics = calculateMetrics();
 
+  // Get all sessions for BOH/FOH tabs (not just curated 3)
+  const getAllBohSessions = () => {
+    return roleFilteredSessions.filter((s: any) => {
+      const status = getSessionStatus(s);
+      return ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY', 'STOCK_BLOCKED', 'REMAKE'].includes(status);
+    });
+  };
+
+  const getAllFohSessions = () => {
+    return roleFilteredSessions.filter((s: any) => {
+      const status = getSessionStatus(s);
+      return ['OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE', 'STAFF_HOLD', 'REFUND_REQUESTED'].includes(status);
+    });
+  };
+
   // Calculate session counts per tab
   const getTabCounts = () => {
-    const bohSessions = filteredSessions.filter((s: any) => 
-      ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY', 'STOCK_BLOCKED', 'REMAKE'].includes(s.status)
-    );
-    const fohSessions = filteredSessions.filter((s: any) => 
-      ['OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE', 'STAFF_HOLD', 'REFUND_REQUESTED'].includes(s.status)
-    );
-    const edgeSessions = filteredSessions.filter((s: any) => 
-      ['STAFF_HOLD', 'STOCK_BLOCKED', 'REMAKE', 'REFUND_REQUESTED', 'VOIDED'].includes(s.status)
-    );
-    const waitlistSessions = filteredSessions.filter((s: any) => 
-      s.status === 'NEW' || s.status === 'PAID_CONFIRMED'
-    );
+    const bohSessions = getAllBohSessions();
+    const fohSessions = getAllFohSessions();
+    const edgeSessions = roleFilteredSessions.filter((s: any) => {
+      const status = getSessionStatus(s);
+      return ['STAFF_HOLD', 'STOCK_BLOCKED', 'REMAKE', 'REFUND_REQUESTED', 'VOIDED'].includes(status);
+    });
+    const waitlistSessions = roleFilteredSessions.filter((s: any) => {
+      const status = getSessionStatus(s);
+      return status === 'NEW' || status === 'PAID_CONFIRMED';
+    });
     
     return {
       overview: filteredSessions.length,
@@ -579,6 +595,24 @@ export default function SimpleFSDDesign({
       {/* Tab Content */}
       {activeTab === 'overview' && (
         <div className="space-y-4">
+        {/* New Session Placeholder */}
+        <div className="bg-gradient-to-r from-teal-900/30 to-cyan-900/30 border-2 border-dashed border-teal-500/50 rounded-lg p-6 cursor-pointer hover:border-teal-500 transition-all"
+          onClick={() => setShowCreateModal(true)}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-lg bg-teal-500/20 flex items-center justify-center">
+                <Plus className="w-6 h-6 text-teal-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">Create New Session</h3>
+                <p className="text-sm text-zinc-400">Click to start a new session that will appear in Overview</p>
+              </div>
+            </div>
+            <ArrowRight className="w-5 h-5 text-teal-400" />
+          </div>
+        </div>
+        
         {filteredSessions.length === 0 ? (
           <div className="text-center py-16 bg-gradient-to-br from-zinc-900/50 to-zinc-800/30 rounded-xl border border-zinc-700">
             <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-teal-500/20 to-cyan-500/20 flex items-center justify-center">
@@ -729,125 +763,31 @@ export default function SimpleFSDDesign({
                   </div>
                 )}
 
-                {/* Quick Action Badge - Most Important Action */}
-                {availableActions.length > 0 && (
-                  <div className="mb-3">
-                    {(() => {
-                      // Prioritize actions: urgent actions first, then delivery, then standard
-                      const priorityOrder = ['READY_FOR_DELIVERY', 'DELIVER_NOW', 'MARK_DELIVERED', 'HEAT_UP', 'CLAIM_PREP'];
-                      const nextAction = availableActions.find(a => priorityOrder.includes(a)) || availableActions[0];
-                      const canPerformNext = canUserPerformAction(nextAction, currentRole);
-                      
-                      if (nextAction && canPerformNext) {
-                        return (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSessionAction(nextAction.toLowerCase(), sessionId);
-                            }}
-                            className={`w-full px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
-                              isUrgent
-                                ? 'bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white shadow-lg shadow-red-500/20'
-                                : needsAttention
-                                ? 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white shadow-lg shadow-yellow-500/20'
-                                : 'bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white shadow-lg shadow-teal-500/20'
-                            }`}
-                          >
-                            {ACTION_ICONS[nextAction]}
-                            <span>{nextAction.replace(/_/g, ' ')}</span>
-                            <ArrowRight className="w-4 h-4" />
-                          </button>
-                        );
-                      }
-                      return null;
-                    })()}
-                  </div>
-                )}
-
-                {/* Available Actions */}
-                {availableActions.length > 0 && (
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-1 text-xs text-zinc-400">
-                      <Zap className="w-3 h-3" />
-                      <span className="font-medium">All Available Actions:</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {availableActions.map((action) => {
-                        // Filter actions based on role workflow continuity
-                        // BOH sees: CLAIM_PREP, HEAT_UP, READY_FOR_DELIVERY, REQUEST_REMAKE
-                        // FOH sees: DELIVER_NOW, MARK_DELIVERED, START_ACTIVE, REQUEST_REFILL, CLOSE_SESSION
-                        // Delivery (FOH subset): DELIVER_NOW, MARK_DELIVERED
-                        const roleAllowedActions: Record<string, SessionAction[]> = {
-                          'BOH': ['CLAIM_PREP', 'HEAT_UP', 'READY_FOR_DELIVERY', 'REQUEST_REMAKE', 'PUT_ON_HOLD'],
-                          'FOH': ['DELIVER_NOW', 'MARK_DELIVERED', 'START_ACTIVE', 'REQUEST_REFILL', 'CLOSE_SESSION', 'PAUSE_SESSION', 'RESUME_SESSION'],
-                          'MANAGER': availableActions, // Managers see all actions
-                          'OWNER': availableActions, // Owners see all actions
-                        };
-                        
-                        const roleActions = roleAllowedActions[currentRole] || availableActions;
-                        if (!roleActions.includes(action)) return null;
-                        
-                        const canPerform = canUserPerformAction(action, currentRole);
-                        return (
-                          <div key={action} className="relative">
-                            <button
-                              onClick={() => canPerform && handleSessionAction(action.toLowerCase(), sessionId)}
-                              disabled={!canPerform}
-                              onMouseEnter={() => setHoveredAction(action)}
-                              onMouseLeave={() => setHoveredAction(null)}
-                              className={`flex items-center space-x-1 px-3 py-1 rounded text-xs font-medium transition-colors ${
-                                canPerform 
-                                  ? ACTION_COLORS[action]
-                                  : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                              }`}
-                            >
-                              {ACTION_ICONS[action]}
-                              <span>{action.replace(/_/g, ' ')}</span>
-                              <Info className="w-3 h-3" />
-                            </button>
-                            
-                            {/* Enhanced Business Logic Tooltip */}
-                            {hoveredAction === action && (
-                              <div className="absolute bottom-full left-0 mb-2 w-64 p-3 bg-zinc-900 border border-zinc-700 rounded-lg shadow-lg z-10">
-                                <div className="flex items-center space-x-1 mb-2">
-                                  <Info className="w-3 h-3 text-blue-400" />
-                                  <span className="text-xs font-medium text-blue-400">Business Logic</span>
-                                </div>
-                                <p className="text-xs text-zinc-300 mb-2">{ACTION_DESCRIPTIONS[action]}</p>
-                                <div className="pt-2 border-t border-zinc-700">
-                                  <p className="text-xs text-zinc-400">
-                                    <span className="font-medium">Next State:</span> {getSessionDisplayName(ACTION_TO_STATUS[action])}
-                                  </p>
-                                  <p className="text-xs text-zinc-400">
-                                    <span className="font-medium">Stage:</span> {STATUS_TO_STAGE[ACTION_TO_STATUS[action]]}
-                                  </p>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                    
-                    {/* Action Buttons Row */}
-                    {(currentRole === 'BOH' || currentRole === 'FOH') && (
-                      <div className="mt-3 pt-3 border-t border-zinc-700 flex gap-2">
-                        <button
-                          onClick={() => {
-                            const reason = prompt('Escalation reason:');
-                            if (reason) {
-                              window.location.href = `/manager-escalations?sessionId=${sessionId}&reason=${encodeURIComponent(reason)}&reportedBy=${currentRole}`;
-                            }
-                          }}
-                          className="flex items-center space-x-1 px-2 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors flex-1 justify-center"
-                        >
-                          <AlertTriangle className="w-3 h-3" />
-                          <span className="text-xs font-medium">Escalate</span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
+                {/* Overview is read-only - only show Intelligence button */}
+                <div className="mb-3 flex gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIntelligenceSessionId(sessionId);
+                      setShowIntelligenceModal(true);
+                    }}
+                    className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-500/20 flex-1"
+                  >
+                    <Brain className="w-4 h-4" />
+                    <span>Intelligence</span>
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedSession(session as FireSession);
+                      setIsModalOpen(true);
+                    }}
+                    className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 bg-zinc-700 hover:bg-zinc-600 text-white"
+                  >
+                    <Info className="w-4 h-4" />
+                    <span>View Details</span>
+                  </button>
+                </div>
 
                 {/* Enhanced Session Details */}
                 <div className="mt-3 pt-3 border-t border-zinc-700 space-y-2">
@@ -898,21 +838,61 @@ export default function SimpleFSDDesign({
               <span>Back of House Operations</span>
             </h3>
             <div className="space-y-3">
-              {filteredSessions.filter((s: any) => ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(s.status || s.state)).map((session: any) => (
-                <div key={session.id} className="bg-zinc-900/50 border border-zinc-600 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium text-white">{session.tableId || 'Unknown Table'}</h4>
-                      <p className="text-sm text-zinc-400">{session.flavor || 'Custom Mix'}</p>
+              {getAllBohSessions().map((session: any) => {
+                const sessionStatus = getSessionStatus(session);
+                const availableActions = getAvailableActions(session);
+                const sessionId = session.id || session.session_id;
+                const displayName = getSessionDisplayName(sessionStatus);
+                const statusColor = STATUS_COLORS[sessionStatus];
+                
+                // BOH can move to FOH or deliver themselves
+                const bohActions = availableActions.filter(action => 
+                  ['READY_FOR_DELIVERY', 'DELIVER_NOW', 'MARK_DELIVERED', 'HEAT_UP', 'CLAIM_PREP'].includes(action)
+                );
+                
+                return (
+                  <div key={sessionId} className="bg-zinc-900/50 border border-zinc-600 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <h4 className="font-medium text-white">{session.tableId || session.table_id || 'Unknown Table'}</h4>
+                        <p className="text-sm text-zinc-400">{session.flavor || session.flavorMix || 'Custom Mix'}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className={`text-sm font-medium ${statusColor}`}>{displayName}</p>
+                        <p className="text-xs text-zinc-500">BOH Stage</p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm text-orange-400 font-medium">{session.status || session.state}</p>
-                      <p className="text-xs text-zinc-500">BOH Stage</p>
-                    </div>
+                    
+                    {/* Action Controls */}
+                    {bohActions.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-zinc-700">
+                        {bohActions.map((action) => {
+                          const canPerform = canUserPerformAction(action, currentRole);
+                          return (
+                            <button
+                              key={action}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSessionAction(action.toLowerCase(), sessionId);
+                              }}
+                              disabled={!canPerform}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${
+                                canPerform
+                                  ? 'bg-teal-600 hover:bg-teal-700 text-white'
+                                  : 'bg-zinc-700 text-zinc-400 cursor-not-allowed'
+                              }`}
+                            >
+                              {ACTION_ICONS[action]}
+                              <span>{action.replace(/_/g, ' ')}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
-              {filteredSessions.filter((s: any) => ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(s.status || s.state)).length === 0 && (
+                );
+              })}
+              {getAllBohSessions().length === 0 && (
                 <p className="text-zinc-400 text-center py-8">No BOH sessions in progress</p>
               )}
             </div>
@@ -929,21 +909,61 @@ export default function SimpleFSDDesign({
               <span>Front of House Operations</span>
             </h3>
             <div className="space-y-3">
-              {filteredSessions.filter((s: any) => ['OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(s.status || s.state)).map((session: any) => (
-                <div key={session.id} className="bg-zinc-900/50 border border-zinc-600 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium text-white">{session.tableId || 'Unknown Table'}</h4>
-                      <p className="text-sm text-zinc-400">{session.customerName || 'Guest Customer'}</p>
+              {getAllFohSessions().map((session: any) => {
+                const sessionStatus = getSessionStatus(session);
+                const availableActions = getAvailableActions(session);
+                const sessionId = session.id || session.session_id;
+                const displayName = getSessionDisplayName(sessionStatus);
+                const statusColor = STATUS_COLORS[sessionStatus];
+                
+                // FOH actions
+                const fohActions = availableActions.filter(action => 
+                  ['DELIVER_NOW', 'MARK_DELIVERED', 'START_ACTIVE', 'REQUEST_REFILL', 'CLOSE_SESSION', 'PAUSE_SESSION', 'RESUME_SESSION'].includes(action)
+                );
+                
+                return (
+                  <div key={sessionId} className="bg-zinc-900/50 border border-zinc-600 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <h4 className="font-medium text-white">{session.tableId || session.table_id || 'Unknown Table'}</h4>
+                        <p className="text-sm text-zinc-400">{session.customerName || session.customer_name || 'Guest Customer'}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className={`text-sm font-medium ${statusColor}`}>{displayName}</p>
+                        <p className="text-xs text-zinc-500">FOH Stage</p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm text-teal-400 font-medium">{session.status || session.state}</p>
-                      <p className="text-xs text-zinc-500">FOH Stage</p>
-                    </div>
+                    
+                    {/* Action Controls */}
+                    {fohActions.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-zinc-700">
+                        {fohActions.map((action) => {
+                          const canPerform = canUserPerformAction(action, currentRole);
+                          return (
+                            <button
+                              key={action}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSessionAction(action.toLowerCase(), sessionId);
+                              }}
+                              disabled={!canPerform}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${
+                                canPerform
+                                  ? 'bg-teal-600 hover:bg-teal-700 text-white'
+                                  : 'bg-zinc-700 text-zinc-400 cursor-not-allowed'
+                              }`}
+                            >
+                              {ACTION_ICONS[action]}
+                              <span>{action.replace(/_/g, ' ')}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
-              {filteredSessions.filter((s: any) => ['OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(s.status || s.state)).length === 0 && (
+                );
+              })}
+              {getAllFohSessions().length === 0 && (
                 <p className="text-zinc-400 text-center py-8">No FOH sessions in progress</p>
               )}
             </div>
@@ -1208,6 +1228,18 @@ export default function SimpleFSDDesign({
           setSelectedSession(null);
         }}
       />
+
+      {/* Intelligence Modal */}
+      {showIntelligenceModal && intelligenceSessionId && (
+        <GuestIntelligenceModal
+          sessionId={intelligenceSessionId}
+          isOpen={showIntelligenceModal}
+          onClose={() => {
+            setShowIntelligenceModal(false);
+            setIntelligenceSessionId(null);
+          }}
+        />
+      )}
     </div>
   );
 }

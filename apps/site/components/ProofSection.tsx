@@ -87,14 +87,30 @@ export default function ProofSection() {
                   <span>18% improvement in revenue per occupied hour</span>
                 </li>
               </ul>
-              <Button
-                variant="outline"
-                className="border-teal-500/50 text-teal-400 hover:bg-teal-500/10"
-                onClick={() => window.location.href = '/contact'}
-              >
-                Request Full Case Study
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  variant="outline"
+                  className="border-teal-500/50 text-teal-400 hover:bg-teal-500/10"
+                  onClick={() => {
+                    // Download case study
+                    const link = document.createElement('a');
+                    link.href = '/case-study-hookahplus-transformation.md';
+                    link.download = 'hookahplus-case-study.md';
+                    link.click();
+                  }}
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Download Full Case Study
+                </Button>
+                <Button
+                  variant="outline"
+                  className="border-teal-500/50 text-teal-400 hover:bg-teal-500/10"
+                  onClick={() => window.location.href = '/contact'}
+                >
+                  Request Custom Assessment
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
             </div>
             <div className="bg-zinc-900/50 rounded-lg p-6 border border-zinc-700">
               <div className="text-center">

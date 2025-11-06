@@ -67,10 +67,10 @@ export default function Demo() {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <Play className="w-6 h-6 text-teal-400" />
-              <h2 className="text-3xl font-bold text-white">Watch the 60-sec demo</h2>
+              <h2 className="text-3xl font-bold text-white">See Hookah+ in Action</h2>
             </div>
             <p className="text-zinc-400 mb-6">
-              See QR → mix → pay → confirm in action. No new hardware. No rip-and-replace.
+              Explore how operators streamline operations, boost revenue, and reduce management friction. Real workflows. Real results.
             </p>
             
             {/* Image Carousel */}

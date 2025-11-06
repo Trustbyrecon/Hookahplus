@@ -66,6 +66,19 @@ const GlobalNavigation: React.FC = () => {
   });
 
   const [sessionCount, setSessionCount] = useState(0);
+  const [isMounted, setIsMounted] = useState(false);
+  const [currentTime, setCurrentTime] = useState<string>('');
+
+  // Fix hydration mismatch - only render time after mount
+  useEffect(() => {
+    setIsMounted(true);
+    const updateTime = () => {
+      setCurrentTime(new Date().toLocaleTimeString());
+    };
+    updateTime();
+    const timeInterval = setInterval(updateTime, 1000);
+    return () => clearInterval(timeInterval);
+  }, []);
 
   // System Status Management
   useEffect(() => {
@@ -296,7 +309,7 @@ const GlobalNavigation: React.FC = () => {
           </div>
           <div className="flex items-center space-x-4">
             <span className="text-zinc-400">Auto-refresh: ON</span>
-            <span className="text-zinc-400">Last updated: {new Date().toLocaleTimeString()}</span>
+            <span className="text-zinc-400">Last updated: {isMounted ? currentTime : '--:--:--'}</span>
           </div>
         </div>
 

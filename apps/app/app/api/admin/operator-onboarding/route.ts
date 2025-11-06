@@ -163,12 +163,64 @@ export async function POST(req: NextRequest) {
   try {
     // TODO: Add role-based authentication check
     const body = await req.json();
-    const { action, leadId, updates } = body;
+    const { action, leadId, updates, leadData } = body;
 
-    if (!leadId || !action) {
+    if (!action) {
       return NextResponse.json({
         success: false,
-        error: 'Missing required fields: leadId, action'
+        error: 'Missing required field: action'
+      }, { status: 400 });
+    }
+
+    // Handle create_lead action
+    if (action === 'create_lead') {
+      if (!leadData || !leadData.businessName || !leadData.email) {
+        return NextResponse.json({
+          success: false,
+          error: 'Missing required fields: businessName, email'
+        }, { status: 400 });
+      }
+
+      // Create a new ReflexEvent for the manual lead
+      const payload = {
+        businessName: leadData.businessName,
+        ownerName: leadData.ownerName || '',
+        email: leadData.email,
+        phone: leadData.phone || '',
+        location: leadData.location || '',
+        stage: leadData.stage || 'new-leads',
+        source: 'manual',
+        createdAt: leadData.createdAt || new Date().toISOString(),
+        notes: [],
+        scheduledFollowUp: null,
+        lastContacted: null,
+        assignedTo: null
+      };
+
+      const newEvent = await prisma.reflexEvent.create({
+        data: {
+          type: 'onboarding.signup',
+          source: 'manual',
+          payload: JSON.stringify(payload),
+          ctaSource: 'manual',
+          ctaType: 'onboarding_signup',
+          userAgent: req.headers.get('user-agent') || undefined,
+          ip: req.headers.get('x-forwarded-for')?.split(',')[0] || undefined
+        }
+      });
+
+      return NextResponse.json({
+        success: true,
+        leadId: newEvent.id,
+        message: 'Lead created successfully'
+      });
+    }
+
+    // For other actions, require leadId
+    if (!leadId) {
+      return NextResponse.json({
+        success: false,
+        error: 'Missing required field: leadId'
       }, { status: 400 });
     }
 
