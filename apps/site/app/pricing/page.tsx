@@ -176,7 +176,7 @@ export default function PricingPage() {
       description: 'Seamless integration with your existing POS and systems',
       icon: <Settings className="w-5 h-5" />,
       highValueFeature: 'POS system integration',
-      hoverText: 'Connect Hookah+ directly to your existing POS system (Stripe, Square, Toast, Clover) for seamless transaction flow and unified reporting.',
+      hoverText: 'Connect Hookah+ directly to your existing payment system for seamless transaction flow and unified reporting. Works with major payment providers.',
       features: [
         'POS system integration',
         'Accounting software sync',
