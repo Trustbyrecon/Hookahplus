@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
+import PageHero from '../../components/PageHero';
 import { 
   LayoutGrid,
   Plus,
@@ -12,7 +13,10 @@ import {
   MapPin,
   Users,
   Settings,
-  ArrowRight
+  ArrowRight,
+  TrendingUp,
+  Map,
+  Zap
 } from 'lucide-react';
 
 interface Table {
@@ -123,36 +127,72 @@ export default function LoungeLayoutPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
-      {/* Header */}
-      <div className="bg-zinc-950 border-b border-teal-500/50">
-        <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold">Physical Lounge Digitization</h1>
-              <p className="text-zinc-400 mt-1">Lounge Layout Manager</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <Button
-                variant="outline"
-                onClick={handleAddTable}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Table
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleSave}
-                disabled={tables.length === 0}
-              >
-                <Save className="w-4 h-4 mr-2" />
-                Save Layout
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Hero Section */}
+      <PageHero
+        headline="Digitize your lounge in minutes, optimize forever"
+        subheadline="Visual floor plan management with AI-powered table optimization"
+        benefit={{
+          value: "↑ 22% better table utilization, automated heat mapping",
+          description: "See which tables perform best and optimize your layout automatically"
+        }}
+        trustIndicators={[
+          { icon: <Map className="w-4 h-4 text-teal-400" />, text: "Visual floor plan" },
+          { icon: <Zap className="w-4 h-4 text-teal-400" />, text: "AI-powered optimization" },
+          { icon: <TrendingUp className="w-4 h-4 text-teal-400" />, text: "Real-time analytics" }
+        ]}
+      />
 
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        {/* Instructions Section */}
+        <Card className="mb-8 border-teal-500/30 bg-teal-500/5">
+          <div className="p-6">
+            <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+              <LayoutGrid className="w-5 h-5 text-teal-400" />
+              How to Use the Lounge Layout Manager
+            </h2>
+            <ol className="space-y-3 text-zinc-300">
+              <li className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-6 h-6 bg-teal-500/20 text-teal-400 rounded-full flex items-center justify-center text-sm font-semibold">1</span>
+                <span>Click <strong className="text-white">"Add Table"</strong> to place a new table on your floor plan</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-6 h-6 bg-teal-500/20 text-teal-400 rounded-full flex items-center justify-center text-sm font-semibold">2</span>
+                <span>Drag tables to reposition them — match your physical lounge layout</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-6 h-6 bg-teal-500/20 text-teal-400 rounded-full flex items-center justify-center text-sm font-semibold">3</span>
+                <span>Click on any table to edit its capacity and seating type</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-6 h-6 bg-teal-500/20 text-teal-400 rounded-full flex items-center justify-center text-sm font-semibold">4</span>
+                <span>Click <strong className="text-white">"Save Layout"</strong> when you're done — AI will optimize table assignments automatically</span>
+              </li>
+            </ol>
+          </div>
+        </Card>
+
+        {/* Quick Actions */}
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold">Floor Plan Layout</h2>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              onClick={handleAddTable}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Table
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleSave}
+              disabled={tables.length === 0}
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Save Layout
+            </Button>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Layout Canvas */}
           <div className="lg:col-span-3">

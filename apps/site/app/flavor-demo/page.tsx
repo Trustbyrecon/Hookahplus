@@ -2,7 +2,8 @@
 
 import React, { useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Wand2, Sparkles, FlaskConical, ListFilter, CircleDot, ChevronRight, RotateCcw, ArrowRight, Play } from "lucide-react";
+import { Search, Wand2, Sparkles, FlaskConical, ListFilter, CircleDot, ChevronRight, RotateCcw, ArrowRight, Play, Clock, Shield, Zap } from "lucide-react";
+import PageHero from '../../components/PageHero';
 
 /**
  * Hookah+ Flavor Wheel Demo — Site Build Marketing
@@ -182,44 +183,31 @@ export default function FlavorWheelDemo() {
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
-      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {/* Hero Section */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 bg-teal-500/10 border border-teal-500/20 rounded-full px-4 py-2 mb-6">
-            <Sparkles className="w-4 h-4 text-teal-400" />
-            <span className="text-teal-400 font-medium">Interactive Demo</span>
-          </div>
-          
-          <h1 className="text-4xl md:text-6xl font-bold mb-6">
-            Experience the Future of
-            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-cyan-400">
-              Flavor Selection
-            </span>
-          </h1>
-          
-          <p className="text-xl text-zinc-400 mb-8 max-w-3xl mx-auto">
-            Try our revolutionary flavor wheel experience. Psychology-driven choices, 
-            real-time pricing, and seamless integration with your hookah session.
-          </p>
+      {/* Hero Section */}
+      <PageHero
+        headline="Give your guests the flavor experience they'll remember"
+        subheadline="Psychology-driven selection, real-time pricing, zero friction"
+        benefit={{
+          value: "↑ 35% faster flavor selection, ↑ 28% repeat orders",
+          description: "Guests love the intuitive experience, you love the results",
+          icon: <Sparkles className="w-6 h-6 text-teal-400" />
+        }}
+        primaryCTA={{
+          text: "Try Full Experience",
+          onClick: () => window.open('https://guest.hookahplus.net', '_blank')
+        }}
+        secondaryCTA={{
+          text: "Contact us for Demo",
+          onClick: () => window.open('/contact', '_blank')
+        }}
+        trustIndicators={[
+          { icon: <Shield className="w-4 h-4 text-teal-400" />, text: "Works with existing setup" },
+          { icon: <Zap className="w-4 h-4 text-teal-400" />, text: "No hardware required" },
+          { icon: <Clock className="w-4 h-4 text-teal-400" />, text: "Setup in minutes" }
+        ]}
+      />
 
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <button
-              onClick={() => window.open('https://guest.hookahplus.net', '_blank')}
-              className="inline-flex items-center justify-center rounded-xl border border-teal-500/50 bg-teal-500/10 px-8 py-4 text-lg font-semibold hover:bg-teal-500/20 transition-all duration-200"
-            >
-              <Play className="w-5 h-5 mr-2" />
-              Try Full Experience
-            </button>
-            <button
-              onClick={() => window.open('/contact', '_blank')}
-              className="inline-flex items-center justify-center rounded-xl border border-purple-500/50 bg-purple-500/10 px-8 py-4 text-lg font-semibold hover:bg-purple-500/20 transition-all duration-200"
-            >
-              <ArrowRight className="w-5 h-5 mr-2" />
-              Contact us for Demo
-            </button>
-          </div>
-        </div>
+      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
 
         {/* Demo Container */}
         <div className="bg-zinc-800/50 border border-zinc-700 rounded-2xl p-8">

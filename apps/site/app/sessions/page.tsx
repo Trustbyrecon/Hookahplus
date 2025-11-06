@@ -3,12 +3,13 @@
 import React, { useState } from 'react';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
+import PageHero from '../../components/PageHero';
 import SimpleFSDDesign from '../../components/SimpleFSDDesign';
 import { 
   Flame, Users, Clock, TrendingUp, BarChart3, Settings, UserCheck, Brain, Shield, CreditCard, 
   ArrowRight, Play, CheckCircle, Zap, Activity, Heart, Star, Package, Truck, Home, Coffee, 
   Timer, Zap as ZapIcon, DollarSign, X, RotateCcw, CreditCard as CreditCardIcon, Ban, 
-  AlertTriangle, MoreVertical, Info, ArrowLeft, RefreshCw, Eye, EyeOff, Lock, Unlock
+  AlertTriangle, MoreVertical, Info, ArrowLeft, RefreshCw, Eye, EyeOff, Lock, Unlock, Map
 } from 'lucide-react';
 import { 
   mockSiteData, getActiveSessions, getBohSessions, getFohSessions, getEdgeCaseSessions,
@@ -29,29 +30,58 @@ export default function SessionsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
-      {/* Header */}
-      <div className="bg-zinc-950 border-b border-teal-500/50">
-        <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-white">🔥 Fire Session Operations</h1>
-              <p className="text-zinc-400 mt-2">Real-time session monitoring and control center</p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Button 
-                variant="outline" 
-                className="flex items-center gap-2"
-                onClick={() => setShowIntelligence(!showIntelligence)}
-              >
-                <Brain className="w-4 h-4" />
-                {showIntelligence ? 'Hide' : 'Show'} Intelligence
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Hero Section */}
+      <PageHero
+        headline="Monitor every session. Optimize every turn."
+        subheadline="Real-time intelligence that reduces management friction by 40%"
+        benefit={{
+          value: "↑ 22% table turns, ↓ 35% order time",
+          description: "AI-powered predictions and automated alerts keep operations flowing"
+        }}
+        primaryCTA={{
+          text: "View Analytics Dashboard",
+          onClick: () => {
+            // Scroll to dashboard or navigate to analytics
+            const dashboard = document.getElementById('dashboard');
+            if (dashboard) {
+              dashboard.scrollIntoView({ behavior: 'smooth' });
+            }
+          }
+        }}
+        secondaryCTA={{
+          text: "Export Report",
+          onClick: () => {
+            // Handle export
+            console.log('Export report');
+          }
+        }}
+        trustIndicators={[
+          { icon: <Map className="w-4 h-4 text-teal-400" />, text: "Live heat maps" },
+          { icon: <Brain className="w-4 h-4 text-teal-400" />, text: "AI-powered predictions" },
+          { icon: <Zap className="w-4 h-4 text-teal-400" />, text: "Automated alerts" }
+        ]}
+      />
 
-      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8" id="dashboard">
+        {/* Quick Actions */}
+        <div className="mb-6 flex flex-wrap gap-4 justify-center">
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={() => setShowIntelligence(!showIntelligence)}
+          >
+            <Brain className="w-4 h-4" />
+            {showIntelligence ? 'Hide' : 'Show'} Intelligence
+          </Button>
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={() => window.location.href = '/analytics'}
+          >
+            <BarChart3 className="w-4 h-4" />
+            View Analytics
+          </Button>
+        </div>
         {/* Intelligence Panel */}
         {showIntelligence && (
           <div className="mb-8 bg-gradient-to-r from-purple-900/20 to-blue-900/20 border border-purple-500/30 rounded-lg p-6">

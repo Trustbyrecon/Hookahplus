@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
+import PageHero from '../../components/PageHero';
 import ROICalculator from '../../components/ROICalculator';
 import { 
   CheckCircle, 
@@ -213,48 +214,44 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
-      {/* Header */}
-      <div className="bg-zinc-950 border-b border-teal-500/50">
-        <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              Pricing Intelligence Board
-            </h1>
-            <p className="text-xl text-zinc-400 max-w-3xl mx-auto mb-4">
-              Smart Scaling — Hookah+ grows with your lounge
-            </p>
-            <p className="text-lg text-zinc-500 max-w-3xl mx-auto mb-8">
-              Pricing adapts automatically based on usage and operational volume — a "Reflex Upgrade." 
-              Instead of requiring manual tier changes, Hookah+ monitors usage thresholds and auto-rolls 
-              into the next tier when it detects consistent load increases. Keeps operations seamless with 
-              a 3-day grace period notification.
-            </p>
-            
-            {/* Billing Cycle Toggle */}
-            <div className="flex items-center justify-center gap-4">
-              <span className={`text-sm ${billingCycle === 'monthly' ? 'text-white font-semibold' : 'text-zinc-400'}`}>
-                Monthly
+      {/* Hero Section */}
+      <PageHero
+        headline="Simple pricing that grows with you"
+        subheadline="Auto-upgrade when you're ready, 3-day grace notice"
+        benefit={{
+          value: "No long-term contracts, cancel anytime",
+          description: "Pricing adapts automatically based on usage — Reflex Upgrade"
+        }}
+        trustIndicators={[
+          { icon: <CheckCircle className="w-4 h-4 text-teal-400" />, text: "Cancel anytime" },
+          { icon: <Clock className="w-4 h-4 text-teal-400" />, text: "3-day grace period" },
+          { icon: <TrendingUp className="w-4 h-4 text-teal-400" />, text: "Auto-upgrade when ready" }
+        ]}
+      />
+
+      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        {/* Billing Cycle Toggle */}
+        <div className="flex items-center justify-center gap-4 mb-8">
+          <span className={`text-sm ${billingCycle === 'monthly' ? 'text-white font-semibold' : 'text-zinc-400'}`}>
+            Monthly
+          </span>
+          <button
+            onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'annual' : 'monthly')}
+            className="relative w-14 h-7 bg-zinc-700 rounded-full transition-colors"
+          >
+            <div className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full transition-transform ${
+              billingCycle === 'annual' ? 'translate-x-7' : ''
+            }`} />
+          </button>
+          <span className={`text-sm ${billingCycle === 'annual' ? 'text-white font-semibold' : 'text-zinc-400'}`}>
+            Annual
+            {billingCycle === 'annual' && (
+              <span className="ml-2 text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">
+                Save ~17%
               </span>
-              <button
-                onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'annual' : 'monthly')}
-                className="relative w-14 h-7 bg-zinc-700 rounded-full transition-colors"
-              >
-                <div className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full transition-transform ${
-                  billingCycle === 'annual' ? 'translate-x-7' : ''
-                }`} />
-              </button>
-              <span className={`text-sm ${billingCycle === 'annual' ? 'text-white font-semibold' : 'text-zinc-400'}`}>
-                Annual
-                {billingCycle === 'annual' && (
-                  <span className="ml-2 text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">
-                    Save ~17%
-                  </span>
-                )}
-              </span>
-            </div>
-          </div>
+            )}
+          </span>
         </div>
-      </div>
 
       <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
         {/* ROI Calculator Section */}

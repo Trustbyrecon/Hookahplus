@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
+import PageHero from '../../components/PageHero';
 import { 
   CheckCircle, 
   ArrowRight, 
@@ -14,7 +15,8 @@ import {
   Settings,
   Shield,
   Zap,
-  Check
+  Check,
+  CreditCard
 } from 'lucide-react';
 
 export default function OnboardingPage() {
@@ -405,15 +407,21 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
-      {/* Header */}
-      <div className="bg-zinc-950 border-b border-teal-500/50">
-        <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold text-center mb-2">Start Operator Onboarding</h1>
-          <p className="text-center text-zinc-400">
-            Let's get your lounge set up on Hookah+. This will take about 5 minutes.
-          </p>
-        </div>
-      </div>
+      {/* Hero Section */}
+      <PageHero
+        headline="Get your lounge running in 15 minutes"
+        subheadline="AI-powered setup learns your flow, optimizes automatically"
+        benefit={{
+          value: "40% reduction in setup time",
+          description: "vs manual configuration — AI handles the heavy lifting",
+          icon: <Zap className="w-6 h-6 text-teal-400" />
+        }}
+        trustIndicators={[
+          { icon: <Clock className="w-4 h-4 text-teal-400" />, text: "30-day pilot available" },
+          { icon: <CreditCard className="w-4 h-4 text-teal-400" />, text: "No credit card required" },
+          { icon: <Shield className="w-4 h-4 text-teal-400" />, text: "Cancel anytime" }
+        ]}
+      />
 
       <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {/* Progress Steps */}

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import PageHero from '../../components/PageHero';
 import { 
   HelpCircle, 
   Mail, 
@@ -207,21 +208,20 @@ const SupportPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
-      {/* Header */}
-      <div className="bg-zinc-900/50 backdrop-blur-sm border-b border-zinc-800">
-        <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="flex items-center justify-center mb-4">
-              <HelpCircle className="w-12 h-12 text-primary-400 mr-3" />
-              <h1 className="text-4xl font-bold text-white">Support Center</h1>
-            </div>
-            <p className="text-xl text-zinc-300 max-w-3xl mx-auto">
-              Get help from our AI-powered support system and expert team. 
-              We're here to ensure your Hookah+ experience is seamless.
-            </p>
-          </div>
-        </div>
-      </div>
+      {/* Hero Section */}
+      <PageHero
+        headline="Get answers fast, get back to running your lounge"
+        subheadline="AI-powered support + human experts, <2 hour response"
+        benefit={{
+          value: "24/7 availability, Average resolution: 15 minutes",
+          description: "Get help when you need it, resolve issues quickly"
+        }}
+        trustIndicators={[
+          { icon: <Clock className="w-4 h-4 text-teal-400" />, text: "<2 hour response" },
+          { icon: <CheckCircle className="w-4 h-4 text-teal-400" />, text: "24/7 availability" },
+          { icon: <Zap className="w-4 h-4 text-teal-400" />, text: "AI + human experts" }
+        ]}
+      />
 
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {/* Support Channels */}
