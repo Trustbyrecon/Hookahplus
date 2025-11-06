@@ -2,6 +2,30 @@
 
 ## 🚀 **Immediate Actions Required**
 
+### **0. Disable Auto-Deployments (CRITICAL - Highest Impact)**
+
+**This is the most effective way to reduce Vercel build costs.** By disabling automatic deployments, you can QA locally first and only deploy when ready, eliminating unnecessary builds.
+
+#### **For Each Project (Guest, App, Site):**
+
+1. Go to: **Project Settings → Git**
+2. Find **Automatic Deployments** section
+3. **Disable** automatic deployments for:
+   - Production Branch (main/master)
+   - Preview Deployments (optional, but recommended)
+4. Click **Save**
+
+**Result:** Pushing to Git will NOT trigger Vercel builds. You'll deploy manually when ready.
+
+**Manual Deployment Options:**
+- Vercel Dashboard → Deployments → **Deploy** button
+- Vercel CLI: `vercel --prod`
+- Git tags (if configured)
+
+**Expected Savings:** ~$0.80-1.00/day (eliminates most build costs during development)
+
+📖 **See [LOCAL_DEV_WORKFLOW.md](./LOCAL_DEV_WORKFLOW.md) for detailed instructions and workflow.**
+
 ### **1. Ignored Build Step Configuration**
 
 For each project in Vercel dashboard:
@@ -55,13 +79,14 @@ export async function generateStaticParams() {
 
 ## 📊 **Expected Cost Savings**
 
-| Optimization | Daily Savings | Monthly Savings |
-|-------------|---------------|-----------------|
-| Ignored Build Step | ~$0.60 | ~$18 |
-| Remote Caching | ~$0.20 | ~$6 |
-| Auto-Cancel | ~$0.10 | ~$3 |
-| Function Optimization | ~$0.10 | ~$3 |
-| **Total** | **~$1.00** | **~$30** |
+| Optimization | Daily Savings | Monthly Savings | Priority |
+|-------------|---------------|-----------------|----------|
+| **Disable Auto-Deployments** | **~$0.80-1.00** | **~$24-30** | **🔴 CRITICAL** |
+| Ignored Build Step | ~$0.60 | ~$18 | 🟡 High |
+| Remote Caching | ~$0.20 | ~$6 | 🟢 Medium |
+| Auto-Cancel | ~$0.10 | ~$3 | 🟢 Medium |
+| Function Optimization | ~$0.10 | ~$3 | 🟢 Medium |
+| **Total** | **~$1.80-2.00** | **~$54-60** | |
 
 ## 🎯 **Target Metrics**
 
@@ -80,6 +105,13 @@ Check usage in Vercel dashboard after 3-5 days:
 
 ## 🔧 **Implementation Checklist**
 
+### **Phase 1: Critical Cost Reduction (Do First)**
+- [ ] **Disable auto-deployments for Guest app** (See [LOCAL_DEV_WORKFLOW.md](./LOCAL_DEV_WORKFLOW.md))
+- [ ] **Disable auto-deployments for App build** (See [LOCAL_DEV_WORKFLOW.md](./LOCAL_DEV_WORKFLOW.md))
+- [ ] **Disable auto-deployments for Site build** (See [LOCAL_DEV_WORKFLOW.md](./LOCAL_DEV_WORKFLOW.md))
+- [ ] Set up local development workflow (See [LOCAL_DEV_WORKFLOW.md](./LOCAL_DEV_WORKFLOW.md))
+
+### **Phase 2: Additional Optimizations**
 - [ ] Update turbo.json (✅ Completed)
 - [ ] Create build step scripts (✅ Completed)
 - [ ] Configure Guest app ignored build step
@@ -92,7 +124,20 @@ Check usage in Vercel dashboard after 3-5 days:
 
 ## 🚀 **Next Steps**
 
-1. **Configure Vercel Dashboard** (Manual - requires Vercel access)
-2. **Monitor Usage** (3-5 days)
-3. **Adjust Settings** if needed
-4. **Target**: ≤$0.80/day to stay under $20 credit
+### **Immediate (Today)**
+1. **Disable Auto-Deployments** for all three projects (See [LOCAL_DEV_WORKFLOW.md](./LOCAL_DEV_WORKFLOW.md))
+   - This alone will save ~$0.80-1.00/day
+2. **Set up local development** using `npm run dev:all`
+   - Ports: Site (3000), Guest (3001), App (3002)
+   - See [LOCAL_DEV_WORKFLOW.md](./LOCAL_DEV_WORKFLOW.md) for details
+
+### **This Week**
+3. **Configure Additional Optimizations** (Ignored Build Step, Remote Caching, etc.)
+4. **Monitor Usage** (3-5 days)
+5. **Adjust Settings** if needed
+
+### **Target Metrics**
+- **Current**: ~$1.50/day
+- **After Disabling Auto-Deployments**: ~$0.50-0.70/day
+- **After All Optimizations**: ≤$0.30-0.50/day
+- **Goal**: Stay under $20/month credit limit
