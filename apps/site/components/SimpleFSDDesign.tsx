@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Plus, 
   Clock, 
@@ -132,6 +132,20 @@ export default function SimpleFSDDesign({
   const [intelligenceSessionId, setIntelligenceSessionId] = useState<string>('');
   const [selectedSession, setSelectedSession] = useState<FireSession | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const [timerKey, setTimerKey] = useState(0);
+
+  // Fix hydration mismatch by only rendering time-dependent content after mount
+  useEffect(() => {
+    setIsMounted(true);
+    
+    // Update timer every second for active sessions
+    const interval = setInterval(() => {
+      setTimerKey(prev => prev + 1);
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSessionAction = async (action: string, sessionId: string) => {
     console.log(`Action: ${action} on session: ${sessionId}`);
@@ -434,7 +448,7 @@ export default function SimpleFSDDesign({
                       <span className="font-medium">Session Timer:</span>
                     </div>
                     <p className="text-lg font-mono">
-                      {formatDuration(calculateRemainingTime(session))}
+                      {isMounted ? formatDuration(calculateRemainingTime(session)) : '--:--'}
                     </p>
                   </div>
                 )}
