@@ -6,51 +6,52 @@ import { Play, Calendar, Clock } from 'lucide-react';
 import { trackContactForm } from '../lib/ctaTracking';
 
 // Demo images data - 60-second demo carousel
+// Images from Google Labs Pomelli
 const demoImages = [
   {
-    src: '/images/demo/automate-operations.jpg',
+    src: 'https://labs.google.com/pomelli_downloads/accounts/9q95cWZhn3P9HScZyTLkGr/resources/bkCpfBit-lF2HXmU73nkIS',
     alt: 'Automate Operations - Streamline inventory, re-fills, and table service',
     title: 'AUTOMATE OPERATIONS',
     description: 'Streamline complex inventory, re-fills, and table service into intuitive, data-driven workflows'
   },
   {
-    src: '/images/demo/operational-flow-simplified.jpg',
+    src: 'https://labs.google.com/pomelli_downloads/accounts/9q95cWZhn3P9HScZyTLkGr/resources/aDf4oXG7-XpfxLJnQrp__B',
     alt: 'Operational Flow Simplified - Monitor sessions in real-time',
     title: 'OPERATIONAL FLOW, SIMPLIFIED',
     description: 'Monitor every session in real-time, reducing management friction by 40%'
   },
   {
-    src: '/images/demo/maximize-lounge-performance.jpg',
+    src: 'https://labs.google.com/pomelli_downloads/accounts/9q95cWZhn3P9HScZyTLkGr/resources/9ZzW8MU4OaDfiuyfRfxk-R',
     alt: 'Maximize Lounge Performance - Analyze session data',
     title: 'MAXIMIZE LOUNGE PERFORMANCE',
     description: 'Analyze session data to optimize table turnover and increase daily revenue'
   },
   {
-    src: '/images/demo/master-lounge-operations.jpg',
+    src: 'https://labs.google.com/pomelli_downloads/accounts/9q95cWZhn3P9HScZyTLkGr/resources/9dFPlJT_WX22bPefY_64V0',
     alt: 'Master Lounge Operations - Real-time data insights',
     title: 'MASTER LOUNGE OPERATIONS',
     description: 'Unlock real-time data insights to optimize your staff and sessions with Hookah+'
   },
   {
-    src: '/images/demo/boost-profitability.jpg',
+    src: 'https://labs.google.com/pomelli_downloads/accounts/9q95cWZhn3P9HScZyTLkGr/resources/9xoTsZF4pnt6QWS0L0445D',
     alt: 'Boost Profitability - Pricing and session duration decisions',
     title: 'STEP 3: BOOST PROFITABILITY',
     description: 'Make smarter pricing and session duration decisions based on real-time business performance metrics'
   },
   {
-    src: '/images/demo/coordinate-staff-seamlessly.jpg',
+    src: 'https://labs.google.com/pomelli_downloads/accounts/9q95cWZhn3P9HScZyTLkGr/resources/aPcnN8DqA_q953Tb_uV4eY',
     alt: 'Coordinate Staff Seamlessly - Assign tasks instantly',
     title: 'COORDINATE STAFF SEAMLESSLY',
     description: 'Assign tasks instantly and track completion—no more missed service calls'
   },
   {
-    src: '/images/demo/take-control-lounge.jpg',
+    src: 'https://labs.google.com/pomelli_downloads/accounts/9q95cWZhn3P9HScZyTLkGr/resources/8l_UVZVNDF7bByiBb_zO9x',
     alt: 'Take Control of Your Lounge - Intelligent management tools',
     title: 'TAKE CONTROL OF YOUR LOUNGE',
     description: 'Move beyond guesswork: intelligent tools for modern hookah lounge management'
   },
   {
-    src: '/images/demo/reduce-management-friction.jpg',
+    src: 'https://labs.google.com/pomelli_downloads/accounts/9q95cWZhn3P9HScZyTLkGr/resources/baBqMo8K_LOb-lV6KVU_08',
     alt: 'Reduce Management Friction by 40% - Before and After',
     title: 'Reduce Management Friction by 40%',
     description: 'Streamline staff, inventory, and table service into automated, data-driven workflows'

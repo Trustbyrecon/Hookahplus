@@ -63,8 +63,25 @@ export default function ImageCarousel({ images, autoPlay = true, interval = 5000
           className="absolute inset-0"
         >
           <div className="relative w-full h-full">
-            {/* Placeholder for images - in production, replace with actual image URLs */}
-            <div className="w-full h-full bg-gradient-to-br from-teal-900/20 to-cyan-900/20 flex items-center justify-center">
+            {/* Actual Image */}
+            <img
+              src={images[currentIndex].src}
+              alt={images[currentIndex].alt}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                // Fallback to placeholder if image fails to load (e.g., authentication required)
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                const fallback = target.nextElementSibling as HTMLElement;
+                if (fallback) fallback.style.display = 'flex';
+              }}
+            />
+            
+            {/* Fallback Placeholder (hidden by default, shown on image error) */}
+            <div 
+              className="w-full h-full bg-gradient-to-br from-teal-900/20 to-cyan-900/20 flex items-center justify-center"
+              style={{ display: 'none' }}
+            >
               <div className="text-center p-8">
                 <div className="text-4xl mb-4">📱</div>
                 <h3 className="text-2xl font-bold text-white mb-2">{images[currentIndex].title}</h3>
