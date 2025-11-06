@@ -32,7 +32,6 @@ import {
   Activity
 } from 'lucide-react';
 import CreateSessionModal from './CreateSessionModal';
-import GuestIntelligenceModal from './GuestIntelligenceModal';
 import SessionDetailModal from './SessionDetailModal';
 import { mockSiteData } from '../lib/mockData';
 import { 
@@ -130,15 +129,10 @@ export default function SimpleFSDDesign({
   const [hoveredAction, setHoveredAction] = useState<string | null>(null);
   const [currentRole, setCurrentRole] = useState<string>(userRole || 'MANAGER');
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showIntelligenceModal, setShowIntelligenceModal] = useState(false);
-  const [intelligenceSessionId, setIntelligenceSessionId] = useState<string>('');
   const [selectedSession, setSelectedSession] = useState<FireSession | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [timerKey, setTimerKey] = useState(0);
-  const [sessionFilter, setSessionFilter] = useState<'all' | 'active' | 'attention' | 'urgent'>('active');
-  const [showAllSessions, setShowAllSessions] = useState(false);
-  const [displayLimit, setDisplayLimit] = useState(10);
 
   // Fix hydration mismatch by only rendering time-dependent content after mount
   useEffect(() => {
@@ -272,90 +266,80 @@ export default function SimpleFSDDesign({
 
   const roleFilteredSessions = getFilteredSessions();
 
-  // Apply priority-based filtering to reduce cognitive load
-  const getPriorityFilteredSessions = () => {
-    if (sessionFilter === 'all' || showAllSessions) {
-      return roleFilteredSessions;
-    }
-
-    const urgent = roleFilteredSessions.filter((s: any) => {
+  // Select exactly 3 curated sessions: 1 urgent (red), 1 needs attention (yellow), 1 active (green)
+  const selectCuratedSessions = () => {
+    const allSessions = roleFilteredSessions;
+    
+    // Helper functions to check session status
+    const isUrgent = (s: any) => {
       const status = getSessionStatus(s);
       return ['STAFF_HOLD', 'STOCK_BLOCKED', 'REMAKE', 'REFUND_REQUESTED'].includes(status);
-    });
-
-    const needsAttention = roleFilteredSessions.filter((s: any) => {
+    };
+    
+    const needsAttention = (s: any) => {
       const status = getSessionStatus(s);
       return ['READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(status);
-    });
-
-    const active = roleFilteredSessions.filter((s: any) => {
+    };
+    
+    const isActive = (s: any) => {
       const status = getSessionStatus(s);
-      return ['ACTIVE', 'PREP_IN_PROGRESS', 'HEAT_UP'].includes(status);
-    });
-
-    // Combine based on filter
-    if (sessionFilter === 'urgent') {
-      return urgent;
-    } else if (sessionFilter === 'attention') {
-      return needsAttention;
-    } else if (sessionFilter === 'active') {
-      return [...urgent, ...needsAttention, ...active]; // Default: show urgent + attention + active
+      return status === 'ACTIVE';
+    };
+    
+    // Find one session from each category
+    const urgentSession = allSessions.find((s: any) => isUrgent(s));
+    const needsAttentionSession = allSessions.find((s: any) => needsAttention(s) && !isUrgent(s));
+    const activeSession = allSessions.find((s: any) => isActive(s) && !isUrgent(s) && !needsAttention(s));
+    
+    // Build curated list, filling gaps if any category is missing
+    const curated: any[] = [];
+    if (urgentSession) curated.push(urgentSession);
+    if (needsAttentionSession) curated.push(needsAttentionSession);
+    if (activeSession) curated.push(activeSession);
+    
+    // If we don't have 3 sessions yet, fill with next priority sessions
+    if (curated.length < 3) {
+      const remaining = allSessions.filter((s: any) => !curated.includes(s));
+      curated.push(...remaining.slice(0, 3 - curated.length));
     }
-
-    return roleFilteredSessions;
+    
+    // Return exactly 3 sessions
+    return curated.slice(0, 3);
   };
 
-  const priorityFilteredSessions = getPriorityFilteredSessions();
-
-  // Sort sessions by priority: urgent first, then needs attention, then active
-  const sortedSessions = [...priorityFilteredSessions].sort((a: any, b: any) => {
-    const statusA = getSessionStatus(a);
-    const statusB = getSessionStatus(b);
-    
-    const isUrgentA = ['STAFF_HOLD', 'STOCK_BLOCKED', 'REMAKE', 'REFUND_REQUESTED'].includes(statusA);
-    const isUrgentB = ['STAFF_HOLD', 'STOCK_BLOCKED', 'REMAKE', 'REFUND_REQUESTED'].includes(statusB);
-    
-    const needsAttentionA = ['READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(statusA);
-    const needsAttentionB = ['READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(statusB);
-    
-    if (isUrgentA && !isUrgentB) return -1;
-    if (!isUrgentA && isUrgentB) return 1;
-    if (needsAttentionA && !needsAttentionB) return -1;
-    if (!needsAttentionA && needsAttentionB) return 1;
-    return 0;
-  });
-
-  // Limit display
-  const displayedSessions = showAllSessions ? sortedSessions : sortedSessions.slice(0, displayLimit);
-  const hasMoreSessions = sortedSessions.length > displayLimit;
-
+  const displayedSessions = selectCuratedSessions();
   const filteredSessions = displayedSessions;
 
-  // Calculate metrics for dashboard
+  // Calculate metrics for dashboard - sync with displayed sessions
   const calculateMetrics = () => {
-    const activeSessions = filteredSessions.filter((s: any) => 
-      ['ACTIVE', 'PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(s.status)
-    );
+    // Use displayedSessions (the 3 curated sessions) for metrics
+    const activeSessions = displayedSessions.filter((s: any) => {
+      const status = getSessionStatus(s);
+      return status === 'ACTIVE';
+    });
     
-    const completedSessions = filteredSessions.filter((s: any) => s.status === 'CLOSED');
-    const totalSessions = filteredSessions.length;
+    const completedSessions = displayedSessions.filter((s: any) => {
+      const status = getSessionStatus(s);
+      return status === 'CLOSED';
+    });
     
-    // Calculate average prep time (mock calculation)
-    const prepSessions = filteredSessions.filter((s: any) => 
-      ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(s.status)
-    );
+    // Calculate average prep time from displayed prep sessions
+    const prepSessions = displayedSessions.filter((s: any) => {
+      const status = getSessionStatus(s);
+      return ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(status);
+    });
     const avgPrepTime = prepSessions.length > 0 ? Math.floor(Math.random() * 8 + 5) : 0; // Mock: 5-12 minutes
     
-    // Calculate completion rate
-    const completionRate = totalSessions > 0 
-      ? Math.round((completedSessions.length / totalSessions) * 100) 
+    // Calculate completion rate based on displayed sessions
+    const completionRate = displayedSessions.length > 0 
+      ? Math.round((completedSessions.length / displayedSessions.length) * 100) 
       : 0;
     
     return {
       active: activeSessions.length,
       avgPrepTime,
       completionRate,
-      total: totalSessions
+      total: displayedSessions.length // Show count of displayed sessions (3)
     };
   };
 
@@ -591,49 +575,6 @@ export default function SimpleFSDDesign({
         ))}
       </div>
 
-      {/* Session Filter Controls */}
-      {activeTab === 'overview' && roleFilteredSessions.length > 0 && (
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <label className="text-sm text-zinc-400">Filter:</label>
-            <select
-              value={sessionFilter}
-              onChange={(e) => {
-                setSessionFilter(e.target.value as any);
-                setShowAllSessions(false);
-              }}
-              className="px-3 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-            >
-              <option value="active">Active + Attention + Urgent</option>
-              <option value="urgent">Urgent Only</option>
-              <option value="attention">Needs Attention</option>
-              <option value="all">All Sessions</option>
-            </select>
-            <span className="text-xs text-zinc-500">
-              Showing {displayedSessions.length} of {sortedSessions.length} sessions
-            </span>
-          </div>
-          {hasMoreSessions && !showAllSessions && (
-            <button
-              onClick={() => setShowAllSessions(true)}
-              className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 rounded-lg text-white text-sm transition-colors"
-            >
-              Show All ({sortedSessions.length})
-            </button>
-          )}
-          {showAllSessions && (
-            <button
-              onClick={() => {
-                setShowAllSessions(false);
-                setDisplayLimit(10);
-              }}
-              className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 rounded-lg text-white text-sm transition-colors"
-            >
-              Show Less
-            </button>
-          )}
-        </div>
-      )}
 
       {/* Tab Content */}
       {activeTab === 'overview' && (
@@ -889,19 +830,8 @@ export default function SimpleFSDDesign({
                     </div>
                     
                     {/* Action Buttons Row */}
-                    <div className="mt-3 pt-3 border-t border-zinc-700 flex gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setIntelligenceSessionId(sessionId);
-                          setShowIntelligenceModal(true);
-                        }}
-                        className="flex items-center space-x-1 px-2 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex-1 justify-center text-xs"
-                      >
-                        <Brain className="w-3 h-3" />
-                        <span className="text-xs font-medium">Intelligence</span>
-                      </button>
-                      {(currentRole === 'BOH' || currentRole === 'FOH') && (
+                    {(currentRole === 'BOH' || currentRole === 'FOH') && (
+                      <div className="mt-3 pt-3 border-t border-zinc-700 flex gap-2">
                         <button
                           onClick={() => {
                             const reason = prompt('Escalation reason:');
@@ -914,8 +844,8 @@ export default function SimpleFSDDesign({
                           <AlertTriangle className="w-3 h-3" />
                           <span className="text-xs font-medium">Escalate</span>
                         </button>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1268,16 +1198,6 @@ export default function SimpleFSDDesign({
           </div>
         </div>
       )}
-      
-      {/* Guest Intelligence Modal */}
-      <GuestIntelligenceModal
-        isOpen={showIntelligenceModal}
-        onClose={() => {
-          setShowIntelligenceModal(false);
-          setIntelligenceSessionId('');
-        }}
-        sessionId={intelligenceSessionId}
-      />
       
       {/* Session Detail Modal */}
       <SessionDetailModal
