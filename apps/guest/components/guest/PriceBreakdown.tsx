@@ -291,11 +291,37 @@ export default function PriceBreakdown({
         <div className="p-2 bg-green-500/20 rounded-lg">
           <DollarSign className="w-6 h-6 text-green-400" />
         </div>
-        <div>
-          <h2 className="text-xl font-semibold text-white">Price Breakdown</h2>
-          <p className="text-sm text-zinc-400">Review your order and checkout</p>
+        <div className="flex-1">
+          <h2 className="text-xl font-semibold text-white">Your Order</h2>
+          <p className="text-sm text-zinc-400">Review your order and proceed to checkout</p>
         </div>
       </div>
+
+      {/* Selected Items Summary */}
+      {selectedFlavors.length > 0 && (
+        <div className="mb-6 p-4 bg-zinc-700/50 rounded-lg border border-zinc-600">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-medium text-white">Selected Flavors</h3>
+            <span className="text-xs text-zinc-400">{selectedFlavors.length} selected</span>
+          </div>
+          <div className="flex flex-wrap gap-2 mb-3">
+            {selectedFlavors.map((flavor, index) => (
+              <span
+                key={index}
+                className="px-3 py-1.5 bg-primary-500/20 text-primary-400 text-sm rounded-full border border-primary-500/30 font-medium"
+              >
+                {flavor}
+              </span>
+            ))}
+          </div>
+          {specialInstructions && (
+            <div className="mt-3 pt-3 border-t border-zinc-600">
+              <span className="text-xs text-zinc-400 block mb-1">Special Instructions:</span>
+              <p className="text-sm text-zinc-300">{specialInstructions}</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Promo Code */}
       {flags.pricing.promos && (
@@ -324,107 +350,108 @@ export default function PriceBreakdown({
       )}
 
       {/* Price Breakdown */}
-      <div className="space-y-4 mb-6">
-        {/* Base Price */}
-        <div className="flex justify-between items-center py-2 border-b border-zinc-700">
-          <span className="text-zinc-300">Base Price</span>
-          <span className="text-white font-medium">{formatPrice(priceData.base)}</span>
-        </div>
-
-        {/* Add-ons */}
-        {priceData.addons > 0 && (
+      <div className="mb-6">
+        <h3 className="text-sm font-medium text-white mb-4">Price Breakdown</h3>
+        <div className="space-y-3">
+          {/* Base Price */}
           <div className="flex justify-between items-center py-2 border-b border-zinc-700">
-            <span className="text-zinc-300">Add-ons</span>
-            <span className="text-white font-medium">{formatPrice(priceData.addons)}</span>
+            <span className="text-sm text-zinc-300">Base Price</span>
+            <span className="text-sm text-white font-medium">{formatPrice(priceData.base)}</span>
           </div>
-        )}
 
-        {/* Promo Discount */}
-        {priceData.promo && (
-          <div className="flex justify-between items-center py-2 border-b border-zinc-700">
-            <div className="flex items-center space-x-2">
-              <Tag className="w-4 h-4 text-green-400" />
-              <span className="text-green-400">Discount ({priceData.promo.code})</span>
+          {/* Add-ons */}
+          {priceData.addons > 0 && (
+            <div className="flex justify-between items-center py-2 border-b border-zinc-700">
+              <span className="text-sm text-zinc-300">Add-ons</span>
+              <span className="text-sm text-white font-medium">{formatPrice(priceData.addons)}</span>
             </div>
-            <span className="text-green-400 font-medium">
-              -{formatPrice(priceData.promo.discount)}
-            </span>
-          </div>
-        )}
+          )}
 
-        {/* Total */}
-        <div className="flex justify-between items-center py-3 bg-zinc-700/50 rounded-lg px-4">
-          <span className="text-lg font-semibold text-white">Total</span>
-          <span className="text-xl font-bold text-white">{formatPrice(priceData.total)}</span>
+          {/* Promo Discount */}
+          {priceData.promo && (
+            <div className="flex justify-between items-center py-2 border-b border-zinc-700">
+              <div className="flex items-center space-x-2">
+                <Tag className="w-4 h-4 text-green-400" />
+                <span className="text-sm text-green-400">Discount ({priceData.promo.code})</span>
+              </div>
+              <span className="text-sm text-green-400 font-medium">
+                -{formatPrice(priceData.promo.discount)}
+              </span>
+            </div>
+          )}
+
+          {/* Total */}
+          <div className="flex justify-between items-center py-4 mt-4 bg-gradient-to-r from-zinc-700/50 to-zinc-800/50 rounded-lg px-4 border border-zinc-600">
+            <span className="text-lg font-semibold text-white">Total</span>
+            <span className="text-2xl font-bold text-teal-400">{formatPrice(priceData.total)}</span>
+          </div>
         </div>
       </div>
-
-      {/* Item Breakdown */}
-      {priceData.breakdown && priceData.breakdown.length > 0 && (
-        <div className="mb-6">
-          <h3 className="text-sm font-medium text-white mb-3">Item Details</h3>
-          <div className="space-y-2">
-            {priceData.breakdown.map((item, index) => (
-              <div key={index} className="flex justify-between items-center py-1">
-                <span className="text-sm text-zinc-300">{item.item}</span>
-                <span className={`text-sm font-medium ${item.price < 0 ? 'text-green-400' : 'text-white'}`}>
-                  {item.price < 0 ? '-' : ''}{formatPrice(Math.abs(item.price))}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Payment Methods */}
       <div className="mb-6">
-        <h3 className="text-sm font-medium text-white mb-3">Payment Method</h3>
-        <div className="grid grid-cols-3 gap-2">
+        <h3 className="text-sm font-medium text-white mb-3">Select Payment Method</h3>
+        <div className="grid grid-cols-3 gap-3">
           <button 
             onClick={() => setSelectedPaymentMethod('card')}
-            className={`p-3 rounded-lg text-center transition-colors ${
+            className={`p-4 rounded-lg text-center transition-all ${
               selectedPaymentMethod === 'card'
-                ? 'bg-teal-600 border-2 border-teal-400'
-                : 'bg-zinc-700 hover:bg-zinc-600 border-2 border-transparent'
+                ? 'bg-teal-600 border-2 border-teal-400 shadow-lg shadow-teal-500/20'
+                : 'bg-zinc-700 hover:bg-zinc-600 border-2 border-transparent hover:border-zinc-500'
             }`}
           >
-            <CreditCard className={`w-5 h-5 mx-auto mb-1 ${selectedPaymentMethod === 'card' ? 'text-white' : 'text-zinc-300'}`} />
-            <div className={`text-xs ${selectedPaymentMethod === 'card' ? 'text-white font-medium' : 'text-zinc-300'}`}>Card</div>
+            <CreditCard className={`w-5 h-5 mx-auto mb-2 ${selectedPaymentMethod === 'card' ? 'text-white' : 'text-zinc-300'}`} />
+            <div className={`text-xs font-medium ${selectedPaymentMethod === 'card' ? 'text-white' : 'text-zinc-300'}`}>Card</div>
           </button>
           <button 
             onClick={() => setSelectedPaymentMethod('cash')}
-            className={`p-3 rounded-lg text-center transition-colors ${
+            className={`p-4 rounded-lg text-center transition-all ${
               selectedPaymentMethod === 'cash'
-                ? 'bg-teal-600 border-2 border-teal-400'
-                : 'bg-zinc-700 hover:bg-zinc-600 border-2 border-transparent'
+                ? 'bg-teal-600 border-2 border-teal-400 shadow-lg shadow-teal-500/20'
+                : 'bg-zinc-700 hover:bg-zinc-600 border-2 border-transparent hover:border-zinc-500'
             }`}
           >
-            <DollarSign className={`w-5 h-5 mx-auto mb-1 ${selectedPaymentMethod === 'cash' ? 'text-white' : 'text-zinc-300'}`} />
-            <div className={`text-xs ${selectedPaymentMethod === 'cash' ? 'text-white font-medium' : 'text-zinc-300'}`}>Cash</div>
+            <DollarSign className={`w-5 h-5 mx-auto mb-2 ${selectedPaymentMethod === 'cash' ? 'text-white' : 'text-zinc-300'}`} />
+            <div className={`text-xs font-medium ${selectedPaymentMethod === 'cash' ? 'text-white' : 'text-zinc-300'}`}>Cash</div>
           </button>
           <button 
             onClick={() => setSelectedPaymentMethod('points')}
-            className={`p-3 rounded-lg text-center transition-colors ${
+            className={`p-4 rounded-lg text-center transition-all ${
               selectedPaymentMethod === 'points'
-                ? 'bg-teal-600 border-2 border-teal-400'
-                : 'bg-zinc-700 hover:bg-zinc-600 border-2 border-transparent'
+                ? 'bg-teal-600 border-2 border-teal-400 shadow-lg shadow-teal-500/20'
+                : 'bg-zinc-700 hover:bg-zinc-600 border-2 border-transparent hover:border-zinc-500'
             }`}
           >
-            <Clock className={`w-5 h-5 mx-auto mb-1 ${selectedPaymentMethod === 'points' ? 'text-white' : 'text-zinc-300'}`} />
-            <div className={`text-xs ${selectedPaymentMethod === 'points' ? 'text-white font-medium' : 'text-zinc-300'}`}>Points</div>
+            <Clock className={`w-5 h-5 mx-auto mb-2 ${selectedPaymentMethod === 'points' ? 'text-white' : 'text-zinc-300'}`} />
+            <div className={`text-xs font-medium ${selectedPaymentMethod === 'points' ? 'text-white' : 'text-zinc-300'}`}>Points</div>
           </button>
         </div>
       </div>
 
-      {/* Checkout Button - Green */}
+      {/* Checkout Button - Professional Green */}
       <button
         onClick={handleCheckout}
-        disabled={isLoading}
-        className="w-full flex items-center justify-center space-x-2 px-6 py-4 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white rounded-lg font-semibold transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+        disabled={isLoading || !selectedFlavors.length}
+        className="w-full flex items-center justify-center space-x-2 px-6 py-4 bg-gradient-to-r from-green-600 via-green-500 to-green-600 hover:from-green-700 hover:via-green-600 hover:to-green-700 text-white rounded-lg font-semibold text-lg transition-all shadow-lg shadow-green-500/20 hover:shadow-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
       >
-        <CreditCard className="w-5 h-5" />
-        <span>{isLoading ? 'Processing...' : `Checkout ${formatPrice(priceData.total)}`}</span>
+        {isLoading ? (
+          <>
+            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            <span>Processing...</span>
+          </>
+        ) : (
+          <>
+            <CreditCard className="w-5 h-5" />
+            <span>Complete Order • {formatPrice(priceData.total)}</span>
+          </>
+        )}
       </button>
+      
+      {!selectedFlavors.length && (
+        <p className="text-xs text-zinc-400 text-center mt-2">
+          Please select flavors to proceed
+        </p>
+      )}
 
       {/* Trust Indicators */}
       {flags.ghostlog.lite && (

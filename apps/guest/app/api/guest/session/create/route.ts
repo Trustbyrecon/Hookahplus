@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
-import { sharedSessions, getGuestProfile } from '../../shared-storage';
+import { sharedSessions, getGuestProfile, setGuestProfile } from '../../shared-storage';
 import { createGhostLogEntry } from '../../hash';
 import { featureFlags } from '../../flags';
 
@@ -23,13 +23,28 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Verify guest exists
-    const guestProfile = getGuestProfile(guestId);
+    // Verify guest exists or create if missing (defensive approach)
+    let guestProfile = getGuestProfile(guestId);
     if (!guestProfile) {
-      return NextResponse.json({
-        ok: false,
-        error: 'Guest not found'
-      }, { status: 404 });
+      // Create guest profile if it doesn't exist (can happen if guest was created client-side but not stored)
+      guestProfile = {
+        guestId,
+        anon: true,
+        lastLoungeId: loungeId,
+        badges: [],
+        sessions: [],
+        points: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        preferences: {
+          favoriteFlavors: [],
+          savedMixes: [],
+          notifications: false
+        }
+      };
+      
+      // Store in shared storage
+      setGuestProfile(guestId, guestProfile);
     }
 
     // Create session
