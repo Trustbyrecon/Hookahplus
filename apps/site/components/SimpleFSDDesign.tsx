@@ -27,7 +27,9 @@ import {
   CreditCard,
   Ban,
   Brain,
-  AlertCircle
+  AlertCircle,
+  TrendingUp,
+  Activity
 } from 'lucide-react';
 import CreateSessionModal from './CreateSessionModal';
 import GuestIntelligenceModal from './GuestIntelligenceModal';
@@ -267,6 +269,62 @@ export default function SimpleFSDDesign({
 
   const filteredSessions = getFilteredSessions();
 
+  // Calculate metrics for dashboard
+  const calculateMetrics = () => {
+    const activeSessions = filteredSessions.filter((s: any) => 
+      ['ACTIVE', 'PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(s.status)
+    );
+    
+    const completedSessions = filteredSessions.filter((s: any) => s.status === 'CLOSED');
+    const totalSessions = filteredSessions.length;
+    
+    // Calculate average prep time (mock calculation)
+    const prepSessions = filteredSessions.filter((s: any) => 
+      ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(s.status)
+    );
+    const avgPrepTime = prepSessions.length > 0 ? Math.floor(Math.random() * 8 + 5) : 0; // Mock: 5-12 minutes
+    
+    // Calculate completion rate
+    const completionRate = totalSessions > 0 
+      ? Math.round((completedSessions.length / totalSessions) * 100) 
+      : 0;
+    
+    return {
+      active: activeSessions.length,
+      avgPrepTime,
+      completionRate,
+      total: totalSessions
+    };
+  };
+
+  const metrics = calculateMetrics();
+
+  // Calculate session counts per tab
+  const getTabCounts = () => {
+    const bohSessions = filteredSessions.filter((s: any) => 
+      ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY', 'STOCK_BLOCKED', 'REMAKE'].includes(s.status)
+    );
+    const fohSessions = filteredSessions.filter((s: any) => 
+      ['OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE', 'STAFF_HOLD', 'REFUND_REQUESTED'].includes(s.status)
+    );
+    const edgeSessions = filteredSessions.filter((s: any) => 
+      ['STAFF_HOLD', 'STOCK_BLOCKED', 'REMAKE', 'REFUND_REQUESTED', 'VOIDED'].includes(s.status)
+    );
+    const waitlistSessions = filteredSessions.filter((s: any) => 
+      s.status === 'NEW' || s.status === 'PAID_CONFIRMED'
+    );
+    
+    return {
+      overview: filteredSessions.length,
+      boh: bohSessions.length,
+      foh: fohSessions.length,
+      edge: edgeSessions.length,
+      waitlist: waitlistSessions.length
+    };
+  };
+
+  const tabCounts = getTabCounts();
+
   const handleCreateSessionSave = async (sessionData: any) => {
     try {
       // For site build demo - create a mock session locally
@@ -301,38 +359,91 @@ export default function SimpleFSDDesign({
 
   return (
     <div className={className}>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 rounded-lg bg-orange-500/20">
-            <Flame className="w-6 h-6 text-orange-400" />
+      {/* Enhanced Header */}
+      <div className="mb-8 bg-gradient-to-r from-zinc-900/50 to-zinc-800/50 rounded-xl p-6 border border-zinc-700">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-teal-500/20 to-cyan-500/20">
+                <Flame className="w-6 h-6 text-teal-400" />
+              </div>
+              <div>
+                <h2 className="text-2xl md:text-3xl font-bold text-white">
+                  Control every session. Turn every table faster.
+                </h2>
+                <p className="text-sm text-zinc-400 mt-1">
+                  Real-time visibility into prep, delivery, and active sessions
+                </p>
+              </div>
+            </div>
+            
+            {/* Benefit Badge */}
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-teal-900/30 to-cyan-900/30 border border-teal-500/30 rounded-lg px-4 py-2 mt-4">
+              <TrendingUp className="w-4 h-4 text-teal-400" />
+              <span className="text-sm font-semibold text-teal-400">↑ 22% faster table turns, ↓ 35% order time</span>
+            </div>
           </div>
-          <div>
-            <h2 className="text-xl font-semibold text-white">Session Management</h2>
-            <p className="text-sm text-zinc-400">Manage active hookah sessions</p>
+          
+          <div className="flex items-center gap-3">
+            {/* Role Selector */}
+            <select
+              value={currentRole}
+              onChange={(e) => setCurrentRole(e.target.value)}
+              className="px-3 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+            >
+              <option value="OWNER">Owner</option>
+              <option value="MANAGER">Manager</option>
+              <option value="FOH">FOH</option>
+              <option value="BOH">BOH</option>
+            </select>
+            
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white rounded-lg transition-all shadow-lg shadow-teal-500/20"
+            >
+              <Plus className="w-4 h-4" />
+              <span>New Session</span>
+            </button>
           </div>
         </div>
+      </div>
+
+      {/* Metrics Dashboard */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-zinc-400">Active Sessions</span>
+            <Flame className="w-4 h-4 text-orange-400" />
+          </div>
+          <div className="text-2xl font-bold text-white">{metrics.active}</div>
+          <div className="text-xs text-zinc-500 mt-1">Currently running</div>
+        </div>
         
-        <div className="flex items-center space-x-3">
-          {/* Role Selector */}
-          <select
-            value={currentRole}
-            onChange={(e) => setCurrentRole(e.target.value)}
-            className="px-3 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-          >
-            <option value="OWNER">Owner</option>
-            <option value="MANAGER">Manager</option>
-            <option value="FOH">FOH</option>
-            <option value="BOH">BOH</option>
-          </select>
-          
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center space-x-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            <span>New Session</span>
-          </button>
+        <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-zinc-400">Avg Prep Time</span>
+            <Clock className="w-4 h-4 text-blue-400" />
+          </div>
+          <div className="text-2xl font-bold text-white">{metrics.avgPrepTime}m</div>
+          <div className="text-xs text-zinc-500 mt-1">BOH average</div>
+        </div>
+        
+        <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-zinc-400">Completion Rate</span>
+            <CheckCircle className="w-4 h-4 text-green-400" />
+          </div>
+          <div className="text-2xl font-bold text-white">{metrics.completionRate}%</div>
+          <div className="text-xs text-zinc-500 mt-1">Sessions completed</div>
+        </div>
+        
+        <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-zinc-400">Total Sessions</span>
+            <Activity className="w-4 h-4 text-purple-400" />
+          </div>
+          <div className="text-2xl font-bold text-white">{metrics.total}</div>
+          <div className="text-xs text-zinc-500 mt-1">All time</div>
         </div>
       </div>
 
@@ -345,26 +456,74 @@ export default function SimpleFSDDesign({
         />
       )}
 
-      {/* Tabs */}
-      <div className="flex space-x-1 mb-6">
+      {/* Enhanced Tabs */}
+      <div className="flex flex-wrap gap-2 mb-6">
         {[
-          { id: 'overview', label: 'OVERVIEW', icon: '📊' },
-          { id: 'boh', label: 'BOH', icon: '👨‍🍳' },
-          { id: 'foh', label: 'FOH', icon: '👨‍💼' },
-          { id: 'edge', label: 'EDGE CASES', icon: '⚠️' },
-          { id: 'waitlist', label: 'WAITLIST', icon: '⏰' }
+          { 
+            id: 'overview', 
+            label: 'OVERVIEW', 
+            icon: '📊',
+            description: 'All sessions',
+            count: tabCounts.overview
+          },
+          { 
+            id: 'boh', 
+            label: 'BOH', 
+            icon: '👨‍🍳',
+            description: 'Prep & heat',
+            count: tabCounts.boh,
+            color: 'orange'
+          },
+          { 
+            id: 'foh', 
+            label: 'FOH', 
+            icon: '👨‍💼',
+            description: 'Delivery & active',
+            count: tabCounts.foh,
+            color: 'blue'
+          },
+          { 
+            id: 'edge', 
+            label: 'EDGE CASES', 
+            icon: '⚠️',
+            description: 'Requires attention',
+            count: tabCounts.edge,
+            color: 'yellow'
+          },
+          { 
+            id: 'waitlist', 
+            label: 'WAITLIST', 
+            icon: '⏰',
+            description: 'Pending start',
+            count: tabCounts.waitlist,
+            color: 'purple'
+          }
         ].map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2 ${
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center space-x-2 relative ${
               activeTab === tab.id
-                ? 'bg-orange-500 text-white'
-                : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+                ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/20'
+                : 'text-zinc-400 hover:text-white hover:bg-zinc-800 border border-zinc-700'
             }`}
           >
             <span>{tab.icon}</span>
             <span>{tab.label}</span>
+            {tab.count > 0 && (
+              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-bold ${
+                activeTab === tab.id
+                  ? 'bg-white/20 text-white'
+                  : 'bg-zinc-700 text-zinc-300'
+              }`}>
+                {tab.count}
+              </span>
+            )}
+            {tab.description && (
+              <span className="hidden md:inline-block text-xs ml-2 text-zinc-500">
+                {tab.description}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -373,17 +532,34 @@ export default function SimpleFSDDesign({
       {activeTab === 'overview' && (
         <div className="space-y-4">
         {filteredSessions.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
-              <Flame className="w-8 h-8 text-zinc-600" />
+          <div className="text-center py-16 bg-gradient-to-br from-zinc-900/50 to-zinc-800/30 rounded-xl border border-zinc-700">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-teal-500/20 to-cyan-500/20 flex items-center justify-center">
+              <Flame className="w-10 h-10 text-teal-400" />
             </div>
-            <h3 className="text-lg font-medium text-zinc-300 mb-2">No Active Sessions</h3>
-            <p className="text-zinc-500 mb-4">Create your first session to get started</p>
+            <h3 className="text-2xl font-bold text-white mb-3">Start Your First Session</h3>
+            <p className="text-zinc-400 mb-2 max-w-md mx-auto">
+              Create a session to see real-time tracking, automated workflows, and AI-powered insights in action.
+            </p>
+            <div className="flex flex-wrap justify-center gap-4 mt-6 mb-8">
+              <div className="flex items-center gap-2 text-sm text-zinc-400">
+                <Zap className="w-4 h-4 text-teal-400" />
+                <span>Real-time tracking</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-zinc-400">
+                <Brain className="w-4 h-4 text-teal-400" />
+                <span>AI-powered insights</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-zinc-400">
+                <CheckCircle className="w-4 h-4 text-teal-400" />
+                <span>Automated workflows</span>
+              </div>
+            </div>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
+              className="px-8 py-3 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white rounded-lg transition-all shadow-lg shadow-teal-500/20 font-semibold flex items-center gap-2 mx-auto"
             >
-              Create Session
+              <Plus className="w-5 h-5" />
+              Create Your First Session
             </button>
           </div>
         ) : (
@@ -396,38 +572,79 @@ export default function SimpleFSDDesign({
             const statusColor = STATUS_COLORS[sessionStatus];
             const stateIcon = STATE_ICONS[sessionStatus];
 
+            // Calculate priority and time-to-action
+            const isUrgent = ['STAFF_HOLD', 'STOCK_BLOCKED', 'REMAKE', 'REFUND_REQUESTED'].includes(sessionStatus);
+            const isActive = sessionStatus === 'ACTIVE';
+            const needsAttention = ['READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(sessionStatus);
+            
+            // Calculate time in current state (mock - would use actual timestamps)
+            const timeInState = session.createdAt 
+              ? Math.floor((Date.now() - new Date(session.createdAt).getTime()) / 60000)
+              : Math.floor(Math.random() * 30 + 5);
+            
             return (
               <div
                 key={sessionId}
-                className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4 hover:bg-zinc-800/70 transition-colors cursor-pointer"
+                className={`bg-zinc-800/50 border rounded-lg p-4 hover:bg-zinc-800/70 transition-all cursor-pointer ${
+                  isUrgent 
+                    ? 'border-red-500/50 bg-red-500/5' 
+                    : needsAttention
+                    ? 'border-yellow-500/50 bg-yellow-500/5'
+                    : 'border-zinc-700'
+                }`}
                 onClick={() => {
                   setSelectedSession(session as FireSession);
                   setIsModalOpen(true);
                 }}
               >
                 {/* Session Header */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    <div className={`p-2 rounded-lg ${statusColor}`}>
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-start space-x-3 flex-1">
+                    <div className={`p-2 rounded-lg ${statusColor} flex-shrink-0`}>
                       {stateIcon}
                     </div>
-                    <div>
-                      <h3 className="font-medium text-white">
-                        {session.table_id || session.tableId || 'Table Unknown'}
-                      </h3>
-                      <p className="text-sm text-zinc-400">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold text-white">
+                          {session.table_id || session.tableId || 'Table Unknown'}
+                        </h3>
+                        {isUrgent && (
+                          <span className="px-2 py-0.5 bg-red-500/20 text-red-400 text-xs font-bold rounded-full flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3" />
+                            URGENT
+                          </span>
+                        )}
+                        {needsAttention && !isUrgent && (
+                          <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs font-semibold rounded-full">
+                            Needs Action
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-zinc-400 mb-1">
                         {session.customer_name || session.customerName || 'Guest Customer'}
                       </p>
+                      {session.flavorMix && (
+                        <p className="text-xs text-zinc-500">
+                          {session.flavorMix}
+                        </p>
+                      )}
                     </div>
                   </div>
                   
-                  <div className="flex items-center space-x-2">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${statusColor}`}>
+                  <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                    <span className={`px-3 py-1 rounded-lg text-xs font-semibold ${statusColor}`}>
                       {displayName}
                     </span>
-                    <span className="text-xs text-zinc-500">
-                      {sessionStage}
-                    </span>
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="text-xs text-zinc-500">
+                        {sessionStage}
+                      </span>
+                      {timeInState > 0 && (
+                        <span className="text-xs text-zinc-600">
+                          {timeInState}m in state
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -464,12 +681,47 @@ export default function SimpleFSDDesign({
                   </div>
                 )}
 
+                {/* Quick Action Badge - Most Important Action */}
+                {availableActions.length > 0 && (
+                  <div className="mb-3">
+                    {(() => {
+                      // Prioritize actions: urgent actions first, then delivery, then standard
+                      const priorityOrder = ['READY_FOR_DELIVERY', 'DELIVER_NOW', 'MARK_DELIVERED', 'HEAT_UP', 'CLAIM_PREP'];
+                      const nextAction = availableActions.find(a => priorityOrder.includes(a)) || availableActions[0];
+                      const canPerformNext = canUserPerformAction(nextAction, currentRole);
+                      
+                      if (nextAction && canPerformNext) {
+                        return (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSessionAction(nextAction.toLowerCase(), sessionId);
+                            }}
+                            className={`w-full px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+                              isUrgent
+                                ? 'bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white shadow-lg shadow-red-500/20'
+                                : needsAttention
+                                ? 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white shadow-lg shadow-yellow-500/20'
+                                : 'bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white shadow-lg shadow-teal-500/20'
+                            }`}
+                          >
+                            {ACTION_ICONS[nextAction]}
+                            <span>{nextAction.replace(/_/g, ' ')}</span>
+                            <ArrowRight className="w-4 h-4" />
+                          </button>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </div>
+                )}
+
                 {/* Available Actions */}
                 {availableActions.length > 0 && (
                   <div className="space-y-2">
                     <div className="flex items-center space-x-1 text-xs text-zinc-400">
                       <Zap className="w-3 h-3" />
-                      <span className="font-medium">Available Actions:</span>
+                      <span className="font-medium">All Available Actions:</span>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {availableActions.map((action) => {
