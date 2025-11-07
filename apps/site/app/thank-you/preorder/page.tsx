@@ -11,16 +11,11 @@ export default function PreOrderThankYouPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
 
   useEffect(() => {
-    // Get session_id from URL search params
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const id = params.get('session_id');
       setSessionId(id);
-      
-      // In a real implementation, fetch email from session_id via API
-      // For now, we'll use a placeholder
       if (id) {
-        // Could fetch: const response = await fetch(`/api/checkout/session/${id}`);
         setEmail('your-email@example.com');
       }
     }
@@ -108,4 +103,3 @@ export default function PreOrderThankYouPage() {
     </div>
   );
 }
-
