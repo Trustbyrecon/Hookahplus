@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Validate ctaType
-    const validTypes = ['demo_request', 'onboarding_signup', 'contact_form', 'social_click', 'newsletter_signup', 'lead_magnet_download'];
+    const validTypes = ['demo_request', 'onboarding_signup', 'contact_form', 'social_click', 'newsletter_signup', 'lead_magnet_download', 'founder_signup'];
     if (!validTypes.includes(ctaType)) {
       return NextResponse.json({
         success: false,
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
 
     // Determine initial stage based on CTA type
     let initialStage = 'new-leads';
-    if (ctaType === 'onboarding_signup') {
+    if (ctaType === 'onboarding_signup' || ctaType === 'founder_signup') {
       initialStage = 'intake';
     } else if (ctaType === 'demo_request') {
       initialStage = 'scheduled';

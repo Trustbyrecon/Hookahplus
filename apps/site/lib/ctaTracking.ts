@@ -7,7 +7,7 @@
 
 export interface CTATrackingData {
   ctaSource: 'website' | 'instagram' | 'linkedin' | 'email' | 'calendly';
-  ctaType: 'demo_request' | 'onboarding_signup' | 'contact_form' | 'social_click' | 'newsletter_signup' | 'lead_magnet_download';
+  ctaType: 'demo_request' | 'onboarding_signup' | 'contact_form' | 'social_click' | 'newsletter_signup' | 'lead_magnet_download' | 'founder_signup';
   data?: {
     name?: string;
     email?: string;
@@ -122,6 +122,18 @@ export function trackNewsletterSignup(data?: CTATrackingData['data'], metadata?:
   trackCTA({
     ctaSource: 'website',
     ctaType: 'newsletter_signup',
+    data,
+    metadata
+  });
+}
+
+/**
+ * Helper: Track founder signup CTA (from /owners page)
+ */
+export function trackFounderSignup(data?: CTATrackingData['data'], metadata?: Record<string, any>) {
+  trackCTA({
+    ctaSource: 'website',
+    ctaType: 'founder_signup',
     data,
     metadata
   });
