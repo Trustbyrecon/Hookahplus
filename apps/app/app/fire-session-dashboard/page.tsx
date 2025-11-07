@@ -66,32 +66,54 @@ function FireSessionDashboardContent() {
 
   const handleCreateSession = async (sessionData: any) => {
     try {
-      // Convert session data to root Prisma API format
-      const prismaSessionData = {
-        loungeId: 'default-lounge',
-        source: 'WALK_IN',
-        externalRef: `table-${sessionData.tableId}-${Date.now()}`,
-        customerPhone: sessionData.customerPhone || '',
-        flavorMix: sessionData.flavor || 'Custom Mix'
+      // Convert modal data format to API format
+      const apiPayload = {
+        tableId: sessionData.table_id || sessionData.tableId,
+        customerName: sessionData.customer_name || sessionData.customerName,
+        customerPhone: sessionData.customer_phone || sessionData.customerPhone || '',
+        flavor: sessionData.flavor_mix && sessionData.flavor_mix.length > 0 
+          ? (Array.isArray(sessionData.flavor_mix) ? sessionData.flavor_mix.join(' + ') : sessionData.flavor_mix)
+          : 'Custom Mix',
+        amount: sessionData.amount ? Math.round(sessionData.amount * 100) : 3000, // Convert to cents
+        assignedStaff: {
+          boh: sessionData.boh_staff || sessionData.bohStaff || undefined,
+          foh: sessionData.foh_staff || sessionData.fohStaff || undefined
+        },
+        notes: sessionData.notes || '',
+        sessionDuration: sessionData.timer_duration ? sessionData.timer_duration * 60 : 45 * 60, // Convert minutes to seconds
+        loungeId: sessionData.lounge_id || 'default-lounge',
+        source: sessionData.session_type === 'reservation' ? 'RESERVE' : 
+                sessionData.session_type === 'vip' ? 'VIP' : 'WALK_IN',
+        externalRef: sessionData.externalRef || `table-${sessionData.table_id || sessionData.tableId}-${Date.now()}`
       };
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/sessions`, {
+      console.log('[Create Session] Sending to API:', apiPayload);
+
+      // Use relative URL to hit the app build's API
+      const response = await fetch('/api/sessions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(prismaSessionData),
+        body: JSON.stringify(apiPayload),
       });
 
+      const responseData = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to create session');
+        console.error('[Create Session] API Error:', responseData);
+        throw new Error(responseData.error || `Failed to create session: ${response.status}`);
       }
 
-      const newSession = await response.json();
+      console.log('[Create Session] Success:', responseData);
       await refreshSessions(); // Refresh live data
       setShowCreateModal(false);
+      
+      // Show success message (optional)
+      alert(`Session created successfully! Table: ${apiPayload.tableId}`);
     } catch (error) {
-      console.error('Error creating session:', error);
+      console.error('[Create Session] Error:', error);
+      alert(`Failed to create session: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 

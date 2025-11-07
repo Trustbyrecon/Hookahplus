@@ -208,7 +208,7 @@ export async function POST(req: NextRequest) {
       customerName,
       customerPhone,
       flavor,
-      amount,
+      amount, // Can be in dollars or cents - will be converted
       assignedStaff,
       notes,
       sessionDuration = 45 * 60, // Default 45 minutes
@@ -267,7 +267,7 @@ export async function POST(req: NextRequest) {
         customerPhone: customerPhone || undefined,
         flavor: typeof flavor === 'string' ? flavor : (Array.isArray(flavor) ? flavor[0] : 'Custom Mix'),
         flavorMix: typeof flavor === 'string' ? flavor : JSON.stringify(flavor),
-        priceCents: amount || 3000, // Default $30.00 in cents
+        priceCents: amount ? (amount < 1000 ? Math.round(amount * 100) : Math.round(amount)) : 3000, // Convert dollars to cents if needed, default $30.00
         state: 'NEW',
         assignedBOHId: assignedStaff?.boh || undefined,
         assignedFOHId: assignedStaff?.foh || undefined,
