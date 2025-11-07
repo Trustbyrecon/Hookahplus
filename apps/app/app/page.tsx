@@ -65,99 +65,7 @@ import {
 export default function LandingPage() {
   // Theme is now managed entirely by ThemeToggle component
   // No local state needed to prevent hydration mismatch
-
-  // Quick Access Cards - Grouped by Role (Reduced from 13 to 7)
-  const quickAccessGroups = [
-    {
-      label: 'Core Operations',
-      cards: [
-        {
-          title: 'Fire Session Dashboard',
-          description: 'Live session management',
-          icon: <Flame className="w-6 h-6 text-orange-400" />,
-          href: '/fire-session-dashboard',
-          color: 'from-orange-500/20 to-red-500/20',
-          borderColor: 'border-orange-500/30'
-        },
-        {
-          title: 'Sessions',
-          description: 'Session overview & history',
-          icon: <BarChart3 className="w-6 h-6 text-teal-400" />,
-          href: '/sessions',
-          color: 'from-teal-500/20 to-cyan-500/20',
-          borderColor: 'border-teal-500/30'
-        }
-      ]
-    },
-    {
-      label: 'Owner & Admin',
-      cards: [
-        {
-          title: 'Operator Dashboard',
-          description: 'Enterprise control & metrics',
-          icon: <Crown className="w-6 h-6 text-emerald-400" />,
-          href: '/operator',
-          color: 'from-emerald-500/20 to-teal-500/20',
-          borderColor: 'border-emerald-500/30'
-        },
-        {
-          title: 'Analytics',
-          description: 'Reports & insights',
-          icon: <TrendingUp className="w-6 h-6 text-blue-400" />,
-          href: '/analytics',
-          color: 'from-blue-500/20 to-indigo-500/20',
-          borderColor: 'border-blue-500/30'
-        }
-      ]
-    },
-    {
-      label: 'Staff',
-      cards: [
-        {
-          title: 'Staff Operations',
-          description: 'Daily operations & tasks',
-          icon: <Users className="w-6 h-6 text-purple-400" />,
-          href: '/staff-ops',
-          color: 'from-purple-500/20 to-pink-500/20',
-          borderColor: 'border-purple-500/30'
-        }
-      ]
-    },
-    {
-      label: 'Setup & Configuration',
-      cards: [
-        {
-          title: 'Lounge Layout',
-          description: 'Digitize your floor plan',
-          icon: <Eye className="w-6 h-6 text-indigo-400" />,
-          href: '/lounge-layout',
-          color: 'from-indigo-500/20 to-purple-500/20',
-          borderColor: 'border-indigo-500/30'
-        },
-        {
-          title: 'QR Generator',
-          description: 'Generate table QR codes',
-          icon: <QrCode className="w-6 h-6 text-cyan-400" />,
-          href: '/qr-generator',
-          color: 'from-cyan-500/20 to-teal-500/20',
-          borderColor: 'border-cyan-500/30'
-        }
-      ]
-    },
-    {
-      label: 'Support',
-      cards: [
-        {
-          title: 'Help Center',
-          description: 'Support & documentation',
-          icon: <HelpCircle className="w-6 h-6 text-pink-400" />,
-          href: '/help',
-          color: 'from-pink-500/20 to-rose-500/20',
-          borderColor: 'border-pink-500/30'
-        }
-      ]
-    }
-  ];
+  // Quick Access has been moved to Global Navigation
 
   // Always use pretty theme - ThemeToggle component manages the actual theme switching
 
@@ -210,38 +118,8 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* Quick Access - Grouped by Role */}
+      {/* Quick Access moved to Global Navigation */}
       <div className="max-w-7xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4">Quick Access</h2>
-          <p className="text-zinc-400 text-lg">Everything you need, organized by role</p>
-        </div>
-        
-        <div className="space-y-8">
-          {quickAccessGroups.map((group, groupIndex) => (
-            <div key={groupIndex}>
-              <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-4">
-                {group.label}
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                {group.cards.map((card, cardIndex) => (
-                  <Link key={cardIndex} href={card.href} className="group">
-                    <div className={`bg-gradient-to-br ${card.color} border ${card.borderColor} rounded-xl p-4 h-24 hover:scale-105 transition-all duration-300 cursor-pointer`}>
-                      <div className="flex flex-col items-center justify-center h-full text-center">
-                        <div className="mb-2">
-                          {card.icon}
-                        </div>
-                        <h3 className="font-semibold text-sm mb-1">{card.title}</h3>
-                        <p className="text-xs text-zinc-300 leading-tight">{card.description}</p>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-
         {/* Quick Start Section for New Users */}
         <div className="mt-16 bg-gradient-to-r from-teal-900/30 to-cyan-900/30 border border-teal-500/30 rounded-xl p-8">
           <div className="text-center">
