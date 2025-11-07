@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import PageHero from '../../../components/PageHero';
 import Button from '../../../components/Button';
 import Card from '../../../components/Card';
 import { CheckCircle, Mail, Calendar, ArrowRight, Shield } from 'lucide-react';
 
-export default function PreOrderThankYouPage() {
+function PreOrderThankYouContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session_id');
   const [email, setEmail] = useState<string | null>(null);
@@ -101,6 +101,21 @@ export default function PreOrderThankYouPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PreOrderThankYouPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-zinc-400">Loading...</p>
+        </div>
+      </div>
+    }>
+      <PreOrderThankYouContent />
+    </Suspense>
   );
 }
 

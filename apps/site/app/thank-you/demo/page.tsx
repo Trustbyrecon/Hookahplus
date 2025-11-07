@@ -2,8 +2,8 @@
 
 import React, { useEffect } from 'react';
 import Link from 'next/link';
-import PageHero from '../../components/PageHero';
-import Button from '../../components/Button';
+import PageHero from '../../../components/PageHero';
+import Button from '../../../components/Button';
 import { CheckCircle, Mail, Calendar, FileText, TrendingUp, ArrowRight } from 'lucide-react';
 
 export default function ThankYouDemoPage() {

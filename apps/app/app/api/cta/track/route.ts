@@ -55,8 +55,16 @@ export async function POST(req: NextRequest) {
     // Build event type
     const eventType = `cta.${ctaType}`;
 
+    // Determine initial stage based on CTA type
+    let initialStage = 'new-leads';
+    if (ctaType === 'onboarding_signup' || ctaType === 'founder_signup') {
+      initialStage = 'intake';
+    } else if (ctaType === 'demo_request') {
+      initialStage = 'scheduled';
+    }
+
     // Build payload with CTA-specific data
-    const payload = {
+    const payload: any = {
       ctaSource,
       ctaType,
       data: data || {},
@@ -66,6 +74,7 @@ export async function POST(req: NextRequest) {
       campaignId: campaignId || null,
       referrer: referrer,
       timestamp: new Date().toISOString(),
+      stage: initialStage,
       // Include lead information if available
       lead: data ? {
         name: data.name || data.businessName || data.ownerName || null,
@@ -75,17 +84,6 @@ export async function POST(req: NextRequest) {
         location: data.location || data.city || null
       } : null
     };
-
-    // Determine initial stage based on CTA type
-    let initialStage = 'new-leads';
-    if (ctaType === 'onboarding_signup' || ctaType === 'founder_signup') {
-      initialStage = 'intake';
-    } else if (ctaType === 'demo_request') {
-      initialStage = 'scheduled';
-    }
-
-    // Add stage to payload
-    payload.stage = initialStage;
 
     // Create payload hash for deduplication
     const payloadStr = JSON.stringify(payload);

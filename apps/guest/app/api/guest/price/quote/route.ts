@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
       
       // Add flavor costs for time-based sessions (flavors are add-ons)
       const flavorPrices = flavors.map((flavor: string) => FLAVOR_PRICES[flavor] || 0);
-      const totalFlavorPrice = flavorPrices.reduce((sum, price) => sum + price, 0);
+      const totalFlavorPrice = flavorPrices.reduce((sum: number, price: number) => sum + price, 0);
       basePrice += totalFlavorPrice;
     } else {
       // Flat fee: Use highest flavor price, or $30.00 minimum
