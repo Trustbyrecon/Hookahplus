@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../../lib/db';
 import { 
   FireSession, 
   SessionStatus, 
@@ -19,8 +19,6 @@ import {
   processFOHLayer,
   processDeliveryLayer,
 } from '../../../lib/reflex-chain/integration';
-
-const prisma = new PrismaClient();
 
 // Helper function to map Prisma session state to FireSession status
 function mapPrismaStateToFireSession(state: string): SessionStatus {
@@ -202,7 +200,23 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    console.log('[Sessions API] POST request received');
+    
+    // Test database connection first
+    try {
+      await prisma.$connect();
+      console.log('[Sessions API] Database connection successful');
+    } catch (dbError) {
+      console.error('[Sessions API] Database connection failed:', dbError);
+      return NextResponse.json({ 
+        error: 'Database connection failed',
+        details: dbError instanceof Error ? dbError.message : 'Unknown database error',
+        hint: 'Check DATABASE_URL environment variable and ensure database is running'
+      }, { status: 503 });
+    }
+    
     const body = await req.json();
+    console.log('[Sessions API] Request body:', JSON.stringify(body, null, 2));
     const { 
       tableId,
       customerName,
@@ -256,25 +270,31 @@ export async function POST(req: NextRequest) {
     });
 
     // Create new session in database
+    const sessionData = {
+      loungeId: loungeId || 'default-lounge',
+      source,
+      externalRef: externalRef || `walk-in-${Date.now()}`,
+      trustSignature,
+      tableId,
+      customerRef: customerName,
+      customerPhone: customerPhone || undefined,
+      flavor: typeof flavor === 'string' ? flavor : (Array.isArray(flavor) ? flavor[0] : 'Custom Mix'),
+      flavorMix: typeof flavor === 'string' ? flavor : JSON.stringify(flavor),
+      priceCents: amount ? (amount < 1000 ? Math.round(amount * 100) : Math.round(amount)) : 3000, // Convert dollars to cents if needed, default $30.00
+      state: 'NEW',
+      assignedBOHId: assignedStaff?.boh || undefined,
+      assignedFOHId: assignedStaff?.foh || undefined,
+      tableNotes: notes || undefined,
+      durationSecs: sessionDuration,
+    };
+    
+    console.log('[Sessions API] Creating session with data:', JSON.stringify(sessionData, null, 2));
+    
     const newSession = await prisma.session.create({
-      data: {
-        loungeId,
-        source,
-        externalRef: externalRef || `walk-in-${Date.now()}`,
-        trustSignature,
-        tableId,
-        customerRef: customerName,
-        customerPhone: customerPhone || undefined,
-        flavor: typeof flavor === 'string' ? flavor : (Array.isArray(flavor) ? flavor[0] : 'Custom Mix'),
-        flavorMix: typeof flavor === 'string' ? flavor : JSON.stringify(flavor),
-        priceCents: amount ? (amount < 1000 ? Math.round(amount * 100) : Math.round(amount)) : 3000, // Convert dollars to cents if needed, default $30.00
-        state: 'NEW',
-        assignedBOHId: assignedStaff?.boh || undefined,
-        assignedFOHId: assignedStaff?.foh || undefined,
-        tableNotes: notes || undefined,
-        durationSecs: sessionDuration,
-      }
+      data: sessionData
     });
+    
+    console.log('[Sessions API] Session created successfully:', newSession.id);
 
     const fireSession = convertPrismaSessionToFireSession(newSession);
 
@@ -288,9 +308,36 @@ export async function POST(req: NextRequest) {
 
   } catch (error) {
     console.error('[Sessions API] Error creating session:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    const errorName = error instanceof Error ? error.name : 'UnknownError';
+    
+    console.error('[Sessions API] Error details:', {
+      name: errorName,
+      message: errorMessage,
+      stack: errorStack
+    });
+    
+    // Check for specific Prisma errors
+    if (errorMessage.includes('P2002')) {
+      return NextResponse.json({ 
+        error: 'Duplicate entry',
+        details: 'A session with this identifier already exists'
+      }, { status: 409 });
+    }
+    
+    if (errorMessage.includes('P2003')) {
+      return NextResponse.json({ 
+        error: 'Foreign key constraint failed',
+        details: 'Referenced record does not exist'
+      }, { status: 400 });
+    }
+    
     return NextResponse.json({ 
       error: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: errorMessage,
+      // Include stack trace in development only
+      ...(process.env.NODE_ENV === 'development' && errorStack ? { stack: errorStack } : {})
     }, { status: 500 });
   }
 }
