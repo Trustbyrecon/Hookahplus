@@ -8,6 +8,16 @@ node_modules/
 .env.development.local
 .env.test.local
 .env.production.local
+.env*.local
+
+# Database connection strings (security)
+*DATABASE_URL*
+*SUPABASE_URL*
+*postgresql://*
+*postgres://*
+*.db
+*.sqlite
+*.sqlite3
 
 # Next.js
 .next/

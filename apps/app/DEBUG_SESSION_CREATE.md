@@ -5,21 +5,68 @@ Getting "Internal server error" when creating a session via `/api/sessions` POST
 
 ## Root Cause Analysis
 
-### Database Configuration Mismatch
-- **Prisma Schema**: Configured for `postgresql`
-- **DATABASE_URL**: Set to `file:./dev.db` (SQLite format)
-- **Result**: Prisma client fails to connect, causing internal server error
+### Database Configuration Mismatch ✅ FIXED
+- **Prisma Schema**: Configured for `postgresql` ✅
+- **DATABASE_URL**: ~~Set to `file:./dev.db` (SQLite format)~~ → **Updated to PostgreSQL** ✅
+- **Result**: ~~Prisma client fails to connect~~ → **Connection configured, ready to test**
+
+### ✅ Configuration Complete
+- `.env.local` updated with Supabase PostgreSQL connection string
+- `.gitignore` files updated to protect credentials
+- `env.template` updated with DATABASE_URL placeholder
 
 ## Solutions
 
 ### Option 1: Use PostgreSQL (Recommended for Production)
-1. Set up PostgreSQL database (local or Supabase)
-2. Update `.env.local`:
+
+#### A. Supabase Setup (Recommended - You Already Have RLS Migrations)
+
+1. **Get Your Supabase Connection String:**
+   - Go to https://supabase.com/dashboard
+   - Select your project
+   - Click **Settings** → **Database**
+   - Scroll to **Connection String** section
+   - Copy the **URI** connection string
+   - Format: `postgresql://postgres:[PASSWORD]@[PROJECT-REF].supabase.co:5432/postgres`
+   - **Important:** Replace `[PASSWORD]` with your actual database password
+
+2. **Update `.env.local` in `apps/app/`:**
    ```env
-   DATABASE_URL="postgresql://user:password@localhost:5432/hookahplus"
+   DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@YOUR_PROJECT.supabase.co:5432/postgres"
    ```
-3. Run migrations:
+
+3. **Run Migrations:**
    ```bash
+   cd apps/app
+   npx prisma generate
+   npx prisma migrate deploy
+   ```
+
+4. **Test Connection:**
+   ```bash
+   npx prisma db pull
+   ```
+
+#### B. Local PostgreSQL Setup
+
+1. **Install PostgreSQL** (if not already installed):
+   - Windows: Download from https://www.postgresql.org/download/windows/
+   - Or use Docker: `docker run --name postgres -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres`
+
+2. **Create Database:**
+   ```sql
+   CREATE DATABASE hookahplus_dev;
+   ```
+
+3. **Update `.env.local`:**
+   ```env
+   DATABASE_URL="postgresql://postgres:postgres@localhost:5432/hookahplus_dev"
+   ```
+
+4. **Run Migrations:**
+   ```bash
+   cd apps/app
+   npx prisma generate
    npx prisma migrate dev
    ```
 

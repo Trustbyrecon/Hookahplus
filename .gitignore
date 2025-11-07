@@ -18,6 +18,15 @@ apps/*/.env.*
 /logs/
 /.env.*
 
+# Database connection strings (security)
+*DATABASE_URL*
+*SUPABASE_URL*
+*postgresql://*
+*postgres://*
+*.db
+*.sqlite
+*.sqlite3
+
 # secrets
 *.pem
 *.key
