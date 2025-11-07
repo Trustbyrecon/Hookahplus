@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { 
   Flame, 
   Users, 
@@ -66,6 +67,8 @@ import {
   LineChart
 } from 'lucide-react';
 import GlobalNavigation from '../../components/GlobalNavigation';
+import Breadcrumbs from '../../components/Breadcrumbs';
+import PageHero from '../../components/PageHero';
 import { Card, Button, Badge } from '../../components';
 import { Session, SessionStatus, SessionTeam, SessionNotes } from '../../types/session';
 import { SessionQueueManager } from '../../components/SessionQueueManager';
@@ -379,18 +382,29 @@ export default function SessionsPage() {
       <GlobalNavigation />
       
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center space-x-3 mb-2">
-            <Flame className="w-8 h-8 text-teal-400" />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
-              Sessions Management
-            </h1>
-          </div>
-          <p className="text-xl text-zinc-400">
-            Advanced session management, monitoring, and workflow optimization
-          </p>
-        </div>
+        <Breadcrumbs className="mb-6" />
+        
+        <PageHero
+          headline="Sessions Management"
+          subheadline="Advanced session management, monitoring, and workflow optimization. View session history, manage queues, and optimize staff workflows."
+          benefit={{
+            value: `${sessions.length} Active Sessions`,
+            description: 'Monitor and manage all lounge sessions',
+            icon: <Flame className="w-5 h-5 text-orange-400" />
+          }}
+          primaryCTA={{
+            text: 'View Fire Dashboard',
+            href: '/fire-session-dashboard'
+          }}
+          secondaryCTA={{
+            text: 'View Analytics',
+            href: '/analytics'
+          }}
+          trustIndicators={[
+            { icon: <Activity className="w-4 h-4" />, text: 'Real-time monitoring' },
+            { icon: <Users className="w-4 h-4" />, text: 'Multi-role support' }
+          ]}
+        />
 
         {/* View Tabs */}
         <div className="flex space-x-2 mb-8 overflow-x-auto">
@@ -429,6 +443,43 @@ export default function SessionsPage() {
 
         {/* Content */}
         {renderContent()}
+
+        {/* Related Features */}
+        <div className="mt-16 border-t border-zinc-800 pt-8">
+          <h3 className="text-lg font-semibold text-white mb-4">Related Features</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Link
+              href="/fire-session-dashboard"
+              className="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700 hover:border-teal-500/50 transition-colors"
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <Flame className="w-5 h-5 text-orange-400" />
+                <span className="font-medium text-white">Fire Session Dashboard</span>
+              </div>
+              <p className="text-sm text-zinc-400">Live session management with real-time updates</p>
+            </Link>
+            <Link
+              href="/analytics"
+              className="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700 hover:border-teal-500/50 transition-colors"
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <BarChart3 className="w-5 h-5 text-blue-400" />
+                <span className="font-medium text-white">Analytics</span>
+              </div>
+              <p className="text-sm text-zinc-400">View detailed analytics and reports</p>
+            </Link>
+            <Link
+              href="/staff-ops"
+              className="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700 hover:border-teal-500/50 transition-colors"
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <Users className="w-5 h-5 text-purple-400" />
+                <span className="font-medium text-white">Staff Operations</span>
+              </div>
+              <p className="text-sm text-zinc-400">Daily operations and staff management</p>
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );

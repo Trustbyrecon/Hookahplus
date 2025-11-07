@@ -80,32 +80,47 @@ const GlobalNavigation: React.FC = () => {
     return () => clearInterval(timeInterval);
   }, []);
 
-  // System Status Management
+  // System Status Management - Real Data
   useEffect(() => {
-    const updateSystemStatus = () => {
-      // Simulate realistic system status
-      const workflows = ['idle', 'data-generation', 'session-management', 'customer-journey', 'admin-setup'];
-      const roles = ['owner', 'foh', 'boh', 'admin'];
-      const dataStatuses = ['empty', 'populated', 'active', 'flowing'];
-      
-      // Simulate session count (more realistic range)
-      const newSessionCount = Math.floor(Math.random() * 25) + 5; // 5-30 sessions
-      
-      setFlowState(prev => ({
-        ...prev,
-        currentWorkflow: workflows[Math.floor(Math.random() * workflows.length)] as any,
-        activeRole: roles[Math.floor(Math.random() * roles.length)] as any,
-        dataStatus: dataStatuses[Math.floor(Math.random() * dataStatuses.length)] as any,
-        progress: Math.floor(Math.random() * 20) + 40, // 40-60% (more realistic)
-        nextAction: 'System monitoring active sessions and workflow optimization'
-      }));
-      
-      setSessionCount(newSessionCount);
+    const updateSystemStatus = async () => {
+      try {
+        // Fetch real session count
+        const sessionsResponse = await fetch('/api/sessions');
+        if (sessionsResponse.ok) {
+          const sessionsData = await sessionsResponse.json();
+          if (sessionsData.success && sessionsData.sessions) {
+            setSessionCount(sessionsData.sessions.length);
+          }
+        }
+
+        // Fetch Trust-Lock status
+        const trustLockResponse = await fetch('/api/trust-lock/status');
+        if (trustLockResponse.ok) {
+          const trustLockData = await trustLockResponse.json();
+          if (trustLockData.success) {
+            setTrustLockStatus(trustLockData.status);
+            setTrustLockVerificationRate(trustLockData.metrics?.verificationRate || 100);
+          }
+        }
+
+        // Fetch Reflex score (placeholder - implement API later)
+        // For now, calculate based on Trust-Lock status
+        if (trustLockStatus === 'verified') {
+          setReflexScore(92);
+        } else if (trustLockStatus === 'active') {
+          setReflexScore(87);
+        } else {
+          setReflexScore(82);
+        }
+      } catch (error) {
+        console.error('[GlobalNavigation] Error fetching system status:', error);
+      }
     };
 
-    const interval = setInterval(updateSystemStatus, 10000); // Update every 10 seconds
+    updateSystemStatus();
+    const interval = setInterval(updateSystemStatus, 30000); // Update every 30 seconds
     return () => clearInterval(interval);
-  }, []);
+  }, [trustLockStatus]);
 
   const navigationGroups: NavGroup[] = [
     {
@@ -295,16 +310,25 @@ const GlobalNavigation: React.FC = () => {
         <div className="flex items-center justify-between py-2 text-xs">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-1">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-              <span className="text-zinc-300">System Health EXCELLENT</span>
+              <div className={`w-2 h-2 rounded-full ${
+                trustLockStatus === 'verified' ? 'bg-green-400 animate-pulse' :
+                trustLockStatus === 'active' ? 'bg-blue-400' :
+                'bg-yellow-400'
+              }`}></div>
+              <span className="text-zinc-300">Trust-Lock {trustLockStatus.toUpperCase()}</span>
+              <span className="text-zinc-500">({trustLockVerificationRate}%)</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <div className={`w-2 h-2 rounded-full ${
+                reflexScore >= 90 ? 'bg-green-400' :
+                reflexScore >= 85 ? 'bg-blue-400' :
+                'bg-yellow-400'
+              }`}></div>
+              <span className="text-zinc-300">Reflex Score {reflexScore}%</span>
             </div>
             <div className="flex items-center space-x-1">
               <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-              <span className="text-zinc-300">Trust Score 87%</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-              <span className="text-zinc-300">Live Sessions 0</span>
+              <span className="text-zinc-300">Live Sessions {sessionCount}</span>
             </div>
           </div>
           <div className="flex items-center space-x-4">

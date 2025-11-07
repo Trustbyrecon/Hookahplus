@@ -49,8 +49,8 @@ export async function GET(req: NextRequest) {
       .slice(0, limit);
 
     return NextResponse.json({
-      ok: true,
-      logs: recentLogs,
+      success: true,
+      entries: recentLogs,
       total: ghostLog.length,
       filtered: filteredLogs.length
     });

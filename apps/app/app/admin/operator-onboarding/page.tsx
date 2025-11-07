@@ -30,6 +30,9 @@ import {
 } from 'lucide-react';
 import GlobalNavigation from '../../../components/GlobalNavigation';
 import Button from '../../../components/Button';
+import Breadcrumbs from '../../../components/Breadcrumbs';
+import PageHero from '../../../components/PageHero';
+import { BarChart3, Users, TrendingUp, Flame } from 'lucide-react';
 
 interface Lead {
   id: string;
@@ -372,25 +375,31 @@ export default function OperatorOnboardingPage() {
       <GlobalNavigation />
       
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <Link
-            href="/admin"
-            className="inline-flex items-center gap-2 text-zinc-400 hover:text-white mb-4 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back to Admin</span>
-          </Link>
-          <div className="flex items-center space-x-3 mb-2">
-            <Shield className="w-8 h-8 text-red-400" />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-red-400 to-pink-400 bg-clip-text text-transparent">
-              Operator Onboarding Management
-            </h1>
-          </div>
-          <p className="text-xl text-zinc-400">
-            Track leads from intake through onboarding completion
-          </p>
-        </div>
+        {/* Breadcrumbs */}
+        <Breadcrumbs className="mb-6" />
+        
+        {/* Page Hero */}
+        <PageHero
+          headline="Operator Onboarding Management"
+          subheadline="Track leads from intake through onboarding completion. Manage your sales pipeline and convert prospects into active operators."
+          benefit={{
+            value: `${stats.total} Total Leads`,
+            description: `${stats.newLeads} new leads requiring attention`,
+            icon: <Users className="w-5 h-5 text-teal-400" />
+          }}
+          primaryCTA={{
+            text: 'Add New Lead',
+            onClick: () => setShowAddLeadModal(true)
+          }}
+          secondaryCTA={{
+            text: 'View Analytics',
+            href: '/analytics'
+          }}
+          trustIndicators={[
+            { icon: <BarChart3 className="w-4 h-4" />, text: `${stats.complete} Completed` },
+            { icon: <TrendingUp className="w-4 h-4" />, text: `${stats.onboarding} In Progress` }
+          ]}
+        />
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-7 gap-4 mb-8">
@@ -813,6 +822,43 @@ export default function OperatorOnboardingPage() {
           </div>
         </div>
       )}
+
+      {/* Related Features */}
+      <div className="mt-16 border-t border-zinc-800 pt-8">
+        <h3 className="text-lg font-semibold text-white mb-4">Related Features</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Link
+            href="/analytics"
+            className="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700 hover:border-teal-500/50 transition-colors"
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <BarChart3 className="w-5 h-5 text-teal-400" />
+              <span className="font-medium text-white">Analytics Dashboard</span>
+            </div>
+            <p className="text-sm text-zinc-400">View detailed analytics and reports</p>
+          </Link>
+          <Link
+            href="/sessions"
+            className="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700 hover:border-teal-500/50 transition-colors"
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <Flame className="w-5 h-5 text-orange-400" />
+              <span className="font-medium text-white">Sessions</span>
+            </div>
+            <p className="text-sm text-zinc-400">Manage active lounge sessions</p>
+          </Link>
+          <Link
+            href="/admin"
+            className="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700 hover:border-teal-500/50 transition-colors"
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <Shield className="w-5 h-5 text-red-400" />
+              <span className="font-medium text-white">Admin Control Center</span>
+            </div>
+            <p className="text-sm text-zinc-400">System administration and management</p>
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
