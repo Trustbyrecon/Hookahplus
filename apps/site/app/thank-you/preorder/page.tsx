@@ -1,25 +1,30 @@
 'use client';
 
-import React, { useEffect, useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
 import PageHero from '../../../components/PageHero';
 import Button from '../../../components/Button';
 import Card from '../../../components/Card';
 import { CheckCircle, Mail, Calendar, ArrowRight, Shield } from 'lucide-react';
 
-function PreOrderThankYouContent() {
-  const searchParams = useSearchParams();
-  const sessionId = searchParams.get('session_id');
+export default function PreOrderThankYouPage() {
   const [email, setEmail] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
   useEffect(() => {
-    // In a real implementation, fetch email from session_id via API
-    // For now, we'll use a placeholder
-    if (sessionId) {
-      // Could fetch: const response = await fetch(`/api/checkout/session/${sessionId}`);
-      setEmail('your-email@example.com');
+    // Get session_id from URL search params
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('session_id');
+      setSessionId(id);
+      
+      // In a real implementation, fetch email from session_id via API
+      // For now, we'll use a placeholder
+      if (id) {
+        // Could fetch: const response = await fetch(`/api/checkout/session/${id}`);
+        setEmail('your-email@example.com');
+      }
     }
-  }, [sessionId]);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
@@ -101,21 +106,6 @@ function PreOrderThankYouContent() {
         </div>
       </div>
     </div>
-  );
-}
-
-export default function PreOrderThankYouPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-zinc-400">Loading...</p>
-        </div>
-      </div>
-    }>
-      <PreOrderThankYouContent />
-    </Suspense>
   );
 }
 

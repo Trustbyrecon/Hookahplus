@@ -13,7 +13,9 @@ export async function GET(req: NextRequest) {
     const verifiedSessions = await prisma.session.count({
       where: {
         trustSignature: {
-          not: null
+          not: {
+            equals: null
+          }
         }
       }
     });
