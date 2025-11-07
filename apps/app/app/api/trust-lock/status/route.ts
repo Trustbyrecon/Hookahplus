@@ -10,12 +10,11 @@ export async function GET(req: NextRequest) {
   try {
     // Count sessions with trust signatures
     const totalSessions = await prisma.session.count();
+    // Since trustSignature is a required String field, count sessions where it's not empty
     const verifiedSessions = await prisma.session.count({
       where: {
         trustSignature: {
-          not: {
-            equals: null
-          }
+          not: ''
         }
       }
     });
