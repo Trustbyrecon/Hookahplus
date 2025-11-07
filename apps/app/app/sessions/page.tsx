@@ -79,14 +79,31 @@ import { ManagerTimerDashboard } from '../../components/ManagerTimerDashboard';
 import SimpleFSDDesign from '../../components/SimpleFSDDesign';
 
 export default function SessionsPage() {
+  return (
+    <SessionProvider>
+      <SessionsPageContent />
+    </SessionProvider>
+  );
+}
+
+function SessionsPageContent() {
   const [activeView, setActiveView] = useState('overview');
   const [managementView, setManagementView] = useState('queue');
   const [showAdvancedManagement, setShowAdvancedManagement] = useState(false);
+  const { sessions: contextSessions, loading: contextLoading, lastUpdated, refreshSessions } = useSessionContext();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [sessionNotes, setSessionNotes] = useState<SessionNotes[]>([]);
   const [sessionFlags, setSessionFlags] = useState<any[]>([]);
   const [userRole, setUserRole] = useState<'BOH' | 'FOH' | 'MANAGER' | 'ADMIN'>('MANAGER');
   const [loading, setLoading] = useState(false);
+
+  // Sync with context sessions
+  useEffect(() => {
+    if (contextSessions.length > 0) {
+      // Convert FireSession to Session format if needed
+      setSessions(contextSessions as any);
+    }
+  }, [contextSessions]);
 
   const views = [
     { id: 'overview', label: 'Overview', icon: <BarChart3 className="w-4 h-4" /> },
@@ -405,6 +422,15 @@ export default function SessionsPage() {
             { icon: <Users className="w-4 h-4" />, text: 'Multi-role support' }
           ]}
         />
+
+        {/* Sync Indicator */}
+        <div className="mb-6">
+          <SyncIndicator
+            lastUpdated={lastUpdated}
+            isLoading={contextLoading || loading}
+            autoRefreshInterval={30}
+          />
+        </div>
 
         {/* View Tabs */}
         <div className="flex space-x-2 mb-8 overflow-x-auto">

@@ -32,7 +32,7 @@ import GlobalNavigation from '../../../components/GlobalNavigation';
 import Button from '../../../components/Button';
 import Breadcrumbs from '../../../components/Breadcrumbs';
 import PageHero from '../../../components/PageHero';
-import { BarChart3, Users, TrendingUp, Flame } from 'lucide-react';
+import { BarChart3, Flame } from 'lucide-react';
 
 interface Lead {
   id: string;

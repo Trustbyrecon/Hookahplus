@@ -27,9 +27,16 @@ import {
   Heart, 
   Coffee, 
   Wind, 
-  Sparkles
+  Sparkles,
+  Flame,
+  FileText
 } from "lucide-react";
 import Ktl4StatusDashboard from '../../components/Ktl4StatusDashboard';
+import GlobalNavigation from '../../components/GlobalNavigation';
+import Breadcrumbs from '../../components/Breadcrumbs';
+import PageHero from '../../components/PageHero';
+import TrustGraph from '../../components/TrustGraph';
+import SyncIndicator from '../../components/SyncIndicator';
 
 function useReflexAgent(routeName: string) {
   useEffect(() => {
@@ -214,70 +221,56 @@ export default function OperatorPage() {
     { id: 4, action: 'Reflex logs synchronized', time: '18 min ago', type: 'system' }
   ];
 
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  useEffect(() => {
+    setLastUpdated(new Date());
+    const interval = setInterval(() => {
+      setLastUpdated(new Date());
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
-      {/* Header */}
-      <header className="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="p-2 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-lg">
-                <Zap className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-white">Hookah+ Operator Dashboard</h1>
-                <p className="text-sm text-zinc-400">Enterprise-grade lounge management</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              {/* Navigation Links */}
-              <div className="hidden md:flex items-center space-x-4">
-                <a href="/" className="text-zinc-300 hover:text-white transition-colors text-sm">
-                  Dashboard
-                </a>
-                <a href="/pricing" className="text-zinc-300 hover:text-white transition-colors text-sm">
-                  Pricing Intelligence
-                </a>
-                <a href="/admin/reflex" className="text-zinc-300 hover:text-white transition-colors text-sm">
-                  Event Analytics
-                </a>
-              </div>
+      <GlobalNavigation />
+      
+      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        <Breadcrumbs className="mb-6" />
+        
+        <PageHero
+          headline="Operator Dashboard"
+          subheadline="Enterprise-grade lounge management with real-time metrics, trust scoring, and system health monitoring. Monitor operations, optimize workflows, and maintain system integrity."
+          benefit={{
+            value: `${systemHealth}% System Health`,
+            description: `Trust Score: ${trustScore}% • ${activeSessions} active sessions`,
+            icon: <Shield className="w-5 h-5 text-emerald-400" />
+          }}
+          primaryCTA={{
+            text: 'View Fire Dashboard',
+            href: '/fire-session-dashboard'
+          }}
+          secondaryCTA={{
+            text: 'View Analytics',
+            href: '/analytics'
+          }}
+          trustIndicators={[
+            { icon: <Activity className="w-4 h-4" />, text: `${activeSessions} Active Sessions` },
+            { icon: <TrendingUp className="w-4 h-4" />, text: `$${totalRevenue.toLocaleString()} Revenue` }
+          ]}
+        />
 
-              {/* Live Mode Indicator */}
-              <div className={`flex items-center space-x-2 px-3 py-2 rounded-lg ${
-                isLiveMode ? 'bg-emerald-600/20 text-emerald-400' : 'bg-zinc-700 text-zinc-400'
-              }`}>
-                <div className={`w-2 h-2 rounded-full ${
-                  isLiveMode ? 'bg-emerald-400 animate-pulse' : 'bg-zinc-500'
-                }`}></div>
-                <span className="text-sm font-medium">
-                  {isLiveMode ? 'LIVE' : 'OFFLINE'}
-                </span>
-              </div>
-
-              {/* Notifications */}
-              <button 
-                onClick={() => setShowNotifications(!showNotifications)}
-                className="p-2 hover:bg-zinc-800 rounded-lg transition-colors relative"
-              >
-                <Bell className="w-5 h-5 text-zinc-400" />
-                {showNotifications && (
-                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
-                )}
-              </button>
-
-              {/* Settings */}
-              <button className="p-2 hover:bg-zinc-800 rounded-lg transition-colors">
-                <Settings className="w-5 h-5 text-zinc-400" />
-              </button>
-            </div>
-          </div>
+        {/* Sync Indicator */}
+        <div className="mb-6">
+          <SyncIndicator
+            lastUpdated={lastUpdated}
+            isLoading={false}
+            autoRefreshInterval={30}
+          />
         </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
+        {/* Main Content */}
+        <div className="space-y-8">
         {/* Metrics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {metrics.map((metric, index) => (
@@ -329,6 +322,11 @@ export default function OperatorPage() {
           <div className="bg-zinc-800/50 backdrop-blur-sm border border-zinc-700 rounded-xl p-6">
             <Ktl4StatusDashboard />
           </div>
+        </div>
+
+        {/* Trust Graph Visualization */}
+        <div className="mb-8">
+          <TrustGraph />
         </div>
 
         {/* Dashboard Grid */}
@@ -429,7 +427,45 @@ export default function OperatorPage() {
             </div>
           </div>
         </div>
-      </main>
+
+        {/* Related Features */}
+        <div className="mt-16 border-t border-zinc-800 pt-8">
+          <h3 className="text-lg font-semibold text-white mb-4">Related Features</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <a
+              href="/fire-session-dashboard"
+              className="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700 hover:border-teal-500/50 transition-colors"
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <Flame className="w-5 h-5 text-orange-400" />
+                <span className="font-medium text-white">Fire Session Dashboard</span>
+              </div>
+              <p className="text-sm text-zinc-400">Live session management</p>
+            </a>
+            <a
+              href="/analytics"
+              className="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700 hover:border-teal-500/50 transition-colors"
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <BarChart3 className="w-5 h-5 text-blue-400" />
+                <span className="font-medium text-white">Analytics</span>
+              </div>
+              <p className="text-sm text-zinc-400">View detailed analytics and reports</p>
+            </a>
+            <a
+              href="/admin/ghost-log"
+              className="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700 hover:border-teal-500/50 transition-colors"
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <FileText className="w-5 h-5 text-purple-400" />
+                <span className="font-medium text-white">Ghost Log</span>
+              </div>
+              <p className="text-sm text-zinc-400">System event log viewer</p>
+            </a>
+          </div>
+        </div>
+        </div>
+      </div>
     </div>
   );
 }
