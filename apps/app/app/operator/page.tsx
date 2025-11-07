@@ -93,12 +93,20 @@ export default function OperatorPage() {
       action: () => window.location.href = '/fire-session-dashboard'
     },
     {
+      id: 'physical-digitization',
+      title: 'Physical Lounge Digitization',
+      description: 'Digitize your physical lounge space',
+      icon: <ScanLine className="w-6 h-6" />,
+      color: 'bg-blue-600 hover:bg-blue-500',
+      action: () => window.location.href = '/lounge-layout'
+    },
+    {
       id: 'layout-manager',
       title: 'Lounge Layout Manager',
-      description: 'Configure table arrangements',
-      icon: <Layout className="w-6 h-6" />,
-      color: 'bg-blue-600 hover:bg-blue-500',
-      action: () => window.location.href = '/layout-preview'
+      description: 'Customize and manage your layout',
+      icon: <Grid3x3 className="w-6 h-6" />,
+      color: 'bg-cyan-600 hover:bg-cyan-500',
+      action: () => window.location.href = '/lounge-layout'
     },
     {
       id: 'pricing-intelligence',
