@@ -2,6 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { FireSession, SessionTimer } from '../types/enhancedSession';
 import { calculateRemainingTime, formatDuration } from '../lib/sessionStateMachine';
 
+// Environment-based demo mode configuration
+const USE_DEMO_MODE = process.env.NEXT_PUBLIC_USE_DEMO_MODE === 'true';
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+const IS_DEVELOPMENT = process.env.NODE_ENV === 'development';
+
 // Generate rich demo data for Fire Session Dashboard
 function generateRichDemoData(): FireSession[] {
   const now = Date.now();
@@ -329,11 +334,17 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
 
         console.log('[useLiveSessionData] Successfully loaded sessions:', fireSessions.length);
         
-        // If no sessions from API, load demo data
+        // If no sessions from API, conditionally load demo data
         if (fireSessions.length === 0) {
-          console.log('[useLiveSessionData] No sessions from API, loading demo data');
-          const demoData = generateRichDemoData();
-          setSessions(demoData);
+          if (USE_DEMO_MODE && IS_DEVELOPMENT) {
+            // Dev mode: Load demo data when no real sessions
+            console.log('[Dev Mode] No sessions from API, loading demo data');
+            const demoData = generateRichDemoData();
+            setSessions(demoData);
+          } else {
+            // Production: Show empty state
+            setSessions([]);
+          }
         } else {
           setSessions(fireSessions);
         }
@@ -365,34 +376,58 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
         displayError = `${errorMessage}. Using demo data.`;
       }
       
-      setError(displayError);
-      
-      // Always load demo data when API fails
-      console.log('[useLiveSessionData] API failed, loading demo data');
-      const demoData = generateRichDemoData();
-      setSessions(demoData);
-      
-      // Calculate metrics from demo data
-      const demoMetrics = {
-        activeSessions: demoData.filter(s => ['ACTIVE', 'DELIVERED', 'OUT_FOR_DELIVERY'].includes(s.status)).length,
-        revenue: demoData.reduce((sum, s) => sum + (s.amount / 100), 0),
-        avgDuration: 45,
-        alerts: demoData.filter(s => s.edgeCase !== null).length,
-        staffAssigned: new Set([
-          ...demoData.map(s => s.assignedStaff.boh).filter(Boolean),
-          ...demoData.map(s => s.assignedStaff.foh).filter(Boolean)
-        ]).size,
-        totalSessions: demoData.length,
-        changes: {
-          activeSessions: '+0%',
-          revenue: '+0%',
-          avgDuration: '0%',
-          alerts: '0%',
-          staffAssigned: '+0%',
-          totalSessions: '+0%'
-        }
-      };
-      setMetrics(demoMetrics);
+      // Hybrid Demo Data Approach:
+      // - Development: Silent fallback to demo data (no error shown)
+      // - Production/Load Testing: Show error, require real database
+      if (USE_DEMO_MODE && IS_DEVELOPMENT) {
+        // Dev mode: Silent fallback to demo data
+        console.warn('[Dev Mode] Using demo data - database connection failed');
+        const demoData = generateRichDemoData();
+        setSessions(demoData);
+        setError(null); // Don't show error in dev mode
+        
+        // Calculate metrics from demo data
+        const demoMetrics = {
+          activeSessions: demoData.filter(s => ['ACTIVE', 'DELIVERED', 'OUT_FOR_DELIVERY'].includes(s.status)).length,
+          revenue: demoData.reduce((sum, s) => sum + (s.amount / 100), 0),
+          avgDuration: 45,
+          alerts: demoData.filter(s => s.edgeCase !== null).length,
+          staffAssigned: new Set([
+            ...demoData.map(s => s.assignedStaff.boh).filter(Boolean),
+            ...demoData.map(s => s.assignedStaff.foh).filter(Boolean)
+          ]).size,
+          totalSessions: demoData.length,
+          changes: {
+            activeSessions: '+0%',
+            revenue: '+0%',
+            avgDuration: '0%',
+            alerts: '0%',
+            staffAssigned: '+0%',
+            totalSessions: '+0%'
+          }
+        };
+        setMetrics(demoMetrics);
+      } else {
+        // Production/Load Testing: Show error, require real database
+        setError(displayError);
+        setSessions([]); // Empty state - require real data
+        setMetrics({
+          activeSessions: 0,
+          revenue: 0,
+          avgDuration: 0,
+          alerts: 0,
+          staffAssigned: 0,
+          totalSessions: 0,
+          changes: {
+            activeSessions: '0%',
+            revenue: '0%',
+            avgDuration: '0%',
+            alerts: '0%',
+            staffAssigned: '0%',
+            totalSessions: '0%'
+          }
+        });
+      }
     } finally {
       setLoading(false);
     }

@@ -324,7 +324,7 @@ const GlobalNavigation: React.FC = () => {
   };
 
   return (
-    <nav className="bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-800/50">
+    <nav className="relative z-50 bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-800/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Status Bar */}
         <div className="flex items-center justify-between py-2 text-xs">
@@ -397,7 +397,7 @@ const GlobalNavigation: React.FC = () => {
               </button>
               
               {quickAccessOpen && (
-                <div className="absolute top-full left-0 mt-2 w-96 md:w-[28rem] lg:w-96 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl z-[100] max-h-[80vh] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
+                <div className="absolute top-full left-0 mt-2 w-96 md:w-[28rem] lg:w-96 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl z-[9999] max-h-[80vh] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
                   <div className="p-4 space-y-6">
                     {/* Core Operations */}
                     <div>
