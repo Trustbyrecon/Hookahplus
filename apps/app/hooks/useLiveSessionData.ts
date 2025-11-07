@@ -261,7 +261,21 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
       console.log('[useLiveSessionData] Sessions response status:', sessionsResponse.status);
       
       if (!sessionsResponse.ok) {
-        throw new Error(`HTTP ${sessionsResponse.status}: ${sessionsResponse.statusText}`);
+        const errorText = await sessionsResponse.text();
+        console.error('[useLiveSessionData] Sessions API error:', {
+          status: sessionsResponse.status,
+          statusText: sessionsResponse.statusText,
+          body: errorText
+        });
+        
+        // Provide user-friendly error message
+        if (sessionsResponse.status === 500) {
+          throw new Error('Server error: Unable to connect to database. Using demo data.');
+        } else if (sessionsResponse.status === 404) {
+          throw new Error('Sessions endpoint not found. Using demo data.');
+        } else {
+          throw new Error(`HTTP ${sessionsResponse.status}: ${sessionsResponse.statusText || 'Failed to load sessions'}. Using demo data.`);
+        }
       }
       
       const sessionsResult = await sessionsResponse.json();
@@ -339,12 +353,46 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
     } catch (err) {
       console.error('[useLiveSessionData] Error loading sessions:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to load sessions';
-      setError(errorMessage);
       
-      // Add rich demo data when API fails or returns empty
+      // Extract user-friendly message if it's already formatted
+      let displayError = errorMessage;
+      if (errorMessage.includes('HTTP 500')) {
+        displayError = 'Server error: Database connection issue. Using demo data.';
+      } else if (errorMessage.includes('HTTP')) {
+        // Keep the formatted error message
+        displayError = errorMessage;
+      } else {
+        displayError = `${errorMessage}. Using demo data.`;
+      }
+      
+      setError(displayError);
+      
+      // Always load demo data when API fails
       console.log('[useLiveSessionData] API failed, loading demo data');
       const demoData = generateRichDemoData();
       setSessions(demoData);
+      
+      // Calculate metrics from demo data
+      const demoMetrics = {
+        activeSessions: demoData.filter(s => ['ACTIVE', 'DELIVERED', 'OUT_FOR_DELIVERY'].includes(s.status)).length,
+        revenue: demoData.reduce((sum, s) => sum + (s.amount / 100), 0),
+        avgDuration: 45,
+        alerts: demoData.filter(s => s.edgeCase !== null).length,
+        staffAssigned: new Set([
+          ...demoData.map(s => s.assignedStaff.boh).filter(Boolean),
+          ...demoData.map(s => s.assignedStaff.foh).filter(Boolean)
+        ]).size,
+        totalSessions: demoData.length,
+        changes: {
+          activeSessions: '+0%',
+          revenue: '+0%',
+          avgDuration: '0%',
+          alerts: '0%',
+          staffAssigned: '+0%',
+          totalSessions: '+0%'
+        }
+      };
+      setMetrics(demoMetrics);
     } finally {
       setLoading(false);
     }
