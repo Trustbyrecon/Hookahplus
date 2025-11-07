@@ -68,6 +68,9 @@ const GlobalNavigation: React.FC = () => {
   const [sessionCount, setSessionCount] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
   const [currentTime, setCurrentTime] = useState<string>('');
+  const [trustLockStatus, setTrustLockStatus] = useState<'active' | 'pending' | 'verified'>('active');
+  const [trustLockVerificationRate, setTrustLockVerificationRate] = useState<number>(100);
+  const [reflexScore, setReflexScore] = useState<number>(87);
 
   // Fix hydration mismatch - only render time after mount
   useEffect(() => {

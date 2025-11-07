@@ -77,6 +77,7 @@ import { StaffWorkflowAssistant } from '../../components/StaffWorkflowAssistant'
 import { FOHTimerInterface } from '../../components/FOHTimerInterface';
 import { ManagerTimerDashboard } from '../../components/ManagerTimerDashboard';
 import SimpleFSDDesign from '../../components/SimpleFSDDesign';
+import { SessionProvider, useSessionContext } from '../../contexts/SessionContext';
 
 export default function SessionsPage() {
   return (
