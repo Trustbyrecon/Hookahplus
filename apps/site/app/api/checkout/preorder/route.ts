@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getStripe } from '../../../lib/stripeServer';
+import { getStripe } from '../../../../lib/stripeServer';
 
 /**
  * POST /api/checkout/preorder

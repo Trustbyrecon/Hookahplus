@@ -127,7 +127,7 @@ export default function OwnersPage() {
           text: 'Calculate Your ROI',
           onClick: () => {
             document.getElementById('roi-calculator')?.scrollIntoView({ behavior: 'smooth' });
-          }}
+          }
         }}
         trustIndicators={[
           { icon: <CheckCircle className="w-4 h-4" />, text: 'Money-back guarantee' },
