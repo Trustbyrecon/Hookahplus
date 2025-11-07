@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import PageHero from '../../components/PageHero';
+import NewsletterSignup from '../../components/NewsletterSignup';
 import { 
   HelpCircle, 
   Mail, 
@@ -433,7 +434,7 @@ const SupportPage = () => {
         </div>
 
         {/* Status Indicators */}
-        <div className="bg-zinc-800/50 backdrop-blur-sm border border-zinc-700 rounded-lg p-6">
+        <div className="bg-zinc-800/50 backdrop-blur-sm border border-zinc-700 rounded-lg p-6 mb-8">
           <h3 className="text-lg font-semibold text-white mb-4">System Status</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="flex items-center">
@@ -458,6 +459,15 @@ const SupportPage = () => {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Newsletter Signup */}
+        <div className="mb-8">
+          <NewsletterSignup
+            variant="inline"
+            title="Get Weekly Tips & Updates"
+            description="Stay updated with the latest Hookah+ features, best practices, and industry insights delivered to your inbox."
+          />
         </div>
       </div>
     </div>

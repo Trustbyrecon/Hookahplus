@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Validate ctaType
-    const validTypes = ['demo_request', 'onboarding_signup', 'contact_form', 'social_click'];
+    const validTypes = ['demo_request', 'onboarding_signup', 'contact_form', 'social_click', 'newsletter_signup', 'lead_magnet_download'];
     if (!validTypes.includes(ctaType)) {
       return NextResponse.json({
         success: false,

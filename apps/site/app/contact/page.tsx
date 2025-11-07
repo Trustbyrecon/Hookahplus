@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { trackContactFormConversion } from '../../lib/conversionTracking';
 import { 
   Mail, 
   Phone, 
@@ -34,7 +35,6 @@ export default function ContactPage() {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -79,15 +79,15 @@ export default function ContactPage() {
 
       const result = await response.json();
       setIsSubmitting(false);
-      setIsSubmitted(true);
       
       // Track conversion
-      if (typeof window !== 'undefined' && window.gtag) {
-        window.gtag('event', 'demo_request_submitted', {
-          event_category: 'conversion',
-          event_label: 'contact_form'
-        });
-      }
+      trackContactFormConversion({
+        email: formData.email,
+        name: formData.name
+      });
+
+      // Redirect to thank you page
+      window.location.href = '/thank-you/contact';
     } catch (error) {
       console.error('Error submitting form:', error);
       setIsSubmitting(false);
@@ -172,37 +172,7 @@ export default function ContactPage() {
           <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-8">
             <h2 className="text-2xl font-bold text-white mb-6">Request a Demo</h2>
             
-            {isSubmitted ? (
-              <div className="text-center py-8">
-                <CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-white mb-2">Demo Request Submitted!</h3>
-                <p className="text-zinc-400 mb-6">
-                  Thank you for your interest. We'll contact you within 24 hours to schedule your personalized demo.
-                </p>
-                <button
-                  onClick={() => {
-                    setIsSubmitted(false);
-                    setFormData({
-                      name: '',
-                      email: '',
-                      company: '',
-                      phone: '',
-                      loungeName: '',
-                      location: '',
-                      currentPOS: '',
-                      integrationType: '',
-                      timeline: '',
-                      message: '',
-                      pricingModel: 'time-based'
-                    });
-                  }}
-                  className="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors"
-                >
-                  Submit Another Request
-                </button>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Personal Information */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -414,8 +384,7 @@ export default function ContactPage() {
                   )}
                 </button>
               </form>
-            )}
-          </div>
+            </div>
 
           {/* Contact Information */}
           <div className="space-y-8">

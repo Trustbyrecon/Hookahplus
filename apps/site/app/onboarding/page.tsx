@@ -129,8 +129,8 @@ export default function OnboardingPage() {
       });
 
       if (response.ok) {
-        // Redirect to lounge layout or success page
-        window.location.href = '/lounge-layout';
+        // Redirect to thank you page
+        window.location.href = '/thank-you/onboarding';
       } else {
         alert('Failed to submit onboarding. Please try again.');
       }

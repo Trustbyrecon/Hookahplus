@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import PageHero from '../../components/PageHero';
+import NewsletterSignup from '../../components/NewsletterSignup';
 import { 
   BookOpen, 
   Code, 
@@ -609,6 +610,15 @@ const DocsPage = () => {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Newsletter Signup */}
+            <div className="mt-12">
+              <NewsletterSignup
+                variant="inline"
+                title="Get Weekly Tips & Updates"
+                description="Stay updated with the latest Hookah+ features, best practices, and industry insights delivered to your inbox."
+              />
             </div>
           </div>
         </div>

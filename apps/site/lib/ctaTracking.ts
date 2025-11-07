@@ -7,7 +7,7 @@
 
 export interface CTATrackingData {
   ctaSource: 'website' | 'instagram' | 'linkedin' | 'email' | 'calendly';
-  ctaType: 'demo_request' | 'onboarding_signup' | 'contact_form' | 'social_click';
+  ctaType: 'demo_request' | 'onboarding_signup' | 'contact_form' | 'social_click' | 'newsletter_signup' | 'lead_magnet_download';
   data?: {
     name?: string;
     email?: string;
@@ -110,6 +110,18 @@ export function trackCalendlyCTA(data?: CTATrackingData['data'], metadata?: Reco
   trackCTA({
     ctaSource: 'calendly',
     ctaType: 'demo_request',
+    data,
+    metadata
+  });
+}
+
+/**
+ * Helper: Track newsletter signup CTA
+ */
+export function trackNewsletterSignup(data?: CTATrackingData['data'], metadata?: Record<string, any>) {
+  trackCTA({
+    ctaSource: 'website',
+    ctaType: 'newsletter_signup',
     data,
     metadata
   });

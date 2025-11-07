@@ -1,5 +1,6 @@
 import './globals.css'
 import GlobalNavigation from '../components/GlobalNavigation'
+import Footer from '../components/Footer'
 import AnalyticsScript from '../components/AnalyticsScript'
 
 export const metadata = {
@@ -21,6 +22,7 @@ export default function RootLayout({
       <body className="min-h-screen bg-zinc-950 text-white">
         <GlobalNavigation />
         {children}
+        <Footer />
       </body>
     </html>
   )

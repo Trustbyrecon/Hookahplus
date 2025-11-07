@@ -12,6 +12,7 @@ import ROICalculator from '../components/ROICalculator';
 import Demo from '../components/Demo';
 import ProofSection from '../components/ProofSection';
 import StickyCTA from '../components/StickyCTA';
+import ExitIntentPopup from '../components/ExitIntentPopup';
 
 export default function Home() {
   return (
@@ -36,6 +37,9 @@ export default function Home() {
 
       {/* Sticky CTA */}
       <StickyCTA />
+
+      {/* Exit Intent Popup */}
+      <ExitIntentPopup />
     </div>
   );
 }
