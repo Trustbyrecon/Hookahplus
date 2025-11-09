@@ -29,7 +29,9 @@ import {
   Wind, 
   Sparkles,
   Flame,
-  FileText
+  FileText,
+  ScanLine,
+  Grid3x3
 } from "lucide-react";
 import Ktl4StatusDashboard from '../../components/Ktl4StatusDashboard';
 import GlobalNavigation from '../../components/GlobalNavigation';
