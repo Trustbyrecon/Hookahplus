@@ -30,8 +30,8 @@ import {
   Sparkles,
   Flame,
   FileText,
-  ScanLine,
-  Grid3x3
+  Camera,
+  LayoutGrid
 } from "lucide-react";
 import Ktl4StatusDashboard from '../../components/Ktl4StatusDashboard';
 import GlobalNavigation from '../../components/GlobalNavigation';
@@ -98,7 +98,7 @@ export default function OperatorPage() {
       id: 'physical-digitization',
       title: 'Physical Lounge Digitization',
       description: 'Digitize your physical lounge space',
-      icon: <ScanLine className="w-6 h-6" />,
+      icon: <Camera className="w-6 h-6" />,
       color: 'bg-blue-600 hover:bg-blue-500',
       action: () => window.location.href = '/lounge-layout'
     },
@@ -106,7 +106,7 @@ export default function OperatorPage() {
       id: 'layout-manager',
       title: 'Lounge Layout Manager',
       description: 'Customize and manage your layout',
-      icon: <Grid3x3 className="w-6 h-6" />,
+      icon: <LayoutGrid className="w-6 h-6" />,
       color: 'bg-cyan-600 hover:bg-cyan-500',
       action: () => window.location.href = '/lounge-layout'
     },
