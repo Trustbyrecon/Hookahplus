@@ -9,6 +9,20 @@ import { prisma } from '../../../../lib/db';
  */
 export async function GET(req: NextRequest) {
   try {
+    // Test database connection first
+    try {
+      await prisma.$connect();
+      console.log('[Operator Onboarding API] Database connection successful');
+    } catch (dbError) {
+      console.error('[Operator Onboarding API] Database connection failed:', dbError);
+      return NextResponse.json({ 
+        success: false,
+        error: 'Database connection failed',
+        details: dbError instanceof Error ? dbError.message : 'Unknown database error',
+        hint: 'Check DATABASE_URL environment variable and ensure database is running'
+      }, { status: 503 });
+    }
+
     // TODO: Add role-based authentication check
     // const userRole = await getCurrentUserRole(req);
     // if (userRole !== 'ADMIN') {
@@ -46,13 +60,29 @@ export async function GET(req: NextRequest) {
       whereClause.ctaSource = ctaSource;
     }
 
-    const events = await prisma.reflexEvent.findMany({
-      where: whereClause,
-      orderBy: {
-        createdAt: 'desc'
-      },
-      take: 100 // Limit to recent 100 entries
-    });
+    let events;
+    try {
+      events = await prisma.reflexEvent.findMany({
+        where: whereClause,
+        orderBy: {
+          createdAt: 'desc'
+        },
+        take: 100 // Limit to recent 100 entries
+      });
+      console.log(`[Operator Onboarding API] Found ${events.length} events`);
+    } catch (queryError) {
+      console.error('[Operator Onboarding API] Query error:', queryError);
+      // Check if it's a table doesn't exist error
+      if (queryError instanceof Error && queryError.message.includes('does not exist')) {
+        return NextResponse.json({
+          success: false,
+          error: 'Database table not found',
+          details: 'The reflex_events table does not exist. Please run database migrations.',
+          hint: 'Run: npx prisma migrate deploy'
+        }, { status: 500 });
+      }
+      throw queryError; // Re-throw other errors
+    }
 
     // Parse and format lead data
     const leads = events.map(event => {
@@ -161,9 +191,25 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
+    // Test database connection first
+    try {
+      await prisma.$connect();
+      console.log('[Operator Onboarding API] POST - Database connection successful');
+    } catch (dbError) {
+      console.error('[Operator Onboarding API] POST - Database connection failed:', dbError);
+      return NextResponse.json({ 
+        success: false,
+        error: 'Database connection failed',
+        details: dbError instanceof Error ? dbError.message : 'Unknown database error',
+        hint: 'Check DATABASE_URL environment variable and ensure database is running'
+      }, { status: 503 });
+    }
+
     // TODO: Add role-based authentication check
     const body = await req.json();
     const { action, leadId, updates, leadData } = body;
+    
+    console.log('[Operator Onboarding API] POST request:', { action, leadId: leadId?.substring(0, 20) });
 
     if (!action) {
       return NextResponse.json({
@@ -197,6 +243,12 @@ export async function POST(req: NextRequest) {
         assignedTo: null
       };
 
+      console.log('[Operator Onboarding API] Creating lead with data:', {
+        businessName: leadData.businessName,
+        email: leadData.email,
+        stage: leadData.stage
+      });
+
       const newEvent = await prisma.reflexEvent.create({
         data: {
           type: 'onboarding.signup',
@@ -208,6 +260,8 @@ export async function POST(req: NextRequest) {
           ip: req.headers.get('x-forwarded-for')?.split(',')[0] || undefined
         }
       });
+
+      console.log('[Operator Onboarding API] Lead created successfully:', newEvent.id);
 
       return NextResponse.json({
         success: true,
@@ -333,10 +387,30 @@ export async function POST(req: NextRequest) {
 
   } catch (error) {
     console.error('[Operator Onboarding] POST Error:', error);
+    
+    // Provide more specific error messages
+    let errorMessage = 'Failed to update lead';
+    let errorDetails = error instanceof Error ? error.message : 'Unknown error';
+    
+    if (error instanceof Error) {
+      // Check for common Prisma errors
+      if (error.message.includes('does not exist')) {
+        errorMessage = 'Database table not found';
+        errorDetails = 'The reflex_events table does not exist. Please run database migrations.';
+      } else if (error.message.includes('Unique constraint')) {
+        errorMessage = 'Duplicate entry';
+        errorDetails = 'A lead with this information already exists.';
+      } else if (error.message.includes('Foreign key constraint')) {
+        errorMessage = 'Invalid reference';
+        errorDetails = 'Referenced record does not exist.';
+      }
+    }
+    
     return NextResponse.json({
       success: false,
-      error: 'Failed to update lead',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      error: errorMessage,
+      details: errorDetails,
+      stack: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : undefined) : undefined
     }, { status: 500 });
   }
 }
