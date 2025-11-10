@@ -35,19 +35,31 @@ export async function GET(req: NextRequest) {
     const ctaSource = searchParams.get('ctaSource'); // Filter by CTA source
 
     // Query ReflexEvent for onboarding-related events including CTAs
+    // Exclude audit events (admin.operator_onboarding.update) to prevent duplicates
     const whereClause: any = {
-      OR: [
-        { type: 'pos.waitlist.signup' },
-        { type: 'sync.optimize.onboarding' },
-        { type: { contains: 'onboarding' } },
-        { type: { contains: 'demo' } },
-        // Include CTA events
-        { type: 'cta.demo_request' },
-        { type: 'cta.onboarding_signup' },
-        { type: 'cta.contact_form' },
-        { type: 'cta.social_click' },
-        { type: 'cta.email' },
-        { type: { startsWith: 'cta.' } } // Catch-all for any CTA type
+      AND: [
+        {
+          OR: [
+            { type: 'pos.waitlist.signup' },
+            { type: 'sync.optimize.onboarding' },
+            { type: 'onboarding.signup' }, // Manual leads
+            { type: { contains: 'onboarding' } },
+            { type: { contains: 'demo' } },
+            // Include CTA events
+            { type: 'cta.demo_request' },
+            { type: 'cta.onboarding_signup' },
+            { type: 'cta.contact_form' },
+            { type: 'cta.social_click' },
+            { type: 'cta.email' },
+            { type: { startsWith: 'cta.' } } // Catch-all for any CTA type
+          ]
+        },
+        {
+          // Exclude audit trail events
+          NOT: {
+            type: 'admin.operator_onboarding.update'
+          }
+        }
       ]
     };
 
@@ -218,6 +230,36 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
+    // Handle bulk_delete action
+    if (action === 'bulk_delete') {
+      const { leadIds } = body;
+      
+      if (!leadIds || !Array.isArray(leadIds) || leadIds.length === 0) {
+        return NextResponse.json({
+          success: false,
+          error: 'Missing or invalid leadIds array'
+        }, { status: 400 });
+      }
+
+      console.log(`[Operator Onboarding API] Bulk deleting ${leadIds.length} leads`);
+
+      const deleteResult = await prisma.reflexEvent.deleteMany({
+        where: {
+          id: {
+            in: leadIds
+          }
+        }
+      });
+
+      console.log(`[Operator Onboarding API] Deleted ${deleteResult.count} leads`);
+
+      return NextResponse.json({
+        success: true,
+        message: `Successfully deleted ${deleteResult.count} lead(s)`,
+        deletedCount: deleteResult.count
+      });
+    }
+
     // Handle create_lead action
     if (action === 'create_lead') {
       if (!leadData || !leadData.businessName || !leadData.email) {
@@ -347,6 +389,18 @@ export async function POST(req: NextRequest) {
       case 'update_probability':
         updatedPayload.conversionProbability = updates.probability;
         break;
+
+      case 'delete_lead':
+        // Delete the lead event
+        await prisma.reflexEvent.delete({
+          where: { id: leadId }
+        });
+        
+        return NextResponse.json({
+          success: true,
+          message: 'Lead deleted successfully',
+          leadId
+        });
 
       default:
         return NextResponse.json({
