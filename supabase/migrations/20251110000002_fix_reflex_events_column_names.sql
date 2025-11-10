@@ -1,6 +1,9 @@
--- Create reflex_events table for CTA tracking and operator onboarding
--- Note: Column names use camelCase to match Prisma schema expectations
-CREATE TABLE IF NOT EXISTS public.reflex_events (
+-- Fix column names in reflex_events table to match Prisma schema (camelCase)
+-- Drop and recreate table with correct column names
+
+DROP TABLE IF EXISTS public.reflex_events CASCADE;
+
+CREATE TABLE public.reflex_events (
   id TEXT PRIMARY KEY,
   type TEXT NOT NULL,
   source TEXT NOT NULL DEFAULT 'ui',
@@ -21,16 +24,15 @@ CREATE TABLE IF NOT EXISTS public.reflex_events (
 );
 
 -- Create indexes for better query performance
-CREATE INDEX IF NOT EXISTS idx_reflex_events_type_created_at ON public.reflex_events(type, created_at);
-CREATE INDEX IF NOT EXISTS idx_reflex_events_cta_source ON public.reflex_events(cta_source);
-CREATE INDEX IF NOT EXISTS idx_reflex_events_cta_type ON public.reflex_events(cta_type);
-CREATE INDEX IF NOT EXISTS idx_reflex_events_campaign_id ON public.reflex_events(campaign_id);
+CREATE INDEX idx_reflex_events_type_created_at ON public.reflex_events(type, "createdAt");
+CREATE INDEX idx_reflex_events_cta_source ON public.reflex_events("ctaSource");
+CREATE INDEX idx_reflex_events_cta_type ON public.reflex_events("ctaType");
+CREATE INDEX idx_reflex_events_campaign_id ON public.reflex_events("campaignId");
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE public.reflex_events ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Allow all operations for authenticated users (adjust as needed for your auth setup)
--- For now, we'll allow all operations since Prisma needs to write
 CREATE POLICY "Allow all operations on reflex_events"
 ON public.reflex_events
 FOR ALL
