@@ -1,23 +1,33 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
 import PageHero from '../../../components/PageHero';
 import Button from '../../../components/Button';
 import { CheckCircle, Mail, Calendar, ArrowRight, Shield } from 'lucide-react';
 
 export default function PreOrderThankYouPage() {
-  const [email, setEmail] = useState<string | null>(null);
-  const [sessionId, setSessionId] = useState<string | null>(null);
-
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const id = params.get('session_id');
-      setSessionId(id);
-      if (id) {
-        setEmail('your-email@example.com');
-      }
+    // Track conversion event
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', 'preorder_completed', {
+        event_category: 'conversion',
+        event_label: 'preorder',
+        value: 1
+      });
+    }
+
+    // Track Meta Pixel conversion
+    if (typeof window !== 'undefined' && (window as any).fbq) {
+      (window as any).fbq('track', 'InitiateCheckout', {
+        content_name: 'Pre-Order',
+        content_category: 'Pre-Order'
+      });
+    }
+
+    // Track LinkedIn Insight Tag conversion
+    if (typeof window !== 'undefined' && (window as any).lintrk) {
+      (window as any).lintrk('track', { conversion_id: 'preorder' });
     }
   }, []);
 
@@ -42,7 +52,7 @@ export default function PreOrderThankYouPage() {
             <div>
               <h3 className="text-xl font-semibold text-white mb-2">Your Pre-Order is Secure</h3>
               <p className="text-zinc-300">
-                {email ? `Confirmation sent to ${email}` : 'Check your email for confirmation details'}
+                Check your email for confirmation details.
               </p>
             </div>
           </div>
