@@ -24,7 +24,6 @@ export default function ContactPage() {
     name: '',
     email: '',
     company: '',
-    phone: '',
     loungeName: '',
     location: '',
     currentPOS: '',
@@ -60,7 +59,6 @@ export default function ContactPage() {
             name: formData.name,
             email: formData.email,
             company: formData.company,
-            phone: formData.phone,
             loungeName: formData.loungeName,
             location: formData.location,
             currentPOS: formData.currentPOS,
@@ -205,33 +203,18 @@ export default function ContactPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-300 mb-2">
-                      Company
-                    </label>
-                    <input
-                      type="text"
-                      name="company"
-                      value={formData.company}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:border-primary-500"
-                      placeholder="Your Company"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-300 mb-2">
-                      Phone Number
-                    </label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:border-primary-500"
-                      placeholder="+1 (555) 123-4567"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">
+                    Company
+                  </label>
+                  <input
+                    type="text"
+                    name="company"
+                    value={formData.company}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:border-primary-500"
+                    placeholder="Your Company"
+                  />
                 </div>
 
                 {/* Lounge Information */}
@@ -396,14 +379,7 @@ export default function ContactPage() {
                   <Mail className="w-5 h-5 text-primary-400" />
                   <div>
                     <p className="text-white font-medium">Email</p>
-                    <p className="text-zinc-400">demo@hookahplus.net</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <Phone className="w-5 h-5 text-primary-400" />
-                  <div>
-                    <p className="text-white font-medium">Phone</p>
-                    <p className="text-zinc-400">+1 (555) 123-4567</p>
+                    <p className="text-zinc-400">hookahplusconnector@gmail.com</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">

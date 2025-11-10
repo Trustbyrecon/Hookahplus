@@ -277,7 +277,7 @@ export async function POST(req: NextRequest) {
         phone: leadData.phone || '',
         location: leadData.location || '',
         stage: leadData.stage || 'new-leads',
-        source: 'manual',
+        source: leadData.source || 'manual', // Allow source to be passed (e.g., 'website')
         createdAt: leadData.createdAt || new Date().toISOString(),
         notes: [],
         scheduledFollowUp: null,
@@ -288,15 +288,23 @@ export async function POST(req: NextRequest) {
       console.log('[Operator Onboarding API] Creating lead with data:', {
         businessName: leadData.businessName,
         email: leadData.email,
-        stage: leadData.stage
+        stage: leadData.stage,
+        source: leadData.source || 'manual'
       });
+
+      // Determine CTA source from leadData.source
+      const ctaSource = leadData.source === 'website' ? 'website' : 
+                        leadData.source?.includes('instagram') ? 'instagram' :
+                        leadData.source?.includes('linkedin') ? 'linkedin' :
+                        leadData.source?.includes('email') ? 'email' :
+                        leadData.source?.includes('calendly') ? 'calendly' : 'manual';
 
       const newEvent = await prisma.reflexEvent.create({
         data: {
           type: 'onboarding.signup',
-          source: 'manual',
+          source: leadData.source || 'manual',
           payload: JSON.stringify(payload),
-          ctaSource: 'manual',
+          ctaSource: ctaSource,
           ctaType: 'onboarding_signup',
           userAgent: req.headers.get('user-agent') || undefined,
           ip: req.headers.get('x-forwarded-for')?.split(',')[0] || undefined

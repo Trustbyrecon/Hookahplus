@@ -10,55 +10,44 @@ export async function POST(req: NextRequest) {
     const { action, data } = body;
 
     if (action === 'onboarding_submission') {
-      // Handle onboarding submission
-      console.log('Onboarding submission received:', {
+      // Create lead in Operator Onboarding Management
+      console.log('[Onboarding Submission] Creating lead in Operator Onboarding:', {
         businessName: data.businessName,
         ownerName: data.ownerName,
         email: data.email,
-        phone: data.phone,
-        location: data.location,
-        seatingTypes: data.seatingTypes,
-        totalCapacity: data.totalCapacity,
-        numberOfTables: data.numberOfTables,
-        averageSessionDuration: data.averageSessionDuration,
-        currentPOS: data.currentPOS,
-        currentManagementSystem: data.currentManagementSystem,
-        integrationNeeds: data.integrationNeeds,
-        pricingModel: data.pricingModel,
-        preferredFeatures: data.preferredFeatures,
-        timestamp: new Date().toISOString()
+        location: data.location
       });
 
-      // Forward to POS waitlist API if available
       try {
-        const waitlistResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/pos-waitlist`, {
+        // Create lead in Operator Onboarding via app API
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
+        const onboardingResponse = await fetch(`${appUrl}/api/admin/operator-onboarding`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            action: 'join_waitlist',
-            data: {
-              name: data.ownerName,
+            action: 'create_lead',
+            leadData: {
+              businessName: data.businessName || 'Unknown Business',
+              ownerName: data.ownerName || '',
               email: data.email,
-              phone: data.phone,
-              loungeName: data.businessName,
-              city: data.location,
-              currentPOS: data.currentPOS || 'unknown',
-              seatingTypes: data.seatingTypes || [],
-              totalCapacity: data.totalCapacity || '0',
-              numberOfTables: data.numberOfTables || '0',
-              pricingModel: data.pricingModel || 'flat-rate',
-              preferredFeatures: data.preferredFeatures || [],
-              source: 'onboarding_submission'
+              phone: data.phone || '',
+              location: data.location || '',
+              stage: 'intake', // Onboarding submission is further along
+              source: 'website',
+              createdAt: new Date().toISOString()
             }
           })
         });
 
-        if (!waitlistResponse.ok) {
-          console.warn('POS waitlist sync failed, but onboarding data logged');
+        if (onboardingResponse.ok) {
+          const result = await onboardingResponse.json();
+          console.log('[Onboarding Submission] Lead created in Operator Onboarding:', result.leadId);
+        } else {
+          console.warn('[Onboarding Submission] Failed to create lead in Operator Onboarding, but continuing');
         }
-      } catch (waitlistError) {
-        console.warn('POS waitlist sync failed:', waitlistError);
-        // Continue anyway - onboarding data is still valid
+      } catch (onboardingError) {
+        console.error('[Onboarding Submission] Error creating lead in Operator Onboarding:', onboardingError);
+        // Continue anyway - we'll still return success to user
       }
 
       return NextResponse.json({ 
@@ -68,41 +57,44 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'request_demo') {
-      // Log the demo request (in production, save to database)
-      console.log('Demo request received:', {
+      // Create lead in Operator Onboarding Management
+      console.log('[Demo Request] Creating lead in Operator Onboarding:', {
         name: data.name,
         email: data.email,
         loungeName: data.loungeName,
-        location: data.location,
-        timestamp: new Date().toISOString()
+        location: data.location
       });
 
-      // Forward to POS waitlist API if available
       try {
-        const waitlistResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/pos-waitlist`, {
+        // Create lead in Operator Onboarding via app API
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
+        const onboardingResponse = await fetch(`${appUrl}/api/admin/operator-onboarding`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            action: 'join_waitlist',
-            data: {
-              name: data.name,
+            action: 'create_lead',
+            leadData: {
+              businessName: data.loungeName || data.company || 'Unknown Business',
+              ownerName: data.name,
               email: data.email,
-              phone: data.phone,
-              loungeName: data.loungeName,
-              city: data.location,
-              currentPOS: data.currentPOS || 'unknown',
-              estimatedRevenue: data.estimatedRevenue || '0',
-              source: 'contact_form_demo_request'
+              phone: data.phone || '',
+              location: data.location || '',
+              stage: 'new-leads',
+              source: 'website',
+              createdAt: new Date().toISOString()
             }
           })
         });
 
-        if (!waitlistResponse.ok) {
-          console.warn('POS waitlist sync failed, but demo request logged');
+        if (onboardingResponse.ok) {
+          const result = await onboardingResponse.json();
+          console.log('[Demo Request] Lead created in Operator Onboarding:', result.leadId);
+        } else {
+          console.warn('[Demo Request] Failed to create lead in Operator Onboarding, but continuing');
         }
-      } catch (waitlistError) {
-        console.warn('POS waitlist sync failed:', waitlistError);
-        // Continue anyway - demo request is still valid
+      } catch (onboardingError) {
+        console.error('[Demo Request] Error creating lead in Operator Onboarding:', onboardingError);
+        // Continue anyway - we'll still return success to user
       }
 
       return NextResponse.json({ 

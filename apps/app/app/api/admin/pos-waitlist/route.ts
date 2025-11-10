@@ -4,27 +4,43 @@ import { prisma } from "../../../../lib/db";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { source, selectedTier, interest, timestamp, contactType } = body;
+    const { source, selectedTier, interest, timestamp, contactType, name, email, phone, loungeName, city, currentPOS, estimatedRevenue } = body;
 
     console.log(`[POS Waitlist] New signup from ${source}`, {
       selectedTier,
       interest,
-      contactType
+      contactType,
+      name,
+      email,
+      loungeName
     });
 
-    // Create waitlist entry
+    // Create waitlist entry with lead data for Operator Onboarding
+    const payload = {
+      source,
+      selectedTier,
+      interest,
+      contactType,
+      timestamp,
+      status: 'pending',
+      // Lead data for Operator Onboarding
+      businessName: loungeName || 'Unknown Business',
+      ownerName: name || '',
+      email: email || '',
+      phone: phone || '',
+      location: city || '',
+      currentPOS: currentPOS || 'unknown',
+      estimatedRevenue: estimatedRevenue || '0',
+      stage: 'new-leads'
+    };
+
     const waitlistEntry = await prisma.reflexEvent.create({
       data: {
         type: "pos.waitlist.signup",
-        source: "api",
-        payload: JSON.stringify({
-          source,
-          selectedTier,
-          interest,
-          contactType,
-          timestamp,
-          status: 'pending'
-        }),
+        source: source || "api",
+        payload: JSON.stringify(payload),
+        ctaSource: source?.includes('website') ? 'website' : source?.includes('instagram') ? 'instagram' : source?.includes('linkedin') ? 'linkedin' : 'website',
+        ctaType: 'demo_request',
         userAgent: req.headers.get("user-agent") || "",
         ip: req.headers.get("x-forwarded-for")?.split(",")[0] || "0.0.0.0"
       }
