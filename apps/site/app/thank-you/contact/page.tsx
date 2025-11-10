@@ -62,7 +62,7 @@ export default function ThankYouContactPage() {
               <Mail className="w-5 h-5 text-teal-400 mt-1 flex-shrink-0" />
               <div>
                 <p className="font-medium text-white">Check Your Email</p>
-                <p className="text-sm text-zinc-400">We've sent a confirmation email acknowledging your message.</p>
+                <p className="text-sm text-zinc-400">You'll receive a confirmation email shortly acknowledging your message.</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -93,12 +93,12 @@ export default function ThankYouContactPage() {
               variant="outline"
               onClick={() => {
                 const link = document.createElement('a');
-                link.href = '/case-study-hookahplus-transformation.md';
-                link.download = 'hookahplus-case-study.md';
+                link.href = '/case-study-hookahplus-transformation.pdf';
+                link.download = 'hookahplus-case-study.pdf';
                 link.click();
               }}
             >
-              Download Case Study
+              Download Case Study (PDF)
             </Button>
           </div>
 

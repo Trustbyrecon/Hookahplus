@@ -92,10 +92,10 @@ export default function ProofSection() {
                   variant="outline"
                   className="border-teal-500/50 text-teal-400 hover:bg-teal-500/10"
                   onClick={() => {
-                    // Download case study
+                    // Download case study PDF
                     const link = document.createElement('a');
-                    link.href = '/case-study-hookahplus-transformation.md';
-                    link.download = 'hookahplus-case-study.md';
+                    link.href = '/case-study-hookahplus-transformation.pdf';
+                    link.download = 'hookahplus-case-study.pdf';
                     link.click();
                   }}
                 >

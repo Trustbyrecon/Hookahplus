@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import NewsletterSignup from '../components/NewsletterSignup';
-import { Mail, Phone, MapPin, Twitter, Linkedin, Instagram } from 'lucide-react';
+import { Mail, Phone, MapPin, Linkedin, Instagram } from 'lucide-react';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -26,13 +26,10 @@ export default function Footer() {
               The future of hookah lounge management with AI-powered personalization, secure payments, and seamless ordering experiences.
             </p>
             <div className="flex items-center gap-4 text-zinc-500">
-              <a href="https://twitter.com/hookahplus" target="_blank" rel="noopener noreferrer" className="hover:text-teal-400 transition-colors">
-                <Twitter className="w-5 h-5" />
-              </a>
-              <a href="https://linkedin.com/company/hookahplus" target="_blank" rel="noopener noreferrer" className="hover:text-teal-400 transition-colors">
+              <a href="https://www.linkedin.com/company/hookahplus-net/?viewAsMember=true" target="_blank" rel="noopener noreferrer" className="hover:text-teal-400 transition-colors">
                 <Linkedin className="w-5 h-5" />
               </a>
-              <a href="https://instagram.com/hookahplus" target="_blank" rel="noopener noreferrer" className="hover:text-teal-400 transition-colors">
+              <a href="https://www.instagram.com/hplus_labs/" target="_blank" rel="noopener noreferrer" className="hover:text-teal-400 transition-colors">
                 <Instagram className="w-5 h-5" />
               </a>
             </div>
