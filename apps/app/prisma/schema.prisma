@@ -52,7 +52,7 @@ model Session {
   tableNotes      String? // Notes specific to this table/session
   qrCodeUrl       String? // URL to QR code image/data URL for staff scanning (fraud prevention)
 
-  @@map("sessions")
+  @@map("Session")
 }
 
 // Partnership Models
