@@ -35,8 +35,10 @@ export async function generateDailyPulse(
   const windowHours = window === 'pm' ? 12 : 24;
   const startTime = new Date(now.getTime() - windowHours * 60 * 60 * 1000);
 
-  // Query sessions from database
-  const sessions = await prisma.session.findMany({
+  // Try to query sessions from database, fallback to demo data on error
+  let sessions;
+  try {
+    sessions = await prisma.session.findMany({
     where: {
       ...(loungeId && { loungeId }),
       createdAt: {
@@ -57,6 +59,26 @@ export async function generateDailyPulse(
       endedAt: true,
     },
   });
+  } catch (dbError) {
+    // Database connection failed - use demo data
+    console.warn('[Pulse Generator] Database unavailable, using demo data:', dbError instanceof Error ? dbError.message : 'Unknown error');
+    const USE_DEMO_MODE = process.env.NEXT_PUBLIC_USE_DEMO_MODE === 'true';
+    const IS_DEVELOPMENT = process.env.NODE_ENV === 'development';
+    
+    if (USE_DEMO_MODE && IS_DEVELOPMENT) {
+      return generateDemoPulse(window);
+    } else {
+      // Production: return empty pulse
+      return {
+        summary: `No data available for ${window === 'pm' ? '12-hour' : '24-hour'} period`,
+        metrics: { sessions: 0, revenue: 0, avgDuration: 0, edgeCases: 0 },
+        topFlavors: [],
+        recommendations: ['Database connection unavailable - please check configuration'],
+        timestamp: now.toISOString(),
+        window: window === 'pm' ? '12h' : '24h',
+      };
+    }
+  }
 
   // Calculate metrics
   const metrics = calculateSessionMetrics(sessions);
@@ -230,5 +252,44 @@ function generateRecommendations(metrics: SessionMetrics, sessions: any[]): stri
   }
 
   return recommendations;
+}
+
+/**
+ * Generate demo pulse data when database is unavailable
+ */
+export function generateDemoPulse(window: '24h' | 'pm' = '24h'): PulseData {
+  const now = new Date();
+  const windowLabel = window === 'pm' ? '12-hour' : '24-hour';
+  
+  // Generate realistic demo metrics
+  const sessions = Math.floor(Math.random() * 15) + 8; // 8-23 sessions
+  const revenue = sessions * (Math.random() * 20 + 25); // $25-45 per session
+  const avgDuration = Math.floor(Math.random() * 30) + 45; // 45-75 minutes
+  
+  const flavors = ['Double Apple', 'Mint Fresh', 'Blue Mist', 'Grape Mint', 'Watermelon'];
+  const topFlavors = flavors
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 3)
+    .map((name, i) => ({ name, count: sessions - i * 2 }));
+  
+  const recommendations = [
+    'Operations running smoothly - maintain current service levels',
+    'Consider upselling premium flavors during peak hours',
+    'Monitor table turnover - optimize prep time for faster service'
+  ];
+  
+  return {
+    summary: `Strong ${windowLabel} performance: ${sessions} sessions completed • Revenue: $${revenue.toFixed(2)} • Average duration: ${avgDuration} minutes`,
+    metrics: {
+      sessions,
+      revenue,
+      avgDuration,
+      edgeCases: Math.floor(sessions * 0.1), // ~10% edge cases
+    },
+    topFlavors,
+    recommendations,
+    timestamp: now.toISOString(),
+    window: window === 'pm' ? '12h' : '24h',
+  };
 }
 

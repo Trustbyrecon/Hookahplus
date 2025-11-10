@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     const window = (searchParams.get('window') as '24h' | 'pm') || '24h';
     const loungeId = searchParams.get('loungeId') || undefined;
 
-    // Generate pulse data
+    // Generate pulse data (includes demo fallback if DB unavailable)
     const pulseData = await generateDailyPulse(window, loungeId);
 
     return NextResponse.json({
@@ -16,6 +16,21 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('[Pulse API] Error generating pulse:', error);
+    
+    // Final fallback: return demo data even if generateDailyPulse throws
+    const USE_DEMO_MODE = process.env.NEXT_PUBLIC_USE_DEMO_MODE === 'true';
+    const IS_DEVELOPMENT = process.env.NODE_ENV === 'development';
+    
+    if (USE_DEMO_MODE && IS_DEVELOPMENT) {
+      const { generateDemoPulse } = await import('../../../lib/pulse-generator');
+      const demoPulse = generateDemoPulse((searchParams.get('window') as '24h' | 'pm') || '24h');
+      return NextResponse.json({
+        success: true,
+        pulse: demoPulse,
+        demo: true, // Flag to indicate this is demo data
+      });
+    }
+    
     return NextResponse.json(
       {
         success: false,
