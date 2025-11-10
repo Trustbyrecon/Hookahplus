@@ -7,6 +7,7 @@ import StaffPerformanceAnalytics from '../../components/StaffPerformanceAnalytic
 import StaffScheduling from '../../components/StaffScheduling';
 import StaffCommunication from '../../components/StaffCommunication';
 import RoleBasedPermissions from '../../components/RoleBasedPermissions';
+import CoachingPanel from '../../components/CoachingPanel';
 import { 
   Users, 
   UserPlus, 
@@ -28,7 +29,8 @@ import {
   Crown,
   MessageSquare,
   Bell,
-  BarChart3
+  BarChart3,
+  Lightbulb
 } from 'lucide-react';
 
 interface StaffMember {
@@ -74,6 +76,8 @@ export default function StaffPanelPage() {
   const [showAddStaffModal, setShowAddStaffModal] = useState(false);
   const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
   const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month' | 'quarter'>('week');
+  const [showCoaching, setShowCoaching] = useState(false);
+  const [selectedStaffForCoaching, setSelectedStaffForCoaching] = useState<string | null>(null);
   const [newStaff, setNewStaff] = useState({
     name: '',
     email: '',
@@ -394,38 +398,70 @@ export default function StaffPanelPage() {
 
         {/* Content */}
         {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card className="card-tablet">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-white">Total Staff</h3>
-                <Users className="w-6 h-6 text-blue-400" />
-              </div>
-              <div className="text-3xl font-bold text-white mb-2">{staffMembers.length}</div>
-              <div className="text-sm text-zinc-400">Active team members</div>
-            </Card>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <Card className="card-tablet">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-white">Total Staff</h3>
+                  <Users className="w-6 h-6 text-blue-400" />
+                </div>
+                <div className="text-3xl font-bold text-white mb-2">{staffMembers.length}</div>
+                <div className="text-sm text-zinc-400">Active team members</div>
+              </Card>
 
-            <Card className="card-tablet">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-white">Available</h3>
-                <CheckCircle className="w-6 h-6 text-green-400" />
-              </div>
-              <div className="text-3xl font-bold text-white mb-2">
-                {staffMembers.filter(s => s.status === 'available').length}
-              </div>
-              <div className="text-sm text-zinc-400">Ready to work</div>
-            </Card>
+              <Card className="card-tablet">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-white">Available</h3>
+                  <CheckCircle className="w-6 h-6 text-green-400" />
+                </div>
+                <div className="text-3xl font-bold text-white mb-2">
+                  {staffMembers.filter(s => s.status === 'available').length}
+                </div>
+                <div className="text-sm text-zinc-400">Ready to work</div>
+              </Card>
 
-            <Card className="card-tablet">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-white">Avg Performance</h3>
-                <Star className="w-6 h-6 text-yellow-400" />
-              </div>
-              <div className="text-3xl font-bold text-white mb-2">
-                {(staffMembers.reduce((sum, s) => sum + s.performance, 0) / staffMembers.length).toFixed(1)}
-              </div>
-              <div className="text-sm text-zinc-400">Out of 5.0</div>
-            </Card>
-          </div>
+              <Card className="card-tablet">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-white">Avg Performance</h3>
+                  <Star className="w-6 h-6 text-yellow-400" />
+                </div>
+                <div className="text-3xl font-bold text-white mb-2">
+                  {(staffMembers.reduce((sum, s) => sum + s.performance, 0) / staffMembers.length).toFixed(1)}
+                </div>
+                <div className="text-sm text-zinc-400">Out of 5.0</div>
+              </Card>
+            </div>
+
+            {/* Coaching Panel - On-demand */}
+            <div className="mb-8">
+              {!showCoaching ? (
+                <Card className="card-tablet">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold text-white mb-2">Micro-Coaching</h3>
+                      <p className="text-sm text-zinc-400">Get personalized coaching tips for your role</p>
+                    </div>
+                    <Button
+                      className="btn-pretty-primary btn-tablet"
+                      onClick={() => setShowCoaching(true)}
+                    >
+                      <Lightbulb className="w-4 h-4 mr-2" />
+                      View Coaching Tips
+                    </Button>
+                  </div>
+                </Card>
+              ) : (
+                <CoachingPanel
+                  role={selectedStaffForCoaching ? 
+                    (staffMembers.find(s => s.id === selectedStaffForCoaching)?.role === 'BOH' ? 'prep' : 'foh') as 'prep' | 'foh' | 'runner'
+                    : 'foh'}
+                  staffId={selectedStaffForCoaching || undefined}
+                  onDismiss={() => setShowCoaching(false)}
+                  showDismiss={true}
+                />
+              )}
+            </div>
+          </>
         )}
 
         {activeTab === 'staff' && (

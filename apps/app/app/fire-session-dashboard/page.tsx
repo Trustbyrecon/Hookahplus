@@ -17,6 +17,7 @@ import Breadcrumbs from '../../components/Breadcrumbs';
 import PageHero from '../../components/PageHero';
 import SyncIndicator from '../../components/SyncIndicator';
 import RelatedSessions from '../../components/RelatedSessions';
+import PulseCard from '../../components/PulseCard';
 
 export default function FireSessionDashboard() {
   return (
@@ -153,6 +154,11 @@ function FireSessionDashboardContent() {
             { icon: <AlertCircle className="w-4 h-4" />, text: `${metrics.alerts} alerts` }
           ]}
         />
+
+        {/* Daily Pulse Card */}
+        <div className="mb-6">
+          <PulseCard compact={true} window="24h" autoRefresh={true} />
+        </div>
 
         {/* Sync Indicator */}
         <div className="mb-6 flex items-center justify-between">
