@@ -42,19 +42,21 @@ export default function NewsletterSignup({
     setIsSubmitting(true);
 
     try {
-      await trackCTA({
-        ctaSource: 'website',
-        ctaType: 'newsletter_signup',
-        data: {
+      // Submit to newsletter API (handles tracking and email sending)
+      const response = await fetch('/api/newsletter/subscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           email,
           name: showName && name ? name : undefined
-        },
-        metadata: {
-          variant,
-          source: typeof window !== 'undefined' ? window.location.pathname : 'unknown'
-        },
-        component: 'NewsletterSignup'
+        }),
       });
+
+      if (!response.ok) {
+        throw new Error('Failed to subscribe');
+      }
 
       setIsSubmitted(true);
       setEmail('');

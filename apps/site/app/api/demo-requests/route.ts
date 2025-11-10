@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { sendContactConfirmation, sendDemoRequestConfirmation } from '../../../lib/email';
 
 // Note: This endpoint handles demo requests from the contact form
-// In production, this should integrate with Prisma/database
-// For now, we'll forward to POS waitlist and log the request
+// Creates leads in Operator Onboarding Management via ReflexEvent
+// Sends confirmation emails via Resend
 
 export async function POST(req: NextRequest) {
   try {
@@ -50,6 +51,14 @@ export async function POST(req: NextRequest) {
         // Continue anyway - we'll still return success to user
       }
 
+      // Send confirmation email
+      try {
+        await sendContactConfirmation(data.email, data.ownerName || data.businessName);
+      } catch (emailError) {
+        console.error('[Onboarding Submission] Failed to send confirmation email:', emailError);
+        // Continue anyway - email failure shouldn't block the submission
+      }
+
       return NextResponse.json({ 
         success: true,
         message: 'Onboarding completed successfully! Redirecting to lounge layout...'
@@ -95,6 +104,14 @@ export async function POST(req: NextRequest) {
       } catch (onboardingError) {
         console.error('[Demo Request] Error creating lead in Operator Onboarding:', onboardingError);
         // Continue anyway - we'll still return success to user
+      }
+
+      // Send confirmation email
+      try {
+        await sendDemoRequestConfirmation(data.email, data.name, data.loungeName || data.company);
+      } catch (emailError) {
+        console.error('[Demo Request] Failed to send confirmation email:', emailError);
+        // Continue anyway - email failure shouldn't block the submission
       }
 
       return NextResponse.json({ 
