@@ -19,9 +19,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Ensure email is a string (not undefined) for Stripe API
-    const customerEmail: string = email;
-
     const stripe = getStripe();
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
@@ -34,10 +31,10 @@ export async function POST(req: NextRequest) {
     console.log(`[Pre-Order Checkout] Amount: $${isTestMode ? testAmount / 100 : amount / 100}`);
 
     // Create Stripe Checkout Session
-    const session = await stripe.checkout.sessions.create({
+    // customer_email is optional in Stripe API - only include if email is provided
+    const sessionParams: any = {
       payment_method_types: ['card'],
       mode: 'subscription',
-      customer_email: customerEmail,
       line_items: [
         {
           price_data: {
@@ -73,7 +70,14 @@ export async function POST(req: NextRequest) {
           test_amount: isTestMode ? testAmount.toString() : undefined,
         },
       },
-    });
+    };
+    
+    // Only add customer_email if email is provided and is a valid string
+    if (email && typeof email === 'string' && email.trim().length > 0) {
+      sessionParams.customer_email = email.trim();
+    }
+    
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     return NextResponse.json({
       sessionId: session.id,

@@ -86,7 +86,7 @@ function mapPrismaStateToFireSession(state: string | SessionState): SessionStatu
 
 // Helper function to map state to stage
 function mapStateToStage(state: string | SessionState): 'BOH' | 'FOH' | 'CUSTOMER' {
-  const stateStr = typeof state === 'string' ? state : state.toString();
+  const stateStr = typeof state === 'string' ? state : String(state);
   
   switch (stateStr) {
     // Database enum values

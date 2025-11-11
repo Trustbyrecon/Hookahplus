@@ -299,25 +299,73 @@ export async function POST(req: NextRequest) {
                         leadData.source?.includes('email') ? 'email' :
                         leadData.source?.includes('calendly') ? 'calendly' : 'manual';
 
-      const newEvent = await prisma.reflexEvent.create({
-        data: {
-          type: 'onboarding.signup',
-          source: leadData.source || 'manual',
-          payload: JSON.stringify(payload),
-          ctaSource: ctaSource,
-          ctaType: 'onboarding_signup',
-          userAgent: req.headers.get('user-agent') || undefined,
-          ip: req.headers.get('x-forwarded-for')?.split(',')[0] || undefined
+      try {
+        const newEvent = await prisma.reflexEvent.create({
+          data: {
+            type: 'onboarding.signup',
+            source: leadData.source || 'manual',
+            payload: JSON.stringify(payload),
+            ctaSource: ctaSource,
+            ctaType: 'onboarding_signup',
+            userAgent: req.headers.get('user-agent') || undefined,
+            ip: req.headers.get('x-forwarded-for')?.split(',')[0] || undefined
+          }
+        });
+
+        console.log('[Operator Onboarding API] Lead created successfully:', newEvent.id);
+
+        return NextResponse.json({
+          success: true,
+          leadId: newEvent.id,
+          message: 'Lead created successfully',
+          lead: {
+            id: newEvent.id,
+            businessName: leadData.businessName,
+            email: leadData.email,
+            stage: leadData.stage || 'new-leads',
+            source: leadData.source || 'manual'
+          }
+        });
+      } catch (createError) {
+        console.error('[Operator Onboarding API] Lead creation error:', createError);
+        console.error('[Operator Onboarding API] Error details:', {
+          message: createError instanceof Error ? createError.message : 'Unknown error',
+          stack: createError instanceof Error ? createError.stack : undefined,
+          leadData: {
+            businessName: leadData.businessName,
+            email: leadData.email,
+            stage: leadData.stage
+          }
+        });
+        
+        // Provide specific error messages
+        let errorMessage = 'Failed to create lead';
+        let errorDetails = createError instanceof Error ? createError.message : 'Unknown error';
+        
+        if (createError instanceof Error) {
+          if (createError.message.includes('does not exist')) {
+            errorMessage = 'Database table not found';
+            errorDetails = 'The reflex_events table does not exist. Please run database migrations.';
+          } else if (createError.message.includes('Unique constraint')) {
+            errorMessage = 'Duplicate entry';
+            errorDetails = 'A lead with this information already exists.';
+          } else if (createError.message.includes('Foreign key constraint')) {
+            errorMessage = 'Invalid reference';
+            errorDetails = 'Referenced record does not exist.';
+          } else if (createError.message.includes('connection') || createError.message.includes('timeout')) {
+            errorMessage = 'Database connection failed';
+            errorDetails = 'Unable to connect to database. Please check DATABASE_URL environment variable.';
+          }
         }
-      });
-
-      console.log('[Operator Onboarding API] Lead created successfully:', newEvent.id);
-
-      return NextResponse.json({
-        success: true,
-        leadId: newEvent.id,
-        message: 'Lead created successfully'
-      });
+        
+        return NextResponse.json({
+          success: false,
+          error: errorMessage,
+          details: errorDetails,
+          hint: 'Check database connection and ensure reflex_events table exists',
+          stack: process.env.NODE_ENV === 'development' ? (createError instanceof Error ? createError.stack : undefined) : undefined
+        }, { status: 500 });
+      }
     }
 
     // For other actions, require leadId
