@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendNewsletterConfirmation } from '../../../lib/email';
-import { trackCTA } from '../../../lib/ctaTracking';
+import { sendNewsletterConfirmation } from '../../../../lib/email';
+import { trackCTA } from '../../../../lib/ctaTracking';
 
 /**
  * POST /api/newsletter/subscribe

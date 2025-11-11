@@ -22,8 +22,10 @@ export async function GET(request: NextRequest) {
     const IS_DEVELOPMENT = process.env.NODE_ENV === 'development';
     
     if (USE_DEMO_MODE && IS_DEVELOPMENT) {
+      // Re-extract searchParams in catch block
+      const { searchParams: catchSearchParams } = new URL(request.url);
       const { generateDemoPulse } = await import('../../../lib/pulse-generator');
-      const demoPulse = generateDemoPulse((searchParams.get('window') as '24h' | 'pm') || '24h');
+      const demoPulse = generateDemoPulse((catchSearchParams.get('window') as '24h' | 'pm') || '24h');
       return NextResponse.json({
         success: true,
         pulse: demoPulse,
