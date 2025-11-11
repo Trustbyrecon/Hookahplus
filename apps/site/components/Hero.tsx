@@ -83,18 +83,9 @@ export default function Hero() {
               size="lg"
               className="px-8 py-4 text-lg border-2 border-teal-500/50 text-teal-400 hover:bg-teal-500/10 hover:border-teal-400 transition-all"
               onClick={() => {
-                // Scroll to demo section and trigger session creation
-                const demoSection = document.getElementById('demo');
-                if (demoSection) {
-                  demoSection.scrollIntoView({ behavior: 'smooth' });
-                  // After scroll, trigger the demo session button click
-                  setTimeout(() => {
-                    const demoButton = document.querySelector('[data-demo-session-button]') as HTMLButtonElement;
-                    if (demoButton) {
-                      demoButton.click();
-                    }
-                  }, 500);
-                }
+                // Navigate directly to Sessions page on site build
+                const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+                window.location.href = `${siteUrl}/sessions`;
               }}
             >
               See How It Works

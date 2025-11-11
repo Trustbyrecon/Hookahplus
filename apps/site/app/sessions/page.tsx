@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import PageHero from '../../components/PageHero';
@@ -17,9 +18,22 @@ import {
 } from '../../lib/mockData';
 
 export default function SessionsPage() {
+  const searchParams = useSearchParams();
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const createdSessionId = searchParams?.get('sessionId');
+  const isCreated = searchParams?.get('created') === 'true';
   
-  // Use mock data
+  // Show success message if session was just created
+  useEffect(() => {
+    if (isCreated && createdSessionId) {
+      setShowSuccessMessage(true);
+      // Hide message after 5 seconds
+      setTimeout(() => setShowSuccessMessage(false), 5000);
+    }
+  }, [isCreated, createdSessionId]);
+  
+  // Use mock data (SimpleFSDDesign will fetch real data from app build API)
   const sessions = mockSiteData.sessions;
   const activeSessions = getActiveSessions();
   const bohSessions = getBohSessions();
@@ -62,10 +76,29 @@ export default function SessionsPage() {
       />
 
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8" id="dashboard">
+        {/* Success Message */}
+        {showSuccessMessage && createdSessionId && (
+          <div className="mb-6 p-4 bg-green-500/20 border border-green-500/50 rounded-lg flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <CheckCircle className="w-5 h-5 text-green-400" />
+              <div>
+                <p className="text-white font-medium">Session Created Successfully!</p>
+                <p className="text-sm text-zinc-300">Session ID: {createdSessionId.substring(0, 8)}...</p>
+                <p className="text-xs text-zinc-400 mt-1">Your session has been created and is now visible in the dashboard below.</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowSuccessMessage(false)}
+              className="text-zinc-400 hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        )}
 
         {/* Enhanced Fire Session Dashboard */}
         <SimpleFSDDesign 
-          sessions={[]} // Let the component generate its own demo data
+          sessions={[]} // Component will fetch real sessions from app build API
           userRole="MANAGER"
           onSessionAction={(action, sessionId) => {
             console.log(`Session action: ${action} on ${sessionId}`);

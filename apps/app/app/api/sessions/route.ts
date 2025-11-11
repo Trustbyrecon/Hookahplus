@@ -452,7 +452,8 @@ export async function PATCH(req: NextRequest) {
     const { 
       operatorId,
       notes,
-      edgeCase 
+      edgeCase,
+      edgeNote 
     } = body;
 
     // Validate required fields
@@ -533,33 +534,41 @@ export async function PATCH(req: NextRequest) {
       );
 
       // Map FireSession status back to Prisma state
+      // Note: Database stores detailed statuses as strings for business logic
+      // while Prisma enum (SessionState) is used for high-level state tracking
       const stateMap: Partial<Record<SessionStatus, string>> = {
         'NEW': 'NEW',
         'ACTIVE': 'ACTIVE',
         'PREP_IN_PROGRESS': 'PREP_IN_PROGRESS',
-        'HEAT_UP': 'HEAT_UP',
+        'HEAT_UP': 'HEAT_UP', // BOH action: transitions from PREP_IN_PROGRESS
         'READY_FOR_DELIVERY': 'READY_FOR_DELIVERY',
         'OUT_FOR_DELIVERY': 'OUT_FOR_DELIVERY',
         'DELIVERED': 'DELIVERED',
         'STAFF_HOLD': 'PAUSED',
-        'CLOSED': 'COMPLETED',
-        'VOIDED': 'CANCELLED',
+        'PAUSE_SESSION': 'PAUSED', // FOH action: pauses active session
+        'CLOSED': 'CLOSED', // FOH action: closes session
+        'VOIDED': 'CANCELED',
         'FAILED_PAYMENT': 'FAILED_PAYMENT',
         'PAID_CONFIRMED': 'NEW', // Maps to NEW as payment is confirmed
         'CLOSE_PENDING': 'NEW', // Maps to NEW for pending close
         'STOCK_BLOCKED': 'NEW', // Maps to NEW for stock issues
         'REMAKE': 'NEW', // Maps to NEW for remake
         'REFUND_REQUESTED': 'NEW', // Maps to NEW for refund requests
-        'REFUNDED': 'CANCELLED', // Maps to CANCELLED for refunded
+        'REFUNDED': 'CANCELED', // Maps to CANCELED for refunded
       };
 
       const newState = stateMap[updatedSession.status] || dbSession.state;
+      
+      // Ensure HEAT_UP properly transitions from PREP_IN_PROGRESS
+      // Ensure PAUSE_SESSION properly pauses active sessions
+      // Ensure CLOSE_SESSION properly closes sessions
 
       // Update session in database
       const updateData: any = {
         state: newState,
         tableNotes: notes !== undefined ? notes : dbSession.tableNotes,
         edgeCase: edgeCase !== undefined ? edgeCase : dbSession.edgeCase,
+        edgeNote: edgeNote !== undefined ? edgeNote : dbSession.edgeNote,
       };
 
       // Update startedAt if transitioning to ACTIVE
@@ -568,7 +577,9 @@ export async function PATCH(req: NextRequest) {
       }
 
       // Update endedAt if transitioning to CLOSED/CANCELED
-      if ([SessionState.CLOSED, SessionState.CANCELED].includes(newState) && !dbSession.endedAt) {
+      // Cast newState to SessionState enum for type checking
+      const finalState = newState as SessionState;
+      if ((finalState === SessionState.CLOSED || finalState === SessionState.CANCELED) && !dbSession.endedAt) {
         updateData.endedAt = new Date();
       }
 

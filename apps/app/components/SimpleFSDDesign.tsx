@@ -50,6 +50,7 @@ import {
 import { calculateSingleSessionTrustScore, getTrustScoreColor } from '../lib/trustScoring';
 import SessionDetailModal from './SessionDetailModal';
 import GuestIntelligenceModal from './GuestIntelligenceModal';
+import ResolveEdgeCaseModal from './ResolveEdgeCaseModal';
 
 interface SimpleFSDDesignProps {
   sessions?: any[];
@@ -130,6 +131,9 @@ export default function SimpleFSDDesign({
   const [showIntelligenceModal, setShowIntelligenceModal] = useState(false);
   const [intelligenceSessionId, setIntelligenceSessionId] = useState<string>('');
   const [isMounted, setIsMounted] = useState(false);
+  const [showResolveModal, setShowResolveModal] = useState(false);
+  const [resolveSessionId, setResolveSessionId] = useState<string>('');
+  const [resolveEdgeCaseType, setResolveEdgeCaseType] = useState<string | null>(null);
   
   // Fix hydration mismatch - only render counts after mount
   useEffect(() => {
@@ -142,6 +146,15 @@ export default function SimpleFSDDesign({
 
   const handleSessionAction = async (action: string, sessionId: string) => {
     console.log(`Action: ${action} on session: ${sessionId}`);
+    
+    // Special handling for RESOLVE_HOLD - show modal instead of direct API call
+    if (action.toLowerCase() === 'resolve_hold' || action === 'RESOLVE_HOLD') {
+      const session = sessions.find(s => s.id === sessionId);
+      setResolveSessionId(sessionId);
+      setResolveEdgeCaseType(session?.edgeCase || null);
+      setShowResolveModal(true);
+      return;
+    }
     
     try {
       // Map action to SessionAction format for PATCH endpoint
@@ -192,10 +205,9 @@ export default function SimpleFSDDesign({
         console.log('Session action successful:', result);
         // Trigger a custom event to refresh sessions
         window.dispatchEvent(new CustomEvent('sessionUpdated', { detail: { sessionId, action: mappedAction } }));
-        // Also refresh the page after a short delay to show updated state
-        setTimeout(() => {
-          window.location.reload();
-        }, 500);
+        // Refresh the page to show updated state immediately
+        // This ensures UI reflects the new status (e.g., Prep in Progress -> Heat Up)
+        window.location.reload();
       } else {
         throw new Error(result.error || 'Action failed');
       }
@@ -237,6 +249,45 @@ export default function SimpleFSDDesign({
 
     if (onSessionAction) {
       onSessionAction(action, sessionId);
+    }
+  };
+
+  const handleResolveEdgeCase = async (sessionId: string, resolutionNotes: string) => {
+    try {
+      // Call API to resolve edge case with notes
+      const response = await fetch(`/api/sessions`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sessionId,
+          action: 'RESOLVE_HOLD',
+          userRole: userRole || 'MANAGER',
+          operatorId: `user-${userRole?.toLowerCase() || 'manager'}`,
+          notes: resolutionNotes,
+          edgeCase: null, // Clear edge case when resolved
+          edgeNote: resolutionNotes // Store resolution notes for briefing/coaching
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+
+      if (result.success) {
+        console.log('Edge case resolved successfully:', result);
+        // Refresh the page to show updated state
+        window.location.reload();
+      } else {
+        throw new Error(result.error || 'Failed to resolve edge case');
+      }
+    } catch (error) {
+      console.error('Error resolving edge case:', error);
+      throw error;
     }
   };
 
@@ -812,7 +863,11 @@ export default function SimpleFSDDesign({
               return (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {visibleStatuses.map((status) => {
-                    const count = isMounted ? sessions.filter(s => (s.status || s.state) === status).length : 0;
+                    // Calculate count only after mount to prevent hydration mismatch
+                    const count = isMounted ? sessions.filter(s => {
+                      const sessionStatus = s.status || s.state;
+                      return sessionStatus === status;
+                    }).length : 0;
                     const displayName = getSessionDisplayName(status);
                     const icon = STATE_ICONS[status];
                     const colorClass = STATUS_COLORS[status];
@@ -853,6 +908,19 @@ export default function SimpleFSDDesign({
           setIntelligenceSessionId('');
         }}
         sessionId={intelligenceSessionId}
+      />
+      
+      {/* Resolve Edge Case Modal */}
+      <ResolveEdgeCaseModal
+        isOpen={showResolveModal}
+        onClose={() => {
+          setShowResolveModal(false);
+          setResolveSessionId('');
+          setResolveEdgeCaseType(null);
+        }}
+        sessionId={resolveSessionId}
+        edgeCaseType={resolveEdgeCaseType}
+        onResolve={handleResolveEdgeCase}
       />
     </div>
   );

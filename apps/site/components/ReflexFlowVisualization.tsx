@@ -143,6 +143,9 @@ export default function ReflexFlowVisualization() {
         setSessionId(responseData.session.id);
         // Auto-advance through steps
         setIsPlaying(true);
+        // Navigate to Sessions page on site build with session ID in query params
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+        window.location.href = `${siteUrl}/sessions?sessionId=${responseData.session.id}&created=true`;
       } else {
         throw new Error(responseData.error || 'Session creation failed');
       }
