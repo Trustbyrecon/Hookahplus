@@ -4,6 +4,8 @@
  * Standardized conversion event tracking for GA4, Meta Pixel, and LinkedIn Insight Tag
  */
 
+// Global type declarations for analytics
+// Note: These types are used across multiple files for type safety
 declare global {
   interface Window {
     gtag?: (...args: any[]) => void;
@@ -12,6 +14,9 @@ declare global {
     dataLayer?: any[];
   }
 }
+
+// Export empty object to make this a module (required for declare global)
+export {};
 
 export interface ConversionEvent {
   eventName: string;

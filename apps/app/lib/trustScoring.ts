@@ -183,7 +183,7 @@ export function calculateSingleSessionTrustScore(session: FireSession): number {
   }
 
   // Staff assignment bonus
-  if (session.assignedStaff.boh && session.assignedStaff.foh) {
+  if (session.assignedStaff && session.assignedStaff.boh && session.assignedStaff.foh) {
     score += 5;
   }
 

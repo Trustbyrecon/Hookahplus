@@ -83,9 +83,17 @@ export default function Hero() {
               size="lg"
               className="px-8 py-4 text-lg border-2 border-teal-500/50 text-teal-400 hover:bg-teal-500/10 hover:border-teal-400 transition-all"
               onClick={() => {
-                const howSection = document.getElementById('how-it-works');
-                if (howSection) {
-                  howSection.scrollIntoView({ behavior: 'smooth' });
+                // Scroll to demo section and trigger session creation
+                const demoSection = document.getElementById('demo');
+                if (demoSection) {
+                  demoSection.scrollIntoView({ behavior: 'smooth' });
+                  // After scroll, trigger the demo session button click
+                  setTimeout(() => {
+                    const demoButton = document.querySelector('[data-demo-session-button]') as HTMLButtonElement;
+                    if (demoButton) {
+                      demoButton.click();
+                    }
+                  }, 500);
                 }
               }}
             >

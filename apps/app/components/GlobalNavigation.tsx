@@ -348,7 +348,7 @@ const GlobalNavigation: React.FC = () => {
             </div>
             <div className="flex items-center space-x-1">
               <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-              <span className="text-zinc-300">Live Sessions {sessionCount}</span>
+              <span className="text-zinc-300">Live Sessions {isMounted ? sessionCount : '...'}</span>
             </div>
           </div>
           <div className="flex items-center space-x-4">

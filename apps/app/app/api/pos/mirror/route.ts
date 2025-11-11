@@ -122,12 +122,12 @@ export async function POST(request: NextRequest) {
         // Create a new session for the ticket
         const newSession = await prisma.session.create({
           data: {
-            source: 'POS',
+            source: SessionSource.LEGACY_POS, // Use enum value
             trustSignature: `pos_${Date.now()}`,
             loungeId: 'CLOUD_DEMO',
             tableId: ticketTableId,
             priceCents: totalCents,
-            state: 'PENDING',
+            state: SessionState.PENDING, // Use enum value
             orderItems: JSON.stringify(items),
             posMode: 'ticket'
           }

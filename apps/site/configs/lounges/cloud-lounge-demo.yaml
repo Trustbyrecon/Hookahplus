@@ -1,0 +1,109 @@
+lounge_id: CLOUD_DEMO
+lounge_name: Cloud Lounge Demo
+slug: cloud-lounge-demo
+session_price: 25
+reflex_enabled: true
+contact:
+  owner_name: Sarah Martinez
+  email: sarah@cloudlounge.com
+  phone: +1 (555) 123-4567
+  address: 123 Cloud Street, New York, NY 10001
+tables:
+  - id: table-1762880452327
+    name: T-2
+    type: booth
+    capacity: 4
+    zone: main_floor
+    coordinates:
+      x: 17.752400586099075
+      'y': 20.666666666666668
+      width: 80
+      height: 80
+    qr_enabled: true
+    status: active
+    price_multiplier: 1
+    description: Booth seating
+  - id: table-1762880462973
+    name: T-3
+    type: booth
+    capacity: 4
+    zone: main_floor
+    coordinates:
+      x: 80.58655529216027
+      'y': 21.5
+      width: 80
+      height: 80
+    qr_enabled: true
+    status: active
+    price_multiplier: 1
+    description: Booth seating
+  - id: table-1762880473644
+    name: T-4
+    type: booth
+    capacity: 4
+    zone: main_floor
+    coordinates:
+      x: 28.497274625053777
+      'y': 20.833333333333336
+      width: 80
+      height: 80
+    qr_enabled: true
+    status: active
+    price_multiplier: 1
+    description: Booth seating
+  - id: table-1762880484062
+    name: T-5
+    type: booth
+    capacity: 4
+    zone: main_floor
+    coordinates:
+      x: 92.96651885878198
+      'y': 22
+      width: 80
+      height: 80
+    qr_enabled: true
+    status: active
+    price_multiplier: 1
+    description: Booth seating
+  - id: table-1762880518780
+    name: B-1
+    type: booth
+    capacity: 2
+    zone: main_floor
+    coordinates:
+      x: 17.869192695218146
+      'y': 39.166666666666664
+      width: 80
+      height: 80
+    qr_enabled: true
+    status: active
+    price_multiplier: 1
+    description: Booth seating
+campaigns:
+  - id: welcome_2024
+    name: Welcome 2024
+    active: true
+    qr_prefix: WELCOME
+    start_date: '2024-01-01'
+    end_date: '2024-12-31'
+    description: New customer welcome campaign
+  - id: vip_loyalty
+    name: VIP Loyalty Program
+    active: true
+    qr_prefix: VIP
+    start_date: '2024-01-01'
+    end_date: '2024-12-31'
+    description: Exclusive VIP member benefits
+  - id: happy_hour
+    name: Happy Hour Special
+    active: true
+    qr_prefix: HAPPY
+    start_date: '2024-01-01'
+    end_date: '2024-12-31'
+    description: Weekday happy hour pricing
+qr_settings:
+  base_url: https://guest.hookahplus.net
+  include_campaign: true
+  include_table_info: true
+  auto_generate: true
+  bulk_generation: true
