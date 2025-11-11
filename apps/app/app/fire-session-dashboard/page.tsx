@@ -99,11 +99,23 @@ function FireSessionDashboardContent() {
         body: JSON.stringify(apiPayload),
       });
 
-      const responseData = await response.json();
+      // Parse response safely
+      let responseData;
+      const responseText = await response.text();
+      try {
+        responseData = responseText ? JSON.parse(responseText) : {};
+      } catch (parseError) {
+        console.error('[Create Session] Failed to parse response:', parseError);
+        throw new Error(`Invalid response from server: ${response.status} ${response.statusText}`);
+      }
 
       if (!response.ok) {
-        console.error('[Create Session] API Error:', responseData);
-        throw new Error(responseData.error || `Failed to create session: ${response.status}`);
+        console.error('[Create Session] API Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          data: responseData
+        });
+        throw new Error(responseData.error || responseData.details || `Failed to create session: ${response.status}`);
       }
 
       console.log('[Create Session] Success:', responseData);

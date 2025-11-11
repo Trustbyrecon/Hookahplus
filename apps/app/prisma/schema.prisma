@@ -10,19 +10,34 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum SessionSource {
+  QR
+  RESERVE
+  WALK_IN
+  LEGACY_POS
+}
+
+enum SessionState {
+  PENDING
+  ACTIVE
+  PAUSED
+  CLOSED
+  CANCELED
+}
+
 model Session {
-  id             String    @id @default(cuid())
+  id             String        @id @default(cuid())
   externalRef    String? // qrToken | reservationId | stripeCheckoutId
-  source         String // QR | RESERVE | WALK_IN | POS
+  source         SessionSource // QR | RESERVE | WALK_IN | LEGACY_POS
   trustSignature String
   tableId        String
   customerRef    String?
   customerPhone  String?
   flavor         String?
   flavorMix      String? // JSON as string for SQLite compatibility
-  loungeId       String?
+  loungeId       String  @default("default-lounge") // Required field with default
   priceCents     Int
-  state          String    @default("NEW")
+  state          SessionState  @default(PENDING)
   edgeCase       String? // 'EQUIPMENT_ISSUE', 'CUSTOMER_NOT_FOUND', 'PAYMENT_FAILED', 'HEALTH_SAFETY', 'OTHER'
   edgeNote       String?
   assignedBOHId  String?

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
+import { SessionSource, SessionState } from '@prisma/client';
 import { 
   FireSession, 
   SessionStatus, 
@@ -20,21 +21,29 @@ import {
   processDeliveryLayer,
 } from '../../../lib/reflex-chain/integration';
 
-// Helper function to map Prisma session state to FireSession status
-function mapPrismaStateToFireSession(state: string): SessionStatus {
+// Helper function to map Prisma session state (enum) to FireSession status
+function mapPrismaStateToFireSession(state: string | SessionState): SessionStatus {
+  // Convert enum to string if needed
+  const stateStr = typeof state === 'string' ? state : state.toString();
+  
   const stateMap: Record<string, SessionStatus> = {
-    'NEW': 'NEW',
+    // Database enum values (SessionState)
+    'PENDING': 'NEW', // Map PENDING to NEW for FireSession
     'ACTIVE': 'ACTIVE',
+    'PAUSED': 'STAFF_HOLD', // Map PAUSED to STAFF_HOLD
+    'CLOSED': 'CLOSED',
+    'CANCELED': 'VOIDED', // Map CANCELED to VOIDED
+    
+    // Legacy string values (for backward compatibility)
+    'NEW': 'NEW',
     'PREP_IN_PROGRESS': 'PREP_IN_PROGRESS',
     'HEAT_UP': 'HEAT_UP',
     'READY_FOR_DELIVERY': 'READY_FOR_DELIVERY',
     'OUT_FOR_DELIVERY': 'OUT_FOR_DELIVERY',
     'DELIVERED': 'DELIVERED',
-    'PAUSED': 'STAFF_HOLD',
     'COMPLETED': 'CLOSED',
     'CANCELLED': 'VOIDED',
     'FAILED_PAYMENT': 'FAILED_PAYMENT',
-    // Additional states that may exist in FireSession but map to Prisma equivalents
     'PAID_CONFIRMED': 'PAID_CONFIRMED',
     'CLOSE_PENDING': 'CLOSE_PENDING',
     'STOCK_BLOCKED': 'STOCK_BLOCKED',
@@ -42,20 +51,31 @@ function mapPrismaStateToFireSession(state: string): SessionStatus {
     'REFUND_REQUESTED': 'REFUND_REQUESTED',
     'REFUNDED': 'REFUNDED',
   };
-  return stateMap[state] || 'NEW';
+  return stateMap[stateStr] || 'NEW';
 }
 
 // Helper function to map state to stage
-function mapStateToStage(state: string): 'BOH' | 'FOH' | 'CUSTOMER' {
-  switch (state) {
-    case 'NEW':
+function mapStateToStage(state: string | SessionState): 'BOH' | 'FOH' | 'CUSTOMER' {
+  const stateStr = typeof state === 'string' ? state : state.toString();
+  
+  switch (stateStr) {
+    // Database enum values
+    case 'PENDING':
     case 'ACTIVE':
+      return 'CUSTOMER';
+    case 'PAUSED':
+      return 'BOH';
+    case 'CLOSED':
+    case 'CANCELED':
+      return 'FOH';
+    
+    // Legacy string values
+    case 'NEW':
     case 'FAILED_PAYMENT':
       return 'CUSTOMER';
     case 'PREP_IN_PROGRESS':
     case 'HEAT_UP':
     case 'READY_FOR_DELIVERY':
-    case 'PAUSED':
       return 'BOH';
     case 'OUT_FOR_DELIVERY':
     case 'DELIVERED':
@@ -243,7 +263,7 @@ export async function POST(req: NextRequest) {
       where: {
         tableId: tableId,
         state: {
-          notIn: ['COMPLETED', 'CANCELLED', 'CLOSED']
+          notIn: [SessionState.CLOSED, SessionState.CANCELED]
         }
       }
     });
@@ -269,10 +289,19 @@ export async function POST(req: NextRequest) {
       flavor
     });
 
+    // Map source string to enum
+    let sourceEnum: SessionSource;
+    if (source === 'QR' || source === 'RESERVE' || source === 'WALK_IN' || source === 'LEGACY_POS') {
+      sourceEnum = source as SessionSource;
+    } else {
+      // Default to WALK_IN for unknown sources
+      sourceEnum = SessionSource.WALK_IN;
+    }
+
     // Create new session in database
     const sessionData = {
       loungeId: loungeId || 'default-lounge',
-      source,
+      source: sourceEnum,
       externalRef: externalRef || `walk-in-${Date.now()}`,
       trustSignature,
       tableId,
@@ -281,7 +310,7 @@ export async function POST(req: NextRequest) {
       flavor: typeof flavor === 'string' ? flavor : (Array.isArray(flavor) ? flavor[0] : 'Custom Mix'),
       flavorMix: typeof flavor === 'string' ? flavor : JSON.stringify(flavor),
       priceCents: amount ? (amount < 1000 ? Math.round(amount * 100) : Math.round(amount)) : 3000, // Convert dollars to cents if needed, default $30.00
-      state: 'NEW',
+      state: SessionState.PENDING, // Use enum - PENDING instead of NEW
       assignedBOHId: assignedStaff?.boh || undefined,
       assignedFOHId: assignedStaff?.foh || undefined,
       tableNotes: notes || undefined,
@@ -470,8 +499,8 @@ export async function PATCH(req: NextRequest) {
         updateData.startedAt = new Date();
       }
 
-      // Update endedAt if transitioning to COMPLETED/CANCELLED
-      if (['COMPLETED', 'CANCELLED'].includes(newState) && !dbSession.endedAt) {
+      // Update endedAt if transitioning to CLOSED/CANCELED
+      if ([SessionState.CLOSED, SessionState.CANCELED].includes(newState) && !dbSession.endedAt) {
         updateData.endedAt = new Date();
       }
 

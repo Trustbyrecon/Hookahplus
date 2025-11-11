@@ -6,7 +6,6 @@
 // Signal Optimization Update - 2025-01-XX
 import React from 'react';
 import Hero from '../components/Hero';
-import HowItWorks from '../components/HowItWorks';
 import PricingTeaser from '../components/PricingTeaser';
 import ROICalculator from '../components/ROICalculator';
 import Demo from '../components/Demo';
@@ -20,10 +19,7 @@ export default function Home() {
       {/* Hero Section - Above the Fold */}
       <Hero />
 
-      {/* How It Works Section */}
-      <HowItWorks />
-
-      {/* Demo Section with Carousel */}
+      {/* Demo Section with Flow Visualization */}
       <Demo />
 
       {/* Pricing Teaser */}

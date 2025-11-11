@@ -240,19 +240,22 @@ export default function GuestPortal() {
       setIsStartingSession(true);
       
       // Create session data for guest session API
+      // Map to match the API endpoint expectations
+      const flavorMix = items
+        .filter(item => item.name.includes('Add-on') || item.name.includes('Flavor'))
+        .map(item => item.name.replace(' Add-on', '').replace(' Flavor', '').trim())
+        .filter(flavor => flavor.length > 0);
+      
       const sessionData = {
         tableId: tableData?.tableId || 'T-001',
         loungeId: 'guest-lounge',
-        customerId: 'guest',
+        guestId: `guest_${Date.now()}`, // Changed from customerId to guestId
+        sessionType: 'standard',
         items: items,
-        totalAmount: subtotal,
+        totalAmount: subtotal / 100, // Convert cents to dollars
         customerName: 'Guest Customer',
         customerPhone: '+1234567890',
-        sessionDuration: sessionDuration,
-        pricingModel: pricingModel,
-        flavorMix: items.filter(item => item.name.includes('Add-on')).map(item => item.name.replace(' Add-on', '')),
-        flavorMixPrice: items.filter(item => item.name.includes('Add-on')).reduce((sum, item) => sum + item.price, 0) / 100,
-        basePrice: calculateBasePrice() / 100
+        flavorMix: flavorMix.length > 0 ? flavorMix : ['Custom Mix']
       };
 
       // Send to guest session start API
@@ -262,8 +265,17 @@ export default function GuestPortal() {
         body: JSON.stringify(sessionData)
       });
 
+      // Parse response safely
+      let result;
+      const responseText = await response.text();
+      try {
+        result = responseText ? JSON.parse(responseText) : {};
+      } catch (parseError) {
+        console.error('[Fire Session] Failed to parse response:', parseError);
+        throw new Error(`Invalid response from server: ${response.status} ${response.statusText}`);
+      }
+
       if (response.ok) {
-        const result = await response.json();
         console.log('✅ Session created successfully:', result);
         
         setShowSuccessModal(true);
@@ -278,8 +290,12 @@ export default function GuestPortal() {
           }));
         }
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create session');
+        console.error('[Fire Session] API Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          data: result
+        });
+        throw new Error(result.error || result.details || `Failed to create session: ${response.status}`);
       }
     } catch (error) {
       console.error('Error starting session:', error);

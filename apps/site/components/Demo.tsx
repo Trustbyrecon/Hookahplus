@@ -12,10 +12,12 @@ export default function Demo() {
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-2 mb-4">
             <Play className="w-6 h-6 text-teal-400" />
-            <h2 className="text-3xl md:text-4xl font-bold text-white">See Hookah+ in Action</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-white">
+              How it Works <span className="bg-gradient-to-r from-teal-400 via-cyan-400 to-teal-400 bg-clip-text text-transparent">(night after night)</span>
+            </h2>
           </div>
           <p className="text-zinc-400 text-lg max-w-3xl mx-auto">
-            Experience the complete Reflex Ops flow: from QR scan to loyalty rewards. Watch how every session flows seamlessly through your operations.
+            This is the flow your guests and staff feel every night—now measured and optimized.
           </p>
         </div>
 

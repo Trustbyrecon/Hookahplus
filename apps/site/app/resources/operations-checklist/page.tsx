@@ -48,9 +48,9 @@ export default function OperationsChecklistPage() {
         name: name || undefined
       });
       
-      // Trigger download
+      // Trigger download - use direct PDF link
       const link = document.createElement('a');
-      link.href = result.downloadUrl;
+      link.href = '/lead-magnets/hookah-lounge-operations-checklist.pdf';
       link.download = 'hookah-lounge-operations-checklist.pdf';
       link.click();
 
