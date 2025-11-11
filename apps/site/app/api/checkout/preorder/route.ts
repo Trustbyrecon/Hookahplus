@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'subscription',
-      customer_email: email,
+      customer_email: email || undefined, // Ensure it's not undefined for Stripe API
       line_items: [
         {
           price_data: {
