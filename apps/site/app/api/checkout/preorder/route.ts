@@ -19,6 +19,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Ensure email is a string (not undefined) for Stripe API
+    const customerEmail: string = email;
+
     const stripe = getStripe();
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
@@ -34,7 +37,7 @@ export async function POST(req: NextRequest) {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'subscription',
-      customer_email: email || undefined, // Ensure it's not undefined for Stripe API
+      customer_email: customerEmail,
       line_items: [
         {
           price_data: {

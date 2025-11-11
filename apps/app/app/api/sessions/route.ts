@@ -21,10 +21,28 @@ import {
   processDeliveryLayer,
 } from '../../../lib/reflex-chain/integration';
 
+// CORS headers helper
+function getCorsHeaders() {
+  const allowedOrigin = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
+}
+
+// Handle CORS preflight requests
+export async function OPTIONS(req: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: getCorsHeaders(),
+  });
+}
+
 // Helper function to map Prisma session state (enum) to FireSession status
 function mapPrismaStateToFireSession(state: string | SessionState): SessionStatus {
   // Convert enum to string if needed
-  const stateStr = typeof state === 'string' ? state : state.toString();
+  const stateStr = typeof state === 'string' ? state : String(state);
   
   const stateMap: Record<string, SessionStatus> = {
     // Database enum values (SessionState)
@@ -163,7 +181,10 @@ export async function GET(req: NextRequest) {
       });
       
       if (!session) {
-        return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+        return NextResponse.json({ error: 'Session not found' }, { 
+          status: 404,
+          headers: getCorsHeaders(),
+        });
       }
       
       const fireSession = convertPrismaSessionToFireSession(session);
@@ -210,11 +231,16 @@ export async function GET(req: NextRequest) {
         FOH: sessions.filter(s => s.currentStage === 'FOH').length,
         CUSTOMER: sessions.filter(s => s.currentStage === 'CUSTOMER').length
       }
+    }, {
+      headers: getCorsHeaders(),
     });
 
   } catch (error) {
     console.error('[Sessions API] Error retrieving sessions:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error' }, { 
+      status: 500,
+      headers: getCorsHeaders(),
+    });
   }
 }
 
@@ -255,7 +281,10 @@ export async function POST(req: NextRequest) {
     if (!tableId || !customerName || !flavor) {
       return NextResponse.json({ 
         error: 'Missing required fields: tableId, customerName, and flavor are required' 
-      }, { status: 400 });
+      }, { 
+        status: 400,
+        headers: getCorsHeaders(),
+      });
     }
 
     // Check if session already exists for this table
@@ -333,6 +362,8 @@ export async function POST(req: NextRequest) {
       message: 'Session created successfully',
       nextActions: ['CLAIM_PREP', 'PUT_ON_HOLD'],
       businessLogic: 'New session created - BOH can claim prep or put on hold'
+    }, {
+      headers: getCorsHeaders(),
     });
 
   } catch (error) {
@@ -356,14 +387,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ 
         error: 'Duplicate entry',
         details: 'A session with this identifier already exists'
-      }, { status: 409 });
+      }, { 
+        status: 409,
+        headers: getCorsHeaders(),
+      });
     }
     
     if (errorMessage.includes('P2003')) {
       return NextResponse.json({ 
         error: 'Foreign key constraint failed',
         details: 'Referenced record does not exist'
-      }, { status: 400 });
+      }, { 
+        status: 400,
+        headers: getCorsHeaders(),
+      });
     }
     
     return NextResponse.json({ 
@@ -371,7 +408,10 @@ export async function POST(req: NextRequest) {
       details: errorMessage,
       // Include stack trace in development only
       ...(process.env.NODE_ENV === 'development' && errorStack ? { stack: errorStack } : {})
-    }, { status: 500 });
+    }, { 
+      status: 500,
+      headers: getCorsHeaders(),
+    });
   }
 }
 
@@ -413,7 +453,10 @@ export async function PATCH(req: NextRequest) {
       });
 
       if (!dbSession) {
-        return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+        return NextResponse.json({ error: 'Session not found' }, { 
+          status: 404,
+          headers: getCorsHeaders(),
+        });
       }
 
       // Update only notes
@@ -446,7 +489,10 @@ export async function PATCH(req: NextRequest) {
     });
 
     if (!dbSession) {
-      return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Session not found' }, { 
+        status: 404,
+        headers: getCorsHeaders(),
+      });
     }
 
     // Convert to FireSession format for state machine
