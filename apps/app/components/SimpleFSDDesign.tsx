@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Plus, 
   Clock, 
@@ -129,6 +129,12 @@ export default function SimpleFSDDesign({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showIntelligenceModal, setShowIntelligenceModal] = useState(false);
   const [intelligenceSessionId, setIntelligenceSessionId] = useState<string>('');
+  const [isMounted, setIsMounted] = useState(false);
+  
+  // Fix hydration mismatch - only render counts after mount
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const handleCreateSession = () => {
     window.dispatchEvent(new CustomEvent('openCreateSessionModal'));
@@ -749,7 +755,9 @@ export default function SimpleFSDDesign({
                 <Users className="w-5 h-5 text-blue-400" />
                 <span className="text-sm text-zinc-400">Total Sessions</span>
               </div>
-              <p className="text-2xl font-bold text-white mt-1">{sessions.length}</p>
+              <p className="text-2xl font-bold text-white mt-1">
+                {isMounted ? sessions.length : '...'}
+              </p>
             </div>
             
             <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4">
@@ -758,7 +766,7 @@ export default function SimpleFSDDesign({
                 <span className="text-sm text-zinc-400">Active</span>
               </div>
               <p className="text-2xl font-bold text-white mt-1">
-                {sessions.filter(s => (s.status || s.state) === 'ACTIVE').length}
+                {isMounted ? sessions.filter(s => (s.status || s.state) === 'ACTIVE').length : '...'}
               </p>
             </div>
             
@@ -768,7 +776,7 @@ export default function SimpleFSDDesign({
                 <span className="text-sm text-zinc-400">BOH Prep</span>
               </div>
               <p className="text-2xl font-bold text-white mt-1">
-                {sessions.filter(s => ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(s.status || s.state)).length}
+                {isMounted ? sessions.filter(s => ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(s.status || s.state)).length : '...'}
               </p>
             </div>
             
@@ -778,7 +786,7 @@ export default function SimpleFSDDesign({
                 <span className="text-sm text-zinc-400">FOH Delivery</span>
               </div>
               <p className="text-2xl font-bold text-white mt-1">
-                {sessions.filter(s => ['OUT_FOR_DELIVERY', 'DELIVERED'].includes(s.status || s.state)).length}
+                {isMounted ? sessions.filter(s => ['OUT_FOR_DELIVERY', 'DELIVERED'].includes(s.status || s.state)).length : '...'}
               </p>
             </div>
           </div>

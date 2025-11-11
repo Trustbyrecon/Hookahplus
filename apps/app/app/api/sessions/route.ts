@@ -21,9 +21,21 @@ import {
   processDeliveryLayer,
 } from '../../../lib/reflex-chain/integration';
 
-// CORS headers helper
-function getCorsHeaders() {
-  const allowedOrigin = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+// CORS headers helper - accepts request to get origin
+function getCorsHeaders(req?: NextRequest) {
+  // Allow requests from site build or app build
+  const origin = req?.headers.get('origin');
+  const allowedOrigins = [
+    process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+    'http://localhost:3000',
+    'http://localhost:3002',
+  ];
+  
+  // If origin matches allowed list, use it; otherwise use default
+  const allowedOrigin = origin && allowedOrigins.includes(origin) 
+    ? origin 
+    : allowedOrigins[0];
+    
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS',
@@ -35,7 +47,7 @@ function getCorsHeaders() {
 export async function OPTIONS(req: NextRequest) {
   return new NextResponse(null, {
     status: 200,
-    headers: getCorsHeaders(),
+    headers: getCorsHeaders(req),
   });
 }
 
@@ -232,7 +244,7 @@ export async function GET(req: NextRequest) {
         CUSTOMER: sessions.filter(s => s.currentStage === 'CUSTOMER').length
       }
     }, {
-      headers: getCorsHeaders(),
+      headers: getCorsHeaders(req),
     });
 
   } catch (error) {
@@ -363,7 +375,7 @@ export async function POST(req: NextRequest) {
       nextActions: ['CLAIM_PREP', 'PUT_ON_HOLD'],
       businessLogic: 'New session created - BOH can claim prep or put on hold'
     }, {
-      headers: getCorsHeaders(),
+      headers: getCorsHeaders(req),
     });
 
   } catch (error) {
@@ -590,6 +602,8 @@ export async function PATCH(req: NextRequest) {
         businessLogic: `Session transitioned from ${currentSession.status} to ${updatedSession.status}`,
         nextActions: getAvailableActions(fireSession),
         stage: fireSession.currentStage
+      }, {
+        headers: getCorsHeaders(req),
       });
 
     } catch (stateMachineError) {
@@ -599,7 +613,10 @@ export async function PATCH(req: NextRequest) {
         currentStatus: currentSession.status,
         requestedAction: action,
         userRole
-      }, { status: 400 });
+      }, { 
+        status: 400,
+        headers: getCorsHeaders(req),
+      });
     }
 
   } catch (error) {
@@ -614,7 +631,10 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ 
       error: 'Internal server error',
       details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    }, { 
+      status: 500,
+      headers: getCorsHeaders(req),
+    });
   }
 }
 
