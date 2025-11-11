@@ -812,7 +812,7 @@ export default function SimpleFSDDesign({
               return (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {visibleStatuses.map((status) => {
-                    const count = sessions.filter(s => (s.status || s.state) === status).length;
+                    const count = isMounted ? sessions.filter(s => (s.status || s.state) === status).length : 0;
                     const displayName = getSessionDisplayName(status);
                     const icon = STATE_ICONS[status];
                     const colorClass = STATUS_COLORS[status];
@@ -823,7 +823,7 @@ export default function SimpleFSDDesign({
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-medium text-zinc-300 truncate">{displayName}</p>
-                          <p className="text-lg font-bold text-white">{count}</p>
+                          <p className="text-lg font-bold text-white">{isMounted ? count : '...'}</p>
                         </div>
                       </div>
                     );
