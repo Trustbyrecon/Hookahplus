@@ -257,8 +257,18 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  let requestBody: any = null;
+  
   try {
     console.log('[Sessions API] POST request received');
+    
+    // Parse request body early so it's available in catch block
+    try {
+      requestBody = await req.json();
+    } catch (parseError) {
+      console.error('[Sessions API] Failed to parse request body:', parseError);
+      requestBody = null;
+    }
     
     // Test database connection first
     try {
@@ -273,7 +283,7 @@ export async function POST(req: NextRequest) {
       }, { status: 503 });
     }
     
-    const body = await req.json();
+    const body = requestBody;
     console.log('[Sessions API] Request body:', JSON.stringify(body, null, 2));
     const { 
       tableId,
@@ -390,7 +400,7 @@ export async function POST(req: NextRequest) {
       message: errorMessage,
       stack: errorStack,
       timestamp: new Date().toISOString(),
-      requestBody: body ? JSON.stringify(body, null, 2) : 'No body',
+      requestBody: requestBody ? JSON.stringify(requestBody, null, 2) : 'No body',
       databaseUrl: process.env.DATABASE_URL ? `${process.env.DATABASE_URL.substring(0, 30)}...` : 'Not set'
     });
     

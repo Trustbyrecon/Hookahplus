@@ -98,6 +98,12 @@ function SessionsPageContent() {
   const [sessionFlags, setSessionFlags] = useState<any[]>([]);
   const [userRole, setUserRole] = useState<'BOH' | 'FOH' | 'MANAGER' | 'ADMIN'>('MANAGER');
   const [loading, setLoading] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  
+  // Fix hydration mismatch - only render counts after mount
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Sync with context sessions
   useEffect(() => {
@@ -232,7 +238,7 @@ function SessionsPageContent() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-zinc-400">Total Sessions</p>
-              <p className="text-2xl font-bold text-white">{sessions.length}</p>
+              <p className="text-2xl font-bold text-white">{isMounted ? sessions.length : '...'}</p>
             </div>
             <BarChart3 className="w-8 h-8 text-blue-400" />
           </div>
@@ -253,7 +259,9 @@ function SessionsPageContent() {
             <div>
               <p className="text-sm text-zinc-400">Avg. Duration</p>
               <p className="text-2xl font-bold text-white">
-                {Math.round(sessions.reduce((sum, s) => sum + (s.durationSecs || 0), 0) / sessions.length / 60)}m
+                {isMounted && sessions.length > 0 
+                  ? `${Math.round(sessions.reduce((sum, s) => sum + (s.durationSecs || 0), 0) / sessions.length / 60)}m`
+                  : '...'}
               </p>
             </div>
             <Clock className="w-8 h-8 text-purple-400" />
@@ -407,7 +415,7 @@ function SessionsPageContent() {
           headline="Sessions Management"
           subheadline="Advanced session management, monitoring, and workflow optimization. View session history, manage queues, and optimize staff workflows."
           benefit={{
-            value: `${sessions.length} Active Sessions`,
+            value: isMounted ? `${sessions.length} Active Sessions` : '... Active Sessions',
             description: 'Monitor and manage all lounge sessions',
             icon: <Flame className="w-5 h-5 text-orange-400" />
           }}
