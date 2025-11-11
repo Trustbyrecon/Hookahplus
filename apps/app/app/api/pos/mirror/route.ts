@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, SessionState } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     if (mode === 'shadow' || mode === 'mirror') {
       sessions = await prisma.session.findMany({
         where: {
-          state: { in: ['NEW', 'PREP_IN_PROGRESS', 'READY_FOR_DELIVERY', 'ACTIVE'] },
+          state: { in: [SessionState.PENDING, SessionState.ACTIVE] },
           ...(tableId && { tableId })
         },
         orderBy: { createdAt: 'desc' },

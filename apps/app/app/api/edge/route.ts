@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, SessionState } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
         const activeEdgeCases = await prisma.session.findMany({
           where: {
             edgeCase: { not: null },
-            state: { in: ['NEW', 'PREP_IN_PROGRESS', 'READY_FOR_DELIVERY', 'ACTIVE'] }
+            state: { in: [SessionState.PENDING, SessionState.ACTIVE] }
           },
           select: {
             id: true,
