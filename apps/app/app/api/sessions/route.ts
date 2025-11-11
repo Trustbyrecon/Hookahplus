@@ -312,10 +312,14 @@ export async function POST(req: NextRequest) {
     const errorStack = error instanceof Error ? error.stack : undefined;
     const errorName = error instanceof Error ? error.name : 'UnknownError';
     
+    // Enhanced error logging
     console.error('[Sessions API] Error details:', {
       name: errorName,
       message: errorMessage,
-      stack: errorStack
+      stack: errorStack,
+      timestamp: new Date().toISOString(),
+      requestBody: body ? JSON.stringify(body, null, 2) : 'No body',
+      databaseUrl: process.env.DATABASE_URL ? `${process.env.DATABASE_URL.substring(0, 30)}...` : 'Not set'
     });
     
     // Check for specific Prisma errors

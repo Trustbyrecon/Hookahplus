@@ -22,6 +22,8 @@ export async function POST(req: NextRequest) {
       try {
         // Create lead in Operator Onboarding via app API
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
+        console.log('[Onboarding Submission] Connecting to app build at:', appUrl);
+        
         const onboardingResponse = await fetch(`${appUrl}/api/admin/operator-onboarding`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -44,10 +46,19 @@ export async function POST(req: NextRequest) {
           const result = await onboardingResponse.json();
           console.log('[Onboarding Submission] Lead created in Operator Onboarding:', result.leadId);
         } else {
-          console.warn('[Onboarding Submission] Failed to create lead in Operator Onboarding, but continuing');
+          const errorText = await onboardingResponse.text();
+          console.warn('[Onboarding Submission] Failed to create lead in Operator Onboarding:', {
+            status: onboardingResponse.status,
+            statusText: onboardingResponse.statusText,
+            error: errorText
+          });
         }
       } catch (onboardingError) {
-        console.error('[Onboarding Submission] Error creating lead in Operator Onboarding:', onboardingError);
+        console.error('[Onboarding Submission] Error creating lead in Operator Onboarding:', {
+          error: onboardingError instanceof Error ? onboardingError.message : 'Unknown error',
+          stack: onboardingError instanceof Error ? onboardingError.stack : undefined,
+          appUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'
+        });
         // Continue anyway - we'll still return success to user
       }
 
@@ -77,6 +88,8 @@ export async function POST(req: NextRequest) {
       try {
         // Create lead in Operator Onboarding via app API
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
+        console.log('[Demo Request] Connecting to app build at:', appUrl);
+        
         const onboardingResponse = await fetch(`${appUrl}/api/admin/operator-onboarding`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -99,10 +112,19 @@ export async function POST(req: NextRequest) {
           const result = await onboardingResponse.json();
           console.log('[Demo Request] Lead created in Operator Onboarding:', result.leadId);
         } else {
-          console.warn('[Demo Request] Failed to create lead in Operator Onboarding, but continuing');
+          const errorText = await onboardingResponse.text();
+          console.warn('[Demo Request] Failed to create lead in Operator Onboarding:', {
+            status: onboardingResponse.status,
+            statusText: onboardingResponse.statusText,
+            error: errorText
+          });
         }
       } catch (onboardingError) {
-        console.error('[Demo Request] Error creating lead in Operator Onboarding:', onboardingError);
+        console.error('[Demo Request] Error creating lead in Operator Onboarding:', {
+          error: onboardingError instanceof Error ? onboardingError.message : 'Unknown error',
+          stack: onboardingError instanceof Error ? onboardingError.stack : undefined,
+          appUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'
+        });
         // Continue anyway - we'll still return success to user
       }
 

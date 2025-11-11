@@ -38,7 +38,7 @@ export default function PreOrderThankYouPage() {
         subheadline="Thank you for securing your spot. We'll notify you when Hookah+ launches."
         benefit={{
           value: 'Test Mode',
-          description: 'No real charges - you'll be charged when we launch',
+          description: 'No real charges - you\'ll be charged when we launch',
           icon: <Shield className="w-5 h-5 text-teal-400" />
         }}
       />
@@ -61,22 +61,22 @@ export default function PreOrderThankYouPage() {
             <div className="flex items-start gap-3">
               <Mail className="w-5 h-5 text-teal-400 mt-1 flex-shrink-0" />
               <div>
-                <p className="font-medium text-white">What's Next?</p>
-                <p className="text-sm text-zinc-400">You'll receive an email confirmation with your pre-order details. We'll notify you when Hookah+ launches and your subscription begins.</p>
+                <p className="font-medium text-white">What&apos;s Next?</p>
+                <p className="text-sm text-zinc-400">You&apos;ll receive an email confirmation with your pre-order details. We&apos;ll notify you when Hookah+ launches and your subscription begins.</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Calendar className="w-5 h-5 text-teal-400 mt-1 flex-shrink-0" />
               <div>
                 <p className="font-medium text-white">Launch Timeline</p>
-                <p className="text-sm text-zinc-400">We're targeting a launch date in the coming weeks. As a pre-order customer, you'll be among the first to access Hookah+.</p>
+                <p className="text-sm text-zinc-400">We&apos;re targeting a launch date in the coming weeks. As a pre-order customer, you&apos;ll be among the first to access Hookah+.</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Shield className="w-5 h-5 text-teal-400 mt-1 flex-shrink-0" />
               <div>
                 <p className="font-medium text-white">Test Mode</p>
-                <p className="text-sm text-zinc-400">This pre-order was processed in test mode. No real charges were made. You'll be charged when Hookah+ officially launches.</p>
+                <p className="text-sm text-zinc-400">This pre-order was processed in test mode. No real charges were made. You&apos;ll be charged when Hookah+ officially launches.</p>
               </div>
             </div>
           </div>
