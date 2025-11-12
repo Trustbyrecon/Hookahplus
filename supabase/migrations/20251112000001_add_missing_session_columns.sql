@@ -3,6 +3,7 @@
 
 -- Add missing columns to Session table
 ALTER TABLE public."Session" 
+ADD COLUMN IF NOT EXISTS "externalRef" TEXT,
 ADD COLUMN IF NOT EXISTS "tableId" TEXT,
 ADD COLUMN IF NOT EXISTS "customerRef" TEXT,
 ADD COLUMN IF NOT EXISTS "flavor" TEXT,
