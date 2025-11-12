@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
@@ -17,7 +17,7 @@ import {
   formatDuration, formatCurrency, getStatusColor, getStageIcon
 } from '../../lib/mockData';
 
-export default function SessionsPage() {
+function SessionsPageContent() {
   const searchParams = useSearchParams();
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
@@ -107,5 +107,20 @@ export default function SessionsPage() {
         />
       </div>
     </div>
+  );
+}
+
+export default function SessionsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-400 mx-auto mb-4"></div>
+          <p className="text-zinc-400">Loading sessions...</p>
+        </div>
+      </div>
+    }>
+      <SessionsPageContent />
+    </Suspense>
   );
 }

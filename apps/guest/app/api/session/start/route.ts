@@ -56,12 +56,11 @@ export async function POST(req: NextRequest) {
           ? flavorMix.join(' + ') 
           : (typeof flavorMix === 'string' ? flavorMix : 'Custom Mix'),
         amount: totalAmount > 0 ? Math.round(totalAmount * 100) : 3000, // Convert to cents, default $30
-        source: sessionType === 'reservation' ? 'RESERVE' : 
-                sessionType === 'vip' ? 'VIP' : 'WALK_IN',
+        source: sessionType === 'reservation' ? 'RESERVE' : 'QR', // QR code scan from guest build
         loungeId: loungeId,
         externalRef: `guest-${sessionId}`,
         sessionDuration: 45 * 60, // Default 45 minutes
-        notes: `Guest session started from guest build`
+        notes: `Guest session started from guest build via QR scan`
       };
 
       console.log(`[Session Start] Sending to app build API:`, JSON.stringify(appSessionPayload, null, 2));
@@ -76,7 +75,8 @@ export async function POST(req: NextRequest) {
 
       if (appResponse.ok) {
         const appResult = await appResponse.json();
-        console.log(`[Session Start] Successfully created session in app build database:`, appResult.session?.id);
+        console.log(`[Session Start] ✅ Successfully created session in app build database:`, appResult.session?.id);
+        console.log(`[Session Start] App build response:`, JSON.stringify(appResult, null, 2));
         
         // Merge app session data with guest session data
         return NextResponse.json({
@@ -86,27 +86,57 @@ export async function POST(req: NextRequest) {
             appSessionId: appResult.session?.id,
             appSession: appResult.session
           },
-          message: 'Session started successfully and synced to database'
+          message: 'Session started successfully and synced to Fire Session Dashboard',
+          synced: true
         });
       } else {
-        const errorData = await appResponse.json().catch(() => ({ error: 'Unknown error' }));
-        console.warn(`[Session Start] Failed to sync to app build database:`, errorData);
+        const errorText = await appResponse.text();
+        let errorData;
+        try {
+          errorData = errorText ? JSON.parse(errorText) : { error: 'Unknown error' };
+        } catch {
+          errorData = { error: errorText || 'Unknown error' };
+        }
+        
+        console.error(`[Session Start] ❌ Failed to sync to app build database:`, {
+          status: appResponse.status,
+          statusText: appResponse.statusText,
+          error: errorData
+        });
+        
         // Continue anyway - guest session still works even if app build is unavailable
         return NextResponse.json({
           success: true,
           session: sessionData,
           message: 'Session started successfully (database sync unavailable)',
-          warning: 'Could not sync to Fire Session Dashboard'
+          warning: 'Could not sync to Fire Session Dashboard',
+          syncError: errorData,
+          synced: false
         });
       }
     } catch (appError) {
-      console.error(`[Session Start] Error connecting to app build:`, appError);
+      const errorMessage = appError instanceof Error ? appError.message : String(appError);
+      const errorStack = appError instanceof Error ? appError.stack : undefined;
+      
+      console.error(`[Session Start] ❌ Error connecting to app build:`, {
+        error: errorMessage,
+        stack: errorStack,
+        appUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002',
+        hint: 'Is the app build running on localhost:3002?'
+      });
+      
       // Continue anyway - guest session still works even if app build is unavailable
       return NextResponse.json({
         success: true,
         session: sessionData,
         message: 'Session started successfully (database sync unavailable)',
-        warning: 'Could not sync to Fire Session Dashboard'
+        warning: 'Could not sync to Fire Session Dashboard',
+        syncError: {
+          type: 'connection_error',
+          message: errorMessage,
+          hint: 'Check if app build is running on localhost:3002'
+        },
+        synced: false
       });
     }
 

@@ -23,12 +23,13 @@ import {
 
 // CORS headers helper - accepts request to get origin
 function getCorsHeaders(req?: NextRequest) {
-  // Allow requests from site build or app build
+  // Allow requests from site build, app build, or guest build
   const origin = req?.headers.get('origin');
   const allowedOrigins = [
     process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
     'http://localhost:3000',
     'http://localhost:3002',
+    'http://localhost:3001', // Guest build
   ];
   
   // If origin matches allowed list, use it; otherwise use default
@@ -290,11 +291,12 @@ export async function POST(req: NextRequest) {
     const finalLoungeId = loungeId || 'default-lounge';
 
     // Check if session already exists for this table (simplified duplicate check)
+    // Use string literals to avoid runtime enum issues
     const existingSession = await prisma.session.findFirst({
       where: {
         tableId: tableId,
         state: {
-          notIn: [SessionState.CLOSED, SessionState.CANCELED]
+          notIn: ['CLOSED', 'CANCELED'] as SessionState[]
         }
       }
     });
@@ -347,7 +349,7 @@ export async function POST(req: NextRequest) {
         flavor: typeof flavor === 'string' ? flavor : (Array.isArray(flavor) ? flavor[0] : 'Custom Mix'),
         flavorMix: typeof flavor === 'string' ? flavor : JSON.stringify(flavor),
         priceCents: amount ? (amount < 1000 ? Math.round(amount * 100) : Math.round(amount)) : 3000,
-        state: SessionState.PENDING,
+        state: 'PENDING' as SessionState, // Use string literal to avoid runtime enum issues
         assignedBOHId: assignedStaff?.boh || undefined,
         assignedFOHId: assignedStaff?.foh || undefined,
         tableNotes: notes || undefined,
@@ -539,9 +541,8 @@ export async function PATCH(req: NextRequest) {
         'READY_FOR_DELIVERY': 'READY_FOR_DELIVERY',
         'OUT_FOR_DELIVERY': 'OUT_FOR_DELIVERY',
         'DELIVERED': 'DELIVERED',
-        'STAFF_HOLD': 'PAUSED',
-        'PAUSE_SESSION': 'PAUSED', // FOH action: pauses active session
-        'CLOSED': 'CLOSED', // FOH action: closes session
+        'STAFF_HOLD': 'PAUSED', // PAUSE_SESSION action results in STAFF_HOLD status
+        'CLOSED': 'CLOSED', // CLOSE_SESSION action results in CLOSED status
         'VOIDED': 'CANCELED',
         'FAILED_PAYMENT': 'FAILED_PAYMENT',
         'PAID_CONFIRMED': 'NEW', // Maps to NEW as payment is confirmed
@@ -572,9 +573,9 @@ export async function PATCH(req: NextRequest) {
       }
 
       // Update endedAt if transitioning to CLOSED/CANCELED
-      // Cast newState to SessionState enum for type checking
-      const finalState = newState as SessionState;
-      if ((finalState === SessionState.CLOSED || finalState === SessionState.CANCELED) && !dbSession.endedAt) {
+      // Use string comparison to avoid runtime enum issues
+      const finalState = String(newState);
+      if ((finalState === 'CLOSED' || finalState === 'CANCELED') && !dbSession.endedAt) {
         updateData.endedAt = new Date();
       }
 

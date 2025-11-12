@@ -278,6 +278,30 @@ export default function GuestPortal() {
       if (response.ok) {
         console.log('✅ Session created successfully:', result);
         
+        // Log sync status with detailed error info
+        if (result.synced) {
+          console.log('✅ Session synced to Fire Session Dashboard (app build)');
+          console.log('📊 App Session ID:', result.session?.appSessionId);
+        } else {
+          console.error('⚠️ Session created but NOT synced to app build');
+          console.error('📋 Warning:', result.warning);
+          if (result.syncError) {
+            console.error('❌ Sync Error Details:', result.syncError);
+            if (result.syncError.status) {
+              console.error('   Status:', result.syncError.status, result.syncError.statusText);
+            }
+            if (result.syncError.error) {
+              console.error('   Error:', result.syncError.error);
+            }
+            if (result.syncError.details) {
+              console.error('   Details:', result.syncError.details);
+            }
+            if (result.syncError.hint) {
+              console.error('   💡 Hint:', result.syncError.hint);
+            }
+          }
+        }
+        
         setShowSuccessModal(true);
         
         // Clear cart after successful session start
@@ -286,7 +310,11 @@ export default function GuestPortal() {
         // Refresh staff dashboard if open
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('sessionCreated', { 
-            detail: { sessionData: result.session } 
+            detail: { 
+              sessionData: result.session,
+              synced: result.synced,
+              appSessionId: result.session?.appSessionId
+            } 
           }));
         }
       } else {
