@@ -257,59 +257,39 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  let requestBody: any = null;
-  
   try {
     console.log('[Sessions API] POST request received');
     
-    // Parse request body early so it's available in catch block
-    try {
-      requestBody = await req.json();
-    } catch (parseError) {
-      console.error('[Sessions API] Failed to parse request body:', parseError);
-      requestBody = null;
-    }
-    
-    // Test database connection first
-    try {
-      await prisma.$connect();
-      console.log('[Sessions API] Database connection successful');
-    } catch (dbError) {
-      console.error('[Sessions API] Database connection failed:', dbError);
-      return NextResponse.json({ 
-        error: 'Database connection failed',
-        details: dbError instanceof Error ? dbError.message : 'Unknown database error',
-        hint: 'Check DATABASE_URL environment variable and ensure database is running'
-      }, { status: 503 });
-    }
-    
-    const body = requestBody;
-    console.log('[Sessions API] Request body:', JSON.stringify(body, null, 2));
+    const body = await req.json();
     const { 
       tableId,
       customerName,
       customerPhone,
       flavor,
-      amount, // Can be in dollars or cents - will be converted
+      amount,
       assignedStaff,
       notes,
-      sessionDuration = 45 * 60, // Default 45 minutes
+      sessionDuration = 45 * 60,
       loungeId = 'default-lounge',
       source = 'WALK_IN',
       externalRef
     } = body;
 
-    // Validate required fields
-    if (!tableId || !customerName || !flavor) {
+    // Simple validation - only required fields
+    if (!tableId || !customerName) {
       return NextResponse.json({ 
-        error: 'Missing required fields: tableId, customerName, and flavor are required' 
+        error: 'Missing required fields: tableId and customerName are required' 
       }, { 
         status: 400,
-        headers: getCorsHeaders(),
+        headers: getCorsHeaders(req),
       });
     }
 
-    // Check if session already exists for this table
+    // Generate externalRef for idempotency
+    const finalExternalRef = externalRef || `walk-in-${Date.now()}`;
+    const finalLoungeId = loungeId || 'default-lounge';
+
+    // Check if session already exists for this table (simplified duplicate check)
     const existingSession = await prisma.session.findFirst({
       where: {
         tableId: tableId,
@@ -322,9 +302,15 @@ export async function POST(req: NextRequest) {
     if (existingSession) {
       const fireSession = convertPrismaSessionToFireSession(existingSession);
       return NextResponse.json({ 
-        error: 'Table already has an active session',
-        existingSession: fireSession
-      }, { status: 409 });
+        success: true, // Idempotent - return existing session
+        session: fireSession,
+        message: 'Session already exists',
+        nextActions: ['CLAIM_PREP', 'PUT_ON_HOLD'],
+        businessLogic: 'Existing session found - BOH can claim prep or put on hold'
+      }, { 
+        status: 200, // 200 instead of 409 for idempotency
+        headers: getCorsHeaders(req),
+      });
     }
 
     // Create trust signature
@@ -333,9 +319,9 @@ export async function POST(req: NextRequest) {
       crypto.createHash("sha256").update(JSON.stringify(o)).digest("hex");
 
     const trustSignature = seal({
-      loungeId,
+      loungeId: finalLoungeId,
       source,
-      externalRef: externalRef || `walk-in-${Date.now()}`,
+      externalRef: finalExternalRef,
       customerPhone,
       flavor
     });
@@ -345,39 +331,69 @@ export async function POST(req: NextRequest) {
     if (source === 'QR' || source === 'RESERVE' || source === 'WALK_IN' || source === 'LEGACY_POS') {
       sourceEnum = source as SessionSource;
     } else {
-      // Default to WALK_IN for unknown sources
       sourceEnum = SessionSource.WALK_IN;
     }
 
-    // Create new session in database
-    const sessionData = {
-      loungeId: loungeId || 'default-lounge',
-      source: sourceEnum,
-      externalRef: externalRef || `walk-in-${Date.now()}`,
-      trustSignature,
-      tableId,
-      customerRef: customerName,
-      customerPhone: customerPhone || undefined,
-      flavor: typeof flavor === 'string' ? flavor : (Array.isArray(flavor) ? flavor[0] : 'Custom Mix'),
-      flavorMix: typeof flavor === 'string' ? flavor : JSON.stringify(flavor),
-      priceCents: amount ? (amount < 1000 ? Math.round(amount * 100) : Math.round(amount)) : 3000, // Convert dollars to cents if needed, default $30.00
-      state: SessionState.PENDING, // Use enum - PENDING instead of NEW
-      assignedBOHId: assignedStaff?.boh || undefined,
-      assignedFOHId: assignedStaff?.foh || undefined,
-      tableNotes: notes || undefined,
-      durationSecs: sessionDuration,
-    };
-    
-    console.log('[Sessions API] Creating session with data:', JSON.stringify(sessionData, null, 2));
-    
+    // Create session in database
     const newSession = await prisma.session.create({
-      data: sessionData
+      data: {
+        loungeId: finalLoungeId,
+        source: sourceEnum,
+        externalRef: finalExternalRef,
+        trustSignature,
+        tableId,
+        customerRef: customerName,
+        customerPhone: customerPhone || undefined,
+        flavor: typeof flavor === 'string' ? flavor : (Array.isArray(flavor) ? flavor[0] : 'Custom Mix'),
+        flavorMix: typeof flavor === 'string' ? flavor : JSON.stringify(flavor),
+        priceCents: amount ? (amount < 1000 ? Math.round(amount * 100) : Math.round(amount)) : 3000,
+        state: SessionState.PENDING,
+        assignedBOHId: assignedStaff?.boh || undefined,
+        assignedFOHId: assignedStaff?.foh || undefined,
+        tableNotes: notes || undefined,
+        durationSecs: sessionDuration,
+      }
     });
     
     console.log('[Sessions API] Session created successfully:', newSession.id);
 
-    const fireSession = convertPrismaSessionToFireSession(newSession);
+    // Create ReflexEvent for analytics tracking
+    try {
+      await prisma.reflexEvent.create({
+        data: {
+          type: 'session.created',
+          source: 'api',
+          sessionId: newSession.id,
+          payload: JSON.stringify({
+            action: 'create-session',
+            tableId,
+            customerName,
+            source,
+            businessLogic: 'New session created - BOH can claim prep or put on hold'
+          }),
+          payloadHash: seal({
+            action: 'create-session',
+            tableId,
+            customerName,
+            source
+          })
+        }
+      });
+    } catch (eventError) {
+      // Log but don't fail the request if event creation fails
+      console.error('[Sessions API] Failed to create analytics event:', eventError);
+    }
 
+    // Initialize Reflex Chain (preserve existing logic)
+    const fireSession = convertPrismaSessionToFireSession(newSession);
+    try {
+      await initializeReflexChain(fireSession);
+    } catch (reflexError) {
+      // Log but don't fail the request if Reflex Chain initialization fails
+      console.error('[Sessions API] Failed to initialize Reflex Chain:', reflexError);
+    }
+
+    // Return with business logic metadata (preserve existing format)
     return NextResponse.json({ 
       success: true, 
       session: fireSession,
@@ -391,48 +407,27 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('[Sessions API] Error creating session:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    const errorStack = error instanceof Error ? error.stack : undefined;
-    const errorName = error instanceof Error ? error.name : 'UnknownError';
     
-    // Enhanced error logging
-    console.error('[Sessions API] Error details:', {
-      name: errorName,
-      message: errorMessage,
-      stack: errorStack,
-      timestamp: new Date().toISOString(),
-      requestBody: requestBody ? JSON.stringify(requestBody, null, 2) : 'No body',
-      databaseUrl: process.env.DATABASE_URL ? `${process.env.DATABASE_URL.substring(0, 30)}...` : 'Not set'
-    });
-    
-    // Check for specific Prisma errors
+    // Simple error handling
     if (errorMessage.includes('P2002')) {
       return NextResponse.json({ 
         error: 'Duplicate entry',
         details: 'A session with this identifier already exists'
       }, { 
         status: 409,
-        headers: getCorsHeaders(),
-      });
-    }
-    
-    if (errorMessage.includes('P2003')) {
-      return NextResponse.json({ 
-        error: 'Foreign key constraint failed',
-        details: 'Referenced record does not exist'
-      }, { 
-        status: 400,
-        headers: getCorsHeaders(),
+        headers: getCorsHeaders(req),
       });
     }
     
     return NextResponse.json({ 
       error: 'Internal server error',
       details: errorMessage,
-      // Include stack trace in development only
-      ...(process.env.NODE_ENV === 'development' && errorStack ? { stack: errorStack } : {})
+      ...(process.env.NODE_ENV === 'development' ? { 
+        stack: error instanceof Error ? error.stack : undefined 
+      } : {})
     }, { 
       status: 500,
-      headers: getCorsHeaders(),
+      headers: getCorsHeaders(req),
     });
   }
 }

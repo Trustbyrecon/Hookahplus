@@ -551,11 +551,11 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-refresh data every 30 seconds
+  // Auto-refresh data every 5 seconds (optimized for real-time updates)
   useEffect(() => {
     const interval = setInterval(() => {
       refreshSessions();
-    }, 30000);
+    }, 5000);
 
     return () => clearInterval(interval);
   }, []); // Remove refreshSessions dependency to prevent recreation
