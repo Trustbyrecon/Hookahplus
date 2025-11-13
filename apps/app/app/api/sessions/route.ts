@@ -370,28 +370,11 @@ export async function POST(req: NextRequest) {
       durationSecs: sessionDuration,
     };
 
-    // Handle enum fields - use Prisma enum values directly for proper serialization
-    // Map source string to Prisma enum value
-    let sourceEnum: SessionSource;
-    switch (sourceValue) {
-      case 'QR':
-        sourceEnum = SessionSource.QR;
-        break;
-      case 'RESERVE':
-        sourceEnum = SessionSource.RESERVE;
-        break;
-      case 'WALK_IN':
-        sourceEnum = SessionSource.WALK_IN;
-        break;
-      case 'LEGACY_POS':
-        sourceEnum = SessionSource.LEGACY_POS;
-        break;
-      default:
-        sourceEnum = SessionSource.WALK_IN;
-    }
-    
-    sessionData.source = sourceEnum;
-    sessionData.state = SessionState.PENDING;
+    // Handle enum fields - use string literals for reliable PostgreSQL enum casting
+    // PostgreSQL automatically casts strings to enum types, avoiding Prisma serialization issues
+    // This is the most reliable approach used by many production teams
+    sessionData.source = sourceValue; // String literal: 'QR', 'WALK_IN', etc.
+    sessionData.state = 'PENDING';    // String literal - PostgreSQL will cast to SessionState enum
 
     // Log the data being sent for debugging
     console.log('[Sessions API] Creating session with data:', {
