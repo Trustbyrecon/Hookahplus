@@ -412,7 +412,9 @@ export async function POST(req: NextRequest) {
       handoff_started_at: null
     });
     
-    const insertQuery = `
+    // Try to include v1 columns, but handle gracefully if they don't exist yet
+    // First, try with v1 columns
+    let insertQuery = `
       INSERT INTO "Session" (
         "id", "externalRef", "source", "state", "trustSignature", 
         "tableId", "customerRef", "customerPhone", "flavor", "flavorMix",
@@ -443,9 +445,38 @@ export async function POST(req: NextRequest) {
       ) RETURNING *
     `;
     
+    // Fallback query without v1 columns (if migration not run yet)
+    const insertQueryFallback = `
+      INSERT INTO "Session" (
+        "id", "externalRef", "source", "state", "trustSignature", 
+        "tableId", "customerRef", "customerPhone", "flavor", "flavorMix",
+        "loungeId", "priceCents", "assignedBOHId", "assignedFOHId", 
+        "tableNotes", "durationSecs", "createdAt", "updatedAt"
+      ) VALUES (
+        gen_random_uuid()::text,
+        ${escapeSqlString(finalExternalRef)},
+        ${escapeSqlString(sourceValue)}::"SessionSource",
+        'PENDING'::"SessionState",
+        ${escapeSqlString(trustSignature)},
+        ${escapeSqlString(tableId)},
+        ${escapeSqlString(customerName)},
+        ${escapeSqlString(customerPhone)},
+        ${escapeSqlString(finalFlavor)},
+        ${escapeSqlString(finalFlavorMix)},
+        ${escapeSqlString(finalLoungeId)},
+        ${finalPriceCents},
+        ${escapeSqlString(assignedStaff?.boh)},
+        ${escapeSqlString(assignedStaff?.foh)},
+        ${escapeSqlString(notes)},
+        ${sessionDuration},
+        NOW(),
+        NOW()
+      ) RETURNING *
+    `;
+    
     let newSession: any;
     try {
-      console.log('[Sessions API] Executing raw SQL query');
+      console.log('[Sessions API] Executing raw SQL query with v1 columns');
       const result = await prisma.$queryRawUnsafe(insertQuery) as any[];
       
       if (result && result.length > 0) {
@@ -477,198 +508,243 @@ export async function POST(req: NextRequest) {
       } else {
         throw new Error('Raw SQL insert returned no rows');
       }
-    } catch (sqlError: any) {
-      console.error('[Sessions API] ❌ Raw SQL insert failed:', sqlError);
-      console.error('[Sessions API] SQL Error details:', {
-        message: sqlError?.message,
-        code: sqlError?.code,
-        query: insertQuery.substring(0, 200) + '...'
-      });
       
-      // Log KTL-4 event for session creation failure
+      // Session created successfully - create analytics event and initialize Reflex Chain
+      // Create ReflexEvent for analytics tracking
       try {
-        const errorType = sqlError?.message?.includes('expected value') ? 'enum_serialization' : 
-                         sqlError?.code ? `database_error_${sqlError.code}` : 'unknown_error';
+        await prisma.reflexEvent.create({
+          data: {
+            type: 'session.created',
+            source: 'api',
+            sessionId: newSession.id,
+            payload: JSON.stringify({
+              action: 'create-session',
+              tableId,
+              customerName,
+              source,
+              businessLogic: 'New session created - BOH can claim prep or put on hold'
+            }),
+            payloadHash: seal({
+              action: 'create-session',
+              tableId,
+              customerName,
+              source
+            })
+          }
+        });
+      } catch (eventError) {
+        // Log but don't fail the request if event creation fails
+        console.error('[Sessions API] Failed to create analytics event:', eventError);
+      }
+
+      // Initialize Reflex Chain (preserve existing logic)
+      const fireSession = convertPrismaSessionToFireSession(newSession);
+      try {
+        await initializeReflexChain(fireSession);
+      } catch (reflexError) {
+        // Log but don't fail the request if Reflex Chain initialization fails
+        console.error('[Sessions API] Failed to initialize Reflex Chain:', reflexError);
+      }
+
+      // Return with business logic metadata (preserve existing format)
+      return NextResponse.json({ 
+        success: true, 
+        session: fireSession,
+        message: 'Session created successfully',
+        nextActions: ['CLAIM_PREP', 'PUT_ON_HOLD'],
+        businessLogic: 'New session created - BOH can claim prep or put on hold'
+      }, {
+        headers: getCorsHeaders(req),
+      });
+    } catch (sqlError: any) {
+      // Check if error is due to missing v1 columns (migration not run yet)
+      const isMissingColumnError = sqlError?.message?.includes('does not exist') || 
+                                   sqlError?.code === '42703' ||
+                                   sqlError?.message?.includes('sessionStateV1');
+      
+      if (isMissingColumnError) {
+        console.warn('[Sessions API] ⚠️ V1 columns not found, using fallback query (migration may not be run yet)');
+        try {
+          // Try fallback query without v1 columns
+          const fallbackResult = await prisma.$queryRawUnsafe(insertQueryFallback) as any[];
+          if (fallbackResult && fallbackResult.length > 0) {
+            newSession = fallbackResult[0];
+            console.log('[Sessions API] ✅ Session created successfully via fallback query (no v1 columns):', newSession.id);
+            
+            // Log KTL-4 event for successful session creation (without v1 columns)
+            try {
+              await logKtl4Event({
+                flowName: 'session_lifecycle',
+                eventType: 'session_created',
+                sessionId: newSession.id,
+                status: 'success',
+                details: {
+                  tableId,
+                  source: sourceValue,
+                  loungeId: finalLoungeId,
+                  customerName,
+                  customerPhone,
+                  flavor: finalFlavor,
+                  priceCents: finalPriceCents,
+                  method: 'raw_sql_fallback',
+                  note: 'V1 columns not available - migration may need to be run'
+                }
+              });
+            } catch (ktl4Error) {
+              console.error('[Sessions API] Failed to log KTL-4 event:', ktl4Error);
+            }
+          } else {
+            throw new Error('Fallback query returned no rows');
+          }
+        } catch (fallbackError: any) {
+          console.error('[Sessions API] ❌ Fallback query also failed:', fallbackError);
+          throw fallbackError; // Re-throw to be handled by outer catch
+        }
+      } else {
+        // Other SQL errors - log and re-throw
+        console.error('[Sessions API] ❌ Raw SQL insert failed:', sqlError);
+        console.error('[Sessions API] SQL Error details:', {
+          message: sqlError?.message,
+          code: sqlError?.code,
+          query: insertQuery.substring(0, 200) + '...'
+        });
         
+        // Log KTL-4 event for session creation failure
+        try {
+          const errorType = sqlError?.message?.includes('expected value') ? 'enum_serialization' : 
+                           sqlError?.code ? `database_error_${sqlError.code}` : 'unknown_error';
+          
+          await logKtl4Event({
+            flowName: 'session_lifecycle',
+            eventType: 'session_creation_failed',
+            status: 'error',
+            details: {
+              error: sqlError?.message || 'Unknown error',
+              errorType,
+              tableId,
+              source: sourceValue,
+              loungeId: finalLoungeId,
+              customerName,
+              method: 'raw_sql'
+            }
+          });
+        } catch (ktl4Error) {
+          // Log but don't fail the request if KTL-4 logging fails
+          console.error('[Sessions API] Failed to log KTL-4 failure event:', ktl4Error);
+        }
+        
+        throw sqlError;
+      }
+    }
+  } catch (error) {
+      console.error('[Sessions API] Error creating session:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      // Log KTL-4 event for session creation failure (outer catch - validation/other errors)
+      try {
+        const errorType = errorMessage.includes('P2002') ? 'duplicate_entry' :
+                         errorMessage.includes('expected value') ? 'enum_serialization' :
+                         'validation_error';
+        
+        // Note: body may not be defined if error occurred during parsing
+        // Use optional chaining to safely access body properties
         await logKtl4Event({
           flowName: 'session_lifecycle',
           eventType: 'session_creation_failed',
           status: 'error',
           details: {
-            error: sqlError?.message || 'Unknown error',
+            error: errorMessage,
             errorType,
-            tableId,
-            source: sourceValue,
-            loungeId: finalLoungeId,
-            customerName,
-            method: 'raw_sql'
+            // body may be undefined if parsing failed
+            tableId: body?.tableId,
+            source: body?.source,
+            loungeId: body?.loungeId,
+            method: 'validation'
           }
         });
+        
+        // Check if we need to update health status (calculate success rate)
+        const { ktl4GhostLog } = await import('../../../lib/ktl4-ghostlog');
+        const recentEvents = ktl4GhostLog.getFlowEvents('session_lifecycle', 100);
+        const creationEvents = recentEvents.filter(e => 
+          e.eventType === 'session_created' || e.eventType === 'session_creation_failed'
+        );
+        
+        if (creationEvents.length >= 10) {
+          const successCount = creationEvents.filter(e => e.eventType === 'session_created').length;
+          const successRate = (successCount / creationEvents.length) * 100;
+          
+          if (successRate < 80) {
+            // Critical: success rate below 80%
+            await updateKtl4Health('session_lifecycle', {
+              flowName: 'session_lifecycle',
+              status: 'critical',
+              lastCheck: new Date().toISOString(),
+              issues: [`Session creation success rate ${successRate.toFixed(1)}% (critical threshold: 80%)`],
+              metrics: { successRate, totalAttempts: creationEvents.length, failures: creationEvents.length - successCount }
+            });
+          } else if (successRate < 95) {
+            // Degraded: success rate below 95%
+            await updateKtl4Health('session_lifecycle', {
+              flowName: 'session_lifecycle',
+              status: 'degraded',
+              lastCheck: new Date().toISOString(),
+              issues: [`Session creation success rate ${successRate.toFixed(1)}% (degraded threshold: 95%)`],
+              metrics: { successRate, totalAttempts: creationEvents.length, failures: creationEvents.length - successCount }
+            });
+          }
+        }
+        
+        // Create alert for enum serialization errors (critical)
+        if (errorType === 'enum_serialization') {
+          try {
+            // Try to create alert via API or direct database insert
+            await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/api/ktl4/alerts`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                flowName: 'session_lifecycle',
+                alertType: 'session_creation_enum_error',
+                priority: 'P1',
+                message: 'Prisma enum serialization failing, using raw SQL fallback',
+                details: { error: errorMessage, errorType }
+              })
+            }).catch(() => {
+              // API endpoint might not exist yet, log to console
+              console.error('[KTL-4 Alert] Critical enum serialization error detected');
+            });
+          } catch (alertError) {
+            console.error('[Sessions API] Failed to create KTL-4 alert:', alertError);
+          }
+        }
       } catch (ktl4Error) {
         // Log but don't fail the request if KTL-4 logging fails
         console.error('[Sessions API] Failed to log KTL-4 failure event:', ktl4Error);
       }
       
-      throw sqlError;
-    }
-
-    // Session created successfully - create analytics event and initialize Reflex Chain
-    // Create ReflexEvent for analytics tracking
-    try {
-      await prisma.reflexEvent.create({
-        data: {
-          type: 'session.created',
-          source: 'api',
-          sessionId: newSession.id,
-          payload: JSON.stringify({
-            action: 'create-session',
-            tableId,
-            customerName,
-            source,
-            businessLogic: 'New session created - BOH can claim prep or put on hold'
-          }),
-          payloadHash: seal({
-            action: 'create-session',
-            tableId,
-            customerName,
-            source
-          })
-        }
-      });
-    } catch (eventError) {
-      // Log but don't fail the request if event creation fails
-      console.error('[Sessions API] Failed to create analytics event:', eventError);
-    }
-
-    // Initialize Reflex Chain (preserve existing logic)
-    const fireSession = convertPrismaSessionToFireSession(newSession);
-    try {
-      await initializeReflexChain(fireSession);
-    } catch (reflexError) {
-      // Log but don't fail the request if Reflex Chain initialization fails
-      console.error('[Sessions API] Failed to initialize Reflex Chain:', reflexError);
-    }
-
-    // Return with business logic metadata (preserve existing format)
-    return NextResponse.json({ 
-      success: true, 
-      session: fireSession,
-      message: 'Session created successfully',
-      nextActions: ['CLAIM_PREP', 'PUT_ON_HOLD'],
-      businessLogic: 'New session created - BOH can claim prep or put on hold'
-    }, {
-      headers: getCorsHeaders(req),
-    });
-
-  } catch (error) {
-    console.error('[Sessions API] Error creating session:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
-    // Log KTL-4 event for session creation failure (outer catch - validation/other errors)
-    try {
-      const errorType = errorMessage.includes('P2002') ? 'duplicate_entry' :
-                       errorMessage.includes('expected value') ? 'enum_serialization' :
-                       'validation_error';
-      
-      // Note: body may not be defined if error occurred during parsing
-      // Use optional chaining to safely access body properties
-      await logKtl4Event({
-        flowName: 'session_lifecycle',
-        eventType: 'session_creation_failed',
-        status: 'error',
-        details: {
-          error: errorMessage,
-          errorType,
-          // body may be undefined if parsing failed
-          tableId: body?.tableId,
-          source: body?.source,
-          loungeId: body?.loungeId,
-          method: 'validation'
-        }
-      });
-      
-      // Check if we need to update health status (calculate success rate)
-      const { ktl4GhostLog } = await import('../../../lib/ktl4-ghostlog');
-      const recentEvents = ktl4GhostLog.getFlowEvents('session_lifecycle', 100);
-      const creationEvents = recentEvents.filter(e => 
-        e.eventType === 'session_created' || e.eventType === 'session_creation_failed'
-      );
-      
-      if (creationEvents.length >= 10) {
-        const successCount = creationEvents.filter(e => e.eventType === 'session_created').length;
-        const successRate = (successCount / creationEvents.length) * 100;
-        
-        if (successRate < 80) {
-          // Critical: success rate below 80%
-          await updateKtl4Health('session_lifecycle', {
-            flowName: 'session_lifecycle',
-            status: 'critical',
-            lastCheck: new Date().toISOString(),
-            issues: [`Session creation success rate ${successRate.toFixed(1)}% (critical threshold: 80%)`],
-            metrics: { successRate, totalAttempts: creationEvents.length, failures: creationEvents.length - successCount }
-          });
-        } else if (successRate < 95) {
-          // Degraded: success rate below 95%
-          await updateKtl4Health('session_lifecycle', {
-            flowName: 'session_lifecycle',
-            status: 'degraded',
-            lastCheck: new Date().toISOString(),
-            issues: [`Session creation success rate ${successRate.toFixed(1)}% (degraded threshold: 95%)`],
-            metrics: { successRate, totalAttempts: creationEvents.length, failures: creationEvents.length - successCount }
-          });
-        }
+      // Simple error handling
+      if (errorMessage.includes('P2002')) {
+        return NextResponse.json({ 
+          error: 'Duplicate entry',
+          details: 'A session with this identifier already exists'
+        }, { 
+          status: 409,
+          headers: getCorsHeaders(req),
+        });
       }
       
-      // Create alert for enum serialization errors (critical)
-      if (errorType === 'enum_serialization') {
-        try {
-          // Try to create alert via API or direct database insert
-          await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/api/ktl4/alerts`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              flowName: 'session_lifecycle',
-              alertType: 'session_creation_enum_error',
-              priority: 'P1',
-              message: 'Prisma enum serialization failing, using raw SQL fallback',
-              details: { error: errorMessage, errorType }
-            })
-          }).catch(() => {
-            // API endpoint might not exist yet, log to console
-            console.error('[KTL-4 Alert] Critical enum serialization error detected');
-          });
-        } catch (alertError) {
-          console.error('[Sessions API] Failed to create KTL-4 alert:', alertError);
-        }
-      }
-    } catch (ktl4Error) {
-      // Log but don't fail the request if KTL-4 logging fails
-      console.error('[Sessions API] Failed to log KTL-4 failure event:', ktl4Error);
-    }
-    
-    // Simple error handling
-    if (errorMessage.includes('P2002')) {
       return NextResponse.json({ 
-        error: 'Duplicate entry',
-        details: 'A session with this identifier already exists'
-      }, { 
-        status: 409,
+        error: 'Internal server error',
+        details: errorMessage,
+        ...(process.env.NODE_ENV === 'development' ? { 
+          stack: error instanceof Error ? error.stack : undefined 
+        } : {})
+      }, {
+        status: 500,
         headers: getCorsHeaders(req),
       });
     }
-    
-    return NextResponse.json({ 
-      error: 'Internal server error',
-      details: errorMessage,
-      ...(process.env.NODE_ENV === 'development' ? { 
-        stack: error instanceof Error ? error.stack : undefined 
-      } : {})
-    }, {
-      status: 500,
-      headers: getCorsHeaders(req),
-    });
   }
-}
 
 // New PATCH endpoint for session actions
 // Note: This endpoint is kept for backward compatibility but should use /api/sessions/[id]/transition

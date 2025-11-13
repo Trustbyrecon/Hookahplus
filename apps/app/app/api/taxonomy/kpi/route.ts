@@ -22,33 +22,65 @@ export async function GET(req: NextRequest) {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - windowDays);
 
-    // Count sessions with v1 state
-    const sessionsWithV1 = await prisma.session.count({
-      where: {
-        sessionStateV1: { not: null },
-        createdAt: { gte: cutoffDate }
-      }
-    });
+    // Count sessions with v1 state (handle case where column doesn't exist yet)
+    let sessionsWithV1 = 0;
+    let totalSessions = 0;
+    try {
+      sessionsWithV1 = await prisma.session.count({
+        where: {
+          sessionStateV1: { not: null },
+          createdAt: { gte: cutoffDate }
+        }
+      });
 
-    const totalSessions = await prisma.session.count({
-      where: {
-        createdAt: { gte: cutoffDate }
+      totalSessions = await prisma.session.count({
+        where: {
+          createdAt: { gte: cutoffDate }
+        }
+      });
+    } catch (error: any) {
+      // Column doesn't exist yet - migration not run
+      if (error?.code === 'P2021' || error?.message?.includes('does not exist')) {
+        console.warn('[Taxonomy KPI] sessionStateV1 column not found - migration may not be run yet');
+        totalSessions = await prisma.session.count({
+          where: {
+            createdAt: { gte: cutoffDate }
+          }
+        });
+      } else {
+        throw error;
       }
-    });
+    }
 
-    // Count reflex events with v1 type
-    const eventsWithV1 = await prisma.reflexEvent.count({
-      where: {
-        trustEventTypeV1: { not: null },
-        createdAt: { gte: cutoffDate }
-      }
-    });
+    // Count reflex events with v1 type (handle case where column doesn't exist yet)
+    let eventsWithV1 = 0;
+    let totalEvents = 0;
+    try {
+      eventsWithV1 = await prisma.reflexEvent.count({
+        where: {
+          trustEventTypeV1: { not: null },
+          createdAt: { gte: cutoffDate }
+        }
+      });
 
-    const totalEvents = await prisma.reflexEvent.count({
-      where: {
-        createdAt: { gte: cutoffDate }
+      totalEvents = await prisma.reflexEvent.count({
+        where: {
+          createdAt: { gte: cutoffDate }
+        }
+      });
+    } catch (error: any) {
+      // Column doesn't exist yet - migration not run
+      if (error?.code === 'P2021' || error?.message?.includes('does not exist')) {
+        console.warn('[Taxonomy KPI] trustEventTypeV1 column not found - migration may not be run yet');
+        totalEvents = await prisma.reflexEvent.count({
+          where: {
+            createdAt: { gte: cutoffDate }
+          }
+        });
+      } else {
+        throw error;
       }
-    });
+    }
 
     // Calculate coverage
     const sessionStateCoverage = totalSessions > 0 

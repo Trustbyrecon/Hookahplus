@@ -121,10 +121,13 @@ export const LEGACY_TRUST_EVENT_MAP: Record<string, TrustEventTypeV1> = {
   'reward_claimed': 'loyalty_redeemed',
   
   // Additional legacy mappings (from rem-types.ts)
+  'order.created': 'fast_checkout', // Order creation indicates checkout process started
   'order.completed': 'fast_checkout', // Completed orders often indicate fast checkout
   'payment.settled': 'fast_checkout', // Settled payments indicate successful checkout
   'loyalty.redeemed': 'loyalty_redeemed', // Direct match
   'session.completed': 'on_time_delivery', // Completed sessions often indicate on-time delivery
+  'session.started': 'fast_checkout', // Session start indicates checkout process
+  'loyalty.issued': 'loyalty_redeemed', // Loyalty issuance is similar to redemption
 };
 
 /**

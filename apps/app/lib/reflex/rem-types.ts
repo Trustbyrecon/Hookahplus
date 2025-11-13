@@ -27,10 +27,13 @@ export const LEGACY_TRUST_EVENT_MAP: Record<string, TrustEventType> = {
   'reward_claimed': 'loyalty_redeemed',
   
   // Legacy REM event type mappings
+  'order.created': 'fast_checkout',
   'order.completed': 'fast_checkout',
   'payment.settled': 'fast_checkout',
   'loyalty.redeemed': 'loyalty_redeemed',
   'session.completed': 'on_time_delivery',
+  'session.started': 'fast_checkout',
+  'loyalty.issued': 'loyalty_redeemed',
 };
 
 export type SentimentType = 'relaxed' | 'energetic' | 'social' | 'focused' | 'neutral';

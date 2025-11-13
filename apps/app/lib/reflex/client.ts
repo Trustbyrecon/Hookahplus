@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { generateTrustEventId, validateTrustEvent, type TrustEvent, type TrustEventType } from './rem-types';
+import { mapTrustEvent } from '../taxonomy/enums-v1';
 
 const API_BASE = '/api/reflex/track';
 
@@ -228,8 +229,10 @@ export function useReflexScore(customerId: string | null) {
  * Convenience functions for common event types
  */
 export const ReflexEvents = {
-  orderCreated: (sessionId: string, amountCents: number) =>
-    trackTrustEvent('order.created', {
+  orderCreated: (sessionId: string, amountCents: number) => {
+    const mapped = mapTrustEvent('order.created');
+    const v1Type: TrustEventType = mapped.v1 || 'fast_checkout'; // Default to fast_checkout if unknown
+    return trackTrustEvent(v1Type, {
       sessionId,
       payload: {
         effect: {
@@ -238,10 +241,13 @@ export const ReflexEvents = {
           revenue_delta: amountCents,
         },
       },
-    }),
+    });
+  },
 
-  orderCompleted: (sessionId: string, amountCents: number) =>
-    trackTrustEvent('order.completed', {
+  orderCompleted: (sessionId: string, amountCents: number) => {
+    const mapped = mapTrustEvent('order.completed');
+    const v1Type: TrustEventType = mapped.v1 || 'fast_checkout'; // Default to fast_checkout if unknown
+    return trackTrustEvent(v1Type, {
       sessionId,
       payload: {
         effect: {
@@ -250,10 +256,13 @@ export const ReflexEvents = {
           revenue_delta: amountCents,
         },
       },
-    }),
+    });
+  },
 
-  paymentSettled: (sessionId: string, paymentIntent: string, amountCents: number) =>
-    trackTrustEvent('payment.settled', {
+  paymentSettled: (sessionId: string, paymentIntent: string, amountCents: number) => {
+    const mapped = mapTrustEvent('payment.settled');
+    const v1Type: TrustEventType = mapped.v1 || 'fast_checkout'; // Default to fast_checkout if unknown
+    return trackTrustEvent(v1Type, {
       sessionId,
       paymentIntent,
       payload: {
@@ -263,10 +272,13 @@ export const ReflexEvents = {
           revenue_delta: amountCents,
         },
       },
-    }),
+    });
+  },
 
-  sessionStarted: (sessionId: string) =>
-    trackTrustEvent('session.started', {
+  sessionStarted: (sessionId: string) => {
+    const mapped = mapTrustEvent('session.started');
+    const v1Type: TrustEventType = mapped.v1 || 'fast_checkout'; // Default to fast_checkout if unknown
+    return trackTrustEvent(v1Type, {
       sessionId,
       payload: {
         effect: {
@@ -274,10 +286,13 @@ export const ReflexEvents = {
           credit_type: 'HPLUS_CREDIT',
         },
       },
-    }),
+    });
+  },
 
-  sessionCompleted: (sessionId: string, durationMinutes: number) =>
-    trackTrustEvent('session.completed', {
+  sessionCompleted: (sessionId: string, durationMinutes: number) => {
+    const mapped = mapTrustEvent('session.completed');
+    const v1Type: TrustEventType = mapped.v1 || 'on_time_delivery'; // Default to on_time_delivery if unknown
+    return trackTrustEvent(v1Type, {
       sessionId,
       payload: {
         effect: {
@@ -289,10 +304,13 @@ export const ReflexEvents = {
           payload: { duration_minutes: durationMinutes },
         },
       },
-    }),
+    });
+  },
 
-  loyaltyIssued: (sessionId: string, amount: number) =>
-    trackTrustEvent('loyalty.issued', {
+  loyaltyIssued: (sessionId: string, amount: number) => {
+    const mapped = mapTrustEvent('loyalty.issued');
+    const v1Type: TrustEventType = mapped.v1 || 'loyalty_redeemed'; // Default to loyalty_redeemed if unknown
+    return trackTrustEvent(v1Type, {
       sessionId,
       payload: {
         effect: {
@@ -300,10 +318,13 @@ export const ReflexEvents = {
           credit_type: 'HPLUS_CREDIT',
         },
       },
-    }),
+    });
+  },
 
-  loyaltyRedeemed: (sessionId: string, amount: number) =>
-    trackTrustEvent('loyalty.redeemed', {
+  loyaltyRedeemed: (sessionId: string, amount: number) => {
+    const mapped = mapTrustEvent('loyalty.redeemed');
+    const v1Type: TrustEventType = mapped.v1 || 'loyalty_redeemed'; // Default to loyalty_redeemed if unknown
+    return trackTrustEvent(v1Type, {
       sessionId,
       payload: {
         effect: {
@@ -311,6 +332,7 @@ export const ReflexEvents = {
           credit_type: 'HPLUS_CREDIT',
         },
       },
-    }),
+    });
+  },
 };
 
