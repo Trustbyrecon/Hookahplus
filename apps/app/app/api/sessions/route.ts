@@ -175,6 +175,24 @@ function calculateRemainingTimeFromPrisma(session: any): number {
 }
 
 export async function GET(req: NextRequest) {
+  // Diagnostic: Check if DATABASE_URL is loaded
+  if (!process.env.DATABASE_URL) {
+    console.error('[Sessions API] ❌ DATABASE_URL is not set!');
+    console.error('[Sessions API] NODE_ENV:', process.env.NODE_ENV);
+    console.error('[Sessions API] process.cwd():', process.cwd());
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Database configuration error: DATABASE_URL is not set',
+        diagnostic: {
+          nodeEnv: process.env.NODE_ENV,
+          cwd: process.cwd(),
+          hint: 'Check if .env.local exists in apps/app directory'
+        }
+      },
+      { status: 500, headers: getCorsHeaders(req) }
+    );
+  }
   try {
     const { searchParams } = new URL(req.url);
     const sessionId = searchParams.get('sessionId') || searchParams.get('id');
