@@ -182,15 +182,19 @@ The Hookah+ application is **92% ready for go-live**, with all core systems impl
 
 ### Available Agents:
 - **database_agent** (Reflex Score: 95%) - Supabase management, RLS policies ✅
-- **session_agent** (Reflex Score: 0% - dormant) - Session management, GhostLog tracking ⏳
+- **Noor (session_agent)** (Reflex Score: 0% - dormant) - Session management, Reflex Ops flow ⏳
 - **deployment_agent** (Reflex Score: 45% - escalated) - Vercel configuration ⚠️
 - **Aliethia** - Identity and trust management ✅
 - **EchoPrime** - Growth and feedback loops ✅
+- **Lumi (pricing_agent)** - Revenue optimization, dynamic pricing ⏳
+- **Jules (loyalty_agent)** - Customer retention, loyalty program ⏳
 
 ### Recommended Activation:
 - ✅ Activate `database_agent` for DATABASE_URL configuration verification
-- ⏳ Activate `session_agent` for Reflex Ops flow validation
+- ⏳ **P0:** Activate `Noor (session_agent)` for Reflex Ops flow validation
 - ⚠️ Escalate `deployment_agent` for Vercel config issues
+- ⏳ **P1:** Activate `Lumi (pricing_agent)` for revenue dashboard
+- ⏳ **P1:** Activate `Jules (loyalty_agent)` for retention tracking
 
 ## Success Criteria
 

@@ -349,7 +349,7 @@ export async function POST(req: NextRequest) {
         flavor: typeof flavor === 'string' ? flavor : (Array.isArray(flavor) ? flavor[0] : 'Custom Mix'),
         flavorMix: typeof flavor === 'string' ? flavor : JSON.stringify(flavor),
         priceCents: amount ? (amount < 1000 ? Math.round(amount * 100) : Math.round(amount)) : 3000,
-        state: 'PENDING' as SessionState, // Use string literal to avoid runtime enum issues
+        state: SessionState.PENDING, // Use enum value
         assignedBOHId: assignedStaff?.boh || undefined,
         assignedFOHId: assignedStaff?.foh || undefined,
         tableNotes: notes || undefined,
