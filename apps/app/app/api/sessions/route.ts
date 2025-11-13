@@ -314,7 +314,7 @@ export async function POST(req: NextRequest) {
       where: {
         tableId: tableId,
         state: {
-          notIn: ['CLOSED', 'CANCELED'] as SessionState[]
+          notIn: ['CLOSED', 'CANCELED'] as any // Cast to any to avoid enum type issues
         }
       }
     });
