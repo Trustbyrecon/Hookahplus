@@ -60,26 +60,9 @@ async function createREMPayload(
     (payload?.customer_id ? `sha256:${sha256(payload.customer_id)}` : 
      `sha256:${sha256(ip || 'unknown')}`);
 
-  // Map event type to TrustEvent type
-  const typeMap: Record<string, TrustEvent['type']> = {
-    'order.created': 'order.created',
-    'order.completed': 'order.completed',
-    'order.cancelled': 'order.cancelled',
-    'payment.settled': 'payment.settled',
-    'payment.refunded': 'payment.refunded',
-    'payment.failed': 'payment.failed',
-    'loyalty.issued': 'loyalty.issued',
-    'loyalty.redeemed': 'loyalty.redeemed',
-    'loyalty.expired': 'loyalty.expired',
-    'session.started': 'session.started',
-    'session.completed': 'session.completed',
-    'session.cancelled': 'session.cancelled',
-    'session.extended': 'session.extended',
-    'refill.requested': 'refill.requested',
-    'refill.completed': 'refill.completed',
-  };
-
-  const trustEventType = typeMap[type] || 'order.created'; // Default fallback
+  // Map event type to TrustEvent v1 type using taxonomy mapping
+  const mapped = mapTrustEvent(type);
+  const trustEventType: TrustEventType = mapped.v1 || 'fast_checkout'; // Default to fast_checkout if unknown
 
   const trustEvent: TrustEvent = {
     id: generateTrustEventId(sequence),
