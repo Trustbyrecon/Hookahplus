@@ -386,109 +386,68 @@ export async function POST(req: NextRequest) {
       customerRef: sessionData.customerRef
     });
 
-    let newSession: any;
+    // SKIP Prisma create entirely - use raw SQL directly to avoid enum serialization issues
+    // This is the most reliable approach and bypasses Prisma's problematic enum handling
+    console.log('[Sessions API] Using raw SQL to create session (bypassing Prisma enum serialization)');
     
-    // Try Prisma first, but if it fails with enum serialization, use raw SQL immediately
+    // Escape values to prevent SQL injection
+    const escapeSqlString = (val: any) => {
+      if (val === null || val === undefined) return 'NULL';
+      if (typeof val === 'string') return `'${val.replace(/'/g, "''")}'`;
+      return val;
+    };
+    
+    const finalFlavor = typeof flavor === 'string' ? flavor : (Array.isArray(flavor) ? flavor[0] : 'Custom Mix');
+    const finalFlavorMix = typeof flavor === 'string' ? flavor : JSON.stringify(flavor);
+    const finalPriceCents = amount ? (amount < 1000 ? Math.round(amount * 100) : Math.round(amount)) : 3000;
+    
+    const insertQuery = `
+      INSERT INTO "Session" (
+        "id", "externalRef", "source", "state", "trustSignature", 
+        "tableId", "customerRef", "customerPhone", "flavor", "flavorMix",
+        "loungeId", "priceCents", "assignedBOHId", "assignedFOHId", 
+        "tableNotes", "durationSecs", "createdAt", "updatedAt"
+      ) VALUES (
+        gen_random_uuid()::text,
+        ${escapeSqlString(finalExternalRef)},
+        ${escapeSqlString(sourceValue)}::"SessionSource",
+        'PENDING'::"SessionState",
+        ${escapeSqlString(trustSignature)},
+        ${escapeSqlString(tableId)},
+        ${escapeSqlString(customerName)},
+        ${escapeSqlString(customerPhone)},
+        ${escapeSqlString(finalFlavor)},
+        ${escapeSqlString(finalFlavorMix)},
+        ${escapeSqlString(finalLoungeId)},
+        ${finalPriceCents},
+        ${escapeSqlString(assignedStaff?.boh)},
+        ${escapeSqlString(assignedStaff?.foh)},
+        ${escapeSqlString(notes)},
+        ${sessionDuration},
+        NOW(),
+        NOW()
+      ) RETURNING *
+    `;
+    
+    let newSession: any;
     try {
-      newSession = await prisma.session.create({
-        data: sessionData as any, // Use 'as any' to bypass strict type checking for enum fields
-      });
+      console.log('[Sessions API] Executing raw SQL query');
+      const result = await prisma.$queryRawUnsafe(insertQuery) as any[];
       
-      console.log('[Sessions API] Session created successfully via Prisma:', newSession.id);
-    } catch (createError: any) {
-      console.error('[Sessions API] Prisma create error:', createError);
-      console.error('[Sessions API] Error message:', createError?.message);
-      console.error('[Sessions API] Error code:', createError?.code);
-      console.error('[Sessions API] Error meta:', createError?.meta);
-      
-      // If enum serialization fails (common with Prisma + PostgreSQL enums), use raw SQL
-      // Check error message, code, stack trace, and nested error properties
-      const errorMessage = createError?.message || '';
-      const errorStack = createError?.stack || '';
-      const errorString = JSON.stringify(createError || {});
-      
-      // More aggressive error detection - check all possible locations
-      const isEnumError = 
-        errorMessage.includes('expected value') || 
-        errorMessage.includes('ToSql') ||
-        errorStack.includes('expected value') ||
-        errorStack.includes('ToSql') ||
-        errorString.includes('expected value') ||
-        errorString.includes('ToSql') ||
-        errorString.includes('ConnectorError') ||
-        createError?.code === 'P2002';
-      
-      console.log('[Sessions API] Error detection:', {
-        isEnumError,
-        errorMessage: errorMessage.substring(0, 200),
-        errorCode: createError?.code,
-        hasToSql: errorString.includes('ToSql'),
-        hasExpectedValue: errorString.includes('expected value')
-      });
-      
-      // ALWAYS use raw SQL fallback for any Prisma create error (defensive approach)
-      // This ensures we bypass Prisma's enum serialization entirely
-      if (isEnumError || createError) {
-        console.log('[Sessions API] Attempting fallback: using raw SQL for enum values');
-        
-        // Fallback: Use $queryRawUnsafe with proper parameter substitution
-        // Escape values to prevent SQL injection
-        const escapeSqlString = (val: any) => {
-          if (val === null || val === undefined) return 'NULL';
-          if (typeof val === 'string') return `'${val.replace(/'/g, "''")}'`;
-          return val;
-        };
-        
-        const finalFlavor = typeof flavor === 'string' ? flavor : (Array.isArray(flavor) ? flavor[0] : 'Custom Mix');
-        const finalFlavorMix = typeof flavor === 'string' ? flavor : JSON.stringify(flavor);
-        const finalPriceCents = amount ? (amount < 1000 ? Math.round(amount * 100) : Math.round(amount)) : 3000;
-        
-        const insertQuery = `
-          INSERT INTO "Session" (
-            "id", "externalRef", "source", "state", "trustSignature", 
-            "tableId", "customerRef", "customerPhone", "flavor", "flavorMix",
-            "loungeId", "priceCents", "assignedBOHId", "assignedFOHId", 
-            "tableNotes", "durationSecs", "createdAt", "updatedAt"
-          ) VALUES (
-            gen_random_uuid()::text,
-            ${escapeSqlString(finalExternalRef)},
-            ${escapeSqlString(sourceValue)}::"SessionSource",
-            'PENDING'::"SessionState",
-            ${escapeSqlString(trustSignature)},
-            ${escapeSqlString(tableId)},
-            ${escapeSqlString(customerName)},
-            ${escapeSqlString(customerPhone)},
-            ${escapeSqlString(finalFlavor)},
-            ${escapeSqlString(finalFlavorMix)},
-            ${escapeSqlString(finalLoungeId)},
-            ${finalPriceCents},
-            ${escapeSqlString(assignedStaff?.boh)},
-            ${escapeSqlString(assignedStaff?.foh)},
-            ${escapeSqlString(notes)},
-            ${sessionDuration},
-            NOW(),
-            NOW()
-          ) RETURNING *
-        `;
-        
-        try {
-          console.log('[Sessions API] Executing raw SQL fallback query');
-          const result = await prisma.$queryRawUnsafe(insertQuery) as any[];
-          
-          if (result && result.length > 0) {
-            newSession = result[0];
-            console.log('[Sessions API] Session created via raw SQL:', newSession.id);
-            // Continue to analytics/reflex chain initialization below
-          } else {
-            throw new Error('Raw SQL insert returned no rows');
-          }
-        } catch (rawError: any) {
-          console.error('[Sessions API] Raw SQL fallback also failed:', rawError);
-          throw createError; // Re-throw original error
-        }
+      if (result && result.length > 0) {
+        newSession = result[0];
+        console.log('[Sessions API] ✅ Session created successfully via raw SQL:', newSession.id);
+      } else {
+        throw new Error('Raw SQL insert returned no rows');
       }
-      
-      throw createError; // Re-throw if not an enum serialization error
+    } catch (sqlError: any) {
+      console.error('[Sessions API] ❌ Raw SQL insert failed:', sqlError);
+      console.error('[Sessions API] SQL Error details:', {
+        message: sqlError?.message,
+        code: sqlError?.code,
+        query: insertQuery.substring(0, 200) + '...'
+      });
+      throw sqlError;
     }
 
     // Session created successfully - create analytics event and initialize Reflex Chain
