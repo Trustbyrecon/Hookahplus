@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "../../../../lib/db";
-import { generateTrustEventId, validateTrustEvent, type TrustEvent, LEGACY_TRUST_EVENT_MAP } from "../../../../lib/reflex/rem-types";
+import { generateTrustEventId, validateTrustEvent, type TrustEvent, type TrustEventType, LEGACY_TRUST_EVENT_MAP } from "../../../../lib/reflex/rem-types";
 import { mapTrustEvent } from "../../../../lib/taxonomy/enums-v1";
 import { trackUnknown } from "../../../../lib/taxonomy/unknown-tracker";
 
