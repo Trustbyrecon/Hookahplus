@@ -2,7 +2,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import Stripe from "stripe";
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, SessionState, SessionSource } from '@prisma/client';
 import crypto from "crypto";
 
 const prisma = new PrismaClient();
@@ -109,7 +109,7 @@ export async function POST(req: Request) {
       // Create trust signature
       const trustSignature = seal({
         loungeId,
-        source: "QR",
+        source: SessionSource.QR,
         externalRef,
         customerPhone: session.customer_details?.phone,
         flavorMix,
@@ -143,7 +143,7 @@ export async function POST(req: Request) {
         const newSession = await prisma.session.create({
           data: {
             loungeId,
-            source: "QR",
+            source: SessionSource.QR,
             externalRef,
             trustSignature,
             tableId,
@@ -151,7 +151,7 @@ export async function POST(req: Request) {
             flavor: flavorsArray.length > 0 ? flavorsArray[0] : undefined,
             flavorMix: flavorMix ? (typeof flavorMix === 'string' ? flavorMix : JSON.stringify(flavorMix)) : undefined,
             priceCents: priceCents,
-            state: "NEW",
+            state: SessionState.PENDING,
             paymentIntent: paymentIntentId,
             paymentStatus: session.payment_status === 'paid' ? 'succeeded' : session.payment_status,
             qrCodeUrl: qrScanUrl, // Store QR code URL for fraud prevention
