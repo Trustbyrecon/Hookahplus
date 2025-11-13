@@ -7,6 +7,7 @@
 
 import { prisma } from './db';
 import { ktl4GhostLog, Ktl4HealthStatus } from './ktl4-ghostlog';
+import { SessionState } from '@prisma/client';
 
 export interface HealthCheckResult {
   flowName: string;
@@ -293,7 +294,7 @@ class Ktl4HealthChecker {
         // Check for sessions without pricing locks after stop
         const unlockedSessions = await prisma.session.findMany({
           where: {
-            state: 'COMPLETED',
+            state: SessionState.CLOSED,
             endedAt: {
               gte: new Date(Date.now() - parseInt(config.threshold) * 1000)
             }
