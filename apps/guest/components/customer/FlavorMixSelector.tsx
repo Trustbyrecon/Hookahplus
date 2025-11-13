@@ -148,11 +148,19 @@ export default function FlavorMixSelector({
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string[]>(selectedFlavors);
   const [mood, setMood] = useState<string | null>(null);
+  const prevSelectedRef = React.useRef<string[]>(selectedFlavors);
+  const onSelectionChangeRef = React.useRef(onSelectionChange);
+
+  // Keep callback ref up to date
+  React.useEffect(() => {
+    onSelectionChangeRef.current = onSelectionChange;
+  }, [onSelectionChange]);
 
   // Sync with parent component
   React.useEffect(() => {
     if (JSON.stringify(selected) !== JSON.stringify(selectedFlavors)) {
       setSelected(selectedFlavors);
+      prevSelectedRef.current = selectedFlavors;
     }
   }, [selectedFlavors]);
 
@@ -196,27 +204,34 @@ export default function FlavorMixSelector({
     })).filter((c) => c.items.length);
   }, [query]);
 
+  // Call callback only when selected actually changes (not when callback reference changes)
+  React.useEffect(() => {
+    const prevSelected = prevSelectedRef.current;
+    const currentSelected = selected;
+    
+    // Only call callback if selection actually changed
+    if (JSON.stringify(prevSelected) !== JSON.stringify(currentSelected)) {
+      prevSelectedRef.current = currentSelected;
+      // Use ref to avoid dependency on callback function reference
+      onSelectionChangeRef.current(currentSelected);
+    }
+  }, [selected]); // Only depend on selected, not onSelectionChange
+
   function toggleFlavor(id: string) {
     setSelected((prev) => {
-      let newSelection;
       if (prev.includes(id)) {
-        newSelection = prev.filter((x) => x !== id);
+        return prev.filter((x) => x !== id);
       } else if (prev.length < maxSelections) {
-        newSelection = [...prev, id];
+        return [...prev, id];
       } else {
         return prev; // Don't add if at max
       }
-      
-      // Notify parent component
-      onSelectionChange(newSelection);
-      return newSelection;
     });
   }
 
   function clearAll() {
     setSelected([]);
     setMood(null);
-    onSelectionChange([]);
   }
 
   return (

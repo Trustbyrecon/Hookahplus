@@ -370,10 +370,28 @@ export async function POST(req: NextRequest) {
       durationSecs: sessionDuration,
     };
 
-    // Handle enum fields with explicit casting to avoid serialization errors
-    // Cast to string first, then let Prisma handle the conversion
-    sessionData.source = sourceValue;
-    sessionData.state = 'PENDING';
+    // Handle enum fields - use Prisma enum values directly for proper serialization
+    // Map source string to Prisma enum value
+    let sourceEnum: SessionSource;
+    switch (sourceValue) {
+      case 'QR':
+        sourceEnum = SessionSource.QR;
+        break;
+      case 'RESERVE':
+        sourceEnum = SessionSource.RESERVE;
+        break;
+      case 'WALK_IN':
+        sourceEnum = SessionSource.WALK_IN;
+        break;
+      case 'LEGACY_POS':
+        sourceEnum = SessionSource.LEGACY_POS;
+        break;
+      default:
+        sourceEnum = SessionSource.WALK_IN;
+    }
+    
+    sessionData.source = sourceEnum;
+    sessionData.state = SessionState.PENDING;
 
     const newSession = await prisma.session.create({
       data: sessionData as any, // Use 'as any' to bypass strict type checking for enum fields
