@@ -20,6 +20,7 @@ import {
   processFOHLayer,
   processDeliveryLayer,
 } from '../../../lib/reflex-chain/integration';
+import { logKtl4Event, updateKtl4Health, getKtl4HealthStatus } from '../../../lib/ktl4-ghostlog';
 
 // CORS headers helper - accepts request to get origin
 function getCorsHeaders(req?: NextRequest) {
@@ -276,10 +277,11 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  let body: any;
   try {
     console.log('[Sessions API] POST request received');
     
-    const body = await req.json();
+    body = await req.json();
     const { 
       tableId,
       customerName,
@@ -437,6 +439,29 @@ export async function POST(req: NextRequest) {
       if (result && result.length > 0) {
         newSession = result[0];
         console.log('[Sessions API] ✅ Session created successfully via raw SQL:', newSession.id);
+        
+        // Log KTL-4 event for successful session creation
+        try {
+          await logKtl4Event({
+            flowName: 'session_lifecycle',
+            eventType: 'session_created',
+            sessionId: newSession.id,
+            status: 'success',
+            details: {
+              tableId,
+              source: sourceValue,
+              loungeId: finalLoungeId,
+              customerName,
+              customerPhone,
+              flavor: finalFlavor,
+              priceCents: finalPriceCents,
+              method: 'raw_sql'
+            }
+          });
+        } catch (ktl4Error) {
+          // Log but don't fail the request if KTL-4 logging fails
+          console.error('[Sessions API] Failed to log KTL-4 event:', ktl4Error);
+        }
       } else {
         throw new Error('Raw SQL insert returned no rows');
       }
@@ -447,6 +472,31 @@ export async function POST(req: NextRequest) {
         code: sqlError?.code,
         query: insertQuery.substring(0, 200) + '...'
       });
+      
+      // Log KTL-4 event for session creation failure
+      try {
+        const errorType = sqlError?.message?.includes('expected value') ? 'enum_serialization' : 
+                         sqlError?.code ? `database_error_${sqlError.code}` : 'unknown_error';
+        
+        await logKtl4Event({
+          flowName: 'session_lifecycle',
+          eventType: 'session_creation_failed',
+          status: 'error',
+          details: {
+            error: sqlError?.message || 'Unknown error',
+            errorType,
+            tableId,
+            source: sourceValue,
+            loungeId: finalLoungeId,
+            customerName,
+            method: 'raw_sql'
+          }
+        });
+      } catch (ktl4Error) {
+        // Log but don't fail the request if KTL-4 logging fails
+        console.error('[Sessions API] Failed to log KTL-4 failure event:', ktl4Error);
+      }
+      
       throw sqlError;
     }
 
@@ -502,6 +552,88 @@ export async function POST(req: NextRequest) {
     console.error('[Sessions API] Error creating session:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     
+    // Log KTL-4 event for session creation failure (outer catch - validation/other errors)
+    try {
+      const errorType = errorMessage.includes('P2002') ? 'duplicate_entry' :
+                       errorMessage.includes('expected value') ? 'enum_serialization' :
+                       'validation_error';
+      
+      // Note: body may not be defined if error occurred during parsing
+      // Use optional chaining to safely access body properties
+      await logKtl4Event({
+        flowName: 'session_lifecycle',
+        eventType: 'session_creation_failed',
+        status: 'error',
+        details: {
+          error: errorMessage,
+          errorType,
+          // body may be undefined if parsing failed
+          tableId: body?.tableId,
+          source: body?.source,
+          loungeId: body?.loungeId,
+          method: 'validation'
+        }
+      });
+      
+      // Check if we need to update health status (calculate success rate)
+      const { ktl4GhostLog } = await import('../../../lib/ktl4-ghostlog');
+      const recentEvents = ktl4GhostLog.getFlowEvents('session_lifecycle', 100);
+      const creationEvents = recentEvents.filter(e => 
+        e.eventType === 'session_created' || e.eventType === 'session_creation_failed'
+      );
+      
+      if (creationEvents.length >= 10) {
+        const successCount = creationEvents.filter(e => e.eventType === 'session_created').length;
+        const successRate = (successCount / creationEvents.length) * 100;
+        
+        if (successRate < 80) {
+          // Critical: success rate below 80%
+          await updateKtl4Health('session_lifecycle', {
+            flowName: 'session_lifecycle',
+            status: 'critical',
+            lastCheck: new Date().toISOString(),
+            issues: [`Session creation success rate ${successRate.toFixed(1)}% (critical threshold: 80%)`],
+            metrics: { successRate, totalAttempts: creationEvents.length, failures: creationEvents.length - successCount }
+          });
+        } else if (successRate < 95) {
+          // Degraded: success rate below 95%
+          await updateKtl4Health('session_lifecycle', {
+            flowName: 'session_lifecycle',
+            status: 'degraded',
+            lastCheck: new Date().toISOString(),
+            issues: [`Session creation success rate ${successRate.toFixed(1)}% (degraded threshold: 95%)`],
+            metrics: { successRate, totalAttempts: creationEvents.length, failures: creationEvents.length - successCount }
+          });
+        }
+      }
+      
+      // Create alert for enum serialization errors (critical)
+      if (errorType === 'enum_serialization') {
+        try {
+          // Try to create alert via API or direct database insert
+          await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/api/ktl4/alerts`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              flowName: 'session_lifecycle',
+              alertType: 'session_creation_enum_error',
+              priority: 'P1',
+              message: 'Prisma enum serialization failing, using raw SQL fallback',
+              details: { error: errorMessage, errorType }
+            })
+          }).catch(() => {
+            // API endpoint might not exist yet, log to console
+            console.error('[KTL-4 Alert] Critical enum serialization error detected');
+          });
+        } catch (alertError) {
+          console.error('[Sessions API] Failed to create KTL-4 alert:', alertError);
+        }
+      }
+    } catch (ktl4Error) {
+      // Log but don't fail the request if KTL-4 logging fails
+      console.error('[Sessions API] Failed to log KTL-4 failure event:', ktl4Error);
+    }
+    
     // Simple error handling
     if (errorMessage.includes('P2002')) {
       return NextResponse.json({ 
@@ -519,7 +651,7 @@ export async function POST(req: NextRequest) {
       ...(process.env.NODE_ENV === 'development' ? { 
         stack: error instanceof Error ? error.stack : undefined 
       } : {})
-    }, { 
+    }, {
       status: 500,
       headers: getCorsHeaders(req),
     });

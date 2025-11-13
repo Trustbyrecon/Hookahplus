@@ -86,6 +86,13 @@ class Ktl4HealthChecker {
         intervalMs: 5 * 60 * 1000, // 5 minutes
         enabled: true
       },
+      {
+        flowName: 'session_lifecycle',
+        checkType: 'creation_success_rate',
+        threshold: '95', // Alert if success rate < 95% (degraded) or < 80% (critical)
+        intervalMs: 5 * 60 * 1000, // 5 minutes
+        enabled: true
+      },
 
       // Flow 3: Order Intake
       {
@@ -313,6 +320,55 @@ class Ktl4HealthChecker {
         if (sessionsWithoutLocks.length > 0) {
           status = sessionsWithoutLocks.length > 3 ? 'critical' : 'degraded';
           issues.push(`${sessionsWithoutLocks.length} completed sessions without pricing locks`);
+        }
+        break;
+
+      case 'creation_success_rate':
+        // Check session creation success rate from KTL-4 events
+        const recentEvents = ktl4GhostLog.getFlowEvents('session_lifecycle', 100);
+        const creationEvents = recentEvents.filter(e => 
+          e.eventType === 'session_created' || e.eventType === 'session_creation_failed'
+        );
+        
+        if (creationEvents.length === 0) {
+          // No events yet, consider healthy
+          actualValue = '100';
+          details.totalAttempts = 0;
+          details.successCount = 0;
+          details.failureCount = 0;
+          details.successRate = 100;
+          break;
+        }
+        
+        const successCount = creationEvents.filter(e => e.eventType === 'session_created').length;
+        const failureCount = creationEvents.length - successCount;
+        const successRate = (successCount / creationEvents.length) * 100;
+        
+        actualValue = successRate.toFixed(1);
+        details.totalAttempts = creationEvents.length;
+        details.successCount = successCount;
+        details.failureCount = failureCount;
+        details.successRate = successRate;
+        details.recentFailures = creationEvents
+          .filter(e => e.eventType === 'session_creation_failed')
+          .slice(0, 5)
+          .map(e => ({
+            timestamp: e.timestamp,
+            errorType: e.details?.errorType,
+            error: e.details?.error
+          }));
+        
+        const threshold = parseFloat(config.threshold);
+        if (successRate < 80) {
+          // Critical: success rate below 80%
+          status = 'critical';
+          issues.push(`Session creation success rate ${successRate.toFixed(1)}% is critical (threshold: 80%)`);
+          issues.push(`${failureCount} failures out of ${creationEvents.length} attempts`);
+        } else if (successRate < threshold) {
+          // Degraded: success rate below threshold (95%)
+          status = 'degraded';
+          issues.push(`Session creation success rate ${successRate.toFixed(1)}% is degraded (threshold: ${threshold}%)`);
+          issues.push(`${failureCount} failures out of ${creationEvents.length} attempts`);
         }
         break;
     }
