@@ -346,32 +346,37 @@ export async function POST(req: NextRequest) {
       flavor
     });
 
-    // Map source string to enum value - use string literal for Prisma compatibility
-    // Prisma will convert string to enum type if enum exists in database
+    // Map source string to enum value - ensure it's a valid enum value
     const sourceValue = (source === 'QR' || source === 'RESERVE' || source === 'WALK_IN' || source === 'LEGACY_POS')
       ? source
       : 'WALK_IN';
 
     // Create session in database
-    // Use string literals for enum fields to avoid serialization issues
+    // Use explicit string casting to avoid enum serialization issues
+    // This works whether columns are enum or text type
+    const sessionData: any = {
+      loungeId: finalLoungeId,
+      externalRef: finalExternalRef,
+      trustSignature,
+      tableId,
+      customerRef: customerName,
+      customerPhone: customerPhone || undefined,
+      flavor: typeof flavor === 'string' ? flavor : (Array.isArray(flavor) ? flavor[0] : 'Custom Mix'),
+      flavorMix: typeof flavor === 'string' ? flavor : JSON.stringify(flavor),
+      priceCents: amount ? (amount < 1000 ? Math.round(amount * 100) : Math.round(amount)) : 3000,
+      assignedBOHId: assignedStaff?.boh || undefined,
+      assignedFOHId: assignedStaff?.foh || undefined,
+      tableNotes: notes || undefined,
+      durationSecs: sessionDuration,
+    };
+
+    // Handle enum fields with explicit casting to avoid serialization errors
+    // Cast to string first, then let Prisma handle the conversion
+    sessionData.source = sourceValue;
+    sessionData.state = 'PENDING';
+
     const newSession = await prisma.session.create({
-      data: {
-        loungeId: finalLoungeId,
-        source: sourceValue as SessionSource, // Prisma will handle enum conversion
-        externalRef: finalExternalRef,
-        trustSignature,
-        tableId,
-        customerRef: customerName,
-        customerPhone: customerPhone || undefined,
-        flavor: typeof flavor === 'string' ? flavor : (Array.isArray(flavor) ? flavor[0] : 'Custom Mix'),
-        flavorMix: typeof flavor === 'string' ? flavor : JSON.stringify(flavor),
-        priceCents: amount ? (amount < 1000 ? Math.round(amount * 100) : Math.round(amount)) : 3000,
-        state: SessionState.PENDING, // Use enum value
-        assignedBOHId: assignedStaff?.boh || undefined,
-        assignedFOHId: assignedStaff?.foh || undefined,
-        tableNotes: notes || undefined,
-        durationSecs: sessionDuration,
-      }
+      data: sessionData as any, // Use 'as any' to bypass strict type checking for enum fields
     });
     
     console.log('[Sessions API] Session created successfully:', newSession.id);
