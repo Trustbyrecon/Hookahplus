@@ -346,19 +346,18 @@ export async function POST(req: NextRequest) {
       flavor
     });
 
-    // Map source string to enum
-    let sourceEnum: SessionSource;
-    if (source === 'QR' || source === 'RESERVE' || source === 'WALK_IN' || source === 'LEGACY_POS') {
-      sourceEnum = source as SessionSource;
-    } else {
-      sourceEnum = SessionSource.WALK_IN;
-    }
+    // Map source string to enum value - use string literal for Prisma compatibility
+    // Prisma will convert string to enum type if enum exists in database
+    const sourceValue = (source === 'QR' || source === 'RESERVE' || source === 'WALK_IN' || source === 'LEGACY_POS')
+      ? source
+      : 'WALK_IN';
 
     // Create session in database
+    // Use string literals for enum fields to avoid serialization issues
     const newSession = await prisma.session.create({
       data: {
         loungeId: finalLoungeId,
-        source: sourceEnum,
+        source: sourceValue as SessionSource, // Prisma will handle enum conversion
         externalRef: finalExternalRef,
         trustSignature,
         tableId,
