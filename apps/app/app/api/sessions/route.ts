@@ -393,12 +393,99 @@ export async function POST(req: NextRequest) {
     sessionData.source = sourceEnum;
     sessionData.state = SessionState.PENDING;
 
-    const newSession = await prisma.session.create({
-      data: sessionData as any, // Use 'as any' to bypass strict type checking for enum fields
+    // Log the data being sent for debugging
+    console.log('[Sessions API] Creating session with data:', {
+      source: sessionData.source,
+      sourceType: typeof sessionData.source,
+      state: sessionData.state,
+      stateType: typeof sessionData.state,
+      tableId: sessionData.tableId,
+      customerRef: sessionData.customerRef
     });
-    
-    console.log('[Sessions API] Session created successfully:', newSession.id);
 
+    let newSession: any;
+    try {
+      newSession = await prisma.session.create({
+        data: sessionData as any, // Use 'as any' to bypass strict type checking for enum fields
+      });
+      
+      console.log('[Sessions API] Session created successfully:', newSession.id);
+    } catch (createError: any) {
+      console.error('[Sessions API] Prisma create error:', createError);
+      console.error('[Sessions API] Error message:', createError?.message);
+      console.error('[Sessions API] Error code:', createError?.code);
+      console.error('[Sessions API] Error meta:', createError?.meta);
+      
+      // If enum serialization fails, try using raw SQL as fallback
+      if (createError?.message?.includes('expected value') || createError?.code === 'P2002') {
+        console.log('[Sessions API] Attempting fallback: using raw SQL for enum values');
+        
+        // Fallback: Use $queryRaw to insert with explicit enum casting
+        const insertQuery = `
+          INSERT INTO "Session" (
+            "id", "externalRef", "source", "state", "trustSignature", 
+            "tableId", "customerRef", "customerPhone", "flavor", "flavorMix",
+            "loungeId", "priceCents", "assignedBOHId", "assignedFOHId", 
+            "tableNotes", "durationSecs", "createdAt", "updatedAt"
+          ) VALUES (
+            gen_random_uuid()::text,
+            $1::text,
+            $2::"SessionSource",
+            $3::"SessionState",
+            $4::text,
+            $5::text,
+            $6::text,
+            $7::text,
+            $8::text,
+            $9::text,
+            $10::text,
+            $11::integer,
+            $12::text,
+            $13::text,
+            $14::text,
+            $15::integer,
+            NOW(),
+            NOW()
+          ) RETURNING *
+        `;
+        
+        try {
+          const result = await prisma.$queryRawUnsafe(
+            insertQuery,
+            finalExternalRef || null,
+            sourceValue, // Use string value, PostgreSQL will cast to enum
+            'PENDING', // Use string value, PostgreSQL will cast to enum
+            trustSignature,
+            tableId,
+            customerName || null,
+            customerPhone || null,
+            typeof flavor === 'string' ? flavor : (Array.isArray(flavor) ? flavor[0] : 'Custom Mix') || null,
+            typeof flavor === 'string' ? flavor : JSON.stringify(flavor) || null,
+            finalLoungeId,
+            amount ? (amount < 1000 ? Math.round(amount * 100) : Math.round(amount)) : 3000,
+            assignedStaff?.boh || null,
+            assignedStaff?.foh || null,
+            notes || null,
+            sessionDuration
+          ) as any[];
+          
+          if (result && result.length > 0) {
+            newSession = result[0];
+            console.log('[Sessions API] Session created via raw SQL:', newSession.id);
+            // Continue to analytics/reflex chain initialization below
+          } else {
+            throw new Error('Raw SQL insert returned no rows');
+          }
+        } catch (rawError: any) {
+          console.error('[Sessions API] Raw SQL fallback also failed:', rawError);
+          throw createError; // Re-throw original error
+        }
+      }
+      
+      throw createError; // Re-throw if not an enum serialization error
+    }
+
+    // Session created successfully - create analytics event and initialize Reflex Chain
     // Create ReflexEvent for analytics tracking
     try {
       await prisma.reflexEvent.create({
