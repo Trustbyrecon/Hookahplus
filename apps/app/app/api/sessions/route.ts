@@ -402,11 +402,33 @@ export async function POST(req: NextRequest) {
       console.error('[Sessions API] Error meta:', createError?.meta);
       
       // If enum serialization fails (common with Prisma + PostgreSQL enums), use raw SQL
-      const isEnumError = createError?.message?.includes('expected value') || 
-                         createError?.message?.includes('ToSql') ||
-                         createError?.code === 'P2002';
+      // Check error message, code, stack trace, and nested error properties
+      const errorMessage = createError?.message || '';
+      const errorStack = createError?.stack || '';
+      const errorString = JSON.stringify(createError || {});
       
-      if (isEnumError) {
+      // More aggressive error detection - check all possible locations
+      const isEnumError = 
+        errorMessage.includes('expected value') || 
+        errorMessage.includes('ToSql') ||
+        errorStack.includes('expected value') ||
+        errorStack.includes('ToSql') ||
+        errorString.includes('expected value') ||
+        errorString.includes('ToSql') ||
+        errorString.includes('ConnectorError') ||
+        createError?.code === 'P2002';
+      
+      console.log('[Sessions API] Error detection:', {
+        isEnumError,
+        errorMessage: errorMessage.substring(0, 200),
+        errorCode: createError?.code,
+        hasToSql: errorString.includes('ToSql'),
+        hasExpectedValue: errorString.includes('expected value')
+      });
+      
+      // ALWAYS use raw SQL fallback for any Prisma create error (defensive approach)
+      // This ensures we bypass Prisma's enum serialization entirely
+      if (isEnumError || createError) {
         console.log('[Sessions API] Attempting fallback: using raw SQL for enum values');
         
         // Fallback: Use $queryRawUnsafe with proper parameter substitution
