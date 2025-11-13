@@ -387,23 +387,40 @@ export async function POST(req: NextRequest) {
     });
 
     let newSession: any;
+    
+    // Try Prisma first, but if it fails with enum serialization, use raw SQL immediately
     try {
       newSession = await prisma.session.create({
         data: sessionData as any, // Use 'as any' to bypass strict type checking for enum fields
       });
       
-      console.log('[Sessions API] Session created successfully:', newSession.id);
+      console.log('[Sessions API] Session created successfully via Prisma:', newSession.id);
     } catch (createError: any) {
       console.error('[Sessions API] Prisma create error:', createError);
       console.error('[Sessions API] Error message:', createError?.message);
       console.error('[Sessions API] Error code:', createError?.code);
       console.error('[Sessions API] Error meta:', createError?.meta);
       
-      // If enum serialization fails, try using raw SQL as fallback
-      if (createError?.message?.includes('expected value') || createError?.code === 'P2002') {
+      // If enum serialization fails (common with Prisma + PostgreSQL enums), use raw SQL
+      const isEnumError = createError?.message?.includes('expected value') || 
+                         createError?.message?.includes('ToSql') ||
+                         createError?.code === 'P2002';
+      
+      if (isEnumError) {
         console.log('[Sessions API] Attempting fallback: using raw SQL for enum values');
         
-        // Fallback: Use $queryRaw to insert with explicit enum casting
+        // Fallback: Use $queryRawUnsafe with proper parameter substitution
+        // Escape values to prevent SQL injection
+        const escapeSqlString = (val: any) => {
+          if (val === null || val === undefined) return 'NULL';
+          if (typeof val === 'string') return `'${val.replace(/'/g, "''")}'`;
+          return val;
+        };
+        
+        const finalFlavor = typeof flavor === 'string' ? flavor : (Array.isArray(flavor) ? flavor[0] : 'Custom Mix');
+        const finalFlavorMix = typeof flavor === 'string' ? flavor : JSON.stringify(flavor);
+        const finalPriceCents = amount ? (amount < 1000 ? Math.round(amount * 100) : Math.round(amount)) : 3000;
+        
         const insertQuery = `
           INSERT INTO "Session" (
             "id", "externalRef", "source", "state", "trustSignature", 
@@ -412,45 +429,29 @@ export async function POST(req: NextRequest) {
             "tableNotes", "durationSecs", "createdAt", "updatedAt"
           ) VALUES (
             gen_random_uuid()::text,
-            $1::text,
-            $2::"SessionSource",
-            $3::"SessionState",
-            $4::text,
-            $5::text,
-            $6::text,
-            $7::text,
-            $8::text,
-            $9::text,
-            $10::text,
-            $11::integer,
-            $12::text,
-            $13::text,
-            $14::text,
-            $15::integer,
+            ${escapeSqlString(finalExternalRef)},
+            ${escapeSqlString(sourceValue)}::"SessionSource",
+            'PENDING'::"SessionState",
+            ${escapeSqlString(trustSignature)},
+            ${escapeSqlString(tableId)},
+            ${escapeSqlString(customerName)},
+            ${escapeSqlString(customerPhone)},
+            ${escapeSqlString(finalFlavor)},
+            ${escapeSqlString(finalFlavorMix)},
+            ${escapeSqlString(finalLoungeId)},
+            ${finalPriceCents},
+            ${escapeSqlString(assignedStaff?.boh)},
+            ${escapeSqlString(assignedStaff?.foh)},
+            ${escapeSqlString(notes)},
+            ${sessionDuration},
             NOW(),
             NOW()
           ) RETURNING *
         `;
         
         try {
-          const result = await prisma.$queryRawUnsafe(
-            insertQuery,
-            finalExternalRef || null,
-            sourceValue, // Use string value, PostgreSQL will cast to enum
-            'PENDING', // Use string value, PostgreSQL will cast to enum
-            trustSignature,
-            tableId,
-            customerName || null,
-            customerPhone || null,
-            typeof flavor === 'string' ? flavor : (Array.isArray(flavor) ? flavor[0] : 'Custom Mix') || null,
-            typeof flavor === 'string' ? flavor : JSON.stringify(flavor) || null,
-            finalLoungeId,
-            amount ? (amount < 1000 ? Math.round(amount * 100) : Math.round(amount)) : 3000,
-            assignedStaff?.boh || null,
-            assignedStaff?.foh || null,
-            notes || null,
-            sessionDuration
-          ) as any[];
+          console.log('[Sessions API] Executing raw SQL fallback query');
+          const result = await prisma.$queryRawUnsafe(insertQuery) as any[];
           
           if (result && result.length > 0) {
             newSession = result[0];
