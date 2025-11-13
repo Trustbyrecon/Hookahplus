@@ -8,6 +8,7 @@ import {
   STATUS_TO_STAGE, 
   ROLE_PERMISSIONS 
 } from '../types/enhancedSession';
+import { SessionStateV1, mapSessionState } from './taxonomy/enums-v1';
 
 // Trust validation function
 export function canPerformAction(userRole: UserRole, action: SessionAction): boolean {
@@ -142,3 +143,62 @@ export const ACTION_DESCRIPTIONS: Record<SessionAction, string> = {
   'PROCESS_REFUND': 'Process refund: customer refund requested and approved',
   'VOID_SESSION': 'Void session: cancel session completely'
 };
+
+// ============================================================================
+// Taxonomy v1 Integration
+// ============================================================================
+
+/**
+ * Map SessionStatus (FireSession) to SessionStateV1 (Taxonomy v1)
+ * 
+ * This bridges the frontend state machine with the database taxonomy
+ */
+export function mapSessionStatusToV1(
+  status: SessionStatus,
+  session: { prep_started_at?: Date | string | null; handoff_started_at?: Date | string | null; [key: string]: any }
+): { state: SessionStateV1; paused: boolean } {
+  // Map FireSession status to legacy Prisma SessionState, then to v1
+  let legacyState: 'PENDING' | 'ACTIVE' | 'PAUSED' | 'CLOSED' | 'CANCELED';
+  
+  switch (status) {
+    case 'NEW':
+    case 'PAID_CONFIRMED':
+      legacyState = 'PENDING';
+      break;
+    case 'PREP_IN_PROGRESS':
+    case 'HEAT_UP':
+    case 'READY_FOR_DELIVERY':
+    case 'OUT_FOR_DELIVERY':
+    case 'DELIVERED':
+    case 'ACTIVE':
+      legacyState = 'ACTIVE';
+      break;
+    case 'STAFF_HOLD':
+      // STAFF_HOLD is similar to PAUSED
+      legacyState = 'PAUSED';
+      break;
+    case 'CLOSED':
+    case 'CLOSE_PENDING':
+      legacyState = 'CLOSED';
+      break;
+    case 'VOIDED':
+    case 'FAILED_PAYMENT':
+    case 'REFUNDED':
+      legacyState = 'CANCELED';
+      break;
+    default:
+      legacyState = 'PENDING';
+  }
+  
+  return mapSessionState(legacyState, session);
+}
+
+/**
+ * Get v1 state and paused flag for a FireSession
+ */
+export function getSessionV1State(session: FireSession): { state: SessionStateV1; paused: boolean } {
+  return mapSessionStatusToV1(session.status, {
+    prep_started_at: session.sessionStartTime ? new Date(session.sessionStartTime) : null,
+    handoff_started_at: null // FireSession doesn't track handoff separately
+  });
+}

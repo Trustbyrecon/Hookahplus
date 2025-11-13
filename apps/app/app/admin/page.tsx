@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   Settings, 
@@ -36,7 +36,9 @@ import {
   Save,
   AlertCircle,
   CheckCircle2,
-  X
+  X,
+  Tag,
+  AlertCircle as AlertCircleIcon
 } from 'lucide-react';
 import Button from '../../components/Button';
 import GlobalNavigation from '../../components/GlobalNavigation';
@@ -60,6 +62,209 @@ interface AdminAction {
   color: string;
   href: string;
   status: 'active' | 'inactive' | 'maintenance';
+}
+
+// Taxonomy Tab Component
+function TaxonomyTab() {
+  const [unknowns, setUnknowns] = useState<Array<{
+    id: string;
+    enumType: string;
+    rawLabel: string;
+    suggestedMapping: string | null;
+    count: number;
+    exampleEventId: string | null;
+    firstSeen: string;
+    lastSeen: string;
+  }>>([]);
+  const [kpi, setKpi] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedEnumType, setSelectedEnumType] = useState<string>('all');
+  const [promoting, setPromoting] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadData();
+    const interval = setInterval(loadData, 30000); // Refresh every 30s
+    return () => clearInterval(interval);
+  }, [selectedEnumType]);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      
+      // Load unknowns
+      const enumTypeParam = selectedEnumType !== 'all' ? `&enumType=${selectedEnumType}` : '';
+      const unknownsRes = await fetch(`/api/taxonomy/unknowns?window=7${enumTypeParam}`);
+      const unknownsData = await unknownsRes.json();
+      if (unknownsData.success) {
+        setUnknowns(unknownsData.unknowns);
+      }
+
+      // Load KPI
+      const kpiRes = await fetch('/api/taxonomy/kpi?window=7');
+      const kpiData = await kpiRes.json();
+      if (kpiData.success) {
+        setKpi(kpiData.metrics);
+      }
+    } catch (error) {
+      console.error('[Taxonomy] Error loading data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePromote = async (unknownId: string, rawLabel: string, enumType: string) => {
+    const suggestedMapping = prompt(`Enter suggested mapping for "${rawLabel}":`);
+    if (!suggestedMapping) return;
+
+    try {
+      setPromoting(unknownId);
+      const res = await fetch('/api/taxonomy/promote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enumType, rawLabel, suggestedMapping })
+      });
+      
+      if (res.ok) {
+        await loadData();
+        alert(`Promoted ${enumType}:${rawLabel} → ${suggestedMapping}`);
+      } else {
+        alert('Failed to promote unknown value');
+      }
+    } catch (error) {
+      console.error('[Taxonomy] Error promoting:', error);
+      alert('Error promoting unknown value');
+    } finally {
+      setPromoting(null);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* KPI Metrics */}
+      {kpi && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div className="card-tablet">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-2 rounded-lg bg-zinc-800 text-green-400">
+                <CheckCircle className="w-5 h-5" />
+              </div>
+              {kpi.overall.coverage < 95 && (
+                <AlertCircleIcon className="w-5 h-5 text-yellow-400" />
+              )}
+            </div>
+            <div className="text-2xl font-bold text-white mb-1">
+              {kpi.overall.coverage.toFixed(1)}%
+            </div>
+            <div className="text-sm text-zinc-400">Overall Coverage</div>
+            <div className="text-xs text-zinc-500 mt-1">
+              Target: ≥95%
+            </div>
+          </div>
+
+          <div className="card-tablet">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-2 rounded-lg bg-zinc-800 text-blue-400">
+                <Tag className="w-5 h-5" />
+              </div>
+              {kpi.sessionState.alert && (
+                <AlertCircleIcon className="w-5 h-5 text-red-400" />
+              )}
+            </div>
+            <div className="text-2xl font-bold text-white mb-1">
+              {kpi.sessionState.coverage.toFixed(1)}%
+            </div>
+            <div className="text-sm text-zinc-400">SessionState Coverage</div>
+            <div className="text-xs text-zinc-500 mt-1">
+              Unknown: {kpi.sessionState.unknownRate.toFixed(1)}%
+            </div>
+          </div>
+
+          <div className="card-tablet">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-2 rounded-lg bg-zinc-800 text-purple-400">
+                <Shield className="w-5 h-5" />
+              </div>
+              {kpi.trustEventType.alert && (
+                <AlertCircleIcon className="w-5 h-5 text-red-400" />
+              )}
+            </div>
+            <div className="text-2xl font-bold text-white mb-1">
+              {kpi.trustEventType.coverage.toFixed(1)}%
+            </div>
+            <div className="text-sm text-zinc-400">TrustEventType Coverage</div>
+            <div className="text-xs text-zinc-500 mt-1">
+              Unknown: {kpi.trustEventType.unknownRate.toFixed(1)}%
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Top Unknowns Table */}
+      <div className="card-tablet">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-semibold text-white">Top Unknowns (7d)</h3>
+          <select
+            value={selectedEnumType}
+            onChange={(e) => setSelectedEnumType(e.target.value)}
+            className="px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm"
+          >
+            <option value="all">All Types</option>
+            <option value="SessionState">SessionState</option>
+            <option value="TrustEventType">TrustEventType</option>
+            <option value="DriftReason">DriftReason</option>
+          </select>
+        </div>
+
+        {loading ? (
+          <div className="text-center py-8 text-zinc-400">Loading...</div>
+        ) : unknowns.length === 0 ? (
+          <div className="text-center py-8 text-zinc-400">
+            <CheckCircle className="w-12 h-12 mx-auto mb-4 text-green-400" />
+            <p>No unknown values found. Taxonomy coverage is excellent!</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-zinc-700">
+                  <th className="text-left py-3 px-4 text-sm font-medium text-zinc-300">Enum Type</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-zinc-300">Raw Label</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-zinc-300">Suggested Mapping</th>
+                  <th className="text-right py-3 px-4 text-sm font-medium text-zinc-300">Count</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-zinc-300">Example Event ID</th>
+                  <th className="text-right py-3 px-4 text-sm font-medium text-zinc-300">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {unknowns.map((unknown) => (
+                  <tr key={unknown.id} className="border-b border-zinc-800 hover:bg-zinc-800/50">
+                    <td className="py-3 px-4 text-sm text-zinc-300">{unknown.enumType}</td>
+                    <td className="py-3 px-4 text-sm text-white font-mono">{unknown.rawLabel}</td>
+                    <td className="py-3 px-4 text-sm text-zinc-400">
+                      {unknown.suggestedMapping || '-'}
+                    </td>
+                    <td className="py-3 px-4 text-sm text-zinc-300 text-right">{unknown.count}</td>
+                    <td className="py-3 px-4 text-sm text-zinc-400 font-mono">
+                      {unknown.exampleEventId ? unknown.exampleEventId.substring(0, 20) + '...' : '-'}
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <Button
+                        className="btn-pretty-outline btn-tablet-sm"
+                        onClick={() => handlePromote(unknown.id, unknown.rawLabel, unknown.enumType)}
+                        disabled={promoting === unknown.id}
+                      >
+                        {promoting === unknown.id ? 'Promoting...' : 'Promote'}
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function AdminPage() {
@@ -229,7 +434,33 @@ export default function AdminPage() {
           </p>
         </div>
 
-        {/* System Metrics */}
+        {/* Tabs */}
+        <div className="flex space-x-1 mb-6 overflow-x-auto">
+          {[
+            { id: 'overview', label: 'Overview', icon: <Activity className="w-4 h-4" /> },
+            { id: 'taxonomy', label: 'Taxonomy', icon: <Tag className="w-4 h-4" /> },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors btn-tablet whitespace-nowrap ${
+                activeTab === tab.id
+                  ? 'bg-red-600 text-white'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+              }`}
+            >
+              {tab.icon}
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Content based on active tab */}
+        {activeTab === 'taxonomy' ? (
+          <TaxonomyTab />
+        ) : (
+          <>
+            {/* System Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {systemMetrics.map((metric) => (
             <div key={metric.id} className="card-tablet">
@@ -325,6 +556,8 @@ export default function AdminPage() {
             </div>
           </div>
         </div>
+          </>
+        )}
       </div>
 
       {/* Add User Modal */}

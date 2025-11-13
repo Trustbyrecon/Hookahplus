@@ -67,6 +67,10 @@ model Session {
   tableNotes      String? // Notes specific to this table/session
   qrCodeUrl       String? // URL to QR code image/data URL for staff scanning (fraud prevention)
 
+  // Taxonomy v1 fields (dual-write pattern)
+  sessionStateV1  String? // Taxonomy v1: queued | prep | handoff | delivering | delivered | checkout | closed | canceled
+  paused          Boolean @default(false) // PAUSED is a modifier flag, not a state
+
   @@map("Session")
 }
 
@@ -234,10 +238,14 @@ model ReflexEvent {
   campaignId    String? // Marketing campaign identifier
   metadata      String? // Additional JSON metadata for source-specific data
 
+  // Taxonomy v1 fields (dual-write pattern)
+  trustEventTypeV1 String? // Taxonomy v1: on_time_delivery | fav_used | fast_checkout | corrected_issue | staff_greeting | loyalty_redeemed
+
   @@index([type, createdAt])
   @@index([ctaSource])
   @@index([ctaType])
   @@index([campaignId])
+  @@index([trustEventTypeV1])
   @@map("reflex_events")
 }
 
@@ -414,4 +422,39 @@ model LoyaltyWallet {
 
   @@index([accountId])
   @@map("loyalty_wallets")
+}
+
+// Taxonomy v1 Models
+model DriftEvent {
+  id            String   @id @default(cuid())
+  sessionId     String?
+  driftReasonV1 String? // Taxonomy v1: slow_handoff | long_dwell | payment_retry | missing_notes | queue_backlog | no_show
+  severity      String? // low | medium | high
+  details       String? // JSON string
+  createdAt     DateTime @default(now())
+
+  @@index([driftReasonV1])
+  @@index([sessionId])
+  @@index([createdAt])
+  @@map("DriftEvent")
+}
+
+model TaxonomyUnknown {
+  id               String   @id @default(cuid())
+  enumType         String // SessionState | TrustEventType | DriftReason
+  rawLabel         String
+  suggestedMapping String?
+  count            Int      @default(1)
+  exampleEventId   String?
+  examplePayload   String? // JSON string
+  firstSeen        DateTime @default(now())
+  lastSeen         DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([enumType, rawLabel])
+  @@index([enumType])
+  @@index([count])
+  @@index([lastSeen])
+  @@map("TaxonomyUnknown")
 }

@@ -3,24 +3,35 @@
  * 
  * Agent: Lumi
  * Generated from schema/rem/v1.yaml
+ * 
+ * Updated: Taxonomy v1 - TrustEventType now uses v1 six values
  */
 
+// Taxonomy v1 - TrustEventType (6 core values)
 export type TrustEventType =
-  | 'order.created'
-  | 'order.completed'
-  | 'order.cancelled'
-  | 'payment.settled'
-  | 'payment.refunded'
-  | 'payment.failed'
-  | 'loyalty.issued'
-  | 'loyalty.redeemed'
-  | 'loyalty.expired'
-  | 'session.started'
-  | 'session.completed'
-  | 'session.cancelled'
-  | 'session.extended'
-  | 'refill.requested'
-  | 'refill.completed';
+  | 'on_time_delivery'
+  | 'fav_used'
+  | 'fast_checkout'
+  | 'corrected_issue'
+  | 'staff_greeting'
+  | 'loyalty_redeemed';
+
+// Legacy TrustEventType mapping (deprecated - 30-60 day window)
+export const LEGACY_TRUST_EVENT_MAP: Record<string, TrustEventType> = {
+  // Direct mappings
+  'delivery_on_time': 'on_time_delivery',
+  'favorite_applied': 'fav_used',
+  'speedy_checkout': 'fast_checkout',
+  'issue_fixed': 'corrected_issue',
+  'greeted_guest': 'staff_greeting',
+  'reward_claimed': 'loyalty_redeemed',
+  
+  // Legacy REM event type mappings
+  'order.completed': 'fast_checkout',
+  'payment.settled': 'fast_checkout',
+  'loyalty.redeemed': 'loyalty_redeemed',
+  'session.completed': 'on_time_delivery',
+};
 
 export type SentimentType = 'relaxed' | 'energetic' | 'social' | 'focused' | 'neutral';
 
@@ -153,28 +164,23 @@ export function createTrustEventFromReflexEvent(
   try {
     const payload = reflexEvent.payload ? JSON.parse(reflexEvent.payload) : {};
 
-    // Map ReflexEvent type to TrustEvent type
-    const typeMap: Record<string, TrustEventType> = {
-      'order.created': 'order.created',
-      'order.completed': 'order.completed',
-      'order.cancelled': 'order.cancelled',
-      'payment.settled': 'payment.settled',
-      'payment.refunded': 'payment.refunded',
-      'payment.failed': 'payment.failed',
-      'loyalty.issued': 'loyalty.issued',
-      'loyalty.redeemed': 'loyalty.redeemed',
-      'loyalty.expired': 'loyalty.expired',
-      'session.started': 'session.started',
-      'session.completed': 'session.completed',
-      'session.cancelled': 'session.cancelled',
-      'session.extended': 'session.extended',
-      'refill.requested': 'refill.requested',
-      'refill.completed': 'refill.completed',
-    };
-
-    const trustEventType = typeMap[reflexEvent.type];
+    // Map ReflexEvent type to TrustEvent v1 type
+    // Use legacy mapping, fallback to direct check if already v1
+    let trustEventType: TrustEventType | null = null;
+    
+    // Check legacy mapping first
+    const mapped = LEGACY_TRUST_EVENT_MAP[reflexEvent.type];
+    if (mapped) {
+      trustEventType = mapped;
+    } else if (['on_time_delivery', 'fav_used', 'fast_checkout', 'corrected_issue', 'staff_greeting', 'loyalty_redeemed'].includes(reflexEvent.type)) {
+      // Already a v1 type
+      trustEventType = reflexEvent.type as TrustEventType;
+    }
+    
     if (!trustEventType) {
-      return null; // Unknown event type
+      // Unknown event type - return null (will be tracked by unknown tracker)
+      console.warn(`[REM Types] Unknown TrustEventType: ${reflexEvent.type}`);
+      return null;
     }
 
     const trustEvent: TrustEvent = {

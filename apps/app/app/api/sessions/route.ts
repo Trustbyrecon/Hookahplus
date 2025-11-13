@@ -21,6 +21,8 @@ import {
   processDeliveryLayer,
 } from '../../../lib/reflex-chain/integration';
 import { logKtl4Event, updateKtl4Health, getKtl4HealthStatus } from '../../../lib/ktl4-ghostlog';
+import { mapSessionState } from '../../../lib/taxonomy/enums-v1';
+import { trackUnknown } from '../../../lib/taxonomy/unknown-tracker';
 
 // CORS headers helper - accepts request to get origin
 function getCorsHeaders(req?: NextRequest) {
@@ -403,12 +405,20 @@ export async function POST(req: NextRequest) {
     const finalFlavorMix = typeof flavor === 'string' ? flavor : JSON.stringify(flavor);
     const finalPriceCents = amount ? (amount < 1000 ? Math.round(amount * 100) : Math.round(amount)) : 3000;
     
+    // Map legacy state to v1 taxonomy (dual-write pattern)
+    const legacyState = 'PENDING' as const; // New sessions start as PENDING
+    const mappedState = mapSessionState(legacyState, {
+      prep_started_at: null,
+      handoff_started_at: null
+    });
+    
     const insertQuery = `
       INSERT INTO "Session" (
         "id", "externalRef", "source", "state", "trustSignature", 
         "tableId", "customerRef", "customerPhone", "flavor", "flavorMix",
         "loungeId", "priceCents", "assignedBOHId", "assignedFOHId", 
-        "tableNotes", "durationSecs", "createdAt", "updatedAt"
+        "tableNotes", "durationSecs", "createdAt", "updatedAt",
+        "sessionStateV1", "paused"
       ) VALUES (
         gen_random_uuid()::text,
         ${escapeSqlString(finalExternalRef)},
@@ -427,7 +437,9 @@ export async function POST(req: NextRequest) {
         ${escapeSqlString(notes)},
         ${sessionDuration},
         NOW(),
-        NOW()
+        NOW(),
+        ${escapeSqlString(mappedState.state)},
+        ${mappedState.paused}
       ) RETURNING *
     `;
     

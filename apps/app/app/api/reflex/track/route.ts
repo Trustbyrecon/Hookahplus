@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "../../../../lib/db";
-import { generateTrustEventId, validateTrustEvent, type TrustEvent } from "../../../../lib/reflex/rem-types";
+import { generateTrustEventId, validateTrustEvent, type TrustEvent, LEGACY_TRUST_EVENT_MAP } from "../../../../lib/reflex/rem-types";
+import { mapTrustEvent } from "../../../../lib/taxonomy/enums-v1";
+import { trackUnknown } from "../../../../lib/taxonomy/unknown-tracker";
 
 const envLimit = Number(process.env.REFLEX_LIMIT_PER_MIN ?? 120);
 
@@ -174,6 +176,17 @@ export async function POST(req: Request) {
     if (dupe) return NextResponse.json({ ok: true, id: dupe.id, deduped: true, remFormat: true });
   }
 
+  // Map to v1 taxonomy (dual-write pattern)
+  const mappedTrustEvent = mapTrustEvent(type);
+  let trustEventTypeV1: string | undefined;
+  
+  if (mappedTrustEvent.v1) {
+    trustEventTypeV1 = mappedTrustEvent.v1;
+  } else if (mappedTrustEvent.unknown) {
+    // Will track unknown after record is created
+    trustEventTypeV1 = undefined;
+  }
+
   const rec = await prisma.reflexEvent.create({
     data: {
       type, 
@@ -184,8 +197,21 @@ export async function POST(req: Request) {
       payloadHash: payloadHash ?? undefined, 
       userAgent: ua, 
       ip,
+      trustEventTypeV1, // Taxonomy v1 field (dual-write)
     },
   });
+
+  // Track unknown after record is created
+  if (mappedTrustEvent.unknown) {
+    await trackUnknown('TrustEventType', mappedTrustEvent.unknown, rec.id, {
+      type,
+      source,
+      sessionId,
+      paymentIntent
+    }).catch(err => {
+      console.error('[Reflex Track] Failed to track unknown:', err);
+    });
+  }
 
   return NextResponse.json({ 
     ok: true, 
