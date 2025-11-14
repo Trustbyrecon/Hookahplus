@@ -43,6 +43,9 @@ apps/*/.env.*
 *STRIPE_KEYS*.txt
 *stripe-keys*.md
 *stripe-keys*.txt
+*STRIPE_KEY*.md
+*STRIPE_KEY*.txt
+STRIPE_KEY_ADDED.md
 
 # Local Netlify folder
 .netlify
