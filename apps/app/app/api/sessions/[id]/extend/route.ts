@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../../lib/db';
-import { convertPrismaSessionToFireSession } from '../../../sessions/route';
+import { convertPrismaSessionToFireSession } from '../../../../../lib/session-utils-prisma';
 import { canExtendSession, calculateExtensionCost } from '../../../../../lib/session-utils';
 import { calculateRemainingTime } from '../../../../../lib/sessionStateMachine';
 import Stripe from 'stripe';
