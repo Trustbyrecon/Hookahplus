@@ -9,7 +9,7 @@ import FlavorWheelSelector from './FlavorWheelSelector';
 interface CreateSessionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateSession: (sessionData: any) => void; // Changed to any to accept API data format
+  onCreateSession: (sessionData: any) => Promise<string | undefined>; // Returns session ID for payment linking
 }
 
 interface SessionData {
@@ -177,7 +177,7 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
       // Format data for the API endpoint
@@ -200,8 +200,94 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
       };
       
       console.log('Creating session with data:', apiData); // Debug log
-      onCreateSession(apiData);
-      onClose();
+      
+      // Create session first and get session ID
+      let sessionId: string | undefined;
+      try {
+        sessionId = await onCreateSession(apiData);
+        if (!sessionId) {
+          throw new Error('Session created but no ID returned');
+        }
+      } catch (error) {
+        console.error('Session creation failed:', error);
+        // Don't proceed to payment if session creation failed
+        return;
+      }
+      
+      // Immediately trigger payment (Stripe checkout) with session ID - same pattern as pre-order
+      try {
+        // Calculate total amount in cents (same as pre-order)
+        const totalAmountCents = Math.round(formData.amount * 100);
+        const totalAmountDollars = formData.amount;
+        
+        console.log('[CreateSessionModal] Creating Stripe checkout with session ID:', sessionId);
+        
+        const response = await fetch('/api/checkout-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId: sessionId, // SECURITY: Only send opaque session ID to Stripe
+            flavors: formData.flavorMix.length > 0 ? formData.flavorMix : [formData.flavor || 'Custom Mix'],
+            tableId: formData.tableId || selectedTable?.id || 'table-001',
+            amount: totalAmountCents, // Amount in cents (same as pre-order)
+            total: totalAmountDollars, // Total in dollars for display
+            sessionDuration: formData.timerDuration * 60,
+            loungeId: 'default-lounge' // Default lounge ID
+          })
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          let checkoutError;
+          try {
+            checkoutError = errorText ? JSON.parse(errorText) : { error: 'Unknown error' };
+          } catch {
+            checkoutError = { error: errorText || `HTTP ${response.status}` };
+          }
+          
+          // Special handling for Stripe configuration errors
+          if (checkoutError.isConfigurationError || checkoutError.error === 'Stripe not configured') {
+            const setupMessage = 
+              `⚠️ Stripe Payment Not Configured\n\n` +
+              `Session created successfully (ID: ${sessionId}), but payment checkout requires Stripe setup.\n\n` +
+              `To enable payments:\n` +
+              `1. Get test key: ${checkoutError.setupUrl || 'https://dashboard.stripe.com/apikeys'}\n` +
+              `2. Add to apps/app/.env.local:\n` +
+              `   STRIPE_SECRET_KEY=sk_test_...\n` +
+              `3. Restart app build server\n\n` +
+              `You can manually confirm payment using the "Confirm Payment" button in the FSD.`;
+            
+            alert(setupMessage);
+            onClose(); // Close modal even if Stripe fails
+            return;
+          }
+          
+          throw new Error(checkoutError.error || checkoutError.details || 'Failed to create checkout session');
+        }
+        
+        const data = await response.json();
+        console.log('[CreateSessionModal] Checkout response:', data);
+        
+        if (data.success && data.url) {
+          // Redirect to Stripe checkout (same pattern as pre-order)
+          console.log('✅ Stripe checkout URL created, redirecting to:', data.url);
+          window.location.href = data.url;
+          // Note: We don't close the modal here because we're redirecting
+          // The redirect will happen, and when user returns, they'll see the updated session
+        } else {
+          throw new Error(data.error || data.details || 'Invalid checkout response');
+        }
+      } catch (error) {
+        console.error('Payment error (session still created):', error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        alert(
+          `⚠️ Session created, but payment checkout failed.\n\n` +
+          `Error: ${errorMessage}\n\n` +
+          `Session ID: ${sessionId}\n` +
+          `You can manually confirm payment using the "Confirm Payment" button in the FSD.`
+        );
+        onClose(); // Close modal even if Stripe fails
+      }
     }
   };
 

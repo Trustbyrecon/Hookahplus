@@ -150,59 +150,73 @@ export default function SimpleFSDDesign({
   }, []);
 
   const handleSessionAction = async (action: string, sessionId: string) => {
-    console.log(`Action: ${action} on session: ${sessionId}`);
+    // Use proxy endpoint to forward to app build
+    // This triggers Reflex Ops flywheel: experience → possibilities → take action → review → build experience
+    console.log(`[Site Build] Action: ${action} on session: ${sessionId}`);
     
     try {
-      // Map action to root Prisma API command format
-      const commandMap: Record<string, string> = {
-        'claim_prep': 'PAYMENT_CONFIRMED',
-        'heat_up': 'PREP_STARTED',
+      // Map action to SessionAction format for app build API
+      const actionMap: Record<string, string> = {
+        'claim_prep': 'CLAIM_PREP',
+        'heat_up': 'HEAT_UP',
         'ready_for_delivery': 'READY_FOR_DELIVERY',
-        'deliver_now': 'OUT_FOR_DELIVERY',
-        'mark_delivered': 'DELIVERED',
-        'start_active': 'ACTIVE',
-        'pause_session': 'PAUSE',
-        'resume_session': 'RESUME',
-        'request_refill': 'REFILL_REQUESTED',
-        'complete_refill': 'REFILL_COMPLETED',
-        'close_session': 'CLOSE',
-        'put_on_hold': 'HOLD',
+        'deliver_now': 'DELIVER_NOW',
+        'mark_delivered': 'MARK_DELIVERED',
+        'start_active': 'START_ACTIVE',
+        'pause_session': 'PAUSE_SESSION',
+        'resume_session': 'RESUME_SESSION',
+        'request_refill': 'REQUEST_REFILL',
+        'complete_refill': 'COMPLETE_REFILL',
+        'close_session': 'CLOSE_SESSION',
+        'put_on_hold': 'PUT_ON_HOLD',
         'resolve_hold': 'RESOLVE_HOLD',
-        'request_remake': 'REMAKE',
-        'process_refund': 'REFUND',
-        'void_session': 'VOID'
+        'request_remake': 'REQUEST_REMAKE',
+        'process_refund': 'PROCESS_REFUND',
+        'void_session': 'VOID_SESSION'
       };
 
-      const command = commandMap[action.toLowerCase()] || action.toUpperCase();
+      const mappedAction = actionMap[action.toLowerCase()] || action.toUpperCase();
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/sessions/${sessionId}/command`, {
-        method: 'POST',
+      // Use proxy endpoint to forward to app build
+      const response = await fetch('/api/sessions/proxy', {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          cmd: command,
-          actor: userRole?.toLowerCase() || 'manager',
-          data: {
-            notes: `Action ${action} executed by ${userRole || 'MANAGER'}`,
-            timestamp: Date.now()
-          }
+          sessionId,
+          action: mappedAction,
+          userRole: currentRole || userRole || 'MANAGER',
+          operatorId: `site-${currentRole?.toLowerCase() || 'manager'}`,
+          notes: `Action ${mappedAction} executed by ${currentRole || 'MANAGER'} from site build`
         }),
       });
 
+      if (!response.ok) {
+        const responseText = await response.text();
+        let error;
+        try {
+          error = JSON.parse(responseText);
+        } catch {
+          error = { details: responseText || `HTTP ${response.status}` };
+        }
+        throw new Error(error.details || error.error || `Failed to ${action} session ${sessionId}`);
+      }
+
       const result = await response.json();
 
-      if (result.ok) {
-        console.log('Session action successful:', result);
+      if (result.success) {
+        console.log('[Site Build] Session action successful:', result);
+        // Trigger Reflex Ops flywheel: experience → possibilities → take action → review → build experience
         // Refresh the page to show updated session state
         window.location.reload();
       } else {
-        console.error('Session action failed:', result);
-        alert(`Action failed: ${result.error || 'Unknown error'}`);
+        console.error('[Site Build] Session action failed:', result);
+        alert(`Action failed: ${result.error || result.details || 'Unknown error'}`);
       }
     } catch (error) {
-      console.error('Error executing session action:', error);
-      alert('Failed to execute action. Please try again.');
+      console.error('[Site Build] Error executing session action:', error);
+      alert(`Failed to execute action: ${error instanceof Error ? error.message : 'Please try again.'}`);
     }
 
     if (onSessionAction) {

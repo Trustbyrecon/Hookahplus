@@ -23,6 +23,7 @@ import {
 import { logKtl4Event, updateKtl4Health, getKtl4HealthStatus } from '../../../lib/ktl4-ghostlog';
 import { mapSessionState } from '../../../lib/taxonomy/enums-v1';
 import { trackUnknown } from '../../../lib/taxonomy/unknown-tracker';
+import { convertPrismaSessionToFireSession } from '../../../lib/session-utils-prisma';
 
 // CORS headers helper - accepts request to get origin
 function getCorsHeaders(req?: NextRequest) {
@@ -56,13 +57,19 @@ export async function OPTIONS(req: NextRequest) {
 }
 
 // Helper function to map Prisma session state (enum) to FireSession status
-function mapPrismaStateToFireSession(state: string | SessionState): SessionStatus {
+function mapPrismaStateToFireSession(state: string | SessionState, paymentStatus?: string | null): SessionStatus {
   // Convert enum to string if needed
   const stateStr = typeof state === 'string' ? state : String(state);
   
+  // Special handling: PENDING + paymentStatus 'succeeded' = PAID_CONFIRMED
+  // This is the key fix: after Stripe payment, sessions should show as PAID_CONFIRMED
+  if (stateStr === 'PENDING' && paymentStatus === 'succeeded') {
+    return 'PAID_CONFIRMED';
+  }
+  
   const stateMap: Record<string, SessionStatus> = {
     // Database enum values (SessionState)
-    'PENDING': 'NEW', // Map PENDING to NEW for FireSession
+    'PENDING': 'NEW', // PENDING without payment = NEW (unpaid)
     'ACTIVE': 'ACTIVE',
     'PAUSED': 'STAFF_HOLD', // Map PAUSED to STAFF_HOLD
     'CLOSED': 'CLOSED',
@@ -121,49 +128,7 @@ function mapStateToStage(state: string | SessionState): 'BOH' | 'FOH' | 'CUSTOME
   }
 }
 
-// Convert Prisma session to FireSession format
-function convertPrismaSessionToFireSession(session: any): FireSession {
-  const flavorMix = session.flavorMix ? (() => {
-    try {
-      const parsed = JSON.parse(session.flavorMix);
-      return typeof parsed === 'string' ? parsed : parsed.join(' + ');
-    } catch {
-      return session.flavorMix;
-    }
-  })() : (session.flavor || 'Custom Mix');
-
-  return {
-    id: session.id,
-    tableId: session.tableId || session.externalRef || 'Unknown',
-    customerName: session.customerRef || 'Anonymous',
-    customerPhone: session.customerPhone || '',
-    flavor: flavorMix,
-    amount: session.priceCents || 0,
-    status: mapPrismaStateToFireSession(session.state),
-    currentStage: mapStateToStage(session.state),
-    assignedStaff: {
-      boh: session.assignedBOHId || '',
-      foh: session.assignedFOHId || ''
-    },
-    createdAt: new Date(session.createdAt).getTime(),
-    updatedAt: new Date(session.updatedAt).getTime(),
-    sessionStartTime: session.startedAt ? new Date(session.startedAt).getTime() : undefined,
-    sessionDuration: session.durationSecs || 45 * 60,
-    coalStatus: 'active' as const,
-    refillStatus: 'none' as const,
-    notes: session.tableNotes || '',
-    edgeCase: session.edgeCase || null,
-    sessionTimer: session.timerStartedAt ? {
-      remaining: calculateRemainingTimeFromPrisma(session),
-      total: session.timerDuration || 45 * 60,
-      isActive: session.timerStatus === 'running',
-      startedAt: new Date(session.timerStartedAt).getTime()
-    } : undefined,
-    bohState: 'PREPARING' as const,
-    guestTimerDisplay: session.state === 'ACTIVE',
-    source: session.source // Include source from Prisma session
-  };
-}
+// convertPrismaSessionToFireSession is now imported from lib/session-utils-prisma.ts
 
 // Helper function to calculate remaining time from Prisma session
 function calculateRemainingTimeFromPrisma(session: any): number {
@@ -352,7 +317,7 @@ export async function POST(req: NextRequest) {
 
     const trustSignature = seal({
       loungeId: finalLoungeId,
-      source,
+      source: sourceValue,
       externalRef: finalExternalRef,
       customerPhone,
       flavor
@@ -540,14 +505,14 @@ export async function POST(req: NextRequest) {
               action: 'create-session',
               tableId,
               customerName,
-              source,
+              source: sourceValue,
               businessLogic: 'New session created - BOH can claim prep or put on hold'
             }),
             payloadHash: seal({
               action: 'create-session',
               tableId,
               customerName,
-              source
+              source: sourceValue
             })
           }
         });
@@ -850,16 +815,60 @@ export async function PATCH(req: NextRequest) {
     const currentSession = convertPrismaSessionToFireSession(dbSession);
 
     try {
-      // Use the state machine to transition the session
-      const updatedSession = nextStateWithTrust(
-        currentSession,
-        { 
-          type: action as SessionAction, 
-          operatorId: operatorId || 'system',
-          timestamp: Date.now()
-        },
-        userRole as UserRole
-      );
+      // ADMIN bypass: Allow ADMIN to bypass state machine for destructive actions
+      let updatedSession: FireSession;
+      if (userRole === 'ADMIN' && action === 'VOID_SESSION') {
+        // ADMIN can actually DELETE sessions (not just mark as canceled)
+        console.log(`[Sessions API] ADMIN delete: Deleting session ${dbSession.id} from database`);
+        
+        // Actually delete the session from the database
+        await prisma.session.delete({
+          where: { id: dbSession.id }
+        });
+        
+        // Also delete related ReflexEvents if they exist
+        try {
+          await prisma.reflexEvent.deleteMany({
+            where: { sessionId: dbSession.id }
+          });
+        } catch (reflexError) {
+          // Log but don't fail if reflex events deletion fails
+          console.warn('[Sessions API] Failed to delete related ReflexEvents:', reflexError);
+        }
+        
+        console.log(`[Sessions API] ✅ Session ${dbSession.id} deleted successfully`);
+        
+        return NextResponse.json({
+          success: true,
+          message: 'Session deleted successfully',
+          deleted: true,
+          sessionId: dbSession.id,
+          businessLogic: 'ADMIN deleted session from database'
+        }, {
+          headers: getCorsHeaders(req),
+        });
+      } else if (userRole === 'ADMIN' && action === 'PROCESS_REFUND') {
+        // ADMIN can refund from any state - bypass state machine validation
+        const targetStatus = 'REFUNDED';
+        updatedSession = {
+          ...currentSession,
+          status: targetStatus as SessionStatus,
+          currentStage: STATUS_TO_STAGE[targetStatus as SessionStatus],
+          updatedAt: Date.now()
+        };
+        console.log(`[Sessions API] ADMIN bypass: ${action} from ${currentSession.status} to ${targetStatus}`);
+      } else {
+        // Use the state machine to transition the session for all other cases
+        updatedSession = nextStateWithTrust(
+          currentSession,
+          { 
+            type: action as SessionAction, 
+            operatorId: operatorId || 'system',
+            timestamp: Date.now()
+          },
+          userRole as UserRole
+        );
+      }
 
       // Map FireSession status back to Prisma state
       // Note: Database stores detailed statuses as strings for business logic

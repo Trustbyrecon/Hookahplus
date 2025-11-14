@@ -77,6 +77,7 @@ import { StaffWorkflowAssistant } from '../../components/StaffWorkflowAssistant'
 import { FOHTimerInterface } from '../../components/FOHTimerInterface';
 import { ManagerTimerDashboard } from '../../components/ManagerTimerDashboard';
 import SimpleFSDDesign from '../../components/SimpleFSDDesign';
+import SessionAnalyticsCard from '../../components/SessionAnalyticsCard';
 import { SessionProvider, useSessionContext } from '../../contexts/SessionContext';
 import SyncIndicator from '../../components/SyncIndicator';
 
@@ -213,9 +214,143 @@ function SessionsPageContent() {
     ));
   };
 
-  const handleBulkAction = (action: string, sessionIds: string[]) => {
-    console.log(`Bulk action ${action} on sessions:`, sessionIds);
-    // Implement bulk actions
+  const [bulkActionProgress, setBulkActionProgress] = useState<{
+    isRunning: boolean;
+    completed: number;
+    total: number;
+    errors: Array<{ sessionId: string; error: string }>;
+  } | null>(null);
+
+  const handleBulkAction = async (action: string, sessionIds: string[]) => {
+    if (sessionIds.length === 0) {
+      alert('Please select at least one session');
+      return;
+    }
+
+    try {
+      // Map action names to API actions
+      const actionMap: Record<string, string> = {
+        'start_prep': 'CLAIM_PREP',
+        'mark_ready': 'READY_FOR_DELIVERY',
+        'take_delivery': 'DELIVER_NOW',
+        'pause': 'PUT_ON_HOLD',
+        'complete': 'CLOSE_SESSION',
+        'delete': 'VOID_SESSION',
+        'cancel': 'VOID_SESSION'
+      };
+
+      const apiAction = actionMap[action] || action.toUpperCase();
+      
+      // Confirm destructive actions
+      if (['delete', 'cancel', 'complete'].includes(action)) {
+        const confirmed = confirm(
+          `Are you sure you want to ${action} ${sessionIds.length} session(s)?`
+        );
+        if (!confirmed) return;
+      }
+
+      // Initialize progress tracking
+      setBulkActionProgress({
+        isRunning: true,
+        completed: 0,
+        total: sessionIds.length,
+        errors: []
+      });
+
+      // Execute bulk action with progress tracking
+      const results = await Promise.allSettled(
+        sessionIds.map(async (sessionId, index) => {
+          try {
+            const response = await fetch(`/api/sessions`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                sessionId,
+                action: apiAction,
+                userRole
+              })
+            });
+
+            if (!response.ok) {
+              const responseText = await response.text();
+              let error;
+              try {
+                error = JSON.parse(responseText);
+              } catch {
+                error = { details: responseText || `HTTP ${response.status}` };
+              }
+              throw new Error(error.details || error.error || `Failed to ${action} session ${sessionId}`);
+            }
+
+            const responseText = await response.text();
+            let result;
+            if (!responseText) {
+              result = { success: true, sessionId };
+            } else {
+              try {
+                result = JSON.parse(responseText);
+              } catch (e) {
+                result = { success: true, sessionId, rawResponse: responseText };
+              }
+            }
+
+            // Update progress
+            setBulkActionProgress(prev => prev ? {
+              ...prev,
+              completed: prev.completed + 1
+            } : null);
+
+            return result;
+          } catch (error) {
+            // Update progress with error
+            setBulkActionProgress(prev => prev ? {
+              ...prev,
+              completed: prev.completed + 1,
+              errors: [...prev.errors, {
+                sessionId,
+                error: error instanceof Error ? error.message : 'Unknown error'
+              }]
+            } : null);
+            throw error;
+          }
+        })
+      );
+
+      // Count successes and failures
+      const successes = results.filter(r => r.status === 'fulfilled').length;
+      const failures = results.filter(r => r.status === 'rejected').length;
+
+      // Clear progress after a delay
+      setTimeout(() => {
+        setBulkActionProgress(null);
+      }, 3000);
+
+      if (failures > 0) {
+        const errors = results
+          .filter(r => r.status === 'rejected')
+          .map(r => (r as PromiseRejectedResult).reason?.message || 'Unknown error')
+          .slice(0, 5) // Limit to first 5 errors
+          .join('\n');
+        
+        const errorCount = failures > 5 ? ` (showing first 5 of ${failures})` : '';
+        
+        alert(
+          `Bulk action completed with errors:\n` +
+          `✅ ${successes} succeeded\n` +
+          `❌ ${failures} failed${errorCount}\n\n` +
+          `Errors:\n${errors}`
+        );
+      } else {
+        alert(`✅ Successfully ${action}d ${successes} session(s)`);
+      }
+
+      // Refresh sessions after bulk action
+      await refreshSessions();
+    } catch (error) {
+      console.error('[Bulk Action] Error:', error);
+      setBulkActionProgress(null);
+      alert(`Failed to execute bulk action: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
   const renderOverview = () => (
@@ -479,6 +614,31 @@ function SessionsPageContent() {
 
         {/* Content */}
         {renderContent()}
+
+        {/* Bulk Action Progress Indicator */}
+        {bulkActionProgress && bulkActionProgress.isRunning && (
+          <div className="fixed bottom-4 right-4 bg-zinc-900 border border-zinc-700 rounded-lg p-4 shadow-lg z-50 min-w-[300px]">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-white">Processing Bulk Action</span>
+              <span className="text-xs text-zinc-400">
+                {bulkActionProgress.completed} / {bulkActionProgress.total}
+              </span>
+            </div>
+            <div className="w-full bg-zinc-700 rounded-full h-2 mb-2">
+              <div
+                className="bg-teal-500 h-2 rounded-full transition-all duration-300"
+                style={{
+                  width: `${(bulkActionProgress.completed / bulkActionProgress.total) * 100}%`
+                }}
+              />
+            </div>
+            {bulkActionProgress.errors.length > 0 && (
+              <div className="text-xs text-red-400 mt-2">
+                {bulkActionProgress.errors.length} error(s) occurred
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Related Features */}
         <div className="mt-16 border-t border-zinc-800 pt-8">

@@ -36,10 +36,26 @@ interface TrackingStep {
 
 interface HookahTrackerProps {
   sessionId: string;
-  loungeId: string;
+  loungeId?: string;
   tableId: string;
   onComplete?: () => void;
 }
+
+// Map session status to tracker step index
+const getStepFromStatus = (status: string): number => {
+  const statusMap: Record<string, number> = {
+    'NEW': 0,
+    'PAID_CONFIRMED': 0,
+    'PREP_IN_PROGRESS': 1,
+    'HEAT_UP': 2,
+    'READY_FOR_DELIVERY': 2,
+    'OUT_FOR_DELIVERY': 3,
+    'DELIVERED': 3,
+    'ACTIVE': 3,
+    'CLOSED': 3
+  };
+  return statusMap[status] ?? 0;
+};
 
 export const HookahTracker: React.FC<HookahTrackerProps> = ({
   sessionId,
@@ -52,6 +68,9 @@ export const HookahTracker: React.FC<HookahTrackerProps> = ({
   const [estimatedTotalTime, setEstimatedTotalTime] = useState('15-20 minutes');
   const [actualStartTime, setActualStartTime] = useState<Date | null>(null);
   const [notifications, setNotifications] = useState<string[]>([]);
+  const [sessionData, setSessionData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [useDemo, setUseDemo] = useState(false);
 
   const trackingSteps: TrackingStep[] = [
     {
@@ -111,8 +130,89 @@ export const HookahTracker: React.FC<HookahTrackerProps> = ({
     }
   ];
 
-  // Simulate the tracking progression
+  // Fetch real session data from app build
   useEffect(() => {
+    const fetchSessionData = async () => {
+      if (!sessionId || sessionId === 'session_demo') {
+        setUseDemo(true);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
+        const response = await fetch(`${appUrl}/api/sessions/${sessionId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.id) {
+            setSessionData(data);
+            setUseDemo(false);
+            
+            // Map session status to tracker step
+            const step = getStepFromStatus(data.status || data.state || 'NEW');
+            setCurrentStep(step);
+            
+            // Set actual start time from session
+            if (data.createdAt) {
+              setActualStartTime(new Date(data.createdAt));
+            } else {
+              setActualStartTime(new Date());
+            }
+            
+            // Calculate estimated time based on session duration
+            if (data.sessionDuration) {
+              const minutes = Math.floor(data.sessionDuration / 60);
+              setEstimatedTotalTime(`${minutes}-${minutes + 5} minutes`);
+            }
+            
+            // Add notification based on current status
+            if (data.status === 'PREP_IN_PROGRESS' || data.status === 'HEAT_UP') {
+              addNotification('Your hookah is being prepared!');
+            } else if (data.status === 'READY_FOR_DELIVERY' || data.status === 'OUT_FOR_DELIVERY') {
+              addNotification('Your hookah is ready and on its way!');
+            } else if (data.status === 'DELIVERED' || data.status === 'ACTIVE') {
+              addNotification('Enjoy your hookah session!');
+            }
+          } else {
+            // No real data, use demo
+            setUseDemo(true);
+          }
+        } else {
+          // API error, use demo
+          console.warn('[HookahTracker] Failed to fetch session, using demo:', response.status);
+          setUseDemo(true);
+        }
+      } catch (error) {
+        console.error('[HookahTracker] Error fetching session:', error);
+        setUseDemo(true);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSessionData();
+
+    // Poll for updates every 5 seconds if we have real data
+    let pollInterval: NodeJS.Timeout | null = null;
+    if (sessionId && sessionId !== 'session_demo' && !useDemo) {
+      pollInterval = setInterval(fetchSessionData, 5000);
+    }
+
+    return () => {
+      if (pollInterval) clearInterval(pollInterval);
+    };
+  }, [sessionId, useDemo]);
+
+  // Demo mode: Simulate the tracking progression
+  useEffect(() => {
+    if (!useDemo || isLoading) return;
+
     const startTime = new Date();
     setActualStartTime(startTime);
 
@@ -143,7 +243,7 @@ export const HookahTracker: React.FC<HookahTrackerProps> = ({
     return () => {
       timeouts.forEach(clearTimeout);
     };
-  }, [onComplete]);
+  }, [useDemo, isLoading, onComplete]);
 
   const addNotification = (message: string) => {
     setNotifications(prev => [message, ...prev.slice(0, 4)]);
@@ -162,6 +262,35 @@ export const HookahTracker: React.FC<HookahTrackerProps> = ({
     if (stepIndex < currentStep) return 'completed';
     if (stepIndex === currentStep) return 'active';
     return 'pending';
+  };
+
+  // Update tracking steps based on real session data
+  const getTrackingSteps = (): TrackingStep[] => {
+    const baseSteps = [...trackingSteps];
+    
+    if (sessionData && !useDemo) {
+      // Update step statuses based on real session data
+      const sessionStatus = sessionData.status || sessionData.state || 'NEW';
+      const activeStep = getStepFromStatus(sessionStatus);
+      
+      baseSteps.forEach((step, index) => {
+        if (index < activeStep) {
+          step.status = 'completed';
+        } else if (index === activeStep) {
+          step.status = 'active';
+        } else {
+          step.status = 'pending';
+        }
+      });
+      
+      // Update descriptions based on real data
+      if (sessionData.flavor || sessionData.flavorMix) {
+        const flavor = sessionData.flavor || sessionData.flavorMix;
+        baseSteps[1].description = `Preparing your ${flavor} hookah`;
+      }
+    }
+    
+    return baseSteps;
   };
 
   const getElapsedTime = () => {
@@ -226,9 +355,25 @@ export const HookahTracker: React.FC<HookahTrackerProps> = ({
           </div>
         </div>
 
+        {/* Demo Mode Indicator */}
+        {useDemo && !isLoading && (
+          <div className="mb-4 p-3 bg-yellow-500/20 border border-yellow-500/30 rounded-lg text-center">
+            <p className="text-sm text-yellow-200">
+              📍 Demo Mode - Waiting for real session data
+            </p>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {isLoading && (
+          <div className="mb-4 p-3 bg-blue-500/20 border border-blue-500/30 rounded-lg text-center">
+            <p className="text-sm text-blue-200">Loading session data...</p>
+          </div>
+        )}
+
         {/* Tracking Steps */}
         <div className="space-y-4 mb-8">
-          {trackingSteps.map((step, index) => {
+          {getTrackingSteps().map((step, index) => {
             const status = getStepStatus(index);
             const isActive = status === 'active';
             const isCompleted = status === 'completed';

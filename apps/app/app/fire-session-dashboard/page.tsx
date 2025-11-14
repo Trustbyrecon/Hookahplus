@@ -120,13 +120,13 @@ function FireSessionDashboardContent() {
 
       console.log('[Create Session] Success:', responseData);
       await refreshSessions(); // Refresh live data
-      setShowCreateModal(false);
       
-      // Show success message (optional)
-      alert(`Session created successfully! Table: ${apiPayload.tableId}`);
+      // Return session ID for payment checkout
+      return responseData.session?.id || responseData.id;
     } catch (error) {
       console.error('[Create Session] Error:', error);
       alert(`Failed to create session: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw error; // Re-throw so modal can handle it
     }
   };
 
@@ -220,6 +220,7 @@ function FireSessionDashboardContent() {
         <SimpleFSDDesign
           sessions={sessions}
           userRole={userRole}
+          refreshSessions={refreshSessions}
           onSessionAction={(action, sessionId) => {
             if (action === 'complete') {
               handleStatusChange(sessionId, 'COMPLETED');

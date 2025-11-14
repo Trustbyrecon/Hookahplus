@@ -1,7 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../../../lib/db';
+import { convertPrismaSessionToFireSession } from '../../../../lib/session-utils-prisma';
 
-const prisma = new PrismaClient();
+// CORS headers helper - accepts request to get origin
+function getCorsHeaders(req?: NextRequest) {
+  // Allow requests from site build, app build, or guest build
+  const origin = req?.headers.get('origin');
+  const allowedOrigins = [
+    process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+    'http://localhost:3000',
+    'http://localhost:3002',
+    'http://localhost:3001', // Guest build
+  ];
+  
+  // If origin matches allowed list, use it; otherwise use default
+  const allowedOrigin = origin && allowedOrigins.includes(origin) 
+    ? origin 
+    : allowedOrigins[0];
+    
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
+}
+
+// Handle CORS preflight requests
+export async function OPTIONS(req: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: getCorsHeaders(req),
+  });
+}
 
 export async function GET(
   request: NextRequest,
@@ -23,46 +53,36 @@ export async function GET(
     if (!session) {
       return NextResponse.json(
         { error: 'Session not found' },
-        { status: 404 }
+        { 
+          status: 404,
+          headers: getCorsHeaders(request),
+        }
       );
     }
 
-    // Parse flavorMix if it's a JSON string
-    let flavorMix = session.flavorMix;
-    if (flavorMix) {
-      try {
-        const parsed = JSON.parse(flavorMix);
-        flavorMix = typeof parsed === 'string' ? parsed : parsed.join(' + ');
-      } catch {
-        // Keep as is if not valid JSON
-      }
-    }
+    // Use the same conversion function as the main sessions route
+    const fireSession = convertPrismaSessionToFireSession(session);
 
     return NextResponse.json({
+      success: true,
       id: session.id,
-      tableId: session.tableId,
+      ...fireSession,
+      // Also include raw fields for backward compatibility
       table_id: session.tableId,
-      customerName: session.customerRef,
       customer_name: session.customerRef,
-      customerPhone: session.customerPhone,
-      flavorMix: flavorMix,
-      flavor: session.flavor,
-      priceCents: session.priceCents,
       price_cents: session.priceCents,
-      state: session.state,
-      status: session.state,
-      source: session.source,
-      createdAt: session.createdAt,
-      startedAt: session.startedAt,
-      qrCodeUrl: session.qrCodeUrl,
-      paymentStatus: session.paymentStatus,
-      paymentIntent: session.paymentIntent,
+      status: fireSession.status,
+    }, {
+      headers: getCorsHeaders(request),
     });
   } catch (error) {
     console.error('[Session API] Error fetching session:', error);
     return NextResponse.json(
       { error: 'Failed to fetch session' },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: getCorsHeaders(request),
+      }
     );
   }
 }

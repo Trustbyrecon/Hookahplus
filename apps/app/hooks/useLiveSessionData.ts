@@ -300,6 +300,15 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
             }
           }
           
+          // Map Prisma state to FireSession status (same logic as API route)
+          // Handle undefined/null state gracefully
+          const sessionState = session.state || 'PENDING';
+          let fireSessionStatus = mapPrismaStateToFireSession(sessionState);
+          // Special handling: PENDING + paymentStatus 'succeeded' = PAID_CONFIRMED
+          if (sessionState === 'PENDING' && session.paymentStatus === 'succeeded') {
+            fireSessionStatus = 'PAID_CONFIRMED';
+          }
+          
           return {
             id: session.id,
             tableId: session.tableId || session.externalRef || 'Unknown',
@@ -307,7 +316,7 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
             customerPhone: session.customerPhone || '',
             flavor: flavorMix,
             amount: session.priceCents || 0,
-            status: mapPrismaStateToFireSession(session.state),
+            status: fireSessionStatus,
             currentStage: mapStateToStage(session.state),
             assignedStaff: {
               boh: session.assignedBOHId,
@@ -577,8 +586,23 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
 }
 
 // Helper function to map Prisma session state to FireSession status
-function mapPrismaStateToFireSession(state: string): any {
+function mapPrismaStateToFireSession(state: string | undefined | null): any {
+  // Handle undefined/null state
+  if (!state) {
+    return 'NEW';
+  }
+  
+  // Normalize to uppercase for enum values
+  const stateUpper = state.toUpperCase();
+  
   const stateMap: Record<string, any> = {
+    // Database enum values (uppercase)
+    'PENDING': 'NEW', // Will be overridden if paymentStatus is 'succeeded'
+    'ACTIVE': 'ACTIVE',
+    'PAUSED': 'STAFF_HOLD',
+    'CLOSED': 'CLOSED',
+    'CANCELED': 'VOIDED',
+    // Legacy lowercase values (for backward compatibility)
     'active': 'ACTIVE',
     'prep_in_progress': 'PREP_IN_PROGRESS',
     'ready_for_delivery': 'READY_FOR_DELIVERY',
@@ -586,9 +610,22 @@ function mapPrismaStateToFireSession(state: string): any {
     'paused': 'STAFF_HOLD',
     'completed': 'CLOSED',
     'cancelled': 'VOIDED',
-    'pending': 'NEW'
+    'pending': 'NEW',
+    // FireSession status values (pass through)
+    'NEW': 'NEW',
+    'PREP_IN_PROGRESS': 'PREP_IN_PROGRESS',
+    'HEAT_UP': 'HEAT_UP',
+    'READY_FOR_DELIVERY': 'READY_FOR_DELIVERY',
+    'OUT_FOR_DELIVERY': 'OUT_FOR_DELIVERY',
+    'DELIVERED': 'DELIVERED',
+    'PAID_CONFIRMED': 'PAID_CONFIRMED',
+    'STAFF_HOLD': 'STAFF_HOLD',
+    'CLOSED': 'CLOSED',
+    'VOIDED': 'VOIDED'
   };
-  return stateMap[state] || 'NEW';
+  
+  // Try uppercase first, then original
+  return stateMap[stateUpper] || stateMap[state] || 'NEW';
 }
 
 // Helper function to calculate remaining time from Prisma session

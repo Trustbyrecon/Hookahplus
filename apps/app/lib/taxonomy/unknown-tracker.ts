@@ -144,20 +144,17 @@ export async function getUnknownRate(
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - windowDays);
 
-    // Get total count of unknowns in window
-    const unknownCount = await prisma.taxonomyUnknown.aggregate({
-      where: {
-        enumType,
-        lastSeen: {
-          gte: cutoffDate
-        }
-      },
-      _sum: {
-        count: true
-      }
-    });
+    // Use raw SQL to query unknowns (works even if Prisma client hasn't been regenerated)
+    const unknownCountResult = await prisma.$queryRaw<Array<{
+      total_count: bigint;
+    }>>`
+      SELECT COALESCE(SUM(count), 0)::bigint as total_count
+      FROM "TaxonomyUnknown"
+      WHERE enum_type = ${enumType}
+        AND last_seen >= ${cutoffDate}
+    `;
 
-    const unknownEvents = unknownCount._sum.count || 0;
+    const unknownEvents = Number(unknownCountResult[0]?.total_count || 0);
 
     // Estimate total events (this is approximate - we'd need actual event counts)
     // For now, we'll use a simple heuristic based on unknown counts
@@ -172,6 +169,7 @@ export async function getUnknownRate(
     };
   } catch (error) {
     console.error('[Taxonomy] Failed to get unknown rate:', error);
+    // Return safe defaults instead of throwing
     return {
       totalEvents: 0,
       unknownEvents: 0,

@@ -27,7 +27,9 @@ import {
   CreditCard,
   Ban,
   Brain,
-  Shield
+  Shield,
+  ChefHat,
+  UserCheck
 } from 'lucide-react';
 import { 
   SessionStatus, 
@@ -51,11 +53,13 @@ import { calculateSingleSessionTrustScore, getTrustScoreColor } from '../lib/tru
 import SessionDetailModal from './SessionDetailModal';
 import GuestIntelligenceModal from './GuestIntelligenceModal';
 import ResolveEdgeCaseModal from './ResolveEdgeCaseModal';
+import SessionExtensionModal from './SessionExtensionModal';
 
 interface SimpleFSDDesignProps {
   sessions?: any[];
   userRole?: 'BOH' | 'FOH' | 'MANAGER' | 'ADMIN';
   onSessionAction?: (action: string, sessionId: string) => void;
+  refreshSessions?: () => void | Promise<void>;
   className?: string;
 }
 
@@ -122,6 +126,7 @@ export default function SimpleFSDDesign({
   sessions = [],
   userRole = 'MANAGER',
   onSessionAction,
+  refreshSessions,
   className = ''
 }: SimpleFSDDesignProps) {
   const [activeTab, setActiveTab] = useState('overview');
@@ -134,11 +139,40 @@ export default function SimpleFSDDesign({
   const [showResolveModal, setShowResolveModal] = useState(false);
   const [resolveSessionId, setResolveSessionId] = useState<string>('');
   const [resolveEdgeCaseType, setResolveEdgeCaseType] = useState<string | null>(null);
+  const [timerUpdates, setTimerUpdates] = useState<Record<string, number>>({});
+  const [showExtensionModal, setShowExtensionModal] = useState(false);
+  const [extensionSessionId, setExtensionSessionId] = useState<string>('');
+  const [extensionSessionData, setExtensionSessionData] = useState<{
+    currentDuration: number;
+    remainingTime: number;
+  } | null>(null);
   
   // Fix hydration mismatch - only render counts after mount
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Real-time timer updates for active sessions
+  useEffect(() => {
+    const activeSessions = sessions.filter(s => 
+      s.sessionTimer?.isActive && s.status === 'ACTIVE'
+    );
+
+    if (activeSessions.length === 0) return;
+
+    const interval = setInterval(() => {
+      const updates: Record<string, number> = {};
+      activeSessions.forEach(session => {
+        if (session.sessionTimer) {
+          const remaining = calculateRemainingTime(session);
+          updates[session.id] = remaining;
+        }
+      });
+      setTimerUpdates(prev => ({ ...prev, ...updates }));
+    }, 1000); // Update every second
+
+    return () => clearInterval(interval);
+  }, [sessions]);
 
   const handleCreateSession = () => {
     window.dispatchEvent(new CustomEvent('openCreateSessionModal'));
@@ -154,6 +188,68 @@ export default function SimpleFSDDesign({
       setResolveEdgeCaseType(session?.edgeCase || null);
       setShowResolveModal(true);
       return;
+    }
+
+    // Special handling for REQUEST_REFILL - use refill API
+    if (action.toLowerCase() === 'request_refill' || action === 'REQUEST_REFILL') {
+      try {
+        const response = await fetch(`/api/sessions/${sessionId}/refill`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userRole,
+            operatorId: `foh-${userRole.toLowerCase()}`
+          })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          alert('Refill requested! BOH will prepare new coals.');
+          if (refreshSessions) {
+            await refreshSessions();
+          } else {
+            window.location.reload();
+          }
+        } else {
+          throw new Error(result.details || result.error || 'Failed to request refill');
+        }
+        return;
+      } catch (error) {
+        console.error('Error requesting refill:', error);
+        alert(`Failed to request refill: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        return;
+      }
+    }
+
+    // Special handling for COMPLETE_REFILL - use refill API
+    if (action.toLowerCase() === 'complete_refill' || action === 'COMPLETE_REFILL') {
+      try {
+        const response = await fetch(`/api/sessions/${sessionId}/refill`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userRole,
+            operatorId: `boh-${userRole.toLowerCase()}`
+          })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          alert('Refill completed! New coals delivered to customer.');
+          if (refreshSessions) {
+            await refreshSessions();
+          } else {
+            window.location.reload();
+          }
+        } else {
+          throw new Error(result.details || result.error || 'Failed to complete refill');
+        }
+        return;
+      } catch (error) {
+        console.error('Error completing refill:', error);
+        alert(`Failed to complete refill: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        return;
+      }
     }
     
     try {
@@ -205,11 +301,21 @@ export default function SimpleFSDDesign({
         console.log('Session action successful:', result);
         // Trigger a custom event to refresh sessions
         window.dispatchEvent(new CustomEvent('sessionUpdated', { detail: { sessionId, action: mappedAction } }));
-        // Refresh the page to show updated state immediately
-        // This ensures UI reflects the new status (e.g., Prep in Progress -> Heat Up)
-        window.location.reload();
+        
+        // Use refreshSessions if provided, otherwise reload page
+        if (refreshSessions) {
+          try {
+            await refreshSessions();
+          } catch (refreshError) {
+            console.error('Failed to refresh sessions, reloading page:', refreshError);
+            window.location.reload();
+          }
+        } else {
+          // Fallback: reload page to show updated state immediately
+          window.location.reload();
+        }
       } else {
-        throw new Error(result.error || 'Action failed');
+        throw new Error(result.error || result.details || 'Action failed');
       }
     } catch (error) {
       console.error('Error executing session action:', error);
@@ -221,8 +327,8 @@ export default function SimpleFSDDesign({
         // Check for specific error types
         if (error.message.includes('Session not found')) {
           errorMessage = 'Session not found. It may have been closed or removed.';
-        } else if (error.message.includes('Invalid transition') || error.message.includes('not available')) {
-          errorMessage = 'This action is not available for the current session state.';
+        } else if (error.message.includes('Invalid transition') || error.message.includes('State transition') || error.message.includes('not available')) {
+          errorMessage = 'State transition failed: This action is not available for the current session state.';
         } else if (error.message.includes('Permission denied') || error.message.includes('403')) {
           errorMessage = 'You do not have permission to perform this action.';
         } else if (error.message.includes('Network') || error.message.includes('Failed to fetch')) {
@@ -292,7 +398,34 @@ export default function SimpleFSDDesign({
   };
 
   const getSessionStatus = (session: any): SessionStatus => {
-    return (session.status || session.state || 'NEW') as SessionStatus;
+    // If session already has a status, use it (might be from convertPrismaSessionToFireSession)
+    if (session.status && session.status !== 'NEW' && session.status !== 'PENDING') {
+      return session.status as SessionStatus;
+    }
+    
+    // Check if PENDING state with succeeded payment = PAID_CONFIRMED
+    const state = session.state || session.status || 'NEW';
+    if (state === 'PENDING' && session.paymentStatus === 'succeeded') {
+      return 'PAID_CONFIRMED';
+    }
+    
+    // Map database state to FireSession status
+    const stateMap: Record<string, SessionStatus> = {
+      'PENDING': session.paymentStatus === 'succeeded' ? 'PAID_CONFIRMED' : 'NEW',
+      'ACTIVE': 'ACTIVE',
+      'PAUSED': 'STAFF_HOLD',
+      'CLOSED': 'CLOSED',
+      'CANCELED': 'VOIDED',
+      'NEW': 'NEW',
+      'PREP_IN_PROGRESS': 'PREP_IN_PROGRESS',
+      'HEAT_UP': 'HEAT_UP',
+      'READY_FOR_DELIVERY': 'READY_FOR_DELIVERY',
+      'OUT_FOR_DELIVERY': 'OUT_FOR_DELIVERY',
+      'DELIVERED': 'DELIVERED',
+      'PAID_CONFIRMED': 'PAID_CONFIRMED',
+    };
+    
+    return stateMap[state] || (session.status as SessionStatus) || 'NEW';
   };
 
   const getSessionStage = (session: any): string => {
@@ -389,16 +522,50 @@ export default function SimpleFSDDesign({
           <p>{STATE_DESCRIPTIONS[sessionStatus]}</p>
         </div>
 
-        {/* Timer Display */}
+        {/* Timer Display - Real-time updates */}
         {session.sessionTimer && (
-          <div className="mb-3 p-2 bg-zinc-900/30 rounded text-xs text-zinc-300">
-            <div className="flex items-center space-x-1 mb-1">
-              <Timer className="w-3 h-3" />
-              <span className="font-medium">Session Timer:</span>
+          <div className={`mb-3 p-2 rounded text-xs ${
+            (timerUpdates[session.id] ?? calculateRemainingTime(session)) < 5 * 60
+              ? 'bg-red-900/30 border border-red-600/50 text-red-300'
+              : (timerUpdates[session.id] ?? calculateRemainingTime(session)) < 10 * 60
+              ? 'bg-yellow-900/30 border border-yellow-600/50 text-yellow-300'
+              : 'bg-zinc-900/30 text-zinc-300'
+          }`}>
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center space-x-1">
+                <Timer className="w-3 h-3" />
+                <span className="font-medium">Session Timer:</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                {session.sessionTimer.isActive && (
+                  <span className="text-xs opacity-75 animate-pulse">● Live</span>
+                )}
+                {/* Extension Button - Only show for active sessions */}
+                {session.status === 'ACTIVE' && session.sessionTimer.isActive && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setExtensionSessionId(sessionId);
+                      setExtensionSessionData({
+                        currentDuration: Math.floor((session.sessionDuration || 45 * 60) / 60),
+                        remainingTime: timerUpdates[session.id] ?? calculateRemainingTime(session)
+                      });
+                      setShowExtensionModal(true);
+                    }}
+                    className="text-xs px-2 py-0.5 bg-teal-600 hover:bg-teal-700 text-white rounded transition-colors"
+                    title="Extend session"
+                  >
+                    + Extend
+                  </button>
+                )}
+              </div>
             </div>
             <p className="text-lg font-mono">
-              {formatDuration(calculateRemainingTime(session))}
+              {formatDuration(timerUpdates[session.id] ?? calculateRemainingTime(session))}
             </p>
+            {(timerUpdates[session.id] ?? calculateRemainingTime(session)) <= 0 && (
+              <p className="text-xs text-red-400 mt-1">Session expired</p>
+            )}
           </div>
         )}
 
@@ -571,6 +738,192 @@ export default function SimpleFSDDesign({
       {/* Tab Content */}
       {activeTab === 'overview' && (
         <div className="space-y-4">
+          {/* Quick Actions Bar - Workflow Actions */}
+          <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4 mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-zinc-300">Quick Actions - Night After Night Flow</h3>
+              <span className="text-xs text-zinc-500">{sessions.length} session(s)</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent('openCreateSessionModal'))}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm"
+              >
+                <Plus className="w-4 h-4" />
+                <span>New Session</span>
+              </button>
+              <button
+                onClick={async () => {
+                  // Find sessions that need payment confirmation (NEW/PENDING status only - PAID_CONFIRMED means already paid)
+                  const unpaidSessions = sessions.filter(s => {
+                    const status = getSessionStatus(s);
+                    return status === 'NEW' || status === 'PENDING';
+                  });
+                  
+                  if (unpaidSessions.length === 0) {
+                    alert('No sessions awaiting payment confirmation.\n\nAll sessions are either paid or already in progress.');
+                    return;
+                  }
+                  
+                  // For now, process first unpaid session
+                  const session = unpaidSessions[0];
+                  const amount = session.amount || 3000;
+                  
+                  try {
+                    // SECURITY: Use existing session ID (session already exists)
+                    const sessionId = session.id;
+                    if (!sessionId) {
+                      throw new Error('Session ID not found');
+                    }
+                    
+                    // Create Stripe checkout session with session ID
+                    const response = await fetch('/api/checkout-session', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        sessionId: sessionId, // SECURITY: Only send opaque session ID to Stripe
+                        flavors: [session.flavor || 'Custom Mix'],
+                        tableId: session.tableId,
+                        amount: amount, // Already in cents
+                        total: amount / 100, // For display
+                        sessionDuration: session.durationSecs || 2700,
+                        dollarTestMode: true // Use $1 test mode for sandbox
+                      })
+                    });
+                    
+                    const data = await response.json();
+                    if (data.success && data.sessionUrl) {
+                      // Open Stripe checkout in new window
+                      window.open(data.sessionUrl, '_blank');
+                      alert(`✅ Payment checkout opened for ${session.tableId}.\n\nAfter payment confirmation, session will be ready for BOH prep → FOH delivery → Light!`);
+                    } else if (data.error && data.error.includes('Stripe not configured')) {
+                      alert(
+                        `❌ Stripe not configured.\n\n` +
+                        `To enable payment:\n` +
+                        `1. Get test key: https://dashboard.stripe.com/apikeys\n` +
+                        `2. Add to .env.local: STRIPE_SECRET_KEY=sk_test_...\n` +
+                        `3. Restart dev server`
+                      );
+                    } else {
+                      throw new Error(data.error || data.details || 'Failed to create checkout');
+                    }
+                  } catch (error) {
+                    alert(`❌ Payment error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                  }
+                }}
+                className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm"
+              >
+                <DollarSign className="w-4 h-4" />
+                <span>Confirm Payment</span>
+              </button>
+              <button
+                onClick={async () => {
+                  // Find sessions ready for BOH to claim prep
+                  const readySessions = sessions.filter(s => {
+                    const status = getSessionStatus(s);
+                    return status === 'NEW' || status === 'PAID_CONFIRMED';
+                  });
+                  
+                  if (readySessions.length === 0) {
+                    alert('No sessions ready for prep');
+                    return;
+                  }
+                  
+                  // Process first ready session
+                  await handleSessionAction('claim_prep', readySessions[0].id);
+                }}
+                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm"
+              >
+                <ChefHat className="w-4 h-4" />
+                <span>BOH: Claim Prep</span>
+              </button>
+              <button
+                onClick={async () => {
+                  // Find sessions ready for delivery
+                  const readySessions = sessions.filter(s => {
+                    const status = getSessionStatus(s);
+                    return status === 'READY_FOR_DELIVERY';
+                  });
+                  
+                  if (readySessions.length === 0) {
+                    alert('No sessions ready for delivery');
+                    return;
+                  }
+                  
+                  await handleSessionAction('deliver_now', readySessions[0].id);
+                }}
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm"
+              >
+                <Truck className="w-4 h-4" />
+                <span>FOH: Deliver</span>
+              </button>
+              <button
+                onClick={async () => {
+                  // Find delivered sessions ready to "light" (start active)
+                  // A session can only be lit if: Payment confirmed → BOH prep → BOH ready → FOH delivered
+                  const deliveredSessions = sessions.filter(s => {
+                    const status = getSessionStatus(s);
+                    return status === 'DELIVERED';
+                  });
+                  
+                  if (deliveredSessions.length === 0) {
+                    // Provide helpful feedback about why no sessions are ready
+                    const allSessions = sessions.map(s => {
+                      const status = getSessionStatus(s);
+                      return { tableId: s.tableId, status };
+                    });
+                    
+                    const statusCounts = allSessions.reduce((acc, s) => {
+                      acc[s.status] = (acc[s.status] || 0) + 1;
+                      return acc;
+                    }, {} as Record<string, number>);
+                    
+                    const statusList = Object.entries(statusCounts)
+                      .map(([status, count]) => `${status}: ${count}`)
+                      .join(', ');
+                    
+                    alert(
+                      `No sessions ready to light.\n\n` +
+                      `A session must complete this flow to be lit:\n` +
+                      `1. Payment Confirmed\n` +
+                      `2. BOH Claims Prep\n` +
+                      `3. BOH Marks Ready\n` +
+                      `4. FOH Delivers\n` +
+                      `5. Light Session 🔥\n\n` +
+                      `Current session states: ${statusList || 'No sessions'}`
+                    );
+                    return;
+                  }
+                  
+                  await handleSessionAction('start_active', deliveredSessions[0].id);
+                  alert('🔥 Session is now LIT! Timer started.');
+                }}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm"
+              >
+                <Flame className="w-4 h-4" />
+                <span>Light Session</span>
+              </button>
+              <button
+                onClick={async () => {
+                  if (refreshSessions) {
+                    try {
+                      await refreshSessions();
+                    } catch (error) {
+                      console.error('Failed to refresh sessions:', error);
+                      window.location.reload();
+                    }
+                  } else {
+                    window.location.reload();
+                  }
+                }}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span>Refresh</span>
+              </button>
+            </div>
+          </div>
+
           {sessions.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
@@ -658,7 +1011,41 @@ export default function SimpleFSDDesign({
                 <Clock className="w-5 h-5 text-yellow-400" />
                 <span>Customer Waitlist</span>
               </h3>
-              <button className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center space-x-2">
+              <button
+                onClick={async () => {
+                  const name = prompt('Customer Name:');
+                  if (!name) return;
+                  
+                  const phone = prompt('Phone Number (optional):') || '';
+                  const partySize = prompt('Party Size:') || '2';
+                  
+                  try {
+                    const response = await fetch('/api/admin/pos-waitlist', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        name,
+                        email: '',
+                        phone,
+                        partySize: parseInt(partySize) || 2,
+                        notes: 'Added from FSD Waitlist',
+                        source: 'fsd'
+                      })
+                    });
+                    
+                    if (response.ok) {
+                      alert('✅ Added to waitlist');
+                      // Refresh waitlist data
+                      window.location.reload();
+                    } else {
+                      throw new Error('Failed to add to waitlist');
+                    }
+                  } catch (error) {
+                    alert(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                  }
+                }}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center space-x-2"
+              >
                 <Plus className="w-4 h-4" />
                 <span>Add to Waitlist</span>
               </button>
@@ -703,10 +1090,48 @@ export default function SimpleFSDDesign({
                   <div className="flex items-center space-x-2">
                     <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded-full">NORMAL</span>
                     <span className="px-2 py-1 bg-orange-500/20 text-orange-400 text-xs rounded-full">WAITING</span>
-                    <button className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition-colors">
+                    <button
+                      onClick={async () => {
+                        const tableId = prompt('Enter Table ID for Sarah Johnson:');
+                        if (!tableId) return;
+                        
+                        try {
+                          const response = await fetch('/api/sessions', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              tableId,
+                              customerName: 'Sarah Johnson',
+                              customerPhone: '+1-555-0123',
+                              flavor: 'Custom Mix',
+                              amount: 3000,
+                              source: 'WALK_IN',
+                              notes: 'Seated from waitlist'
+                            })
+                          });
+                          
+                          if (response.ok) {
+                            alert('✅ Session created - customer seated');
+                            window.location.reload();
+                          } else {
+                            throw new Error('Failed to create session');
+                          }
+                        } catch (error) {
+                          alert(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                        }
+                      }}
+                      className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition-colors"
+                    >
                       Seat
                     </button>
-                    <button className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors">
+                    <button
+                      onClick={async () => {
+                        if (!confirm('Cancel Sarah Johnson\'s waitlist entry?')) return;
+                        alert('✅ Waitlist entry cancelled');
+                        window.location.reload();
+                      }}
+                      className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors"
+                    >
                       Cancel
                     </button>
                   </div>
@@ -728,10 +1153,48 @@ export default function SimpleFSDDesign({
                   <div className="flex items-center space-x-2">
                     <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs rounded-full">VIP</span>
                     <span className="px-2 py-1 bg-orange-500/20 text-orange-400 text-xs rounded-full">WAITING</span>
-                    <button className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition-colors">
+                    <button
+                      onClick={async () => {
+                        const tableId = prompt('Enter Table ID for Mike Chen (VIP):');
+                        if (!tableId) return;
+                        
+                        try {
+                          const response = await fetch('/api/sessions', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              tableId,
+                              customerName: 'Mike Chen',
+                              customerPhone: '+1-555-0456',
+                              flavor: 'Custom Mix',
+                              amount: 3000,
+                              source: 'WALK_IN',
+                              notes: 'VIP - Seated from waitlist'
+                            })
+                          });
+                          
+                          if (response.ok) {
+                            alert('✅ Session created - VIP customer seated');
+                            window.location.reload();
+                          } else {
+                            throw new Error('Failed to create session');
+                          }
+                        } catch (error) {
+                          alert(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                        }
+                      }}
+                      className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition-colors"
+                    >
                       Seat
                     </button>
-                    <button className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors">
+                    <button
+                      onClick={async () => {
+                        if (!confirm('Cancel Mike Chen\'s waitlist entry?')) return;
+                        alert('✅ Waitlist entry cancelled');
+                        window.location.reload();
+                      }}
+                      className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors"
+                    >
                       Cancel
                     </button>
                   </div>
@@ -898,6 +1361,8 @@ export default function SimpleFSDDesign({
           setIsModalOpen(false);
           setSelectedSession(null);
         }}
+        userRole={userRole}
+        refreshSessions={refreshSessions}
       />
       
       {/* Guest Intelligence Modal */}
@@ -922,6 +1387,24 @@ export default function SimpleFSDDesign({
         edgeCaseType={resolveEdgeCaseType}
         onResolve={handleResolveEdgeCase}
       />
+      
+      {/* Session Extension Modal */}
+      {extensionSessionData && (
+        <SessionExtensionModal
+          isOpen={showExtensionModal}
+          onClose={() => {
+            setShowExtensionModal(false);
+            setExtensionSessionId('');
+            setExtensionSessionData(null);
+          }}
+          sessionId={extensionSessionId}
+          currentDuration={extensionSessionData.currentDuration}
+          remainingTime={extensionSessionData.remainingTime}
+          onExtensionComplete={() => {
+            refreshSessions?.();
+          }}
+        />
+      )}
     </div>
   );
 }

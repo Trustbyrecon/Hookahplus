@@ -119,8 +119,36 @@ export default function GuestIntelligenceDashboard({
   useEffect(() => {
     const loadIntelligenceData = async () => {
       try {
-        // TODO: Replace with actual API calls
-        const mockMemory: BehavioralMemory = {
+        setLoading(true);
+        
+        // Try to fetch real data from API
+        let realData: BehavioralMemory | null = null;
+        let useDemo = false;
+        
+        if (sessionId && sessionId !== 'session_demo') {
+          try {
+            const response = await fetch(`/api/guest-intelligence/${sessionId}`);
+            if (response.ok) {
+              const data = await response.json();
+              if (data.success && data.behavioralMemory) {
+                realData = data.behavioralMemory;
+                useDemo = false;
+              } else {
+                useDemo = true;
+              }
+            } else {
+              useDemo = true;
+            }
+          } catch (error) {
+            console.warn('[GID] Failed to fetch real data, using demo:', error);
+            useDemo = true;
+          }
+        } else {
+          useDemo = true;
+        }
+        
+        // Use real data if available, otherwise use demo/mock data
+        const memory: BehavioralMemory = realData || {
           guestId: session?.id || 'guest_001',
           preferences: {
             favoriteFlavors: session?.flavor ? [session.flavor] : ['Blue Mist', 'Double Apple', 'Mint Fresh'],
@@ -171,8 +199,35 @@ export default function GuestIntelligenceDashboard({
           }
         ];
 
-        setBehavioralMemory(mockMemory);
-        setSessionNotes(mockNotes);
+        setBehavioralMemory(memory);
+        
+        // Use real notes if available from API, otherwise use mock
+        if (realData && sessionId && sessionId !== 'session_demo') {
+          try {
+            const notesResponse = await fetch(`/api/guest-intelligence/${sessionId}`);
+            if (notesResponse.ok) {
+              const notesData = await notesResponse.json();
+              if (notesData.success && notesData.operationalNotes) {
+                setSessionNotes(notesData.operationalNotes);
+              } else {
+                setSessionNotes(mockNotes);
+              }
+            } else {
+              setSessionNotes(mockNotes);
+            }
+          } catch (error) {
+            console.warn('[GID] Failed to fetch notes, using mock:', error);
+            setSessionNotes(mockNotes);
+          }
+        } else {
+          setSessionNotes(mockNotes);
+        }
+        
+        // Show demo indicator if using demo data
+        if (useDemo && !realData) {
+          console.log('[GID] Using demo data - real data will appear when session is active');
+        }
+        
         setLoading(false);
       } catch (error) {
         console.error('Error loading intelligence data:', error);

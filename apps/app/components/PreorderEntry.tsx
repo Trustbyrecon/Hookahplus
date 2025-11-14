@@ -18,12 +18,14 @@ const SAMPLE_ADDONS = [
   { id: 'flavor-boost', name: 'Flavor Boost', price: 5 },
 ];
 
+// Session durations - pricing is calculated by API using pricing library
+// Base: $30 flat or $0.50/min (time-based)
 const SESSION_DURATIONS = [
-  { value: 30, label: '30 min', price: 15 },
-  { value: 45, label: '45 min', price: 22.50 },
-  { value: 60, label: '60 min', price: 30 },
-  { value: 90, label: '90 min', price: 45 },
-  { value: 120, label: '2 hours', price: 60 },
+  { value: 30, label: '30 min' },
+  { value: 45, label: '45 min' },
+  { value: 60, label: '60 min' },
+  { value: 90, label: '90 min' },
+  { value: 120, label: '2 hours' },
 ];
 
 const PreorderEntry: React.FC<PreorderEntryProps> = ({
@@ -132,18 +134,55 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
       // Calculate final total including add-ons
       // If $1 test mode is enabled, force total to $1.00
       const finalTotal = dollarTestMode ? 1.00 : (pricing.total + addOnsTotal);
+      const finalTotalCents = Math.round(finalTotal * 100);
 
-      // Create checkout session
+      // SECURITY: Create session first, then link payment via opaque session ID
+      console.log('[PreorderEntry] Creating session before checkout...');
+      const sessionResponse = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          tableId,
+          customerName: 'Pre-Order Guest', // Pre-order doesn't collect name yet
+          customerPhone: undefined,
+          flavor: selectedFlavorIds.join(' + '), // Join flavors for display
+          amount: finalTotalCents,
+          sessionDuration: pricingModel === 'time-based' ? sessionDuration : 45 * 60,
+          loungeId,
+          source: 'QR', // Pre-order is QR-based
+          externalRef: `preorder-${tableId}-${Date.now()}`,
+        }),
+      });
+
+      if (!sessionResponse.ok) {
+        const sessionError = await sessionResponse.json().catch(() => ({ error: 'Failed to create session' }));
+        throw new Error(sessionError.error || sessionError.details || 'Failed to create session');
+      }
+
+      const sessionData = await sessionResponse.json();
+      const sessionId = sessionData.session?.id || sessionData.id;
+
+      if (!sessionId) {
+        throw new Error('Session created but no ID returned');
+      }
+
+      console.log('[PreorderEntry] Session created:', sessionId);
+
+      // Create checkout session with session ID
       const response = await fetch('/api/checkout-session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          sessionId: sessionId, // SECURITY: Only send opaque session ID to Stripe
           flavors: selectedFlavorIds,
           addOns: selectedAddOns,
           tableId,
           loungeId,
+          amount: finalTotalCents,
           total: finalTotal, // Include add-ons in total, or $1.00 if test mode
           pricingModel,
           sessionDuration: pricingModel === 'time-based' ? sessionDuration : undefined,
@@ -274,7 +313,9 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
                     }`}
                   >
                     <div className="font-medium">{duration.label}</div>
-                    <div className="text-xs text-zinc-400">${duration.price.toFixed(2)}</div>
+                    <div className="text-xs text-zinc-400">
+                      {pricingModel === 'flat' ? '$30.00' : `$${(duration.value * 0.50).toFixed(2)}`}
+                    </div>
                   </button>
                 ))}
               </div>

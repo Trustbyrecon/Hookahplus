@@ -278,28 +278,159 @@ export default function GuestPortal() {
       if (response.ok) {
         console.log('✅ Session created successfully:', result);
         
+        // Get app session ID for Stripe checkout
+        // Check multiple possible locations for the session ID
+        const appSessionId = result.session?.appSessionId || 
+                            result.session?.appSession?.id || 
+                            result.session?.id || 
+                            result.appSessionId ||
+                            result.id;
+        const loungeId = result.session?.loungeId || 
+                        result.session?.appSession?.loungeId ||
+                        sessionData.loungeId || 
+                        'default-lounge';
+        
+        console.log('[Fire Session] Extracted session ID:', appSessionId, 'from result:', {
+          hasSession: !!result.session,
+          hasAppSessionId: !!result.session?.appSessionId,
+          hasAppSession: !!result.session?.appSession,
+          hasAppSessionIdInAppSession: !!result.session?.appSession?.id,
+          hasId: !!result.session?.id,
+          hasTopLevelId: !!result.id
+        });
+        
+        if (!appSessionId) {
+          console.error('[Fire Session] No session ID found in result:', result);
+          throw new Error('Session created but no session ID returned. Please check the server response.');
+        }
+        
         // Log sync status with detailed error info
         if (result.synced) {
           console.log('✅ Session synced to Fire Session Dashboard (app build)');
-          console.log('📊 App Session ID:', result.session?.appSessionId);
+          console.log('📊 App Session ID:', appSessionId);
         } else {
           console.error('⚠️ Session created but NOT synced to app build');
           console.error('📋 Warning:', result.warning);
           if (result.syncError) {
             console.error('❌ Sync Error Details:', result.syncError);
-            if (result.syncError.status) {
-              console.error('   Status:', result.syncError.status, result.syncError.statusText);
-            }
-            if (result.syncError.error) {
-              console.error('   Error:', result.syncError.error);
-            }
-            if (result.syncError.details) {
-              console.error('   Details:', result.syncError.details);
-            }
-            if (result.syncError.hint) {
-              console.error('   💡 Hint:', result.syncError.hint);
-            }
           }
+        }
+        
+        // Determine payment model (default to independent for now, can be configured per lounge)
+        // TODO: Fetch lounge config from database to determine payment model
+        const paymentModel = 'independent'; // Default: 80% use case
+        
+        // Create Stripe checkout session (same pattern as pre-order)
+        try {
+          // Calculate amount in cents (same pattern as pre-order)
+          const totalAmountCents = subtotal; // subtotal is already in cents
+          const totalAmountDollars = subtotal / 100; // Convert to dollars for display
+          
+          console.log('[Fire Session] Creating Stripe checkout with:', {
+            sessionId: appSessionId,
+            amount: totalAmountCents,
+            total: totalAmountDollars,
+            loungeId: loungeId,
+            paymentModel: paymentModel
+          });
+          
+          const checkoutResponse = await fetch('/api/checkout-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              sessionId: appSessionId, // SECURITY: Only send opaque session ID to Stripe
+              flavors: flavorMix.length > 0 ? flavorMix : ['Custom Mix'],
+              tableId: tableData?.tableId || 'T-001',
+              amount: totalAmountCents, // Amount in cents (same as pre-order)
+              total: totalAmountDollars, // Total in dollars for display
+              loungeId: loungeId,
+              paymentModel: paymentModel
+            })
+          });
+          
+          console.log('[Fire Session] Checkout response status:', checkoutResponse.status);
+          
+          if (!checkoutResponse.ok) {
+            const errorText = await checkoutResponse.text();
+            let checkoutError;
+            try {
+              checkoutError = errorText ? JSON.parse(errorText) : { error: 'Unknown error' };
+            } catch {
+              checkoutError = { error: errorText || `HTTP ${checkoutResponse.status}` };
+            }
+            console.error('[Fire Session] Checkout API error:', checkoutError);
+            
+            // Special handling for Stripe configuration errors
+            if (checkoutError.isConfigurationError || checkoutError.error === 'Stripe not configured') {
+              const setupMessage = 
+                `⚠️ Stripe Payment Not Configured\n\n` +
+                `Session created successfully, but payment checkout requires Stripe setup.\n\n` +
+                `To enable payments:\n` +
+                `1. Get test key: ${checkoutError.setupUrl || 'https://dashboard.stripe.com/apikeys'}\n` +
+                `2. Add to apps/guest/.env.local:\n` +
+                `   STRIPE_SECRET_KEY=sk_test_...\n` +
+                `3. Restart guest build server\n\n` +
+                `Session ID: ${appSessionId}\n` +
+                `You can manually confirm payment in the FSD.`;
+              
+              alert(setupMessage);
+              throw new Error('Stripe not configured');
+            }
+            
+            throw new Error(checkoutError.error || checkoutError.details || 'Failed to create checkout session');
+          }
+          
+          const checkoutData = await checkoutResponse.json();
+          console.log('[Fire Session] Checkout data:', checkoutData);
+          
+          if (checkoutData.success) {
+            if (paymentModel === 'independent') {
+              // Independent operator: Require verified payment before services
+              if (checkoutData.url) {
+                console.log('✅ Stripe checkout URL created, redirecting to:', checkoutData.url);
+                // Redirect to Stripe checkout
+                window.location.href = checkoutData.url;
+                return; // Exit early, Stripe will handle redirect
+              } else {
+                console.error('[Fire Session] ❌ Stripe checkout URL missing in response:', checkoutData);
+                throw new Error('Stripe checkout URL not returned');
+              }
+            } else {
+              // Internal lounge: Payment hold created, route immediately
+              if (checkoutData.paymentIntentId) {
+                console.log('✅ Payment hold created:', checkoutData.paymentIntentId);
+                // Route to app build immediately after hold
+                const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
+                window.location.href = `${appUrl}/fire-session-dashboard?session=${appSessionId}&loungeId=${loungeId}`;
+                return;
+              } else {
+                throw new Error('Payment intent ID not returned');
+              }
+            }
+          } else {
+            // Checkout failed - show user-friendly error
+            const errorMsg = checkoutData.error || checkoutData.details || 'Unknown error';
+            console.error('⚠️ Stripe checkout failed:', errorMsg, checkoutData);
+            
+            if (errorMsg.includes('Stripe not configured') || errorMsg.includes('STRIPE_SECRET_KEY')) {
+              alert(
+                `⚠️ Payment checkout unavailable.\n\n` +
+                `Stripe is not configured for the guest build.\n\n` +
+                `To enable payment:\n` +
+                `1. Get test key from: https://dashboard.stripe.com/apikeys\n` +
+                `2. Add to guest build .env.local: STRIPE_SECRET_KEY=sk_test_...\n` +
+                `3. Restart dev server\n\n` +
+                `Session is created but needs payment to proceed.`
+              );
+            } else {
+              alert(`⚠️ Payment checkout failed: ${errorMsg}\n\nSession is created but needs payment to proceed.`);
+            }
+            // Continue to success modal even if Stripe fails
+          }
+        } catch (stripeError) {
+          console.error('⚠️ Stripe checkout error (session still created):', stripeError);
+          alert(`⚠️ Payment checkout error: ${stripeError instanceof Error ? stripeError.message : 'Unknown error'}\n\nSession is created but needs payment to proceed.`);
+          // Continue to success modal even if Stripe fails
         }
         
         setShowSuccessModal(true);
@@ -313,7 +444,7 @@ export default function GuestPortal() {
             detail: { 
               sessionData: result.session,
               synced: result.synced,
-              appSessionId: result.session?.appSessionId
+              appSessionId: appSessionId
             } 
           }));
         }

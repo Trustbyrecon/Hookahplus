@@ -26,7 +26,10 @@ export async function POST(req: NextRequest) {
         
         const onboardingResponse = await fetch(`${appUrl}/api/admin/operator-onboarding`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
           body: JSON.stringify({
             action: 'create_lead',
             leadData: {
@@ -37,29 +40,44 @@ export async function POST(req: NextRequest) {
               location: data.location || '',
               stage: 'intake', // Onboarding submission is further along
               source: 'website',
-              createdAt: new Date().toISOString()
+              createdAt: new Date().toISOString(),
+              // Include additional form data for better lead quality
+              preferredFeatures: data.preferredFeatures || [],
+              pricingModel: data.pricingModel || 'time-based',
+              seatingTypes: data.seatingTypes || [],
+              currentPOS: data.currentPOS || '',
+              integrationNeeds: data.integrationNeeds || ''
             }
           })
         });
 
         if (onboardingResponse.ok) {
           const result = await onboardingResponse.json();
-          console.log('[Onboarding Submission] Lead created in Operator Onboarding:', result.leadId);
+          console.log('[Onboarding Submission] ✅ Lead created in Operator Onboarding:', result.leadId || result.id);
         } else {
           const errorText = await onboardingResponse.text();
-          console.warn('[Onboarding Submission] Failed to create lead in Operator Onboarding:', {
+          let errorData;
+          try {
+            errorData = errorText ? JSON.parse(errorText) : { error: 'Unknown error' };
+          } catch {
+            errorData = { error: errorText || 'Unknown error' };
+          }
+          console.error('[Onboarding Submission] ❌ Failed to create lead in Operator Onboarding:', {
             status: onboardingResponse.status,
             statusText: onboardingResponse.statusText,
-            error: errorText
+            error: errorData,
+            appUrl
           });
+          // Don't fail the request - lead creation is secondary to form submission
         }
       } catch (onboardingError) {
-        console.error('[Onboarding Submission] Error creating lead in Operator Onboarding:', {
+        console.error('[Onboarding Submission] ❌ Error creating lead in Operator Onboarding:', {
           error: onboardingError instanceof Error ? onboardingError.message : 'Unknown error',
           stack: onboardingError instanceof Error ? onboardingError.stack : undefined,
           appUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'
         });
         // Continue anyway - we'll still return success to user
+        // Lead can be created manually later if needed
       }
 
       // Send confirmation email

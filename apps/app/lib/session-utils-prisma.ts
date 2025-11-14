@@ -1,0 +1,110 @@
+import { FireSession, SessionStatus } from '../types/enhancedSession';
+import { SessionState } from '@prisma/client';
+
+// Helper function to map Prisma session state (enum) to FireSession status
+function mapPrismaStateToFireSession(state: string | SessionState, paymentStatus?: string | null): SessionStatus {
+  // Convert enum to string if needed
+  const stateStr = typeof state === 'string' ? state : String(state);
+  
+  // Special handling: PENDING + paymentStatus 'succeeded' = PAID_CONFIRMED
+  // This is the key fix: after Stripe payment, sessions should show as PAID_CONFIRMED
+  if (stateStr === 'PENDING' && paymentStatus === 'succeeded') {
+    return 'PAID_CONFIRMED';
+  }
+  
+  const stateMap: Record<string, SessionStatus> = {
+    // Database enum values (SessionState)
+    'PENDING': 'NEW', // PENDING without payment = NEW (unpaid)
+    'ACTIVE': 'ACTIVE',
+    'PAUSED': 'STAFF_HOLD', // Map PAUSED to STAFF_HOLD
+    'CLOSED': 'CLOSED',
+    'CANCELED': 'VOIDED', // Map CANCELED to VOIDED
+    
+    // Legacy string values (for backward compatibility)
+    'NEW': 'NEW',
+    'PREP_IN_PROGRESS': 'PREP_IN_PROGRESS',
+    'HEAT_UP': 'HEAT_UP',
+    'READY_FOR_DELIVERY': 'READY_FOR_DELIVERY',
+    'OUT_FOR_DELIVERY': 'OUT_FOR_DELIVERY',
+    'DELIVERED': 'DELIVERED',
+    'COMPLETED': 'CLOSED',
+    'CANCELLED': 'VOIDED',
+    'FAILED_PAYMENT': 'FAILED_PAYMENT',
+    'PAID_CONFIRMED': 'PAID_CONFIRMED',
+    'CLOSE_PENDING': 'CLOSE_PENDING',
+    'STOCK_BLOCKED': 'STOCK_BLOCKED',
+    'REMAKE': 'REMAKE',
+    'REFUND_REQUESTED': 'REFUND_REQUESTED',
+    'REFUNDED': 'REFUNDED',
+  };
+  return stateMap[stateStr] || 'NEW';
+}
+
+function mapStateToStage(state: string | SessionState): 'BOH' | 'FOH' | 'CUSTOMER' {
+  const stateStr = typeof state === 'string' ? state : String(state);
+  
+  if (['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(stateStr)) {
+    return 'BOH';
+  }
+  if (['OUT_FOR_DELIVERY', 'DELIVERED', 'CLOSE_PENDING'].includes(stateStr)) {
+    return 'FOH';
+  }
+  return 'CUSTOMER';
+}
+
+// Helper function to calculate remaining time from Prisma session
+function calculateRemainingTimeFromPrisma(session: any): number {
+  if (!session.timerStartedAt || !session.timerDuration) return 0;
+  
+  const now = Date.now();
+  const startedAt = new Date(session.timerStartedAt).getTime();
+  const elapsed = Math.floor((now - startedAt) / 1000);
+  const pausedTime = session.timerPausedDuration || 0;
+  
+  return Math.max(0, session.timerDuration - elapsed + pausedTime);
+}
+
+// Convert Prisma session to FireSession format
+export function convertPrismaSessionToFireSession(session: any): FireSession {
+  const flavorMix = session.flavorMix ? (() => {
+    try {
+      const parsed = JSON.parse(session.flavorMix);
+      return typeof parsed === 'string' ? parsed : parsed.join(' + ');
+    } catch {
+      return session.flavorMix;
+    }
+  })() : (session.flavor || 'Custom Mix');
+
+  return {
+    id: session.id,
+    tableId: session.tableId || session.externalRef || 'Unknown',
+    customerName: session.customerRef || 'Anonymous',
+    customerPhone: session.customerPhone || '',
+    flavor: flavorMix,
+    amount: session.priceCents || 0,
+    status: mapPrismaStateToFireSession(session.state, session.paymentStatus),
+    currentStage: mapStateToStage(session.state),
+    assignedStaff: {
+      boh: session.assignedBOHId || '',
+      foh: session.assignedFOHId || ''
+    },
+    createdAt: new Date(session.createdAt).getTime(),
+    updatedAt: new Date(session.updatedAt).getTime(),
+    sessionStartTime: session.startedAt ? new Date(session.startedAt).getTime() : undefined,
+    sessionDuration: session.durationSecs || 45 * 60,
+    coalStatus: 'active' as const,
+    refillStatus: 'none' as const,
+    notes: session.tableNotes || '',
+    edgeCase: session.edgeCase || null,
+    sessionTimer: session.timerStartedAt ? {
+      remaining: calculateRemainingTimeFromPrisma(session),
+      total: session.timerDuration || 45 * 60,
+      isActive: session.timerStatus === 'running',
+      startedAt: new Date(session.timerStartedAt).getTime()
+    } : undefined,
+    bohState: 'PREPARING' as const,
+    guestTimerDisplay: session.state === 'ACTIVE',
+    source: session.source // Include source from Prisma session
+  };
+}
+

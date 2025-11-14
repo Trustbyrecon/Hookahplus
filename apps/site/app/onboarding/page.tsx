@@ -129,8 +129,9 @@ export default function OnboardingPage() {
       });
 
       if (response.ok) {
-        // Redirect to thank you page
-        window.location.href = '/thank-you/onboarding';
+        // Redirect to Operator Onboarding Management in app build
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
+        window.location.href = `${appUrl}/admin/operator-onboarding?source=onboarding&email=${encodeURIComponent(formData.email)}`;
       } else {
         alert('Failed to submit onboarding. Please try again.');
       }

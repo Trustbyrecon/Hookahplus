@@ -25,7 +25,8 @@ import {
   Timer,
   UserCheck,
   ChefHat,
-  Truck
+  Truck,
+  Trash2
 } from 'lucide-react';
 import Button from './Button';
 
@@ -331,6 +332,14 @@ export function SessionQueueManager({ sessions, userRole, onBulkAction }: Sessio
                 <CheckCircle className="w-4 h-4 mr-1" />
                 Complete
               </Button>
+              <Button
+                size="sm"
+                onClick={() => handleBulkAction('delete')}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                <Trash2 className="w-4 h-4 mr-1" />
+                Delete
+              </Button>
             </div>
           </div>
         )}
@@ -413,21 +422,42 @@ export function SessionQueueManager({ sessions, userRole, onBulkAction }: Sessio
                         session.state === 'READY_FOR_DELIVERY' ? 'bg-blue-500/20 text-blue-400' :
                         'bg-zinc-500/20 text-zinc-400'
                       }`}>
-                        {session.state.replace('_', ' ')}
+                        {session.state ? session.state.replace('_', ' ') : 'PENDING'}
                       </span>
                     </div>
                     
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-zinc-400">Flavor:</span>
-                      <span className="text-zinc-300">{session.flavor}</span>
+                      <span className="text-zinc-300">{session.flavor || session.flavorMix || 'N/A'}</span>
                     </div>
+
+                    {session.customerPhone && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-zinc-400">Phone:</span>
+                        <span className="text-zinc-300">{session.customerPhone}</span>
+                      </div>
+                    )}
+
+                    {session.source && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-zinc-400">Source:</span>
+                        <span className="text-zinc-300">{session.source}</span>
+                      </div>
+                    )}
 
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-zinc-400">Staff:</span>
                       <span className="text-zinc-300">
-                        {session.assignedBOH || session.assignedFOH || 'Unassigned'}
+                        {session.assignedBOHId || session.assignedFOHId || session.assignedBOH || session.assignedFOH || 'Unassigned'}
                       </span>
                     </div>
+
+                    {session.tableNotes && (
+                      <div className="mt-2 p-2 bg-zinc-800/50 rounded text-xs">
+                        <span className="text-zinc-400">Notes: </span>
+                        <span className="text-zinc-300">{session.tableNotes}</span>
+                      </div>
+                    )}
                   </div>
 
                   {session.edgeCase && (

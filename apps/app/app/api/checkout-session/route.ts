@@ -10,19 +10,34 @@ const stripe = process.env.STRIPE_SECRET_KEY
 export async function POST(request: NextRequest) {
   try {
     if (!stripe) {
-      console.error('[Checkout API] Stripe not configured - STRIPE_SECRET_KEY missing');
+      console.error('[Checkout API] ❌ STRIPE_SECRET_KEY not configured');
       return NextResponse.json(
         { 
           success: false,
           error: 'Stripe not configured',
-          details: 'STRIPE_SECRET_KEY environment variable is missing'
+          details: 'STRIPE_SECRET_KEY environment variable is missing',
+          hint: 'Add STRIPE_SECRET_KEY=sk_test_... to apps/app/.env.local and restart the dev server',
+          setupUrl: 'https://dashboard.stripe.com/apikeys',
+          isConfigurationError: true
         },
-        { status: 500 }
+        { status: 503 } // Service Unavailable - more appropriate than 500 for missing config
       );
     }
 
     const body = await request.json();
-    const { flavors, addOns, tableId, loungeId, amount, total, pricingModel, sessionDuration, dollarTestMode } = body;
+    const { flavors, addOns, tableId, loungeId, amount, total, pricingModel, sessionDuration, dollarTestMode, sessionId } = body;
+    
+    // SECURITY: sessionId is required - we only send opaque IDs to Stripe
+    if (!sessionId) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Session ID required',
+          details: 'sessionId must be provided to link payment to session'
+        },
+        { status: 400 }
+      );
+    }
 
     console.log('[Checkout API] Request:', { 
       flavors, 
@@ -57,7 +72,21 @@ export async function POST(request: NextRequest) {
 
     // Use total if provided, otherwise use amount (convert to cents)
     // If $1 test mode is enabled, force amount to $1.00 (100 cents)
-    const amountInCents = dollarTestMode ? 100 : (total ? Math.round(total * 100) : amount);
+    // If amount is provided and >= 100, assume it's already in cents
+    // If amount is provided and < 100, assume it's in dollars and convert
+    let amountInCents: number;
+    if (dollarTestMode) {
+      amountInCents = 100;
+    } else if (total) {
+      // total is always in dollars, convert to cents
+      amountInCents = Math.round(total * 100);
+    } else if (amount >= 100) {
+      // amount >= 100, assume it's already in cents
+      amountInCents = Math.round(amount);
+    } else {
+      // amount < 100, assume it's in dollars, convert to cents
+      amountInCents = Math.round(amount * 100);
+    }
     
     if (dollarTestMode) {
       console.log('[Checkout API] $1 Test Mode ENABLED - Original amount:', total || amount, '→ Forced to $1.00 (100 cents)');
@@ -181,20 +210,11 @@ export async function POST(request: NextRequest) {
       ],
       success_url: successUrl,
       cancel_url: cancelUrl,
-      // Enhanced metadata for production tracking
+      // SECURITY: Only send opaque session ID to Stripe (protects behavioral memory)
+      // All business logic (flavorMix, tableId, loungeId) stays in our DB
       metadata: {
-        flavors: JSON.stringify(flavors),
-        addOns: JSON.stringify(addOns || []),
-        tableId: tableId || '',
-        loungeId: loungeId || 'default-lounge',
-        flavorMix: flavors.join(' + '),
-        pricingModel: pricingModel || 'flat',
-        sessionDuration: sessionDuration ? String(sessionDuration) : '',
-        dollarTestMode: dollarTestMode ? 'true' : 'false',
-        originalAmount: dollarTestMode ? String(total || amount) : '',
-        source: 'checkout-session-api',
-        environment: isTestMode ? 'test' : 'live',
-        timestamp: new Date().toISOString(),
+        h_session: sessionId, // Opaque UUID - Stripe can't reverse engineer business logic
+        h_order: `H+ ${sessionId.substring(0, 8)}`, // Optional: human-friendly for support lookups
       },
       // Customer email collection - let Stripe handle it securely
       customer_email: undefined,
@@ -212,11 +232,10 @@ export async function POST(request: NextRequest) {
       allow_promotion_codes: true,
       // Configure receipt email
       payment_intent_data: {
-        description: `Hookah Session - ${flavors.join(' + ')}`,
+        description: `Hookah Plus Session ${sessionId.substring(0, 8)}`, // Generic description
+        // SECURITY: Only opaque session ID in PaymentIntent metadata
         metadata: {
-          tableId: tableId || '',
-          loungeId: loungeId || 'default-lounge',
-          flavorMix: flavors.join(' + '),
+          h_session: sessionId, // Opaque UUID only
         },
       },
       // Expire checkout sessions after 30 minutes

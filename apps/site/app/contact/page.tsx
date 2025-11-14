@@ -84,8 +84,9 @@ export default function ContactPage() {
         name: formData.name
       });
 
-      // Redirect to thank you page
-      window.location.href = '/thank-you/contact';
+      // Redirect to Operator Onboarding Management in app build
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
+      window.location.href = `${appUrl}/admin/operator-onboarding?source=contact&email=${encodeURIComponent(formData.email)}`;
     } catch (error) {
       console.error('Error submitting form:', error);
       setIsSubmitting(false);
