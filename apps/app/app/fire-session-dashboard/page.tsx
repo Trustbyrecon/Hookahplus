@@ -84,7 +84,7 @@ function FireSessionDashboardContent() {
         sessionDuration: sessionData.timer_duration ? sessionData.timer_duration * 60 : 45 * 60, // Convert minutes to seconds
         loungeId: sessionData.lounge_id || 'default-lounge',
         source: sessionData.session_type === 'reservation' ? 'RESERVE' : 
-                sessionData.session_type === 'vip' ? 'VIP' : 'WALK_IN',
+                sessionData.session_type === 'vip' ? 'WALK_IN' : 'WALK_IN', // VIP maps to WALK_IN (not a valid SessionSource)
         externalRef: sessionData.externalRef || `table-${sessionData.table_id || sessionData.tableId}-${Date.now()}`
       };
 

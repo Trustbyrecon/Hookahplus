@@ -30,49 +30,29 @@ export async function trackUnknown(
   examplePayload?: Record<string, any>
 ): Promise<void> {
   try {
-    // Try to find existing unknown
-    const existing = await prisma.taxonomyUnknown.findUnique({
-      where: {
-        enumType_rawLabel: {
-          enumType,
-          rawLabel
-        }
-      }
-    });
-
-    if (existing) {
-      // Update count and last_seen
-      await prisma.taxonomyUnknown.update({
-        where: {
-          enumType_rawLabel: {
-            enumType,
-            rawLabel
-          }
-        },
-        data: {
-          count: existing.count + 1,
-          lastSeen: new Date(),
-          // Update example if this is a new event
-          ...(exampleEventId !== existing.exampleEventId ? {
-            exampleEventId,
-            examplePayload: examplePayload ? JSON.stringify(examplePayload) : null
-          } : {})
-        }
-      });
-    } else {
-      // Create new unknown record
-      await prisma.taxonomyUnknown.create({
-        data: {
-          enumType,
-          rawLabel,
-          exampleEventId,
-          examplePayload: examplePayload ? JSON.stringify(examplePayload) : null,
-          count: 1,
-          firstSeen: new Date(),
-          lastSeen: new Date()
-        }
-      });
-    }
+    // Use raw SQL to upsert unknown values
+    // This works even if Prisma client hasn't been regenerated yet
+    const payloadJson = examplePayload ? JSON.stringify(examplePayload) : null;
+    
+    await prisma.$executeRaw`
+      INSERT INTO "TaxonomyUnknown" (
+        enum_type, raw_label, example_event_id, example_payload,
+        count, first_seen, last_seen, created_at, updated_at
+      )
+      VALUES (
+        ${enumType}, ${rawLabel}, ${exampleEventId}, ${payloadJson}::jsonb,
+        1, NOW(), NOW(), NOW(), NOW()
+      )
+      ON CONFLICT (enum_type, raw_label) DO UPDATE
+      SET
+        count = "TaxonomyUnknown".count + 1,
+        last_seen = NOW(),
+        updated_at = NOW(),
+        example_event_id = COALESCE("TaxonomyUnknown".example_event_id, EXCLUDED.example_event_id),
+        example_payload = COALESCE("TaxonomyUnknown".example_payload, EXCLUDED.example_payload)
+    `;
+    
+    console.log(`[Unknown Tracker] Tracked unknown: ${enumType}:${rawLabel}`);
   } catch (error) {
     // Log but don't fail - unknown tracking is non-critical
     console.error(`[Taxonomy] Failed to track unknown ${enumType}:${rawLabel}:`, error);
@@ -101,30 +81,47 @@ export async function getTopUnknowns(
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - windowDays);
 
-    const unknowns = await prisma.taxonomyUnknown.findMany({
-      where: {
-        ...(enumType ? { enumType } : {}),
-        lastSeen: {
-          gte: cutoffDate
-        }
-      },
-      orderBy: [
-        { count: 'desc' },
-        { lastSeen: 'desc' }
-      ],
-      take: limit
-    });
+    // Use raw SQL to query unknowns (works even if Prisma client hasn't been regenerated)
+    const enumTypeFilter = enumType ? `AND enum_type = '${enumType}'` : '';
+    
+    const unknowns = await prisma.$queryRaw<Array<{
+      id: string;
+      enum_type: string;
+      raw_label: string;
+      suggested_mapping: string | null;
+      count: number;
+      example_event_id: string | null;
+      example_payload: string | null;
+      first_seen: Date;
+      last_seen: Date;
+    }>>`
+      SELECT 
+        id,
+        enum_type,
+        raw_label,
+        suggested_mapping,
+        count,
+        example_event_id,
+        example_payload,
+        first_seen,
+        last_seen
+      FROM "TaxonomyUnknown"
+      WHERE last_seen >= ${cutoffDate}
+        ${enumTypeFilter}
+      ORDER BY count DESC, last_seen DESC
+      LIMIT ${limit}
+    `;
 
     return unknowns.map(u => ({
       id: u.id,
-      enumType: u.enumType as EnumType,
-      rawLabel: u.rawLabel,
-      suggestedMapping: u.suggestedMapping,
+      enumType: u.enum_type as EnumType,
+      rawLabel: u.raw_label,
+      suggestedMapping: u.suggested_mapping,
       count: u.count,
-      exampleEventId: u.exampleEventId,
-      examplePayload: u.examplePayload ? JSON.parse(u.examplePayload) : null,
-      firstSeen: u.firstSeen,
-      lastSeen: u.lastSeen
+      exampleEventId: u.example_event_id,
+      examplePayload: u.example_payload ? JSON.parse(u.example_payload) : null,
+      firstSeen: u.first_seen,
+      lastSeen: u.last_seen
     }));
   } catch (error) {
     console.error('[Taxonomy] Failed to get top unknowns:', error);

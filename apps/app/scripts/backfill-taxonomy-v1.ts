@@ -50,20 +50,18 @@ async function backfillSessions(): Promise<MigrationStats['sessions']> {
   };
 
   try {
-    // Get all sessions that don't have session_state_v1 set
-    const sessions = await prisma.session.findMany({
-      where: {
-        sessionStateV1: null
-      },
-      select: {
-        id: true,
-        state: true,
-        startedAt: true,
-        endedAt: true,
-        // Check for prep/handoff indicators (these might be in other fields)
-        // For now, we'll use startedAt as a proxy for prep_started_at
-      }
-    });
+    // Use raw SQL to find sessions that don't have session_state_v1 set
+    // This works even if Prisma client hasn't been regenerated yet
+    const sessions = await prisma.$queryRaw<Array<{
+      id: string;
+      state: string;
+      started_at: Date | null;
+      ended_at: Date | null;
+    }>>`
+      SELECT id, state, "startedAt" as started_at, "endedAt" as ended_at
+      FROM "Session"
+      WHERE session_state_v1 IS NULL
+    `;
 
     stats.total = sessions.length;
     console.log(`Found ${stats.total} sessions to migrate`);
@@ -73,18 +71,19 @@ async function backfillSessions(): Promise<MigrationStats['sessions']> {
         // Map legacy state to v1
         const legacyState = session.state as string;
         const mapped = mapSessionState(legacyState, {
-          prep_started_at: session.startedAt,
+          prep_started_at: session.started_at,
           handoff_started_at: null, // We don't have this field yet, will default to prep
         });
 
-        // Update session with v1 state and paused flag
-        await prisma.session.update({
-          where: { id: session.id },
-          data: {
-            sessionStateV1: mapped.state,
-            paused: mapped.paused
-          }
-        });
+        // Update session with v1 state and paused flag using raw SQL
+        // This works even if Prisma client hasn't been regenerated yet
+        await prisma.$executeRaw`
+          UPDATE "Session"
+          SET 
+            session_state_v1 = ${mapped.state},
+            paused = ${mapped.paused}
+          WHERE id = ${session.id}
+        `;
 
         stats.migrated++;
         
@@ -127,16 +126,16 @@ async function backfillReflexEvents(): Promise<MigrationStats['reflexEvents']> {
   };
 
   try {
-    // Get all reflex events that don't have trust_event_type_v1 set
-    const events = await prisma.reflexEvent.findMany({
-      where: {
-        trustEventTypeV1: null
-      },
-      select: {
-        id: true,
-        type: true,
-      }
-    });
+    // Use raw SQL to find reflex events that don't have trust_event_type_v1 set
+    // This works even if Prisma client hasn't been regenerated yet
+    const events = await prisma.$queryRaw<Array<{
+      id: string;
+      type: string;
+    }>>`
+      SELECT id, type
+      FROM reflex_events
+      WHERE trust_event_type_v1 IS NULL
+    `;
 
     stats.total = events.length;
     console.log(`Found ${stats.total} reflex events to migrate`);
@@ -147,13 +146,13 @@ async function backfillReflexEvents(): Promise<MigrationStats['reflexEvents']> {
         const mapped = mapTrustEvent(event.type);
 
         if (mapped.v1) {
-          // Update event with v1 type
-          await prisma.reflexEvent.update({
-            where: { id: event.id },
-            data: {
-              trustEventTypeV1: mapped.v1
-            }
-          });
+          // Update event with v1 type using raw SQL
+          // This works even if Prisma client hasn't been regenerated yet
+          await prisma.$executeRaw`
+            UPDATE reflex_events
+            SET trust_event_type_v1 = ${mapped.v1}
+            WHERE id = ${event.id}
+          `;
 
           stats.migrated++;
         } else if (mapped.unknown) {

@@ -294,9 +294,17 @@ export async function POST(req: NextRequest) {
       notes,
       sessionDuration = 45 * 60,
       loungeId = 'default-lounge',
-      source = 'WALK_IN',
+      source: sourceInput = 'WALK_IN',
       externalRef
     } = body;
+    
+    // Validate and normalize source (only valid SessionSource values)
+    const validSources = ['QR', 'RESERVE', 'WALK_IN', 'LEGACY_POS'];
+    const sourceValue = validSources.includes(sourceInput) ? sourceInput : 'WALK_IN';
+    
+    if (sourceInput !== sourceValue) {
+      console.warn(`[Sessions API] Invalid source "${sourceInput}", defaulting to "WALK_IN"`);
+    }
 
     // Simple validation - only required fields
     if (!tableId || !customerName) {
@@ -350,10 +358,7 @@ export async function POST(req: NextRequest) {
       flavor
     });
 
-    // Map source string to enum value - ensure it's a valid enum value
-    const sourceValue = (source === 'QR' || source === 'RESERVE' || source === 'WALK_IN' || source === 'LEGACY_POS')
-      ? source
-      : 'WALK_IN';
+    // sourceValue is already validated above
 
     // Create session in database
     // Use explicit string casting to avoid enum serialization issues
@@ -402,7 +407,21 @@ export async function POST(req: NextRequest) {
     };
     
     const finalFlavor = typeof flavor === 'string' ? flavor : (Array.isArray(flavor) ? flavor[0] : 'Custom Mix');
-    const finalFlavorMix = typeof flavor === 'string' ? flavor : JSON.stringify(flavor);
+    // flavorMix: Store as valid JSON string (works for both TEXT and JSONB columns)
+    // Always ensure it's valid JSON to avoid parsing errors
+    let finalFlavorMix: string | null;
+    if (flavor === null || flavor === undefined) {
+      finalFlavorMix = null;
+    } else if (typeof flavor === 'string') {
+      // If it's a string, wrap it in JSON quotes to make it valid JSON
+      finalFlavorMix = JSON.stringify(flavor); // e.g., "Custom Mix" becomes "\"Custom Mix\""
+    } else if (Array.isArray(flavor)) {
+      finalFlavorMix = JSON.stringify(flavor); // JSON array
+    } else if (typeof flavor === 'object') {
+      finalFlavorMix = JSON.stringify(flavor); // JSON object
+    } else {
+      finalFlavorMix = JSON.stringify('Custom Mix'); // Default: valid JSON string
+    }
     const finalPriceCents = amount ? (amount < 1000 ? Math.round(amount * 100) : Math.round(amount)) : 3000;
     
     // Map legacy state to v1 taxonomy (dual-write pattern)
@@ -431,7 +450,7 @@ export async function POST(req: NextRequest) {
         ${escapeSqlString(customerName)},
         ${escapeSqlString(customerPhone)},
         ${escapeSqlString(finalFlavor)},
-        ${escapeSqlString(finalFlavorMix)},
+        ${finalFlavorMix ? `${escapeSqlString(finalFlavorMix)}` : 'NULL'},
         ${escapeSqlString(finalLoungeId)},
         ${finalPriceCents},
         ${escapeSqlString(assignedStaff?.boh)},
@@ -462,7 +481,7 @@ export async function POST(req: NextRequest) {
         ${escapeSqlString(customerName)},
         ${escapeSqlString(customerPhone)},
         ${escapeSqlString(finalFlavor)},
-        ${escapeSqlString(finalFlavorMix)},
+        ${finalFlavorMix ? `${escapeSqlString(finalFlavorMix)}` : 'NULL'},
         ${escapeSqlString(finalLoungeId)},
         ${finalPriceCents},
         ${escapeSqlString(assignedStaff?.boh)},
