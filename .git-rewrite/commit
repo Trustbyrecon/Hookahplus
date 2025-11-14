@@ -1,0 +1,26 @@
+tree 91e63a918c88d074f90cb568c996283b6759e229
+parent ce4a1e24afa0afc378d0b43b24f8cafa7b0f0c13
+parent ff04f3c359f07195bc08c1f3017bac34430ec90a
+author reconai-dev <clark.dwayne@gmail.com> 1754066362 -0400
+committer GitHub <noreply@github.com> 1754066362 -0400
+gpgsig -----BEGIN PGP SIGNATURE-----
+ 
+ wsFcBAABCAAQBQJojO26CRC1aQ7uu5UhlAAATRsQAIjN07NphFB7HeSVGLDL5qjg
+ xHIQgiq3JMQB9f9i/cfOP250IPMhcvDCCn2dTIE4Dl0VA4nYEFjn+Y3a7YzU2ZL+
+ DDXBZ2FDs5E3Tke6/cNznfIvx1NfhjkNtYzqUBlZ6ybm/oVED3ZRJyRx6rC8i5VQ
+ E9IlTGuopkIthbz//MNA0WGgu4nR0VHKHuveYKhywq5oIAYSJYSwrKUmY8xd3M3a
+ ouzJaQl8LMS3HDyYsE+QPKqfMrdbKGD5ZC+VokLA2EazTRtcy9m8ZCzOZYp8PWgI
+ 5Id0DBYv9GDtQez7pdBjRLnSKVXw/irjmRU6FK8ip6uX1URxNtE48EA78A4UL0Ms
+ jR8xraPMiwwXkKBPB6lDJFRqfge6IPl70DHoWCIsWOWL4LaCnjNwc3iVSL2FIWC9
+ uGERfyah5TK4JV+6XMKSmqIAAoIygM7WKtZltwSb0p62zObr87TZyq7+2AGTM4Y4
+ 3IeJDkcmNgZI+v5bSc8amNgOfPeT3KjoxSymiM95LnCXTNneIPo8xyz86aMg95ch
+ BV+zBI9eu8bccjf7PJ3YMJcsEwXBxDr4R4s0fyBDzZKzm5SAyHUl60dcCWo6+WMn
+ fAtX6Ey9/UgEnwA2EZ5scQUec3V5fdwdn3VNrtYsd2DAHUK7/POKUuGPZnyRsJEM
+ lo44GTdSBzI9QiVs4zrn
+ =Hfmi
+ -----END PGP SIGNATURE-----
+ 
+
+Merge pull request #4 from Trustbyrecon/codex/task-title
+
+Add releaseTeaserVideo command

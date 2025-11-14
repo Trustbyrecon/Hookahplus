@@ -1,0 +1,6 @@
+[submodule "backend"]
+	path = backend
+	url = https://github.com/Trustbyrecon/hookahplus-backend
+[submodule "netlify"]
+	path = netlify
+	url = https://github.com/Trustbyrecon/hookahplus-netlify.git

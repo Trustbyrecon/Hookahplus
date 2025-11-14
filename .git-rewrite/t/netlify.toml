@@ -1,0 +1,10 @@
+[build]
+base = "app/dashboard"
+publish = "out"
+command = "npm run export"
+
+[functions]
+directory = "netlify/functions"
+
+[context.production.environment]
+  NEXT_PUBLIC_API_URL = "https://api.yourprodurl.com"

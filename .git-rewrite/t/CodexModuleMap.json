@@ -1,0 +1,59 @@
+{
+  "$schema": "https://reconai.dev/codex-module-map/v1",
+  "project": "HookahPlus",
+  "rootDir": "C:/Users/Dwayne Clark/Projects/HookahPlus",
+  "modules": {
+    "pos": {
+      "path": "pos",
+      "repo": "hookahplus-pos",
+      "triggers": [
+        "cmd.deployOperatorDashboard",
+        "cmd.startSessionFlow",
+        "cmd.injectReflexOverlay",
+        "cmd.packageCodexPOSFlow",
+        "cmd.launchFlavorTracker"
+      ]
+    },
+    "backend": {
+      "path": "backend",
+      "repo": "hookahplus-backend",
+      "triggers": [
+        "cmd.deployWebhookListener",
+        "cmd.syncReflexLog",
+        "cmd.activateTrustGraph",
+        "cmd.initSessionNotes",
+        "cmd.processStripeEvents"
+      ]
+    },
+    "netlify": {
+      "path": "netlify",
+      "repo": "hookahplus-netlify",
+      "triggers": [
+        "cmd.deployLandingPage",
+        "cmd.switchDomain",
+        "cmd.setupRedirects",
+        "cmd.bundlePublicTeasers",
+        "cmd.launchGTMStack"
+      ]
+    },
+    "docs": {
+      "path": "docs",
+      "repo": "hookahplus-docs",
+      "triggers": [
+        "cmd.generateMoatPDF",
+        "cmd.writeReflexGuide",
+        "cmd.exportPricingSheet",
+        "cmd.logWhisperJournal",
+        "cmd.snapshotPartnerStatus"
+      ]
+    },
+    "repoOps": {
+      "path": ".",
+      "repo": "hookahplus",
+      "codex": [
+        "ReflexArc_GitRemoteReassignment.codex.md"
+      ]
+    }
+  },
+  "defaultModule": "pos"
+}
