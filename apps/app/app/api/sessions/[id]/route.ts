@@ -60,21 +60,20 @@ export async function GET(
       );
     }
 
-    // Use the same conversion function as the main sessions route
-    const fireSession = convertPrismaSessionToFireSession(session);
+      // Use the same conversion function as the main sessions route
+      const fireSession = convertPrismaSessionToFireSession(session);
 
-    return NextResponse.json({
-      success: true,
-      id: session.id,
-      ...fireSession,
-      // Also include raw fields for backward compatibility
-      table_id: session.tableId,
-      customer_name: session.customerRef,
-      price_cents: session.priceCents,
-      status: fireSession.status,
-    }, {
-      headers: getCorsHeaders(request),
-    });
+      return NextResponse.json({
+        success: true,
+        ...fireSession, // fireSession already includes 'id'
+        // Also include raw fields for backward compatibility
+        table_id: session.tableId,
+        customer_name: session.customerRef,
+        price_cents: session.priceCents,
+        status: fireSession.status,
+      }, {
+        headers: getCorsHeaders(request),
+      });
   } catch (error) {
     console.error('[Session API] Error fetching session:', error);
     return NextResponse.json(
