@@ -8,7 +8,7 @@
 Stripe test key has been added to `apps/app/.env.local`:
 
 ```
-STRIPE_SECRET_KEY=sk_test_51RZ0cpDHM3T5fq9re4ZGZMvwqTrYHkQ6ARyolebbtPdu6jThPA9TzV8VyzJtTrIrcOwwiJxkPZ67EJHKWf3PkOHH00ZX9JFBSt
+STRIPE_SECRET_KEY=sk_test_... (key stored in .env.local, not in git)
 ```
 
 ## Protection Status
