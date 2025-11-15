@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../../lib/db';
 import Stripe from 'stripe';
-
-const prisma = new PrismaClient();
 
 // Initialize Stripe
 const stripe = process.env.STRIPE_SECRET_KEY
@@ -25,62 +23,130 @@ export async function GET(request: NextRequest) {
     const end = endDate ? new Date(endDate) : new Date();
     end.setHours(23, 59, 59, 999);
 
-    // Get sessions from database
-    const sessions = await prisma.session.findMany({
-      where: {
-        loungeId: loungeId,
-        createdAt: {
-          gte: start,
-          lte: end,
-        },
-        paymentStatus: 'succeeded', // Only include successful payments
-      },
-      select: {
-        id: true,
-        priceCents: true,
-        paymentIntent: true,
-        flavorMix: true,
-        tableId: true,
-        createdAt: true,
-        startedAt: true,
-      },
-    });
+    // Use database aggregations instead of fetching all sessions and processing in memory
+    // This is MUCH faster for large datasets
+    const baseWhere = {
+      loungeId: loungeId,
+      paymentStatus: 'succeeded' as const,
+    };
 
-    // Calculate today's revenue
+    // Calculate date ranges
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
     
-    const todaySessions = sessions.filter(
-      (s) => s.createdAt >= todayStart && s.createdAt <= todayEnd
-    );
-    const today = todaySessions.reduce((sum, s) => sum + s.priceCents, 0);
-
-    // Calculate week revenue (last 7 days)
     const weekStart = new Date();
     weekStart.setDate(weekStart.getDate() - 7);
     weekStart.setHours(0, 0, 0, 0);
     
-    const weekSessions = sessions.filter((s) => s.createdAt >= weekStart);
-    const week = weekSessions.reduce((sum, s) => sum + s.priceCents, 0);
-
-    // Calculate month revenue
     const monthStart = new Date();
     monthStart.setDate(1);
     monthStart.setHours(0, 0, 0, 0);
-    
-    const monthSessions = sessions.filter((s) => s.createdAt >= monthStart);
-    const month = monthSessions.reduce((sum, s) => sum + s.priceCents, 0);
 
-    // Calculate average session value
-    const avgSessionValue =
-      sessions.length > 0
-        ? sessions.reduce((sum, s) => sum + s.priceCents, 0) / sessions.length
-        : 0;
+    // Run all aggregations in parallel for maximum performance
+    const [
+      todayRevenue,
+      weekRevenue,
+      monthRevenue,
+      totalRevenue,
+      sessionCount,
+      avgSessionValue,
+      sessionsForBreakdown // Only fetch minimal data needed for breakdowns
+    ] = await Promise.all([
+      // Today's revenue
+      prisma.session.aggregate({
+        where: {
+          ...baseWhere,
+          createdAt: {
+            gte: todayStart,
+            lte: todayEnd,
+          },
+        },
+        _sum: { priceCents: true },
+        _count: { id: true },
+      }),
 
-    // Generate trend data (last 7 days)
-    const trendData = [];
+      // Week revenue
+      prisma.session.aggregate({
+        where: {
+          ...baseWhere,
+          createdAt: { gte: weekStart },
+        },
+        _sum: { priceCents: true },
+      }),
+
+      // Month revenue
+      prisma.session.aggregate({
+        where: {
+          ...baseWhere,
+          createdAt: { gte: monthStart },
+        },
+        _sum: { priceCents: true },
+      }),
+
+      // Total revenue for date range
+      prisma.session.aggregate({
+        where: {
+          ...baseWhere,
+          createdAt: {
+            gte: start,
+            lte: end,
+          },
+        },
+        _sum: { priceCents: true },
+        _count: { id: true },
+      }),
+
+      // Session count
+      prisma.session.count({
+        where: {
+          ...baseWhere,
+          createdAt: {
+            gte: start,
+            lte: end,
+          },
+        },
+      }),
+
+      // Average session value
+      prisma.session.aggregate({
+        where: {
+          ...baseWhere,
+          createdAt: {
+            gte: start,
+            lte: end,
+          },
+        },
+        _avg: { priceCents: true },
+      }),
+
+      // Minimal data for breakdowns (only fetch what we need)
+      prisma.session.findMany({
+        where: {
+          ...baseWhere,
+          createdAt: {
+            gte: start,
+            lte: end,
+          },
+        },
+        select: {
+          priceCents: true,
+          flavorMix: true,
+          tableId: true,
+          createdAt: true,
+        },
+        take: 10000, // Limit to prevent memory issues
+      }),
+    ]);
+
+    const today = todayRevenue._sum.priceCents || 0;
+    const week = weekRevenue._sum.priceCents || 0;
+    const month = monthRevenue._sum.priceCents || 0;
+    const sessions = sessionsForBreakdown;
+
+    // Generate trend data (last 7 days) using database queries for better performance
+    const trendDataPromises = [];
     for (let i = 6; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
@@ -89,17 +155,25 @@ export async function GET(request: NextRequest) {
       const dateEnd = new Date(date);
       dateEnd.setHours(23, 59, 59, 999);
       
-      const daySessions = sessions.filter(
-        (s) => s.createdAt >= date && s.createdAt <= dateEnd
+      trendDataPromises.push(
+        prisma.session.aggregate({
+          where: {
+            ...baseWhere,
+            createdAt: {
+              gte: date,
+              lte: dateEnd,
+            },
+          },
+          _sum: { priceCents: true },
+          _count: { id: true },
+        }).then(result => ({
+          date: date.toISOString().split('T')[0],
+          revenue: (result._sum.priceCents || 0) / 100,
+          sessions: result._count.id,
+        }))
       );
-      const dayRevenue = daySessions.reduce((sum, s) => sum + s.priceCents, 0);
-      
-      trendData.push({
-        date: date.toISOString().split('T')[0],
-        revenue: dayRevenue / 100, // Convert cents to dollars
-        sessions: daySessions.length,
-      });
     }
+    const trendData = await Promise.all(trendDataPromises);
 
     // Revenue breakdown by flavor mix
     const flavorBreakdown: Record<string, { revenue: number; count: number }> = {};
@@ -287,7 +361,7 @@ export async function GET(request: NextRequest) {
     // Calculate base session revenue (total session revenue - extensions - refills)
     // Note: Session priceCents already includes extension costs if updated via webhook
     // So we need to calculate base as: total session revenue - extension revenue - refill revenue
-    const totalSessionRevenue = sessions.reduce((sum, s) => sum + s.priceCents, 0) / 100;
+    const totalSessionRevenue = (totalRevenue._sum.priceCents || 0) / 100;
     const baseSessionRevenue = Math.max(0, totalSessionRevenue - extensionRevenue - refillRevenue);
 
     // Calculate percentages
@@ -309,8 +383,8 @@ export async function GET(request: NextRequest) {
         week: week / 100,
         month: month / 100,
         trend: trendData,
-        avgSessionValue: avgSessionValue / 100,
-        sessionCount: sessions.length,
+        avgSessionValue: (avgSessionValue._avg.priceCents || 0) / 100,
+        sessionCount: sessionCount,
         extensionRevenue,
         refillRevenue,
         baseSessionRevenue: Math.max(0, baseSessionRevenue),

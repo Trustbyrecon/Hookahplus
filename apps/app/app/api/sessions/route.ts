@@ -366,8 +366,9 @@ export async function POST(req: NextRequest) {
     
     // Escape values to prevent SQL injection
     const escapeSqlString = (val: any) => {
-      if (val === null || val === undefined) return 'NULL';
+      if (val === null || val === undefined || val === '') return 'NULL';
       if (typeof val === 'string') return `'${val.replace(/'/g, "''")}'`;
+      if (typeof val === 'boolean') return val ? 'true' : 'false';
       return val;
     };
     
@@ -413,14 +414,14 @@ export async function POST(req: NextRequest) {
         ${escapeSqlString(trustSignature)},
         ${escapeSqlString(tableId)},
         ${escapeSqlString(customerName)},
-        ${escapeSqlString(customerPhone)},
+        ${customerPhone ? escapeSqlString(customerPhone) : 'NULL'},
         ${escapeSqlString(finalFlavor)},
         ${finalFlavorMix ? `${escapeSqlString(finalFlavorMix)}` : 'NULL'},
         ${escapeSqlString(finalLoungeId)},
         ${finalPriceCents},
-        ${escapeSqlString(assignedStaff?.boh)},
-        ${escapeSqlString(assignedStaff?.foh)},
-        ${escapeSqlString(notes)},
+        ${assignedStaff?.boh ? escapeSqlString(assignedStaff.boh) : 'NULL'},
+        ${assignedStaff?.foh ? escapeSqlString(assignedStaff.foh) : 'NULL'},
+        ${notes ? escapeSqlString(notes) : 'NULL'},
         ${sessionDuration},
         NOW(),
         NOW(),
@@ -449,9 +450,9 @@ export async function POST(req: NextRequest) {
         ${finalFlavorMix ? `${escapeSqlString(finalFlavorMix)}` : 'NULL'},
         ${escapeSqlString(finalLoungeId)},
         ${finalPriceCents},
-        ${escapeSqlString(assignedStaff?.boh)},
-        ${escapeSqlString(assignedStaff?.foh)},
-        ${escapeSqlString(notes)},
+        ${assignedStaff?.boh ? escapeSqlString(assignedStaff.boh) : 'NULL'},
+        ${assignedStaff?.foh ? escapeSqlString(assignedStaff.foh) : 'NULL'},
+        ${notes ? escapeSqlString(notes) : 'NULL'},
         ${sessionDuration},
         NOW(),
         NOW()
@@ -541,6 +542,15 @@ export async function POST(req: NextRequest) {
         headers: getCorsHeaders(req),
       });
     } catch (sqlError: any) {
+      // Log the actual error for debugging
+      console.error('[Sessions API] Raw SQL error:', {
+        message: sqlError?.message,
+        code: sqlError?.code,
+        detail: sqlError?.detail,
+        hint: sqlError?.hint,
+        stack: sqlError?.stack
+      });
+      
       // Check if error is due to missing v1 columns (migration not run yet)
       const isMissingColumnError = sqlError?.message?.includes('does not exist') || 
                                    sqlError?.code === '42703' ||
