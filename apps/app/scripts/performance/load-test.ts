@@ -43,16 +43,25 @@ async function loadTestSessionCreation(
       const requestTime = performance.now() - requestStart;
       
       if (!response.ok) {
+        // P2: Print real error - surface response text/JSON
         let errorText = '';
+        let errorJson: any = null;
         try {
           errorText = await response.text();
+          try {
+            errorJson = JSON.parse(errorText);
+          } catch {
+            // Not JSON, use text as-is
+          }
         } catch {
           errorText = `HTTP ${response.status} - Could not read error body`;
         }
+        
+        const errorMessage = errorJson?.error || errorJson?.details || errorText || `${response.status} ${response.statusText}`;
         results.push({
           time: requestTime,
           success: false,
-          error: `HTTP ${response.status}: ${errorText.substring(0, 200)}`
+          error: `HTTP ${response.status}: ${errorMessage.substring(0, 300)}`
         });
         return;
       }

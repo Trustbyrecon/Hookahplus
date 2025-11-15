@@ -249,32 +249,40 @@ export async function POST(req: NextRequest) {
     console.log('[Sessions API] POST request received');
     
     body = await req.json();
-    const { 
-      tableId,
-      customerName,
-      customerPhone,
-      flavor,
-      amount,
-      assignedStaff,
-      notes,
-      sessionDuration = 45 * 60,
-      loungeId = 'default-lounge',
-      source: sourceInput = 'WALK_IN',
-      externalRef
-    } = body;
     
-    // Validate and normalize source (only valid SessionSource values)
+    // P0: Harden input coercion - normalize all inputs to safe types
+    // Normalize flavor: handle array, string, or comma-separated
+    const flavorArr = Array.isArray(body.flavor)
+      ? body.flavor.map((f: any) => String(f).trim()).filter(Boolean)
+      : body.flavor
+      ? String(body.flavor).split(',').map((s: string) => s.trim()).filter(Boolean)
+      : ['Custom Mix'];
+    
+    // Normalize source with validation
     const validSources = ['QR', 'RESERVE', 'WALK_IN', 'LEGACY_POS'];
-    const sourceValue = validSources.includes(sourceInput) ? sourceInput : 'WALK_IN';
+    const sourceValue = validSources.includes(body.source) ? body.source : 'WALK_IN';
     
-    if (sourceInput !== sourceValue) {
-      console.warn(`[Sessions API] Invalid source "${sourceInput}", defaulting to "WALK_IN"`);
-    }
-
-    // Simple validation - only required fields
-    if (!tableId || !customerName) {
+    // Normalize all fields with safe defaults
+    const data = {
+      tableId: String(body.tableId || '').trim(),
+      customerName: String(body.customerName || '').trim(),
+      customerPhone: body.customerPhone ? String(body.customerPhone).trim() : null,
+      source: sourceValue,
+      flavorMix: flavorArr,
+      notes: body.notes ? String(body.notes).trim() : null,
+      amount: Number.isFinite(body.amount) ? Number(body.amount) : null,
+      externalRef: body.externalRef ? String(body.externalRef).trim() : null,
+      loungeId: body.loungeId ? String(body.loungeId).trim() : 'default-lounge',
+      assignedBoh: body.assignedStaff?.boh ? String(body.assignedStaff.boh).trim() : null,
+      assignedFoh: body.assignedStaff?.foh ? String(body.assignedStaff.foh).trim() : null,
+      sessionDuration: Number.isFinite(body.sessionDuration) ? Number(body.sessionDuration) : 45 * 60,
+    };
+    
+    // Validate required fields
+    if (!data.tableId || !data.customerName) {
       return NextResponse.json({ 
-        error: 'Missing required fields: tableId and customerName are required' 
+        error: 'Missing required fields: tableId and customerName are required',
+        received: { tableId: !!data.tableId, customerName: !!data.customerName }
       }, { 
         status: 400,
         headers: getCorsHeaders(req),
@@ -282,16 +290,15 @@ export async function POST(req: NextRequest) {
     }
 
     // Generate externalRef for idempotency
-    const finalExternalRef = externalRef || `walk-in-${Date.now()}`;
-    const finalLoungeId = loungeId || 'default-lounge';
+    const finalExternalRef = data.externalRef || `${data.source.toLowerCase()}-${Date.now()}`;
+    const finalLoungeId = data.loungeId;
 
     // Check if session already exists for this table (simplified duplicate check)
-    // Use string literals to avoid runtime enum issues
     const existingSession = await prisma.session.findFirst({
       where: {
-        tableId: tableId,
+        tableId: data.tableId,
         state: {
-          notIn: ['CLOSED', 'CANCELED'] as any // Cast to any to avoid enum type issues
+          notIn: ['CLOSED', 'CANCELED'] as any
         }
       }
     });
@@ -317,38 +324,34 @@ export async function POST(req: NextRequest) {
 
     const trustSignature = seal({
       loungeId: finalLoungeId,
-      source: sourceValue,
+      source: data.source,
       externalRef: finalExternalRef,
-      customerPhone,
-      flavor
+      customerPhone: data.customerPhone,
+      flavor: data.flavorMix
     });
 
-    // sourceValue is already validated above
+    // Normalize price: if amount < 100, assume dollars; if >= 100, assume cents
+    const priceCents = data.amount 
+      ? (data.amount < 100 ? Math.round(data.amount * 100) : Math.round(data.amount))
+      : 3000;
 
-    // Create session in database
-    // Use explicit string casting to avoid enum serialization issues
-    // This works whether columns are enum or text type
+    // Create session in database with normalized data
     const sessionData: any = {
       loungeId: finalLoungeId,
       externalRef: finalExternalRef,
       trustSignature,
-      tableId,
-      customerRef: customerName,
-      customerPhone: customerPhone || undefined,
-      flavor: typeof flavor === 'string' ? flavor : (Array.isArray(flavor) ? flavor[0] : 'Custom Mix'),
-      flavorMix: typeof flavor === 'string' ? flavor : JSON.stringify(flavor),
-      priceCents: amount ? (amount < 1000 ? Math.round(amount * 100) : Math.round(amount)) : 3000,
-      assignedBOHId: assignedStaff?.boh || undefined,
-      assignedFOHId: assignedStaff?.foh || undefined,
-      tableNotes: notes || undefined,
-      durationSecs: sessionDuration,
-    };
-
-    // Handle enum fields - use string literals for reliable PostgreSQL enum casting
-    // PostgreSQL automatically casts strings to enum types, avoiding Prisma serialization issues
-    // This is the most reliable approach used by many production teams
-    sessionData.source = sourceValue; // String literal: 'QR', 'WALK_IN', etc.
-    sessionData.state = 'PENDING';    // String literal - PostgreSQL will cast to SessionState enum
+      tableId: data.tableId,
+      customerRef: data.customerName,
+      customerPhone: data.customerPhone, // null is fine
+      flavor: data.flavorMix[0] || 'Custom Mix', // First flavor for single flavor field
+      flavorMix: JSON.stringify(data.flavorMix), // Store as JSON string
+      priceCents,
+      assignedBOHId: data.assignedBoh, // null is fine
+      assignedFOHId: data.assignedFoh, // null is fine
+      tableNotes: data.notes, // null is fine
+      durationSecs: data.sessionDuration,
+      source: data.source, // Already validated
+      state: 'PENDING',
 
     // Log the data being sent for debugging
     console.log('[Sessions API] Creating session with data:', {
@@ -372,23 +375,10 @@ export async function POST(req: NextRequest) {
       return val;
     };
     
-    const finalFlavor = typeof flavor === 'string' ? flavor : (Array.isArray(flavor) ? flavor[0] : 'Custom Mix');
-    // flavorMix: Store as valid JSON string (works for both TEXT and JSONB columns)
-    // Always ensure it's valid JSON to avoid parsing errors
-    let finalFlavorMix: string | null;
-    if (flavor === null || flavor === undefined) {
-      finalFlavorMix = null;
-    } else if (typeof flavor === 'string') {
-      // If it's a string, wrap it in JSON quotes to make it valid JSON
-      finalFlavorMix = JSON.stringify(flavor); // e.g., "Custom Mix" becomes "\"Custom Mix\""
-    } else if (Array.isArray(flavor)) {
-      finalFlavorMix = JSON.stringify(flavor); // JSON array
-    } else if (typeof flavor === 'object') {
-      finalFlavorMix = JSON.stringify(flavor); // JSON object
-    } else {
-      finalFlavorMix = JSON.stringify('Custom Mix'); // Default: valid JSON string
-    }
-    const finalPriceCents = amount ? (amount < 1000 ? Math.round(amount * 100) : Math.round(amount)) : 3000;
+    // Use normalized data from above
+    const finalFlavor = data.flavorMix[0] || 'Custom Mix';
+    const finalFlavorMix = JSON.stringify(data.flavorMix);
+    const finalPriceCents = priceCents;
     
     // Map legacy state to v1 taxonomy (dual-write pattern)
     const legacyState = 'PENDING' as const; // New sessions start as PENDING
@@ -409,20 +399,20 @@ export async function POST(req: NextRequest) {
       ) VALUES (
         gen_random_uuid()::text,
         ${escapeSqlString(finalExternalRef)},
-        ${escapeSqlString(sourceValue)}::"SessionSource",
+        ${escapeSqlString(data.source)}::"SessionSource",
         'PENDING'::"SessionState",
         ${escapeSqlString(trustSignature)},
-        ${escapeSqlString(tableId)},
-        ${escapeSqlString(customerName)},
-        ${customerPhone ? escapeSqlString(customerPhone) : 'NULL'},
+        ${escapeSqlString(data.tableId)},
+        ${escapeSqlString(data.customerName)},
+        ${data.customerPhone ? escapeSqlString(data.customerPhone) : 'NULL'},
         ${escapeSqlString(finalFlavor)},
-        ${finalFlavorMix ? `${escapeSqlString(finalFlavorMix)}` : 'NULL'},
+        ${finalFlavorMix ? escapeSqlString(finalFlavorMix) : 'NULL'},
         ${escapeSqlString(finalLoungeId)},
         ${finalPriceCents},
-        ${assignedStaff?.boh ? escapeSqlString(assignedStaff.boh) : 'NULL'},
-        ${assignedStaff?.foh ? escapeSqlString(assignedStaff.foh) : 'NULL'},
-        ${notes ? escapeSqlString(notes) : 'NULL'},
-        ${sessionDuration},
+        ${data.assignedBoh ? escapeSqlString(data.assignedBoh) : 'NULL'},
+        ${data.assignedFoh ? escapeSqlString(data.assignedFoh) : 'NULL'},
+        ${data.notes ? escapeSqlString(data.notes) : 'NULL'},
+        ${data.sessionDuration},
         NOW(),
         NOW(),
         ${escapeSqlString(mappedState.state)},
@@ -440,20 +430,20 @@ export async function POST(req: NextRequest) {
       ) VALUES (
         gen_random_uuid()::text,
         ${escapeSqlString(finalExternalRef)},
-        ${escapeSqlString(sourceValue)}::"SessionSource",
+        ${escapeSqlString(data.source)}::"SessionSource",
         'PENDING'::"SessionState",
         ${escapeSqlString(trustSignature)},
-        ${escapeSqlString(tableId)},
-        ${escapeSqlString(customerName)},
-        ${escapeSqlString(customerPhone)},
+        ${escapeSqlString(data.tableId)},
+        ${escapeSqlString(data.customerName)},
+        ${data.customerPhone ? escapeSqlString(data.customerPhone) : 'NULL'},
         ${escapeSqlString(finalFlavor)},
-        ${finalFlavorMix ? `${escapeSqlString(finalFlavorMix)}` : 'NULL'},
+        ${finalFlavorMix ? escapeSqlString(finalFlavorMix) : 'NULL'},
         ${escapeSqlString(finalLoungeId)},
         ${finalPriceCents},
-        ${assignedStaff?.boh ? escapeSqlString(assignedStaff.boh) : 'NULL'},
-        ${assignedStaff?.foh ? escapeSqlString(assignedStaff.foh) : 'NULL'},
-        ${notes ? escapeSqlString(notes) : 'NULL'},
-        ${sessionDuration},
+        ${data.assignedBoh ? escapeSqlString(data.assignedBoh) : 'NULL'},
+        ${data.assignedFoh ? escapeSqlString(data.assignedFoh) : 'NULL'},
+        ${data.notes ? escapeSqlString(data.notes) : 'NULL'},
+        ${data.sessionDuration},
         NOW(),
         NOW()
       ) RETURNING *
@@ -476,11 +466,11 @@ export async function POST(req: NextRequest) {
             sessionId: newSession.id,
             status: 'success',
             details: {
-              tableId,
-              source: sourceValue,
+              tableId: data.tableId,
+              source: data.source,
               loungeId: finalLoungeId,
-              customerName,
-              customerPhone,
+              customerName: data.customerName,
+              customerPhone: data.customerPhone,
               flavor: finalFlavor,
               priceCents: finalPriceCents,
               method: 'raw_sql'
@@ -727,13 +717,27 @@ export async function POST(req: NextRequest) {
         });
       }
       
-      return NextResponse.json({ 
-        error: 'Internal server error',
+      // P0: Emit error bodies so test runner shows real causes
+      const errorResponse: any = {
+        error: error instanceof Error ? error.message : 'Internal server error',
         details: errorMessage,
-        ...(process.env.NODE_ENV === 'development' ? { 
-          stack: error instanceof Error ? error.stack : undefined 
-        } : {})
-      }, {
+      };
+      
+      // Include stack in development
+      if (process.env.NODE_ENV === 'development') {
+        errorResponse.stack = error instanceof Error ? error.stack : undefined;
+      }
+      
+      // Include request context for debugging
+      if (body) {
+        errorResponse.requestContext = {
+          tableId: body.tableId,
+          customerName: body.customerName,
+          source: body.source,
+        };
+      }
+      
+      return NextResponse.json(errorResponse, {
         status: 500,
         headers: getCorsHeaders(req),
       });
