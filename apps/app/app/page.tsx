@@ -89,6 +89,17 @@ export default function LandingPage() {
               </p>
             </div>
 
+            {/* Server Status Indicator */}
+            <div className="mb-8">
+              <Link href="/status">
+                <div className="inline-flex items-center space-x-2 px-4 py-2 bg-green-500/20 border border-green-500/50 rounded-lg hover:bg-green-500/30 transition-colors">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <span className="text-sm text-green-400 font-medium">Server Running</span>
+                  <span className="text-xs text-zinc-400">Click to view status</span>
+                </div>
+              </Link>
+            </div>
+
             {/* Primary CTA Group */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-12">
               <Link href="/preorder/T-001">
