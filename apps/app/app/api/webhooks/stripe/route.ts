@@ -250,7 +250,7 @@ async function handleSessionExtension(
     }
 
     // Validate session can still be extended (might have changed since checkout)
-    const { convertPrismaSessionToFireSession } = await import('../../sessions/route');
+    const { convertPrismaSessionToFireSession } = await import('../../../../lib/session-utils-prisma');
     const fireSession = convertPrismaSessionToFireSession(dbSession);
     const { canExtendSession } = await import('../../../../lib/session-utils');
     
