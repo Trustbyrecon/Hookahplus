@@ -26,34 +26,42 @@ export async function GET(request: NextRequest) {
       whereClause.loungeId = loungeId;
     }
 
-    // Step 1: QR Scans (sessions with source = 'QR')
-    const qrScans = await prisma.session.count({
-      where: {
-        ...whereClause,
-        source: 'QR'
-      }
-    });
+    // Run all count queries in parallel for better performance
+    const [
+      qrScans,
+      sessionsCreated,
+      paymentsCompleted,
+      sessionsCompleted
+    ] = await Promise.all([
+      // Step 1: QR Scans (sessions with source = 'QR')
+      prisma.session.count({
+        where: {
+          ...whereClause,
+          source: 'QR'
+        }
+      }),
 
-    // Step 2: Sessions Created (all sessions)
-    const sessionsCreated = await prisma.session.count({
-      where: whereClause
-    });
+      // Step 2: Sessions Created (all sessions)
+      prisma.session.count({
+        where: whereClause
+      }),
 
-    // Step 3: Payments Completed (sessions with paymentStatus = 'succeeded')
-    const paymentsCompleted = await prisma.session.count({
-      where: {
-        ...whereClause,
-        paymentStatus: 'succeeded'
-      }
-    });
+      // Step 3: Payments Completed (sessions with paymentStatus = 'succeeded')
+      prisma.session.count({
+        where: {
+          ...whereClause,
+          paymentStatus: 'succeeded'
+        }
+      }),
 
-    // Step 4: Sessions Completed (sessions with state = 'CLOSED')
-    const sessionsCompleted = await prisma.session.count({
-      where: {
-        ...whereClause,
-        state: 'CLOSED'
-      }
-    });
+      // Step 4: Sessions Completed (sessions with state = 'CLOSED')
+      prisma.session.count({
+        where: {
+          ...whereClause,
+          state: 'CLOSED'
+        }
+      })
+    ]);
 
     // Calculate conversion rates
     const conversionRates = {
@@ -71,21 +79,35 @@ export async function GET(request: NextRequest) {
     };
 
     // Calculate time-to-conversion metrics
-    // Get sessions that completed the full funnel
-    const completedSessions = await prisma.session.findMany({
-      where: {
-        ...whereClause,
-        source: 'QR',
-        paymentStatus: 'succeeded',
-        state: 'CLOSED',
-        createdAt: { not: null },
-        startedAt: { not: null }
-      },
-      select: {
-        createdAt: true,
-        startedAt: true
-      }
-    });
+    // Get sessions that completed the full funnel (run in parallel with conversionBySource)
+    const [completedSessions, conversionBySource] = await Promise.all([
+      prisma.session.findMany({
+        where: {
+          ...whereClause,
+          source: 'QR',
+          paymentStatus: 'succeeded',
+          state: 'CLOSED',
+          createdAt: { not: null },
+          startedAt: { not: null }
+        },
+        select: {
+          createdAt: true,
+          startedAt: true
+        }
+      }),
+      // Get conversion by source
+      prisma.session.groupBy({
+        by: ['source'],
+        where: {
+          ...whereClause,
+          paymentStatus: 'succeeded',
+          state: 'CLOSED'
+        },
+        _count: {
+          id: true
+        }
+      })
+    ]);
 
     let avgTimeToPayment = 0;
     let avgTimeToComplete = 0;
@@ -120,18 +142,6 @@ export async function GET(request: NextRequest) {
         : 0;
     }
 
-    // Get conversion by source
-    const conversionBySource = await prisma.session.groupBy({
-      by: ['source'],
-      where: {
-        ...whereClause,
-        paymentStatus: 'succeeded',
-        state: 'CLOSED'
-      },
-      _count: {
-        id: true
-      }
-    });
 
     const sourceBreakdown = conversionBySource.map(source => ({
       source: source.source || 'UNKNOWN',

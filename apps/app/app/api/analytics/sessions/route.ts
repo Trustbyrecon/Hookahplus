@@ -26,99 +26,111 @@ export async function GET(request: NextRequest) {
       whereClause.loungeId = loungeId;
     }
 
-    // Get session counts by state
-    const sessionsByState = await prisma.session.groupBy({
-      by: ['state'],
-      where: whereClause,
-      _count: {
-        id: true
-      }
-    });
-
-    // Get total sessions
-    const totalSessions = await prisma.session.count({
-      where: whereClause
-    });
-
-    // Get active sessions
-    const activeSessions = await prisma.session.count({
-      where: {
-        ...whereClause,
-        state: {
-          in: ['ACTIVE', 'PREP_IN_PROGRESS', 'READY_FOR_DELIVERY', 'DELIVERED']
+    // Run all queries in parallel for better performance
+    const [
+      sessionsByState,
+      totalSessions,
+      activeSessions,
+      completedSessions,
+      revenueResult,
+      extensionEvents,
+      refillEvents,
+      avgDurationResult,
+      sessionsBySource
+    ] = await Promise.all([
+      // Get session counts by state
+      prisma.session.groupBy({
+        by: ['state'],
+        where: whereClause,
+        _count: {
+          id: true
         }
-      }
-    });
+      }),
 
-    // Get completed sessions
-    const completedSessions = await prisma.session.count({
-      where: {
-        ...whereClause,
-        state: 'CLOSED'
-      }
-    });
+      // Get total sessions
+      prisma.session.count({
+        where: whereClause
+      }),
 
-    // Get revenue (sum of priceCents)
-    const revenueResult = await prisma.session.aggregate({
-      where: {
-        ...whereClause,
-        paymentStatus: 'succeeded'
-      },
-      _sum: {
-        priceCents: true
-      }
-    });
+      // Get active sessions
+      prisma.session.count({
+        where: {
+          ...whereClause,
+          state: {
+            in: ['ACTIVE', 'PREP_IN_PROGRESS', 'READY_FOR_DELIVERY', 'DELIVERED']
+          }
+        }
+      }),
+
+      // Get completed sessions
+      prisma.session.count({
+        where: {
+          ...whereClause,
+          state: 'CLOSED'
+        }
+      }),
+
+      // Get revenue (sum of priceCents)
+      prisma.session.aggregate({
+        where: {
+          ...whereClause,
+          paymentStatus: 'succeeded'
+        },
+        _sum: {
+          priceCents: true
+        }
+      }),
+
+      // Get extension events
+      prisma.reflexEvent.count({
+        where: {
+          type: 'session.extended',
+          createdAt: {
+            gte: cutoffDate
+          }
+        }
+      }),
+
+      // Get refill events
+      prisma.reflexEvent.count({
+        where: {
+          type: {
+            in: ['session.refill_requested', 'session.refill_completed']
+          },
+          createdAt: {
+            gte: cutoffDate
+          }
+        }
+      }),
+
+      // Calculate average session duration
+      prisma.session.aggregate({
+        where: {
+          ...whereClause,
+          state: 'CLOSED',
+          durationSecs: {
+            not: null
+          }
+        },
+        _avg: {
+          durationSecs: true
+        }
+      }),
+
+      // Get sessions by source
+      prisma.session.groupBy({
+        by: ['source'],
+        where: whereClause,
+        _count: {
+          id: true
+        }
+      })
+    ]);
 
     const revenue = (revenueResult._sum.priceCents || 0) / 100; // Convert cents to dollars
-
-    // Get extension events
-    const extensionEvents = await prisma.reflexEvent.count({
-      where: {
-        type: 'session.extended',
-        createdAt: {
-          gte: cutoffDate
-        }
-      }
-    });
-
-    // Get refill events
-    const refillEvents = await prisma.reflexEvent.count({
-      where: {
-        type: {
-          in: ['session.refill_requested', 'session.refill_completed']
-        },
-        createdAt: {
-          gte: cutoffDate
-        }
-      }
-    });
-
-    // Calculate average session duration
-    const avgDurationResult = await prisma.session.aggregate({
-      where: {
-        ...whereClause,
-        state: 'CLOSED',
-        durationSecs: {
-          not: null
-        }
-      },
-      _avg: {
-        durationSecs: true
-      }
-    });
-
     const avgDurationMinutes = avgDurationResult._avg.durationSecs 
       ? Math.round((avgDurationResult._avg.durationSecs / 60) * 10) / 10 
       : 0;
-
-    // Get sessions by source
-    const sessionsBySource = await prisma.session.groupBy({
-      by: ['source'],
-      where: whereClause,
-      _count: {
-        id: true
-      }
-    });
 
     return NextResponse.json({
       success: true,

@@ -28,20 +28,26 @@ async function createTestSessions(
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tableId: `T-TIMER-${i}`,
-          customerRef: `TimerTest-${i}`,
-          flavorMix: 'Mint',
+          customerName: `TimerTest-${i}`, // API expects customerName, not customerRef
+          flavor: 'Mint', // API expects flavor, not flavorMix
           source: 'QR'
         })
       });
 
       if (response.ok) {
         const data = await response.json();
-        if (data.session?.id || data.id) {
-          sessionIds.push(data.session?.id || data.id);
+        const sessionId = data.session?.id || data.id || data.sessionId;
+        if (sessionId) {
+          sessionIds.push(sessionId);
+        } else {
+          console.warn(`Session ${i} created but no ID returned:`, Object.keys(data));
         }
+      } else {
+        const errorText = await response.text().catch(() => 'Unknown error');
+        console.warn(`Failed to create session ${i}: HTTP ${response.status} - ${errorText.substring(0, 100)}`);
       }
-    } catch (error) {
-      console.warn(`Failed to create session ${i}:`, error);
+    } catch (error: any) {
+      console.warn(`Failed to create session ${i}:`, error.message || error);
     }
   }
 
@@ -54,19 +60,21 @@ async function activateSessions(
 ): Promise<void> {
   // Activate sessions by transitioning them to ACTIVE state
   // This simulates the full flow: NEW → PAID → PREP → DELIVERED → ACTIVE
+  // For performance tests, we'll use the PATCH endpoint to update state directly
   for (const sessionId of sessionIds) {
     try {
-      // Simulate quick activation (skip actual payment for test)
-      await fetch(`${baseUrl}/api/sessions/${sessionId}/transition`, {
+      // Use PATCH /api/sessions to update state directly
+      await fetch(`${baseUrl}/api/sessions`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          sessionId: sessionId,
           action: 'START_ACTIVE',
           userRole: 'ADMIN'
         })
       });
     } catch (error) {
-      // Ignore errors for test sessions
+      // Ignore errors for test sessions - they may not all activate
     }
   }
 }
@@ -79,8 +87,10 @@ async function testTimerPerformance(
   const sessionIds = await createTestSessions(baseUrl, sessionCount);
   
   if (sessionIds.length === 0) {
-    throw new Error('Failed to create test sessions');
+    throw new Error(`Failed to create any test sessions (attempted ${sessionCount})`);
   }
+  
+  console.log(`  Created ${sessionIds.length}/${sessionCount} sessions`);
 
   console.log(`Activating ${sessionIds.length} sessions...`);
   await activateSessions(baseUrl, sessionIds);

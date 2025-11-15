@@ -37,7 +37,7 @@ async function testEndpoint(
     const response = await fetch(`${baseUrl}${endpoint}`, options);
     const responseTime = performance.now() - startTime;
     
-    // Try to read response (but don't wait for full body)
+    // Read response body to ensure request completes
     try {
       await response.text();
     } catch {

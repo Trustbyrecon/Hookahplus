@@ -34,8 +34,8 @@ async function loadTestSessionCreation(
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tableId: `T-LOAD-${index}`,
-          customerRef: `LoadTest-${index}`,
-          flavorMix: 'Mint',
+          customerName: `LoadTest-${index}`, // API expects customerName, not customerRef
+          flavor: 'Mint', // API expects flavor, not flavorMix
           source: 'QR'
         })
       });
@@ -43,19 +43,35 @@ async function loadTestSessionCreation(
       const requestTime = performance.now() - requestStart;
       
       if (!response.ok) {
-        const errorText = await response.text();
+        let errorText = '';
+        try {
+          errorText = await response.text();
+        } catch {
+          errorText = `HTTP ${response.status} - Could not read error body`;
+        }
         results.push({
           time: requestTime,
           success: false,
-          error: `HTTP ${response.status}: ${errorText.substring(0, 100)}`
+          error: `HTTP ${response.status}: ${errorText.substring(0, 200)}`
         });
         return;
       }
 
-      const data = await response.json();
+      let data: any;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        results.push({
+          time: requestTime,
+          success: false,
+          error: 'Failed to parse JSON response'
+        });
+        return;
+      }
+
       results.push({
         time: requestTime,
-        success: data.success !== false
+        success: data.success !== false && (data.session || data.id)
       });
     } catch (error: any) {
       const requestTime = performance.now() - requestStart;
@@ -78,9 +94,9 @@ async function loadTestSessionCreation(
   return {
     concurrency,
     totalTime: endTime - startTime,
-    avgTime: times.reduce((sum, t) => sum + t, 0) / times.length,
-    minTime: Math.min(...times),
-    maxTime: Math.max(...times),
+    avgTime: times.length > 0 ? times.reduce((sum, t) => sum + t, 0) / times.length : 0,
+    minTime: times.length > 0 ? Math.min(...times) : 0,
+    maxTime: times.length > 0 ? Math.max(...times) : 0,
     successCount,
     errorCount,
     errors: [...new Set(errors)] // Unique errors
