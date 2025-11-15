@@ -754,10 +754,11 @@ export default function SimpleFSDDesign({
               </button>
               <button
                 onClick={async () => {
-                  // Find sessions that need payment confirmation (NEW/PENDING status only - PAID_CONFIRMED means already paid)
+                  // Find sessions that need payment confirmation (NEW status only - PAID_CONFIRMED means already paid)
+                  // Note: 'PENDING' is not a SessionStatus - it gets mapped to 'NEW' or 'PAID_CONFIRMED' by getSessionStatus
                   const unpaidSessions = sessions.filter(s => {
                     const status = getSessionStatus(s);
-                    return status === 'NEW' || status === 'PENDING';
+                    return status === 'NEW';
                   });
                   
                   if (unpaidSessions.length === 0) {
