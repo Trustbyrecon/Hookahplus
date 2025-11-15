@@ -166,7 +166,7 @@ export async function POST(req: Request) {
           status: 'PAID_CONFIRMED' as const,
           flavorMix: flavorMix || undefined,
           tableId: tableId || undefined,
-          source: (existingSession.source || 'QR') as const,
+          source: (existingSession.source || SessionSource.QR) as SessionSource,
           notes: existingSession.tableNotes || undefined,
         };
         await initializeReflexChain(fireSession as any);
