@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { DollarSign, TrendingUp, Calendar, Users } from 'lucide-react';
+import { DollarSign, TrendingUp, Calendar, Users, Clock, Coffee } from 'lucide-react';
 import MetricCard from './dashboard/MetricCard';
 
 interface RevenueMetricsProps {
@@ -10,6 +10,8 @@ interface RevenueMetricsProps {
   month: number;
   avgSessionValue: number;
   sessionCount: number;
+  extensionRevenue?: number;
+  refillRevenue?: number;
   className?: string;
 }
 
@@ -19,6 +21,8 @@ const RevenueMetrics: React.FC<RevenueMetricsProps> = ({
   month,
   avgSessionValue,
   sessionCount,
+  extensionRevenue = 0,
+  refillRevenue = 0,
   className,
 }) => {
   return (
@@ -45,6 +49,22 @@ const RevenueMetrics: React.FC<RevenueMetricsProps> = ({
         icon={<Calendar className="w-6 h-6" />}
         color="text-purple-400"
         bgColor="bg-purple-500/20"
+      />
+      
+      <MetricCard
+        title="Extension Revenue"
+        value={`$${extensionRevenue.toFixed(2)}`}
+        icon={<Clock className="w-6 h-6" />}
+        color="text-orange-400"
+        bgColor="bg-orange-500/20"
+      />
+      
+      <MetricCard
+        title="Refill Revenue"
+        value={`$${refillRevenue.toFixed(2)}`}
+        icon={<Coffee className="w-6 h-6" />}
+        color="text-cyan-400"
+        bgColor="bg-cyan-500/20"
       />
       
       <MetricCard

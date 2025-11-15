@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -44,6 +44,9 @@ export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState('7d');
   const [viewMode, setViewMode] = useState('overview');
   const [showDetails, setShowDetails] = useState(false);
+  const [analytics, setAnalytics] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const timeRanges = [
     { value: '24h', label: '24 Hours' },
@@ -61,42 +64,95 @@ export default function AnalyticsPage() {
     { value: 'performance', label: 'Performance', icon: <Activity className="w-4 h-4" /> }
   ];
 
-  // Mock analytics data
-  const analytics = {
-    revenue: {
-      total: 45680,
-      change: 12.5,
-      daily: 6526,
-      hourly: 272
-    },
-    sessions: {
-      total: 234,
-      active: 12,
-      completed: 198,
-      cancelled: 24,
-      avgDuration: 85
-    },
-    customers: {
-      total: 1890,
-      new: 45,
-      returning: 1445,
-      vip: 23,
-      avgSpend: 24.15
-    },
-    performance: {
-      avgWaitTime: 18,
-      tableTurnover: 2.3,
-      staffEfficiency: 87,
-      customerSatisfaction: 4.6
+  // Convert time range to window days
+  const getWindowDays = (range: string): number => {
+    switch (range) {
+      case '24h': return 1;
+      case '7d': return 7;
+      case '30d': return 30;
+      case '90d': return 90;
+      case '1y': return 365;
+      default: return 7;
     }
   };
 
-  const keyMetrics: MetricData[] = [
+  // Fetch analytics data
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const windowDays = getWindowDays(timeRange);
+        
+        const [sessionsRes, conversionRes, retentionRes] = await Promise.all([
+          fetch(`/api/analytics/sessions?windowDays=${windowDays}`),
+          fetch(`/api/analytics/conversion?windowDays=${windowDays}`),
+          fetch(`/api/analytics/retention?windowDays=${windowDays}`)
+        ]);
+
+        if (!sessionsRes.ok || !conversionRes.ok || !retentionRes.ok) {
+          throw new Error('Failed to fetch analytics data');
+        }
+
+        const [sessionsData, conversionData, retentionData] = await Promise.all([
+          sessionsRes.json(),
+          conversionRes.json(),
+          retentionRes.json()
+        ]);
+
+        if (!sessionsData.success || !conversionData.success || !retentionData.success) {
+          throw new Error('Analytics API returned error');
+        }
+
+        // Combine data into analytics object
+        setAnalytics({
+          revenue: {
+            total: sessionsData.metrics?.revenue || 0,
+            change: 0, // TODO: Calculate change from previous period
+            daily: sessionsData.metrics?.revenue || 0,
+            hourly: (sessionsData.metrics?.revenue || 0) / (windowDays * 24)
+          },
+          sessions: {
+            total: sessionsData.metrics?.totalSessions || 0,
+            active: sessionsData.metrics?.activeSessions || 0,
+            completed: sessionsData.metrics?.completedSessions || 0,
+            cancelled: 0, // TODO: Add cancelled count
+            avgDuration: sessionsData.metrics?.avgDurationMinutes || 0
+          },
+          customers: {
+            total: retentionData.metrics?.totalCustomers || 0,
+            new: (retentionData.metrics?.totalCustomers || 0) - (retentionData.metrics?.repeatCustomers || 0),
+            returning: retentionData.metrics?.repeatCustomers || 0,
+            vip: retentionData.vipCustomers?.length || 0,
+            avgSpend: retentionData.metrics?.avgCLV || 0
+          },
+          performance: {
+            avgWaitTime: 0, // TODO: Calculate from session data
+            tableTurnover: 0, // TODO: Calculate from session data
+            staffEfficiency: 0, // TODO: Calculate from session data
+            customerSatisfaction: 0 // TODO: Calculate from feedback data
+          },
+          conversion: conversionData,
+          retention: retentionData
+        });
+      } catch (err) {
+        console.error('Error fetching analytics:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load analytics');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnalytics();
+  }, [timeRange]);
+
+  const keyMetrics: MetricData[] = analytics ? [
     {
       label: 'Total Revenue',
       value: analytics.revenue.total,
       change: analytics.revenue.change,
-      changeType: 'increase',
+      changeType: analytics.revenue.change >= 0 ? 'increase' : 'decrease',
       format: 'currency',
       icon: <DollarSign className="w-5 h-5" />,
       color: 'text-green-400'
@@ -104,8 +160,8 @@ export default function AnalyticsPage() {
     {
       label: 'Active Sessions',
       value: analytics.sessions.active,
-      change: -2.1,
-      changeType: 'decrease',
+      change: 0, // TODO: Calculate change
+      changeType: 'neutral',
       format: 'number',
       icon: <Flame className="w-5 h-5" />,
       color: 'text-orange-400'
@@ -113,8 +169,8 @@ export default function AnalyticsPage() {
     {
       label: 'Total Customers',
       value: analytics.customers.total,
-      change: 8.3,
-      changeType: 'increase',
+      change: 0, // TODO: Calculate change
+      changeType: 'neutral',
       format: 'number',
       icon: <Users className="w-5 h-5" />,
       color: 'text-blue-400'
@@ -122,13 +178,13 @@ export default function AnalyticsPage() {
     {
       label: 'Avg. Session Duration',
       value: analytics.sessions.avgDuration,
-      change: 5.2,
-      changeType: 'increase',
+      change: 0, // TODO: Calculate change
+      changeType: 'neutral',
       format: 'time',
       icon: <Clock className="w-5 h-5" />,
       color: 'text-purple-400'
     }
-  ];
+  ] : [];
 
   const formatValue = (value: number, format: string) => {
     switch (format) {
@@ -681,8 +737,55 @@ export default function AnalyticsPage() {
           </div>
 
           <div className="flex items-center space-x-2">
-            <Button variant="outline">
-              <RefreshCw className="w-4 h-4" />
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setLoading(true);
+                const windowDays = getWindowDays(timeRange);
+                Promise.all([
+                  fetch(`/api/analytics/sessions?windowDays=${windowDays}`).then(r => r.json()),
+                  fetch(`/api/analytics/conversion?windowDays=${windowDays}`).then(r => r.json()),
+                  fetch(`/api/analytics/retention?windowDays=${windowDays}`).then(r => r.json())
+                ]).then(([sessionsData, conversionData, retentionData]) => {
+                  setAnalytics({
+                    revenue: {
+                      total: sessionsData.metrics?.revenue || 0,
+                      change: 0,
+                      daily: sessionsData.metrics?.revenue || 0,
+                      hourly: (sessionsData.metrics?.revenue || 0) / (windowDays * 24)
+                    },
+                    sessions: {
+                      total: sessionsData.metrics?.totalSessions || 0,
+                      active: sessionsData.metrics?.activeSessions || 0,
+                      completed: sessionsData.metrics?.completedSessions || 0,
+                      cancelled: 0,
+                      avgDuration: sessionsData.metrics?.avgDurationMinutes || 0
+                    },
+                    customers: {
+                      total: retentionData.metrics?.totalCustomers || 0,
+                      new: (retentionData.metrics?.totalCustomers || 0) - (retentionData.metrics?.repeatCustomers || 0),
+                      returning: retentionData.metrics?.repeatCustomers || 0,
+                      vip: retentionData.vipCustomers?.length || 0,
+                      avgSpend: retentionData.metrics?.avgCLV || 0
+                    },
+                    performance: {
+                      avgWaitTime: 0,
+                      tableTurnover: 0,
+                      staffEfficiency: 0,
+                      customerSatisfaction: 0
+                    },
+                    conversion: conversionData,
+                    retention: retentionData
+                  });
+                  setLoading(false);
+                }).catch(err => {
+                  setError(err.message);
+                  setLoading(false);
+                });
+              }}
+              disabled={loading}
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
             <Button variant="outline">
@@ -710,8 +813,139 @@ export default function AnalyticsPage() {
           ))}
         </div>
 
+        {/* Loading State */}
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <RefreshCw className="w-12 h-12 text-teal-400 animate-spin mx-auto mb-4" />
+              <p className="text-zinc-400">Loading analytics data...</p>
+            </div>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && !loading && (
+          <Card className="p-6 mb-6 border-red-500/30 bg-red-500/10">
+            <div className="flex items-center gap-2 text-red-400">
+              <AlertTriangle className="w-5 h-5" />
+              <span className="text-lg font-semibold">Error:</span>
+              <span>{error}</span>
+            </div>
+          </Card>
+        )}
+
         {/* Content */}
-        {renderContent()}
+        {!loading && !error && analytics && renderContent()}
+
+        {/* Conversion Funnel Section (in Overview) */}
+        {!loading && !error && analytics && analytics.conversion && viewMode === 'overview' && (
+          <div className="mt-8">
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold text-white mb-4">Conversion Funnel</h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg">
+                  <div>
+                    <p className="text-white font-medium">QR Scans</p>
+                    <p className="text-sm text-zinc-400">{analytics.conversion.funnel?.qrScans || 0} scans</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-teal-400 font-semibold">100%</p>
+                    <p className="text-xs text-zinc-500">Entry point</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg">
+                  <div>
+                    <p className="text-white font-medium">Sessions Created</p>
+                    <p className="text-sm text-zinc-400">{analytics.conversion.funnel?.sessionsCreated || 0} sessions</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-blue-400 font-semibold">
+                      {analytics.conversion.conversionRates?.scanToCreate?.toFixed(1) || 0}%
+                    </p>
+                    <p className="text-xs text-zinc-500">Conversion rate</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg">
+                  <div>
+                    <p className="text-white font-medium">Payments Completed</p>
+                    <p className="text-sm text-zinc-400">{analytics.conversion.funnel?.paymentsCompleted || 0} payments</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-green-400 font-semibold">
+                      {analytics.conversion.conversionRates?.createToPayment?.toFixed(1) || 0}%
+                    </p>
+                    <p className="text-xs text-zinc-500">Conversion rate</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg">
+                  <div>
+                    <p className="text-white font-medium">Sessions Completed</p>
+                    <p className="text-sm text-zinc-400">{analytics.conversion.funnel?.sessionsCompleted || 0} completed</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-purple-400 font-semibold">
+                      {analytics.conversion.conversionRates?.overall?.toFixed(1) || 0}%
+                    </p>
+                    <p className="text-xs text-zinc-500">Overall conversion</p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* Retention Metrics Section (in Customers view) */}
+        {!loading && !error && analytics && analytics.retention && viewMode === 'customers' && (
+          <div className="mt-8">
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold text-white mb-4">Retention Metrics</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="bg-zinc-800/50 rounded-lg p-4">
+                  <p className="text-sm text-zinc-400 mb-2">Repeat Customer Rate</p>
+                  <p className="text-2xl font-bold text-white">
+                    {analytics.retention.metrics?.repeatCustomerRate?.toFixed(1) || 0}%
+                  </p>
+                  <p className="text-xs text-zinc-500 mt-1">
+                    {analytics.retention.metrics?.repeatCustomers || 0} of {analytics.retention.metrics?.totalCustomers || 0} customers
+                  </p>
+                </div>
+                <div className="bg-zinc-800/50 rounded-lg p-4">
+                  <p className="text-sm text-zinc-400 mb-2">Avg. Customer Lifetime Value</p>
+                  <p className="text-2xl font-bold text-teal-400">
+                    ${analytics.retention.metrics?.avgCLV?.toFixed(2) || 0}
+                  </p>
+                  <p className="text-xs text-zinc-500 mt-1">Per customer</p>
+                </div>
+                <div className="bg-zinc-800/50 rounded-lg p-4">
+                  <p className="text-sm text-zinc-400 mb-2">30-Day Retention Rate</p>
+                  <p className="text-2xl font-bold text-purple-400">
+                    {analytics.retention.metrics?.retentionRate30Days?.toFixed(1) || 0}%
+                  </p>
+                  <p className="text-xs text-zinc-500 mt-1">Customers returning</p>
+                </div>
+              </div>
+              {analytics.retention.vipCustomers && analytics.retention.vipCustomers.length > 0 && (
+                <div>
+                  <h4 className="text-md font-semibold text-white mb-3">VIP Customers (Top 10%)</h4>
+                  <div className="space-y-2">
+                    {analytics.retention.vipCustomers.slice(0, 5).map((vip: any, index: number) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg">
+                        <div>
+                          <p className="text-white font-medium">{vip.customerId}</p>
+                          <p className="text-sm text-zinc-400">{vip.sessionCount} sessions</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-teal-400 font-semibold">${vip.revenue.toFixed(2)}</p>
+                          <p className="text-xs text-zinc-500">Lifetime value</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -15,10 +15,20 @@ interface RevenueData {
   trend: Array<{ date: string; revenue: number; sessions: number }>;
   avgSessionValue: number;
   sessionCount: number;
+  extensionRevenue?: number;
+  refillRevenue?: number;
+  baseSessionRevenue?: number;
+  revenueComposition?: {
+    base: { revenue: number; percentage: number };
+    extensions: { revenue: number; percentage: number };
+    refills: { revenue: number; percentage: number };
+  };
   breakdown: {
     byFlavor: Array<{ flavor: string; revenue: number; count: number }>;
     byTable: Array<{ table: string; revenue: number; count: number }>;
     byTimeOfDay: Array<{ period: string; revenue: number; count: number }>;
+    byExtensionDuration?: Array<{ duration: string; revenue: number; count: number }>;
+    byRefillType?: Array<{ type: string; revenue: number; count: number }>;
   };
 }
 
@@ -80,6 +90,9 @@ export default function RevenuePage() {
       ['Month Revenue', `$${revenueData.month.toFixed(2)}`],
       ['Average Session Value', `$${revenueData.avgSessionValue.toFixed(2)}`],
       ['Total Sessions', revenueData.sessionCount.toString()],
+      ['Extension Revenue', `$${(revenueData.extensionRevenue || 0).toFixed(2)}`],
+      ['Refill Revenue', `$${(revenueData.refillRevenue || 0).toFixed(2)}`],
+      ['Base Session Revenue', `$${(revenueData.baseSessionRevenue || 0).toFixed(2)}`],
       [],
       ['Date', 'Revenue', 'Sessions'],
       ...revenueData.trend.map((item) => [
@@ -109,6 +122,25 @@ export default function RevenuePage() {
         item.count.toString(),
       ]),
     ];
+
+    // Add extension and refill breakdowns if available
+    if (revenueData.breakdown.byExtensionDuration && revenueData.breakdown.byExtensionDuration.length > 0) {
+      csvRows.push([], ['Extension Duration', 'Revenue', 'Count']);
+      csvRows.push(...revenueData.breakdown.byExtensionDuration.map((item) => [
+        item.duration,
+        `$${item.revenue.toFixed(2)}`,
+        item.count.toString(),
+      ]));
+    }
+
+    if (revenueData.breakdown.byRefillType && revenueData.breakdown.byRefillType.length > 0) {
+      csvRows.push([], ['Refill Type', 'Revenue', 'Count']);
+      csvRows.push(...revenueData.breakdown.byRefillType.map((item) => [
+        item.type,
+        `$${item.revenue.toFixed(2)}`,
+        item.count.toString(),
+      ]));
+    }
 
     const csvContent = csvRows.map((row) => row.join(',')).join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -190,12 +222,52 @@ export default function RevenuePage() {
               month={revenueData.month}
               avgSessionValue={revenueData.avgSessionValue}
               sessionCount={revenueData.sessionCount}
+              extensionRevenue={revenueData.extensionRevenue || 0}
+              refillRevenue={revenueData.refillRevenue || 0}
               className="mb-6"
             />
 
             <RevenueChart data={revenueData.trend} className="mb-6" />
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Revenue Composition */}
+            {revenueData.revenueComposition && (
+              <Card className="p-6 mb-6">
+                <h3 className="text-lg font-semibold text-white mb-4">
+                  Revenue Composition
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-zinc-800/50 rounded-lg p-4">
+                    <div className="text-sm text-zinc-400 mb-2">Base Sessions</div>
+                    <div className="text-2xl font-bold text-white mb-1">
+                      ${revenueData.revenueComposition.base.revenue.toFixed(2)}
+                    </div>
+                    <div className="text-xs text-zinc-500">
+                      {revenueData.revenueComposition.base.percentage.toFixed(1)}% of total
+                    </div>
+                  </div>
+                  <div className="bg-zinc-800/50 rounded-lg p-4">
+                    <div className="text-sm text-zinc-400 mb-2">Extensions</div>
+                    <div className="text-2xl font-bold text-orange-400 mb-1">
+                      ${revenueData.revenueComposition.extensions.revenue.toFixed(2)}
+                    </div>
+                    <div className="text-xs text-zinc-500">
+                      {revenueData.revenueComposition.extensions.percentage.toFixed(1)}% of total
+                    </div>
+                  </div>
+                  <div className="bg-zinc-800/50 rounded-lg p-4">
+                    <div className="text-sm text-zinc-400 mb-2">Refills</div>
+                    <div className="text-2xl font-bold text-cyan-400 mb-1">
+                      ${revenueData.revenueComposition.refills.revenue.toFixed(2)}
+                    </div>
+                    <div className="text-xs text-zinc-500">
+                      {revenueData.revenueComposition.refills.percentage.toFixed(1)}% of total
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
               {/* Revenue by Flavor */}
               <Card className="p-6">
                 <h3 className="text-lg font-semibold text-white mb-4">
@@ -283,6 +355,75 @@ export default function RevenuePage() {
                 </div>
               </Card>
             </div>
+
+            {/* Extension and Refill Breakdowns */}
+            {(revenueData.breakdown.byExtensionDuration || revenueData.breakdown.byRefillType) && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Revenue by Extension Duration */}
+                {revenueData.breakdown.byExtensionDuration && revenueData.breakdown.byExtensionDuration.length > 0 && (
+                  <Card className="p-6">
+                    <h3 className="text-lg font-semibold text-white mb-4">
+                      Extension Revenue by Duration
+                    </h3>
+                    <div className="space-y-3">
+                      {revenueData.breakdown.byExtensionDuration
+                        .filter(item => item.count > 0)
+                        .sort((a, b) => b.revenue - a.revenue)
+                        .map((item) => (
+                          <div
+                            key={item.duration}
+                            className="flex items-center justify-between p-3 bg-zinc-800 rounded-lg"
+                          >
+                            <div>
+                              <div className="text-white font-medium">
+                                {item.duration}
+                              </div>
+                              <div className="text-sm text-zinc-400">
+                                {item.count} extensions
+                              </div>
+                            </div>
+                            <div className="text-orange-400 font-semibold">
+                              ${item.revenue.toFixed(2)}
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </Card>
+                )}
+
+                {/* Revenue by Refill Type */}
+                {revenueData.breakdown.byRefillType && revenueData.breakdown.byRefillType.length > 0 && (
+                  <Card className="p-6">
+                    <h3 className="text-lg font-semibold text-white mb-4">
+                      Refill Revenue by Type
+                    </h3>
+                    <div className="space-y-3">
+                      {revenueData.breakdown.byRefillType
+                        .filter(item => item.count > 0)
+                        .sort((a, b) => b.revenue - a.revenue)
+                        .map((item) => (
+                          <div
+                            key={item.type}
+                            className="flex items-center justify-between p-3 bg-zinc-800 rounded-lg"
+                          >
+                            <div>
+                              <div className="text-white font-medium capitalize">
+                                {item.type}
+                              </div>
+                              <div className="text-sm text-zinc-400">
+                                {item.count} refills
+                              </div>
+                            </div>
+                            <div className="text-cyan-400 font-semibold">
+                              ${item.revenue.toFixed(2)}
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </Card>
+                )}
+              </div>
+            )}
           </>
         )}
       </div>

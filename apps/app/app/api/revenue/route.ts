@@ -173,6 +173,135 @@ export async function GET(request: NextRequest) {
       })
     );
 
+    // Calculate extension revenue from ReflexEvent
+    const extensionEvents = await prisma.reflexEvent.findMany({
+      where: {
+        type: 'session.extended',
+        createdAt: {
+          gte: start,
+          lte: end,
+        },
+      },
+      select: {
+        payload: true,
+        createdAt: true,
+      },
+    });
+
+    let extensionRevenue = 0;
+    const extensionByDuration: Record<string, { revenue: number; count: number }> = {
+      '15min': { revenue: 0, count: 0 },
+      '30min': { revenue: 0, count: 0 },
+      '45min': { revenue: 0, count: 0 },
+      '60min': { revenue: 0, count: 0 },
+    };
+
+    extensionEvents.forEach((event) => {
+      try {
+        const payload = typeof event.payload === 'string' ? JSON.parse(event.payload) : event.payload;
+        const cost = payload?.extensionCost || 0;
+        const minutes = payload?.extensionMinutes || 0;
+        
+        extensionRevenue += cost;
+        
+        // Categorize by duration
+        if (minutes <= 15) {
+          extensionByDuration['15min'].revenue += cost;
+          extensionByDuration['15min'].count += 1;
+        } else if (minutes <= 30) {
+          extensionByDuration['30min'].revenue += cost;
+          extensionByDuration['30min'].count += 1;
+        } else if (minutes <= 45) {
+          extensionByDuration['45min'].revenue += cost;
+          extensionByDuration['45min'].count += 1;
+        } else {
+          extensionByDuration['60min'].revenue += cost;
+          extensionByDuration['60min'].count += 1;
+        }
+      } catch (e) {
+        console.warn('[Revenue API] Failed to parse extension event payload:', e);
+      }
+    });
+
+    const extensionByDurationArray = Object.entries(extensionByDuration).map(
+      ([duration, data]) => ({
+        duration,
+        revenue: data.revenue,
+        count: data.count,
+      })
+    );
+
+    // Calculate refill revenue from ReflexEvent
+    const refillEvents = await prisma.reflexEvent.findMany({
+      where: {
+        type: {
+          in: ['session.refill_requested', 'session.refill_completed'],
+        },
+        createdAt: {
+          gte: start,
+          lte: end,
+        },
+      },
+      select: {
+        type: true,
+        payload: true,
+        createdAt: true,
+      },
+    });
+
+    let refillRevenue = 0;
+    const refillByType: Record<string, { revenue: number; count: number }> = {
+      'coal': { revenue: 0, count: 0 },
+      'flavor': { revenue: 0, count: 0 },
+      'full': { revenue: 0, count: 0 },
+    };
+
+    refillEvents.forEach((event) => {
+      if (event.type === 'session.refill_completed') {
+        try {
+          const payload = typeof event.payload === 'string' ? JSON.parse(event.payload) : event.payload;
+          const cost = payload?.refillCost || payload?.cost || 0;
+          const refillType = payload?.refillType || payload?.type || 'full';
+          
+          refillRevenue += cost;
+          
+          // Categorize by type
+          const typeKey = refillType.toLowerCase().includes('coal') ? 'coal' :
+                         refillType.toLowerCase().includes('flavor') ? 'flavor' : 'full';
+          refillByType[typeKey].revenue += cost;
+          refillByType[typeKey].count += 1;
+        } catch (e) {
+          console.warn('[Revenue API] Failed to parse refill event payload:', e);
+        }
+      }
+    });
+
+    const refillByTypeArray = Object.entries(refillByType).map(
+      ([type, data]) => ({
+        type,
+        revenue: data.revenue,
+        count: data.count,
+      })
+    );
+
+    // Calculate base session revenue (total session revenue - extensions - refills)
+    // Note: Session priceCents already includes extension costs if updated via webhook
+    // So we need to calculate base as: total session revenue - extension revenue - refill revenue
+    const totalSessionRevenue = sessions.reduce((sum, s) => sum + s.priceCents, 0) / 100;
+    const baseSessionRevenue = Math.max(0, totalSessionRevenue - extensionRevenue - refillRevenue);
+
+    // Calculate percentages
+    const totalWithExtensions = totalSessionRevenue + extensionRevenue + refillRevenue;
+    const extensionPercentage = totalWithExtensions > 0 
+      ? (extensionRevenue / totalWithExtensions) * 100 
+      : 0;
+    const refillPercentage = totalWithExtensions > 0 
+      ? (refillRevenue / totalWithExtensions) * 100 
+      : 0;
+    const basePercentage = totalWithExtensions > 0 
+      ? (baseSessionRevenue / totalWithExtensions) * 100 
+      : 0;
+
     return NextResponse.json({
       success: true,
       data: {
@@ -182,10 +311,29 @@ export async function GET(request: NextRequest) {
         trend: trendData,
         avgSessionValue: avgSessionValue / 100,
         sessionCount: sessions.length,
+        extensionRevenue,
+        refillRevenue,
+        baseSessionRevenue: Math.max(0, baseSessionRevenue),
+        revenueComposition: {
+          base: {
+            revenue: Math.max(0, baseSessionRevenue),
+            percentage: basePercentage,
+          },
+          extensions: {
+            revenue: extensionRevenue,
+            percentage: extensionPercentage,
+          },
+          refills: {
+            revenue: refillRevenue,
+            percentage: refillPercentage,
+          },
+        },
         breakdown: {
           byFlavor: flavorBreakdownArray,
           byTable: tableBreakdownArray,
           byTimeOfDay: timeBreakdownArray,
+          byExtensionDuration: extensionByDurationArray,
+          byRefillType: refillByTypeArray,
         },
       },
     });
