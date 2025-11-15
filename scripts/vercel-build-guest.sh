@@ -1,15 +1,67 @@
 #!/bin/bash
+# Vercel build script for guest - only builds if guest-related files changed
+# This script should be used in Vercel's "Ignored Build Step" setting
 
-# Vercel Ignored Build Step for Guest App
-# Exit 0 to skip, exit 1 to build
+set -e
 
-CHANGED_FILES=$(git diff --name-only "$VERCEL_GIT_PREVIOUS_SHA" "$VERCEL_GIT_COMMIT_SHA")
+# Get the list of changed files in this commit
+CHANGED_FILES=$(git diff --name-only HEAD^ HEAD 2>/dev/null || echo "")
 
-# Check if any files relevant to Guest app have changed
-if echo "$CHANGED_FILES" | grep -Eq '^(apps/guest/|packages/|turbo.json|package.json|pnpm-lock.yaml|yarn.lock|package-lock.json)$'; then
-  echo "Guest app relevant changes detected → building"
-  exit 1  # build
-else
-  echo "No Guest app relevant changes → skipping build"
-  exit 0  # skip build
+# If no changed files detected (first commit or manual deploy), build anyway
+if [ -z "$CHANGED_FILES" ]; then
+  echo "No changed files detected, building guest..."
+  exit 1  # Build (exit 1 = don't ignore)
 fi
+
+# Directories that should trigger guest build
+GUEST_TRIGGER_PATTERNS=(
+  "apps/guest/"
+  "apps/shared/"
+  "packages/"
+  "turbo.json"
+  "package.json"
+  "tsconfig.json"
+)
+
+# Check if any changed file matches guest trigger patterns
+for file in $CHANGED_FILES; do
+  for pattern in "${GUEST_TRIGGER_PATTERNS[@]}"; do
+    if [[ "$file" == *"$pattern"* ]]; then
+      echo "Guest-related file changed: $file"
+      echo "Building guest..."
+      exit 1  # Build (exit 1 = don't ignore)
+    fi
+  done
+done
+
+# Check if only unrelated files changed
+UNRELATED_PATTERNS=(
+  "apps/app/"
+  "apps/site/"
+  "apps/app/prisma/"
+  "docs/"
+  "*.md"
+  ".gitignore"
+  "README"
+)
+
+ONLY_UNRELATED=true
+for file in $CHANGED_FILES; do
+  MATCHED=false
+  for pattern in "${UNRELATED_PATTERNS[@]}"; do
+    if [[ "$file" == *"$pattern"* ]]; then
+      MATCHED=true
+      break
+    fi
+  done
+  if [ "$MATCHED" = false ]; then
+    echo "Potentially guest-related file changed: $file"
+    echo "Building guest to be safe..."
+    exit 1  # Build
+  fi
+done
+
+# Only unrelated files changed, skip build
+echo "No guest-related changes detected. Skipping build."
+echo "Changed files: $CHANGED_FILES"
+exit 0  # Ignore build (exit 0 = ignore)
