@@ -9,7 +9,9 @@ import {
   Server,
   Database,
   Clock,
-  Zap
+  Zap,
+  Power,
+  RotateCw
 } from 'lucide-react';
 import { Card } from '../../components';
 
@@ -26,6 +28,7 @@ export default function StatusPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastChecked, setLastChecked] = useState<Date>(new Date());
+  const [restarting, setRestarting] = useState(false);
 
   const fetchHealth = async () => {
     try {
@@ -43,6 +46,34 @@ export default function StatusPage() {
       setHealth(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRestart = async () => {
+    if (!confirm('⚠️ This will stop the server. You will need to restart it manually.\n\nContinue?')) {
+      return;
+    }
+
+    try {
+      setRestarting(true);
+      const response = await fetch('/api/server/restart', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        alert(`✅ Server stopped successfully!\n\n${data.instructions?.join('\n') || 'Please restart manually with: npm run dev'}`);
+      } else {
+        alert(`⚠️ ${data.error || 'Failed to restart server'}\n\n${data.note || ''}`);
+      }
+    } catch (err: any) {
+      alert(`❌ Error: ${err.message || 'Failed to restart server'}`);
+    } finally {
+      setRestarting(false);
     }
   };
 
@@ -93,14 +124,25 @@ export default function StatusPage() {
                 </p>
               </div>
             </div>
-            <button
-              onClick={fetchHealth}
-              disabled={loading}
-              className="px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:bg-zinc-700 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center space-x-2"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              <span>Refresh</span>
-            </button>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={fetchHealth}
+                disabled={loading}
+                className="px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:bg-zinc-700 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center space-x-2"
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                <span>Refresh</span>
+              </button>
+              <button
+                onClick={handleRestart}
+                disabled={restarting || loading}
+                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-zinc-700 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center space-x-2"
+                title="Stop server (requires manual restart)"
+              >
+                <RotateCw className={`w-4 h-4 ${restarting ? 'animate-spin' : ''}`} />
+                <span>{restarting ? 'Stopping...' : 'Restart'}</span>
+              </button>
+            </div>
           </div>
 
           {/* Status Details */}

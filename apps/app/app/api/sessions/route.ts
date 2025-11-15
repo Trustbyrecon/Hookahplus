@@ -352,6 +352,7 @@ export async function POST(req: NextRequest) {
       durationSecs: data.sessionDuration,
       source: data.source, // Already validated
       state: 'PENDING',
+    };
 
     // Log the data being sent for debugging
     console.log('[Sessions API] Creating session with data:', {
