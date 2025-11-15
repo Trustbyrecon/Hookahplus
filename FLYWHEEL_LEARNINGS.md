@@ -42,10 +42,24 @@
 
 ---
 
-### 3. **TypeScript Const Assertions**
-**Pattern:** `as const` only works on literals, not expressions.
+### 3. **TypeScript Type Narrowing**
+**Pattern:** TypeScript narrows types in conditional blocks, making some comparisons impossible.
 
 **Key Insight:**
+```typescript
+// ❌ Wrong - inside conditional, TypeScript narrows type
+{pricingModel === 'time-based' && (
+  <div>{pricingModel === 'flat' ? '$30' : '$50'}</div> 
+  // Error: can't be 'flat' here (type narrowed to 'time-based')
+)}
+
+// ✅ Right - don't check narrowed type
+{pricingModel === 'time-based' && (
+  <div>{`$${(duration * 0.50).toFixed(2)}`}</div> // Just show time-based price
+)}
+```
+
+**Also:**
 ```typescript
 // ❌ Wrong - expression result
 source: (existingSession.source || 'QR') as const
@@ -58,11 +72,14 @@ source: (existingSession.source || SessionSource.QR) as SessionSource
 - Use proper enum types instead of string literals
 - Type assertions should match the actual type
 - Leverage Prisma enums for type safety
+- Don't check against narrowed types inside conditional blocks
+- Understand TypeScript's control flow analysis
 
 **Impact:**
 - Better type safety
 - Fewer runtime errors
 - Clearer intent in code
+- Prevents impossible comparisons
 
 ---
 

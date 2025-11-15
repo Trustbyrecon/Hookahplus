@@ -314,7 +314,7 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
                   >
                     <div className="font-medium">{duration.label}</div>
                     <div className="text-xs text-zinc-400">
-                      {pricingModel === 'flat' ? '$30.00' : `$${(duration.value * 0.50).toFixed(2)}`}
+                      {`$${(duration.value * 0.50).toFixed(2)}`}
                     </div>
                   </button>
                 ))}
