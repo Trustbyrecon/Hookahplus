@@ -9,7 +9,8 @@ import { prisma } from '../../../../lib/db';
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const windowDays = parseInt(searchParams.get('windowDays') || '7', 10);
+    // P0: Cap windowDays to max 31 days to prevent slow queries
+    const windowDays = Math.min(parseInt(searchParams.get('windowDays') || '7', 10), 31);
     const loungeId = searchParams.get('loungeId');
 
     const cutoffDate = new Date();

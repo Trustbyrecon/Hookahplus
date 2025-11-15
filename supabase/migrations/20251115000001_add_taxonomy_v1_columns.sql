@@ -176,6 +176,7 @@ COMMENT ON TABLE public."TaxonomyUnknown" IS 'Tracks unknown enum values for tax
 -- ============================================================================
 
 -- Helper function to upsert unknown taxonomy values
+-- SECURITY: Set search_path to prevent search_path injection attacks
 CREATE OR REPLACE FUNCTION public.taxonomy_unknown_upsert(
   p_enum_type TEXT,
   p_raw_label TEXT,
@@ -183,6 +184,8 @@ CREATE OR REPLACE FUNCTION public.taxonomy_unknown_upsert(
   p_example_payload JSONB DEFAULT NULL
 ) RETURNS VOID
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
 AS $$
 BEGIN
   INSERT INTO public."TaxonomyUnknown" (enum_type, raw_label, example_event_id, example_payload)

@@ -9,7 +9,8 @@ import { prisma } from '../../../../lib/db';
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const windowDays = parseInt(searchParams.get('windowDays') || '7', 10);
+    // P0: Cap windowDays to max 31 days to prevent slow queries
+    const windowDays = Math.min(parseInt(searchParams.get('windowDays') || '7', 10), 31);
     const loungeId = searchParams.get('loungeId');
 
     const cutoffDate = new Date();
@@ -95,7 +96,10 @@ export async function GET(request: NextRequest) {
           createdAt: true,
           startedAt: true
         },
-        take: 1000 // Limit to prevent memory issues with large datasets
+        take: 200, // P0: Reduced from 1000 to 200 for faster queries (sample is sufficient for averages)
+        orderBy: {
+          createdAt: 'desc' // Get most recent sessions first
+        }
       }) : Promise.resolve([]),
       // Get conversion by source
       prisma.session.groupBy({

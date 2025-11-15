@@ -19,12 +19,26 @@ if (process.env.NODE_ENV !== "production") {
   }
 }
 
-// Create PrismaClient instance
+// Create PrismaClient instance with optimized connection pool settings
 // The dotenv loading above ensures DATABASE_URL is available
 const globalForPrisma = global as unknown as { prisma?: PrismaClient };
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient({ log: ["error"] });
+// P0: Optimize PrismaClient for high concurrency
+// - Connection pool settings are controlled via DATABASE_URL (?connection_limit=30&pool_timeout=10)
+// - Prisma automatically uses these settings from the connection string
+const prismaInstance = globalForPrisma.prisma ?? new PrismaClient({ 
+  log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+});
+
+// P0: PrismaClient automatically uses connection pool settings from DATABASE_URL
+// Connection pooling is handled by Prisma internally via the connection string parameters:
+// - connection_limit=30: Max 30 concurrent connections
+// - pool_timeout=10: 10 second timeout for acquiring a connection
+// No additional retry wrapper needed - Prisma handles connection management internally
+const prisma = prismaInstance;
 
 if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
+  globalForPrisma.prisma = prismaInstance;
 }
+
+export { prisma };

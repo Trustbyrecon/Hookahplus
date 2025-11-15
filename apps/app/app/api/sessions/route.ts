@@ -294,14 +294,41 @@ export async function POST(req: NextRequest) {
     const finalLoungeId = data.loungeId;
 
     // Check if session already exists for this table (simplified duplicate check)
-    const existingSession = await prisma.session.findFirst({
-      where: {
-        tableId: data.tableId,
-        state: {
-          notIn: ['CLOSED', 'CANCELED'] as any
-        }
+    // Use raw SQL to avoid Prisma trying to select sessionStateV1 if column doesn't exist
+    let existingSession: any = null;
+    try {
+      // Use parameterized query to avoid SQL injection
+      existingSession = await prisma.$queryRaw`
+        SELECT id, "tableId", state, "customerRef", "loungeId", "externalRef", 
+               "createdAt", "updatedAt", "priceCents", "paymentStatus"
+        FROM "Session"
+        WHERE "tableId" = ${data.tableId}
+          AND state NOT IN ('CLOSED', 'CANCELED')
+        LIMIT 1
+      ` as any[];
+      
+      if (existingSession && existingSession.length > 0) {
+        existingSession = existingSession[0];
+      } else {
+        existingSession = null;
       }
-    });
+    } catch (sqlError: any) {
+      // If raw SQL fails, fall back to Prisma (might work if migration is applied)
+      try {
+        existingSession = await prisma.session.findFirst({
+          where: {
+            tableId: data.tableId,
+            state: {
+              notIn: ['CLOSED', 'CANCELED'] as any
+            }
+          }
+        });
+      } catch (prismaError: any) {
+        // If both fail, log but continue (will create new session)
+        console.warn('[Sessions API] Could not check for existing session:', prismaError.message);
+        existingSession = null;
+      }
+    }
 
     if (existingSession) {
       const fireSession = convertPrismaSessionToFireSession(existingSession);

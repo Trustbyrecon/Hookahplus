@@ -46,7 +46,10 @@ function updateDatabaseUrl() {
       
       // Add connection pool parameters
       const separator = url.includes('?') ? '&' : '?';
-      const newUrl = `${url}${separator}connection_limit=15&pool_timeout=5`;
+      // P0: Increase connection pool for high concurrency (100 concurrent requests)
+      // - connection_limit=30: Support up to 30 concurrent connections (was 15)
+      // - pool_timeout=10: 10 second timeout (was 5) to handle connection acquisition delays
+      const newUrl = `${url}${separator}connection_limit=30&pool_timeout=10`;
       
       updated = true;
       console.log('📝 Updated DATABASE_URL:');
@@ -80,8 +83,8 @@ function updateDatabaseUrl() {
   console.log('   1. Restart your dev server (Ctrl+C, then npm run dev)');
   console.log('   2. Re-run performance tests to verify improvements');
   console.log('\n📊 Connection Pool Settings:');
-  console.log('   - connection_limit=15: Max 15 concurrent connections');
-  console.log('   - pool_timeout=5: 5 second timeout for getting a connection');
+    console.log('   - connection_limit=30: Max 30 concurrent connections (increased for load testing)');
+    console.log('   - pool_timeout=10: 10 second timeout for getting a connection (increased for reliability)');
 }
 
 updateDatabaseUrl();

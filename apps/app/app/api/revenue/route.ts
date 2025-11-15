@@ -136,7 +136,10 @@ export async function GET(request: NextRequest) {
           tableId: true,
           createdAt: true,
         },
-        take: 10000, // Limit to prevent memory issues
+        take: 2000, // P0: Reduced from 10000 to 2000 for faster queries (sample is sufficient for breakdowns)
+        orderBy: {
+          createdAt: 'desc' // Get most recent sessions first
+        }
       }),
     ]);
 

@@ -24,12 +24,37 @@ interface PerformanceReport {
   };
 }
 
+function parseArgs() {
+  const args: { base?: string; concurrency?: string } = {};
+  
+  for (let i = 0; i < process.argv.length; i++) {
+    if (process.argv[i] === '--base' && process.argv[i + 1]) {
+      args.base = process.argv[i + 1];
+      i++; // Skip next arg as it's the value
+    } else if (process.argv[i] === '--concurrency' && process.argv[i + 1]) {
+      args.concurrency = process.argv[i + 1];
+      i++; // Skip next arg as it's the value
+    } else if (process.argv[i].startsWith('--base=')) {
+      args.base = process.argv[i].split('=')[1];
+    } else if (process.argv[i].startsWith('--concurrency=')) {
+      args.concurrency = process.argv[i].split('=')[1];
+    }
+  }
+  
+  return args;
+}
+
 async function runAllTests(): Promise<PerformanceReport> {
-  const baseUrl = process.env.BASE_URL || process.argv[2] || 'http://localhost:3002';
+  const parsedArgs = parseArgs();
+  const baseUrl = process.env.BASE_URL || parsedArgs.base || process.argv[2] || 'http://localhost:3002';
+  const concurrencyArg = parsedArgs.concurrency || process.env.CONCURRENCY || '10,50,100';
+  const concurrencyLevels = concurrencyArg.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n));
+  
   const startTime = performance.now();
 
   console.log('🚀 Running All Performance Tests');
   console.log(`Base URL: ${baseUrl}`);
+  console.log(`Concurrency levels: ${concurrencyLevels.join(', ')}`);
   console.log(`Started at: ${new Date().toISOString()}\n`);
   console.log('='.repeat(70));
 
@@ -51,8 +76,9 @@ async function runAllTests(): Promise<PerformanceReport> {
   console.log('\n📦 Phase 1: Load Tests');
   console.log('-'.repeat(70));
   try {
-    const concurrencyLevels = [10, 50, 100];
-    for (const concurrency of concurrencyLevels) {
+    // Use parsed concurrency levels or default
+    const levelsToTest = concurrencyLevels.length > 0 ? concurrencyLevels : [10, 50, 100];
+    for (const concurrency of levelsToTest) {
       const result = await loadTestSessionCreation(concurrency, baseUrl);
       report.loadTests.push(result);
       console.log(`✅ ${concurrency} concurrent: ${result.successCount}/${concurrency} success`);

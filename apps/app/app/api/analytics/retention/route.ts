@@ -9,7 +9,8 @@ import { prisma } from '../../../../lib/db';
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const windowDays = parseInt(searchParams.get('windowDays') || '30', 10);
+    // P0: Cap windowDays to max 31 days to prevent slow queries
+    const windowDays = Math.min(parseInt(searchParams.get('windowDays') || '30', 10), 31);
     const loungeId = searchParams.get('loungeId');
 
     const cutoffDate = new Date();
@@ -27,68 +28,75 @@ export async function GET(request: NextRequest) {
       whereClause.loungeId = loungeId;
     }
 
-    // Get all sessions with customer info
-    const sessions = await prisma.session.findMany({
-      where: whereClause,
-      select: {
-        id: true,
-        customerRef: true,
-        customerPhone: true,
-        priceCents: true,
-        createdAt: true,
-        state: true
-      }
-    });
-
-    // Group sessions by customer (use customerRef or customerPhone as identifier)
-    const customerMap = new Map<string, {
-      sessions: typeof sessions;
-      totalRevenue: number;
-      sessionCount: number;
-      firstSessionDate: Date;
-      lastSessionDate: Date;
-    }>();
-
-    sessions.forEach(session => {
-      // Use customerRef if available, otherwise customerPhone, otherwise 'anonymous'
-      const customerId = session.customerRef || session.customerPhone || `anonymous_${session.id}`;
+    // P0: Use database aggregations instead of fetching all sessions
+    // This is MUCH faster for large datasets
+    const [
+      totalSessions,
+      totalRevenue,
+      sessionsByCustomer
+    ] = await Promise.all([
+      // Total session count
+      prisma.session.count({
+        where: whereClause
+      }),
       
-      if (!customerMap.has(customerId)) {
-        customerMap.set(customerId, {
-          sessions: [],
-          totalRevenue: 0,
-          sessionCount: 0,
-          firstSessionDate: new Date(session.createdAt),
-          lastSessionDate: new Date(session.createdAt)
-        });
-      }
-
-      const customer = customerMap.get(customerId)!;
-      customer.sessions.push(session);
-      customer.totalRevenue += session.priceCents || 0;
-      customer.sessionCount += 1;
+      // Total revenue
+      prisma.session.aggregate({
+        where: whereClause,
+        _sum: { priceCents: true }
+      }),
       
-      const sessionDate = new Date(session.createdAt);
-      if (sessionDate < customer.firstSessionDate) {
-        customer.firstSessionDate = sessionDate;
-      }
-      if (sessionDate > customer.lastSessionDate) {
-        customer.lastSessionDate = sessionDate;
-      }
-    });
+      // Group by customer (using raw SQL for better performance)
+      loungeId 
+        ? prisma.$queryRaw`
+            SELECT 
+              COALESCE("customerRef", "customerPhone", CONCAT('anonymous_', id)) as customer_id,
+              COUNT(*) as session_count,
+              SUM("priceCents") as total_revenue,
+              MIN("createdAt") as first_session,
+              MAX("createdAt") as last_session
+            FROM "Session"
+            WHERE "createdAt" >= ${cutoffDate}
+              AND "paymentStatus" = 'succeeded'
+              AND "loungeId" = ${loungeId}
+            GROUP BY customer_id
+            LIMIT 5000
+          ` as any[]
+        : prisma.$queryRaw`
+            SELECT 
+              COALESCE("customerRef", "customerPhone", CONCAT('anonymous_', id)) as customer_id,
+              COUNT(*) as session_count,
+              SUM("priceCents") as total_revenue,
+              MIN("createdAt") as first_session,
+              MAX("createdAt") as last_session
+            FROM "Session"
+            WHERE "createdAt" >= ${cutoffDate}
+              AND "paymentStatus" = 'succeeded'
+            GROUP BY customer_id
+            LIMIT 5000
+          ` as any[]
+    ]);
 
-    // Calculate metrics
-    const totalCustomers = customerMap.size;
-    const repeatCustomers = Array.from(customerMap.values()).filter(c => c.sessionCount > 1);
+    // Process aggregated customer data
+    const customers = (sessionsByCustomer || []).map((row: any) => ({
+      customerId: String(row.customer_id),
+      sessionCount: parseInt(String(row.session_count), 10),
+      totalRevenue: parseInt(String(row.total_revenue || 0), 10),
+      firstSessionDate: new Date(row.first_session),
+      lastSessionDate: new Date(row.last_session)
+    }));
+
+    // Calculate metrics from aggregated data
+    const totalCustomers = customers.length;
+    const repeatCustomers = customers.filter(c => c.sessionCount > 1);
     const repeatCustomerRate = totalCustomers > 0 
       ? (repeatCustomers.length / totalCustomers) * 100 
       : 0;
 
     // Calculate Customer Lifetime Value (CLV)
-    const totalRevenue = Array.from(customerMap.values())
-      .reduce((sum, c) => sum + c.totalRevenue, 0);
+    const totalRevenueCents = totalRevenue._sum.priceCents || 0;
     const avgCLV = totalCustomers > 0 
-      ? (totalRevenue / totalCustomers) / 100 // Convert cents to dollars
+      ? (totalRevenueCents / totalCustomers) / 100 // Convert cents to dollars
       : 0;
 
     // Calculate retention rates (customers who returned within different time periods)
@@ -103,18 +111,17 @@ export async function GET(request: NextRequest) {
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
     // Customers with session in last 30 days
-    const recentCustomers = Array.from(customerMap.values()).filter(c => 
+    const recentCustomers = customers.filter(c => 
       c.lastSessionDate >= thirtyDaysAgo
     );
 
-    // Customers with session 30-60 days ago who also had one in last 30 days
-    const retained30Days = Array.from(customerMap.values()).filter(c => {
-      const hadSession30to60DaysAgo = c.sessions.some(s => {
-        const sessionDate = new Date(s.createdAt);
-        return sessionDate >= sixtyDaysAgo && sessionDate < thirtyDaysAgo;
-      });
+    // For retention calculation, we need to check if customers had sessions in both periods
+    // Since we only have aggregated data, we'll use a simplified approach:
+    // Customers who had their first session 30-60 days ago and last session in last 30 days
+    const retained30Days = customers.filter(c => {
+      const firstSessionInWindow = c.firstSessionDate >= sixtyDaysAgo && c.firstSessionDate < thirtyDaysAgo;
       const hadRecentSession = c.lastSessionDate >= thirtyDaysAgo;
-      return hadSession30to60DaysAgo && hadRecentSession;
+      return firstSessionInWindow && hadRecentSession && c.sessionCount > 1;
     });
 
     const retentionRate30Days = recentCustomers.length > 0
@@ -122,13 +129,13 @@ export async function GET(request: NextRequest) {
       : 0;
 
     // Identify VIP customers (top 10% by revenue)
-    const customersByRevenue = Array.from(customerMap.entries())
-      .map(([id, data]) => ({
-        customerId: id,
-        revenue: data.totalRevenue / 100, // Convert to dollars
-        sessionCount: data.sessionCount,
-        firstSession: data.firstSessionDate,
-        lastSession: data.lastSessionDate
+    const customersByRevenue = customers
+      .map(c => ({
+        customerId: c.customerId,
+        revenue: c.totalRevenue / 100, // Convert to dollars
+        sessionCount: c.sessionCount,
+        firstSession: c.firstSessionDate,
+        lastSession: c.lastSessionDate
       }))
       .sort((a, b) => b.revenue - a.revenue);
 
@@ -137,21 +144,20 @@ export async function GET(request: NextRequest) {
 
     // Calculate average sessions per customer
     const avgSessionsPerCustomer = totalCustomers > 0
-      ? sessions.length / totalCustomers
+      ? totalSessions / totalCustomers
       : 0;
 
     // Calculate average days between sessions for repeat customers
+    // Simplified: use first and last session dates for customers with multiple sessions
     let avgDaysBetweenSessions = 0;
     if (repeatCustomers.length > 0) {
       const daysBetweenSessions: number[] = [];
       repeatCustomers.forEach(customer => {
-        const sortedSessions = customer.sessions
-          .map(s => new Date(s.createdAt))
-          .sort((a, b) => a.getTime() - b.getTime());
-        
-        for (let i = 1; i < sortedSessions.length; i++) {
-          const days = (sortedSessions[i].getTime() - sortedSessions[i - 1].getTime()) / (1000 * 60 * 60 * 24);
-          daysBetweenSessions.push(days);
+        if (customer.sessionCount > 1) {
+          const days = (customer.lastSessionDate.getTime() - customer.firstSessionDate.getTime()) / (1000 * 60 * 60 * 24);
+          // Average days between sessions = total days / (session count - 1)
+          const avgDays = days / (customer.sessionCount - 1);
+          daysBetweenSessions.push(avgDays);
         }
       });
 
@@ -180,9 +186,9 @@ export async function GET(request: NextRequest) {
       })),
       breakdown: {
         bySessionCount: {
-          single: Array.from(customerMap.values()).filter(c => c.sessionCount === 1).length,
+          single: customers.filter(c => c.sessionCount === 1).length,
           repeat: repeatCustomers.length,
-          frequent: Array.from(customerMap.values()).filter(c => c.sessionCount >= 5).length
+          frequent: customers.filter(c => c.sessionCount >= 5).length
         }
       },
       windowDays
