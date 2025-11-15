@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
         }
       }),
 
-      // Calculate average session duration
+      // Calculate average session duration (only for closed sessions with duration)
       prisma.session.aggregate({
         where: {
           ...whereClause,
@@ -114,6 +114,9 @@ export async function GET(request: NextRequest) {
         },
         _avg: {
           durationSecs: true
+        },
+        _count: {
+          id: true
         }
       }),
 

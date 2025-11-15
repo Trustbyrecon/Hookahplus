@@ -80,8 +80,9 @@ export async function GET(request: NextRequest) {
 
     // Calculate time-to-conversion metrics
     // Get sessions that completed the full funnel (run in parallel with conversionBySource)
+    // Only fetch if we have QR sessions to avoid unnecessary queries
     const [completedSessions, conversionBySource] = await Promise.all([
-      prisma.session.findMany({
+      qrScans > 0 ? prisma.session.findMany({
         where: {
           ...whereClause,
           source: 'QR',
@@ -93,8 +94,9 @@ export async function GET(request: NextRequest) {
         select: {
           createdAt: true,
           startedAt: true
-        }
-      }),
+        },
+        take: 1000 // Limit to prevent memory issues with large datasets
+      }) : Promise.resolve([]),
       // Get conversion by source
       prisma.session.groupBy({
         by: ['source'],
