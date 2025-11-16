@@ -871,6 +871,21 @@ export async function POST(req: NextRequest) {
       }
       
       // P0: Emit error bodies so test runner shows real causes
+      // Check if this is a validation error that was already handled
+      if (errorMessage.includes('Missing required fields')) {
+        // This error was already handled by validation - don't override it
+        // The validation error response should have already been returned
+        console.error('[Sessions API] Validation error caught in outer catch - this should not happen');
+        // Return a generic error to avoid double-handling
+        return NextResponse.json({ 
+          error: 'Validation error occurred',
+          details: 'Check server logs for detailed validation error'
+        }, {
+          status: 400,
+          headers: getCorsHeaders(req),
+        });
+      }
+      
       const errorResponse: any = {
         error: error instanceof Error ? error.message : 'Internal server error',
         details: errorMessage,
