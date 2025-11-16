@@ -390,13 +390,28 @@ export async function POST(req: NextRequest) {
         }
       };
       console.error('[Sessions API] Validation failed:', JSON.stringify(errorResponse, null, 2));
-      return NextResponse.json(errorResponse, { 
-        status: 400,
-        headers: {
-          ...getCorsHeaders(req),
-          'Content-Type': 'application/json'
-        },
-      });
+      
+      // P0: Ensure we return proper JSON - explicitly stringify to avoid serialization issues
+      try {
+        const jsonResponse = NextResponse.json(errorResponse, { 
+          status: 400,
+          headers: {
+            ...getCorsHeaders(req),
+            'Content-Type': 'application/json'
+          },
+        });
+        return jsonResponse;
+      } catch (jsonError: any) {
+        // Fallback if JSON serialization fails
+        console.error('[Sessions API] Failed to serialize error response:', jsonError);
+        return NextResponse.json({ 
+          error: 'Missing required fields: tableId and customerName are required',
+          details: 'Validation failed - check server logs for details'
+        }, { 
+          status: 400,
+          headers: getCorsHeaders(req),
+        });
+      }
     }
 
     // Generate externalRef for idempotency
