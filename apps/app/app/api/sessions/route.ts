@@ -351,7 +351,19 @@ export async function POST(req: NextRequest) {
     const hasTableId = body.tableId !== undefined && body.tableId !== null && String(body.tableId).trim().length > 0;
     const hasCustomerName = body.customerName !== undefined && body.customerName !== null && String(body.customerName).trim().length > 0;
     
-    if (!hasTableId || !hasCustomerName || !data.tableId || data.tableId.length === 0 || !data.customerName || data.customerName.length === 0) {
+    // P0: Debug - log validation checks
+    console.log('[Sessions API] Validation checks:', {
+      hasTableId,
+      hasCustomerName,
+      dataTableId: data.tableId,
+      dataTableIdLength: data.tableId?.length,
+      dataCustomerName: data.customerName,
+      dataCustomerNameLength: data.customerName?.length,
+      willFail: !hasTableId || !hasCustomerName || !data.tableId || data.tableId.length === 0 || !data.customerName || data.customerName.length === 0
+    });
+    
+    // P0: Simplified validation - only check normalized data (hasTableId/hasCustomerName already validated the raw input)
+    if (!data.tableId || data.tableId.length === 0 || !data.customerName || data.customerName.length === 0) {
       const errorResponse = { 
         error: 'Missing required fields: tableId and customerName are required',
         details: {
