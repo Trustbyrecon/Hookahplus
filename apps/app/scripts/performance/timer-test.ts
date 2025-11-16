@@ -28,9 +28,10 @@ async function createTestSessions(
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tableId: `T-TIMER-${i}`,
-          customerName: `TimerTest-${i}`, // API expects customerName, not customerRef
-          flavor: 'Mint', // API expects flavor, not flavorMix
-          source: 'QR'
+          customerName: `TimerTest-${i}`,
+          flavor: ['Mint'], // API expects array or string, normalize to array
+          source: 'QR',
+          loungeId: process.env.DEFAULT_LOUNGE_ID || 'default-lounge'
         })
       });
 

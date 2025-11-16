@@ -248,7 +248,36 @@ export async function POST(req: NextRequest) {
   try {
     console.log('[Sessions API] POST request received');
     
-    body = await req.json();
+    // Parse body with better error handling
+    try {
+      body = await req.json();
+      console.log('[Sessions API] Body parsed:', { 
+        hasTableId: !!body.tableId, 
+        hasCustomerName: !!body.customerName,
+        tableId: body.tableId,
+        customerName: body.customerName
+      });
+    } catch (parseError: any) {
+      console.error('[Sessions API] Failed to parse JSON body:', parseError);
+      return NextResponse.json({ 
+        error: 'Invalid JSON in request body',
+        details: parseError?.message || 'Could not parse request body as JSON'
+      }, { 
+        status: 400,
+        headers: getCorsHeaders(req),
+      });
+    }
+    
+    // Check if body is empty or null
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ 
+        error: 'Request body is required and must be a JSON object',
+        received: body
+      }, { 
+        status: 400,
+        headers: getCorsHeaders(req),
+      });
+    }
     
     // P0: Harden input coercion - normalize all inputs to safe types
     // Normalize flavor: handle array, string, or comma-separated
@@ -263,6 +292,14 @@ export async function POST(req: NextRequest) {
     const sourceValue = validSources.includes(body.source) ? body.source : 'WALK_IN';
     
     // Normalize all fields with safe defaults
+    // P0: Debug normalization - log raw values before processing
+    console.log('[Sessions API] Raw body values:', {
+      tableId: body.tableId,
+      tableIdType: typeof body.tableId,
+      customerName: body.customerName,
+      customerNameType: typeof body.customerName
+    });
+    
     const data = {
       tableId: String(body.tableId || '').trim(),
       customerName: String(body.customerName || '').trim(),
@@ -279,11 +316,31 @@ export async function POST(req: NextRequest) {
     };
     
     // Validate required fields
+    console.log('[Sessions API] Normalized data:', {
+      tableId: data.tableId,
+      tableIdLength: data.tableId?.length,
+      customerName: data.customerName,
+      customerNameLength: data.customerName?.length
+    });
+    
     if (!data.tableId || !data.customerName) {
-      return NextResponse.json({ 
+      const errorResponse = { 
         error: 'Missing required fields: tableId and customerName are required',
-        received: { tableId: !!data.tableId, customerName: !!data.customerName }
-      }, { 
+        received: { 
+          tableId: !!data.tableId, 
+          customerName: !!data.customerName,
+          tableIdValue: data.tableId || '(empty)',
+          customerNameValue: data.customerName || '(empty)',
+          rawBody: process.env.NODE_ENV === 'development' ? {
+            tableId: body.tableId,
+            customerName: body.customerName,
+            flavor: body.flavor,
+            source: body.source
+          } : undefined
+        }
+      };
+      console.error('[Sessions API] Validation failed:', errorResponse);
+      return NextResponse.json(errorResponse, { 
         status: 400,
         headers: getCorsHeaders(req),
       });
