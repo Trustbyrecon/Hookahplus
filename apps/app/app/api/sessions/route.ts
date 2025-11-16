@@ -269,15 +269,28 @@ export async function POST(req: NextRequest) {
     }
     
     // Check if body is empty or null
-    if (!body || typeof body !== 'object') {
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
       return NextResponse.json({ 
         error: 'Request body is required and must be a JSON object',
-        received: body
+        received: body,
+        receivedType: typeof body,
+        isArray: Array.isArray(body)
       }, { 
         status: 400,
         headers: getCorsHeaders(req),
       });
     }
+    
+    // P0: Debug - log all body keys to see what's actually being received
+    console.log('[Sessions API] Body keys:', Object.keys(body || {}));
+    console.log('[Sessions API] Body values:', {
+      tableId: body.tableId,
+      customerName: body.customerName,
+      flavor: body.flavor,
+      source: body.source,
+      loungeId: body.loungeId,
+      allKeys: Object.keys(body)
+    });
     
     // P0: Harden input coercion - normalize all inputs to safe types
     // Normalize flavor: handle array, string, or comma-separated
@@ -300,9 +313,17 @@ export async function POST(req: NextRequest) {
       customerNameType: typeof body.customerName
     });
     
+    // P0: Normalize with better handling of undefined/null/empty values
+    // Ensure we preserve non-empty values and handle edge cases
+    const normalizeString = (val: any): string => {
+      if (val === null || val === undefined) return '';
+      const str = String(val).trim();
+      return str;
+    };
+    
     const data = {
-      tableId: String(body.tableId || '').trim(),
-      customerName: String(body.customerName || '').trim(),
+      tableId: normalizeString(body.tableId),
+      customerName: normalizeString(body.customerName),
       customerPhone: body.customerPhone ? String(body.customerPhone).trim() : null,
       source: sourceValue,
       flavorMix: flavorArr,
@@ -315,17 +336,44 @@ export async function POST(req: NextRequest) {
       sessionDuration: Number.isFinite(body.sessionDuration) ? Number(body.sessionDuration) : 45 * 60,
     };
     
-    // Validate required fields
+    // Validate required fields - check for non-empty strings
     console.log('[Sessions API] Normalized data:', {
       tableId: data.tableId,
       tableIdLength: data.tableId?.length,
       customerName: data.customerName,
-      customerNameLength: data.customerName?.length
+      customerNameLength: data.customerName?.length,
+      tableIdTruthy: !!data.tableId,
+      customerNameTruthy: !!data.customerName
     });
     
-    if (!data.tableId || !data.customerName) {
+    // P0: More robust validation - check for non-empty strings after normalization
+    // Also check if values were actually provided in the request (not just empty after normalization)
+    const hasTableId = body.tableId !== undefined && body.tableId !== null && String(body.tableId).trim().length > 0;
+    const hasCustomerName = body.customerName !== undefined && body.customerName !== null && String(body.customerName).trim().length > 0;
+    
+    if (!hasTableId || !hasCustomerName || !data.tableId || data.tableId.length === 0 || !data.customerName || data.customerName.length === 0) {
       const errorResponse = { 
         error: 'Missing required fields: tableId and customerName are required',
+        details: {
+          tableId: {
+            provided: body.tableId !== undefined && body.tableId !== null,
+            value: body.tableId,
+            valueType: typeof body.tableId,
+            normalized: data.tableId,
+            normalizedLength: data.tableId?.length || 0,
+            isEmpty: !data.tableId || data.tableId.length === 0,
+            hasValue: hasTableId
+          },
+          customerName: {
+            provided: body.customerName !== undefined && body.customerName !== null,
+            value: body.customerName,
+            valueType: typeof body.customerName,
+            normalized: data.customerName,
+            normalizedLength: data.customerName?.length || 0,
+            isEmpty: !data.customerName || data.customerName.length === 0,
+            hasValue: hasCustomerName
+          }
+        },
         received: { 
           tableId: !!data.tableId, 
           customerName: !!data.customerName,
@@ -335,14 +383,19 @@ export async function POST(req: NextRequest) {
             tableId: body.tableId,
             customerName: body.customerName,
             flavor: body.flavor,
-            source: body.source
+            source: body.source,
+            loungeId: body.loungeId,
+            allKeys: Object.keys(body || {})
           } : undefined
         }
       };
-      console.error('[Sessions API] Validation failed:', errorResponse);
+      console.error('[Sessions API] Validation failed:', JSON.stringify(errorResponse, null, 2));
       return NextResponse.json(errorResponse, { 
         status: 400,
-        headers: getCorsHeaders(req),
+        headers: {
+          ...getCorsHeaders(req),
+          'Content-Type': 'application/json'
+        },
       });
     }
 
