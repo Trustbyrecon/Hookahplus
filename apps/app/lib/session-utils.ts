@@ -70,10 +70,10 @@ export function canRefillSession(session: FireSession): {
     };
   }
 
-  if (session.refillStatus === 'in_progress') {
+  if (session.refillStatus === 'requested') {
     return {
       canRefill: false,
-      reason: 'Refill already in progress'
+      reason: 'Refill already requested'
     };
   }
 
