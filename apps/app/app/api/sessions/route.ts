@@ -798,11 +798,11 @@ export async function POST(req: NextRequest) {
                 sessionId: newSession.id,
                 status: 'success',
                 details: {
-                  tableId,
+                  tableId: data.tableId,
                   source: sourceValue,
                   loungeId: finalLoungeId,
-                  customerName,
-                  customerPhone,
+                  customerName: data.customerName,
+                  customerPhone: data.customerPhone,
                   flavor: finalFlavor,
                   priceCents: finalPriceCents,
                   method: 'raw_sql_fallback',
@@ -840,10 +840,10 @@ export async function POST(req: NextRequest) {
             details: {
               error: sqlError?.message || 'Unknown error',
               errorType,
-              tableId,
+              tableId: data.tableId,
               source: sourceValue,
               loungeId: finalLoungeId,
-              customerName,
+              customerName: data.customerName,
               method: 'raw_sql'
             }
           });
