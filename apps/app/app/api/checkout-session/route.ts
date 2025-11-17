@@ -191,6 +191,21 @@ export async function POST(request: NextRequest) {
     // Determine if we're in test or live mode
     const isTestMode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_') ?? false;
     
+    // Log mode for debugging
+    const stripeKeyPrefix = process.env.STRIPE_SECRET_KEY?.substring(0, 10) || 'not set';
+    console.log('[Checkout API] Stripe Mode:', {
+      isTestMode,
+      keyPrefix: stripeKeyPrefix,
+      mode: isTestMode ? 'TEST (Sandbox)' : 'LIVE (Production)',
+      warning: !isTestMode ? '⚠️ Using LIVE mode - ensure you want to process real payments!' : '✅ Using TEST mode - safe for testing'
+    });
+    
+    // Warn if trying to use test card in live mode
+    if (!isTestMode) {
+      console.warn('[Checkout API] ⚠️ LIVE MODE DETECTED - Test cards will be declined!');
+      console.warn('[Checkout API] To use test mode, set STRIPE_SECRET_KEY=sk_test_... in environment variables');
+    }
+    
     // Create Stripe checkout session with production optimizations
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
