@@ -620,7 +620,6 @@ function mapPrismaStateToFireSession(state: string | undefined | null): any {
     'DELIVERED': 'DELIVERED',
     'PAID_CONFIRMED': 'PAID_CONFIRMED',
     'STAFF_HOLD': 'STAFF_HOLD',
-    'CLOSED': 'CLOSED',
     'VOIDED': 'VOIDED'
   };
   
