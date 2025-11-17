@@ -33,9 +33,9 @@ async function loadTestSessionCreation(
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          tableId: `T-LOAD-${index}`,
-          customerName: `LoadTest-${index}`,
-          flavor: ['Mint'], // API expects array or string, normalize to array
+          tableId: `TEST-${index}`,
+          customerName: `PerfUser-${index}`,
+          flavor: ['Mint'], // array is safest
           source: 'QR',
           loungeId: process.env.DEFAULT_LOUNGE_ID || 'default-lounge'
         })

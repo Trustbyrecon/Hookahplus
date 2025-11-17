@@ -295,21 +295,21 @@ export default function GuestLoungePage() {
 
             {/* Flavor Selection */}
             {qrData?.tableId && (
-              <MobileFlavorSelector
-                flavors={MOCK_FLAVORS}
-                selectedFlavors={selectedFlavors}
-                onFlavorToggle={handleFlavorToggle}
-                onClearAll={handleClearAllFlavors}
-                basePrice={3000} // $30.00 base price
-              />
+            <MobileFlavorSelector
+              flavors={MOCK_FLAVORS}
+              selectedFlavors={selectedFlavors}
+              onFlavorToggle={handleFlavorToggle}
+              onClearAll={handleClearAllFlavors}
+              basePrice={3000} // $30.00 base price
+            />
             )}
 
             {/* Session Pricing */}
             {qrData?.tableId && (
               <SessionPricing
-                sessionType={sessionType}
-                onSessionTypeChange={setSessionType}
-              />
+              sessionType={sessionType}
+              onSessionTypeChange={setSessionType}
+            />
             )}
 
             {/* Order Review & Checkout */}
@@ -436,12 +436,12 @@ export default function GuestLoungePage() {
                   5
                 </div>
               </div>
-              <QRGate
-                qrData={qrData}
-                guestProfile={guestProfile}
-                flags={flags}
-                onProfileUpdate={setGuestProfile}
-              />
+            <QRGate
+              qrData={qrData}
+              guestProfile={guestProfile}
+              flags={flags}
+              onProfileUpdate={setGuestProfile}
+            />
             </div>
 
             {/* Step 2: Register (for anonymous users) */}
@@ -656,18 +656,18 @@ export default function GuestLoungePage() {
                     5
                   </div>
                 </div>
-                <PriceBreakdown
-                  guestProfile={guestProfile}
-                  flags={flags}
+            <PriceBreakdown
+              guestProfile={guestProfile}
+              flags={flags}
                   selectedFlavors={selectedFlavors}
                   specialInstructions={specialInstructions}
                   loungeId={loungeId}
                   tableId={qrData?.tableId}
                   zone={qrData?.zone}
                   sessionType={sessionType}
-                  onPriceUpdate={() => {
-                    // Handle price updates
-                  }}
+              onPriceUpdate={() => {
+                // Handle price updates
+              }}
                   onCheckoutSuccess={(sessionId) => {
                     // Start session after successful checkout
                     setSessionStarted(true);
