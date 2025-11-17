@@ -1,6 +1,14 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Initialize Resend only if API key is available
+let resend: Resend | null = null;
+try {
+  if (process.env.RESEND_API_KEY) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+  }
+} catch (error) {
+  console.error('[Email] Failed to initialize Resend:', error);
+}
 
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'Hookah+ <noreply@hookahplus.net>';
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hookahplus.net';
@@ -9,7 +17,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hookahplus.net';
  * Send contact form confirmation email
  */
 export async function sendContactConfirmation(email: string, name: string) {
-  if (!process.env.RESEND_API_KEY) {
+  if (!resend || !process.env.RESEND_API_KEY) {
     console.warn('[Email] RESEND_API_KEY not configured, skipping email send');
     return { success: false, error: 'Email service not configured' };
   }
@@ -77,7 +85,7 @@ export async function sendContactConfirmation(email: string, name: string) {
  * Send newsletter confirmation email with free resources
  */
 export async function sendNewsletterConfirmation(email: string, name?: string) {
-  if (!process.env.RESEND_API_KEY) {
+  if (!resend || !process.env.RESEND_API_KEY) {
     console.warn('[Email] RESEND_API_KEY not configured, skipping email send');
     return { success: false, error: 'Email service not configured' };
   }
@@ -156,7 +164,7 @@ export async function sendNewsletterConfirmation(email: string, name?: string) {
  * Send demo request confirmation email
  */
 export async function sendDemoRequestConfirmation(email: string, name: string, loungeName?: string) {
-  if (!process.env.RESEND_API_KEY) {
+  if (!resend || !process.env.RESEND_API_KEY) {
     console.warn('[Email] RESEND_API_KEY not configured, skipping email send');
     return { success: false, error: 'Email service not configured' };
   }

@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
               currentPOS: data.currentPOS || '',
               integrationNeeds: data.integrationNeeds || ''
             }
-          })
+          }),
         });
 
         if (onboardingResponse.ok) {
@@ -95,20 +95,26 @@ export async function POST(req: NextRequest) {
           // Don't fail the request - lead creation is secondary to form submission
         }
       } catch (onboardingError) {
-        console.error('[Onboarding Submission] ❌ Error creating lead in Operator Onboarding:', {
-          error: onboardingError instanceof Error ? onboardingError.message : 'Unknown error',
+        // Log error but don't fail the request - lead creation is optional
+        const errorMessage = onboardingError instanceof Error ? onboardingError.message : 'Unknown error';
+        console.error('[Onboarding Submission] ❌ Error creating lead in Operator Onboarding (non-blocking):', {
+          error: errorMessage,
           stack: onboardingError instanceof Error ? onboardingError.stack : undefined,
-          appUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'
+          appUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002',
+          note: 'This error is non-blocking - form submission will still succeed'
         });
         // Continue anyway - we'll still return success to user
         // Lead can be created manually later if needed
       }
 
-      // Send confirmation email
+      // Send confirmation email (non-blocking)
       try {
-        await sendContactConfirmation(data.email, data.ownerName || data.businessName);
+        const emailResult = await sendContactConfirmation(data.email, data.ownerName || data.businessName);
+        if (!emailResult.success) {
+          console.warn('[Onboarding Submission] Email send returned failure (non-blocking):', emailResult.error);
+        }
       } catch (emailError) {
-        console.error('[Onboarding Submission] Failed to send confirmation email:', emailError);
+        console.error('[Onboarding Submission] Failed to send confirmation email (non-blocking):', emailError);
         // Continue anyway - email failure shouldn't block the submission
       }
 
@@ -187,9 +193,21 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
   } catch (error) {
-    console.error('Demo request error:', error);
+    console.error('[Demo Requests] Unhandled error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    console.error('[Demo Requests] Error details:', {
+      message: errorMessage,
+      stack: errorStack,
+      error: error
+    });
+    
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Internal server error',
+        message: process.env.NODE_ENV === 'development' ? errorMessage : 'An error occurred processing your request'
+      },
       { status: 500 }
     );
   }

@@ -11,8 +11,13 @@ export default function AnalyticsScript() {
   const gaId = process.env.NEXT_PUBLIC_GA_ID;
 
   useEffect(() => {
+    // Early return if no GA ID - prevents unnecessary work
+    if (!gaId || typeof window === 'undefined') {
+      return;
+    }
+
     // Initialize analytics when component mounts
-    if (typeof window !== 'undefined' && gaId) {
+    if (gaId) {
       // Initialize dataLayer
       if (!window.dataLayer) {
         window.dataLayer = [];
@@ -93,7 +98,11 @@ export default function AnalyticsScript() {
   }, [gaId]);
 
   if (!gaId) {
-    console.warn('[Analytics] NEXT_PUBLIC_GA_ID not found in environment variables');
+    // Silently skip analytics if GA_ID is not configured (development mode)
+    // Only log in development to reduce console noise
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('[Analytics] NEXT_PUBLIC_GA_ID not found - analytics disabled');
+    }
     return null;
   }
 
