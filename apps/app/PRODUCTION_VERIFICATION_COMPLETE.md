@@ -85,21 +85,46 @@ After adding environment variables:
 
 ### Step 5: Test Webhook
 
-1. **Make a Test Transaction:**
-   - Create a test session with payment
-   - Use Stripe test mode or a small live transaction ($1)
+#### Option A: Test Mode (Sandbox) - Recommended for Initial Testing
 
-2. **Verify Webhook Delivery:**
-   - Go to Stripe Dashboard → **Webhooks** → Your endpoint
-   - Click on **"Events"** tab
-   - Look for recent webhook events
+1. **Set Up Test Mode Webhook:**
+   - Go to: https://dashboard.stripe.com/test/webhooks
+   - Create webhook endpoint: `https://app.hookahplus.net/api/webhooks/stripe`
+   - Select events: `checkout.session.completed`, `payment_intent.succeeded`
+   - Copy test webhook secret (`whsec_...`)
+   - Add to `.env.local`: `STRIPE_WEBHOOK_SECRET=whsec_...` (test mode)
+
+2. **Test Using Pre-Order Page:**
+   - Navigate to: `https://app.hookahplus.net/preorder/T-001`
+   - **Enable "$1 Test Mode" toggle** (yellow banner)
+   - Select flavors and click "Checkout"
+   - Use Stripe test card: `4242 4242 4242 4242`
+   - Complete payment
+
+3. **Verify Webhook Delivery:**
+   - Go to Stripe Dashboard → **Test Webhooks** → Your endpoint
+   - Click **"Events"** tab
+   - Look for `checkout.session.completed` event
    - Check status: Should be **"Succeeded"** ✅
 
-3. **Check Vercel Logs:**
-   - Go to Vercel Dashboard → **Deployments** → Latest
-   - Click **"Functions"** → View logs
+4. **Check Server Logs:**
+   - Vercel Dashboard → **Deployments** → Latest → **Functions** → View logs
    - Look for: `[Stripe Webhook] Verified event: evt_...`
    - Should NOT see: `Webhook Error` or `Invalid signature`
+
+#### Option B: Live Mode (Production)
+
+1. **Use Live Webhook:**
+   - Endpoint: `https://app.hookahplus.net/api/webhooks/stripe`
+   - Created in: https://dashboard.stripe.com/webhooks (LIVE mode)
+   - Use live webhook secret in Vercel Production environment
+
+2. **Test with Real Transaction:**
+   - Use Pre-Order page with $1 test mode enabled
+   - Use a real card (small amount recommended)
+   - Monitor webhook delivery in Stripe Dashboard
+
+**📖 See [WEBHOOK_TEST_GUIDE.md](./WEBHOOK_TEST_GUIDE.md) for detailed testing instructions.**
 
 ---
 
