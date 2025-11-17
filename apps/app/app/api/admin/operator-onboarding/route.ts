@@ -397,9 +397,29 @@ export async function POST(req: NextRequest) {
     }
 
     // Get existing event
-    const event = await prisma.reflexEvent.findUnique({
-      where: { id: leadId }
-    });
+    let event;
+    try {
+      event = await prisma.reflexEvent.findUnique({
+        where: { id: leadId }
+      });
+    } catch (queryError: any) {
+      // Check if it's a table doesn't exist error
+      const isTableMissing = queryError?.message?.includes('does not exist') || 
+                            queryError?.code === '42P01' || // PostgreSQL: relation does not exist
+                            queryError?.message?.includes('reflex_events') ||
+                            queryError?.message?.includes('ReflexEvent');
+      
+      if (isTableMissing) {
+        console.warn('[Operator Onboarding API] ReflexEvent table not found - cannot update lead');
+        return NextResponse.json({
+          success: false,
+          error: 'Database table not found',
+          details: 'The reflex_events table does not exist. Please run database migrations.',
+          hint: 'Run: npx prisma migrate deploy'
+        }, { status: 503 });
+      }
+      throw queryError; // Re-throw other errors
+    }
 
     if (!event) {
       return NextResponse.json({
@@ -486,28 +506,47 @@ export async function POST(req: NextRequest) {
     }
 
     // Update the event
-    await prisma.reflexEvent.update({
-      where: { id: leadId },
-      data: {
-        payload: JSON.stringify(updatedPayload)
-      }
-    });
+    try {
+      await prisma.reflexEvent.update({
+        where: { id: leadId },
+        data: {
+          payload: JSON.stringify(updatedPayload)
+        }
+      });
 
-    // Create a new ReflexEvent for audit trail
-    await prisma.reflexEvent.create({
-      data: {
-        type: 'admin.operator_onboarding.update',
-        source: 'admin',
-        payload: JSON.stringify({
-          leadId,
-          action,
-          updates,
-          timestamp: new Date().toISOString()
-        }),
-        userAgent: req.headers.get('user-agent') || '',
-        ip: req.headers.get('x-forwarded-for')?.split(',')[0] || '0.0.0.0'
+      // Create a new ReflexEvent for audit trail
+      await prisma.reflexEvent.create({
+        data: {
+          type: 'admin.operator_onboarding.update',
+          source: 'admin',
+          payload: JSON.stringify({
+            leadId,
+            action,
+            updates,
+            timestamp: new Date().toISOString()
+          }),
+          userAgent: req.headers.get('user-agent') || '',
+          ip: req.headers.get('x-forwarded-for')?.split(',')[0] || '0.0.0.0'
+        }
+      });
+    } catch (updateError: any) {
+      // Check if it's a table doesn't exist error
+      const isTableMissing = updateError?.message?.includes('does not exist') || 
+                            updateError?.code === '42P01' ||
+                            updateError?.message?.includes('reflex_events') ||
+                            updateError?.message?.includes('ReflexEvent');
+      
+      if (isTableMissing) {
+        console.warn('[Operator Onboarding API] ReflexEvent table not found - cannot update lead');
+        return NextResponse.json({
+          success: false,
+          error: 'Database table not found',
+          details: 'The reflex_events table does not exist. Please run database migrations.',
+          hint: 'Run: npx prisma migrate deploy'
+        }, { status: 503 });
       }
-    });
+      throw updateError; // Re-throw other errors
+    }
 
     return NextResponse.json({
       success: true,

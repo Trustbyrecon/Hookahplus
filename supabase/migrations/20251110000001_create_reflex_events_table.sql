@@ -21,10 +21,11 @@ CREATE TABLE IF NOT EXISTS public.reflex_events (
 );
 
 -- Create indexes for better query performance
-CREATE INDEX IF NOT EXISTS idx_reflex_events_type_created_at ON public.reflex_events(type, created_at);
-CREATE INDEX IF NOT EXISTS idx_reflex_events_cta_source ON public.reflex_events(cta_source);
-CREATE INDEX IF NOT EXISTS idx_reflex_events_cta_type ON public.reflex_events(cta_type);
-CREATE INDEX IF NOT EXISTS idx_reflex_events_campaign_id ON public.reflex_events(campaign_id);
+-- Note: Use quoted column names to match camelCase column definitions
+CREATE INDEX IF NOT EXISTS idx_reflex_events_type_created_at ON public.reflex_events(type, "createdAt");
+CREATE INDEX IF NOT EXISTS idx_reflex_events_cta_source ON public.reflex_events("ctaSource");
+CREATE INDEX IF NOT EXISTS idx_reflex_events_cta_type ON public.reflex_events("ctaType");
+CREATE INDEX IF NOT EXISTS idx_reflex_events_campaign_id ON public.reflex_events("campaignId");
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE public.reflex_events ENABLE ROW LEVEL SECURITY;

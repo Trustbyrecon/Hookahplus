@@ -9,15 +9,36 @@ import { prisma } from '../../../../lib/db';
 export async function GET(req: NextRequest) {
   try {
     // Count sessions with trust signatures
-    const totalSessions = await prisma.session.count();
-    // Since trustSignature is a required String field, count sessions where it's not empty
-    const verifiedSessions = await prisma.session.count({
-      where: {
-        trustSignature: {
-          not: ''
+    // Use raw SQL to avoid sessionStateV1 column issues
+    let totalSessions: number;
+    let verifiedSessions: number;
+    
+    try {
+      totalSessions = await prisma.session.count();
+      verifiedSessions = await prisma.session.count({
+        where: {
+          trustSignature: {
+            not: ''
+          }
         }
+      });
+    } catch (dbError: any) {
+      // If sessionStateV1 column doesn't exist, use raw SQL
+      if (dbError?.message?.includes('sessionStateV1') || dbError?.code === 'P2021') {
+        console.warn('[Trust-Lock Status] sessionStateV1 column not found, using raw SQL fallback');
+        const totalResult = await prisma.$queryRawUnsafe(`
+          SELECT COUNT(*) as count FROM "Session"
+        `) as any[];
+        totalSessions = Number(totalResult[0]?.count || 0);
+        
+        const verifiedResult = await prisma.$queryRawUnsafe(`
+          SELECT COUNT(*) as count FROM "Session" WHERE "trustSignature" != ''
+        `) as any[];
+        verifiedSessions = Number(verifiedResult[0]?.count || 0);
+      } else {
+        throw dbError;
       }
-    });
+    }
 
     // Calculate verification rate
     const verificationRate = totalSessions > 0 

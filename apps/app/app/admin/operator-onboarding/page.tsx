@@ -161,9 +161,13 @@ export default function OperatorOnboardingPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update stage');
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.details || errorData.error || 'Failed to update stage';
+        throw new Error(errorMessage);
       }
 
+      const result = await response.json();
+      
       // Reload leads
       await loadLeads();
       
@@ -172,9 +176,15 @@ export default function OperatorOnboardingPage() {
         setSelectedLead({ ...selectedLead, stage: newStage });
       }
 
+      // Show success message for stage changes
+      if (newStage === 'complete') {
+        console.log('✅ Lead marked as complete successfully');
+      }
+
     } catch (err) {
       console.error('Update stage error:', err);
-      alert('Failed to update stage. Please try again.');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update stage. Please try again.';
+      alert(`❌ ${errorMessage}\n\n${err instanceof Error && err.message.includes('table') ? 'Note: Database migrations may need to be run.' : ''}`);
     }
   };
 
