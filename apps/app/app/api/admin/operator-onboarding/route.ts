@@ -82,16 +82,36 @@ export async function GET(req: NextRequest) {
         take: 100 // Limit to recent 100 entries
       });
       console.log(`[Operator Onboarding API] Found ${events.length} events`);
-    } catch (queryError) {
+    } catch (queryError: any) {
       console.error('[Operator Onboarding API] Query error:', queryError);
       // Check if it's a table doesn't exist error
-      if (queryError instanceof Error && queryError.message.includes('does not exist')) {
+      const isTableMissing = queryError?.message?.includes('does not exist') || 
+                            queryError?.code === '42P01' || // PostgreSQL: relation does not exist
+                            queryError?.message?.includes('reflex_events') ||
+                            queryError?.message?.includes('ReflexEvent');
+      
+      if (isTableMissing) {
+        console.warn('[Operator Onboarding API] ReflexEvent table not found - returning empty list');
+        // Return empty list instead of error - allows page to load
         return NextResponse.json({
-          success: false,
-          error: 'Database table not found',
-          details: 'The reflex_events table does not exist. Please run database migrations.',
+          success: true,
+          leads: [],
+          stats: {
+            total: 0,
+            byStage: {
+              'new-leads': 0,
+              'intake': 0,
+              'follow-up': 0,
+              'scheduled': 0,
+              'onboarding': 0,
+              'complete': 0
+            },
+            bySource: {},
+            byCtaSource: {}
+          },
+          message: 'ReflexEvent table not found. Run migrations to enable lead tracking.',
           hint: 'Run: npx prisma migrate deploy'
-        }, { status: 500 });
+        }, { status: 200 });
       }
       throw queryError; // Re-throw other errors
     }

@@ -169,33 +169,82 @@ export async function GET(req: NextRequest) {
     const role = searchParams.get('role') as UserRole;
 
     if (sessionId) {
-      const session = await prisma.session.findFirst({
-        where: {
-          OR: [
-            { id: sessionId },
-            { externalRef: sessionId },
-            { tableId: sessionId }
-          ]
+      let session;
+      try {
+        session = await prisma.session.findFirst({
+          where: {
+            OR: [
+              { id: sessionId },
+              { externalRef: sessionId },
+              { tableId: sessionId }
+            ]
+          }
+        });
+      } catch (dbError: any) {
+        // If sessionStateV1 column doesn't exist, use raw SQL
+        if (dbError?.message?.includes('sessionStateV1') || dbError?.code === 'P2021') {
+          console.warn('[Sessions API] sessionStateV1 column not found, using raw SQL fallback for single session');
+          const results = await prisma.$queryRawUnsafe(`
+            SELECT 
+              id, "externalRef", source, "trustSignature", "tableId", "customerRef", 
+              "customerPhone", flavor, "flavorMix", "loungeId", "priceCents", state, 
+              "edgeCase", "edgeNote", "assignedBOHId", "assignedFOHId", "startedAt", 
+              "endedAt", "durationSecs", "paymentIntent", "paymentStatus", "orderItems", 
+              "posMode", version, "createdAt", "updatedAt", "timerDuration", 
+              "timerStartedAt", "timerPausedAt", "timerPausedDuration", "timerStatus", 
+              zone, "fohUserId", "specialRequests", "tableNotes", "qrCodeUrl", paused
+            FROM "Session"
+            WHERE id = $1 OR "externalRef" = $1 OR "tableId" = $1
+            LIMIT 1
+          `, sessionId) as any[];
+          session = results[0] || null;
+        } else {
+          throw dbError;
         }
-      });
+      }
       
       if (!session) {
         return NextResponse.json({ error: 'Session not found' }, { 
           status: 404,
-          headers: getCorsHeaders(),
+          headers: getCorsHeaders(req),
         });
       }
       
       const fireSession = convertPrismaSessionToFireSession(session);
-      return NextResponse.json({ success: true, session: fireSession });
+      return NextResponse.json({ success: true, session: fireSession }, {
+        headers: getCorsHeaders(req),
+      });
     }
 
     // Fetch all sessions from database
-    let dbSessions = await prisma.session.findMany({
-      orderBy: {
-        createdAt: 'desc'
+    // Use select to only get columns that exist (avoid sessionStateV1 if migration not run)
+    let dbSessions;
+    try {
+      dbSessions = await prisma.session.findMany({
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
+    } catch (dbError: any) {
+      // If sessionStateV1 column doesn't exist, use raw SQL to select only existing columns
+      if (dbError?.message?.includes('sessionStateV1') || dbError?.code === 'P2021') {
+        console.warn('[Sessions API] sessionStateV1 column not found, using raw SQL fallback');
+        dbSessions = await prisma.$queryRawUnsafe(`
+          SELECT 
+            id, "externalRef", source, "trustSignature", "tableId", "customerRef", 
+            "customerPhone", flavor, "flavorMix", "loungeId", "priceCents", state, 
+            "edgeCase", "edgeNote", "assignedBOHId", "assignedFOHId", "startedAt", 
+            "endedAt", "durationSecs", "paymentIntent", "paymentStatus", "orderItems", 
+            "posMode", version, "createdAt", "updatedAt", "timerDuration", 
+            "timerStartedAt", "timerPausedAt", "timerPausedDuration", "timerStatus", 
+            zone, "fohUserId", "specialRequests", "tableNotes", "qrCodeUrl", paused
+          FROM "Session"
+          ORDER BY "createdAt" DESC
+        `) as any[];
+      } else {
+        throw dbError;
       }
-    });
+    }
 
     // Convert to FireSession format
     let sessions = dbSessions.map(convertPrismaSessionToFireSession);
@@ -234,11 +283,32 @@ export async function GET(req: NextRequest) {
       headers: getCorsHeaders(req),
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('[Sessions API] Error retrieving sessions:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { 
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    // Check for database connection errors
+    if (errorMessage.includes('Can\'t reach database') || 
+        errorMessage.includes('connection') ||
+        error?.code === 'P1001') {
+      return NextResponse.json({ 
+        error: 'Database connection failed',
+        details: errorMessage,
+        hint: 'Check DATABASE_URL and ensure database is running'
+      }, { 
+        status: 503,
+        headers: getCorsHeaders(req),
+      });
+    }
+    
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
+      stack: process.env.NODE_ENV === 'development' ? errorStack : undefined
+    }, { 
       status: 500,
-      headers: getCorsHeaders(),
+      headers: getCorsHeaders(req),
     });
   }
 }

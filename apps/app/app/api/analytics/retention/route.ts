@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     const [
       totalSessions,
       totalRevenue,
-      sessionsByCustomer
+      sessionsByCustomerRaw
     ] = await Promise.all([
       // Total session count
       prisma.session.count({
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
               AND "loungeId" = ${loungeId}
             GROUP BY customer_id
             LIMIT 5000
-          ` as any[]
+          `
         : prisma.$queryRaw`
             SELECT 
               COALESCE("customerRef", "customerPhone", CONCAT('anonymous_', id)) as customer_id,
@@ -74,8 +74,11 @@ export async function GET(request: NextRequest) {
               AND "paymentStatus" = 'succeeded'
             GROUP BY customer_id
             LIMIT 5000
-          ` as any[]
+          `
     ]);
+
+    // Cast the raw query result to any[] after awaiting
+    const sessionsByCustomer = (sessionsByCustomerRaw as unknown) as any[];
 
     // Process aggregated customer data
     const customers = (sessionsByCustomer || []).map((row: any) => ({
