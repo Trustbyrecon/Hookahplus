@@ -46,26 +46,27 @@ export default function PricingTeaser() {
   return (
     <section className="bg-black px-4 py-20 sm:px-6 lg:px-8 border-t border-zinc-800">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-12">
+        <div className="text-center mb-12" id="pricing">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Simple, grows when you do
+            Simple Pricing
           </h2>
-          <p className="text-lg text-zinc-400 max-w-2xl mx-auto mb-2">
-            Usage-based auto-upgrade with a grace notice. Works with your existing payment setup.
+          <p className="text-lg text-zinc-400 max-w-2xl mx-auto mb-4">
+            Auto-upgrades when you're ready. No long-term contracts.
           </p>
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-teal-500/10 border border-teal-500/30 rounded-lg mt-4">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-teal-500/10 border border-teal-500/30 rounded-lg">
             <CheckCircle className="w-4 h-4 text-teal-400" />
-            <span className="text-sm text-teal-400">No long-term contracts • Cancel anytime</span>
+            <span className="text-sm text-teal-400">Cancel anytime • 3-day grace period</span>
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {tiers.map((tier) => (
+        {/* Simplified 3-tier layout - reduced cognitive load */}
+        <div className="grid md:grid-cols-3 gap-6 mb-8 max-w-5xl mx-auto">
+          {tiers.slice(0, 3).map((tier) => (
             <Card
               key={tier.name}
               className={`relative border-2 transition-all ${
                 tier.popular
-                  ? 'border-teal-500 bg-teal-500/5 scale-105'
+                  ? 'border-teal-500 bg-teal-500/5'
                   : 'border-zinc-700 bg-zinc-900/50'
               }`}
             >
@@ -75,21 +76,20 @@ export default function PricingTeaser() {
                 </div>
               )}
               <div className="p-6">
-                <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-4 ${
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${
                   tier.color === 'teal' ? 'bg-teal-500/20 text-teal-400' :
                   tier.color === 'blue' ? 'bg-blue-500/20 text-blue-400' :
-                  tier.color === 'purple' ? 'bg-purple-500/20 text-purple-400' :
-                  'bg-amber-500/20 text-amber-400'
+                  'bg-purple-500/20 text-purple-400'
                 }`}>
                   {tier.icon}
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2">{tier.name}</h3>
-                <div className="text-3xl font-bold text-teal-400 mb-2">{tier.price}</div>
-                <p className="text-sm text-zinc-400 mb-4">{tier.blurb}</p>
-                <ul className="space-y-2 mb-6">
-                  {tier.features.slice(0, 3).map((feature, idx) => (
-                    <li key={idx} className="flex items-start gap-2 text-sm text-zinc-300">
-                      <CheckCircle className="w-4 h-4 text-teal-400 mt-0.5 flex-shrink-0" />
+                <h3 className="text-lg font-semibold text-white mb-1">{tier.name}</h3>
+                <div className="text-2xl font-bold text-teal-400 mb-2">{tier.price}</div>
+                <p className="text-xs text-zinc-400 mb-4">{tier.blurb}</p>
+                <ul className="space-y-1.5 mb-6">
+                  {tier.features.slice(0, 2).map((feature, idx) => (
+                    <li key={idx} className="flex items-start gap-2 text-xs text-zinc-300">
+                      <CheckCircle className="w-3 h-3 text-teal-400 mt-0.5 flex-shrink-0" />
                       <span>{feature}</span>
                     </li>
                   ))}
@@ -97,6 +97,29 @@ export default function PricingTeaser() {
               </div>
             </Card>
           ))}
+        </div>
+        
+        {/* Enterprise tier - separate, less prominent */}
+        <div className="max-w-md mx-auto mb-8">
+          <Card className="border border-zinc-700 bg-zinc-900/30 p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-amber-500/20 rounded-lg flex items-center justify-center text-amber-400">
+                  <Building2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-white">{tiers[3].name}</div>
+                  <div className="text-xs text-zinc-400">{tiers[3].blurb}</div>
+                </div>
+              </div>
+              <a 
+                href="/pricing" 
+                className="text-xs text-teal-400 hover:text-teal-300 underline"
+              >
+                Learn more
+              </a>
+            </div>
+          </Card>
         </div>
 
         <div className="text-center">

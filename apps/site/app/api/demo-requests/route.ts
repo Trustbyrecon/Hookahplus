@@ -7,8 +7,32 @@ import { sendContactConfirmation, sendDemoRequestConfirmation } from '../../../l
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    let body;
+    try {
+      body = await req.json();
+    } catch (parseError) {
+      console.error('[Demo Requests] Failed to parse request body:', parseError);
+      return NextResponse.json(
+        { error: 'Invalid JSON in request body' },
+        { status: 400 }
+      );
+    }
+
     const { action, data } = body;
+
+    if (!action) {
+      return NextResponse.json(
+        { error: 'Missing action parameter' },
+        { status: 400 }
+      );
+    }
+
+    if (!data) {
+      return NextResponse.json(
+        { error: 'Missing data parameter' },
+        { status: 400 }
+      );
+    }
 
     if (action === 'onboarding_submission') {
       // Create lead in Operator Onboarding Management
@@ -90,7 +114,8 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({ 
         success: true,
-        message: 'Onboarding completed successfully! Redirecting to lounge layout...'
+        message: 'Onboarding completed successfully! Redirecting to intake funnel...',
+        leadCreated: true
       });
     }
 

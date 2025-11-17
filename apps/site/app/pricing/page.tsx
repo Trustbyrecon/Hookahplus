@@ -230,27 +230,31 @@ export default function PricingPage() {
       />
 
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {/* Billing Cycle Toggle */}
-        <div className="flex items-center justify-center gap-4 mb-8">
-          <span className={`text-sm ${billingCycle === 'monthly' ? 'text-white font-semibold' : 'text-zinc-400'}`}>
-            Monthly
-          </span>
+        {/* Simplified Billing Cycle Toggle - less prominent */}
+        <div className="flex items-center justify-center gap-3 mb-12">
           <button
-            onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'annual' : 'monthly')}
-            className="relative w-14 h-7 bg-zinc-700 rounded-full transition-colors"
+            onClick={() => setBillingCycle('monthly')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              billingCycle === 'monthly'
+                ? 'bg-teal-500/20 text-teal-400 border border-teal-500/30'
+                : 'text-zinc-400 hover:text-zinc-300'
+            }`}
           >
-            <div className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full transition-transform ${
-              billingCycle === 'annual' ? 'translate-x-7' : ''
-            }`} />
+            Monthly
           </button>
-          <span className={`text-sm ${billingCycle === 'annual' ? 'text-white font-semibold' : 'text-zinc-400'}`}>
+          <button
+            onClick={() => setBillingCycle('annual')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors relative ${
+              billingCycle === 'annual'
+                ? 'bg-teal-500/20 text-teal-400 border border-teal-500/30'
+                : 'text-zinc-400 hover:text-zinc-300'
+            }`}
+          >
             Annual
-            {billingCycle === 'annual' && (
-              <span className="ml-2 text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">
-                Save ~17%
-              </span>
-            )}
-          </span>
+            <span className="ml-1.5 text-xs bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded">
+              Save 17%
+            </span>
+          </button>
         </div>
 
         {/* ROI Calculator Section */}
@@ -300,12 +304,9 @@ export default function PricingPage() {
           </div>
         </div>
 
-        {/* Subscription Tiers */}
+        {/* Simplified Subscription Tiers - reduced cognitive load */}
         <div className="mb-16">
-          <h2 className="text-3xl font-bold text-center mb-2">Subscription Tiers</h2>
-          <p className="text-center text-zinc-400 mb-8">Smart Scaling — Hookah+ grows with your lounge</p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {subscriptionTiers.map((tier, index) => (
               <Card
                 key={index}
@@ -331,22 +332,18 @@ export default function PricingPage() {
                   <h3 className="text-2xl font-bold mb-2">{tier.name}</h3>
                   <p className="text-zinc-400 text-sm mb-4">{tier.description}</p>
                   
-                  {/* Auto-Upgrade Info */}
-                  <div className="mb-4 p-3 bg-zinc-800/50 rounded-lg border border-zinc-700">
-                    <div className="flex items-start gap-2 mb-2">
-                      <Zap className="w-4 h-4 text-teal-400 flex-shrink-0 mt-0.5" />
-                      <div className="flex-1">
-                        <div className="text-xs font-semibold text-teal-400 mb-1">Auto-Upgrade Trigger</div>
-                        <div className="text-xs text-zinc-300">{tier.autoUpgradeTrigger}</div>
+                  {/* Simplified Auto-Upgrade Info - collapsed by default */}
+                  <details className="mb-4">
+                    <summary className="text-xs text-teal-400 cursor-pointer hover:text-teal-300 mb-2">
+                      Auto-upgrade info
+                    </summary>
+                    <div className="mt-2 p-3 bg-zinc-800/50 rounded-lg border border-zinc-700 text-xs">
+                      <div className="text-zinc-300 mb-1">{tier.autoUpgradeTrigger}</div>
+                      <div className="text-zinc-400 mt-1">
+                        <span className="font-medium">Next:</span> {tier.nextTier}
                       </div>
                     </div>
-                    <div className="text-xs text-zinc-400 mt-2">
-                      <span className="font-medium">Next Tier:</span> {tier.nextTier}
-                    </div>
-                    <div className="text-xs text-zinc-500 mt-1 italic">
-                      {tier.upgradeNote}
-                    </div>
-                  </div>
+                  </details>
                   
                   <div className="mb-6">
                     <span className="text-4xl font-bold">${getPrice(tier.price)}</span>
@@ -367,24 +364,43 @@ export default function PricingPage() {
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                   
-                  <div className="space-y-3">
-                    <div className="text-sm font-semibold text-zinc-300 mb-2">Included Features:</div>
-                    {tier.features.map((feature, idx) => (
+                  {/* Simplified features list - show top 5, rest in details */}
+                  <div className="space-y-2">
+                    {tier.features.slice(0, 5).map((feature, idx) => (
                       <div key={idx} className="flex items-start gap-2">
-                        <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                        <span className="text-sm text-zinc-300">{feature}</span>
+                        <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
+                        <span className="text-xs text-zinc-300">{feature}</span>
                       </div>
                     ))}
+                    {tier.features.length > 5 && (
+                      <details className="mt-2">
+                        <summary className="text-xs text-teal-400 cursor-pointer hover:text-teal-300">
+                          +{tier.features.length - 5} more features
+                        </summary>
+                        <div className="mt-2 space-y-1">
+                          {tier.features.slice(5).map((feature, idx) => (
+                            <div key={idx} className="flex items-start gap-2">
+                              <CheckCircle className="w-3 h-3 text-green-400 flex-shrink-0 mt-0.5" />
+                              <span className="text-xs text-zinc-400">{feature}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    )}
                     {tier.limitations.length > 0 && (
-                      <>
-                        <div className="text-sm font-semibold text-zinc-400 mt-4 mb-2">Not Included:</div>
-                        {tier.limitations.map((limitation, idx) => (
-                          <div key={idx} className="flex items-start gap-2">
-                            <X className="w-5 h-5 text-zinc-600 flex-shrink-0 mt-0.5" />
-                            <span className="text-sm text-zinc-500">{limitation}</span>
-                          </div>
-                        ))}
-                      </>
+                      <details className="mt-3">
+                        <summary className="text-xs text-zinc-500 cursor-pointer">
+                          Limitations
+                        </summary>
+                        <div className="mt-2 space-y-1">
+                          {tier.limitations.map((limitation, idx) => (
+                            <div key={idx} className="flex items-start gap-2">
+                              <X className="w-3 h-3 text-zinc-600 flex-shrink-0 mt-0.5" />
+                              <span className="text-xs text-zinc-500">{limitation}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </details>
                     )}
                   </div>
                 </div>
@@ -393,12 +409,13 @@ export default function PricingPage() {
           </div>
         </div>
 
-        {/* Add-ons */}
+        {/* Simplified Add-ons - collapsed by default to reduce cognitive load */}
         <div className="mb-16">
-          <h2 className="text-3xl font-bold text-center mb-2">Add-ons</h2>
-          <p className="text-center text-zinc-400 mb-8">Enhance your plan with powerful add-ons</p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <details className="max-w-4xl mx-auto">
+            <summary className="text-2xl font-bold text-center mb-8 cursor-pointer hover:text-teal-400 transition-colors">
+              Optional Add-ons
+            </summary>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
             {addOns.map((addon, index) => (
               <Card 
                 key={index} 
@@ -461,7 +478,8 @@ export default function PricingPage() {
                 </div>
               </Card>
             ))}
-          </div>
+            </div>
+          </details>
         </div>
 
         {/* CTA Section */}

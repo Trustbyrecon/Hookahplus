@@ -9,6 +9,7 @@ import Hero from '../components/Hero';
 import PricingTeaser from '../components/PricingTeaser';
 import ROICalculator from '../components/ROICalculator';
 import Demo from '../components/Demo';
+import DataOptimization from '../components/DataOptimization';
 import ProofSection from '../components/ProofSection';
 import StickyCTA from '../components/StickyCTA';
 import ExitIntentPopup from '../components/ExitIntentPopup';
@@ -21,6 +22,9 @@ export default function Home() {
 
       {/* Demo Section with Flow Visualization */}
       <Demo />
+
+      {/* Data Optimization Section */}
+      <DataOptimization />
 
       {/* Pricing Teaser */}
       <PricingTeaser />

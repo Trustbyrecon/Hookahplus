@@ -102,6 +102,12 @@ export default function OnboardingPage() {
 
   const handleSubmit = async () => {
     try {
+      // Validate required fields
+      if (!formData.email || !formData.businessName || !formData.ownerName) {
+        alert('Please fill in all required fields (Business Name, Owner Name, and Email).');
+        return;
+      }
+
       // Track CTA event with form data
       trackOnboardingSignup({
         name: formData.ownerName,
@@ -128,16 +134,35 @@ export default function OnboardingPage() {
         }),
       });
 
-      if (response.ok) {
-        // Redirect to Operator Onboarding Management in app build
+      const responseData = await response.json().catch(() => ({ error: 'Failed to parse response' }));
+
+      if (response.ok && responseData.success) {
+        // Route to intake funnel for hydration in app build
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
-        window.location.href = `${appUrl}/admin/operator-onboarding?source=onboarding&email=${encodeURIComponent(formData.email)}`;
+        const hydrationParams = new URLSearchParams({
+          source: 'onboarding',
+          email: formData.email,
+          businessName: formData.businessName || '',
+          ownerName: formData.ownerName || '',
+          stage: 'intake',
+          hydrated: 'true'
+        });
+        
+        // Redirect to Operator Onboarding Management (intake funnel)
+        window.location.href = `${appUrl}/admin/operator-onboarding?${hydrationParams.toString()}`;
       } else {
-        alert('Failed to submit onboarding. Please try again.');
+        const errorMessage = responseData.error || responseData.message || 'Failed to submit onboarding. Please try again.';
+        console.error('Onboarding submission error:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: responseData
+        });
+        alert(errorMessage);
       }
     } catch (error) {
       console.error('Error submitting onboarding:', error);
-      alert('Failed to submit onboarding. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to submit onboarding. Please try again.';
+      alert(`Error: ${errorMessage}`);
     }
   };
 
