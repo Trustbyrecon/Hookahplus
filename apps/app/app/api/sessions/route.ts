@@ -729,15 +729,15 @@ export async function POST(req: NextRequest) {
             sessionId: newSession.id,
             payload: JSON.stringify({
               action: 'create-session',
-              tableId,
-              customerName,
+              tableId: data.tableId,
+              customerName: data.customerName,
               source: sourceValue,
               businessLogic: 'New session created - BOH can claim prep or put on hold'
             }),
             payloadHash: seal({
               action: 'create-session',
-              tableId,
-              customerName,
+              tableId: data.tableId,
+              customerName: data.customerName,
               source: sourceValue
             })
           }
