@@ -137,19 +137,12 @@ export default function OnboardingPage() {
       const responseData = await response.json().catch(() => ({ error: 'Failed to parse response' }));
 
       if (response.ok && responseData.success) {
-        // Route to intake funnel for hydration in app build
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
-        const hydrationParams = new URLSearchParams({
-          source: 'onboarding',
-          email: formData.email,
-          businessName: formData.businessName || '',
-          ownerName: formData.ownerName || '',
-          stage: 'intake',
-          hydrated: 'true'
-        });
-        
-        // Redirect to Operator Onboarding Management (intake funnel)
-        window.location.href = `${appUrl}/admin/operator-onboarding?${hydrationParams.toString()}`;
+        // Show success message and stay on site build
+        // Users should never see the admin Operator Onboarding Management page
+        // Show success state (we'll add a success step or message)
+        alert('✅ Thank you! Your onboarding request has been submitted successfully. Our team will contact you shortly.');
+        // Optionally reset form or redirect to home
+        window.location.href = '/';
       } else {
         const errorMessage = responseData.error || responseData.message || 'Failed to submit onboarding. Please try again.';
         console.error('Onboarding submission error:', {

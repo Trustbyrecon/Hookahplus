@@ -84,9 +84,10 @@ export default function ContactPage() {
         name: formData.name
       });
 
-      // Redirect to Operator Onboarding Management in app build
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
-      window.location.href = `${appUrl}/admin/operator-onboarding?source=contact&email=${encodeURIComponent(formData.email)}`;
+      // Show success message and redirect to home
+      // Users should never see the admin Operator Onboarding Management page
+      alert('✅ Thank you! Your demo request has been submitted successfully. Our team will contact you within 24 hours.');
+      window.location.href = '/';
     } catch (error) {
       console.error('Error submitting form:', error);
       setIsSubmitting(false);
