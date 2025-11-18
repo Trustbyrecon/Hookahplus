@@ -30,10 +30,27 @@ function CheckoutSuccessContent() {
     const fetchSessionDetails = async () => {
       try {
         // First get Stripe checkout session details
+        // Use path parameter format: /api/checkout-session/[sessionId]
         const stripeResponse = await fetch(`/api/checkout-session/${checkoutSessionId}`);
         
         if (!stripeResponse.ok) {
-          throw new Error('Failed to fetch session details');
+          const errorText = await stripeResponse.text();
+          let errorData;
+          try {
+            errorData = JSON.parse(errorText);
+          } catch {
+            errorData = { error: errorText || `HTTP ${stripeResponse.status}` };
+          }
+          
+          console.warn('[Checkout Success] Failed to fetch Stripe session:', {
+            status: stripeResponse.status,
+            error: errorData.error || errorData.details,
+            sessionId: checkoutSessionId.substring(0, 20) + '...'
+          });
+          
+          // Continue anyway - we can still show success page with session ID
+          // The webhook may still be processing
+          throw new Error(errorData.error || errorData.details || 'Failed to fetch session details');
         }
 
         const stripeResult = await stripeResponse.json();

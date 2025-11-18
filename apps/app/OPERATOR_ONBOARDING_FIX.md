@@ -1,93 +1,122 @@
-# Operator Onboarding API Fix
+# ✅ Operator Onboarding Fix - trustEventTypeV1 Column
 
-## Issues Fixed
+**Date:** 2025-01-16  
+**Status:** ✅ **Fixed**
 
-1. **Database Connection Checks**: Added connection testing before all database operations
-2. **Better Error Handling**: More specific error messages for common Prisma errors
-3. **CTA Logging**: Enhanced logging for CTA events (Create Lead button clicks)
-4. **Table Existence Checks**: Added checks for missing database tables
+---
 
-## Changes Made
+## 🔍 Issue
 
-### API Route: `/api/admin/operator-onboarding`
+**Error:** `The column reflex_events.trustEventTypeV1 does not exist in the current database`
 
-**GET Route:**
-- Added database connection test before querying
-- Added error handling for missing tables
-- Added logging for query results
+**Root Cause:**
+- Prisma schema includes `trustEventTypeV1` field in `ReflexEvent` model
+- Database table doesn't have this column yet (migration not applied)
+- `prisma.reflexEvent.create()` fails when trying to insert
 
-**POST Route:**
-- Added database connection test before creating/updating
-- Added detailed logging for lead creation
-- Enhanced error messages with specific Prisma error detection
-- Better error details in development mode
+**Impact:**
+- ❌ Onboarding form submissions failing
+- ❌ Leads not being created
+- ❌ Operator onboarding dashboard showing "0 Total Leads"
 
-## CTA Tracking
+---
 
-The API now properly logs CTA events when:
-- User clicks "Add New Lead" button
-- User clicks "Create Lead" button
-- Lead is created successfully
+## ✅ Solution
 
-All CTA events are stored in the `ReflexEvent` table with:
-- `ctaSource`: 'manual' (for manually created leads)
-- `ctaType`: 'onboarding_signup'
-- `type`: 'onboarding.signup'
-- Full payload with lead data
+Added raw SQL fallback for missing `trustEventTypeV1` column, similar to the `sessionStateV1` fix.
 
-## Database Requirements
+### Changes Made
 
-The API requires the `ReflexEvent` table (mapped to `reflex_events` in database) with these fields:
-- `id` (String, primary key)
-- `type` (String)
-- `source` (String)
-- `payload` (String, JSON)
-- `ctaSource` (String, nullable)
-- `ctaType` (String, nullable)
-- `userAgent` (String, nullable)
-- `ip` (String, nullable)
-- `createdAt` (DateTime)
+**File:** `apps/app/app/api/admin/operator-onboarding/route.ts`
 
-## Testing
+1. **Lead Creation (POST endpoint)** - Lines 322-393
+   - Try Prisma create first
+   - If `trustEventTypeV1` column missing, use raw SQL INSERT
+   - Insert only existing columns (exclude `trustEventTypeV1`)
 
-1. **Test Lead Creation:**
-   - Go to `/admin/operator-onboarding`
-   - Click "Add New Lead"
-   - Fill in Business Name and Email (required)
-   - Click "Create Lead"
-   - Should see success message and lead appear in list
+2. **Audit Trail Creation (PATCH endpoint)** - Lines 577-637
+   - Same fallback pattern
+   - Non-critical - logs warning but doesn't fail the request
 
-2. **Check Logs:**
-   - Check server console for `[Operator Onboarding API]` logs
-   - Should see "Database connection successful"
-   - Should see "Creating lead with data"
-   - Should see "Lead created successfully"
+---
 
-3. **Check Database:**
-   - Query `reflex_events` table
-   - Should see new entry with `type = 'onboarding.signup'`
-   - Should see `ctaSource = 'manual'` and `ctaType = 'onboarding_signup'`
+## 🔧 Technical Details
 
-## Error Messages
+### Raw SQL Fallback Query
 
-The API now provides specific error messages:
+```sql
+INSERT INTO reflex_events (
+  id, type, source, payload, "ctaSource", "ctaType", 
+  "userAgent", ip, referrer, "campaignId", metadata, "createdAt"
+)
+VALUES (
+  gen_random_uuid()::text,
+  $1, -- 'onboarding.signup'
+  $2, -- source
+  $3, -- payload (JSON string)
+  $4, -- ctaSource
+  $5, -- ctaType
+  $6, -- userAgent
+  $7, -- ip
+  $8, -- referrer
+  $9, -- campaignId (null)
+  $10, -- metadata (null)
+  NOW()
+)
+RETURNING id, type, source, "createdAt"
+```
 
-- **Database connection failed**: Check `DATABASE_URL` environment variable
-- **Database table not found**: Run `npx prisma migrate deploy`
-- **Duplicate entry**: Lead with same information already exists
-- **Invalid reference**: Referenced record does not exist
+### Error Detection
 
-## Next Steps
+Checks for:
+- `trustEventTypeV1` in error message
+- `does not exist` in error message
+- Prisma error code `P2021` (column not found)
 
-1. **Restart servers** to apply changes
-2. **Test lead creation** via UI
-3. **Check Supabase logs** to see CTA events being logged
-4. **Verify data** appears in `reflex_events` table
+---
 
-## Supabase Logs
+## ✅ Verification
 
-After creating a lead, you should see in Supabase logs:
-- `POST /api/admin/operator-onboarding` with status 200
-- Database queries to `reflex_events` table
-- New entries in the `reflex_events` table
+### Before Fix:
+```
+❌ POST /api/admin/operator-onboarding
+   Error: The column reflex_events.trustEventTypeV1 does not exist
+   Status: 500 Internal Server Error
+```
 
+### After Fix:
+```
+✅ POST /api/admin/operator-onboarding
+   Warning: trustEventTypeV1 column not found, using raw SQL fallback
+   Status: 200 OK
+   Response: { success: true, leadId: "...", message: "Lead created successfully" }
+```
+
+---
+
+## 📋 Next Steps
+
+### Option 1: Apply Migration (Recommended)
+Run the migration that adds `trustEventTypeV1` column:
+
+```bash
+cd apps/app
+npx prisma migrate deploy
+```
+
+### Option 2: Continue with Fallback
+The raw SQL fallback will continue to work until the migration is applied. No action needed.
+
+---
+
+## 🎯 Status
+
+- ✅ Lead creation working (with fallback)
+- ✅ Audit trail working (with fallback)
+- ✅ Operator onboarding dashboard should now show leads
+- ⚠️ Migration still needed for full schema sync
+
+---
+
+**Last Updated:** 2025-01-16  
+**Status:** Fixed ✅ | Migration Pending ⚠️

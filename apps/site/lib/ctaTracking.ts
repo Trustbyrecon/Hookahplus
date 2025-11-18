@@ -47,23 +47,49 @@ export async function trackCTA(params: CTATrackingData): Promise<void> {
 
     // Send to tracking API (use app build URL in production)
     const apiUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
-    const response = await fetch(`${apiUrl}/api/cta/track`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    });
+    
+    // Use fetch with timeout and better error handling
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+    
+    try {
+      const response = await fetch(`${apiUrl}/api/cta/track`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
 
-    if (!response.ok) {
-      console.warn('[CTA Tracking] Failed to track CTA:', await response.text());
-    } else {
-      const result = await response.json();
-      console.log('[CTA Tracking] Success:', result);
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        // Only log in development to reduce console noise
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[CTA Tracking] Failed to track CTA:', await response.text());
+        }
+      } else {
+        const result = await response.json();
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[CTA Tracking] Success:', result);
+        }
+      }
+    } catch (fetchError: any) {
+      clearTimeout(timeoutId);
+      
+      // Only log connection errors in development
+      // Connection refused is expected if app build isn't running
+      if (process.env.NODE_ENV === 'development' && !fetchError.message?.includes('aborted')) {
+        console.debug('[CTA Tracking] Connection error (app build may not be running):', fetchError.message);
+      }
+      // Fail silently in production - don't break user experience
     }
   } catch (error) {
     // Fail silently - don't break user experience if tracking fails
-    console.warn('[CTA Tracking] Error:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('[CTA Tracking] Error:', error);
+    }
   }
 }
 

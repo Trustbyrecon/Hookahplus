@@ -7,7 +7,10 @@ const stripe = process.env.STRIPE_SECRET_KEY
     })
   : null;
 
-export async function GET(request: NextRequest) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { sessionId: string } }
+) {
   try {
     if (!stripe) {
       return NextResponse.json(
@@ -16,8 +19,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Get session ID from path parameter (route: /api/checkout-session/[sessionId])
+    // Also support query parameter for backwards compatibility
     const { searchParams } = new URL(request.url);
-    const sessionId = searchParams.get('session_id');
+    const sessionId = params?.sessionId || searchParams.get('session_id');
 
     if (!sessionId) {
       return NextResponse.json(
@@ -25,6 +30,8 @@ export async function GET(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    console.log('[Checkout Session API] Fetching session:', sessionId.substring(0, 20) + '...');
 
     // Retrieve checkout session from Stripe
     const session = await stripe.checkout.sessions.retrieve(sessionId);
