@@ -609,53 +609,54 @@ export async function POST(req: NextRequest) {
           console.error('[Sessions API] Failed to log KTL-4 event:', ktl4Error);
         }
       
-      // Session created successfully - create analytics event and initialize Reflex Chain
-      // Create ReflexEvent for analytics tracking
-      try {
-        await prisma.reflexEvent.create({
-          data: {
-            type: 'session.created',
-            source: 'api',
-            sessionId: newSession.id,
-            payload: JSON.stringify({
-              action: 'create-session',
-              tableId: data.tableId,
-              customerName: data.customerName,
-              source: sourceValue,
-              businessLogic: 'New session created - BOH can claim prep or put on hold'
-            }),
-            payloadHash: seal({
-              action: 'create-session',
-              tableId: data.tableId,
-              customerName: data.customerName,
-              source: sourceValue
-            })
-          }
+        // Session created successfully - create analytics event and initialize Reflex Chain
+        // Create ReflexEvent for analytics tracking
+        try {
+          await prisma.reflexEvent.create({
+            data: {
+              type: 'session.created',
+              source: 'api',
+              sessionId: newSession.id,
+              payload: JSON.stringify({
+                action: 'create-session',
+                tableId: data.tableId,
+                customerName: data.customerName,
+                source: sourceValue,
+                businessLogic: 'New session created - BOH can claim prep or put on hold'
+              }),
+              payloadHash: seal({
+                action: 'create-session',
+                tableId: data.tableId,
+                customerName: data.customerName,
+                source: sourceValue
+              })
+            }
+          });
+        } catch (eventError) {
+          // Log but don't fail the request if event creation fails
+          console.error('[Sessions API] Failed to create analytics event:', eventError);
+        }
+
+        // Initialize Reflex Chain (preserve existing logic)
+        const fireSession = convertPrismaSessionToFireSession(newSession);
+        try {
+          await initializeReflexChain(fireSession);
+        } catch (reflexError) {
+          // Log but don't fail the request if Reflex Chain initialization fails
+          console.error('[Sessions API] Failed to initialize Reflex Chain:', reflexError);
+        }
+
+        // Return with business logic metadata (preserve existing format)
+        return NextResponse.json({ 
+          success: true, 
+          session: fireSession,
+          message: 'Session created successfully',
+          nextActions: ['CLAIM_PREP', 'PUT_ON_HOLD'],
+          businessLogic: 'New session created - BOH can claim prep or put on hold'
+        }, {
+          headers: getCorsHeaders(req),
         });
-      } catch (eventError) {
-        // Log but don't fail the request if event creation fails
-        console.error('[Sessions API] Failed to create analytics event:', eventError);
       }
-
-      // Initialize Reflex Chain (preserve existing logic)
-      const fireSession = convertPrismaSessionToFireSession(newSession);
-      try {
-        await initializeReflexChain(fireSession);
-      } catch (reflexError) {
-        // Log but don't fail the request if Reflex Chain initialization fails
-        console.error('[Sessions API] Failed to initialize Reflex Chain:', reflexError);
-      }
-
-      // Return with business logic metadata (preserve existing format)
-      return NextResponse.json({ 
-        success: true, 
-        session: fireSession,
-        message: 'Session created successfully',
-        nextActions: ['CLAIM_PREP', 'PUT_ON_HOLD'],
-        businessLogic: 'New session created - BOH can claim prep or put on hold'
-      }, {
-        headers: getCorsHeaders(req),
-      });
     } catch (createError: any) {
       // Log Prisma create error
       console.error('[Sessions API] ❌ Session creation failed:', {

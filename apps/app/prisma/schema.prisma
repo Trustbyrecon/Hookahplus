@@ -68,7 +68,7 @@ model Session {
   qrCodeUrl       String? // URL to QR code image/data URL for staff scanning (fraud prevention)
 
   // Taxonomy v1 fields (dual-write pattern)
-  sessionStateV1  String? // Taxonomy v1: queued | prep | handoff | delivering | delivered | checkout | closed | canceled
+  sessionStateV1  String? @map("session_state_v1") // Taxonomy v1: queued | prep | handoff | delivering | delivered | checkout | closed | canceled
   paused          Boolean @default(false) // PAUSED is a modifier flag, not a state
 
   @@map("Session")

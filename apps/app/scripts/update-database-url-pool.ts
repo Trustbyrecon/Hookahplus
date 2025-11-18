@@ -49,6 +49,12 @@ function updateDatabaseUrl() {
           // Replace old values with new values using regex
           url = url.replace(/connection_limit=\d+/g, 'connection_limit=30');
           url = url.replace(/pool_timeout=\d+/g, 'pool_timeout=10');
+          // Ensure pgbouncer=true is set (critical for PgBouncer transaction mode)
+          if (!url.includes('pgbouncer=')) {
+            url += '&pgbouncer=true';
+          } else {
+            url = url.replace(/pgbouncer=(true|false)/, 'pgbouncer=true');
+          }
           
           updated = true;
           console.log('📝 Updated DATABASE_URL with new pool limits:');
@@ -65,23 +71,44 @@ function updateDatabaseUrl() {
         } else {
           // Already has new values or different values - check if they're correct
           const hasNewValues = url.includes('connection_limit=30') && url.includes('pool_timeout=10');
-          if (hasNewValues) {
-            console.log('✅ DATABASE_URL already has correct connection pool parameters (30, 10)');
+          const hasPgbouncer = url.includes('pgbouncer=true');
+          
+          if (hasNewValues && hasPgbouncer) {
+            console.log('✅ DATABASE_URL already has correct connection pool parameters (30, 10) and pgbouncer=true');
+            return line; // Keep as-is
           } else {
-            console.log('⚠️  DATABASE_URL has connection pool parameters, but with different values');
-            console.log('   Current URL:', url.substring(0, 80) + '...');
-            console.log('   Expected: connection_limit=30&pool_timeout=10');
+            // Update to ensure pgbouncer=true is set
+            if (!hasPgbouncer) {
+              url += '&pgbouncer=true';
+              updated = true;
+              console.log('📝 Added pgbouncer=true to DATABASE_URL (required for PgBouncer transaction mode)');
+            }
+            if (!hasNewValues) {
+              url = url.replace(/connection_limit=\d+/g, 'connection_limit=30');
+              url = url.replace(/pool_timeout=\d+/g, 'pool_timeout=10');
+              updated = true;
+              console.log('📝 Updated connection pool parameters to (30, 10)');
+            }
+            
+            // Preserve original quote style
+            if (line.includes('"')) {
+              return `DATABASE_URL="${url}"`;
+            } else if (line.includes("'")) {
+              return `DATABASE_URL='${url}'`;
+            } else {
+              return `DATABASE_URL=${url}`;
+            }
           }
-          return line; // Keep as-is
         }
       }
       
-      // Add connection pool parameters
+      // Add connection pool parameters and pgbouncer=true (critical for PgBouncer transaction mode)
       const separator = url.includes('?') ? '&' : '?';
       // P0: Increase connection pool for high concurrency (100 concurrent requests)
       // - connection_limit=30: Support up to 30 concurrent connections (was 15)
       // - pool_timeout=10: 10 second timeout (was 5) to handle connection acquisition delays
-      const newUrl = `${url}${separator}connection_limit=30&pool_timeout=10`;
+      // - pgbouncer=true: Disable prepared statements (required for PgBouncer transaction mode)
+      const newUrl = `${url}${separator}connection_limit=30&pool_timeout=10&pgbouncer=true`;
       
       updated = true;
       console.log('📝 Updated DATABASE_URL:');
@@ -115,8 +142,9 @@ function updateDatabaseUrl() {
   console.log('   1. Restart your dev server (Ctrl+C, then npm run dev)');
   console.log('   2. Re-run performance tests to verify improvements');
   console.log('\n📊 Connection Pool Settings:');
-    console.log('   - connection_limit=30: Max 30 concurrent connections (increased for load testing)');
-    console.log('   - pool_timeout=10: 10 second timeout for getting a connection (increased for reliability)');
+  console.log('   - connection_limit=30: Max 30 concurrent connections (increased for load testing)');
+  console.log('   - pool_timeout=10: 10 second timeout for getting a connection (increased for reliability)');
+  console.log('   - pgbouncer=true: Disables prepared statements (required for PgBouncer transaction mode)');
 }
 
 updateDatabaseUrl();
