@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
 import { SessionSource, SessionState } from '@prisma/client';
+import crypto from 'crypto';
 import { 
   FireSession, 
   SessionStatus, 
@@ -182,25 +183,9 @@ export async function GET(req: NextRequest) {
         });
       } catch (dbError: any) {
         // If sessionStateV1 column doesn't exist, use raw SQL
-        if (dbError?.message?.includes('sessionStateV1') || dbError?.code === 'P2021') {
-          console.warn('[Sessions API] sessionStateV1 column not found, using raw SQL fallback for single session');
-          const results = await prisma.$queryRawUnsafe(`
-            SELECT 
-              id, "externalRef", source, "trustSignature", "tableId", "customerRef", 
-              "customerPhone", flavor, "flavorMix", "loungeId", "priceCents", state, 
-              "edgeCase", "edgeNote", "assignedBOHId", "assignedFOHId", "startedAt", 
-              "endedAt", "durationSecs", "paymentIntent", "paymentStatus", "orderItems", 
-              "posMode", version, "createdAt", "updatedAt", "timerDuration", 
-              "timerStartedAt", "timerPausedAt", "timerPausedDuration", "timerStatus", 
-              zone, "fohUserId", "specialRequests", "tableNotes", "qrCodeUrl", paused
-            FROM "Session"
-            WHERE id = $1 OR "externalRef" = $1 OR "tableId" = $1
-            LIMIT 1
-          `, sessionId) as any[];
-          session = results[0] || null;
-        } else {
-          throw dbError;
-        }
+        // If Prisma query fails, log and return null (no raw SQL fallback)
+        console.error('[Sessions API] Failed to fetch session:', dbError?.message);
+        throw dbError;
       }
       
       if (!session) {
@@ -227,23 +212,9 @@ export async function GET(req: NextRequest) {
       });
     } catch (dbError: any) {
       // If sessionStateV1 column doesn't exist, use raw SQL to select only existing columns
-      if (dbError?.message?.includes('sessionStateV1') || dbError?.code === 'P2021') {
-        console.warn('[Sessions API] sessionStateV1 column not found, using raw SQL fallback');
-        dbSessions = await prisma.$queryRawUnsafe(`
-          SELECT 
-            id, "externalRef", source, "trustSignature", "tableId", "customerRef", 
-            "customerPhone", flavor, "flavorMix", "loungeId", "priceCents", state, 
-            "edgeCase", "edgeNote", "assignedBOHId", "assignedFOHId", "startedAt", 
-            "endedAt", "durationSecs", "paymentIntent", "paymentStatus", "orderItems", 
-            "posMode", version, "createdAt", "updatedAt", "timerDuration", 
-            "timerStartedAt", "timerPausedAt", "timerPausedDuration", "timerStatus", 
-            zone, "fohUserId", "specialRequests", "tableNotes", "qrCodeUrl", paused
-          FROM "Session"
-          ORDER BY "createdAt" DESC
-        `) as any[];
-      } else {
-        throw dbError;
-      }
+      // If Prisma query fails, log and return empty array (no raw SQL fallback)
+      console.error('[Sessions API] Failed to fetch sessions:', dbError?.message);
+      throw dbError;
     }
 
     // Convert to FireSession format
@@ -503,38 +474,17 @@ export async function POST(req: NextRequest) {
     // Check if session already exists for this table (simplified duplicate check)
     // Use raw SQL to avoid Prisma trying to select sessionStateV1 if column doesn't exist
     let existingSession: any = null;
+    // Use Prisma Client only - no raw SQL
     try {
-      // Use parameterized query to avoid SQL injection
-      existingSession = await prisma.$queryRaw`
-        SELECT id, "tableId", state, "customerRef", "loungeId", "externalRef", 
-               "createdAt", "updatedAt", "priceCents", "paymentStatus"
-        FROM "Session"
-        WHERE "tableId" = ${data.tableId}
-          AND state NOT IN ('CLOSED', 'CANCELED')
-        LIMIT 1
-      ` as any[];
-      
-      if (existingSession && existingSession.length > 0) {
-        existingSession = existingSession[0];
-      } else {
-        existingSession = null;
-      }
-    } catch (sqlError: any) {
-      // If raw SQL fails, fall back to Prisma (might work if migration is applied)
-      try {
-        existingSession = await prisma.session.findFirst({
-          where: {
-            tableId: data.tableId,
-            state: {
-              notIn: ['CLOSED', 'CANCELED'] as any
-            }
-          }
-        });
-      } catch (prismaError: any) {
-        // If both fail, log but continue (will create new session)
-        console.warn('[Sessions API] Could not check for existing session:', prismaError.message);
-        existingSession = null;
-      }
+      existingSession = await prisma.session.findFirst({
+        where: {
+          tableId: data.tableId,
+          state: { notIn: ['CLOSED', 'CANCELED'] as any }
+        }
+      });
+    } catch (prismaError: any) {
+      console.warn('[Sessions API] Could not check for existing session:', prismaError.message);
+      existingSession = null;
     }
 
     if (existingSession) {
@@ -598,101 +548,44 @@ export async function POST(req: NextRequest) {
       customerRef: sessionData.customerRef
     });
 
-    // SKIP Prisma create entirely - use raw SQL directly to avoid enum serialization issues
-    // This is the most reliable approach and bypasses Prisma's problematic enum handling
-    console.log('[Sessions API] Using raw SQL to create session (bypassing Prisma enum serialization)');
-    
-    // Escape values to prevent SQL injection
-    const escapeSqlString = (val: any) => {
-      if (val === null || val === undefined || val === '') return 'NULL';
-      if (typeof val === 'string') return `'${val.replace(/'/g, "''")}'`;
-      if (typeof val === 'boolean') return val ? 'true' : 'false';
-      return val;
-    };
+    // Use Prisma Client only - no raw SQL (PgBouncer transaction mode compatible)
+    console.log('[Sessions API] Creating session via Prisma Client (PgBouncer-friendly)');
     
     // Use normalized data from above
     const finalFlavor = data.flavorMix[0] || 'Custom Mix';
     const finalFlavorMix = JSON.stringify(data.flavorMix);
     const finalPriceCents = priceCents;
     
-    // Map legacy state to v1 taxonomy (dual-write pattern)
-    const legacyState = 'PENDING' as const; // New sessions start as PENDING
-    const mappedState = mapSessionState(legacyState, {
-      prep_started_at: null,
-      handoff_started_at: null
-    });
+    // Generate UUID
+    const sessionId = crypto.randomUUID();
     
-    // Try to include v1 columns, but handle gracefully if they don't exist yet
-    // First, try with v1 columns
-    let insertQuery = `
-      INSERT INTO "Session" (
-        "id", "externalRef", "source", "state", "trustSignature", 
-        "tableId", "customerRef", "customerPhone", "flavor", "flavorMix",
-        "loungeId", "priceCents", "assignedBOHId", "assignedFOHId", 
-        "tableNotes", "durationSecs", "createdAt", "updatedAt",
-        "sessionStateV1", "paused"
-      ) VALUES (
-        gen_random_uuid()::text,
-        ${escapeSqlString(finalExternalRef)},
-        ${escapeSqlString(data.source)}::"SessionSource",
-        'PENDING'::"SessionState",
-        ${escapeSqlString(trustSignature)},
-        ${escapeSqlString(data.tableId)},
-        ${escapeSqlString(data.customerName)},
-        ${data.customerPhone ? escapeSqlString(data.customerPhone) : 'NULL'},
-        ${escapeSqlString(finalFlavor)},
-        ${finalFlavorMix ? escapeSqlString(finalFlavorMix) : 'NULL'},
-        ${escapeSqlString(finalLoungeId)},
-        ${finalPriceCents},
-        ${data.assignedBoh ? escapeSqlString(data.assignedBoh) : 'NULL'},
-        ${data.assignedFoh ? escapeSqlString(data.assignedFoh) : 'NULL'},
-        ${data.notes ? escapeSqlString(data.notes) : 'NULL'},
-        ${data.sessionDuration},
-        NOW(),
-        NOW(),
-        ${escapeSqlString(mappedState.state)},
-        ${mappedState.paused}
-      ) RETURNING *
-    `;
-    
-    // Fallback query without v1 columns (if migration not run yet)
-    const insertQueryFallback = `
-      INSERT INTO "Session" (
-        "id", "externalRef", "source", "state", "trustSignature", 
-        "tableId", "customerRef", "customerPhone", "flavor", "flavorMix",
-        "loungeId", "priceCents", "assignedBOHId", "assignedFOHId", 
-        "tableNotes", "durationSecs", "createdAt", "updatedAt"
-      ) VALUES (
-        gen_random_uuid()::text,
-        ${escapeSqlString(finalExternalRef)},
-        ${escapeSqlString(data.source)}::"SessionSource",
-        'PENDING'::"SessionState",
-        ${escapeSqlString(trustSignature)},
-        ${escapeSqlString(data.tableId)},
-        ${escapeSqlString(data.customerName)},
-        ${data.customerPhone ? escapeSqlString(data.customerPhone) : 'NULL'},
-        ${escapeSqlString(finalFlavor)},
-        ${finalFlavorMix ? escapeSqlString(finalFlavorMix) : 'NULL'},
-        ${escapeSqlString(finalLoungeId)},
-        ${finalPriceCents},
-        ${data.assignedBoh ? escapeSqlString(data.assignedBoh) : 'NULL'},
-        ${data.assignedFoh ? escapeSqlString(data.assignedFoh) : 'NULL'},
-        ${data.notes ? escapeSqlString(data.notes) : 'NULL'},
-        ${data.sessionDuration},
-        NOW(),
-        NOW()
-      ) RETURNING *
-    `;
-    
+    // Create session using Prisma Client only
     let newSession: any;
     try {
-      console.log('[Sessions API] Executing raw SQL query with v1 columns');
-      const result = await prisma.$queryRawUnsafe(insertQuery) as any[];
+      newSession = await prisma.session.create({
+        data: {
+          id: sessionId,
+          externalRef: finalExternalRef,
+          source: data.source as SessionSource,
+          state: 'PENDING' as SessionState,
+          trustSignature,
+          tableId: data.tableId,
+          customerRef: data.customerName,
+          customerPhone: data.customerPhone,
+          flavor: finalFlavor,
+          flavorMix: finalFlavorMix,
+          loungeId: finalLoungeId,
+          priceCents: finalPriceCents,
+          assignedBOHId: data.assignedBoh,
+          assignedFOHId: data.assignedFoh,
+          tableNotes: data.notes,
+          durationSecs: data.sessionDuration
+          // Note: sessionStateV1 and paused columns skipped - migration may not be run yet
+        }
+      });
+      console.log('[Sessions API] ✅ Session created successfully:', newSession.id);
       
-      if (result && result.length > 0) {
-        newSession = result[0];
-        console.log('[Sessions API] ✅ Session created successfully via raw SQL:', newSession.id);
-        
+      if (newSession) {
         // Log KTL-4 event for successful session creation
         try {
           await logKtl4Event({
@@ -708,16 +601,13 @@ export async function POST(req: NextRequest) {
               customerPhone: data.customerPhone,
               flavor: finalFlavor,
               priceCents: finalPriceCents,
-              method: 'raw_sql'
+              method: 'prisma_client'
             }
           });
         } catch (ktl4Error) {
           // Log but don't fail the request if KTL-4 logging fails
           console.error('[Sessions API] Failed to log KTL-4 event:', ktl4Error);
         }
-      } else {
-        throw new Error('Raw SQL insert returned no rows');
-      }
       
       // Session created successfully - create analytics event and initialize Reflex Chain
       // Create ReflexEvent for analytics tracking
@@ -766,94 +656,44 @@ export async function POST(req: NextRequest) {
       }, {
         headers: getCorsHeaders(req),
       });
-    } catch (sqlError: any) {
-      // Log the actual error for debugging
-      console.error('[Sessions API] Raw SQL error:', {
-        message: sqlError?.message,
-        code: sqlError?.code,
-        detail: sqlError?.detail,
-        hint: sqlError?.hint,
-        stack: sqlError?.stack
+    } catch (createError: any) {
+      // Log Prisma create error
+      console.error('[Sessions API] ❌ Session creation failed:', {
+        message: createError?.message,
+        code: createError?.code,
+        meta: createError?.meta
       });
       
-      // Check if error is due to missing v1 columns (migration not run yet)
-      const isMissingColumnError = sqlError?.message?.includes('does not exist') || 
-                                   sqlError?.code === '42703' ||
-                                   sqlError?.message?.includes('sessionStateV1');
-      
-      if (isMissingColumnError) {
-        console.warn('[Sessions API] ⚠️ V1 columns not found, using fallback query (migration may not be run yet)');
-        try {
-          // Try fallback query without v1 columns
-          const fallbackResult = await prisma.$queryRawUnsafe(insertQueryFallback) as any[];
-          if (fallbackResult && fallbackResult.length > 0) {
-            newSession = fallbackResult[0];
-            console.log('[Sessions API] ✅ Session created successfully via fallback query (no v1 columns):', newSession.id);
-            
-            // Log KTL-4 event for successful session creation (without v1 columns)
-            try {
-              await logKtl4Event({
-                flowName: 'session_lifecycle',
-                eventType: 'session_created',
-                sessionId: newSession.id,
-                status: 'success',
-                details: {
-                  tableId: data.tableId,
-                  source: sourceValue,
-                  loungeId: finalLoungeId,
-                  customerName: data.customerName,
-                  customerPhone: data.customerPhone,
-                  flavor: finalFlavor,
-                  priceCents: finalPriceCents,
-                  method: 'raw_sql_fallback',
-                  note: 'V1 columns not available - migration may need to be run'
-                }
-              });
-            } catch (ktl4Error) {
-              console.error('[Sessions API] Failed to log KTL-4 event:', ktl4Error);
-            }
-          } else {
-            throw new Error('Fallback query returned no rows');
+      // Log KTL-4 event for session creation failure
+      try {
+        const errorType = createError?.code || 'unknown_error';
+        await logKtl4Event({
+          flowName: 'session_lifecycle',
+          eventType: 'session_creation_failed',
+          status: 'error',
+          details: {
+            error: createError?.message || 'Unknown error',
+            errorType,
+            tableId: data.tableId,
+            source: sourceValue,
+            loungeId: finalLoungeId,
+            customerName: data.customerName,
+            method: 'prisma_client'
           }
-        } catch (fallbackError: any) {
-          console.error('[Sessions API] ❌ Fallback query also failed:', fallbackError);
-          throw fallbackError; // Re-throw to be handled by outer catch
-        }
-      } else {
-        // Other SQL errors - log and re-throw
-        console.error('[Sessions API] ❌ Raw SQL insert failed:', sqlError);
-        console.error('[Sessions API] SQL Error details:', {
-          message: sqlError?.message,
-          code: sqlError?.code,
-          query: insertQuery.substring(0, 200) + '...'
         });
-        
-        // Log KTL-4 event for session creation failure
-        try {
-          const errorType = sqlError?.message?.includes('expected value') ? 'enum_serialization' : 
-                           sqlError?.code ? `database_error_${sqlError.code}` : 'unknown_error';
-          
-          await logKtl4Event({
-            flowName: 'session_lifecycle',
-            eventType: 'session_creation_failed',
-            status: 'error',
-            details: {
-              error: sqlError?.message || 'Unknown error',
-              errorType,
-              tableId: data.tableId,
-              source: sourceValue,
-              loungeId: finalLoungeId,
-              customerName: data.customerName,
-              method: 'raw_sql'
-            }
-          });
-        } catch (ktl4Error) {
-          // Log but don't fail the request if KTL-4 logging fails
-          console.error('[Sessions API] Failed to log KTL-4 failure event:', ktl4Error);
-        }
-        
-        throw sqlError;
+      } catch (ktl4Error) {
+        console.error('[Sessions API] Failed to log KTL-4 failure event:', ktl4Error);
       }
+      
+      // Return appropriate error response
+      return NextResponse.json({
+        error: 'Failed to create session',
+        details: createError?.message || 'Unknown error',
+        code: createError?.code
+      }, {
+        status: createError?.code === 'P2002' ? 409 : 500, // 409 for unique constraint violations
+        headers: getCorsHeaders(req),
+      });
     }
   } catch (error) {
       console.error('[Sessions API] Error creating session:', error);
