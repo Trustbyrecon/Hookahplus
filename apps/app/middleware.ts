@@ -1,85 +1,83 @@
+import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 /**
- * Simple authentication check
- * For SaaS, we need to protect both admin and app routes
+ * Middleware for Supabase Auth with multi-tenant RLS
+ * Protects admin routes and app routes based on authentication and roles
  */
-function isAuthenticated(req: NextRequest): boolean {
-  // Check for API key in header (for programmatic access)
-  const apiKey = req.headers.get('x-api-key');
-  if (apiKey && process.env.ADMIN_API_KEY && apiKey === process.env.ADMIN_API_KEY) {
-    return true;
-  }
-
-  // Check for session cookie (for browser access)
-  const sessionCookie = req.cookies.get('admin_session');
-  if (sessionCookie && process.env.ADMIN_SESSION_SECRET && sessionCookie.value === process.env.ADMIN_SESSION_SECRET) {
-    return true;
-  }
-
-  // In development, allow access if ADMIN_BYPASS is set
-  if (process.env.NODE_ENV === 'development' && process.env.ADMIN_BYPASS === 'true') {
-    return true;
-  }
-
-  // If no auth config, allow in development (graceful degradation)
-  if (process.env.NODE_ENV === 'development' && !process.env.ADMIN_API_KEY && !process.env.ADMIN_SESSION_SECRET) {
-    console.warn('[Middleware] No auth configured - allowing access in development');
-    return true;
-  }
-
-  return false;
-}
-
-/**
- * Check if user has admin role
- */
-function isAdmin(req: NextRequest): boolean {
-  // For now, use same auth check as authenticated
-  // In future, can add role-based checks here
-  return isAuthenticated(req);
-}
-
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
 
-  // Protect admin routes
-  if (pathname.startsWith('/admin')) {
-    if (!isAdmin(request)) {
-      // Redirect to login or return 401
-      if (pathname.startsWith('/api/admin')) {
-        // API routes return 401
-        return NextResponse.json(
-          { error: 'Unauthorized', message: 'Admin access required' },
-          { status: 401 }
-        );
-      } else {
-        // Page routes redirect to login
-        const loginUrl = new URL('/login', request.url);
-        loginUrl.searchParams.set('redirect', pathname);
-        return NextResponse.redirect(loginUrl);
-      }
+  // Create Supabase client for middleware
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            request.cookies.set(name, value);
+            response.cookies.set(name, value, options);
+          });
+        },
+      },
     }
-  }
+  );
 
-  // Protect app routes (SaaS requirement)
-  // Exclude public routes like /api/health, /api/sessions (for QR codes), etc.
+  // Get current user
+  const { data: { user }, error } = await supabase.auth.getUser();
+
+  // Public routes that don't require authentication
   const publicRoutes = [
     '/api/health',
-    '/api/sessions', // QR code access
+    '/api/sessions', // QR code access (POST only)
     '/api/checkout-session',
     '/api/webhooks',
     '/login',
+    '/signup',
     '/_next',
     '/favicon.ico',
   ];
 
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
 
-  if (!isPublicRoute && pathname.startsWith('/api') && !pathname.startsWith('/api/admin')) {
-    // Protect API routes (except public ones)
-    if (!isAuthenticated(request)) {
+  // Allow public routes
+  if (isPublicRoute) {
+    return response;
+  }
+
+  // Protect admin routes
+  if (pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) {
+    if (!user) {
+      if (pathname.startsWith('/api/admin')) {
+        return NextResponse.json(
+          { error: 'Unauthorized', message: 'Authentication required' },
+          { status: 401 }
+        );
+      } else {
+        const loginUrl = new URL('/login', request.url);
+        loginUrl.searchParams.set('redirect', pathname);
+        return NextResponse.redirect(loginUrl);
+      }
+    }
+
+    // Check if user has admin role (owner or admin)
+    // Note: Role check happens in API routes using getCurrentRole()
+    // Middleware just ensures user is authenticated
+  }
+
+  // Protect other API routes
+  if (pathname.startsWith('/api') && !isPublicRoute) {
+    if (!user) {
       return NextResponse.json(
         { error: 'Unauthorized', message: 'Authentication required' },
         { status: 401 }
@@ -87,8 +85,7 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // Allow all other requests
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {

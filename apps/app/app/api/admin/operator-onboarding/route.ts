@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/db';
 import { generateTrustEventId, type TrustEvent, type TrustEventType } from '../../../../lib/reflex/rem-types';
 import { sendNewLeadNotification } from '../../../../lib/email';
+import { requireRole, getCurrentTenant } from '../../../../lib/auth';
 import crypto from 'crypto';
 
 /**
@@ -102,8 +103,16 @@ export async function GET(req: NextRequest) {
       }, { status: 503 });
     }
 
-    // Authentication is handled by middleware
-    // If request reaches here, user is authenticated and has admin access
+    // Require owner or admin role
+    const { user, role } = await requireRole(req, ['owner', 'admin']);
+    const tenantId = await getCurrentTenant(req);
+    
+    if (!tenantId) {
+      return NextResponse.json({
+        success: false,
+        error: 'No active tenant. Please select a tenant or create one.',
+      }, { status: 400 });
+    }
 
     const { searchParams } = new URL(req.url);
     const stage = searchParams.get('stage');
@@ -135,6 +144,10 @@ export async function GET(req: NextRequest) {
           NOT: {
             type: 'admin.operator_onboarding.update'
           }
+        },
+        {
+          // Multi-tenant filter: only events for current tenant
+          tenantId: tenantId
         }
       ]
     };
@@ -358,7 +371,17 @@ export async function POST(req: NextRequest) {
       }, { status: 503 });
     }
 
-    // Authentication is handled by middleware
+    // Require owner or admin role
+    const { user, role } = await requireRole(req, ['owner', 'admin']);
+    const tenantId = await getCurrentTenant(req);
+    
+    if (!tenantId) {
+      return NextResponse.json({
+        success: false,
+        error: 'No active tenant. Please select a tenant or create one.',
+      }, { status: 400 });
+    }
+
     const body = await req.json();
     const { action, leadId, updates, leadData } = body;
     
@@ -464,7 +487,8 @@ export async function POST(req: NextRequest) {
               ctaType: 'onboarding_signup',
               userAgent: userAgent,
               ip: ip,
-              trustEventTypeV1: 'fast_checkout' // Map onboarding.signup to fast_checkout (new customer acquisition)
+              trustEventTypeV1: 'fast_checkout', // Map onboarding.signup to fast_checkout (new customer acquisition)
+              tenantId: tenantId // Multi-tenant: associate with current tenant
             }
           });
         } catch (prismaError: any) {
@@ -480,10 +504,11 @@ export async function POST(req: NextRequest) {
             
             // Use raw SQL to insert without trustEventTypeV1 column
             // Store REM-compliant payload
+            // Note: This fallback should be removed once migration is complete
             const insertResult = await prisma.$queryRawUnsafe(`
               INSERT INTO reflex_events (
                 id, type, source, payload, "ctaSource", "ctaType", 
-                "userAgent", ip, referrer, "campaignId", metadata, "createdAt"
+                "userAgent", ip, referrer, "campaignId", metadata, tenant_id, "createdAt"
               )
               VALUES (
                 gen_random_uuid()::text,
@@ -497,6 +522,7 @@ export async function POST(req: NextRequest) {
                 $8,
                 $9,
                 $10,
+                $11,
                 NOW()
               )
               RETURNING id, type, source, "createdAt"
@@ -510,7 +536,8 @@ export async function POST(req: NextRequest) {
               ip,
               referrer,
               null, // campaignId
-              null  // metadata
+              null, // metadata
+              tenantId // Multi-tenant: associate with current tenant
             ) as any[];
             
             if (insertResult && insertResult.length > 0) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/db';
 import { SessionSource, SessionState } from '@prisma/client';
+import { getCurrentUser, getCurrentTenant } from '../../../lib/auth';
 import crypto from 'crypto';
 import { 
   FireSession, 
@@ -202,10 +203,22 @@ export async function GET(req: NextRequest) {
     }
 
     // Fetch all sessions from database
-    // Use select to only get columns that exist (avoid sessionStateV1 if migration not run)
+    // Filter by tenant_id if user is authenticated (RLS will also enforce this)
+    const user = await getCurrentUser(req);
+    const tenantId = user ? await getCurrentTenant(req) : null;
+    
     let dbSessions;
     try {
+      const whereClause: any = {};
+      
+      // If authenticated, filter by tenant_id (RLS will also enforce)
+      if (tenantId) {
+        whereClause.tenantId = tenantId;
+      }
+      // If not authenticated, this is a public route - RLS will handle filtering
+      
       dbSessions = await prisma.session.findMany({
+        where: whereClause,
         orderBy: {
           createdAt: 'desc'
         }
@@ -470,6 +483,39 @@ export async function POST(req: NextRequest) {
     // Generate externalRef for idempotency
     const finalExternalRef = data.externalRef || `${data.source.toLowerCase()}-${Date.now()}`;
     const finalLoungeId = data.loungeId;
+    
+    // Get tenant_id for multi-tenant support
+    // For public QR code access, try to get tenant_id from:
+    // 1. Request body (if provided)
+    // 2. loungeId mapping (lookup tenant by loungeId)
+    // 3. Authenticated user's tenant (if user is logged in)
+    let finalTenantId: string | null = null;
+    
+    if (body.tenantId) {
+      finalTenantId = String(body.tenantId).trim();
+    } else {
+      // Try to get from authenticated user
+      const user = await getCurrentUser(req);
+      if (user) {
+        finalTenantId = await getCurrentTenant(req);
+      }
+      
+      // If still no tenant_id, try to lookup by loungeId
+      if (!finalTenantId && finalLoungeId) {
+        try {
+          const tenant = await prisma.tenant.findFirst({
+            where: {
+              name: finalLoungeId,
+            },
+          });
+          if (tenant) {
+            finalTenantId = tenant.id;
+          }
+        } catch (error) {
+          console.warn('[Sessions API] Could not lookup tenant by loungeId:', error);
+        }
+      }
+    }
 
     // Check if session already exists for this table (simplified duplicate check)
     // Use raw SQL to avoid Prisma trying to select sessionStateV1 if column doesn't exist
@@ -579,7 +625,8 @@ export async function POST(req: NextRequest) {
           assignedBOHId: data.assignedBoh,
           assignedFOHId: data.assignedFoh,
           tableNotes: data.notes,
-          durationSecs: data.sessionDuration
+          durationSecs: data.sessionDuration,
+          tenantId: finalTenantId // Multi-tenant: associate with tenant
           // Note: sessionStateV1 and paused columns skipped - migration may not be run yet
         }
       });
@@ -629,7 +676,8 @@ export async function POST(req: NextRequest) {
                 tableId: data.tableId,
                 customerName: data.customerName,
                 source: sourceValue
-              })
+              }),
+              tenantId: finalTenantId // Multi-tenant: associate with tenant
             }
           });
         } catch (eventError) {

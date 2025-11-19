@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 
 import Stripe from "stripe";
 import { PrismaClient, SessionState, SessionSource } from '@prisma/client';
+import { adminClient } from '../../../lib/supabase';
 import crypto from "crypto";
 
 const prisma = new PrismaClient();
@@ -157,6 +158,37 @@ export async function POST(req: Request) {
           }),
         },
       });
+
+      // Create Payment record in payments table (multi-tenant)
+      // Note: Webhooks should use service role connection (bypasses RLS)
+      // Prisma client uses DATABASE_URL - ensure it's service role for webhooks
+      if (session.payment_status === 'paid' && paymentIntentId && existingSession.tenantId) {
+        try {
+          // Check if payment already exists
+          const existingPayment = await prisma.payment.findFirst({
+            where: {
+              stripeChargeId: paymentIntentId,
+            },
+          });
+
+          if (!existingPayment) {
+            await prisma.payment.create({
+              data: {
+                tenantId: existingSession.tenantId,
+                sessionId: sessionId,
+                stripeChargeId: paymentIntentId,
+                amountCents: priceCents,
+                status: 'succeeded',
+                paidAt: new Date(),
+              },
+            });
+            console.log('[Webhook] Payment record created:', paymentIntentId);
+          }
+        } catch (paymentError) {
+          console.error('[Webhook] Failed to create payment record (non-blocking):', paymentError);
+          // Don't fail webhook if payment record creation fails
+        }
+      }
       
       // Apply loyalty and trust events (all business logic stays in H+)
       try {
@@ -208,6 +240,34 @@ export async function POST(req: Request) {
             // State will be updated via checkout.session.completed webhook
           },
         });
+
+        // Create Payment record if session has tenant_id
+        if (session.tenantId) {
+          try {
+            const existingPayment = await prisma.payment.findFirst({
+              where: {
+                stripeChargeId: paymentIntent.id,
+              },
+            });
+
+            if (!existingPayment) {
+              await prisma.payment.create({
+                data: {
+                  tenantId: session.tenantId,
+                  sessionId: sessionId,
+                  stripeChargeId: paymentIntent.id,
+                  amountCents: session.priceCents || paymentIntent.amount,
+                  status: 'succeeded',
+                  paidAt: new Date(),
+                },
+              });
+              console.log('[Webhook] Payment record created from PaymentIntent:', paymentIntent.id);
+            }
+          } catch (paymentError) {
+            console.error('[Webhook] Failed to create payment record (non-blocking):', paymentError);
+          }
+        }
+
         console.log('[Webhook] PaymentIntent confirmed for session:', sessionId);
       } else {
         console.warn('[Webhook] PaymentIntent succeeded but session not found:', sessionId);
@@ -298,7 +358,8 @@ async function handleSessionExtension(
             checkoutSessionId: checkoutSession.id,
             businessLogic: 'Session extended via Stripe payment - timer duration increased'
           }),
-          payloadHash: `extend_${sessionId}_${Date.now()}`
+          payloadHash: `extend_${sessionId}_${Date.now()}`,
+          tenantId: dbSession.tenantId || updatedSession.tenantId // Multi-tenant: associate with tenant
         }
       });
     } catch (eventError) {

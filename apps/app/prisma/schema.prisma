@@ -25,6 +25,13 @@ enum SessionState {
   CANCELED
 }
 
+enum Role {
+  owner
+  admin
+  staff
+  viewer
+}
+
 model Session {
   id             String        @id @default(cuid())
   externalRef    String? // qrToken | reservationId | stripeCheckoutId
@@ -71,6 +78,14 @@ model Session {
   sessionStateV1  String? @map("session_state_v1") // Taxonomy v1: queued | prep | handoff | delivering | delivered | checkout | closed | canceled
   paused          Boolean @default(false) // PAUSED is a modifier flag, not a state
 
+  // Multi-tenant field
+  tenantId        String? @map("tenant_id") @db.Uuid
+
+  // Relations
+  tenant   Tenant?   @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  payments Payment[] // One session can have multiple payments
+
+  @@index([tenantId])
   @@map("Session")
 }
 
@@ -148,11 +163,72 @@ model User {
   id        String   @id @default(cuid())
   email     String   @unique
   name      String?
-  roles     String // Comma-separated roles: "BOH,FOH,MANAGER,ADMIN"
+  roles     String // Comma-separated roles: "BOH,FOH,MANAGER,ADMIN" (legacy, use memberships for multi-tenant)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("users")
+}
+
+// Note: memberships.user_id references auth.users(id) from Supabase Auth
+// Prisma cannot directly reference auth.users, so Membership model has userId field without relation
+
+// Multi-tenant models
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  memberships Membership[]
+  sessions     Session[]
+  events       ReflexEvent[]
+  payments     Payment[]
+
+  @@map("tenants")
+}
+
+model Membership {
+  userId    String   @map("user_id") @db.Uuid // References auth.users(id) from Supabase Auth
+  tenantId  String   @map("tenant_id") @db.Uuid
+  role      Role
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  // Note: userId references auth.users(id), not User model (Prisma cannot reference auth schema)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@id([userId, tenantId])
+  @@index([userId])
+  @@index([tenantId])
+  @@index([role])
+  @@map("memberships")
+}
+
+model Payment {
+  id             String    @id @default(uuid())
+  tenantId       String    @map("tenant_id") @db.Uuid
+  sessionId      String?   @map("session_id")
+  stripeChargeId String?   @unique @map("stripe_charge_id")
+  amountCents    Int       @map("amount_cents")
+  status         String    @default("pending") // 'pending', 'succeeded', 'failed', 'refunded'
+  paidAt         DateTime? @map("paid_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  session Session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  // Note: sessionId is not unique - a session can have multiple payments (refunds, partial payments, etc.)
+  // So this is a one-to-many relation (one session can have many payments)
+
+  @@index([tenantId])
+  @@index([sessionId])
+  @@index([stripeChargeId])
+  @@index([status])
+  @@index([paidAt])
+  @@index([createdAt])
+  @@map("payments")
 }
 
 model SessionTransition {
@@ -241,11 +317,18 @@ model ReflexEvent {
   // Taxonomy v1 fields (dual-write pattern)
   trustEventTypeV1 String? // Taxonomy v1: on_time_delivery | fav_used | fast_checkout | corrected_issue | staff_greeting | loyalty_redeemed
 
+  // Multi-tenant field
+  tenantId        String? @map("tenant_id") @db.Uuid
+
+  // Relations
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+
   @@index([type, createdAt])
   @@index([ctaSource])
   @@index([ctaType])
   @@index([campaignId])
   @@index([trustEventTypeV1])
+  @@index([tenantId])
   @@map("reflex_events")
 }
 
