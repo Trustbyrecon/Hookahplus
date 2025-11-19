@@ -4,8 +4,13 @@ import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// Get Supabase URL and key from environment
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Missing Supabase environment variables');
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -24,7 +29,16 @@ export default function LoginPage() {
     setError(null);
 
     try {
+      // Validate environment variables
+      if (!supabaseUrl || !supabaseAnonKey) {
+        throw new Error('Supabase configuration is missing. Please check your environment variables.');
+      }
+
       const supabase = createClient(supabaseUrl, supabaseAnonKey);
+      
+      if (!supabase || typeof supabase.auth?.signInWithPassword !== 'function') {
+        throw new Error('Failed to initialize Supabase client. Please restart the dev server.');
+      }
       
       if (isMagicLink) {
         // Magic link login

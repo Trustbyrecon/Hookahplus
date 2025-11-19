@@ -4,8 +4,13 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// Get Supabase URL and key from environment
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Missing Supabase environment variables');
+}
 
 export default function SignupPage() {
   const router = useRouter();
@@ -22,6 +27,16 @@ export default function SignupPage() {
     setError(null);
 
     try {
+      // Validate environment variables
+      if (!supabaseUrl || !supabaseAnonKey) {
+        throw new Error('Supabase configuration is missing. Please check your environment variables.');
+      }
+
+      // Validate createClient is available
+      if (typeof createClient !== 'function') {
+        throw new Error('Supabase client initialization failed. Please restart the dev server.');
+      }
+
       const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
       // Step 1: Create user in Supabase Auth
