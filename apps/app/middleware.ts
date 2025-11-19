@@ -42,6 +42,8 @@ export async function middleware(request: NextRequest) {
     '/api/sessions', // QR code access (POST only)
     '/api/checkout-session',
     '/api/webhooks',
+    '/api/tenants', // Allow tenant creation during signup
+    '/api/memberships', // Allow membership creation during signup (uses service role internally)
     '/login',
     '/signup',
     '/_next',

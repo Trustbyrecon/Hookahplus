@@ -260,10 +260,15 @@ export default function SimpleFSDDesign({
   };
 
   // Generate demo sessions if none provided
-  const displaySessions = sessions.length > 0 ? sessions : mockSiteData.sessions;
+  // Only use mock data after mount to prevent hydration mismatch
+  const displaySessions = isMounted 
+    ? (sessions.length > 0 ? sessions : mockSiteData.sessions)
+    : []; // Empty array during SSR to prevent hydration mismatch
 
   // Filter sessions by role permissions
   const getFilteredSessions = () => {
+    if (!isMounted) return []; // Return empty during SSR
+    
     const allSessions = displaySessions;
     
     // Role-based filtering
@@ -324,8 +329,35 @@ export default function SimpleFSDDesign({
     return curated.slice(0, 3);
   };
 
-  const displayedSessions = selectCuratedSessions();
-  const filteredSessions = displayedSessions;
+  // Only calculate sessions after mount to prevent hydration mismatch
+  const displayedSessions = isMounted ? selectCuratedSessions() : [];
+  
+  // Filter sessions based on active tab
+  const getFilteredSessionsForTab = () => {
+    if (!isMounted) return [];
+    
+    switch (activeTab) {
+      case 'boh':
+        return getAllBohSessions();
+      case 'foh':
+        return getAllFohSessions();
+      case 'edge':
+        return roleFilteredSessions.filter((s: any) => {
+          const status = getSessionStatus(s);
+          return ['STAFF_HOLD', 'STOCK_BLOCKED', 'REMAKE', 'REFUND_REQUESTED', 'VOIDED'].includes(status);
+        });
+      case 'waitlist':
+        return roleFilteredSessions.filter((s: any) => {
+          const status = getSessionStatus(s);
+          return status === 'NEW' || status === 'PAID_CONFIRMED';
+        });
+      case 'overview':
+      default:
+        return displayedSessions; // Show curated 3 for overview
+    }
+  };
+  
+  const filteredSessions = getFilteredSessionsForTab();
 
   // Calculate metrics for dashboard - sync with displayed sessions
   const calculateMetrics = () => {
@@ -364,6 +396,7 @@ export default function SimpleFSDDesign({
 
   // Get all sessions for BOH/FOH tabs (not just curated 3)
   const getAllBohSessions = () => {
+    if (!isMounted) return [];
     return roleFilteredSessions.filter((s: any) => {
       const status = getSessionStatus(s);
       return ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY', 'STOCK_BLOCKED', 'REMAKE'].includes(status);
@@ -371,6 +404,7 @@ export default function SimpleFSDDesign({
   };
 
   const getAllFohSessions = () => {
+    if (!isMounted) return [];
     return roleFilteredSessions.filter((s: any) => {
       const status = getSessionStatus(s);
       return ['OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE', 'STAFF_HOLD', 'REFUND_REQUESTED'].includes(status);
@@ -378,7 +412,18 @@ export default function SimpleFSDDesign({
   };
 
   // Calculate session counts per tab
+  // Only calculate after mount to prevent hydration mismatch
   const getTabCounts = () => {
+    if (!isMounted) {
+      return {
+        overview: 0,
+        boh: 0,
+        foh: 0,
+        edge: 0,
+        waitlist: 0
+      };
+    }
+    
     const bohSessions = getAllBohSessions();
     const fohSessions = getAllFohSessions();
     const edgeSessions = roleFilteredSessions.filter((s: any) => {
@@ -391,7 +436,7 @@ export default function SimpleFSDDesign({
     });
     
     return {
-      overview: filteredSessions.length,
+      overview: roleFilteredSessions.length, // All sessions for overview
       boh: bohSessions.length,
       foh: fohSessions.length,
       edge: edgeSessions.length,

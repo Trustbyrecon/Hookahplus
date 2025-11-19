@@ -1,17 +1,12 @@
 /**
  * Next.js config for apps/app
- * Aliases @supabase/supabase-js to a noop to avoid any accidental bundling during build.
+ * Note: Supabase client is now used in client components (login/signup pages)
  */
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  webpack: (config) => {
-    config.resolve = config.resolve || {};
-    config.resolve.alias = config.resolve.alias || {};
-    // Prevent any import of supabase client from being bundled/executed in this app
-    config.resolve.alias['@supabase/supabase-js'] = false;
-    return config;
-  },
+  // Removed webpack alias that was blocking @supabase/supabase-js imports
+  // The Supabase client is now needed for client-side auth in login/signup pages
 };
 
 module.exports = nextConfig;

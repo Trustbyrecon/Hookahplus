@@ -1,16 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 
 // Get Supabase URL and key from environment
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables');
-}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -23,6 +19,20 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [isMagicLink, setIsMagicLink] = useState(false);
 
+  // Check environment variables on mount
+  useEffect(() => {
+    if (!supabaseUrl || !supabaseAnonKey) {
+      setError('Supabase configuration is missing. Please check your environment variables and restart the dev server.');
+    } else if (typeof createClient !== 'function') {
+      setError('Supabase client initialization failed. Please restart the dev server.');
+    } else if (supabaseAnonKey.endsWith('...') || supabaseAnonKey.length < 100) {
+      setError('Supabase anon key appears to be incomplete. Please check your .env.local file.');
+    } else {
+      // Clear any previous errors if everything is configured
+      setError(null);
+    }
+  }, []);
+
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -31,7 +41,17 @@ export default function LoginPage() {
     try {
       // Validate environment variables
       if (!supabaseUrl || !supabaseAnonKey) {
-        throw new Error('Supabase configuration is missing. Please check your environment variables.');
+        throw new Error('Supabase configuration is missing. Please check your environment variables and restart the dev server.');
+      }
+
+      // Validate createClient is available
+      if (typeof createClient !== 'function') {
+        throw new Error('Supabase client initialization failed. Please restart the dev server.');
+      }
+
+      // Validate that the anon key is not truncated
+      if (supabaseAnonKey.endsWith('...') || supabaseAnonKey.length < 100) {
+        throw new Error('Supabase anon key appears to be incomplete. Please check your .env.local file and ensure NEXT_PUBLIC_SUPABASE_ANON_KEY is set correctly.');
       }
 
       const supabase = createClient(supabaseUrl, supabaseAnonKey);

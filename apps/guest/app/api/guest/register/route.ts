@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
       profile = {
         guestId: profileId,
         anon: false, // They're registering, so not anonymous
+        name: name || undefined,
         phone: phone || undefined,
         email: email || undefined,
         badges: [],
@@ -57,6 +58,7 @@ export async function POST(req: NextRequest) {
     } else {
       // Update existing profile
       profile.anon = false;
+      if (name) profile.name = name;
       if (phone) profile.phone = phone;
       if (email) profile.email = email;
       profile.updatedAt = new Date().toISOString();
@@ -81,8 +83,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       guestId: profileId,
+      id: profileId, // Also return as 'id' for compatibility
+      deviceId: profile.deviceId,
       profile: {
         guestId: profile.guestId,
+        name: profile.name,
         phone: profile.phone,
         email: profile.email,
         badges: profile.badges,

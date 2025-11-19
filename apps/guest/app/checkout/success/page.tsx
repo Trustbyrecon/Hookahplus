@@ -4,6 +4,7 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { CheckCircle, ExternalLink, Loader2 } from 'lucide-react';
 import Button from '../../../components/Button';
+import RewardsSignupModal from '../../../components/RewardsSignupModal';
 
 function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
@@ -18,6 +19,7 @@ function CheckoutSuccessContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isRouting, setIsRouting] = useState(false);
+  const [showSignupModal, setShowSignupModal] = useState(false);
 
   useEffect(() => {
     const stripeSessionId = searchParams.get('session_id');
@@ -130,12 +132,12 @@ function CheckoutSuccessContent() {
     fetchSessionDetails();
   }, [searchParams]);
 
-  const handleRouteToDashboard = () => {
+  const handleRouteToTracker = () => {
     if (appSessionId) {
       setIsRouting(true);
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
       const loungeId = sessionData?.loungeId || 'default-lounge';
-      window.location.href = `${appUrl}/fire-session-dashboard?session=${appSessionId}&loungeId=${loungeId}`;
+      const tableId = sessionData?.tableId || 'T-001';
+      window.location.href = `/hookah-tracker?sessionId=${appSessionId}&loungeId=${loungeId}&tableId=${tableId}`;
     }
   };
 
@@ -213,19 +215,40 @@ function CheckoutSuccessContent() {
         {isRouting && (
           <div className="mb-6">
             <p className="text-zinc-400 animate-pulse">
-              Redirecting to Fire Session Dashboard...
+              Opening your live hookah tracker...
             </p>
           </div>
         )}
 
+        {/* Rewards Signup Nudge */}
+        <div className="mb-6 p-4 bg-gradient-to-r from-teal-900/30 to-cyan-900/30 border border-teal-500/30 rounded-lg">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 w-8 h-8 bg-teal-500/20 rounded-full flex items-center justify-center">
+              <span className="text-teal-400 text-lg">🎁</span>
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-teal-300 mb-1">Unlock Rewards & Track Your Sessions</p>
+              <p className="text-xs text-zinc-400 mb-3">
+                Sign up to earn points, get exclusive offers, and never lose track of your favorite sessions.
+              </p>
+              <button
+                onClick={() => setShowSignupModal(true)}
+                className="text-xs bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                Sign Up for Rewards
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div className="space-y-3">
           {appSessionId && !isRouting && (
             <Button
-              onClick={handleRouteToDashboard}
+              onClick={handleRouteToTracker}
               className="w-full bg-teal-600 hover:bg-teal-700"
             >
               <ExternalLink className="w-4 h-4 mr-2" />
-              Go to Fire Session Dashboard
+              View Live Hookah Tracker
             </Button>
           )}
           
@@ -237,6 +260,18 @@ function CheckoutSuccessContent() {
             Return to Guest Portal
           </Button>
         </div>
+
+        {/* Rewards Signup Modal */}
+        <RewardsSignupModal
+          isOpen={showSignupModal}
+          onClose={() => setShowSignupModal(false)}
+          onSuccess={(guestInfo) => {
+            console.log('Guest registered:', guestInfo);
+            // Optionally show a success message or update UI
+          }}
+          sessionId={appSessionId || undefined}
+          loungeId={sessionData?.loungeId || undefined}
+        />
       </div>
     </div>
   );

@@ -2,6 +2,7 @@
 export type GuestProfile = {
   guestId: string;            // UUID (portable)
   anon: boolean;              // true until opt-in
+  name?: string;              // optional, guest's name
   phone?: string;             // optional, if user links
   email?: string;             // optional, if user links
   lastLoungeId?: string;

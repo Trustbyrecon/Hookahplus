@@ -1,16 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 
 // Get Supabase URL and key from environment
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables');
-}
 
 export default function SignupPage() {
   const router = useRouter();
@@ -21,6 +17,18 @@ export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Check environment variables on mount
+  useEffect(() => {
+    if (!supabaseUrl || !supabaseAnonKey) {
+      setError('Supabase configuration is missing. Please check your environment variables and restart the dev server.');
+    } else if (typeof createClient !== 'function') {
+      setError('Supabase client initialization failed. Please restart the dev server.');
+    } else {
+      // Clear any previous errors if everything is configured
+      setError(null);
+    }
+  }, []);
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -29,12 +37,17 @@ export default function SignupPage() {
     try {
       // Validate environment variables
       if (!supabaseUrl || !supabaseAnonKey) {
-        throw new Error('Supabase configuration is missing. Please check your environment variables.');
+        throw new Error('Supabase configuration is missing. Please check your environment variables and restart the dev server.');
       }
 
       // Validate createClient is available
       if (typeof createClient !== 'function') {
         throw new Error('Supabase client initialization failed. Please restart the dev server.');
+      }
+
+      // Validate that the anon key is not truncated
+      if (supabaseAnonKey.endsWith('...') || supabaseAnonKey.length < 100) {
+        throw new Error('Supabase anon key appears to be incomplete. Please check your .env.local file and ensure NEXT_PUBLIC_SUPABASE_ANON_KEY is set correctly.');
       }
 
       const supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -74,16 +87,26 @@ export default function SignupPage() {
         throw new Error('Tenant creation failed - invalid response');
       }
 
-      // Step 3: Create membership with owner role
-      const { error: membershipError } = await supabase
-        .from('memberships')
-        .insert({
-          user_id: authData.user.id,
-          tenant_id: tenantData.id,
+      // Step 3: Create membership with owner role (must use API route to bypass RLS)
+      const membershipResponse = await fetch('/api/memberships', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: authData.user.id,
+          tenantId: tenantData.id,
           role: 'owner',
-        });
+        }),
+      });
 
-      if (membershipError) throw membershipError;
+      if (!membershipResponse.ok) {
+        const errorData = await membershipResponse.json().catch(() => ({ error: 'Failed to create membership' }));
+        throw new Error(errorData.error || 'Membership creation failed');
+      }
+
+      const membershipResponseData = await membershipResponse.json();
+      if (!membershipResponseData.success) {
+        throw new Error('Membership creation failed - invalid response');
+      }
 
       // Step 4: Set active tenant in user metadata
       await supabase.auth.updateUser({

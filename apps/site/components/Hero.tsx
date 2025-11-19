@@ -67,12 +67,10 @@ export default function Hero() {
               className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white px-8 py-4 text-lg font-semibold shadow-lg shadow-teal-500/20 transform hover:scale-105 transition-all duration-200"
               onClick={() => {
                 // Track CTA click
-                trackDemoRequest('Hero', { action: 'scroll_to_demo' });
+                trackDemoRequest('Hero', { action: 'navigate_to_onboarding' });
                 
-                const demoSection = document.getElementById('demo');
-                if (demoSection) {
-                  demoSection.scrollIntoView({ behavior: 'smooth' });
-                }
+                // Navigate to onboarding page
+                window.location.href = '/onboarding';
               }}
             >
               Book 15-min Demo
