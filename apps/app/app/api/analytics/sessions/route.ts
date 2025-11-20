@@ -37,7 +37,10 @@ export async function GET(request: NextRequest) {
       extensionEvents,
       refillEvents,
       avgDurationResult,
-      sessionsBySource
+      sessionsBySource,
+      sessionsByPricingType,
+      timeBasedDurationAgg,
+      sessionsForZoneMetrics
     ] = await Promise.all([
       // Get session counts by state
       prisma.session.groupBy({
@@ -128,6 +131,39 @@ export async function GET(request: NextRequest) {
         _count: {
           id: true
         }
+      }),
+
+      // Get sessions by pricing type (TIME_BASED vs FLAT)
+      prisma.session.groupBy({
+        by: ['sessionType'],
+        where: whereClause,
+        _count: {
+          id: true
+        }
+      }),
+
+      // Average duration for TIME_BASED sessions (closed only)
+      prisma.session.aggregate({
+        where: {
+          ...whereClause,
+          state: 'CLOSED',
+          sessionType: 'TIME_BASED',
+          durationSecs: {
+            not: null
+          }
+        },
+        _avg: {
+          durationSecs: true
+        }
+      }),
+
+      // Lightweight dataset for zone-level refill metrics
+      prisma.session.findMany({
+        where: whereClause,
+        select: {
+          zone: true,
+          hadRefill: true
+        }
       })
     ]);
 
@@ -135,6 +171,49 @@ export async function GET(request: NextRequest) {
     const avgDurationMinutes = avgDurationResult._avg.durationSecs 
       ? Math.round((avgDurationResult._avg.durationSecs / 60) * 10) / 10 
       : 0;
+
+    // Time-based vs flat share
+    const timeBasedBucket = sessionsByPricingType.find(
+      (s: any) => s.sessionType === 'TIME_BASED'
+    );
+    const timeBasedSessions = timeBasedBucket?._count?.id ?? 0;
+    const timeBasedShare =
+      totalSessions > 0 ? timeBasedSessions / totalSessions : 0;
+
+    const timeBasedAvgDurationMinutes = timeBasedDurationAgg._avg.durationSecs
+      ? Math.round(
+          (timeBasedDurationAgg._avg.durationSecs / 60) * 10
+        ) / 10
+      : 0;
+
+    // Global refill rate & per-zone refill rates
+    const refillSessionCount = sessionsForZoneMetrics.filter(
+      (s: any) => s.hadRefill
+    ).length;
+    const globalRefillRate =
+      totalSessions > 0 ? refillSessionCount / totalSessions : 0;
+
+    const zoneStats: Record<string, { total: number; refills: number }> = {};
+    sessionsForZoneMetrics.forEach((s: any) => {
+      const zoneKey = s.zone || 'UNASSIGNED';
+      if (!zoneStats[zoneKey]) {
+        zoneStats[zoneKey] = { total: 0, refills: 0 };
+      }
+      zoneStats[zoneKey].total += 1;
+      if (s.hadRefill) {
+        zoneStats[zoneKey].refills += 1;
+      }
+    });
+
+    const refillByZone = Object.entries(zoneStats).map(
+      ([zone, stats]) => ({
+        zone,
+        totalSessions: stats.total,
+        refilledSessions: stats.refills,
+        refillRate:
+          stats.total > 0 ? stats.refills / stats.total : 0
+      })
+    );
 
     return NextResponse.json({
       success: true,
@@ -146,7 +225,12 @@ export async function GET(request: NextRequest) {
         extensionCount: extensionEvents,
         refillCount: refillEvents,
         avgDurationMinutes,
-        windowDays
+        windowDays,
+        timeBasedSessions,
+        timeBasedShare,
+        timeBasedAvgDurationMinutes,
+        refillSessionCount,
+        globalRefillRate
       },
       breakdown: {
         byState: sessionsByState.map(s => ({
@@ -156,7 +240,12 @@ export async function GET(request: NextRequest) {
         bySource: sessionsBySource.map(s => ({
           source: s.source,
           count: s._count.id
-        }))
+        })),
+        byPricingType: sessionsByPricingType.map(s => ({
+          sessionType: s.sessionType || 'UNKNOWN',
+          count: s._count.id
+        })),
+        refillByZone
       }
     });
 

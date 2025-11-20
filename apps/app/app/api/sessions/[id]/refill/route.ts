@@ -162,13 +162,22 @@ export async function PATCH(
       );
     }
 
-    // Complete refill - clear refill status
+    // Complete refill - clear refill status and update refill metadata
+    const currentRefillCount: number =
+      typeof (dbSession as any).refillCount === 'number'
+        ? (dbSession as any).refillCount
+        : typeof (dbSession as any).refill_count === 'number'
+          ? (dbSession as any).refill_count
+          : 0;
+
     const updatedSession = await prisma.session.update({
       where: { id: dbSession.id },
       data: {
         edgeCase: null,
         edgeNote: `Refill completed by ${operatorId || userRole} at ${new Date().toISOString()}`,
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        hadRefill: true,
+        refillCount: currentRefillCount + 1
       }
     });
 

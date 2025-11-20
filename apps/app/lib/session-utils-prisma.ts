@@ -75,6 +75,44 @@ export function convertPrismaSessionToFireSession(session: any): FireSession {
     }
   })() : (session.flavor || 'Custom Mix');
 
+  // Normalize pricing / refill metadata
+  const rawSessionType: string | null =
+    session.sessionType ??
+    session.session_type ??
+    null;
+
+  const normalizedSessionType: 'TIME_BASED' | 'FLAT' | undefined =
+    rawSessionType
+      ? (String(rawSessionType).toUpperCase().includes('TIME')
+          ? 'TIME_BASED'
+          : 'FLAT')
+      : undefined;
+
+  const refillCount: number = typeof session.refillCount === 'number'
+    ? session.refillCount
+    : typeof session.refill_count === 'number'
+      ? session.refill_count
+      : 0;
+
+  const hadRefill: boolean =
+    typeof session.hadRefill === 'boolean'
+      ? session.hadRefill
+      : typeof session.had_refill === 'boolean'
+        ? session.had_refill
+        : refillCount > 0;
+
+  // Derive refillStatus from edgeCase + refill metadata
+  let refillStatus: 'none' | 'requested' | 'delivered' = 'none';
+  if (session.edgeCase === 'refill_requested') {
+    refillStatus = 'requested';
+  } else if (hadRefill || refillCount > 0) {
+    refillStatus = 'delivered';
+  }
+
+  // Simple pricing rule: first refill on TIME_BASED sessions is free, subsequent are billable
+  const isTimeBased = normalizedSessionType === 'TIME_BASED';
+  const isRefillBillable = isTimeBased ? refillCount >= 1 : false;
+
   return {
     id: session.id,
     tableId: session.tableId || session.externalRef || 'Unknown',
@@ -84,6 +122,10 @@ export function convertPrismaSessionToFireSession(session: any): FireSession {
     amount: session.priceCents || 0,
     status: mapPrismaStateToFireSession(session.state, session.paymentStatus),
     currentStage: mapStateToStage(session.state),
+    sessionType: normalizedSessionType,
+    hadRefill,
+    refillCount,
+    isRefillBillable,
     assignedStaff: {
       boh: session.assignedBOHId || '',
       foh: session.assignedFOHId || ''
@@ -93,7 +135,7 @@ export function convertPrismaSessionToFireSession(session: any): FireSession {
     sessionStartTime: session.startedAt ? new Date(session.startedAt).getTime() : undefined,
     sessionDuration: session.durationSecs || 45 * 60,
     coalStatus: 'active' as const,
-    refillStatus: 'none' as const,
+    refillStatus,
     notes: session.tableNotes || '',
     edgeCase: session.edgeCase || null,
     sessionTimer: session.timerStartedAt ? {

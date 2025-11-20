@@ -44,6 +44,10 @@ model Session {
   flavorMix      String? // JSON as string for SQLite compatibility
   loungeId       String  @default("default-lounge") // Required field with default
   priceCents     Int
+  // Pricing / refill metadata
+  sessionType    String?  @map("session_type") // TIME_BASED | FLAT
+  hadRefill      Boolean  @default(false) @map("had_refill")
+  refillCount    Int      @default(0) @map("refill_count")
   state          SessionState  @default(PENDING)
   edgeCase       String? // 'EQUIPMENT_ISSUE', 'CUSTOMER_NOT_FOUND', 'PAYMENT_FAILED', 'HEALTH_SAFETY', 'OTHER'
   edgeNote       String?

@@ -53,11 +53,15 @@ export default function SignupPage() {
       const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
       // Step 1: Create user in Supabase Auth
+      const appUrl =
+        process.env.NEXT_PUBLIC_APP_URL ||
+        (typeof window !== 'undefined' ? window.location.origin : '');
+
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${appUrl}/auth/callback`,
         },
       });
 

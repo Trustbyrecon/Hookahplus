@@ -49,6 +49,7 @@ import {
   STATE_DESCRIPTIONS,
   ACTION_DESCRIPTIONS
 } from '../lib/sessionStateMachine';
+import { getSessionHealth } from '../lib/session-utils';
 import { calculateSingleSessionTrustScore, getTrustScoreColor } from '../lib/trustScoring';
 import SessionDetailModal from './SessionDetailModal';
 import GuestIntelligenceModal from './GuestIntelligenceModal';
@@ -471,6 +472,7 @@ export default function SimpleFSDDesign({
 
     const trustScore = calculateSingleSessionTrustScore(session as FireSession);
     const trustScoreColor = getTrustScoreColor(trustScore);
+    const { status: healthStatus, issues } = getSessionHealth(session as FireSession);
 
     return (
       <div
@@ -510,6 +512,15 @@ export default function SimpleFSDDesign({
                 {trustScore}
               </span>
             </div>
+            {healthStatus !== 'healthy' && (
+              <div
+                className="flex items-center gap-1 px-2 py-1 bg-teal-900/40 border border-teal-500/40 rounded"
+                title={issues.join('; ') || 'Reflex detected a potential issue'}
+              >
+                <Zap className="w-3 h-3 text-teal-300" />
+                <span className="text-[10px] font-semibold text-teal-200">Reflex</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -653,6 +664,12 @@ export default function SimpleFSDDesign({
 
         {/* Enhanced Session Details */}
         <div className="mt-3 pt-3 border-t border-zinc-700 space-y-2">
+          {session.sessionType && (
+            <p className="text-sm text-zinc-400">
+              <span className="font-medium">Pricing:</span>{' '}
+              {session.sessionType === 'TIME_BASED' ? 'Time-based session' : 'Flat session'}
+            </p>
+          )}
           {session.flavor && (
             <p className="text-sm text-zinc-400">
               <span className="font-medium">Flavor:</span> {session.flavor}

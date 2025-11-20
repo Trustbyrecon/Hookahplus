@@ -388,6 +388,7 @@ export async function POST(req: NextRequest) {
       assignedBoh: body.assignedStaff?.boh ? String(body.assignedStaff.boh).trim() : null,
       assignedFoh: body.assignedStaff?.foh ? String(body.assignedStaff.foh).trim() : null,
       sessionDuration: Number.isFinite(body.sessionDuration) ? Number(body.sessionDuration) : 45 * 60,
+      pricingModel: body.pricingModel ? String(body.pricingModel).toLowerCase() : 'flat', // 'flat' | 'time-based'
     };
     
     // Validate required fields - check for non-empty strings
@@ -565,6 +566,10 @@ export async function POST(req: NextRequest) {
       ? (data.amount < 100 ? Math.round(data.amount * 100) : Math.round(data.amount))
       : 3000;
 
+    // Determine session pricing type for MOAT metrics
+    const sessionPricingType: 'TIME_BASED' | 'FLAT' =
+      data.pricingModel === 'time-based' ? 'TIME_BASED' : 'FLAT';
+
     // Create session in database with normalized data
     const sessionData: any = {
       loungeId: finalLoungeId,
@@ -576,6 +581,7 @@ export async function POST(req: NextRequest) {
       flavor: data.flavorMix[0] || 'Custom Mix', // First flavor for single flavor field
       flavorMix: JSON.stringify(data.flavorMix), // Store as JSON string
       priceCents,
+      sessionType: sessionPricingType,
       assignedBOHId: data.assignedBoh, // null is fine
       assignedFOHId: data.assignedFoh, // null is fine
       tableNotes: data.notes, // null is fine
@@ -622,6 +628,7 @@ export async function POST(req: NextRequest) {
           flavorMix: finalFlavorMix,
           loungeId: finalLoungeId,
           priceCents: finalPriceCents,
+      sessionType: sessionPricingType,
           assignedBOHId: data.assignedBoh,
           assignedFOHId: data.assignedFoh,
           tableNotes: data.notes,

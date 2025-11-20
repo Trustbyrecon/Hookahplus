@@ -38,8 +38,14 @@ export interface FireSession {
   customerPhone?: string;
   flavor: string;
   amount: number;
+  // High-level status/stage
   status: SessionStatus;
   currentStage: SessionStage;
+  // Pricing / refill metadata
+  sessionType?: 'TIME_BASED' | 'FLAT';
+  hadRefill?: boolean;
+  refillCount?: number;
+  isRefillBillable?: boolean;
   assignedStaff: {
     boh?: string;
     foh?: string;
