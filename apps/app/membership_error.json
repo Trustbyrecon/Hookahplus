@@ -1,0 +1,1 @@
+{"error":"Failed to create membership","details":"insert or update on table \"memberships\" violates foreign key constraint \"memberships_user_id_fkey\""}

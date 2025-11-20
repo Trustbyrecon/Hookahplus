@@ -3,7 +3,8 @@ export const dynamic = "force-dynamic";
 
 import Stripe from "stripe";
 import { PrismaClient, SessionState, SessionSource } from '@prisma/client';
-import { adminClient } from '../../../lib/supabase';
+// Use project-level Supabase admin client (one level above app/)
+import { adminClient } from '../../../../lib/supabase';
 import crypto from "crypto";
 
 const prisma = new PrismaClient();

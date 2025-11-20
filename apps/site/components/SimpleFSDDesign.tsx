@@ -29,7 +29,8 @@ import {
   Brain,
   AlertCircle,
   TrendingUp,
-  Activity
+  Activity,
+  Star
 } from 'lucide-react';
 import CreateSessionModal from './CreateSessionModal';
 import SessionDetailModal from './SessionDetailModal';
@@ -42,7 +43,8 @@ import {
   FireSession,
   STATUS_COLORS,
   ACTION_TO_STATUS,
-  STATUS_TO_STAGE
+  STATUS_TO_STAGE,
+  VALID_TRANSITIONS
 } from '../types/enhancedSession';
 import { 
   canPerformAction, 
@@ -136,59 +138,318 @@ export default function SimpleFSDDesign({
   const [timerKey, setTimerKey] = useState(0);
   const [showIntelligenceModal, setShowIntelligenceModal] = useState(false);
   const [intelligenceSessionId, setIntelligenceSessionId] = useState<string | null>(null);
+  const [realSessions, setRealSessions] = useState<any[]>([]);
+  const [isLoadingSessions, setIsLoadingSessions] = useState(false);
+
+  // Load sessions from app build API
+  const loadSessions = async () => {
+    setIsLoadingSessions(true);
+    try {
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
+      const response = await fetch(`${appUrl}/api/sessions`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Transform app build session format to site build format
+        const transformedSessions = (data.sessions || []).map((s: any) => {
+          // Map payment status to PAID_CONFIRMED if payment succeeded
+          const status = (s.state === 'PENDING' && s.paymentStatus === 'succeeded') 
+            ? 'PAID_CONFIRMED' 
+            : (s.state || s.status || 'PENDING');
+          
+          return {
+            id: s.id,
+            session_id: s.id,
+            tableId: s.tableId,
+            table_id: s.tableId,
+            customerName: s.customerRef || s.customerName,
+            customer_name: s.customerRef || s.customerName,
+            customerPhone: s.customerPhone,
+            flavor: s.flavor || 'Custom Mix',
+            flavorMix: s.flavorMix ? (typeof s.flavorMix === 'string' ? JSON.parse(s.flavorMix) : s.flavorMix) : [],
+            amount: s.priceCents || 0,
+            status: status,
+            state: status,
+            paymentStatus: s.paymentStatus,
+            currentStage: status === 'PAID_CONFIRMED' || status === 'PREP_IN_PROGRESS' ? 'BOH' : status === 'ACTIVE' ? 'FOH' : 'BOH',
+            createdAt: s.createdAt ? new Date(s.createdAt).getTime() : Date.now(),
+            updatedAt: s.updatedAt ? new Date(s.updatedAt).getTime() : Date.now(),
+            notes: s.tableNotes || s.notes,
+            priority: s.priority || 'NORMAL',
+          };
+        });
+        
+        // Merge with existing sessions - preserve ALL local state updates
+        setRealSessions(prev => {
+          const merged = [...prev];
+          transformedSessions.forEach((newSession: any) => {
+            const existingIndex = merged.findIndex(s => 
+              s.id === newSession.id || s.session_id === newSession.id
+            );
+            if (existingIndex >= 0) {
+              const existing = merged[existingIndex];
+              // Preserve local state updates - if session was updated locally, keep that status
+              // Only update from backend if local status is older or same
+              const localUpdatedAt = existing.updatedAt || existing.updated_at || 0;
+              const backendUpdatedAt = newSession.updatedAt || newSession.updated_at || 0;
+              
+              if (localUpdatedAt > backendUpdatedAt) {
+                // Local update is newer - preserve it, but merge other fields
+                merged[existingIndex] = { 
+                  ...newSession, 
+                  status: existing.status,
+                  state: existing.status,
+                  currentStage: existing.currentStage || newSession.currentStage,
+                  updatedAt: existing.updatedAt,
+                };
+              } else {
+                // Backend is newer or same - use backend data
+                merged[existingIndex] = newSession;
+              }
+            } else {
+              merged.push(newSession);
+            }
+          });
+          return merged;
+        });
+      } else {
+        console.warn('[Site Build] Failed to load sessions from app build:', response.status);
+      }
+    } catch (error) {
+      console.error('[Site Build] Error loading sessions:', error);
+    } finally {
+      setIsLoadingSessions(false);
+    }
+  };
 
   // Fix hydration mismatch by only rendering time-dependent content after mount
   useEffect(() => {
     setIsMounted(true);
+    
+    // Load real sessions from app build
+    loadSessions();
+    
+    // Refresh sessions every 30 seconds (less frequent to preserve local state changes)
+    const refreshInterval = setInterval(() => {
+      loadSessions();
+    }, 30000);
     
     // Update timer every second for active sessions
     const interval = setInterval(() => {
       setTimerKey(prev => prev + 1);
     }, 1000);
     
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      clearInterval(refreshInterval);
+    };
   }, []);
 
-  const handleSessionAction = async (action: string, sessionId: string) => {
-    // Use proxy endpoint to forward to app build
-    // This triggers Reflex Ops flywheel: experience → possibilities → take action → review → build experience
-    console.log(`[Site Build] Action: ${action} on session: ${sessionId}`);
-    
-    try {
-      // Map action to SessionAction format for app build API
-      const actionMap: Record<string, string> = {
-        'claim_prep': 'CLAIM_PREP',
-        'heat_up': 'HEAT_UP',
-        'ready_for_delivery': 'READY_FOR_DELIVERY',
-        'deliver_now': 'DELIVER_NOW',
-        'mark_delivered': 'MARK_DELIVERED',
-        'start_active': 'START_ACTIVE',
-        'pause_session': 'PAUSE_SESSION',
-        'resume_session': 'RESUME_SESSION',
-        'request_refill': 'REQUEST_REFILL',
-        'complete_refill': 'COMPLETE_REFILL',
-        'close_session': 'CLOSE_SESSION',
-        'put_on_hold': 'PUT_ON_HOLD',
-        'resolve_hold': 'RESOLVE_HOLD',
-        'request_remake': 'REQUEST_REMAKE',
-        'process_refund': 'PROCESS_REFUND',
-        'void_session': 'VOID_SESSION'
-      };
 
-      const mappedAction = actionMap[action.toLowerCase()] || action.toUpperCase();
+  const handleSessionAction = async (action: string, sessionId: string) => {
+    // Find the session in current state
+    const session = displaySessions.find((s: any) => 
+      s.id === sessionId || s.session_id === sessionId
+    ) || realSessions.find((s: any) => 
+      s.id === sessionId || s.session_id === sessionId
+    );
+    
+    if (!session) {
+      alert('Session not found');
+      return;
+    }
+    
+    // Get current status
+    const currentStatus = getSessionStatus(session);
+    
+    // Map action to SessionAction format
+    const actionMap: Record<string, SessionAction> = {
+      'claim_prep': 'CLAIM_PREP',
+      'heat_up': 'HEAT_UP',
+      'ready_for_delivery': 'READY_FOR_DELIVERY',
+      'deliver_now': 'DELIVER_NOW',
+      'mark_delivered': 'MARK_DELIVERED',
+      'start_active': 'START_ACTIVE',
+      'pause_session': 'PAUSE_SESSION',
+      'resume_session': 'RESUME_SESSION',
+      'request_refill': 'REQUEST_REFILL',
+      'complete_refill': 'COMPLETE_REFILL',
+      'close_session': 'CLOSE_SESSION',
+      'put_on_hold': 'PUT_ON_HOLD',
+      'resolve_hold': 'RESOLVE_HOLD',
+      'request_remake': 'REQUEST_REMAKE',
+      'process_refund': 'PROCESS_REFUND',
+      'void_session': 'VOID_SESSION'
+    };
+
+    const mappedAction = actionMap[action.toLowerCase()] || action.toUpperCase() as SessionAction;
+    const targetStatus = ACTION_TO_STATUS[mappedAction];
+    
+    // Validate transition using state machine
+    if (!isValidTransition(currentStatus, targetStatus)) {
+      alert(`Invalid transition: Cannot go from ${currentStatus} to ${targetStatus}.\n\nValid transitions from ${currentStatus}: ${VALID_TRANSITIONS[currentStatus].join(', ')}`);
+      return;
+    }
+    
+    // Check permissions
+    const userRoleTyped = (currentRole || userRole || 'MANAGER') as UserRole;
+    if (!canPerformAction(userRoleTyped, mappedAction)) {
+      alert(`You don't have permission to perform ${mappedAction} as ${userRoleTyped}`);
+      return;
+    }
+    
+    // Demo mode: Apply transition locally using state machine
+    console.log(`[Site Build] Action: ${action} on session: ${sessionId} (${currentStatus} → ${targetStatus})`);
+    
+    // Update local state immediately using state machine
+    try {
+      // Ensure session has all required FireSession properties
+      const fireSession: FireSession = {
+        id: session.id || session.session_id || sessionId,
+        tableId: session.tableId || session.table_id || 'Unknown',
+        customerName: session.customerName || session.customer_name || 'Guest',
+        customerPhone: session.customerPhone || session.customer_phone,
+        flavor: session.flavor || 'Custom Mix',
+        amount: session.amount || 0,
+        status: currentStatus,
+        currentStage: STATUS_TO_STAGE[currentStatus],
+        assignedStaff: session.assignedStaff || { boh: undefined, foh: undefined },
+        createdAt: session.createdAt || session.created_at || Date.now(),
+        updatedAt: session.updatedAt || session.updated_at || Date.now(),
+        sessionDuration: session.sessionDuration || 45 * 60,
+        coalStatus: session.coalStatus || 'active',
+        refillStatus: session.refillStatus || 'none',
+        notes: session.notes || '',
+        edgeCase: session.edgeCase || null,
+        sessionTimer: session.sessionTimer,
+        sessionStartTime: session.sessionStartTime,
+        bohState: session.bohState,
+        guestTimerDisplay: session.guestTimerDisplay,
+      };
       
+      const updatedSession = nextStateWithTrust(
+        fireSession,
+        { 
+          type: mappedAction, 
+          operatorId: `site-${currentRole?.toLowerCase() || 'manager'}` 
+        },
+        userRoleTyped
+      );
+      
+      // Update in realSessions
+      setRealSessions(prev => prev.map(s => {
+        if (s.id === sessionId || s.session_id === sessionId) {
+          return {
+            ...s,
+            ...updatedSession,
+            status: updatedSession.status,
+            state: updatedSession.status,
+            currentStage: updatedSession.currentStage,
+            updatedAt: updatedSession.updatedAt,
+            sessionTimer: updatedSession.sessionTimer,
+            sessionStartTime: updatedSession.sessionStartTime,
+            guestTimerDisplay: updatedSession.guestTimerDisplay,
+          };
+        }
+        return s;
+      }));
+      
+      // Also try to sync with backend (non-blocking)
+      try {
+        const response = await fetch('/api/sessions/proxy', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            sessionId,
+            action: mappedAction,
+            userRole: currentRole || userRole || 'MANAGER',
+            operatorId: `site-${currentRole?.toLowerCase() || 'manager'}`,
+            notes: `Action ${mappedAction} executed by ${currentRole || 'MANAGER'} from site build`
+          }),
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            console.log('[Site Build] Session action synced to backend');
+          }
+        }
+      } catch (apiError) {
+        // Silently fail - demo mode works offline
+        console.warn('[Site Build] Failed to sync to backend, but local update succeeded');
+      }
+      
+    } catch (stateError: any) {
+      alert(`State machine error: ${stateError.message}`);
+      return;
+    }
+
+    if (onSessionAction) {
+      onSessionAction(action, sessionId);
+    }
+  };
+
+  // Payment confirmation handler for demo flow - lightweight, no API calls
+  const handleConfirmPayment = async (sessionId: string) => {
+    // Demo mode: Update local session state immediately
+    setRealSessions(prev => prev.map(s => {
+      if (s.id === sessionId || s.session_id === sessionId) {
+        return {
+          ...s,
+          status: 'PAID_CONFIRMED',
+          state: 'PAID_CONFIRMED',
+          paymentStatus: 'succeeded',
+        };
+      }
+      return s;
+    }));
+    
+    alert('✅ Payment confirmed! Session ready for prep. Check BOH tab.');
+    
+    // Switch to BOH tab to show the session
+    setActiveTab('boh');
+    
+    // Don't refresh immediately - let the local state update persist
+    // The loadSessions function already handles merging and preserving PAID_CONFIRMED status
+  };
+
+  // Cancel/Delete session handler for demo - lightweight
+  const handleCancelSession = (sessionId: string) => {
+    if (!confirm('Cancel this session? This will remove it from the dashboard.')) {
+      return;
+    }
+    
+    // Demo mode: Remove from local state
+    setRealSessions(prev => prev.filter(s => 
+      s.id !== sessionId && s.session_id !== sessionId
+    ));
+    
+    alert('✅ Session cancelled');
+  };
+
+  // Edge case handlers
+  const handleEscalate = async (sessionId: string) => {
+    const reason = prompt('Escalation reason:');
+    if (!reason) return;
+
+    try {
       // Use proxy endpoint to forward to app build
       const response = await fetch('/api/sessions/proxy', {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           sessionId,
-          action: mappedAction,
+          action: 'PUT_ON_HOLD', // Escalate by putting on hold
           userRole: currentRole || userRole || 'MANAGER',
           operatorId: `site-${currentRole?.toLowerCase() || 'manager'}`,
-          notes: `Action ${mappedAction} executed by ${currentRole || 'MANAGER'} from site build`
+          notes: `ESCALATED: ${reason}`,
+          edgeCase: 'ESCALATION',
+          edgeNote: reason,
         }),
       });
 
@@ -200,27 +461,60 @@ export default function SimpleFSDDesign({
         } catch {
           error = { details: responseText || `HTTP ${response.status}` };
         }
-        throw new Error(error.details || error.error || `Failed to ${action} session ${sessionId}`);
+        throw new Error(error.details || error.error || 'Failed to escalate session');
       }
 
       const result = await response.json();
-
       if (result.success) {
-        console.log('[Site Build] Session action successful:', result);
-        // Trigger Reflex Ops flywheel: experience → possibilities → take action → review → build experience
-        // Refresh the page to show updated session state
+        alert('Session escalated successfully');
         window.location.reload();
       } else {
-        console.error('[Site Build] Session action failed:', result);
-        alert(`Action failed: ${result.error || result.details || 'Unknown error'}`);
+        throw new Error(result.error || result.details || 'Failed to escalate');
       }
-    } catch (error) {
-      console.error('[Site Build] Error executing session action:', error);
-      alert(`Failed to execute action: ${error instanceof Error ? error.message : 'Please try again.'}`);
+    } catch (error: any) {
+      alert(`Failed to escalate: ${error.message}`);
     }
+  };
 
-    if (onSessionAction) {
-      onSessionAction(action, sessionId);
+  const handleResolve = async (sessionId: string) => {
+    const resolutionNotes = prompt('Resolution notes:');
+    if (!resolutionNotes) return;
+
+    try {
+      // Use proxy endpoint to forward to app build (same as handleSessionAction)
+      const response = await fetch('/api/sessions/proxy', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId,
+          action: 'RESOLVE_HOLD', // Use standard action
+          userRole: currentRole || userRole || 'MANAGER',
+          operatorId: `site-${currentRole?.toLowerCase() || 'manager'}`,
+          notes: `Resolution: ${resolutionNotes}`,
+          edgeNote: resolutionNotes,
+        }),
+      });
+
+      if (!response.ok) {
+        const responseText = await response.text();
+        let error;
+        try {
+          error = JSON.parse(responseText);
+        } catch {
+          error = { details: responseText || `HTTP ${response.status}` };
+        }
+        throw new Error(error.details || error.error || 'Failed to resolve session');
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        alert('Session resolved successfully');
+        window.location.reload();
+      } else {
+        throw new Error(result.error || result.details || 'Failed to resolve');
+      }
+    } catch (error: any) {
+      alert(`Failed to resolve: ${error.message}`);
     }
   };
 
@@ -259,10 +553,14 @@ export default function SimpleFSDDesign({
     return status.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
   };
 
-  // Generate demo sessions if none provided
+  // Combine real sessions with prop sessions, fallback to mock only if no real data
   // Only use mock data after mount to prevent hydration mismatch
   const displaySessions = isMounted 
-    ? (sessions.length > 0 ? sessions : mockSiteData.sessions)
+    ? (realSessions.length > 0 
+        ? [...realSessions, ...(sessions || [])] 
+        : sessions.length > 0 
+          ? sessions 
+          : mockSiteData.sessions)
     : []; // Empty array during SSR to prevent hydration mismatch
 
   // Filter sessions by role permissions
@@ -288,9 +586,20 @@ export default function SimpleFSDDesign({
 
   const roleFilteredSessions = getFilteredSessions();
 
-  // Select exactly 3 curated sessions: 1 urgent (red), 1 needs attention (yellow), 1 active (green)
+  // Select up to 5 curated sessions for overview - exclude PAID_CONFIRMED (those go to BOH)
   const selectCuratedSessions = () => {
-    const allSessions = roleFilteredSessions;
+    // Filter out PAID_CONFIRMED and BOH/FOH workflow sessions - they belong in their respective tabs
+    const overviewSessions = roleFilteredSessions.filter((s: any) => {
+      const status = getSessionStatus(s);
+      // Exclude BOH workflow sessions (they belong in BOH tab)
+      const isBohSession = ['PAID_CONFIRMED', 'PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(status);
+      // Exclude FOH workflow sessions (they belong in FOH tab)
+      const isFohSession = ['OUT_FOR_DELIVERY', 'DELIVERED'].includes(status);
+      // Exclude edge cases (they belong in Edge Cases tab)
+      const isEdgeCase = ['STAFF_HOLD', 'STOCK_BLOCKED', 'REMAKE', 'REFUND_REQUESTED', 'VOIDED'].includes(status);
+      // Only show NEW/PENDING (awaiting payment), ACTIVE (customer stage), and CLOSED (completed)
+      return !isBohSession && !isFohSession && !isEdgeCase;
+    });
     
     // Helper functions to check session status
     const isUrgent = (s: any) => {
@@ -308,29 +617,55 @@ export default function SimpleFSDDesign({
       return status === 'ACTIVE';
     };
     
-    // Find one session from each category
-    const urgentSession = allSessions.find((s: any) => isUrgent(s));
-    const needsAttentionSession = allSessions.find((s: any) => needsAttention(s) && !isUrgent(s));
-    const activeSession = allSessions.find((s: any) => isActive(s) && !isUrgent(s) && !needsAttention(s));
+    const isNew = (s: any) => {
+      const status = getSessionStatus(s);
+      return status === 'NEW' || status === 'PENDING';
+    };
     
-    // Build curated list, filling gaps if any category is missing
+    // Find sessions from each category
+    const urgentSession = overviewSessions.find((s: any) => isUrgent(s));
+    const needsAttentionSession = overviewSessions.find((s: any) => needsAttention(s) && !isUrgent(s));
+    const activeSession = overviewSessions.find((s: any) => isActive(s) && !isUrgent(s) && !needsAttention(s));
+    const newSessions = overviewSessions.filter((s: any) => isNew(s) && !isUrgent(s) && !needsAttention(s) && !isActive(s));
+    
+    // Build curated list
     const curated: any[] = [];
     if (urgentSession) curated.push(urgentSession);
     if (needsAttentionSession) curated.push(needsAttentionSession);
     if (activeSession) curated.push(activeSession);
+    // Add new sessions (up to 2 more to reach 5)
+    curated.push(...newSessions.slice(0, 5 - curated.length));
     
-    // If we don't have 3 sessions yet, fill with next priority sessions
-    if (curated.length < 3) {
-      const remaining = allSessions.filter((s: any) => !curated.includes(s));
-      curated.push(...remaining.slice(0, 3 - curated.length));
+    // If we still don't have 5, fill with any remaining
+    if (curated.length < 5) {
+      const remaining = overviewSessions.filter((s: any) => !curated.includes(s));
+      curated.push(...remaining.slice(0, 5 - curated.length));
     }
     
-    // Return exactly 3 sessions
-    return curated.slice(0, 3);
+    // Return up to 5 sessions
+    return curated.slice(0, 5);
   };
 
   // Only calculate sessions after mount to prevent hydration mismatch
   const displayedSessions = isMounted ? selectCuratedSessions() : [];
+  
+  // Get all sessions for BOH/FOH tabs (not just curated 3)
+  // Define these BEFORE getFilteredSessionsForTab to avoid ReferenceError
+  const getAllBohSessions = () => {
+    if (!isMounted) return [];
+    return roleFilteredSessions.filter((s: any) => {
+      const status = getSessionStatus(s);
+      return ['PAID_CONFIRMED', 'PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY', 'STOCK_BLOCKED', 'REMAKE'].includes(status);
+    });
+  };
+
+  const getAllFohSessions = () => {
+    if (!isMounted) return [];
+    return roleFilteredSessions.filter((s: any) => {
+      const status = getSessionStatus(s);
+      return ['OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE', 'STAFF_HOLD', 'REFUND_REQUESTED'].includes(status);
+    });
+  };
   
   // Filter sessions based on active tab
   const getFilteredSessionsForTab = () => {
@@ -346,70 +681,95 @@ export default function SimpleFSDDesign({
           const status = getSessionStatus(s);
           return ['STAFF_HOLD', 'STOCK_BLOCKED', 'REMAKE', 'REFUND_REQUESTED', 'VOIDED'].includes(status);
         });
-      case 'waitlist':
-        return roleFilteredSessions.filter((s: any) => {
-          const status = getSessionStatus(s);
-          return status === 'NEW' || status === 'PAID_CONFIRMED';
-        });
       case 'overview':
       default:
-        return displayedSessions; // Show curated 3 for overview
+        return displayedSessions; // Show curated 5 for overview
     }
   };
   
-  const filteredSessions = getFilteredSessionsForTab();
+  const filteredSessionsRaw = getFilteredSessionsForTab();
+  
+  // Sort sessions: VIP first, then by creation time/status
+  const filteredSessions = [...filteredSessionsRaw].sort((a: any, b: any) => {
+    const aPriority = a.priority || 'NORMAL';
+    const bPriority = b.priority || 'NORMAL';
+    
+    // VIP first
+    if (aPriority === 'VIP' && bPriority !== 'VIP') return -1;
+    if (aPriority !== 'VIP' && bPriority === 'VIP') return 1;
+    
+    // Then by creation time or status
+    const aTime = a.createdAt || a.created_at || 0;
+    const bTime = b.createdAt || b.created_at || 0;
+    return aTime - bTime;
+  });
 
-  // Calculate metrics for dashboard - sync with displayed sessions
+  // Calculate metrics for dashboard - use all sessions
   const calculateMetrics = () => {
-    // Use displayedSessions (the 3 curated sessions) for metrics
-    const activeSessions = displayedSessions.filter((s: any) => {
+    const allSessions = roleFilteredSessions;
+    
+    // Active sessions (ACTIVE status)
+    const activeSessions = allSessions.filter((s: any) => {
       const status = getSessionStatus(s);
       return status === 'ACTIVE';
     });
     
-    const completedSessions = displayedSessions.filter((s: any) => {
+    // Completed sessions
+    const completedSessions = allSessions.filter((s: any) => {
       const status = getSessionStatus(s);
       return status === 'CLOSED';
     });
     
-    // Calculate average prep time from displayed prep sessions
-    const prepSessions = displayedSessions.filter((s: any) => {
+    // Calculate average prep time from completed prep sessions
+    // Prep time = time from PAID_CONFIRMED to READY_FOR_DELIVERY
+    const completedPrepSessions = allSessions.filter((s: any) => {
       const status = getSessionStatus(s);
-      return ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(status);
+      return ['READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE', 'CLOSED'].includes(status);
     });
-    const avgPrepTime = prepSessions.length > 0 ? Math.floor(Math.random() * 8 + 5) : 0; // Mock: 5-12 minutes
     
-    // Calculate completion rate based on displayed sessions
-    const completionRate = displayedSessions.length > 0 
-      ? Math.round((completedSessions.length / displayedSessions.length) * 100) 
+    let avgPrepTime = 0;
+    if (completedPrepSessions.length > 0) {
+      const prepTimes = completedPrepSessions
+        .map((s: any) => {
+          const createdAt = s.createdAt || s.created_at || Date.now();
+          const updatedAt = s.updatedAt || s.updated_at || Date.now();
+          // Estimate: if status is READY_FOR_DELIVERY or later, prep is done
+          // Use a reasonable estimate based on time elapsed
+          const elapsed = (updatedAt - createdAt) / 1000 / 60; // minutes
+          return elapsed > 0 ? Math.min(elapsed, 30) : 0; // Cap at 30 minutes
+        })
+        .filter(t => t > 0);
+      
+      if (prepTimes.length > 0) {
+        avgPrepTime = Math.round(prepTimes.reduce((a, b) => a + b, 0) / prepTimes.length);
+      }
+    }
+    
+    // If no completed sessions, use current prep sessions for estimate
+    if (avgPrepTime === 0) {
+      const currentPrepSessions = allSessions.filter((s: any) => {
+        const status = getSessionStatus(s);
+        return ['PREP_IN_PROGRESS', 'HEAT_UP'].includes(status);
+      });
+      if (currentPrepSessions.length > 0) {
+        avgPrepTime = 8; // Default estimate
+      }
+    }
+    
+    // Calculate completion rate
+    const completionRate = allSessions.length > 0 
+      ? Math.round((completedSessions.length / allSessions.length) * 100) 
       : 0;
     
     return {
       active: activeSessions.length,
       avgPrepTime,
       completionRate,
-      total: displayedSessions.length // Show count of displayed sessions (3)
+      total: allSessions.length
     };
   };
 
   const metrics = calculateMetrics();
-
-  // Get all sessions for BOH/FOH tabs (not just curated 3)
-  const getAllBohSessions = () => {
-    if (!isMounted) return [];
-    return roleFilteredSessions.filter((s: any) => {
-      const status = getSessionStatus(s);
-      return ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY', 'STOCK_BLOCKED', 'REMAKE'].includes(status);
-    });
-  };
-
-  const getAllFohSessions = () => {
-    if (!isMounted) return [];
-    return roleFilteredSessions.filter((s: any) => {
-      const status = getSessionStatus(s);
-      return ['OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE', 'STAFF_HOLD', 'REFUND_REQUESTED'].includes(status);
-    });
-  };
 
   // Calculate session counts per tab
   // Only calculate after mount to prevent hydration mismatch
@@ -420,7 +780,6 @@ export default function SimpleFSDDesign({
         boh: 0,
         foh: 0,
         edge: 0,
-        waitlist: 0
       };
     }
     
@@ -430,52 +789,60 @@ export default function SimpleFSDDesign({
       const status = getSessionStatus(s);
       return ['STAFF_HOLD', 'STOCK_BLOCKED', 'REMAKE', 'REFUND_REQUESTED', 'VOIDED'].includes(status);
     });
-    const waitlistSessions = roleFilteredSessions.filter((s: any) => {
-      const status = getSessionStatus(s);
-      return status === 'NEW' || status === 'PAID_CONFIRMED';
-    });
-    
     return {
       overview: roleFilteredSessions.length, // All sessions for overview
       boh: bohSessions.length,
       foh: fohSessions.length,
-      edge: edgeSessions.length,
-      waitlist: waitlistSessions.length
+      edge: edgeSessions.length
     };
   };
 
   const tabCounts = getTabCounts();
 
   const handleCreateSessionSave = async (sessionData: any) => {
+    // Create session via app build API
     try {
-      // For site build demo - create a mock session locally
-      // In production, this would call the app build API
-      const newSession = {
-        id: `session-${Date.now()}`,
-        customerName: sessionData.customerName || 'Guest',
-        tableId: sessionData.table || 'T-001',
-        status: 'NEW' as SessionStatus,
-        flavorMix: sessionData.addons.length > 0 ? sessionData.addons.join(' + ') : 'Standard Mix',
-        amount: sessionData.basePrice + sessionData.addons.reduce((sum: number, id: string) => {
-          const addon = [{ id: 'mint', price: 2.50 }, { id: 'mango', price: 2.00 }, { id: 'strawberry', price: 2.00 }, { id: 'peach', price: 2.50 }].find(a => a.id === id);
-          return sum + (addon?.price || 0);
-        }, 0),
-        createdAt: new Date().toISOString(),
-        source: sessionData.sessionType || 'walk-in'
-      };
-
-      // Show success message
-      alert(`Session created successfully!\n\nSession ID: ${newSession.id}\nCustomer: ${newSession.customerName}\nTable: ${newSession.tableId}\nFlavor: ${newSession.flavorMix}\nAmount: $${newSession.amount.toFixed(2)}`);
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
+      const flavorMix = sessionData.addons && sessionData.addons.length > 0 
+        ? sessionData.addons 
+        : ['Custom Mix'];
       
-      // Refresh the page to show the new session in demo data
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
-    } catch (error) {
-      console.error('Error creating session:', error);
-      alert('Failed to create session. Please try again.');
+      const response = await fetch(`${appUrl}/api/sessions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tableId: sessionData.table,
+          customerName: sessionData.customerName,
+          customerPhone: sessionData.customerPhone || '',
+          flavor: flavorMix.join(' + '),
+          amount: Math.round(sessionData.basePrice * 100) + (sessionData.addons?.reduce((sum: number, addon: string) => {
+            const item = [{ id: 'mint', price: 2.50 }, { id: 'mango', price: 2.00 }, { id: 'strawberry', price: 2.00 }, { id: 'peach', price: 2.50 }].find(a => a.id === addon);
+            return sum + (item?.price || 0) * 100;
+          }, 0) || 0),
+          source: 'WALK_IN',
+          notes: `Walk-in customer`,
+          loungeId: 'default-lounge',
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to create session' }));
+        throw new Error(errorData.error || 'Failed to create session');
+      }
+
+      const result = await response.json();
+      
+      // Refresh sessions to show new session
+      await loadSessions();
+      
+      // Switch to overview tab
+      setActiveTab('overview');
+      
+      alert(`Session created successfully! Session ID: ${result.session?.id || result.id || 'N/A'}`);
+      setShowCreateModal(false);
+    } catch (error: any) {
+      alert(`Failed to create session: ${error.message}`);
     }
-    setShowCreateModal(false);
   };
 
   return (
@@ -611,14 +978,6 @@ export default function SimpleFSDDesign({
             description: 'Requires attention',
             count: tabCounts.edge,
             color: 'yellow'
-          },
-          { 
-            id: 'waitlist', 
-            label: 'WAITLIST', 
-            icon: '⏰',
-            description: 'Pending start',
-            count: tabCounts.waitlist,
-            color: 'purple'
           }
         ].map((tab) => (
           <button
@@ -749,6 +1108,12 @@ export default function SimpleFSDDesign({
                         <h3 className="font-semibold text-white">
                           {session.table_id || session.tableId || 'Table Unknown'}
                         </h3>
+                        {(session.priority === 'VIP' || session.priority === 'vip') && (
+                          <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs font-bold rounded-full flex items-center gap-1">
+                            <Star className="w-3 h-3" />
+                            VIP
+                          </span>
+                        )}
                         {isUrgent && (
                           <span className="px-2 py-0.5 bg-red-500/20 text-red-400 text-xs font-bold rounded-full flex items-center gap-1">
                             <AlertTriangle className="w-3 h-3" />
@@ -822,30 +1187,67 @@ export default function SimpleFSDDesign({
                   </div>
                 )}
 
-                {/* Overview is read-only - only show Intelligence button */}
+                {/* Action Buttons - Show payment confirmation for NEW/PENDING sessions */}
                 <div className="mb-3 flex gap-2">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIntelligenceSessionId(sessionId);
-                      setShowIntelligenceModal(true);
-                    }}
-                    className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-500/20 flex-1"
-                  >
-                    <Brain className="w-4 h-4" />
-                    <span>Intelligence</span>
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedSession(session as FireSession);
-                      setIsModalOpen(true);
-                    }}
-                    className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 bg-zinc-700 hover:bg-zinc-600 text-white"
-                  >
-                    <Info className="w-4 h-4" />
-                    <span>View Details</span>
-                  </button>
+                  {sessionStatus === 'NEW' || sessionStatus === 'PENDING' ? (
+                    <>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleConfirmPayment(sessionId);
+                        }}
+                        className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-500/20 flex-1"
+                      >
+                        <CreditCard className="w-4 h-4" />
+                        <span>Confirm Payment</span>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCancelSession(sessionId);
+                        }}
+                        className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white"
+                        title="Cancel session"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIntelligenceSessionId(sessionId);
+                          setShowIntelligenceModal(true);
+                        }}
+                        className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-500/20 flex-1"
+                      >
+                        <Brain className="w-4 h-4" />
+                        <span>Intelligence</span>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedSession(session as FireSession);
+                          setIsModalOpen(true);
+                        }}
+                        className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 bg-zinc-700 hover:bg-zinc-600 text-white"
+                      >
+                        <Info className="w-4 h-4" />
+                        <span>View Details</span>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCancelSession(sessionId);
+                        }}
+                        className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white"
+                        title="Cancel session"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </>
+                  )}
                 </div>
 
                 {/* Enhanced Session Details */}
@@ -904,17 +1306,66 @@ export default function SimpleFSDDesign({
                 const displayName = getSessionDisplayName(sessionStatus);
                 const statusColor = STATUS_COLORS[sessionStatus];
                 
-                // BOH can move to FOH or deliver themselves
-                const bohActions = availableActions.filter(action => 
-                  ['READY_FOR_DELIVERY', 'DELIVER_NOW', 'MARK_DELIVERED', 'HEAT_UP', 'CLAIM_PREP'].includes(action)
-                );
+                // BOH actions - ordered by workflow: Claim Prep → Heat Up → Ready for Delivery → (BOH can deliver or FOH delivers)
+                // Filter and order actions based on current status
+                const orderedBohActions = (() => {
+                  const allBohActions = availableActions.filter(action => 
+                    ['CLAIM_PREP', 'HEAT_UP', 'READY_FOR_DELIVERY', 'DELIVER_NOW', 'MARK_DELIVERED'].includes(action)
+                  );
+                  
+                  // Order by workflow sequence
+                  const actionOrder: SessionAction[] = ['CLAIM_PREP', 'HEAT_UP', 'READY_FOR_DELIVERY', 'DELIVER_NOW', 'MARK_DELIVERED'];
+                  return actionOrder.filter(action => allBohActions.includes(action));
+                })();
                 
                 return (
                   <div key={sessionId} className="bg-zinc-900/50 border border-zinc-600 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div>
-                        <h4 className="font-medium text-white">{session.tableId || session.table_id || 'Unknown Table'}</h4>
-                        <p className="text-sm text-zinc-400">{session.flavor || session.flavorMix || 'Custom Mix'}</p>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-medium text-white">{session.tableId || session.table_id || 'Unknown Table'}</h4>
+                          {(session.priority === 'VIP' || session.priority === 'vip') && (
+                            <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs font-bold rounded-full">
+                              <Star className="w-3 h-3 inline mr-1" />
+                              VIP
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-zinc-400 font-medium">
+                          {(() => {
+                            // Format flavor/order display - check flavor first (it's the formatted string)
+                            if (session.flavor && session.flavor !== 'Custom Mix') {
+                              return `Flavor: ${session.flavor}`;
+                            }
+                            
+                            // Then check flavorMix
+                            if (session.flavorMix) {
+                              if (Array.isArray(session.flavorMix)) {
+                                return session.flavorMix.length > 0 
+                                  ? `Flavor: ${session.flavorMix.join(' + ')}`
+                                  : 'Flavor: Custom Mix';
+                              }
+                              if (typeof session.flavorMix === 'string') {
+                                try {
+                                  const parsed = JSON.parse(session.flavorMix);
+                                  if (Array.isArray(parsed) && parsed.length > 0) {
+                                    return `Flavor: ${parsed.join(' + ')}`;
+                                  }
+                                  return parsed ? `Flavor: ${parsed}` : 'Flavor: Custom Mix';
+                                } catch {
+                                  return session.flavorMix ? `Flavor: ${session.flavorMix}` : 'Flavor: Custom Mix';
+                                }
+                              }
+                            }
+                            return session.flavor ? `Flavor: ${session.flavor}` : 'Flavor: Custom Mix';
+                          })()}
+                        </p>
+                        {session.customerName && (
+                          <p className="text-xs text-zinc-500 mt-1">
+                            {session.customerName}
+                            {session.customerPhone && ` • ${session.customerPhone}`}
+                          </p>
+                        )}
                       </div>
                       <div className="text-right">
                         <p className={`text-sm font-medium ${statusColor}`}>{displayName}</p>
@@ -922,30 +1373,45 @@ export default function SimpleFSDDesign({
                       </div>
                     </div>
                     
-                    {/* Action Controls */}
-                    {bohActions.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-zinc-700">
-                        {bohActions.map((action) => {
-                          const canPerform = canUserPerformAction(action, currentRole);
-                          return (
-                            <button
-                              key={action}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleSessionAction(action.toLowerCase(), sessionId);
-                              }}
-                              disabled={!canPerform}
-                              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${
-                                canPerform
-                                  ? 'bg-teal-600 hover:bg-teal-700 text-white'
-                                  : 'bg-zinc-700 text-zinc-400 cursor-not-allowed'
-                              }`}
-                            >
-                              {ACTION_ICONS[action]}
-                              <span>{action.replace(/_/g, ' ')}</span>
-                            </button>
-                          );
-                        })}
+                    {/* Action Controls - Workflow buttons in order */}
+                    {orderedBohActions.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-zinc-700">
+                        <div className="flex flex-wrap gap-2">
+                          {orderedBohActions.map((action) => {
+                            const canPerform = canUserPerformAction(action, currentRole);
+                            // Custom label for delivery action when BOH is notifying FOH
+                            const isNotifyFoh =
+                              action === 'DELIVER_NOW' &&
+                              sessionStatus === 'READY_FOR_DELIVERY';
+                            const label = isNotifyFoh
+                              ? 'Notify FOH'
+                              : action.replace(/_/g, ' ');
+
+                            return (
+                              <button
+                                key={action}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSessionAction(action.toLowerCase(), sessionId);
+                                }}
+                                disabled={!canPerform}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${
+                                  canPerform
+                                    ? ACTION_COLORS[action] || 'bg-teal-600 hover:bg-teal-700 text-white'
+                                    : 'bg-zinc-700 text-zinc-400 cursor-not-allowed'
+                                }`}
+                              >
+                                {ACTION_ICONS[action]}
+                                <span>{label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {sessionStatus === 'READY_FOR_DELIVERY' && (
+                          <p className="text-xs text-zinc-500 mt-2">
+                            💡 Independent operators: You can deliver yourself or have FOH deliver
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>
@@ -975,17 +1441,61 @@ export default function SimpleFSDDesign({
                 const displayName = getSessionDisplayName(sessionStatus);
                 const statusColor = STATUS_COLORS[sessionStatus];
                 
-                // FOH actions
-                const fohActions = availableActions.filter(action => 
-                  ['DELIVER_NOW', 'MARK_DELIVERED', 'START_ACTIVE', 'REQUEST_REFILL', 'CLOSE_SESSION', 'PAUSE_SESSION', 'RESUME_SESSION'].includes(action)
-                );
+                // FOH actions - ordered by workflow
+                const orderedFohActions = (() => {
+                  const allFohActions = availableActions.filter(action => 
+                    ['DELIVER_NOW', 'MARK_DELIVERED', 'START_ACTIVE', 'REQUEST_REFILL', 'CLOSE_SESSION', 'PAUSE_SESSION', 'RESUME_SESSION'].includes(action)
+                  );
+                  
+                  // Order by workflow sequence
+                  const actionOrder: SessionAction[] = ['DELIVER_NOW', 'MARK_DELIVERED', 'START_ACTIVE', 'PAUSE_SESSION', 'RESUME_SESSION', 'REQUEST_REFILL', 'CLOSE_SESSION'];
+                  return actionOrder.filter(action => allFohActions.includes(action));
+                })();
                 
                 return (
                   <div key={sessionId} className="bg-zinc-900/50 border border-zinc-600 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div>
-                        <h4 className="font-medium text-white">{session.tableId || session.table_id || 'Unknown Table'}</h4>
-                        <p className="text-sm text-zinc-400">{session.customerName || session.customer_name || 'Guest Customer'}</p>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-medium text-white">{session.tableId || session.table_id || 'Unknown Table'}</h4>
+                          {(session.priority === 'VIP' || session.priority === 'vip') && (
+                            <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs font-bold rounded-full">
+                              <Star className="w-3 h-3 inline mr-1" />
+                              VIP
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-zinc-400 font-medium">
+                          {(() => {
+                            // Format flavor/order display
+                            if (session.flavor && session.flavor !== 'Custom Mix') {
+                              return `Flavor: ${session.flavor}`;
+                            }
+                            if (session.flavorMix) {
+                              if (Array.isArray(session.flavorMix)) {
+                                return session.flavorMix.length > 0 
+                                  ? `Flavor: ${session.flavorMix.join(' + ')}`
+                                  : 'Flavor: Custom Mix';
+                              }
+                              if (typeof session.flavorMix === 'string') {
+                                try {
+                                  const parsed = JSON.parse(session.flavorMix);
+                                  if (Array.isArray(parsed) && parsed.length > 0) {
+                                    return `Flavor: ${parsed.join(' + ')}`;
+                                  }
+                                  return parsed ? `Flavor: ${parsed}` : 'Flavor: Custom Mix';
+                                } catch {
+                                  return session.flavorMix ? `Flavor: ${session.flavorMix}` : 'Flavor: Custom Mix';
+                                }
+                              }
+                            }
+                            return session.flavor ? `Flavor: ${session.flavor}` : 'Flavor: Custom Mix';
+                          })()}
+                        </p>
+                        <p className="text-xs text-zinc-500 mt-1">
+                          {session.customerName || session.customer_name || 'Guest Customer'}
+                          {session.customerPhone && ` • ${session.customerPhone}`}
+                        </p>
                       </div>
                       <div className="text-right">
                         <p className={`text-sm font-medium ${statusColor}`}>{displayName}</p>
@@ -993,10 +1503,11 @@ export default function SimpleFSDDesign({
                       </div>
                     </div>
                     
-                    {/* Action Controls */}
-                    {fohActions.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-zinc-700">
-                        {fohActions.map((action) => {
+                    {/* Action Controls - Workflow buttons in order */}
+                    {orderedFohActions.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-zinc-700">
+                        <div className="flex flex-wrap gap-2">
+                          {orderedFohActions.map((action) => {
                           const canPerform = canUserPerformAction(action, currentRole);
                           return (
                             <button
@@ -1008,7 +1519,7 @@ export default function SimpleFSDDesign({
                               disabled={!canPerform}
                               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${
                                 canPerform
-                                  ? 'bg-teal-600 hover:bg-teal-700 text-white'
+                                  ? ACTION_COLORS[action] || 'bg-teal-600 hover:bg-teal-700 text-white'
                                   : 'bg-zinc-700 text-zinc-400 cursor-not-allowed'
                               }`}
                             >
@@ -1017,6 +1528,7 @@ export default function SimpleFSDDesign({
                             </button>
                           );
                         })}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -1025,124 +1537,6 @@ export default function SimpleFSDDesign({
               {getAllFohSessions().length === 0 && (
                 <p className="text-zinc-400 text-center py-8">No FOH sessions in progress</p>
               )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Waitlist Tab */}
-      {activeTab === 'waitlist' && (
-        <div className="space-y-4">
-          <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white flex items-center space-x-2">
-                <Clock className="w-5 h-5 text-yellow-400" />
-                <span>Customer Waitlist</span>
-              </h3>
-              <button className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center space-x-2">
-                <Plus className="w-4 h-4" />
-                <span>Add to Waitlist</span>
-              </button>
-            </div>
-            
-            {/* Search and Filters */}
-            <div className="flex space-x-4 mb-6">
-              <div className="flex-1">
-                <input
-                  type="text"
-                  placeholder="Search customers..."
-                  className="w-full px-4 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:border-yellow-500"
-                />
-              </div>
-              <select className="px-4 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:border-yellow-500">
-                <option value="waiting">Waiting</option>
-                <option value="seated">Seated</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-              <select className="px-4 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:border-yellow-500">
-                <option value="all">All Priority</option>
-                <option value="vip">VIP</option>
-                <option value="normal">Normal</option>
-              </select>
-            </div>
-
-            {/* Waitlist Entries */}
-            <div className="space-y-3">
-              {/* Sample waitlist entries */}
-              <div className="bg-zinc-900/50 border border-zinc-600 rounded-lg p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                      1
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-white">Sarah Johnson</h4>
-                      <p className="text-sm text-zinc-400">4 people • +1-555-0123 • 25m wait</p>
-                      <p className="text-xs text-zinc-500">Booth preferred • Regular customer</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded-full">NORMAL</span>
-                    <span className="px-2 py-1 bg-orange-500/20 text-orange-400 text-xs rounded-full">WAITING</span>
-                    <button className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition-colors">
-                      Seat
-                    </button>
-                    <button className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors">
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-zinc-900/50 border border-zinc-600 rounded-lg p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                      2
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-white">Mike Chen</h4>
-                      <p className="text-sm text-zinc-400">2 people • +1-555-0456 • 15m wait</p>
-                      <p className="text-xs text-zinc-500">VIP member</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs rounded-full">VIP</span>
-                    <span className="px-2 py-1 bg-orange-500/20 text-orange-400 text-xs rounded-full">WAITING</span>
-                    <button className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition-colors">
-                      Seat
-                    </button>
-                    <button className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors">
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-zinc-900/50 border border-zinc-600 rounded-lg p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                      3
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-white">Alex Rodriguez</h4>
-                      <p className="text-sm text-zinc-400">6 people • +1-555-0789 • 45m wait</p>
-                      <p className="text-xs text-zinc-500">Large table needed • Birthday party</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded-full">NORMAL</span>
-                    <span className="px-2 py-1 bg-orange-500/20 text-orange-400 text-xs rounded-full">WAITING</span>
-                    <button className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition-colors">
-                      Seat
-                    </button>
-                    <button className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors">
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -1161,7 +1555,14 @@ export default function SimpleFSDDesign({
                 <div key={session.id} className="bg-red-900/20 border border-red-600/30 rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-medium text-white">{session.tableId || 'Unknown Table'}</h4>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-medium text-white">{session.tableId || 'Unknown Table'}</h4>
+                        {(session.priority === 'VIP' || session.priority === 'vip') && (
+                          <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs font-bold rounded-full">
+                            VIP
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm text-zinc-400">{session.customerName || 'Guest Customer'}</p>
                       {session.notes && (
                         <p className="text-sm text-yellow-400 mt-1">📝 {session.notes}</p>
@@ -1173,10 +1574,16 @@ export default function SimpleFSDDesign({
                     </div>
                   </div>
                   <div className="mt-3 flex space-x-2">
-                    <button className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors">
+                    <button 
+                      onClick={() => handleEscalate(session.id)}
+                      className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
+                    >
                       Escalate
                     </button>
-                    <button className="px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white text-xs rounded transition-colors">
+                    <button 
+                      onClick={() => handleResolve(session.id)}
+                      className="px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white text-xs rounded transition-colors"
+                    >
                       Resolve
                     </button>
                   </div>
@@ -1299,6 +1706,7 @@ export default function SimpleFSDDesign({
           }}
         />
       )}
+
     </div>
   );
 }

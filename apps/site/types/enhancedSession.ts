@@ -146,6 +146,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, SessionAction[]> = {
     'CLAIM_PREP',
     'HEAT_UP',
     'READY_FOR_DELIVERY',
+    'DELIVER_NOW', // Independent operators can deliver themselves
+    'MARK_DELIVERED', // Independent operators can mark delivered
     'PUT_ON_HOLD',
     'RESOLVE_HOLD',
     'REQUEST_REMAKE'

@@ -43,6 +43,26 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (membershipError) {
+      // Handle duplicate membership (user already has a membership for this tenant)
+      const code = (membershipError as any).code || (membershipError as any).details;
+      const message = membershipError.message || '';
+
+      const isDuplicate =
+        code === '23505' || // Postgres unique_violation
+        message.toLowerCase().includes('duplicate key value') ||
+        message.toLowerCase().includes('already exists');
+
+      if (isDuplicate) {
+        console.warn(
+          '[Memberships API] Membership already exists for user/tenant. Treating as success.'
+        );
+        return NextResponse.json({
+          success: true,
+          membership: null,
+          warning: 'Membership already exists',
+        });
+      }
+
       console.error('[Memberships API] Failed to create membership:', membershipError);
       return NextResponse.json(
         { error: 'Failed to create membership', details: membershipError.message },
