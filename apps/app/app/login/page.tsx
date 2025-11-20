@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 
 // Get Supabase URL and key from environment
@@ -10,8 +10,7 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirect = searchParams.get('redirect') || '/admin/operator-onboarding';
+  const [redirect, setRedirect] = useState('/admin/operator-onboarding');
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -30,6 +29,15 @@ export default function LoginPage() {
     } else {
       // Clear any previous errors if everything is configured
       setError(null);
+    }
+
+    // Read redirect param from URL on the client
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const redirectParam = params.get('redirect');
+      if (redirectParam) {
+        setRedirect(redirectParam);
+      }
     }
   }, []);
 
@@ -62,10 +70,16 @@ export default function LoginPage() {
       
       if (isMagicLink) {
         // Magic link login
+        const appUrl =
+          process.env.NEXT_PUBLIC_APP_URL ||
+          (typeof window !== 'undefined' ? window.location.origin : '');
+
         const { error } = await supabase.auth.signInWithOtp({
           email,
           options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirect)}`,
+            emailRedirectTo: `${appUrl}/auth/callback?redirect=${encodeURIComponent(
+              redirect
+            )}`,
           },
         });
 
