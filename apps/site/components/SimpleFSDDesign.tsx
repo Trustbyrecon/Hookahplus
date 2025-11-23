@@ -619,7 +619,7 @@ export default function SimpleFSDDesign({
     
     const isNew = (s: any) => {
       const status = getSessionStatus(s);
-      return status === 'NEW' || status === 'PENDING';
+      return status === 'NEW';
     };
     
     // Find sessions from each category
