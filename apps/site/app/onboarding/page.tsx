@@ -5,9 +5,9 @@ import Card from '../../components/Card';
 import Button from '../../components/Button';
 import PageHero from '../../components/PageHero';
 import { trackOnboardingSignup } from '../../lib/ctaTracking';
-import { 
-  CheckCircle, 
-  ArrowRight, 
+import {
+  CheckCircle,
+  ArrowRight,
   ArrowLeft,
   Building,
   Users,
@@ -17,7 +17,13 @@ import {
   Shield,
   Zap,
   Check,
-  CreditCard
+  CreditCard,
+  Mail,
+  Image as ImageIcon,
+  DollarSign,
+  HelpCircle,
+  Sparkles,
+  Link as LinkIcon
 } from 'lucide-react';
 
 export default function OnboardingPage() {
@@ -444,19 +450,180 @@ export default function OnboardingPage() {
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
       {/* Hero Section */}
       <PageHero
-        headline="Get your lounge running in 15 minutes"
-        subheadline="AI-powered setup learns your flow, optimizes automatically"
+        headline="Get your lounge running in 15 minutes."
+        subheadline="Send us your menu and base price. We configure Hookah+ for your floor and send you one test link your staff can click through in under 15 minutes."
         benefit={{
-          value: "40% reduction in setup time",
-          description: "vs manual configuration — AI handles the heavy lifting",
-          icon: <Zap className="w-6 h-6 text-teal-400" />
+          value: 'One test link',
+          description: 'Staff-ready demo in 10–15 minutes',
+          icon: <Sparkles className="w-6 h-6 text-teal-400" />
         }}
         trustIndicators={[
-          { icon: <Clock className="w-4 h-4 text-teal-400" />, text: "30-day pilot available" },
-          { icon: <CreditCard className="w-4 h-4 text-teal-400" />, text: "No credit card required" },
-          { icon: <Shield className="w-4 h-4 text-teal-400" />, text: "Cancel anytime" }
+          { icon: <Clock className="w-4 h-4 text-teal-400" />, text: '30-day pilot available' },
+          { icon: <CreditCard className="w-4 h-4 text-teal-400" />, text: 'No credit card required' },
+          { icon: <Shield className="w-4 h-4 text-teal-400" />, text: 'Cancel anytime' }
         ]}
       />
+
+      {/* Test link story: what you send, what we send back, how staff use it */}
+      <div className="max-w-6xl mx-auto px-4 pt-8 sm:px-6 lg:px-8 space-y-10">
+        {/* What you send us */}
+        <section id="send-menu" className="grid gap-6 md:grid-cols-3">
+          <Card className="bg-zinc-900/60 border border-zinc-800 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Mail className="w-6 h-6 text-teal-400" />
+              <h2 className="text-lg font-semibold">1. Your menu & flavors</h2>
+            </div>
+            <p className="text-sm text-zinc-300 mb-3">
+              Email or upload a photo, PDF, or link to your current menu and flavor list.
+            </p>
+            <p className="text-xs text-zinc-500">
+              We use this to pre-build your flavor wheel and session cards.
+            </p>
+          </Card>
+
+          <Card className="bg-zinc-900/60 border border-zinc-800 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <DollarSign className="w-6 h-6 text-teal-400" />
+              <h2 className="text-lg font-semibold">2. Your base hookah price</h2>
+            </div>
+            <p className="text-sm text-zinc-300 mb-3">
+              Tell us your base hookah price and whether you lean flat or time-based.
+            </p>
+            <p className="text-xs text-zinc-500">
+              We configure simple pricing rules so sessions feel natural for your floor.
+            </p>
+          </Card>
+
+          <Card className="bg-zinc-900/60 border border-zinc-800 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <ImageIcon className="w-6 h-6 text-teal-400" />
+              <h2 className="text-lg font-semibold">3. Optional lounge photos</h2>
+            </div>
+            <p className="text-sm text-zinc-300 mb-3">
+              Share a few photos of your VIP, patio, or main floor if you’d like us to mirror zones.
+            </p>
+            <p className="text-xs text-zinc-500">
+              This lets us pre-label tables and sections so staff recognize the screen instantly.
+            </p>
+          </Card>
+        </section>
+
+        {/* What we send back – test link */}
+        <section className="grid gap-8 lg:grid-cols-[3fr,2fr] items-start">
+          <Card className="bg-zinc-900/60 border border-zinc-800 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <LinkIcon className="w-6 h-6 text-teal-400" />
+              <h2 className="text-xl font-semibold">We send you one test link.</h2>
+            </div>
+            <p className="text-sm text-zinc-300 mb-4">
+              Your test link opens a private Fire Session Dashboard for <span className="font-semibold">your</span> lounge in
+              demo mode—no installs, no passwords, no real charges.
+            </p>
+            <ol className="space-y-3 text-sm text-zinc-300 mb-4 list-decimal list-inside">
+              <li>Open the link on a FOH or BOH tablet.</li>
+              <li>
+                Click through tonight’s flow:{' '}
+                <span className="text-zinc-100">
+                  New → Prep → Heat Up → Ready for Delivery → Out for Delivery → Active → Close
+                </span>
+                .
+              </li>
+              <li>See if the floor feels smoother and staff can read the screen in under 10 minutes.</li>
+            </ol>
+            <p className="text-xs text-zinc-500">
+              Most owners never touch a dashboard builder. You send inputs; we handle configuration and send the link.
+            </p>
+          </Card>
+
+          <Card className="bg-zinc-900/60 border border-zinc-800 p-6 space-y-4">
+            <div className="flex items-center gap-2">
+              <Shield className="w-5 h-5 text-teal-400" />
+              <h3 className="text-sm font-semibold text-white">What your staff see</h3>
+            </div>
+            <ul className="space-y-2 text-sm text-zinc-300">
+              <li className="flex gap-2">
+                <CheckCircle className="w-4 h-4 text-teal-400 mt-0.5" />
+                <span>Clean BOH/FOH tabs that show who needs coals, refills, or close-out.</span>
+              </li>
+              <li className="flex gap-2">
+                <CheckCircle className="w-4 h-4 text-teal-400 mt-0.5" />
+                <span>Session cards with your flavors, tables, and simple next-step buttons.</span>
+              </li>
+              <li className="flex gap-2">
+                <CheckCircle className="w-4 h-4 text-teal-400 mt-0.5" />
+                <span>A &quot;Demo Mode&quot; banner so everyone knows it’s safe to tap everything.</span>
+              </li>
+            </ul>
+            <Button
+              variant="primary"
+              className="mt-2 bg-teal-600 hover:bg-teal-700 w-full justify-center"
+            >
+              Talk about my test link
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </Card>
+        </section>
+
+        {/* FAQ focused on the test link */}
+        <section className="grid gap-6 lg:grid-cols-2">
+          <Card className="bg-zinc-900/60 border border-zinc-800 p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <HelpCircle className="w-5 h-5 text-teal-400" />
+              <h2 className="text-lg font-semibold">What is the test link?</h2>
+            </div>
+            <p className="text-sm text-zinc-300 mb-3">
+              It’s a private URL that opens your lounge’s Fire Session Dashboard in <span className="font-semibold">demo mode</span>.
+              No installs, no passwords, no real payments—just your floor, simulated.
+            </p>
+            <p className="text-sm text-zinc-300">
+              Your team can open it on a tablet, run through a mock busy night in 10–15 minutes, and decide if Hookah+ makes
+              their shift feel smoother or not.
+            </p>
+          </Card>
+
+          <Card className="bg-zinc-900/60 border border-zinc-800 p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <HelpCircle className="w-5 h-5 text-teal-400" />
+              <h2 className="text-lg font-semibold">Do I need IT or POS integration?</h2>
+            </div>
+            <p className="text-sm text-zinc-300 mb-3">
+              No. The test link runs stand-alone. You don’t need to change your POS or wire anything into payments just to try it.
+            </p>
+            <p className="text-sm text-zinc-300">
+              If you like how the floor feels, we can later talk about deeper POS or payment integrations—but that’s optional.
+            </p>
+          </Card>
+
+          <Card className="bg-zinc-900/60 border border-zinc-800 p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <HelpCircle className="w-5 h-5 text-teal-400" />
+              <h2 className="text-lg font-semibold">How long does setup take?</h2>
+            </div>
+            <p className="text-sm text-zinc-300 mb-3">
+              Once you send your menu and base price, we aim to send your test link within <span className="font-semibold">24–48 hours</span>.
+            </p>
+            <p className="text-sm text-zinc-300">
+              Most owners only need to approve the final layout—not build it. Implementation on your side is basically
+              &quot;send us your menu and approve the test link.&quot;
+            </p>
+          </Card>
+
+          <Card className="bg-zinc-900/60 border border-zinc-800 p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <Clock className="w-5 h-5 text-teal-400" />
+              <h2 className="text-lg font-semibold">What should my staff do with it?</h2>
+            </div>
+            <p className="text-sm text-zinc-300 mb-3">
+              Ask a manager and one FOH + one BOH staff member to:
+            </p>
+            <ol className="list-decimal list-inside space-y-1 text-sm text-zinc-300 mb-3">
+              <li>Open the test link at a quiet time.</li>
+              <li>Walk through 2–3 fake sessions from New → Close.</li>
+              <li>Tell you in plain language if it makes their night feel easier.</li>
+            </ol>
+          </Card>
+        </section>
+      </div>
 
       <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {/* Progress Steps */}

@@ -122,3 +122,96 @@ export async function sendNewLeadNotification(leadData: {
   }
 }
 
+/**
+ * Send test link email to an operator lead
+ */
+export async function sendTestLinkEmail(params: {
+  email: string;
+  businessName?: string;
+  ownerName?: string;
+  testLink: string;
+}) {
+  if (!resend || !process.env.RESEND_API_KEY) {
+    console.warn('[Email] RESEND_API_KEY not configured, skipping test link email');
+    return { success: false, error: 'Email service not configured' };
+  }
+
+  const { email, businessName, ownerName, testLink } = params;
+  const displayName = ownerName || businessName || 'there';
+
+  try {
+    const result = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: 'Your Hookah+ test link is ready',
+      html: `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Your Hookah+ Test Link</title>
+          </head>
+          <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #e5e5e5; max-width: 640px; margin: 0 auto; padding: 24px; background-color: #050509;">
+            <div style="background: radial-gradient(circle at top left, #14b8a6 0, #020617 45%), #020617; border-radius: 16px; padding: 32px 28px; color: #e5e5e5;">
+              <div style="text-align: center; margin-bottom: 28px;">
+                <div style="display: inline-flex; width: 52px; height: 52px; background: linear-gradient(135deg, #14b8a6, #06b6d4); border-radius: 12px; align-items: center; justify-content: center; margin-bottom: 18px;">
+                  <span style="color: white; font-weight: 800; font-size: 22px;">H+</span>
+                </div>
+                <h1 style="margin: 0; font-size: 26px; font-weight: 700; color: #f9fafb;">Your Hookah+ test link is live</h1>
+              </div>
+
+              <p style="font-size: 15px; margin: 0 0 16px 0; color: #e5e5e5;">
+                Hi ${displayName},
+              </p>
+              <p style="font-size: 15px; margin: 0 0 16px 0; color: #d4d4d8;">
+                We&apos;ve configured a demo Fire Session Dashboard for your lounge. Your staff can click through tonight&apos;s
+                flow in under 15 minutes and see how Hookah+ feels on your floor.
+              </p>
+
+              <div style="margin: 24px 0; text-align: center;">
+                <a href="${testLink}"
+                   style="display: inline-block; padding: 14px 28px; background: linear-gradient(135deg, #14b8a6, #06b6d4); color: #0b1120; text-decoration: none; border-radius: 999px; font-weight: 600; font-size: 15px;">
+                  Open your test link →
+                </a>
+                <p style="margin-top: 10px; font-size: 12px; color: #9ca3af;">
+                  If the button doesn&apos;t work, paste this into your browser:<br />
+                  <span style="word-break: break-all; color: #e5e5e5;">${testLink}</span>
+                </p>
+              </div>
+
+              <div style="background-color: #020617; border: 1px solid #1f2937; border-radius: 12px; padding: 18px 18px 14px 18px; margin-bottom: 24px;">
+                <h2 style="margin: 0 0 10px 0; font-size: 15px; color: #e5e5e5;">How to try it with your team</h2>
+                <ol style="margin: 0 0 10px 18px; padding: 0; font-size: 13px; color: #d4d4d8;">
+                  <li style="margin-bottom: 6px;">Open the link on a FOH or BOH tablet during a quiet window.</li>
+                  <li style="margin-bottom: 6px;">Run 2–3 fake sessions from New → Close using your tables &amp; flavors.</li>
+                  <li>Ask the team if it makes their night feel smoother or not—no filters.</li>
+                </ol>
+              </div>
+
+              <p style="font-size: 13px; margin: 0; color: #9ca3af;">
+                If you have any questions or want us on a quick call while your team tests it, just reply to this email and
+                we&apos;ll line it up.
+              </p>
+
+              <p style="font-size: 13px; margin: 16px 0 0 0; color: #6b7280;">
+                — The Hookah+ team
+              </p>
+            </div>
+          </body>
+        </html>
+      `,
+    });
+
+    console.log('[Email] Test link email sent:', result);
+    return { success: true, id: result.data?.id };
+  } catch (error) {
+    console.error('[Email] Failed to send test link email:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+
