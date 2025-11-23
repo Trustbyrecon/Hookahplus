@@ -26,7 +26,8 @@ import {
   X,
   ChevronRight,
   AlertCircle,
-  Star
+  Star,
+  Link as LinkIcon
 } from 'lucide-react';
 import GlobalNavigation from '../../../components/GlobalNavigation';
 import Button from '../../../components/Button';
@@ -108,6 +109,8 @@ export default function OperatorOnboardingPage() {
   });
   const [selectedLeadIds, setSelectedLeadIds] = useState<Set<string>>(new Set());
   const [showBulkActions, setShowBulkActions] = useState(false);
+  const [showTestLinkModal, setShowTestLinkModal] = useState(false);
+  const [testLinkUrl, setTestLinkUrl] = useState('');
 
   useEffect(() => {
     loadLeads();
@@ -412,6 +415,39 @@ export default function OperatorOnboardingPage() {
     }
   };
 
+  const sendTestLinkEmail = async () => {
+    if (!selectedLead || !testLinkUrl.trim()) {
+      alert('Please provide a test link URL');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/admin/operator-onboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'send_test_link',
+          leadId: selectedLead.id,
+          testLink: testLinkUrl.trim()
+        })
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok || !data.success) {
+        const message = data.error || 'Failed to send test link email';
+        throw new Error(message);
+      }
+
+      alert('✅ Test link email sent successfully.');
+      setShowTestLinkModal(false);
+      setTestLinkUrl('');
+    } catch (err) {
+      console.error('Send test link error:', err);
+      alert(err instanceof Error ? err.message : 'Failed to send test link email. Please try again.');
+    }
+  };
+
   const getStageColor = (stage: Lead['stage']) => {
     switch (stage) {
       case 'new-leads': return 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30';
@@ -697,6 +733,25 @@ export default function OperatorOnboardingPage() {
                             className="px-3 py-1 bg-teal-600 hover:bg-teal-700 text-white text-xs rounded-lg transition-colors"
                           >
                             View Details
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedLead(lead);
+                              setShowTestLinkModal(true);
+                              if (!testLinkUrl && lead.businessName) {
+                                const slug = lead.businessName
+                                  .toLowerCase()
+                                  .replace(/[^a-z0-9]+/g, '-')
+                                  .replace(/^-+|-+$/g, '');
+                                const base =
+                                  process.env.NEXT_PUBLIC_APP_URL || 'https://app.hookahplus.com';
+                                setTestLinkUrl(`${base}/demo/${slug || 'your-lounge'}`);
+                              }
+                            }}
+                            className="px-3 py-1 bg-zinc-700 hover:bg-zinc-600 text-white text-xs rounded-lg transition-colors"
+                            title="Send test link email"
+                          >
+                            <Send className="w-3 h-3" />
                           </button>
                           <button
                             onClick={() => deleteLead(lead.id)}
@@ -1011,6 +1066,75 @@ export default function OperatorOnboardingPage() {
           </Link>
         </div>
       </div>
+
+      {/* Send Test Link Modal */}
+      {showTestLinkModal && selectedLead && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-xl max-w-lg w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <Send className="w-5 h-5 text-teal-400" />
+                <div>
+                  <h2 className="text-lg font-semibold text-white">Send Test Link Email</h2>
+                  <p className="text-xs text-zinc-400">
+                    This will email a private test link to {selectedLead.email}.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowTestLinkModal(false);
+                  setTestLinkUrl('');
+                }}
+                className="text-zinc-500 hover:text-zinc-300"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-zinc-300">
+                Test link URL
+              </label>
+              <div className="flex items-center gap-2">
+                <LinkIcon className="w-4 h-4 text-zinc-400" />
+                <input
+                  type="text"
+                  value={testLinkUrl}
+                  onChange={(e) => setTestLinkUrl(e.target.value)}
+                  className="flex-1 px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  placeholder="https://app.hookahplus.com/demo/your-lounge-slug"
+                />
+              </div>
+              <p className="text-xs text-zinc-500">
+                Tip: Use <span className="font-mono">https://app.hookahplus.com/demo/&lt;lounge-slug&gt;</span>.
+                For example, “Night After Night” → <span className="font-mono">night-after-night</span>.
+              </p>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setShowTestLinkModal(false);
+                  setTestLinkUrl('');
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={sendTestLinkEmail}
+              >
+                Send Email
+                <Send className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

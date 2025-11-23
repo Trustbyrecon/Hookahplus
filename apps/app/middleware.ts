@@ -48,6 +48,10 @@ export async function middleware(request: NextRequest) {
     '/signup',
     '/_next',
     '/favicon.ico',
+    // Dev-only: allow direct access to operator onboarding admin without auth
+    ...(process.env.NODE_ENV !== 'production'
+      ? ['/admin/operator-onboarding', '/api/admin/operator-onboarding']
+      : []),
   ];
 
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));

@@ -28,6 +28,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Ensure service role key is configured
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('[Memberships API] SUPABASE_SERVICE_ROLE_KEY is not configured');
+      return NextResponse.json(
+        {
+          error: 'Supabase service role key is not configured on the server',
+          hint: 'Add SUPABASE_SERVICE_ROLE_KEY to apps/app/.env.local and restart the dev server.',
+        },
+        { status: 500 }
+      );
+    }
+
     // Use service role client to bypass RLS
     const admin = adminClient();
 
@@ -65,7 +77,13 @@ export async function POST(req: NextRequest) {
 
       console.error('[Memberships API] Failed to create membership:', membershipError);
       return NextResponse.json(
-        { error: 'Failed to create membership', details: membershipError.message },
+        {
+          error: 'Failed to create membership',
+          details: membershipError.message,
+          code: (membershipError as any).code,
+          hint:
+            'If this is a foreign key error, ensure the user exists in Supabase Auth and the tenant row was created in the same database.',
+        },
         { status: 500 }
       );
     }
@@ -84,7 +102,10 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error('[Memberships API] Error:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      {
+        error: 'Internal server error',
+        details: error.message,
+      },
       { status: 500 }
     );
   }

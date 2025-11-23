@@ -15,6 +15,7 @@ The following variables have been added to `apps/app/.env.local`:
 NEXT_PUBLIC_SUPABASE_URL=https://hsypmyqtlxjwpnkkacmo.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzeXBteXF0bHhqd3Bua2thY21vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5NjA0MjQsImV4cCI6MjA2NTUzNjQyNH0.RoYFf-uSgewj4xPx2d0sxczqGGLwzaYVRCYI4LGdIHM
+   DATABASE_URL=postgresql://postgres:E1hqrL3FjsWVItZR@db.hsypmyqtlxjwpnkkacmo.supabase.co:5432/postgres?sslmode=require
 
 NEXT_PUBLIC_APP_URL=http://localhost:3002
 ```

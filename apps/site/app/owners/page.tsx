@@ -203,6 +203,40 @@ export default function OwnersPage() {
         </div>
       </section>
 
+      {/* Founder Story / About Section */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8 border-t border-zinc-800 bg-zinc-950/60">
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-6 text-sm font-semibold tracking-wide text-teal-400 uppercase flex items-center gap-2">
+            <Building2 className="w-4 h-4" />
+            <span>Why I&apos;m Building Hookah+</span>
+          </div>
+          <h2 className="text-3xl font-bold text-white mb-4">
+            Less performing, more conducting
+          </h2>
+          <div className="space-y-4 text-zinc-300 text-base leading-relaxed">
+            <p>
+              I&apos;ve always been more drawn to conducting than performing. As a kid in church,
+              I wasn&apos;t dreaming about holding the mic—I wanted to be the one guiding the choir,
+              watching the whole room, and bringing every voice into the same rhythm. That instinct
+              followed me into tech, where I moved into agile coaching and product work, helping
+              teams, projects, and portfolios move in sync instead of fighting complexity.
+            </p>
+            <p>
+              Hookah+ is a direct extension of that lens. I see a hookah lounge as a live experience
+              to be conducted: staff, sessions, flavors, pricing, and loyalty all working together
+              as one coherent flow. I&apos;m building tools that make that visible and manageable in
+              real time, so owners get clarity, staff get support, and guests feel the difference.
+            </p>
+            <p>
+              At the core, my work lives where experience, operations, and intelligence meet.
+              Whether it&apos;s a busy lounge floor or a digital dashboard, my role is the same as
+              it was in that church pew: see the whole, protect the flow, and help every part play
+              its role in harmony.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* ROI Calculator */}
       <section id="roi-calculator" className="py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
