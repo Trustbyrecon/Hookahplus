@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { 
   Shield, 
@@ -64,6 +64,9 @@ interface Lead {
   assignedTo: string | null;
   selectedTier: string | null;
   conversionProbability: number | null;
+  menuLink?: string | null;
+  baseHookahPrice?: string | null;
+  refillPrice?: string | null;
 }
 
 interface Stats {
@@ -111,10 +114,30 @@ export default function OperatorOnboardingPage() {
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [showTestLinkModal, setShowTestLinkModal] = useState(false);
   const [testLinkUrl, setTestLinkUrl] = useState('');
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const actionMessageTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     loadLeads();
   }, [selectedStage]);
+
+  useEffect(() => {
+    return () => {
+      if (actionMessageTimeout.current) {
+        clearTimeout(actionMessageTimeout.current);
+      }
+    };
+  }, []);
+
+  const showActionMessage = (message: string) => {
+    setActionMessage(message);
+    if (actionMessageTimeout.current) {
+      clearTimeout(actionMessageTimeout.current);
+    }
+    actionMessageTimeout.current = setTimeout(() => {
+      setActionMessage(null);
+    }, 4000);
+  };
 
   const loadLeads = async () => {
     try {
@@ -180,9 +203,7 @@ export default function OperatorOnboardingPage() {
       }
 
       // Show success message for stage changes
-      if (newStage === 'complete') {
-        console.log('✅ Lead marked as complete successfully');
-      }
+      showActionMessage(`Stage updated to ${newStage.replace('-', ' ')}`);
 
     } catch (err) {
       console.error('Update stage error:', err);
@@ -222,6 +243,7 @@ export default function OperatorOnboardingPage() {
       if (updatedLead) {
         setSelectedLead(updatedLead);
       }
+      showActionMessage('Note added');
 
     } catch (err) {
       console.error('Add note error:', err);
@@ -258,6 +280,7 @@ export default function OperatorOnboardingPage() {
       setNewNote('');
       setShowScheduleModal(false);
       await loadLeads();
+      showActionMessage('Follow-up scheduled');
 
     } catch (err) {
       console.error('Schedule follow-up error:', err);
@@ -302,6 +325,7 @@ export default function OperatorOnboardingPage() {
       });
       setShowAddLeadModal(false);
       await loadLeads();
+      showActionMessage('Manual lead created');
     } catch (err) {
       console.error('Create lead error:', err);
       alert('Failed to create lead. Please try again.');
@@ -330,6 +354,7 @@ export default function OperatorOnboardingPage() {
 
       setNewNote('');
       await loadLeads();
+      showActionMessage(`Marked contacted via ${method}`);
 
     } catch (err) {
       console.error('Mark contacted error:', err);
@@ -442,6 +467,7 @@ export default function OperatorOnboardingPage() {
       alert('✅ Test link email sent successfully.');
       setShowTestLinkModal(false);
       setTestLinkUrl('');
+      showActionMessage('Test link email sent');
     } catch (err) {
       console.error('Send test link error:', err);
       alert(err instanceof Error ? err.message : 'Failed to send test link email. Please try again.');
@@ -589,6 +615,12 @@ export default function OperatorOnboardingPage() {
               <AlertCircle className="w-5 h-5 text-red-400" />
               <span className="text-red-400">{error}</span>
             </div>
+          </div>
+        )}
+
+        {actionMessage && (
+          <div className="mb-6 px-4 py-3 rounded-lg border border-teal-500/40 bg-teal-500/10 text-sm text-teal-200 shadow-lg">
+            {actionMessage}
           </div>
         )}
 
@@ -1207,37 +1239,76 @@ function LeadDetailModal({
             </div>
 
             {/* Business Details */}
-            <div className="bg-zinc-900/50 rounded-lg p-4">
-              <h3 className="text-lg font-semibold text-white mb-4">Business Details</h3>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-zinc-400">Capacity:</span>
-                  <span className="text-white">{lead.totalCapacity} seats</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-400">Tables:</span>
-                  <span className="text-white">{lead.numberOfTables}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-400">Current POS:</span>
-                  <span className="text-white">{lead.currentPOS}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-400">Pricing Model:</span>
-                  <span className="text-white">{lead.pricingModel}</span>
-                </div>
-                {lead.seatingTypes.length > 0 && (
-                  <div>
-                    <span className="text-zinc-400">Seating Types:</span>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {lead.seatingTypes.map((type, idx) => (
-                        <span key={idx} className="px-2 py-1 bg-zinc-700 text-zinc-300 text-xs rounded-full">
-                          {type}
-                        </span>
-                      ))}
-                    </div>
+            <div className="bg-zinc-900/50 rounded-lg p-4 space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-4">Business Details</h3>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-zinc-400">Capacity:</span>
+                    <span className="text-white">{lead.totalCapacity} seats</span>
                   </div>
-                )}
+                  <div className="flex justify-between">
+                    <span className="text-zinc-400">Tables:</span>
+                    <span className="text-white">{lead.numberOfTables}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-zinc-400">Current POS:</span>
+                    <span className="text-white">{lead.currentPOS}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-zinc-400">Pricing Model:</span>
+                    <span className="text-white">{lead.pricingModel}</span>
+                  </div>
+                  {lead.seatingTypes.length > 0 && (
+                    <div>
+                      <span className="text-zinc-400">Seating Types:</span>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {lead.seatingTypes.map((type, idx) => (
+                          <span key={idx} className="px-2 py-1 bg-zinc-700 text-zinc-300 text-xs rounded-full">
+                            {type}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="border-t border-zinc-800 pt-4">
+                <h4 className="text-sm font-semibold text-zinc-300 mb-3 uppercase tracking-wide">Menu & Pricing</h4>
+                <div className="text-sm space-y-2">
+                  {lead.baseHookahPrice ? (
+                    <div className="flex justify-between">
+                      <span className="text-zinc-400">Base price:</span>
+                      <span className="text-white">${lead.baseHookahPrice}</span>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-zinc-500">Base price not provided yet.</p>
+                  )}
+                  {lead.refillPrice && (
+                    <div className="flex justify-between">
+                      <span className="text-zinc-400">Refill price:</span>
+                      <span className="text-white">${lead.refillPrice}</span>
+                    </div>
+                  )}
+                  {lead.menuLink ? (
+                    <div className="flex items-center gap-2 text-teal-400 text-xs">
+                      <LinkIcon className="w-4 h-4" />
+                      <a
+                        href={lead.menuLink}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="underline break-all"
+                      >
+                        Menu reference
+                      </a>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-zinc-500">
+                      No menu link on file. Ask the owner to email or upload their latest menu.
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           </div>

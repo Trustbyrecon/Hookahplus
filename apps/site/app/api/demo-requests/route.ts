@@ -70,7 +70,10 @@ export async function POST(req: NextRequest) {
               pricingModel: data.pricingModel || 'time-based',
               seatingTypes: data.seatingTypes || [],
               currentPOS: data.currentPOS || '',
-              integrationNeeds: data.integrationNeeds || ''
+              integrationNeeds: data.integrationNeeds || '',
+              baseHookahPrice: data.baseHookahPrice || '',
+              refillPrice: data.refillPrice || '',
+              menuLink: data.menuLink || ''
             }
           }),
         });

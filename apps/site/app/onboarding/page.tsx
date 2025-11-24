@@ -49,7 +49,12 @@ export default function OnboardingPage() {
     
     // Step 4: Preferences
     pricingModel: 'time-based',
-    preferredFeatures: [] as string[]
+    preferredFeatures: [] as string[],
+
+    // Menu & pricing
+    baseHookahPrice: '',
+    refillPrice: '',
+    menuLink: ''
   });
 
   const seatingTypesOptions = [
@@ -109,8 +114,13 @@ export default function OnboardingPage() {
   const handleSubmit = async () => {
     try {
       // Validate required fields
-      if (!formData.email || !formData.businessName || !formData.ownerName) {
-        alert('Please fill in all required fields (Business Name, Owner Name, and Email).');
+      if (
+        !formData.email ||
+        !formData.businessName ||
+        !formData.ownerName ||
+        !formData.baseHookahPrice
+      ) {
+        alert('Please fill in all required fields (Business Name, Owner Name, Email, and Base Hookah Price).');
         return;
       }
 
@@ -437,6 +447,58 @@ export default function OnboardingPage() {
                   </label>
                 ))}
               </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                  Base Hookah Price (USD) *
+                </label>
+                <input
+                  type="number"
+                  name="baseHookahPrice"
+                  value={formData.baseHookahPrice}
+                  onChange={handleInputChange}
+                  min="0"
+                  step="0.01"
+                  required
+                  className="w-full px-4 py-3 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:border-teal-500 focus:outline-none"
+                  placeholder="25"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                  Refill Price (optional)
+                </label>
+                <input
+                  type="number"
+                  name="refillPrice"
+                  value={formData.refillPrice}
+                  onChange={handleInputChange}
+                  min="0"
+                  step="0.01"
+                  className="w-full px-4 py-3 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:border-teal-500 focus:outline-none"
+                  placeholder="10"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-zinc-300 mb-2">
+                Link to your current menu (optional)
+              </label>
+              <input
+                type="url"
+                name="menuLink"
+                value={formData.menuLink}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:border-teal-500 focus:outline-none"
+                placeholder="Instagram, website, or PDF link"
+              />
+              <p className="mt-2 text-xs text-zinc-500">
+                You can also email photos or a PDF; the link just helps us start faster.
+              </p>
             </div>
           </div>
         );

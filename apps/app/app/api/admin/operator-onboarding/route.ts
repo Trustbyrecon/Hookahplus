@@ -295,6 +295,9 @@ export async function GET(req: NextRequest) {
         currentPOS: data.currentPOS || 'unknown',
         pricingModel: data.pricingModel || 'unknown',
         preferredFeatures: data.preferredFeatures || [],
+        menuLink: data.menuLink || payload.lead?.menuLink || null,
+        baseHookahPrice: data.baseHookahPrice || payload.lead?.baseHookahPrice || null,
+        refillPrice: data.refillPrice || payload.lead?.refillPrice || null,
         
         // Stage tracking (stored in payload or default)
         // CTA events have stage in payload, otherwise use defaults
