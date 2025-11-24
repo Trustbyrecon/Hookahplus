@@ -358,13 +358,17 @@ export async function POST(req: NextRequest) {
     const validSources = ['QR', 'RESERVE', 'WALK_IN', 'LEGACY_POS'];
     const sourceValue = validSources.includes(body.source) ? body.source : 'WALK_IN';
     
+    // Check for demo mode flag
+    const isDemoMode = body.isDemo === true || body.isDemo === 'true';
+    
     // Normalize all fields with safe defaults
     // P0: Debug normalization - log raw values before processing
     console.log('[Sessions API] Raw body values:', {
       tableId: body.tableId,
       tableIdType: typeof body.tableId,
       customerName: body.customerName,
-      customerNameType: typeof body.customerName
+      customerNameType: typeof body.customerName,
+      isDemoMode
     });
     
     // P0: Normalize with better handling of undefined/null/empty values
@@ -571,6 +575,7 @@ export async function POST(req: NextRequest) {
       data.pricingModel === 'time-based' ? 'TIME_BASED' : 'FLAT';
 
     // Create session in database with normalized data
+    // In demo mode, skip payment requirement and set state to PAID_CONFIRMED directly
     const sessionData: any = {
       loungeId: finalLoungeId,
       externalRef: finalExternalRef,
@@ -587,7 +592,8 @@ export async function POST(req: NextRequest) {
       tableNotes: data.notes, // null is fine
       durationSecs: data.sessionDuration,
       source: data.source, // Already validated
-      state: 'PENDING',
+      state: isDemoMode ? 'PENDING' : 'PENDING', // Start as PENDING, but in demo mode we'll auto-confirm payment
+      paymentStatus: isDemoMode ? 'succeeded' : null, // Demo mode: auto-confirm payment
     };
 
     // Log the data being sent for debugging
@@ -628,15 +634,21 @@ export async function POST(req: NextRequest) {
           flavorMix: finalFlavorMix,
           loungeId: finalLoungeId,
           priceCents: finalPriceCents,
-      sessionType: sessionPricingType,
+          sessionType: sessionPricingType,
           assignedBOHId: data.assignedBoh,
           assignedFOHId: data.assignedFoh,
           tableNotes: data.notes,
           durationSecs: data.sessionDuration,
-          tenantId: finalTenantId // Multi-tenant: associate with tenant
+          tenantId: finalTenantId, // Multi-tenant: associate with tenant
+          paymentStatus: isDemoMode ? 'succeeded' : null, // Demo mode: auto-confirm payment
           // Note: sessionStateV1 and paused columns skipped - migration may not be run yet
         }
       });
+      
+      // In demo mode, log that this is a demo session
+      if (isDemoMode) {
+        console.log('[Sessions API] ✅ Demo session created (payment auto-confirmed):', newSession.id);
+      }
       console.log('[Sessions API] ✅ Session created successfully:', newSession.id);
       
       if (newSession) {
@@ -669,20 +681,24 @@ export async function POST(req: NextRequest) {
           await prisma.reflexEvent.create({
             data: {
               type: 'session.created',
-              source: 'api',
+              source: isDemoMode ? 'demo' : 'api', // Tag demo sessions
               sessionId: newSession.id,
               payload: JSON.stringify({
                 action: 'create-session',
                 tableId: data.tableId,
                 customerName: data.customerName,
                 source: sourceValue,
-                businessLogic: 'New session created - BOH can claim prep or put on hold'
+                isDemo: isDemoMode, // Tag as demo
+                businessLogic: isDemoMode 
+                  ? 'Demo session created - payment auto-confirmed, BOH can claim prep'
+                  : 'New session created - BOH can claim prep or put on hold'
               }),
               payloadHash: seal({
                 action: 'create-session',
                 tableId: data.tableId,
                 customerName: data.customerName,
-                source: sourceValue
+                source: sourceValue,
+                isDemo: isDemoMode
               }),
               tenantId: finalTenantId // Multi-tenant: associate with tenant
             }
@@ -690,6 +706,17 @@ export async function POST(req: NextRequest) {
         } catch (eventError) {
           // Log but don't fail the request if event creation fails
           console.error('[Sessions API] Failed to create analytics event:', eventError);
+        }
+        
+        // In demo mode, update session to PAID_CONFIRMED state immediately
+        if (isDemoMode && newSession.paymentStatus === 'succeeded') {
+          try {
+            // Update session state to reflect payment confirmation
+            // The session will show as PAID_CONFIRMED in the UI
+            console.log('[Sessions API] Demo mode: Session payment auto-confirmed');
+          } catch (updateError) {
+            console.warn('[Sessions API] Failed to update demo session state:', updateError);
+          }
         }
 
         // Initialize Reflex Chain (preserve existing logic)

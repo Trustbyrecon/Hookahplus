@@ -70,6 +70,14 @@ interface Lead {
   instagramUrl?: string | null;
   facebookUrl?: string | null;
   websiteUrl?: string | null;
+  instagramScrapedData?: {
+    menuItems?: Array<{ name: string; price?: number; description?: string }>;
+    flavors?: string[];
+    basePrice?: number;
+    refillPrice?: number;
+    extractedAt?: string;
+    source?: string;
+  } | null;
 }
 
 interface Stats {
@@ -1402,6 +1410,52 @@ function LeadDetailModal({
                     <p className="text-xs text-zinc-500">
                       No menu link on file. Ask the owner to email or upload their latest menu.
                     </p>
+                  )}
+                  
+                  {/* Instagram Scraped Data */}
+                  {lead.instagramScrapedData && lead.instagramUrl && (
+                    <div className="mt-4 p-3 bg-pink-500/10 border border-pink-500/30 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <LinkIcon className="w-4 h-4 text-pink-400" />
+                        <span className="text-xs font-semibold text-pink-400 uppercase">Instagram Analysis</span>
+                      </div>
+                      {lead.instagramScrapedData.menuItems && lead.instagramScrapedData.menuItems.length > 0 && (
+                        <div className="mt-2">
+                          <p className="text-xs text-zinc-400 mb-1">Menu Items Found:</p>
+                          <div className="space-y-1">
+                            {lead.instagramScrapedData.menuItems.slice(0, 5).map((item, idx) => (
+                              <div key={idx} className="text-xs text-zinc-300">
+                                • {item.name}
+                                {item.price && <span className="text-zinc-500 ml-2">${item.price}</span>}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {lead.instagramScrapedData.flavors && lead.instagramScrapedData.flavors.length > 0 && (
+                        <div className="mt-2">
+                          <p className="text-xs text-zinc-400 mb-1">Flavors Detected:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {lead.instagramScrapedData.flavors.map((flavor, idx) => (
+                              <span key={idx} className="px-2 py-0.5 bg-pink-500/20 text-pink-300 text-xs rounded">
+                                {flavor}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {lead.instagramScrapedData.basePrice && (
+                        <div className="mt-2 text-xs">
+                          <span className="text-zinc-400">Extracted base price:</span>
+                          <span className="text-white ml-2">${lead.instagramScrapedData.basePrice}</span>
+                        </div>
+                      )}
+                      {lead.instagramScrapedData.extractedAt && (
+                        <p className="text-xs text-zinc-500 mt-2">
+                          Scraped: {new Date(lead.instagramScrapedData.extractedAt).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>

@@ -54,14 +54,3 @@ export function adminClient() {
   );
 }
 
-/**
- * Client-side Supabase client (for use in client components)
- * Note: Prefer using serverClient() in server components for better security
- */
-export function clientClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-}
-

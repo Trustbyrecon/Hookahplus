@@ -10,6 +10,7 @@ interface CreateSessionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCreateSession: (sessionData: any) => Promise<string | undefined>; // Returns session ID for payment linking
+  isDemoMode?: boolean; // Optional: if true, skip real Stripe payments
 }
 
 interface SessionData {
@@ -68,7 +69,7 @@ const timerDurations = [
   { value: 120, label: '2 hours', description: 'Ultimate session' }
 ];
 
-export default function CreateSessionModal({ isOpen, onClose, onCreateSession }: CreateSessionModalProps) {
+export default function CreateSessionModal({ isOpen, onClose, onCreateSession, isDemoMode = false }: CreateSessionModalProps) {
   // Handle escape key
   React.useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -214,6 +215,17 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
         return;
       }
       
+      // In demo mode, skip Stripe checkout and auto-confirm payment
+      if (isDemoMode) {
+        console.log('[CreateSessionModal] 🎭 Demo Mode: Skipping Stripe checkout, payment auto-confirmed');
+        // In demo mode, payment is already confirmed in the session creation
+        // Just close the modal and refresh
+        onClose();
+        // Trigger a refresh of the session list
+        window.dispatchEvent(new Event('refreshSessions'));
+        return;
+      }
+      
       // Immediately trigger payment (Stripe checkout) with session ID - same pattern as pre-order
       try {
         // Calculate total amount in cents (same as pre-order)
@@ -232,7 +244,8 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession }:
             amount: totalAmountCents, // Amount in cents (same as pre-order)
             total: totalAmountDollars, // Total in dollars for display
             sessionDuration: formData.timerDuration * 60,
-            loungeId: 'default-lounge' // Default lounge ID
+            loungeId: 'default-lounge', // Default lounge ID
+            isDemo: false // Explicitly set to false for non-demo sessions
           })
         });
         

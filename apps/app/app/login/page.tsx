@@ -2,15 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
-
-// Get Supabase URL and key from environment
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+import { clientClient } from '../../lib/supabase-client';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [redirect, setRedirect] = useState('/admin/operator-onboarding');
+  const [redirect, setRedirect] = useState('/sessions'); // Default to sessions, not admin
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,20 +14,8 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [isMagicLink, setIsMagicLink] = useState(false);
 
-  // Check environment variables on mount
+  // Read redirect param from URL on the client
   useEffect(() => {
-    if (!supabaseUrl || !supabaseAnonKey) {
-      setError('Supabase configuration is missing. Please check your environment variables and restart the dev server.');
-    } else if (typeof createClient !== 'function') {
-      setError('Supabase client initialization failed. Please restart the dev server.');
-    } else if (supabaseAnonKey.endsWith('...') || supabaseAnonKey.length < 100) {
-      setError('Supabase anon key appears to be incomplete. Please check your .env.local file.');
-    } else {
-      // Clear any previous errors if everything is configured
-      setError(null);
-    }
-
-    // Read redirect param from URL on the client
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const redirectParam = params.get('redirect');
@@ -47,26 +31,7 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      // Validate environment variables
-      if (!supabaseUrl || !supabaseAnonKey) {
-        throw new Error('Supabase configuration is missing. Please check your environment variables and restart the dev server.');
-      }
-
-      // Validate createClient is available
-      if (typeof createClient !== 'function') {
-        throw new Error('Supabase client initialization failed. Please restart the dev server.');
-      }
-
-      // Validate that the anon key is not truncated
-      if (supabaseAnonKey.endsWith('...') || supabaseAnonKey.length < 100) {
-        throw new Error('Supabase anon key appears to be incomplete. Please check your .env.local file and ensure NEXT_PUBLIC_SUPABASE_ANON_KEY is set correctly.');
-      }
-
-      const supabase = createClient(supabaseUrl, supabaseAnonKey);
-      
-      if (!supabase || typeof supabase.auth?.signInWithPassword !== 'function') {
-        throw new Error('Failed to initialize Supabase client. Please restart the dev server.');
-      }
+      const supabase = clientClient();
       
       if (isMagicLink) {
         // Magic link login
@@ -79,7 +44,7 @@ export default function LoginPage() {
           options: {
             emailRedirectTo: `${appUrl}/auth/callback?redirect=${encodeURIComponent(
               redirect
-            )}`,
+            )}&onboarding_flow=true`, // Flag for onboarding flow
           },
         });
 

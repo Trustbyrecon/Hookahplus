@@ -1,11 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { clientClient } from '../lib/supabase-client';
 import { Shield, Mail, Loader2 } from 'lucide-react';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 interface SecureRoleSelectorProps {
   currentRole: string;
@@ -26,7 +23,7 @@ export function SecureRoleSelector({ currentRole, onRoleChange }: SecureRoleSele
       if (typeof window === 'undefined') return;
       
       try {
-        const supabase = createClient(supabaseUrl, supabaseAnonKey);
+        const supabase = clientClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (user?.email) {
           setUserEmail(user.email);
@@ -61,7 +58,7 @@ export function SecureRoleSelector({ currentRole, onRoleChange }: SecureRoleSele
 
     setIsVerifying(true);
     try {
-      const supabase = createClient(supabaseUrl, supabaseAnonKey);
+      const supabase = clientClient();
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
       
       // Use standard auth callback route (must be in Supabase allowed redirect URLs)

@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { SecureRoleSelector } from './SecureRoleSelector';
-import { createClient } from '@supabase/supabase-js';
+import { clientClient } from '../lib/supabase-client';
 
 // AI Agent Collaboration Interface
 interface FlowState {
@@ -107,12 +107,7 @@ const GlobalNavigation: React.FC = () => {
   useEffect(() => {
     const checkAdminVerification = async () => {
       try {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-        const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-        
-        if (!supabaseUrl || !supabaseAnonKey) return;
-
-        const supabase = createClient(supabaseUrl, supabaseAnonKey);
+        const supabase = clientClient();
         const { data: { user } } = await supabase.auth.getUser();
         
         if (user) {

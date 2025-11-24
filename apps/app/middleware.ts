@@ -46,11 +46,18 @@ export async function middleware(request: NextRequest) {
     '/api/memberships', // Allow membership creation during signup (uses service role internally)
     '/login',
     '/signup',
+    '/admin/login', // Admin login page is public
+    '/demo', // Demo/test link routes are public (no auth required)
     '/_next',
     '/favicon.ico',
-    // Dev-only: allow direct access to operator onboarding admin without auth
+    // Dev-only: allow direct access to admin routes without auth
     ...(process.env.NODE_ENV !== 'production'
-      ? ['/admin/operator-onboarding', '/api/admin/operator-onboarding']
+      ? [
+          '/admin',
+          '/admin/operator-onboarding',
+          '/api/admin',
+          '/api/admin/operator-onboarding'
+        ]
       : []),
   ];
 
@@ -63,6 +70,11 @@ export async function middleware(request: NextRequest) {
 
   // Protect admin routes
   if (pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) {
+    // Allow admin login page without authentication
+    if (pathname === '/admin/login') {
+      return response;
+    }
+
     if (!user) {
       if (pathname.startsWith('/api/admin')) {
         return NextResponse.json(
@@ -70,7 +82,8 @@ export async function middleware(request: NextRequest) {
           { status: 401 }
         );
       } else {
-        const loginUrl = new URL('/login', request.url);
+        // Redirect to admin login (not regular login) for admin routes
+        const loginUrl = new URL('/admin/login', request.url);
         loginUrl.searchParams.set('redirect', pathname);
         return NextResponse.redirect(loginUrl);
       }
@@ -79,6 +92,7 @@ export async function middleware(request: NextRequest) {
     // Check if user has admin role (owner or admin)
     // Note: Role check happens in API routes using getCurrentRole()
     // Middleware just ensures user is authenticated
+    // If user is authenticated, allow access (role check happens in API routes)
   }
 
   // Protect other API routes

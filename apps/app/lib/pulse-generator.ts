@@ -255,38 +255,38 @@ function generateRecommendations(metrics: SessionMetrics, sessions: any[]): stri
 }
 
 /**
- * Generate demo pulse data when database is unavailable
+ * Generate demo pulse data when database is unavailable or in demo mode
  */
 export function generateDemoPulse(window: '24h' | 'pm' = '24h'): PulseData {
   const now = new Date();
   const windowLabel = window === 'pm' ? '12-hour' : '24-hour';
   
-  // Generate realistic demo metrics
-  const sessions = Math.floor(Math.random() * 15) + 8; // 8-23 sessions
-  const revenue = sessions * (Math.random() * 20 + 25); // $25-45 per session
-  const avgDuration = Math.floor(Math.random() * 30) + 45; // 45-75 minutes
+  // Generate realistic demo metrics for Night After Night trial
+  const sessions = 12; // Fixed for consistent demo experience
+  const revenue = 387.50; // Realistic revenue for demo
+  const avgDuration = 58; // Average session duration
   
-  const flavors = ['Double Apple', 'Mint Fresh', 'Blue Mist', 'Grape Mint', 'Watermelon'];
-  const topFlavors = flavors
-    .sort(() => Math.random() - 0.5)
-    .slice(0, 3)
-    .map((name, i) => ({ name, count: sessions - i * 2 }));
+  const flavors = [
+    { name: 'Blue Mist', count: 5 },
+    { name: 'Mint Fresh', count: 4 },
+    { name: 'Double Apple', count: 3 }
+  ];
   
   const recommendations = [
     'Operations running smoothly - maintain current service levels',
-    'Consider upselling premium flavors during peak hours',
-    'Monitor table turnover - optimize prep time for faster service'
+    'Blue Mist is trending - ensure adequate stock for peak hours',
+    'Consider upselling session extensions - customers staying longer'
   ];
   
   return {
-    summary: `Strong ${windowLabel} performance: ${sessions} sessions completed • Revenue: $${revenue.toFixed(2)} • Average duration: ${avgDuration} minutes`,
+    summary: `Strong ${windowLabel} performance: ${sessions} sessions completed • Revenue: $${revenue.toFixed(2)} • Average duration: ${avgDuration} minutes • Smooth operations with minimal edge cases`,
     metrics: {
       sessions,
       revenue,
       avgDuration,
-      edgeCases: Math.floor(sessions * 0.1), // ~10% edge cases
+      edgeCases: 1, // Minimal edge cases for positive demo
     },
-    topFlavors,
+    topFlavors: flavors,
     recommendations,
     timestamp: now.toISOString(),
     window: window === 'pm' ? '12h' : '24h',

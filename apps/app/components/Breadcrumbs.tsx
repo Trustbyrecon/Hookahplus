@@ -86,7 +86,8 @@ export default function Breadcrumbs({ items, className = '' }: BreadcrumbsProps)
               {index === 0 ? (
                 <Link
                   href={item.href}
-                  className="flex items-center text-zinc-400 hover:text-white transition-colors"
+                  className="flex items-center text-zinc-400 hover:text-teal-400 transition-colors cursor-pointer rounded p-1 hover:bg-zinc-800/50"
+                  title="Go to Home"
                 >
                   <Home className="w-4 h-4" />
                 </Link>
@@ -98,7 +99,8 @@ export default function Breadcrumbs({ items, className = '' }: BreadcrumbsProps)
                   ) : (
                     <Link
                       href={item.href}
-                      className="text-zinc-400 hover:text-white transition-colors"
+                      className="text-zinc-400 hover:text-teal-400 transition-colors cursor-pointer rounded px-2 py-1 hover:bg-zinc-800/50"
+                      title={`Go to ${item.label}`}
                     >
                       {item.label}
                     </Link>

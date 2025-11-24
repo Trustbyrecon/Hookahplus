@@ -66,6 +66,16 @@ async function createREMCompliantOnboardingEvent(
         preferredFeatures: payload.preferredFeatures,
         createdAt: payload.createdAt,
         notes: payload.notes || [],
+        // Menu & pricing
+        menuLink: payload.menuLink,
+        baseHookahPrice: payload.baseHookahPrice,
+        refillPrice: payload.refillPrice,
+        // Social media links
+        instagramUrl: payload.instagramUrl,
+        facebookUrl: payload.facebookUrl,
+        websiteUrl: payload.websiteUrl,
+        // Instagram scraped data
+        instagramScrapedData: payload.instagramScrapedData,
       },
     },
     effect: {
@@ -303,6 +313,8 @@ export async function GET(req: NextRequest) {
         instagramUrl: payload.lead?.instagramUrl || data.instagramUrl || data.instagram || null,
         facebookUrl: payload.lead?.facebookUrl || data.facebookUrl || data.facebook || null,
         websiteUrl: payload.lead?.websiteUrl || data.websiteUrl || data.website || null,
+        // Instagram scraped data (for agent review)
+        instagramScrapedData: payload.lead?.instagramScrapedData || data.instagramScrapedData || null,
         
         // Stage tracking (stored in payload or default)
         // CTA events have stage in payload, otherwise use defaults
@@ -708,8 +720,26 @@ export async function POST(req: NextRequest) {
         }, { status: 400 });
       }
 
+      // Process Instagram URL if provided - scrape for menu data
+      let instagramMenuData: any = {};
+      if (leadData.instagramUrl) {
+        try {
+          const { processInstagramLead } = await import('../../../lib/instagram-scraper');
+          instagramMenuData = await processInstagramLead(leadData.instagramUrl);
+          console.log('[Operator Onboarding API] Instagram scraping result:', {
+            hasMenuData: !!instagramMenuData.menuItems,
+            hasFlavors: !!instagramMenuData.flavors,
+            hasPrices: !!(instagramMenuData.basePrice || instagramMenuData.refillPrice)
+          });
+        } catch (scrapeError) {
+          console.error('[Operator Onboarding API] Instagram scraping error:', scrapeError);
+          // Continue without scraping data - don't fail the lead creation
+        }
+      }
+
       // Create a new ReflexEvent for the manual lead
       // Include ALL fields from leadData to preserve business details
+      // Merge Instagram scraped data with form data (form data takes precedence)
       const payload = {
         businessName: leadData.businessName,
         ownerName: leadData.ownerName || '',
@@ -732,10 +762,21 @@ export async function POST(req: NextRequest) {
         pricingModel: leadData.pricingModel || 'time-based',
         preferredFeatures: leadData.preferredFeatures || [],
         integrationNeeds: leadData.integrationNeeds || '',
-        // Menu & pricing
-        menuLink: leadData.menuLink || '',
-        baseHookahPrice: leadData.baseHookahPrice || '',
-        refillPrice: leadData.refillPrice || ''
+        // Menu & pricing - merge Instagram data with form data (form data takes precedence)
+        menuLink: leadData.menuLink || instagramMenuData.menuLink || '',
+        baseHookahPrice: leadData.baseHookahPrice || instagramMenuData.basePrice?.toString() || '',
+        refillPrice: leadData.refillPrice || instagramMenuData.refillPrice?.toString() || '',
+        // Social media links
+        instagramUrl: leadData.instagramUrl || '',
+        facebookUrl: leadData.facebookUrl || '',
+        websiteUrl: leadData.websiteUrl || '',
+        // Instagram scraped data (for agent review)
+        instagramScrapedData: instagramMenuData.menuItems ? {
+          menuItems: instagramMenuData.menuItems,
+          flavors: instagramMenuData.flavors || [],
+          extractedAt: instagramMenuData.extractedAt,
+          source: instagramMenuData.source
+        } : null
       };
 
       console.log('[Operator Onboarding API] Creating lead with data:', {

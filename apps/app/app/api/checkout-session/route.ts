@@ -25,7 +25,24 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { flavors, addOns, tableId, loungeId, amount, total, pricingModel, sessionDuration, dollarTestMode, sessionId } = body;
+    const { flavors, addOns, tableId, loungeId, amount, total, pricingModel, sessionDuration, dollarTestMode, sessionId, isDemo } = body;
+    
+    // Check for demo mode - short-circuit Stripe and return demo payment confirmation
+    const isDemoMode = isDemo === true || isDemo === 'true';
+    
+    if (isDemoMode) {
+      console.log('[Checkout API] 🎭 Demo Mode: Short-circuiting Stripe payment');
+      return NextResponse.json({
+        success: true,
+        demo: true,
+        sessionId: sessionId,
+        paymentIntent: 'demo_payment_intent_' + Date.now(),
+        clientSecret: null, // No Stripe client secret needed in demo
+        message: 'Demo payment confirmed - no real charges',
+        checkoutUrl: null, // No checkout URL needed
+        redirectUrl: `/fire-session-dashboard?mode=demo&session=${sessionId}&payment=confirmed`
+      });
+    }
     
     // SECURITY: sessionId is required - we only send opaque IDs to Stripe
     if (!sessionId) {

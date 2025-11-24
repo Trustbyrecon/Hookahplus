@@ -9,6 +9,7 @@ interface SyncIndicatorProps {
   error?: string | null;
   autoRefreshInterval?: number; // in seconds
   className?: string;
+  isDemoMode?: boolean; // Hide errors in demo mode
 }
 
 export default function SyncIndicator({
@@ -16,7 +17,8 @@ export default function SyncIndicator({
   isLoading = false,
   error = null,
   autoRefreshInterval = 30,
-  className = ''
+  className = '',
+  isDemoMode = false
 }: SyncIndicatorProps) {
   const [timeAgo, setTimeAgo] = useState<string>('');
 
@@ -76,10 +78,10 @@ export default function SyncIndicator({
         {getStatusIcon()}
         <span>Last updated: {timeAgo}</span>
       </div>
-      {isStale && (
+      {isStale && !isDemoMode && (
         <span className="text-yellow-400 text-xs">• Data may be stale</span>
       )}
-      {error && (
+      {error && !isDemoMode && (
         <span className="text-red-400 text-xs">• {error}</span>
       )}
       {!error && !isLoading && lastUpdated && (

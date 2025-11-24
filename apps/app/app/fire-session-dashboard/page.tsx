@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import CreateSessionModal from '../../components/CreateSessionModal';
 import GlobalNavigation from '../../components/GlobalNavigation';
 import SimpleFSDDesign from '../../components/SimpleFSDDesign';
@@ -10,7 +11,8 @@ import { SessionProvider, useSessionContext } from '../../contexts/SessionContex
 import { 
   Flame, 
   AlertCircle,
-  RefreshCw
+  RefreshCw,
+  Shield
 } from 'lucide-react';
 import { SessionStatus } from '../../types/session';
 import Breadcrumbs from '../../components/Breadcrumbs';
@@ -40,12 +42,76 @@ export default function FireSessionDashboard() {
 }
 
 function FireSessionDashboardContent() {
+  const searchParams = useSearchParams();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [userRole, setUserRole] = useState<'BOH' | 'FOH' | 'MANAGER' | 'ADMIN'>('MANAGER');
+  const [demoSessionCreated, setDemoSessionCreated] = useState(false);
+  
+  // Check for demo mode from URL params
+  const isDemoMode = searchParams.get('mode') === 'demo';
+  const demoLounge = searchParams.get('lounge') || null;
   
   // Use session context for shared state
   const { sessions, metrics, loading, error, refreshSessions, updateSessionState, lastUpdated } = useSessionContext();
   const { currentTheme } = useTheme();
+  
+  // Pre-load demo session in demo mode
+  useEffect(() => {
+    if (isDemoMode && !demoSessionCreated && !loading) {
+      const createDemoSession = async () => {
+        try {
+          // Check if demo session already exists
+          const existingSessions = await fetch('/api/sessions').then(r => r.json());
+          if (existingSessions.success && existingSessions.sessions && existingSessions.sessions.length > 0) {
+            // Check if any session is in demo mode (has payment confirmed)
+            const hasDemoSession = existingSessions.sessions.some((s: any) => 
+              s.paymentStatus === 'succeeded' || s.status === 'PAID_CONFIRMED' || s.status === 'NEW'
+            );
+            if (hasDemoSession) {
+              console.log('[Demo Mode] Demo session already exists');
+              setDemoSessionCreated(true);
+              return;
+            }
+          }
+
+          const demoSessionData = {
+            tableId: 'table-5',
+            customerName: 'Sarah & Friends',
+            customerPhone: '+1 (555) 234-5678',
+            flavor: ['Blue Mist', 'Mint Fresh'],
+            amount: 35.00,
+            sessionDuration: 60 * 60, // 60 minutes
+            loungeId: demoLounge || 'portland-smoke-shop',
+            source: 'WALK_IN',
+            pricingModel: 'time-based',
+            isDemo: true
+          };
+
+          const response = await fetch('/api/sessions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(demoSessionData)
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            console.log('[Demo Mode] ✅ Pre-loaded demo session:', data.session?.id);
+            setDemoSessionCreated(true);
+            // Refresh sessions to show the new one
+            setTimeout(() => refreshSessions(), 1000);
+          }
+        } catch (err) {
+          console.error('[Demo Mode] Failed to create demo session:', err);
+          // Don't block UI if demo session creation fails
+          setDemoSessionCreated(true);
+        }
+      };
+
+      // Small delay to ensure context is ready
+      const timer = setTimeout(createDemoSession, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [isDemoMode, demoSessionCreated, loading, demoLounge, refreshSessions]);
   
   // Debug modal state
   useEffect(() => {
@@ -82,10 +148,12 @@ function FireSessionDashboardContent() {
         },
         notes: sessionData.notes || '',
         sessionDuration: sessionData.timer_duration ? sessionData.timer_duration * 60 : 45 * 60, // Convert minutes to seconds
-        loungeId: sessionData.lounge_id || 'default-lounge',
+        loungeId: sessionData.lounge_id || demoLounge || 'default-lounge',
         source: sessionData.session_type === 'reservation' ? 'RESERVE' : 
                 sessionData.session_type === 'vip' ? 'WALK_IN' : 'WALK_IN', // VIP maps to WALK_IN (not a valid SessionSource)
-        externalRef: sessionData.externalRef || `table-${sessionData.table_id || sessionData.tableId}-${Date.now()}`
+        externalRef: sessionData.externalRef || `table-${sessionData.table_id || sessionData.tableId}-${Date.now()}`,
+        // Add demo mode flag
+        isDemo: isDemoMode
       };
 
       console.log('[Create Session] Sending to API:', apiPayload);
@@ -142,6 +210,25 @@ function FireSessionDashboardContent() {
     <div className={`min-h-screen ${getThemeClasses()}`}>
       <GlobalNavigation />
       
+      {/* Demo Mode Banner */}
+      {isDemoMode && (
+        <div className="bg-gradient-to-r from-teal-500/20 to-blue-500/20 border-b border-teal-500/30 px-4 py-3">
+          <div className="max-w-7xl mx-auto flex items-center gap-3">
+            <Shield className="w-5 h-5 text-teal-400 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-teal-200">
+                Demo Mode — Safe to tap everything, no real payments.
+              </p>
+              {demoLounge && (
+                <p className="text-xs text-teal-300/70 mt-0.5">
+                  Testing: {demoLounge.replace(/-/g, ' ')}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <Breadcrumbs className="mb-6" />
         
@@ -169,7 +256,12 @@ function FireSessionDashboardContent() {
 
         {/* Daily Pulse Card */}
         <div className="mb-6">
-          <PulseCard compact={true} window="24h" autoRefresh={true} />
+          <PulseCard 
+            compact={true} 
+            window="24h" 
+            autoRefresh={true}
+            loungeId={isDemoMode ? (demoLounge || 'demo-lounge') : undefined}
+          />
         </div>
 
         {/* Sync Indicator */}
@@ -179,6 +271,7 @@ function FireSessionDashboardContent() {
             isLoading={loading}
             error={error}
             autoRefreshInterval={30}
+            isDemoMode={isDemoMode}
           />
           <div className="flex items-center gap-4">
             <button
@@ -205,8 +298,8 @@ function FireSessionDashboardContent() {
           </div>
         </div>
 
-        {/* Error Display */}
-        {error && (
+        {/* Error Display - Hidden in demo mode */}
+        {error && !isDemoMode && (
           <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6">
             <div className="flex items-center gap-2 text-red-300">
               <AlertCircle className="w-5 h-5" />
@@ -273,6 +366,7 @@ function FireSessionDashboardContent() {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onCreateSession={handleCreateSession}
+        isDemoMode={isDemoMode}
       />
     </div>
   );
