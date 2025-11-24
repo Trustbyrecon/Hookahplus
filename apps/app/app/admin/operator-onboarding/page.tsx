@@ -67,6 +67,9 @@ interface Lead {
   menuLink?: string | null;
   baseHookahPrice?: string | null;
   refillPrice?: string | null;
+  instagramUrl?: string | null;
+  facebookUrl?: string | null;
+  websiteUrl?: string | null;
 }
 
 interface Stats {
@@ -349,16 +352,20 @@ export default function OperatorOnboardingPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to mark as contacted');
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.details || errorData.error || 'Failed to mark as contacted';
+        throw new Error(errorMessage);
       }
 
+      const result = await response.json();
       setNewNote('');
       await loadLeads();
       showActionMessage(`Marked contacted via ${method}`);
 
     } catch (err) {
       console.error('Mark contacted error:', err);
-      alert('Failed to mark as contacted. Please try again.');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to mark as contacted. Please try again.';
+      alert(`❌ ${errorMessage}`);
     }
   };
 
@@ -440,9 +447,42 @@ export default function OperatorOnboardingPage() {
     }
   };
 
+  const createDemoSession = async () => {
+    if (!selectedLead) return;
+
+    try {
+      const response = await fetch('/api/admin/operator-onboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create_demo_session',
+          leadId: selectedLead.id
+        })
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok || !data.success) {
+        const message = data.error || data.details || 'Failed to create demo session';
+        throw new Error(message);
+      }
+
+      // Update test link URL with generated link
+      if (data.demoLink) {
+        setTestLinkUrl(data.demoLink);
+      }
+
+      showActionMessage(`Demo session created: ${data.demoLink || 'Link generated'}`);
+      alert(`✅ Demo session created!\n\nLink: ${data.demoLink || 'Generated'}\n\nYou can now send the test link email.`);
+    } catch (err) {
+      console.error('Create demo session error:', err);
+      alert(err instanceof Error ? err.message : 'Failed to create demo session. Please try again.');
+    }
+  };
+
   const sendTestLinkEmail = async () => {
-    if (!selectedLead || !testLinkUrl.trim()) {
-      alert('Please provide a test link URL');
+    if (!selectedLead) {
+      alert('Please select a lead first');
       return;
     }
 
@@ -453,20 +493,21 @@ export default function OperatorOnboardingPage() {
         body: JSON.stringify({
           action: 'send_test_link',
           leadId: selectedLead.id,
-          testLink: testLinkUrl.trim()
+          testLink: testLinkUrl.trim() || undefined // Optional - backend will auto-generate if not provided
         })
       });
 
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok || !data.success) {
-        const message = data.error || 'Failed to send test link email';
+        const message = data.error || data.details || 'Failed to send test link email';
         throw new Error(message);
       }
 
       alert('✅ Test link email sent successfully.');
       setShowTestLinkModal(false);
       setTestLinkUrl('');
+      await loadLeads(); // Refresh to show updated lead
       showActionMessage('Test link email sent');
     } catch (err) {
       console.error('Send test link error:', err);
@@ -1109,7 +1150,7 @@ export default function OperatorOnboardingPage() {
                 <div>
                   <h2 className="text-lg font-semibold text-white">Send Test Link Email</h2>
                   <p className="text-xs text-zinc-400">
-                    This will email a private test link to {selectedLead.email}.
+                    This will email a private test link to {selectedLead.email}. The link will be auto-generated if not provided.
                   </p>
                 </div>
               </div>
@@ -1124,9 +1165,20 @@ export default function OperatorOnboardingPage() {
               </button>
             </div>
 
+            <div className="mb-4">
+              <Button
+                onClick={createDemoSession}
+                className="w-full mb-3"
+                variant="outline"
+              >
+                <Zap className="w-4 h-4 mr-2" />
+                Create Demo Session (Auto-generate Link)
+              </Button>
+            </div>
+
             <div className="space-y-3">
               <label className="block text-sm font-medium text-zinc-300">
-                Test link URL
+                Test link URL (optional - will be auto-generated if empty)
               </label>
               <div className="flex items-center gap-2">
                 <LinkIcon className="w-4 h-4 text-zinc-400" />
@@ -1135,12 +1187,11 @@ export default function OperatorOnboardingPage() {
                   value={testLinkUrl}
                   onChange={(e) => setTestLinkUrl(e.target.value)}
                   className="flex-1 px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  placeholder="https://app.hookahplus.com/demo/your-lounge-slug"
+                  placeholder="Leave empty to auto-generate, or enter custom URL"
                 />
               </div>
               <p className="text-xs text-zinc-500">
-                Tip: Use <span className="font-mono">https://app.hookahplus.com/demo/&lt;lounge-slug&gt;</span>.
-                For example, “Night After Night” → <span className="font-mono">night-after-night</span>.
+                Tip: Click "Create Demo Session" to auto-generate, or manually enter a URL like <span className="font-mono">https://app.hookahplus.com/demo/&lt;lounge-slug&gt;</span>.
               </p>
             </div>
 
@@ -1235,6 +1286,50 @@ function LeadDetailModal({
                   <MapPin className="w-5 h-5 text-zinc-400" />
                   <span className="text-zinc-300">{lead.location}</span>
                 </div>
+                {(lead.instagramUrl || lead.facebookUrl || lead.websiteUrl) && (
+                  <div className="pt-3 border-t border-zinc-800">
+                    <div className="text-xs text-zinc-500 mb-2">Social Media & Links</div>
+                    {lead.instagramUrl && (
+                      <div className="flex items-center gap-2 mb-2">
+                        <LinkIcon className="w-4 h-4 text-pink-400" />
+                        <a
+                          href={lead.instagramUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-pink-400 hover:text-pink-300 text-sm underline"
+                        >
+                          Instagram
+                        </a>
+                      </div>
+                    )}
+                    {lead.facebookUrl && (
+                      <div className="flex items-center gap-2 mb-2">
+                        <LinkIcon className="w-4 h-4 text-blue-400" />
+                        <a
+                          href={lead.facebookUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-blue-400 hover:text-blue-300 text-sm underline"
+                        >
+                          Facebook
+                        </a>
+                      </div>
+                    )}
+                    {lead.websiteUrl && (
+                      <div className="flex items-center gap-2">
+                        <LinkIcon className="w-4 h-4 text-teal-400" />
+                        <a
+                          href={lead.websiteUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-teal-400 hover:text-teal-300 text-sm underline"
+                        >
+                          Website
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 

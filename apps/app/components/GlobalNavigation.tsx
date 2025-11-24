@@ -24,6 +24,8 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
+import { SecureRoleSelector } from './SecureRoleSelector';
+import { createClient } from '@supabase/supabase-js';
 
 // AI Agent Collaboration Interface
 interface FlowState {
@@ -74,6 +76,7 @@ const GlobalNavigation: React.FC = () => {
   const [trustLockStatus, setTrustLockStatus] = useState<'active' | 'pending' | 'verified'>('active');
   const [trustLockVerificationRate, setTrustLockVerificationRate] = useState<number>(100);
   const [reflexScore, setReflexScore] = useState<number>(87);
+  const [isAdminVerified, setIsAdminVerified] = useState(false);
 
   // Close Quick Access dropdown when clicking outside
   useEffect(() => {
@@ -98,6 +101,53 @@ const GlobalNavigation: React.FC = () => {
     updateTime();
     const timeInterval = setInterval(updateTime, 1000);
     return () => clearInterval(timeInterval);
+  }, []);
+
+  // Check admin verification status
+  useEffect(() => {
+    const checkAdminVerification = async () => {
+      try {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+        const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+        
+        if (!supabaseUrl || !supabaseAnonKey) return;
+
+        const supabase = createClient(supabaseUrl, supabaseAnonKey);
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          // Check user metadata for admin verification
+          const adminVerified = user.user_metadata?.admin_verified === true;
+          const activeRole = user.user_metadata?.active_role;
+          const roleVerifiedAt = user.user_metadata?.role_verified_at;
+          
+          // Also check if user has admin/owner membership
+          const { data: membership } = await supabase
+            .from('memberships')
+            .select('role')
+            .eq('user_id', user.id)
+            .in('role', ['admin', 'owner'])
+            .limit(1)
+            .single();
+
+          // User is verified admin if:
+          // 1. Has admin_verified flag in metadata, OR
+          // 2. Has admin/owner membership and active_role is admin
+          setIsAdminVerified(
+            adminVerified || 
+            (membership && activeRole === 'admin' && roleVerifiedAt) ||
+            (membership && (membership.role === 'admin' || membership.role === 'owner'))
+          );
+        }
+      } catch (error) {
+        console.error('[GlobalNavigation] Error checking admin verification:', error);
+      }
+    };
+
+    checkAdminVerification();
+    // Re-check periodically in case verification status changes
+    const interval = setInterval(checkAdminVerification, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // System Status Management - Real Data
@@ -541,17 +591,15 @@ const GlobalNavigation: React.FC = () => {
               <span className="text-sm">Support Docs</span>
             </button>
 
-            {/* Role Dropdown */}
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-zinc-400">Role:</span>
-              <select className="bg-zinc-800 border border-zinc-600 rounded-md px-2 py-1 text-sm text-white">
-                <option value="manager">MANAGER</option>
-                <option value="foh">FOH</option>
-                <option value="boh">BOH</option>
-                <option value="admin">ADMIN</option>
-              </select>
-              <span className="text-xs text-zinc-500">(FOH View)</span>
-            </div>
+            {/* Role Dropdown with Security */}
+            <SecureRoleSelector
+              currentRole="foh"
+              onRoleChange={(role) => {
+                // Handle role change (could update state, localStorage, etc.)
+                console.log('Role changed to:', role);
+                // TODO: Update user's active role in session/localStorage
+              }}
+            />
 
             {/* Search */}
             <button className="text-zinc-400 hover:text-white transition-colors">
@@ -616,6 +664,20 @@ const GlobalNavigation: React.FC = () => {
                   <div>
                     <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">Owner & Admin</h3>
                     <div className="space-y-1">
+                      {/* Administrator - Only visible after magic link verification */}
+                      {isAdminVerified && (
+                        <Link
+                          href="/admin"
+                          onClick={() => setQuickAccessOpen(false)}
+                          className="flex items-center space-x-3 p-2 rounded-lg hover:bg-zinc-800 transition-colors border border-teal-500/30 bg-teal-500/10"
+                        >
+                          <Shield className="w-4 h-4 text-teal-400" />
+                          <div className="flex-1">
+                            <div className="text-sm font-medium text-white">Administrator</div>
+                            <div className="text-xs text-zinc-400">Admin control center</div>
+                          </div>
+                        </Link>
+                      )}
                       <Link
                         href="/operator"
                         onClick={() => setQuickAccessOpen(false)}

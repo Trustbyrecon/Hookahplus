@@ -65,15 +65,22 @@ export async function POST(req: NextRequest) {
               stage: 'intake', // Onboarding submission is further along
               source: 'website',
               createdAt: new Date().toISOString(),
-              // Include additional form data for better lead quality
+              // Include ALL form data for complete lead information
               preferredFeatures: data.preferredFeatures || [],
               pricingModel: data.pricingModel || 'time-based',
               seatingTypes: data.seatingTypes || [],
+              totalCapacity: data.totalCapacity || '',
+              numberOfTables: data.numberOfTables || '',
+              averageSessionDuration: data.averageSessionDuration || '',
               currentPOS: data.currentPOS || '',
               integrationNeeds: data.integrationNeeds || '',
               baseHookahPrice: data.baseHookahPrice || '',
               refillPrice: data.refillPrice || '',
-              menuLink: data.menuLink || ''
+              menuLink: data.menuLink || '',
+              // Social media links (if provided)
+              instagramUrl: data.instagramUrl || data.instagram || null,
+              facebookUrl: data.facebookUrl || data.facebook || null,
+              websiteUrl: data.websiteUrl || data.website || null
             }
           }),
         });

@@ -3,6 +3,7 @@ import { prisma } from '../../../../lib/db';
 import { generateTrustEventId, type TrustEvent, type TrustEventType } from '../../../../lib/reflex/rem-types';
 import { sendNewLeadNotification, sendTestLinkEmail } from '../../../../lib/email';
 import { requireRole, getCurrentTenant } from '../../../../lib/auth';
+import { generateSlug, generateDemoLink, findOrCreateDemoTenant } from '../../../../lib/demo';
 import crypto from 'crypto';
 
 /**
@@ -287,17 +288,21 @@ export async function GET(req: NextRequest) {
                   data.city || 
                   'Unknown',
         
-        // Business details
-        seatingTypes: data.seatingTypes || [],
-        totalCapacity: data.totalCapacity || '0',
-        numberOfTables: data.numberOfTables || '0',
-        averageSessionDuration: data.averageSessionDuration || '',
-        currentPOS: data.currentPOS || 'unknown',
-        pricingModel: data.pricingModel || 'unknown',
-        preferredFeatures: data.preferredFeatures || [],
-        menuLink: data.menuLink || payload.lead?.menuLink || null,
-        baseHookahPrice: data.baseHookahPrice || payload.lead?.baseHookahPrice || null,
-        refillPrice: data.refillPrice || payload.lead?.refillPrice || null,
+        // Business details - check multiple locations for data
+        seatingTypes: payload.lead?.seatingTypes || data.seatingTypes || [],
+        totalCapacity: payload.lead?.totalCapacity || data.totalCapacity || '0',
+        numberOfTables: payload.lead?.numberOfTables || data.numberOfTables || '0',
+        averageSessionDuration: payload.lead?.averageSessionDuration || data.averageSessionDuration || '',
+        currentPOS: payload.lead?.currentPOS || data.currentPOS || 'unknown',
+        pricingModel: payload.lead?.pricingModel || data.pricingModel || 'unknown',
+        preferredFeatures: payload.lead?.preferredFeatures || data.preferredFeatures || [],
+        menuLink: payload.lead?.menuLink || data.menuLink || null,
+        baseHookahPrice: payload.lead?.baseHookahPrice || data.baseHookahPrice || null,
+        refillPrice: payload.lead?.refillPrice || data.refillPrice || null,
+        // Social media links
+        instagramUrl: payload.lead?.instagramUrl || data.instagramUrl || data.instagram || null,
+        facebookUrl: payload.lead?.facebookUrl || data.facebookUrl || data.facebook || null,
+        websiteUrl: payload.lead?.websiteUrl || data.websiteUrl || data.website || null,
         
         // Stage tracking (stored in payload or default)
         // CTA events have stage in payload, otherwise use defaults
@@ -305,11 +310,11 @@ export async function GET(req: NextRequest) {
           (event.type === 'pos.waitlist.signup' ? 'new-leads' : 
            event.type?.startsWith('cta.') ? 'new-leads' : 'intake'),
         
-        // Management fields
-        notes: payload.notes || [],
-        scheduledFollowUp: payload.scheduledFollowUp || null,
-        lastContacted: payload.lastContacted || null,
-        assignedTo: payload.assignedTo || null,
+        // Management fields - check both payload locations
+        notes: payload.notes || (payload.behavior?.payload?.notes) || data.notes || [],
+        scheduledFollowUp: payload.scheduledFollowUp || (payload.behavior?.payload?.scheduledFollowUp) || data.scheduledFollowUp || null,
+        lastContacted: payload.lastContacted || (payload.behavior?.payload?.lastContacted) || data.lastContacted || null,
+        assignedTo: payload.assignedTo || (payload.behavior?.payload?.assignedTo) || data.assignedTo || null,
         
         // Metadata
         selectedTier: payload.selectedTier || data.selectedTier || null,
@@ -417,12 +422,80 @@ export async function POST(req: NextRequest) {
     }
 
     // Handle send_test_link action (email only, no payload mutation)
+    // If testLink not provided, auto-generate demo session first
     if (action === 'send_test_link') {
-      if (!leadId || !testLink) {
+      if (!leadId) {
         return NextResponse.json({
           success: false,
-          error: 'Missing required fields: leadId, testLink',
+          error: 'Missing required field: leadId',
         }, { status: 400 });
+      }
+
+      // If testLink not provided, create demo session first
+      let finalTestLink = testLink;
+      if (!finalTestLink) {
+        // Get the lead event
+        const event = await prisma.reflexEvent.findUnique({
+          where: { id: leadId }
+        });
+
+        if (!event || !event.payload) {
+          return NextResponse.json({
+            success: false,
+            error: 'Lead not found or has no payload'
+          }, { status: 404 });
+        }
+
+        // Parse payload
+        let payload: any;
+        try {
+          payload = JSON.parse(event.payload);
+        } catch (parseError) {
+          return NextResponse.json({
+            success: false,
+            error: 'Failed to parse lead payload'
+          }, { status: 500 });
+        }
+
+        // Check if demo link already exists
+        let data: any;
+        if (payload.behavior && payload.behavior.payload) {
+          data = { ...payload, ...payload.behavior.payload };
+        } else {
+          data = payload.data || payload;
+        }
+
+        if (data.demoLink) {
+          finalTestLink = data.demoLink;
+        } else {
+          // Create demo session
+          const businessName = data.businessName || data.loungeName || 'Demo Lounge';
+          const slug = generateSlug(businessName);
+          const appUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                        (req.headers.get('origin') || 'http://localhost:3002');
+          finalTestLink = generateDemoLink(slug, appUrl);
+
+          // Find or create tenant
+          const demoTenantId = await findOrCreateDemoTenant(businessName, prisma);
+
+          // Update lead payload with demo link
+          const targetPayload = payload.behavior?.payload || payload;
+          targetPayload.demoLink = finalTestLink;
+          targetPayload.demoSlug = slug;
+          targetPayload.demoTenantId = demoTenantId;
+          targetPayload.demoCreatedAt = new Date().toISOString();
+
+          // Update the event
+          await prisma.reflexEvent.update({
+            where: { id: leadId },
+            data: {
+              payload: JSON.stringify(payload),
+              tenantId: demoTenantId
+            }
+          });
+
+          console.log(`[Operator Onboarding API] Auto-generated demo link: ${finalTestLink}`);
+        }
       }
 
       // Look up the lead event to get email + names
@@ -472,7 +545,7 @@ export async function POST(req: NextRequest) {
           email,
           businessName,
           ownerName,
-          testLink,
+          testLink: finalTestLink,
         });
 
         if (!result.success) {
@@ -494,6 +567,104 @@ export async function POST(req: NextRequest) {
           success: false,
           error: 'Error sending test link email',
           details: emailError instanceof Error ? emailError.message : 'Unknown error',
+        }, { status: 500 });
+      }
+    }
+
+    // Handle create_demo_session action
+    if (action === 'create_demo_session') {
+      if (!leadId) {
+        return NextResponse.json({
+          success: false,
+          error: 'Missing required field: leadId'
+        }, { status: 400 });
+      }
+
+      // Get the lead event
+      const event = await prisma.reflexEvent.findUnique({
+        where: { id: leadId }
+      });
+
+      if (!event || !event.payload) {
+        return NextResponse.json({
+          success: false,
+          error: 'Lead not found or has no payload'
+        }, { status: 404 });
+      }
+
+      // Parse payload to extract business details
+      let payload: any;
+      try {
+        payload = JSON.parse(event.payload);
+      } catch (parseError) {
+        return NextResponse.json({
+          success: false,
+          error: 'Failed to parse lead payload'
+        }, { status: 500 });
+      }
+
+      // Extract lead data
+      let data: any;
+      if (payload.behavior && payload.behavior.payload) {
+        data = { ...payload, ...payload.behavior.payload };
+      } else {
+        data = payload.data || payload;
+      }
+
+      const businessName = data.businessName || data.loungeName || 'Demo Lounge';
+      
+      if (!businessName) {
+        return NextResponse.json({
+          success: false,
+          error: 'Business name not found in lead data'
+        }, { status: 400 });
+      }
+
+      try {
+        // Generate slug from business name
+        const slug = generateSlug(businessName);
+        
+        // Find or create tenant
+        const demoTenantId = await findOrCreateDemoTenant(businessName, prisma);
+        console.log(`[Operator Onboarding API] Demo tenant ID: ${demoTenantId} for "${businessName}"`);
+
+        // Generate demo link
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                      (req.headers.get('origin') || 'http://localhost:3002');
+        const demoLink = generateDemoLink(slug, appUrl);
+
+        // Update lead payload with demo link and tenant info
+        const targetPayload = payload.behavior?.payload || payload;
+        targetPayload.demoLink = demoLink;
+        targetPayload.demoSlug = slug;
+        targetPayload.demoTenantId = demoTenantId;
+        targetPayload.demoCreatedAt = new Date().toISOString();
+
+        // Update the event
+        await prisma.reflexEvent.update({
+          where: { id: leadId },
+          data: {
+            payload: JSON.stringify(payload),
+            tenantId: demoTenantId // Associate lead with demo tenant
+          }
+        });
+
+        console.log(`[Operator Onboarding API] Demo session created: ${demoLink}`);
+
+        return NextResponse.json({
+          success: true,
+          message: 'Demo session created successfully',
+          demoLink,
+          slug,
+          tenantId: demoTenantId
+        });
+
+      } catch (demoError: any) {
+        console.error('[Operator Onboarding API] Error creating demo session:', demoError);
+        return NextResponse.json({
+          success: false,
+          error: 'Failed to create demo session',
+          details: demoError instanceof Error ? demoError.message : 'Unknown error'
         }, { status: 500 });
       }
     }
@@ -538,6 +709,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Create a new ReflexEvent for the manual lead
+      // Include ALL fields from leadData to preserve business details
       const payload = {
         businessName: leadData.businessName,
         ownerName: leadData.ownerName || '',
@@ -550,7 +722,20 @@ export async function POST(req: NextRequest) {
         notes: [],
         scheduledFollowUp: null,
         lastContacted: null,
-        assignedTo: null
+        assignedTo: null,
+        // Business details from form
+        seatingTypes: leadData.seatingTypes || [],
+        totalCapacity: leadData.totalCapacity || '',
+        numberOfTables: leadData.numberOfTables || '',
+        averageSessionDuration: leadData.averageSessionDuration || '',
+        currentPOS: leadData.currentPOS || '',
+        pricingModel: leadData.pricingModel || 'time-based',
+        preferredFeatures: leadData.preferredFeatures || [],
+        integrationNeeds: leadData.integrationNeeds || '',
+        // Menu & pricing
+        menuLink: leadData.menuLink || '',
+        baseHookahPrice: leadData.baseHookahPrice || '',
+        refillPrice: leadData.refillPrice || ''
       };
 
       console.log('[Operator Onboarding API] Creating lead with data:', {
@@ -772,20 +957,36 @@ export async function POST(req: NextRequest) {
     // Parse existing payload
     const existingPayload = event.payload ? JSON.parse(event.payload) : {};
 
-    let updatedPayload = { ...existingPayload };
+    // Preserve REM TrustEvent structure if it exists
+    let updatedPayload: any;
+    if (existingPayload.behavior && existingPayload.behavior.payload) {
+      // REM TrustEvent format - update behavior.payload
+      updatedPayload = { ...existingPayload };
+      updatedPayload.behavior.payload = { ...existingPayload.behavior.payload };
+    } else {
+      // Legacy format - update top level
+      updatedPayload = { ...existingPayload };
+    }
 
     switch (action) {
       case 'update_stage':
-        updatedPayload.stage = updates.stage;
-        updatedPayload.stageUpdatedAt = new Date().toISOString();
-        updatedPayload.stageUpdatedBy = updates.updatedBy || 'admin';
+        if (updatedPayload.behavior && updatedPayload.behavior.payload) {
+          updatedPayload.behavior.payload.stage = updates.stage;
+          updatedPayload.behavior.payload.stageUpdatedAt = new Date().toISOString();
+          updatedPayload.behavior.payload.stageUpdatedBy = updates.updatedBy || 'admin';
+        } else {
+          updatedPayload.stage = updates.stage;
+          updatedPayload.stageUpdatedAt = new Date().toISOString();
+          updatedPayload.stageUpdatedBy = updates.updatedBy || 'admin';
+        }
         break;
 
       case 'add_note':
-        if (!updatedPayload.notes) {
-          updatedPayload.notes = [];
+        const targetPayload = updatedPayload.behavior?.payload || updatedPayload;
+        if (!targetPayload.notes) {
+          targetPayload.notes = [];
         }
-        updatedPayload.notes.push({
+        targetPayload.notes.push({
           id: `note_${Date.now()}`,
           content: updates.note,
           author: updates.author || 'admin',
@@ -795,36 +996,40 @@ export async function POST(req: NextRequest) {
         break;
 
       case 'schedule_followup':
-        updatedPayload.scheduledFollowUp = updates.scheduledDate;
-        updatedPayload.followUpNote = updates.note || '';
-        updatedPayload.scheduledBy = updates.scheduledBy || 'admin';
+        const scheduleTarget = updatedPayload.behavior?.payload || updatedPayload;
+        scheduleTarget.scheduledFollowUp = updates.scheduledDate;
+        scheduleTarget.followUpNote = updates.note || '';
+        scheduleTarget.scheduledBy = updates.scheduledBy || 'admin';
         break;
 
       case 'mark_contacted':
-        updatedPayload.lastContacted = new Date().toISOString();
-        updatedPayload.lastContactedBy = updates.contactedBy || 'admin';
-        updatedPayload.contactMethod = updates.contactMethod || 'email';
-        if (updates.note) {
-          if (!updatedPayload.notes) {
-            updatedPayload.notes = [];
-          }
-          updatedPayload.notes.push({
-            id: `note_${Date.now()}`,
-            content: updates.note,
-            author: updates.contactedBy || 'admin',
-            createdAt: new Date().toISOString(),
-            type: 'contact'
-          });
+        const contactTarget = updatedPayload.behavior?.payload || updatedPayload;
+        contactTarget.lastContacted = new Date().toISOString();
+        contactTarget.lastContactedBy = updates.contactedBy || 'admin';
+        contactTarget.contactMethod = updates.contactMethod || 'email';
+        // Always create a note for mark_contacted to document the interaction
+        if (!contactTarget.notes) {
+          contactTarget.notes = [];
         }
+        const contactNote = updates.note || `Contacted via ${updates.contactMethod || 'email'}`;
+        contactTarget.notes.push({
+          id: `note_${Date.now()}`,
+          content: contactNote,
+          author: updates.contactedBy || 'admin',
+          createdAt: new Date().toISOString(),
+          type: 'contact'
+        });
         break;
 
       case 'assign':
-        updatedPayload.assignedTo = updates.assignedTo;
-        updatedPayload.assignedAt = new Date().toISOString();
+        const assignTarget = updatedPayload.behavior?.payload || updatedPayload;
+        assignTarget.assignedTo = updates.assignedTo;
+        assignTarget.assignedAt = new Date().toISOString();
         break;
 
       case 'update_probability':
-        updatedPayload.conversionProbability = updates.probability;
+        const probTarget = updatedPayload.behavior?.payload || updatedPayload;
+        probTarget.conversionProbability = updates.probability;
         break;
 
       case 'delete_lead':
@@ -855,7 +1060,7 @@ export async function POST(req: NextRequest) {
         }
       });
 
-      // Create a new ReflexEvent for audit trail
+      // Create a new ReflexEvent for audit trail (non-critical, don't fail if this errors)
       try {
         try {
           await prisma.reflexEvent.create({
@@ -908,8 +1113,8 @@ export async function POST(req: NextRequest) {
               ip
             );
           } else {
-            // Re-throw if it's a different error
-            throw prismaError;
+            // Log but don't fail - audit trail is non-critical
+            console.warn('[Operator Onboarding API] Failed to create audit trail (non-critical):', prismaError?.message);
           }
         }
       } catch (updateError: any) {
@@ -917,8 +1122,9 @@ export async function POST(req: NextRequest) {
         console.warn('[Operator Onboarding API] Failed to create audit trail (non-critical):', updateError?.message);
       }
     } catch (updateEventError: any) {
-      // Log but don't fail - event update is critical, but we'll continue
+      // Event update is critical - re-throw the error so it's properly handled
       console.error('[Operator Onboarding API] Failed to update event:', updateEventError?.message);
+      throw updateEventError;
     }
 
     return NextResponse.json({
