@@ -391,6 +391,27 @@ model PosTicket {
   @@map("pos_tickets")
 }
 
+model MenuFile {
+  id           String    @id @default(uuid())
+  leadId       String?   @map("lead_id") // Link to ReflexEvent (lead) - stored as string ID
+  fileName     String    @map("file_name")
+  fileUrl      String    @map("file_url") // Supabase storage URL
+  fileType     String    @map("file_type") // "application/pdf" | "image/jpeg" | "image/png"
+  fileSize     Int       @map("file_size") // bytes
+  uploadedAt   DateTime  @default(now()) @map("uploaded_at")
+  processedAt  DateTime? @map("processed_at")
+  status       String    @default("pending") // "pending" | "processing" | "extracted" | "failed" | "deleted"
+  extractedData Json?    @map("extracted_data") // Menu/flavor data extracted by agent
+  tenantId     String?   @map("tenant_id") @db.Uuid
+  deletedAt    DateTime? @map("deleted_at") // Soft delete for retention tracking
+
+  @@index([leadId])
+  @@index([status])
+  @@index([tenantId])
+  @@index([uploadedAt])
+  @@map("menu_files")
+}
+
 model SessionHeartbeat {
   id            String   @id @default(cuid())
   sessionId     String

@@ -6,7 +6,15 @@ const useFallbackData = true;
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('[metrics/live] Using fallback data to avoid production issues');
+    // Check for demo mode - bypass auth in demo mode
+    const { searchParams } = new URL(request.url);
+    const isDemoMode = searchParams.get('mode') === 'demo' || searchParams.get('isDemo') === 'true';
+    
+    if (isDemoMode) {
+      console.log('[metrics/live] Demo mode: Bypassing auth, returning demo metrics');
+    } else {
+      console.log('[metrics/live] Using fallback data to avoid production issues');
+    }
     
     // Get current timestamp for calculations
     const now = new Date();

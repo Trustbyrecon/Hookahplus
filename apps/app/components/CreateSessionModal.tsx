@@ -11,6 +11,7 @@ interface CreateSessionModalProps {
   onClose: () => void;
   onCreateSession: (sessionData: any) => Promise<string | undefined>; // Returns session ID for payment linking
   isDemoMode?: boolean; // Optional: if true, skip real Stripe payments
+  demoMenuFlavors?: string[] | null; // For demo mode: flavors from uploaded menu
 }
 
 interface SessionData {
@@ -69,7 +70,7 @@ const timerDurations = [
   { value: 120, label: '2 hours', description: 'Ultimate session' }
 ];
 
-export default function CreateSessionModal({ isOpen, onClose, onCreateSession, isDemoMode = false }: CreateSessionModalProps) {
+export default function CreateSessionModal({ isOpen, onClose, onCreateSession, isDemoMode = false, demoMenuFlavors = null }: CreateSessionModalProps) {
   // Handle escape key
   React.useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -157,8 +158,8 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
       const updated = {
         ...prev,
         flavorMix: flavors,
-        flavorMixPrice: totalPrice,
-        amount: calculateTotalAmount(prev.pricingModel, prev.timerDuration, totalPrice)
+        flavorMixPrice: isDemoMode ? 0 : totalPrice, // Free in demo mode
+        amount: calculateTotalAmount(prev.pricingModel, prev.timerDuration, isDemoMode ? 0 : totalPrice)
       };
       return updated;
     });
@@ -472,11 +473,18 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
                     maxSelections={4}
                     mode="staff"
                     className=""
+                    customFlavors={isDemoMode && demoMenuFlavors ? demoMenuFlavors : undefined}
+                    isDemoMode={isDemoMode}
                   />
                 </div>
-                {formData.flavorMixPrice > 0 && (
+                {formData.flavorMixPrice > 0 && !isDemoMode && (
                   <div className="mt-2 text-sm text-green-400">
                     Flavor Add-ons: +${formData.flavorMixPrice.toFixed(2)}
+                  </div>
+                )}
+                {isDemoMode && (
+                  <div className="mt-2 text-sm text-zinc-400">
+                    Flavors are free in demo mode (pricing can be configured later)
                   </div>
                 )}
                 {errors.flavor && (

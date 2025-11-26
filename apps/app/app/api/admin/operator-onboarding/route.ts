@@ -70,6 +70,7 @@ async function createREMCompliantOnboardingEvent(
         menuLink: payload.menuLink,
         baseHookahPrice: payload.baseHookahPrice,
         refillPrice: payload.refillPrice,
+        menuFiles: payload.menuFiles || [], // Array of uploaded file metadata
         // Social media links
         instagramUrl: payload.instagramUrl,
         facebookUrl: payload.facebookUrl,
@@ -315,6 +316,10 @@ export async function GET(req: NextRequest) {
         websiteUrl: payload.lead?.websiteUrl || data.websiteUrl || data.website || null,
         // Instagram scraped data (for agent review)
         instagramScrapedData: payload.lead?.instagramScrapedData || data.instagramScrapedData || null,
+        // Menu files (uploaded files)
+        menuFiles: payload.lead?.menuFiles || data.menuFiles || null,
+        // Extracted menu data (from MenuExtractor)
+        extractedMenuData: payload.lead?.extractedMenuData || data.extractedMenuData || null,
         
         // Stage tracking (stored in payload or default)
         // CTA events have stage in payload, otherwise use defaults
@@ -724,7 +729,7 @@ export async function POST(req: NextRequest) {
       let instagramMenuData: any = {};
       if (leadData.instagramUrl) {
         try {
-          const { processInstagramLead } = await import('../../../lib/instagram-scraper');
+          const { processInstagramLead } = await import('../../../../lib/instagram-scraper');
           instagramMenuData = await processInstagramLead(leadData.instagramUrl);
           console.log('[Operator Onboarding API] Instagram scraping result:', {
             hasMenuData: !!instagramMenuData.menuItems,
@@ -766,6 +771,7 @@ export async function POST(req: NextRequest) {
         menuLink: leadData.menuLink || instagramMenuData.menuLink || '',
         baseHookahPrice: leadData.baseHookahPrice || instagramMenuData.basePrice?.toString() || '',
         refillPrice: leadData.refillPrice || instagramMenuData.refillPrice?.toString() || '',
+        menuFiles: leadData.menuFiles || [], // Array of uploaded file metadata
         // Social media links
         instagramUrl: leadData.instagramUrl || '',
         facebookUrl: leadData.facebookUrl || '',
@@ -796,12 +802,15 @@ export async function POST(req: NextRequest) {
       try {
         let newEvent: any;
         
-        // Create REM-compliant TrustEvent payload
-        const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || '0.0.0.0';
-        const userAgent = req.headers.get('user-agent') || undefined;
-        const remPayload = await createREMCompliantOnboardingEvent(payload, ip, userAgent, leadData.source || 'manual');
-        
-        try {
+      // Create REM-compliant TrustEvent payload
+      const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || '0.0.0.0';
+      const userAgent = req.headers.get('user-agent') || undefined;
+      const remPayload = await createREMCompliantOnboardingEvent(payload, ip, userAgent, leadData.source || 'manual');
+      
+      // Create MenuFile records for uploaded files
+      let createdEventId: string | null = null;
+      
+      try {
           // Try Prisma create first (works if all columns exist)
           // Map source to valid enum value (ui | backend | agent)
           const validSource = leadData.source === 'website' ? 'ui' : 
@@ -883,6 +892,57 @@ export async function POST(req: NextRequest) {
         }
 
         console.log('[Operator Onboarding API] Lead created successfully:', newEvent.id);
+        createdEventId = newEvent.id;
+
+        // Create MenuFile records for uploaded files
+        if (leadData.menuFiles && Array.isArray(leadData.menuFiles) && leadData.menuFiles.length > 0) {
+          try {
+            const menuFileRecords = leadData.menuFiles.map((file: any) => ({
+              leadId: newEvent.id,
+              fileName: file.fileName,
+              fileUrl: file.fileUrl,
+              fileType: file.fileType,
+              fileSize: file.fileSize,
+              status: 'pending',
+              tenantId: tenantId
+            }));
+
+            // Insert menu files using raw SQL (MenuFile model may not be migrated yet)
+            for (const fileRecord of menuFileRecords) {
+              try {
+                await prisma.$executeRawUnsafe(`
+                  INSERT INTO public.menu_files (
+                    id, lead_id, file_name, file_url, file_type, file_size, 
+                    status, tenant_id, uploaded_at
+                  )
+                  VALUES (
+                    gen_random_uuid()::text,
+                    $1, $2, $3, $4, $5, $6, $7, NOW()
+                  )
+                `,
+                  fileRecord.leadId,
+                  fileRecord.fileName,
+                  fileRecord.fileUrl,
+                  fileRecord.fileType,
+                  fileRecord.fileSize,
+                  fileRecord.status,
+                  fileRecord.tenantId
+                );
+                console.log(`[Operator Onboarding API] Created MenuFile record for: ${fileRecord.fileName}`);
+              } catch (fileError: any) {
+                // If menu_files table doesn't exist yet, log and continue
+                if (fileError?.message?.includes('does not exist') || fileError?.code === '42P01') {
+                  console.warn('[Operator Onboarding API] menu_files table not found, skipping file record creation');
+                } else {
+                  console.error('[Operator Onboarding API] Error creating MenuFile record:', fileError);
+                }
+              }
+            }
+          } catch (fileError) {
+            console.error('[Operator Onboarding API] Error creating menu file records (non-blocking):', fileError);
+            // Continue anyway - file records are non-critical
+          }
+        }
 
         // Send email notification to admin (non-blocking)
         try {
@@ -1071,6 +1131,16 @@ export async function POST(req: NextRequest) {
       case 'update_probability':
         const probTarget = updatedPayload.behavior?.payload || updatedPayload;
         probTarget.conversionProbability = updates.probability;
+        break;
+
+      case 'extract_menu_data':
+        const extractTarget = updatedPayload.behavior?.payload || updatedPayload;
+        extractTarget.extractedMenuData = updates.extractedData;
+        extractTarget.menuExtractedAt = new Date().toISOString();
+        extractTarget.menuExtractedBy = updates.extractedBy || 'admin';
+        
+        // Update menu file statuses to 'extracted'
+        // This will be handled by the file deletion workflow
         break;
 
       case 'delete_lead':

@@ -56,3 +56,38 @@ export async function findOrCreateDemoTenant(
   return tenant.id;
 }
 
+/**
+ * Injects extracted menu data into demo tenant configuration
+ * This makes the menu data available when the demo link is opened
+ */
+export async function injectMenuDataIntoDemo(tenantId: string, menuData: any) {
+  try {
+    // For now, we'll store menu data in a separate table or tenant metadata
+    // In the future, this could update tenant configuration, flavor lists, etc.
+    
+    // Option 1: Store in a tenant_config table (if it exists)
+    // Option 2: Store in tenant metadata JSON field (if it exists)
+    // Option 3: Create demo-specific session data
+    
+    // For now, we'll just log it - the actual injection will happen when demo session loads
+    // The demo session can read extractedMenuData from the lead payload
+    console.log('[Demo] Menu data prepared for injection:', {
+      tenantId,
+      hasBasePrice: !!menuData.basePrice,
+      hasRefillPrice: !!menuData.refillPrice,
+      flavorsCount: menuData.flavors?.length || 0,
+      sectionsCount: menuData.sections?.length || 0,
+      menuItemsCount: menuData.menuItems?.length || 0
+    });
+    
+    // TODO: In future, create/update tenant_config or flavor_lists tables
+    // For now, the demo session will read from lead.extractedMenuData
+    
+    return { success: true };
+  } catch (error) {
+    console.error('[Demo] Error injecting menu data:', error);
+    // Non-critical - continue anyway
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+

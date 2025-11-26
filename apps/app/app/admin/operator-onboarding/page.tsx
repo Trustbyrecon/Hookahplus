@@ -27,12 +27,14 @@ import {
   ChevronRight,
   AlertCircle,
   Star,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Image as ImageIcon
 } from 'lucide-react';
 import GlobalNavigation from '../../../components/GlobalNavigation';
 import Button from '../../../components/Button';
 import Breadcrumbs from '../../../components/Breadcrumbs';
 import PageHero from '../../../components/PageHero';
+import MenuExtractor from '../../../components/MenuExtractor';
 import { BarChart3, Flame } from 'lucide-react';
 
 interface Lead {
@@ -77,6 +79,24 @@ interface Lead {
     refillPrice?: number;
     extractedAt?: string;
     source?: string;
+  } | null;
+  menuFiles?: Array<{
+    id: string;
+    fileName: string;
+    fileUrl: string;
+    filePath?: string;
+    fileType: string;
+    fileSize: number;
+    uploadedAt: string;
+    status?: string;
+  }> | null;
+  extractedMenuData?: {
+    basePrice?: number;
+    refillPrice?: number;
+    flavors: string[];
+    sections: string[];
+    menuItems?: Array<{ name: string; price?: number; description?: string }>;
+    notes?: string;
   } | null;
 }
 
@@ -1410,6 +1430,79 @@ function LeadDetailModal({
                     <p className="text-xs text-zinc-500">
                       No menu link on file. Ask the owner to email or upload their latest menu.
                     </p>
+                  )}
+
+                  {/* Menu Files & Extractor */}
+                  {lead.menuFiles && lead.menuFiles.length > 0 && (
+                    <div className="mt-4">
+                      <MenuExtractor
+                        leadId={lead.id}
+                        menuFiles={lead.menuFiles}
+                        existingData={lead.extractedMenuData || null}
+                        onExtractComplete={async (data) => {
+                          // Save extracted data to lead via dedicated API
+                          const response = await fetch('/api/admin/operator-onboarding/extract-menu', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              leadId: lead.id,
+                              extractedData: data
+                            })
+                          });
+                          const result = await response.json();
+                          if (!response.ok) {
+                            throw new Error(result.error || 'Failed to save extracted menu data');
+                          }
+                          showActionMessage(
+                            result.warnings 
+                              ? `Menu data saved. ${result.warnings}` 
+                              : `Menu data extracted and saved. ${result.deletedFiles} file(s) deleted.`
+                          );
+                          loadLeads(); // Refresh to show updated data
+                        }}
+                        onFileDelete={async (fileId) => {
+                          // Delete file from storage and database
+                          const file = lead.menuFiles?.find(f => f.id === fileId);
+                          if (file?.filePath) {
+                            const response = await fetch(`/api/menu-upload?path=${encodeURIComponent(file.filePath)}`, {
+                              method: 'DELETE'
+                            });
+                            if (!response.ok) {
+                              throw new Error('Failed to delete file');
+                            }
+                          }
+                          showActionMessage('File deleted successfully');
+                          loadLeads(); // Refresh to remove deleted file
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Extracted Menu Data Display (if already extracted) */}
+                  {lead.extractedMenuData && !lead.menuFiles?.length && (
+                    <div className="mt-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CheckCircle className="w-4 h-4 text-green-400" />
+                        <span className="text-xs font-semibold text-green-400 uppercase">Menu Data Extracted</span>
+                      </div>
+                      {lead.extractedMenuData.basePrice && (
+                        <div className="text-xs text-zinc-300 mb-1">
+                          Base Price: ${lead.extractedMenuData.basePrice}
+                        </div>
+                      )}
+                      {lead.extractedMenuData.flavors && lead.extractedMenuData.flavors.length > 0 && (
+                        <div className="mt-2">
+                          <p className="text-xs text-zinc-400 mb-1">Flavors:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {lead.extractedMenuData.flavors.map((flavor: string, idx: number) => (
+                              <span key={idx} className="px-2 py-0.5 bg-green-500/20 text-green-300 text-xs rounded">
+                                {flavor}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   )}
                   
                   {/* Instagram Scraped Data */}

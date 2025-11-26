@@ -202,10 +202,21 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Fetch all sessions from database
-    // Filter by tenant_id if user is authenticated (RLS will also enforce this)
-    const user = await getCurrentUser(req);
-    const tenantId = user ? await getCurrentTenant(req) : null;
+    // Check for demo mode from query params
+    const isDemoMode = searchParams.get('mode') === 'demo' || searchParams.get('isDemo') === 'true';
+    
+    // In demo mode, bypass auth/tenant checks
+    let user = null;
+    let tenantId: string | null = null;
+    
+    if (!isDemoMode) {
+      // Fetch all sessions from database
+      // Filter by tenant_id if user is authenticated (RLS will also enforce this)
+      user = await getCurrentUser(req);
+      tenantId = user ? await getCurrentTenant(req) : null;
+    } else {
+      console.log('[Sessions API] Demo mode: Bypassing auth/tenant checks');
+    }
     
     let dbSessions;
     try {

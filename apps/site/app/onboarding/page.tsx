@@ -25,6 +25,7 @@ import {
   Sparkles,
   Link as LinkIcon
 } from 'lucide-react';
+import MenuFileUpload from '../../components/MenuFileUpload';
 
 export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -54,7 +55,17 @@ export default function OnboardingPage() {
     // Menu & pricing
     baseHookahPrice: '',
     refillPrice: '',
-    menuLink: ''
+    menuLink: '',
+    menuFiles: [] as Array<{
+      id: string;
+      fileName: string;
+      fileUrl: string;
+      filePath: string;
+      fileType: string;
+      fileSize: number;
+      uploadedAt: string;
+      status: string;
+    }>
   });
 
   const seatingTypesOptions = [
@@ -486,7 +497,20 @@ export default function OnboardingPage() {
 
             <div>
               <label className="block text-sm font-medium text-zinc-300 mb-2">
-                Link to your current menu (optional)
+                Upload your menu (PDF, JPG, or PNG)
+              </label>
+              <MenuFileUpload
+                onFilesChange={(files) => {
+                  setFormData(prev => ({ ...prev, menuFiles: files }));
+                }}
+                maxFiles={5}
+                className="mb-4"
+              />
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-zinc-300 mb-2">
+                Or paste a link to your menu (optional)
               </label>
               <input
                 type="url"
@@ -497,7 +521,7 @@ export default function OnboardingPage() {
                 placeholder="Instagram, website, or PDF link"
               />
               <p className="mt-2 text-xs text-zinc-500">
-                You can also email photos or a PDF; the link just helps us start faster.
+                If you prefer, you can paste a link instead of uploading files.
               </p>
             </div>
           </div>

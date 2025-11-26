@@ -129,6 +129,8 @@ interface FlavorWheelSelectorProps {
   maxSelections?: number;
   mode?: 'staff' | 'customer';
   className?: string;
+  customFlavors?: string[]; // For demo mode: flavors from uploaded menu
+  isDemoMode?: boolean; // If true, flavors are free
 }
 
 export default function FlavorWheelSelector({
@@ -136,15 +138,44 @@ export default function FlavorWheelSelector({
   onSelectionChange,
   maxSelections = 4,
   mode = 'staff',
-  className = ''
+  className = '',
+  customFlavors = [],
+  isDemoMode = false
 }: FlavorWheelSelectorProps) {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string[]>(selectedFlavors);
-  const [showPresets, setShowPresets] = useState(true);
+  const [showPresets, setShowPresets] = useState(customFlavors && customFlavors.length > 0 ? false : true); // Hide presets if using custom flavors
+
+  // Build available flavors: use customFlavors if provided (demo mode), otherwise use FLAVOR_CATEGORIES
+  const availableFlavors = useMemo(() => {
+    if (customFlavors && customFlavors.length > 0) {
+      // Convert custom flavor names to flavor items (free in demo mode)
+      return customFlavors.map((flavorName, idx) => ({
+        id: `custom-${idx}`,
+        label: flavorName,
+        price: isDemoMode ? 0 : 2.00, // Free in demo mode
+        category: 'custom'
+      }));
+    }
+    // Flatten FLAVOR_CATEGORIES into a single array
+    return FLAVOR_CATEGORIES.flatMap(cat => cat.items);
+  }, [customFlavors, isDemoMode]);
 
   // Calculate total price for selected flavors
   const totalPrice = useMemo(() => {
+    if (isDemoMode) {
+      // In demo mode, flavors are free
+      return 0;
+    }
     return selected.reduce((total, flavorId) => {
+      // Check custom flavors first
+      if (flavorId.startsWith('custom-')) {
+        const idx = parseInt(flavorId.replace('custom-', ''));
+        if (customFlavors && customFlavors[idx]) {
+          return total + (isDemoMode ? 0 : 2.00); // Free in demo, $2 otherwise
+        }
+      }
+      // Then check standard categories
       for (const category of FLAVOR_CATEGORIES) {
         const flavor = category.items.find(item => item.id === flavorId);
         if (flavor) {
@@ -153,17 +184,35 @@ export default function FlavorWheelSelector({
       }
       return total;
     }, 0);
-  }, [selected]);
+  }, [selected, isDemoMode, customFlavors]);
 
   // Filter categories based on search
   const filteredCategories = useMemo(() => {
     const q = query.toLowerCase();
+    if (customFlavors && customFlavors.length > 0) {
+      // In demo mode with custom flavors, show a single "Menu Flavors" category
+      const filteredCustom = customFlavors.filter(f => f.toLowerCase().includes(q));
+      if (filteredCustom.length > 0) {
+        return [{
+          id: 'custom',
+          label: 'Menu Flavors',
+          hue: 200,
+          basePrice: isDemoMode ? 0 : 2.00,
+          items: filteredCustom.map((flavorName, idx) => ({
+            id: `custom-${idx}`,
+            label: flavorName,
+            price: isDemoMode ? 0 : 2.00
+          }))
+        }];
+      }
+      return [];
+    }
     if (!q) return FLAVOR_CATEGORIES;
     return FLAVOR_CATEGORIES.map((c) => ({
       ...c,
       items: c.items.filter((i) => i.label.toLowerCase().includes(q)),
     })).filter((c) => c.items.length);
-  }, [query]);
+  }, [query, customFlavors, isDemoMode]);
 
   // Handle flavor selection
   const toggleFlavor = (flavorId: string) => {
@@ -194,7 +243,17 @@ export default function FlavorWheelSelector({
 
   // Calculate price for flavor array
   const calculatePrice = (flavors: string[]) => {
+    if (isDemoMode) {
+      // In demo mode, flavors are free
+      return 0;
+    }
     return flavors.reduce((total, flavorId) => {
+      // Check custom flavors first
+      const customFlavor = availableFlavors.find(f => f.id === flavorId);
+      if (customFlavor) {
+        return total + customFlavor.price;
+      }
+      // Then check standard categories
       for (const category of FLAVOR_CATEGORIES) {
         const flavor = category.items.find(item => item.id === flavorId);
         if (flavor) {
@@ -213,6 +272,14 @@ export default function FlavorWheelSelector({
 
   // Get flavor label by ID
   const getFlavorLabel = (id: string) => {
+    // Check custom flavors first
+    if (id.startsWith('custom-')) {
+      const idx = parseInt(id.replace('custom-', ''));
+      if (customFlavors && customFlavors[idx]) {
+        return customFlavors[idx];
+      }
+    }
+    // Then check standard categories
     for (const c of FLAVOR_CATEGORIES) {
       const f = c.items.find((x) => x.id === id);
       if (f) return f.label;
@@ -222,6 +289,18 @@ export default function FlavorWheelSelector({
 
   // Get flavor price by ID
   const getFlavorPrice = (id: string) => {
+    if (isDemoMode) {
+      // In demo mode, all flavors are free
+      return 0;
+    }
+    // Check custom flavors first
+    if (id.startsWith('custom-')) {
+      const idx = parseInt(id.replace('custom-', ''));
+      if (customFlavors && customFlavors[idx]) {
+        return 2.00; // Default price for custom flavors (non-demo)
+      }
+    }
+    // Then check standard categories
     for (const c of FLAVOR_CATEGORIES) {
       const f = c.items.find((x) => x.id === id);
       if (f) return f.price;

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { cn } from '../utils/cn';
 import { 
   Home, 
@@ -59,6 +59,8 @@ interface NavItem {
 
 const GlobalNavigation: React.FC = () => {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const isDemoMode = searchParams?.get('mode') === 'demo';
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
   const [quickAccessOpen, setQuickAccessOpen] = useState(false);
   const [flowState, setFlowState] = useState<FlowState>({
@@ -371,36 +373,55 @@ const GlobalNavigation: React.FC = () => {
   return (
     <nav className="relative z-50 bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-800/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Status Bar */}
-        <div className="flex items-center justify-between py-2 text-xs">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-1">
-              <div className={`w-2 h-2 rounded-full ${
-                trustLockStatus === 'verified' ? 'bg-green-400 animate-pulse' :
-                trustLockStatus === 'active' ? 'bg-blue-400' :
-                'bg-yellow-400'
-              }`}></div>
-              <span className="text-zinc-300">Trust-Lock {trustLockStatus.toUpperCase()}</span>
-              <span className="text-zinc-500">({trustLockVerificationRate}%)</span>
+        {/* Status Bar - Simplified for demo mode */}
+        {isDemoMode ? (
+          <div className="flex items-center justify-between py-2 text-xs">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-teal-400 rounded-full animate-pulse"></div>
+                <span className="text-teal-300 font-medium">DEMO MODE</span>
+                <span className="text-zinc-500">Safe to explore - no real charges</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                <span className="text-zinc-300">Demo Sessions {isMounted ? sessionCount : '...'}</span>
+              </div>
             </div>
-            <div className="flex items-center space-x-1">
-              <div className={`w-2 h-2 rounded-full ${
-                reflexScore >= 90 ? 'bg-green-400' :
-                reflexScore >= 85 ? 'bg-blue-400' :
-                'bg-yellow-400'
-              }`}></div>
-              <span className="text-zinc-300">Reflex Score {reflexScore}%</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-              <span className="text-zinc-300">Live Sessions {isMounted ? sessionCount : '...'}</span>
+            <div className="flex items-center space-x-4">
+              <span className="text-zinc-400">Last updated: {isMounted ? currentTime : '--:--:--'}</span>
             </div>
           </div>
-          <div className="flex items-center space-x-4">
-            <span className="text-zinc-400">Auto-refresh: ON</span>
-            <span className="text-zinc-400">Last updated: {isMounted ? currentTime : '--:--:--'}</span>
+        ) : (
+          <div className="flex items-center justify-between py-2 text-xs">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-1">
+                <div className={`w-2 h-2 rounded-full ${
+                  trustLockStatus === 'verified' ? 'bg-green-400 animate-pulse' :
+                  trustLockStatus === 'active' ? 'bg-blue-400' :
+                  'bg-yellow-400'
+                }`}></div>
+                <span className="text-zinc-300">Trust-Lock {trustLockStatus.toUpperCase()}</span>
+                <span className="text-zinc-500">({trustLockVerificationRate}%)</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <div className={`w-2 h-2 rounded-full ${
+                  reflexScore >= 90 ? 'bg-green-400' :
+                  reflexScore >= 85 ? 'bg-blue-400' :
+                  'bg-yellow-400'
+                }`}></div>
+                <span className="text-zinc-300">Reflex Score {reflexScore}%</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                <span className="text-zinc-300">Live Sessions {isMounted ? sessionCount : '...'}</span>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span className="text-zinc-400">Auto-refresh: ON</span>
+              <span className="text-zinc-400">Last updated: {isMounted ? currentTime : '--:--:--'}</span>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Main Navigation */}
         <div className="flex items-center justify-between h-16">
@@ -414,20 +435,33 @@ const GlobalNavigation: React.FC = () => {
             </Link>
           </div>
 
-          {/* Main Navigation Links */}
+          {/* Main Navigation Links - Simplified for demo mode */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link href="/fire-session-dashboard" className="text-zinc-300 hover:text-white transition-colors font-medium">
-              Dashboard
-            </Link>
-            <Link href="/preorder/T-001" className="text-zinc-300 hover:text-white transition-colors font-medium">
-              Pre-Order
-            </Link>
-            <Link href="/sessions" className="text-zinc-300 hover:text-white transition-colors font-medium">
-              Sessions
-            </Link>
-            <Link href="/staff-panel" className="text-zinc-300 hover:text-white transition-colors font-medium">
-              Staff
-            </Link>
+            {isDemoMode ? (
+              <>
+                <Link href="/fire-session-dashboard" className="text-zinc-300 hover:text-white transition-colors font-medium">
+                  Dashboard
+                </Link>
+                <Link href="/sessions" className="text-zinc-300 hover:text-white transition-colors font-medium">
+                  Sessions
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/fire-session-dashboard" className="text-zinc-300 hover:text-white transition-colors font-medium">
+                  Dashboard
+                </Link>
+                <Link href="/preorder/T-001" className="text-zinc-300 hover:text-white transition-colors font-medium">
+                  Pre-Order
+                </Link>
+                <Link href="/sessions" className="text-zinc-300 hover:text-white transition-colors font-medium">
+                  Sessions
+                </Link>
+                <Link href="/staff-panel" className="text-zinc-300 hover:text-white transition-colors font-medium">
+                  Staff
+                </Link>
+              </>
+            )}
             
             {/* Quick Access Dropdown - Desktop */}
             <div className="relative quick-access-dropdown">
@@ -444,162 +478,228 @@ const GlobalNavigation: React.FC = () => {
               {quickAccessOpen && (
                 <div className="absolute top-full left-0 mt-2 w-96 md:w-[28rem] lg:w-96 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl z-[9999] max-h-[80vh] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
                   <div className="p-4 space-y-6">
-                    {/* Core Operations */}
-                    <div>
-                      <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3">Core Operations</h3>
-                      <div className="space-y-2">
-                        <Link
-                          href="/fire-session-dashboard"
-                          onClick={() => setQuickAccessOpen(false)}
-                          className="flex items-center space-x-3 p-2 rounded-lg hover:bg-zinc-800 transition-colors group"
-                        >
-                          <Flame className="w-5 h-5 text-orange-400" />
-                          <div className="flex-1">
-                            <div className="text-sm font-medium text-white group-hover:text-teal-400">Fire Session Dashboard</div>
-                            <div className="text-xs text-zinc-400">Live session management</div>
+                    {isDemoMode ? (
+                      <>
+                        {/* Demo Experience */}
+                        <div>
+                          <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3">Demo Experience</h3>
+                          <div className="space-y-2">
+                            <Link
+                              href="/fire-session-dashboard"
+                              onClick={() => setQuickAccessOpen(false)}
+                              className="flex items-center space-x-3 p-2 rounded-lg hover:bg-zinc-800 transition-colors group"
+                            >
+                              <Flame className="w-5 h-5 text-orange-400" />
+                              <div className="flex-1">
+                                <div className="text-sm font-medium text-white group-hover:text-teal-400">Fire Session Dashboard</div>
+                                <div className="text-xs text-zinc-400">Create and manage sessions</div>
+                              </div>
+                            </Link>
+                            <Link
+                              href="/sessions"
+                              onClick={() => setQuickAccessOpen(false)}
+                              className="flex items-center space-x-3 p-2 rounded-lg hover:bg-zinc-800 transition-colors group"
+                            >
+                              <BarChart3 className="w-5 h-5 text-teal-400" />
+                              <div className="flex-1">
+                                <div className="text-sm font-medium text-white group-hover:text-teal-400">Sessions</div>
+                                <div className="text-xs text-zinc-400">View all sessions</div>
+                              </div>
+                            </Link>
                           </div>
-                        </Link>
-                        <Link
-                          href="/sessions"
-                          onClick={() => setQuickAccessOpen(false)}
-                          className="flex items-center space-x-3 p-2 rounded-lg hover:bg-zinc-800 transition-colors group"
-                        >
-                          <BarChart3 className="w-5 h-5 text-teal-400" />
-                          <div className="flex-1">
-                            <div className="text-sm font-medium text-white group-hover:text-teal-400">Sessions</div>
-                            <div className="text-xs text-zinc-400">Session overview & history</div>
-                          </div>
-                        </Link>
-                      </div>
-                    </div>
+                        </div>
 
-                    {/* Owner & Admin */}
-                    <div>
-                      <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3">Owner & Admin</h3>
-                      <div className="space-y-2">
-                        <Link
-                          href="/operator"
-                          onClick={() => setQuickAccessOpen(false)}
-                          className="flex items-center space-x-3 p-2 rounded-lg hover:bg-zinc-800 transition-colors group"
-                        >
-                          <Crown className="w-5 h-5 text-emerald-400" />
-                          <div className="flex-1">
-                            <div className="text-sm font-medium text-white group-hover:text-teal-400">Operator Dashboard</div>
-                            <div className="text-xs text-zinc-400">Enterprise control & metrics</div>
+                        {/* Support */}
+                        <div>
+                          <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3">Support</h3>
+                          <div className="space-y-2">
+                            <Link
+                              href="/help"
+                              onClick={() => setQuickAccessOpen(false)}
+                              className="flex items-center space-x-3 p-2 rounded-lg hover:bg-zinc-800 transition-colors group"
+                            >
+                              <HelpCircle className="w-5 h-5 text-pink-400" />
+                              <div className="flex-1">
+                                <div className="text-sm font-medium text-white group-hover:text-teal-400">Help Center</div>
+                                <div className="text-xs text-zinc-400">Get help with the demo</div>
+                              </div>
+                            </Link>
                           </div>
-                        </Link>
-                        <Link
-                          href="/analytics"
-                          onClick={() => setQuickAccessOpen(false)}
-                          className="flex items-center space-x-3 p-2 rounded-lg hover:bg-zinc-800 transition-colors group"
-                        >
-                          <TrendingUp className="w-5 h-5 text-blue-400" />
-                          <div className="flex-1">
-                            <div className="text-sm font-medium text-white group-hover:text-teal-400">Analytics</div>
-                            <div className="text-xs text-zinc-400">Reports & insights</div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        {/* Core Operations */}
+                        <div>
+                          <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3">Core Operations</h3>
+                          <div className="space-y-2">
+                            <Link
+                              href="/fire-session-dashboard"
+                              onClick={() => setQuickAccessOpen(false)}
+                              className="flex items-center space-x-3 p-2 rounded-lg hover:bg-zinc-800 transition-colors group"
+                            >
+                              <Flame className="w-5 h-5 text-orange-400" />
+                              <div className="flex-1">
+                                <div className="text-sm font-medium text-white group-hover:text-teal-400">Fire Session Dashboard</div>
+                                <div className="text-xs text-zinc-400">Live session management</div>
+                              </div>
+                            </Link>
+                            <Link
+                              href="/sessions"
+                              onClick={() => setQuickAccessOpen(false)}
+                              className="flex items-center space-x-3 p-2 rounded-lg hover:bg-zinc-800 transition-colors group"
+                            >
+                              <BarChart3 className="w-5 h-5 text-teal-400" />
+                              <div className="flex-1">
+                                <div className="text-sm font-medium text-white group-hover:text-teal-400">Sessions</div>
+                                <div className="text-xs text-zinc-400">Session overview & history</div>
+                              </div>
+                            </Link>
                           </div>
-                        </Link>
-                      </div>
-                    </div>
+                        </div>
 
-                    {/* Staff */}
-                    <div>
-                      <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3">Staff</h3>
-                      <div className="space-y-2">
-                        <Link
-                          href="/staff-ops"
-                          onClick={() => setQuickAccessOpen(false)}
-                          className="flex items-center space-x-3 p-2 rounded-lg hover:bg-zinc-800 transition-colors group"
-                        >
-                          <Users className="w-5 h-5 text-purple-400" />
-                          <div className="flex-1">
-                            <div className="text-sm font-medium text-white group-hover:text-teal-400">Staff Operations</div>
-                            <div className="text-xs text-zinc-400">Daily operations & tasks</div>
+                        {/* Owner & Admin */}
+                        <div>
+                          <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3">Owner & Admin</h3>
+                          <div className="space-y-2">
+                            <Link
+                              href="/operator"
+                              onClick={() => setQuickAccessOpen(false)}
+                              className="flex items-center space-x-3 p-2 rounded-lg hover:bg-zinc-800 transition-colors group"
+                            >
+                              <Crown className="w-5 h-5 text-emerald-400" />
+                              <div className="flex-1">
+                                <div className="text-sm font-medium text-white group-hover:text-teal-400">Operator Dashboard</div>
+                                <div className="text-xs text-zinc-400">Enterprise control & metrics</div>
+                              </div>
+                            </Link>
+                            <Link
+                              href="/analytics"
+                              onClick={() => setQuickAccessOpen(false)}
+                              className="flex items-center space-x-3 p-2 rounded-lg hover:bg-zinc-800 transition-colors group"
+                            >
+                              <TrendingUp className="w-5 h-5 text-blue-400" />
+                              <div className="flex-1">
+                                <div className="text-sm font-medium text-white group-hover:text-teal-400">Analytics</div>
+                                <div className="text-xs text-zinc-400">Reports & insights</div>
+                              </div>
+                            </Link>
                           </div>
-                        </Link>
-                      </div>
-                    </div>
+                        </div>
 
-                    {/* Setup & Configuration */}
-                    <div>
-                      <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3">Setup & Configuration</h3>
-                      <div className="space-y-2">
-                        <Link
-                          href="/lounge-layout"
-                          onClick={() => setQuickAccessOpen(false)}
-                          className="flex items-center space-x-3 p-2 rounded-lg hover:bg-zinc-800 transition-colors group"
-                        >
-                          <Eye className="w-5 h-5 text-indigo-400" />
-                          <div className="flex-1">
-                            <div className="text-sm font-medium text-white group-hover:text-teal-400">Lounge Layout</div>
-                            <div className="text-xs text-zinc-400">Digitize your floor plan</div>
+                        {/* Staff */}
+                        <div>
+                          <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3">Staff</h3>
+                          <div className="space-y-2">
+                            <Link
+                              href="/staff-ops"
+                              onClick={() => setQuickAccessOpen(false)}
+                              className="flex items-center space-x-3 p-2 rounded-lg hover:bg-zinc-800 transition-colors group"
+                            >
+                              <Users className="w-5 h-5 text-purple-400" />
+                              <div className="flex-1">
+                                <div className="text-sm font-medium text-white group-hover:text-teal-400">Staff Operations</div>
+                                <div className="text-xs text-zinc-400">Daily operations & tasks</div>
+                              </div>
+                            </Link>
                           </div>
-                        </Link>
-                        <Link
-                          href="/qr-generator"
-                          onClick={() => setQuickAccessOpen(false)}
-                          className="flex items-center space-x-3 p-2 rounded-lg hover:bg-zinc-800 transition-colors group"
-                        >
-                          <QrCode className="w-5 h-5 text-cyan-400" />
-                          <div className="flex-1">
-                            <div className="text-sm font-medium text-white group-hover:text-teal-400">QR Generator</div>
-                            <div className="text-xs text-zinc-400">Generate table QR codes</div>
-                          </div>
-                        </Link>
-                      </div>
-                    </div>
+                        </div>
 
-                    {/* Support */}
-                    <div>
-                      <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3">Support</h3>
-                      <div className="space-y-2">
-                        <Link
-                          href="/help"
-                          onClick={() => setQuickAccessOpen(false)}
-                          className="flex items-center space-x-3 p-2 rounded-lg hover:bg-zinc-800 transition-colors group"
-                        >
-                          <HelpCircle className="w-5 h-5 text-pink-400" />
-                          <div className="flex-1">
-                            <div className="text-sm font-medium text-white group-hover:text-teal-400">Help Center</div>
-                            <div className="text-xs text-zinc-400">Support & documentation</div>
+                        {/* Setup & Configuration */}
+                        <div>
+                          <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3">Setup & Configuration</h3>
+                          <div className="space-y-2">
+                            <Link
+                              href="/lounge-layout"
+                              onClick={() => setQuickAccessOpen(false)}
+                              className="flex items-center space-x-3 p-2 rounded-lg hover:bg-zinc-800 transition-colors group"
+                            >
+                              <Eye className="w-5 h-5 text-indigo-400" />
+                              <div className="flex-1">
+                                <div className="text-sm font-medium text-white group-hover:text-teal-400">Lounge Layout</div>
+                                <div className="text-xs text-zinc-400">Digitize your floor plan</div>
+                              </div>
+                            </Link>
+                            <Link
+                              href="/qr-generator"
+                              onClick={() => setQuickAccessOpen(false)}
+                              className="flex items-center space-x-3 p-2 rounded-lg hover:bg-zinc-800 transition-colors group"
+                            >
+                              <QrCode className="w-5 h-5 text-cyan-400" />
+                              <div className="flex-1">
+                                <div className="text-sm font-medium text-white group-hover:text-teal-400">QR Generator</div>
+                                <div className="text-xs text-zinc-400">Generate table QR codes</div>
+                              </div>
+                            </Link>
                           </div>
-                        </Link>
-                      </div>
-                    </div>
+                        </div>
+
+                        {/* Support */}
+                        <div>
+                          <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3">Support</h3>
+                          <div className="space-y-2">
+                            <Link
+                              href="/help"
+                              onClick={() => setQuickAccessOpen(false)}
+                              className="flex items-center space-x-3 p-2 rounded-lg hover:bg-zinc-800 transition-colors group"
+                            >
+                              <HelpCircle className="w-5 h-5 text-pink-400" />
+                              <div className="flex-1">
+                                <div className="text-sm font-medium text-white group-hover:text-teal-400">Help Center</div>
+                                <div className="text-xs text-zinc-400">Support & documentation</div>
+                              </div>
+                            </Link>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Right Side Actions */}
+          {/* Right Side Actions - Hide advanced features in demo mode */}
           <div className="flex items-center space-x-4">
-            {/* Settings */}
-            <button className="flex items-center space-x-1 text-zinc-400 hover:text-white transition-colors">
-              <Settings className="w-4 h-4" />
-              <span className="text-sm">Settings</span>
-            </button>
+            {!isDemoMode && (
+              <>
+                {/* Settings */}
+                <button className="flex items-center space-x-1 text-zinc-400 hover:text-white transition-colors">
+                  <Settings className="w-4 h-4" />
+                  <span className="text-sm">Settings</span>
+                </button>
 
-            {/* Support Docs */}
-            <button className="flex items-center space-x-1 text-zinc-400 hover:text-white transition-colors">
-              <HelpCircle className="w-4 h-4" />
-              <span className="text-sm">Support Docs</span>
-            </button>
+                {/* Support Docs */}
+                <button className="flex items-center space-x-1 text-zinc-400 hover:text-white transition-colors">
+                  <HelpCircle className="w-4 h-4" />
+                  <span className="text-sm">Support Docs</span>
+                </button>
 
-            {/* Role Dropdown with Security */}
-            <SecureRoleSelector
-              currentRole="foh"
-              onRoleChange={(role) => {
-                // Handle role change (could update state, localStorage, etc.)
-                console.log('Role changed to:', role);
-                // TODO: Update user's active role in session/localStorage
-              }}
-            />
+                {/* Role Dropdown with Security */}
+                <SecureRoleSelector
+                  currentRole="foh"
+                  onRoleChange={(role) => {
+                    // Handle role change (could update state, localStorage, etc.)
+                    console.log('Role changed to:', role);
+                    // TODO: Update user's active role in session/localStorage
+                  }}
+                />
 
-            {/* Search */}
-            <button className="text-zinc-400 hover:text-white transition-colors">
-              <Eye className="w-4 h-4" />
-            </button>
+                {/* Search */}
+                <button className="text-zinc-400 hover:text-white transition-colors">
+                  <Eye className="w-4 h-4" />
+                </button>
+              </>
+            )}
+            {isDemoMode && (
+              <Link
+                href="/help"
+                className="flex items-center space-x-1 text-zinc-400 hover:text-white transition-colors"
+              >
+                <HelpCircle className="w-4 h-4" />
+                <span className="text-sm">Help</span>
+              </Link>
+            )}
           </div>
         </div>
       </div>

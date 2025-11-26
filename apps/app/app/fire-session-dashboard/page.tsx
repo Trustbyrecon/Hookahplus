@@ -50,6 +50,8 @@ function FireSessionDashboardContent() {
   // Check for demo mode from URL params
   const isDemoMode = searchParams.get('mode') === 'demo';
   const demoLounge = searchParams.get('lounge') || null;
+  const demoFlavorsParam = searchParams.get('flavors');
+  const demoMenuFlavors = demoFlavorsParam ? demoFlavorsParam.split(',').filter(Boolean) : null;
   
   // Use session context for shared state
   const { sessions, metrics, loading, error, refreshSessions, updateSessionState, lastUpdated } = useSessionContext();
@@ -208,7 +210,9 @@ function FireSessionDashboardContent() {
 
   return (
     <div className={`min-h-screen ${getThemeClasses()}`}>
-      <GlobalNavigation />
+      <Suspense fallback={<div className="h-16 bg-zinc-950 border-b border-zinc-800"></div>}>
+        <GlobalNavigation />
+      </Suspense>
       
       {/* Demo Mode Banner */}
       {isDemoMode && (
@@ -362,12 +366,13 @@ function FireSessionDashboardContent() {
       </div>
 
       {/* Modals */}
-      <CreateSessionModal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onCreateSession={handleCreateSession}
-        isDemoMode={isDemoMode}
-      />
+        <CreateSessionModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onCreateSession={handleCreateSession}
+          isDemoMode={isDemoMode}
+          demoMenuFlavors={demoMenuFlavors}
+        />
     </div>
   );
 }

@@ -77,6 +77,7 @@ export async function POST(req: NextRequest) {
               baseHookahPrice: data.baseHookahPrice || '',
               refillPrice: data.refillPrice || '',
               menuLink: data.menuLink || '',
+              menuFiles: data.menuFiles || [], // Array of uploaded file metadata
               // Social media links (if provided)
               instagramUrl: data.instagramUrl || data.instagram || null,
               facebookUrl: data.facebookUrl || data.facebook || null,
