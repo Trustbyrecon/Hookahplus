@@ -1187,9 +1187,9 @@ export default function SimpleFSDDesign({
                   </div>
                 )}
 
-                {/* Action Buttons - Show payment confirmation for NEW/PENDING sessions */}
+                {/* Action Buttons - Show payment confirmation for NEW/PAID_CONFIRMED sessions */}
                 <div className="mb-3 flex gap-2">
-                  {sessionStatus === 'NEW' || sessionStatus === 'PENDING' ? (
+                  {sessionStatus === 'NEW' || sessionStatus === 'PAID_CONFIRMED' ? (
                     <>
                       <button
                         onClick={(e) => {

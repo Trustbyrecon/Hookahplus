@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../../lib/db';
 import { adminClient } from '../../../../../lib/supabase';
+import { injectMenuDataIntoDemo } from '../../../../../lib/demo';
 
 /**
  * POST /api/admin/operator-onboarding/extract-menu
