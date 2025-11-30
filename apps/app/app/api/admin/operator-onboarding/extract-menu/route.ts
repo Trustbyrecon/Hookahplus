@@ -149,12 +149,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Handle failed deletions (Phase 6: Fallback)
+    // Note: Failed deletions are already logged and included in warnings response
+    // Future: Could implement retry logic or manual cleanup queue here
     if (failedDeletes.length > 0) {
-      const failedFileObjects = targetPayload.menuFiles
-        ?.filter((f: any) => failedDeletes.includes(f.fileName))
-        .map((f: any) => ({ fileName: f.fileName, filePath: f.filePath })) || [];
-      
-      await handleFailedDeletes(failedFileObjects, leadId);
+      console.warn(`[Extract Menu API] ${failedDeletes.length} file(s) failed to delete:`, failedDeletes);
+      // Failed files are already logged above and included in the response warnings
     }
 
     return NextResponse.json({
