@@ -910,6 +910,8 @@ export default function OperatorOnboardingPage() {
             setShowScheduleModal(true);
           }}
           onMarkContacted={markContacted}
+          showActionMessage={showActionMessage}
+          loadLeads={loadLeads}
         />
       )}
 
@@ -1295,7 +1297,9 @@ function LeadDetailModal({
   onUpdateStage,
   onAddNote,
   onScheduleFollowUp,
-  onMarkContacted
+  onMarkContacted,
+  showActionMessage,
+  loadLeads
 }: {
   lead: Lead;
   onClose: () => void;
@@ -1303,6 +1307,8 @@ function LeadDetailModal({
   onAddNote: () => void;
   onScheduleFollowUp: () => void;
   onMarkContacted: (leadId: string, method: 'email' | 'phone' | 'meeting') => void;
+  showActionMessage: (message: string) => void;
+  loadLeads: () => Promise<void>;
 }) {
   const getStageColor = (stage: Lead['stage']) => {
     switch (stage) {
