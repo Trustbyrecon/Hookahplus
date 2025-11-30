@@ -38,7 +38,7 @@ interface PulseCardProps {
 
 export default function PulseCard({ 
   compact = false, 
-  window = '24h',
+  window: timeWindow = '24h',
   loungeId,
   autoRefresh = true,
   refreshInterval = 5 * 60 * 1000 // 5 minutes
@@ -46,7 +46,7 @@ export default function PulseCard({
   const [pulseData, setPulseData] = useState<PulseData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentWindow, setCurrentWindow] = useState<'24h' | 'pm'>(window);
+  const [currentWindow, setCurrentWindow] = useState<'24h' | 'pm'>(timeWindow);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
   const fetchPulse = async () => {
