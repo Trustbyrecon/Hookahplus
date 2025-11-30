@@ -560,7 +560,7 @@ export default function OnboardingPage() {
               <h2 className="text-lg font-semibold">1. Your menu & flavors</h2>
             </div>
             <p className="text-sm text-zinc-300 mb-3">
-              Email or upload a photo, PDF, or link to your current menu and flavor list.
+              Upload a photo, PDF, or link to your current menu and flavor list.
             </p>
             <p className="text-xs text-zinc-500">
               We use this to pre-build your flavor wheel and session cards.

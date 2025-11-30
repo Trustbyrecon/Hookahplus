@@ -75,25 +75,52 @@ export default function PulseCard({
       if (data.success && data.pulse) {
         setPulseData(data.pulse);
         setLastRefresh(new Date());
-        // In demo mode, don't show errors
-        if (data.demo) {
+        // In demo mode, always clear errors and use demo data
+        if (data.demo || isDemoMode) {
           setError(null);
         }
       } else {
-        // In demo mode, suppress errors
-        const isDemoMode = typeof window !== 'undefined' && 
-          new URLSearchParams(window.location.search).get('mode') === 'demo';
-        if (!isDemoMode) {
+        // In demo mode, use demo data instead of showing error
+        if (isDemoMode) {
+          // Fetch demo pulse data
+          const demoParams = new URLSearchParams({ window: currentWindow, demo: 'true' });
+          if (loungeId) {
+            demoParams.append('loungeId', loungeId);
+          }
+          const demoResponse = await fetch(`/api/pulse?${demoParams.toString()}`);
+          const demoData = await demoResponse.json();
+          if (demoData.success && demoData.pulse) {
+            setPulseData(demoData.pulse);
+            setError(null);
+          }
+        } else {
           setError(data.error || 'Failed to load pulse');
         }
       }
     } catch (err) {
       console.error('Error fetching pulse:', err);
-      // In demo mode, suppress errors
+      // In demo mode, try to load demo data instead of showing error
       const isDemoMode = typeof window !== 'undefined' && 
         window.location && 
         new URLSearchParams(window.location.search).get('mode') === 'demo';
-      if (!isDemoMode) {
+      if (isDemoMode) {
+        try {
+          const demoParams = new URLSearchParams({ window: currentWindow, demo: 'true' });
+          if (loungeId) {
+            demoParams.append('loungeId', loungeId);
+          }
+          const demoResponse = await fetch(`/api/pulse?${demoParams.toString()}`);
+          const demoData = await demoResponse.json();
+          if (demoData.success && demoData.pulse) {
+            setPulseData(demoData.pulse);
+            setError(null);
+          }
+        } catch (demoErr) {
+          console.error('Error loading demo pulse:', demoErr);
+          // Even in demo mode, if we can't load demo data, don't show error
+          setError(null);
+        }
+      } else {
         setError('Failed to load pulse data');
       }
     } finally {
@@ -199,7 +226,7 @@ export default function PulseCard({
 
       {loading ? (
         <div className="text-center py-8 text-zinc-400">Loading pulse data...</div>
-      ) : error ? (
+      ) : error && !(typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mode') === 'demo') ? (
         <div className="text-center py-8 text-red-400">{error}</div>
       ) : pulseData ? (
         <div className="space-y-4">
@@ -272,10 +299,12 @@ export default function PulseCard({
             </div>
           )}
 
-          {/* Timestamp */}
-          <div className="text-xs text-zinc-500 pt-2 border-t border-zinc-800">
-            Last updated: {new Date(pulseData.timestamp).toLocaleString()}
-          </div>
+          {/* Timestamp - Hidden in demo mode */}
+          {!(typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mode') === 'demo') && pulseData && (
+            <div className="text-xs text-zinc-500 pt-2 border-t border-zinc-800">
+              Last updated: {new Date(pulseData.timestamp).toLocaleString()}
+            </div>
+          )}
         </div>
       ) : null}
     </Card>

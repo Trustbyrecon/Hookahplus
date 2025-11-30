@@ -182,6 +182,27 @@ export default function SimpleFSDDesign({
   const handleSessionAction = async (action: string, sessionId: string) => {
     console.log(`Action: ${action} on session: ${sessionId}`);
     
+    // Check if we're in demo mode
+    const isDemoMode = typeof window !== 'undefined' && 
+      window.location &&
+      new URLSearchParams(window.location.search).get('mode') === 'demo';
+
+    // In demo mode, use the callback (which updates in-memory state) instead of API
+    if (isDemoMode && onSessionAction) {
+      console.log(`[Demo Mode] 🎭 Using callback for action: ${action}`);
+      try {
+        await onSessionAction(action, sessionId);
+        if (refreshSessions) {
+          await refreshSessions();
+        }
+        return;
+      } catch (error) {
+        console.error('[Demo Mode] Error in callback:', error);
+        alert(`Failed to execute action: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        return;
+      }
+    }
+    
     // Special handling for RESOLVE_HOLD - show modal instead of direct API call
     if (action.toLowerCase() === 'resolve_hold' || action === 'RESOLVE_HOLD') {
       const session = sessions.find(s => s.id === sessionId);

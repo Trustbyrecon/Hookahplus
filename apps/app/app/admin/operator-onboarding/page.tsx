@@ -498,10 +498,17 @@ export default function OperatorOnboardingPage() {
       // Update test link URL with generated link
       if (data.demoLink) {
         setTestLinkUrl(data.demoLink);
+        showActionMessage(`Demo session created: ${data.demoLink}`);
+        // Show info about the generated link
+        const isLocalhost = data.demoLink.includes('localhost');
+        const linkType = isLocalhost 
+          ? 'This link will work on your local machine. For production, set NEXT_PUBLIC_APP_URL environment variable.'
+          : 'This link will work for the recipient.';
+        alert(`✅ Demo session created!\n\nGenerated Link: ${data.demoLink}\n\n${linkType}\n\nYou can now send the test link email.`);
+      } else {
+        showActionMessage('Demo session created but no link returned');
+        alert('✅ Demo session created, but no link was returned. Please check the console for details.');
       }
-
-      showActionMessage(`Demo session created: ${data.demoLink || 'Link generated'}`);
-      alert(`✅ Demo session created!\n\nLink: ${data.demoLink || 'Generated'}\n\nYou can now send the test link email.`);
     } catch (err) {
       console.error('Create demo session error:', err);
       alert(err instanceof Error ? err.message : 'Failed to create demo session. Please try again.');
@@ -539,7 +546,22 @@ export default function OperatorOnboardingPage() {
       showActionMessage('Test link email sent');
     } catch (err) {
       console.error('Send test link error:', err);
-      alert(err instanceof Error ? err.message : 'Failed to send test link email. Please try again.');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to send test link email. Please try again.';
+      
+      // Provide helpful guidance for missing API key
+      if (errorMessage.includes('RESEND_API_KEY') || errorMessage.includes('not configured')) {
+        alert(
+          `❌ Email service not configured\n\n` +
+          `To enable email sending:\n` +
+          `1. Get your Resend API key from: https://resend.com/api-keys\n` +
+          `2. Add it to your .env.local file:\n` +
+          `   RESEND_API_KEY=re_your_key_here\n` +
+          `3. Restart your development server\n\n` +
+          `Note: Your .env.local file is already in .gitignore and will not be committed.`
+        );
+      } else {
+        alert(`❌ ${errorMessage}`);
+      }
     }
   };
 
@@ -1218,8 +1240,24 @@ export default function OperatorOnboardingPage() {
                   placeholder="Leave empty to auto-generate, or enter custom URL"
                 />
               </div>
+              {testLinkUrl && (
+                <div className="p-3 bg-teal-500/10 border border-teal-500/30 rounded-lg">
+                  <p className="text-xs text-teal-300 font-medium mb-1">Generated Link:</p>
+                  <p className="text-xs text-teal-200 font-mono break-all">{testLinkUrl}</p>
+                  {testLinkUrl.includes('localhost') && (
+                    <p className="text-xs text-yellow-400 mt-2">
+                      ⚠️ This is a localhost link. It will only work on your machine. For production, set NEXT_PUBLIC_APP_URL environment variable.
+                    </p>
+                  )}
+                </div>
+              )}
               <p className="text-xs text-zinc-500">
-                Tip: Click "Create Demo Session" to auto-generate, or manually enter a URL like <span className="font-mono">https://app.hookahplus.com/demo/&lt;lounge-slug&gt;</span>.
+                Tip: Click "Create Demo Session" to auto-generate a link based on the business name. 
+                {!testLinkUrl && (
+                  <span className="block mt-1 text-zinc-400">
+                    If left empty when sending, a link will be auto-generated using: <span className="font-mono">NEXT_PUBLIC_APP_URL</span> or the current origin.
+                  </span>
+                )}
               </p>
             </div>
 

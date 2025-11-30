@@ -448,40 +448,41 @@ export async function POST(req: NextRequest) {
         }, { status: 400 });
       }
 
+      // Get the lead event once (avoid duplicate lookup)
+      const event = await prisma.reflexEvent.findUnique({
+        where: { id: leadId }
+      });
+
+      if (!event || !event.payload) {
+        return NextResponse.json({
+          success: false,
+          error: 'Lead not found or has no payload'
+        }, { status: 404 });
+      }
+
+      // Parse payload once
+      let payload: any;
+      try {
+        payload = JSON.parse(event.payload);
+      } catch (parseError) {
+        console.error('[Operator Onboarding API] Failed to parse lead payload for send_test_link:', parseError);
+        return NextResponse.json({
+          success: false,
+          error: 'Failed to parse lead payload',
+        }, { status: 500 });
+      }
+
+      // Extract lead data
+      let data: any;
+      if (payload.behavior && payload.behavior.payload) {
+        data = { ...payload, ...payload.behavior.payload };
+      } else {
+        data = payload.data || payload;
+      }
+
       // If testLink not provided, create demo session first
       let finalTestLink = testLink;
       if (!finalTestLink) {
-        // Get the lead event
-        const event = await prisma.reflexEvent.findUnique({
-          where: { id: leadId }
-        });
-
-        if (!event || !event.payload) {
-          return NextResponse.json({
-            success: false,
-            error: 'Lead not found or has no payload'
-          }, { status: 404 });
-        }
-
-        // Parse payload
-        let payload: any;
-        try {
-          payload = JSON.parse(event.payload);
-        } catch (parseError) {
-          return NextResponse.json({
-            success: false,
-            error: 'Failed to parse lead payload'
-          }, { status: 500 });
-        }
-
-        // Check if demo link already exists
-        let data: any;
-        if (payload.behavior && payload.behavior.payload) {
-          data = { ...payload, ...payload.behavior.payload };
-        } else {
-          data = payload.data || payload;
-        }
-
         if (data.demoLink) {
           finalTestLink = data.demoLink;
         } else {
@@ -515,37 +516,6 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // Look up the lead event to get email + names
-      const event = await prisma.reflexEvent.findUnique({
-        where: { id: leadId },
-      });
-
-      if (!event || !event.payload) {
-        return NextResponse.json({
-          success: false,
-          error: 'Lead not found or has no payload',
-        }, { status: 404 });
-      }
-
-      let payload: any;
-      try {
-        payload = JSON.parse(event.payload);
-      } catch (parseError) {
-        console.error('[Operator Onboarding API] Failed to parse lead payload for send_test_link:', parseError);
-        return NextResponse.json({
-          success: false,
-          error: 'Failed to parse lead payload',
-        }, { status: 500 });
-      }
-
-      // Extract lead data similar to GET handler
-      let data: any;
-      if (payload.behavior && payload.behavior.payload) {
-        data = { ...payload, ...payload.behavior.payload };
-      } else {
-        data = payload.data || payload;
-      }
-
       const email = data.email;
       const businessName = data.businessName || data.loungeName || '';
       const ownerName = data.ownerName || '';
@@ -566,10 +536,19 @@ export async function POST(req: NextRequest) {
         });
 
         if (!result.success) {
+          // Provide more helpful error message
+          const errorMessage = result.error || 'Unknown error';
+          const isConfigError = errorMessage.includes('not configured') || errorMessage.includes('RESEND_API_KEY');
+          
           return NextResponse.json({
             success: false,
-            error: 'Failed to send test link email',
-            details: result.error,
+            error: isConfigError 
+              ? 'Email service not configured. Please set RESEND_API_KEY environment variable.'
+              : 'Failed to send test link email',
+            details: errorMessage,
+            hint: isConfigError 
+              ? 'To enable email sending, configure RESEND_API_KEY in your environment variables.'
+              : undefined
           }, { status: 500 });
         }
 
@@ -577,6 +556,7 @@ export async function POST(req: NextRequest) {
           success: true,
           message: 'Test link email sent successfully',
           leadId,
+          demoLink: finalTestLink,
         });
       } catch (emailError: any) {
         console.error('[Operator Onboarding API] Error sending test link email:', emailError);

@@ -57,63 +57,16 @@ function FireSessionDashboardContent() {
   const { sessions, metrics, loading, error, refreshSessions, updateSessionState, lastUpdated } = useSessionContext();
   const { currentTheme } = useTheme();
   
-  // Pre-load demo session in demo mode
+  // In demo mode, sessions are generated in-memory by useLiveSessionData
+  // No API calls needed - demo data is automatically used when database is unavailable
   useEffect(() => {
-    if (isDemoMode && !demoSessionCreated && !loading) {
-      const createDemoSession = async () => {
-        try {
-          // Check if demo session already exists
-          const existingSessions = await fetch('/api/sessions').then(r => r.json());
-          if (existingSessions.success && existingSessions.sessions && existingSessions.sessions.length > 0) {
-            // Check if any session is in demo mode (has payment confirmed)
-            const hasDemoSession = existingSessions.sessions.some((s: any) => 
-              s.paymentStatus === 'succeeded' || s.status === 'PAID_CONFIRMED' || s.status === 'NEW'
-            );
-            if (hasDemoSession) {
-              console.log('[Demo Mode] Demo session already exists');
-              setDemoSessionCreated(true);
-              return;
-            }
-          }
-
-          const demoSessionData = {
-            tableId: 'table-5',
-            customerName: 'Sarah & Friends',
-            customerPhone: '+1 (555) 234-5678',
-            flavor: ['Blue Mist', 'Mint Fresh'],
-            amount: 35.00,
-            sessionDuration: 60 * 60, // 60 minutes
-            loungeId: demoLounge || 'portland-smoke-shop',
-            source: 'WALK_IN',
-            pricingModel: 'time-based',
-            isDemo: true
-          };
-
-          const response = await fetch('/api/sessions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(demoSessionData)
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            console.log('[Demo Mode] ✅ Pre-loaded demo session:', data.session?.id);
-            setDemoSessionCreated(true);
-            // Refresh sessions to show the new one
-            setTimeout(() => refreshSessions(), 1000);
-          }
-        } catch (err) {
-          console.error('[Demo Mode] Failed to create demo session:', err);
-          // Don't block UI if demo session creation fails
-          setDemoSessionCreated(true);
-        }
-      };
-
-      // Small delay to ensure context is ready
-      const timer = setTimeout(createDemoSession, 1000);
-      return () => clearTimeout(timer);
+    if (isDemoMode) {
+      console.log('[Demo Mode] 🎭 Using in-memory demo sessions - no API calls required');
+      setDemoSessionCreated(true);
+      // Refresh to load demo data
+      refreshSessions();
     }
-  }, [isDemoMode, demoSessionCreated, loading, demoLounge, refreshSessions]);
+  }, [isDemoMode, refreshSessions]);
   
   // Debug modal state
   useEffect(() => {
@@ -134,6 +87,16 @@ function FireSessionDashboardContent() {
   }, []);
 
   const handleCreateSession = async (sessionData: any) => {
+    // In demo mode, don't call API - just return a demo session ID
+    if (isDemoMode) {
+      console.log('[Create Session] 🎭 Demo Mode: Creating in-memory demo session (no API call)');
+      const demoSessionId = `demo-session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      // Refresh to show the new demo session in the list
+      await refreshSessions();
+      return demoSessionId;
+    }
+
+    // Production mode: call the API
     try {
       // Convert modal data format to API format
       const apiPayload = {
@@ -200,8 +163,10 @@ function FireSessionDashboardContent() {
     }
   };
 
-  const handleStatusChange = (sessionId: string, newStatus: SessionStatus) => {
-    updateSessionState(sessionId, newStatus);
+  const handleStatusChange = async (sessionId: string, action: string) => {
+    // In demo mode, updateSessionState handles in-memory updates
+    // In production, it calls the API
+    await updateSessionState(sessionId, action);
   };
 
   const getThemeClasses = () => {
@@ -248,10 +213,10 @@ function FireSessionDashboardContent() {
             text: 'View Analytics',
             href: '/analytics'
           }}
-          secondaryCTA={{
+          secondaryCTA={!isDemoMode ? {
             text: 'View All Sessions',
             href: '/sessions'
-          }}
+          } : undefined}
           trustIndicators={[
             { icon: <RefreshCw className="w-4 h-4" />, text: 'Real-time updates' },
             { icon: <AlertCircle className="w-4 h-4" />, text: `${metrics.alerts} alerts` }
@@ -268,39 +233,41 @@ function FireSessionDashboardContent() {
           />
         </div>
 
-        {/* Sync Indicator */}
-        <div className="mb-6 flex items-center justify-between">
-          <SyncIndicator
-            lastUpdated={lastUpdated}
-            isLoading={loading}
-            error={error}
-            autoRefreshInterval={30}
-            isDemoMode={isDemoMode}
-          />
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => refreshSessions()}
-              className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors flex items-center gap-2"
-              disabled={loading}
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              <span>Refresh</span>
-            </button>
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-zinc-400">Role:</span>
-              <select 
-                value={userRole} 
-                onChange={(e) => setUserRole(e.target.value as any)}
-                className="bg-zinc-800 text-white text-sm font-medium px-3 py-2 rounded-lg border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
+        {/* Sync Indicator - Hidden in demo mode */}
+        {!isDemoMode && (
+          <div className="mb-6 flex items-center justify-between">
+            <SyncIndicator
+              lastUpdated={lastUpdated}
+              isLoading={loading}
+              error={error}
+              autoRefreshInterval={30}
+              isDemoMode={isDemoMode}
+            />
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => refreshSessions()}
+                className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors flex items-center gap-2"
+                disabled={loading}
               >
-                <option value="MANAGER">MANAGER</option>
-                <option value="BOH">BOH</option>
-                <option value="FOH">FOH</option>
-                <option value="ADMIN">ADMIN</option>
-              </select>
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                <span>Refresh</span>
+              </button>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-zinc-400">Role:</span>
+                <select 
+                  value={userRole} 
+                  onChange={(e) => setUserRole(e.target.value as any)}
+                  className="bg-zinc-800 text-white text-sm font-medium px-3 py-2 rounded-lg border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                >
+                  <option value="MANAGER">MANAGER</option>
+                  <option value="BOH">BOH</option>
+                  <option value="FOH">FOH</option>
+                  <option value="ADMIN">ADMIN</option>
+                </select>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Error Display - Hidden in demo mode */}
         {error && !isDemoMode && (
@@ -318,51 +285,47 @@ function FireSessionDashboardContent() {
           sessions={sessions}
           userRole={userRole}
           refreshSessions={refreshSessions}
-          onSessionAction={(action, sessionId) => {
-            if (action === 'complete') {
-              handleStatusChange(sessionId, 'COMPLETED');
-            } else if (action === 'pause') {
-              handleStatusChange(sessionId, 'PAUSED');
-            }
-          }}
+          onSessionAction={handleStatusChange}
         />
 
-        {/* Related Features */}
-        <div className="mt-16 border-t border-zinc-800 pt-8">
-          <h3 className="text-lg font-semibold text-white mb-4">Related Features</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <a
-              href="/sessions"
-              className="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700 hover:border-teal-500/50 transition-colors"
-            >
-              <div className="flex items-center gap-3 mb-2">
-                <Flame className="w-5 h-5 text-teal-400" />
-                <span className="font-medium text-white">Sessions Management</span>
-              </div>
-              <p className="text-sm text-zinc-400">Advanced session management and monitoring</p>
-            </a>
-            <a
-              href="/analytics"
-              className="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700 hover:border-teal-500/50 transition-colors"
-            >
-              <div className="flex items-center gap-3 mb-2">
-                <RefreshCw className="w-5 h-5 text-blue-400" />
-                <span className="font-medium text-white">Analytics</span>
-              </div>
-              <p className="text-sm text-zinc-400">View detailed analytics and reports</p>
-            </a>
-            <a
-              href="/staff-ops"
-              className="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700 hover:border-teal-500/50 transition-colors"
-            >
-              <div className="flex items-center gap-3 mb-2">
-                <AlertCircle className="w-5 h-5 text-purple-400" />
-                <span className="font-medium text-white">Staff Operations</span>
-              </div>
-              <p className="text-sm text-zinc-400">Daily operations and staff management</p>
-            </a>
+        {/* Related Features - Hidden in demo mode */}
+        {!isDemoMode && (
+          <div className="mt-16 border-t border-zinc-800 pt-8">
+            <h3 className="text-lg font-semibold text-white mb-4">Related Features</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <a
+                href="/sessions"
+                className="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700 hover:border-teal-500/50 transition-colors"
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <Flame className="w-5 h-5 text-teal-400" />
+                  <span className="font-medium text-white">Sessions Management</span>
+                </div>
+                <p className="text-sm text-zinc-400">Advanced session management and monitoring</p>
+              </a>
+              <a
+                href="/analytics"
+                className="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700 hover:border-teal-500/50 transition-colors"
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <RefreshCw className="w-5 h-5 text-blue-400" />
+                  <span className="font-medium text-white">Analytics</span>
+                </div>
+                <p className="text-sm text-zinc-400">View detailed analytics and reports</p>
+              </a>
+              <a
+                href="/staff-ops"
+                className="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700 hover:border-teal-500/50 transition-colors"
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <AlertCircle className="w-5 h-5 text-purple-400" />
+                  <span className="font-medium text-white">Staff Operations</span>
+                </div>
+                <p className="text-sm text-zinc-400">Daily operations and staff management</p>
+              </a>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Modals */}

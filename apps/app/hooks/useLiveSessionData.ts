@@ -10,193 +10,28 @@ const IS_DEVELOPMENT = process.env.NODE_ENV === 'development';
 // Generate rich demo data for Fire Session Dashboard
 function generateRichDemoData(): FireSession[] {
   const now = Date.now();
-  const oneHourAgo = now - (60 * 60 * 1000);
-  const twoHoursAgo = now - (2 * 60 * 60 * 1000);
-  const threeHoursAgo = now - (3 * 60 * 60 * 1000);
+  const thirtyMinutesAgo = now - (30 * 60 * 1000);
 
+  // Single demo session showing night after night flow - starts at PAID_CONFIRMED
   return [
-    // BOH Operations - Active sessions
     {
-      id: 'demo-1',
-      tableId: 'T-001',
-      customerName: 'Sarah Johnson',
-      customerPhone: '+1-555-0123',
-      flavor: 'Mint Fresh + Watermelon',
-      amount: 3200,
-      status: 'PREP_IN_PROGRESS',
-      currentStage: 'BOH',
-      assignedStaff: { boh: 'staff-boh-1', foh: undefined },
-      createdAt: oneHourAgo,
-      updatedAt: now - (10 * 60 * 1000),
-      sessionStartTime: oneHourAgo,
-      sessionDuration: 45 * 60,
-      coalStatus: 'active',
-      refillStatus: 'none',
-      notes: 'VIP customer - extra attention to detail',
-      edgeCase: null,
-      bohState: 'PREPARING',
-      guestTimerDisplay: false
-    },
-    {
-      id: 'demo-2',
-      tableId: 'T-002',
-      customerName: 'Mike Chen',
-      customerPhone: '+1-555-0124',
-      flavor: 'Peach Wave + Strawberry',
-      amount: 2800,
-      status: 'HEAT_UP',
-      currentStage: 'BOH',
-      assignedStaff: { boh: 'staff-boh-2', foh: undefined },
-      createdAt: now - (30 * 60 * 1000),
-      updatedAt: now - (5 * 60 * 1000),
-      sessionStartTime: now - (30 * 60 * 1000),
-      sessionDuration: 45 * 60,
-      coalStatus: 'active',
-      refillStatus: 'none',
-      notes: 'Coals heating up - almost ready',
-      edgeCase: null,
-      bohState: 'WARMING_UP',
-      guestTimerDisplay: false
-    },
-    {
-      id: 'demo-3',
-      tableId: 'T-003',
-      customerName: 'Emma Davis',
-      customerPhone: '+1-555-0125',
-      flavor: 'Classic Mint',
-      amount: 2500,
-      status: 'READY_FOR_DELIVERY',
-      currentStage: 'BOH',
-      assignedStaff: { boh: 'staff-boh-1', foh: 'staff-foh-1' },
-      createdAt: now - (45 * 60 * 1000),
-      updatedAt: now - (2 * 60 * 1000),
-      sessionStartTime: now - (45 * 60 * 1000),
-      sessionDuration: 45 * 60,
-      coalStatus: 'active',
-      refillStatus: 'none',
-      notes: 'Ready for FOH pickup',
-      edgeCase: null,
-      bohState: 'READY_FOR_PICKUP',
-      guestTimerDisplay: false
-    },
-
-    // FOH Operations - Active sessions
-    {
-      id: 'demo-4',
-      tableId: 'T-004',
-      customerName: 'Alex Rodriguez',
-      customerPhone: '+1-555-0126',
-      flavor: 'Mixed Berry + Ice Mint',
-      amount: 3500,
-      status: 'OUT_FOR_DELIVERY',
-      currentStage: 'FOH',
-      assignedStaff: { boh: undefined, foh: 'staff-foh-2' },
-      createdAt: twoHoursAgo,
-      updatedAt: now - (15 * 60 * 1000),
-      sessionStartTime: twoHoursAgo,
-      sessionDuration: 45 * 60,
-      coalStatus: 'active',
-      refillStatus: 'none',
-      notes: 'En route to table - 2 minutes away',
-      edgeCase: null,
-      bohState: 'PICKED_UP',
-      guestTimerDisplay: true,
-      sessionTimer: {
-        remaining: 25 * 60, // 25 minutes left
-        total: 45 * 60,
-        isActive: true,
-        startedAt: twoHoursAgo
-      }
-    },
-    {
-      id: 'demo-5',
+      id: 'demo-session-1',
       tableId: 'T-005',
-      customerName: 'Lisa Wang',
-      customerPhone: '+1-555-0127',
-      flavor: 'Grape + Menthol',
-      amount: 3000,
-      status: 'DELIVERED',
-      currentStage: 'FOH',
-      assignedStaff: { boh: undefined, foh: 'staff-foh-1' },
-      createdAt: threeHoursAgo,
+      customerName: 'Sarah & Friends',
+      customerPhone: '+1 (555) 234-5678',
+      flavor: 'Blue Mist + Mint Fresh',
+      amount: 3500,
+      status: 'PAID_CONFIRMED', // Starting point for night after night flow
+      currentStage: 'BOH',
+      assignedStaff: { boh: undefined, foh: undefined },
+      createdAt: thirtyMinutesAgo,
       updatedAt: now - (5 * 60 * 1000),
-      sessionStartTime: threeHoursAgo,
-      sessionDuration: 45 * 60,
+      sessionStartTime: undefined,
+      sessionDuration: 60 * 60, // 60 minutes
       coalStatus: 'active',
       refillStatus: 'none',
-      notes: 'Delivered and active - customer enjoying',
+      notes: 'Demo session - ready to test night after night flow',
       edgeCase: null,
-      bohState: 'PICKED_UP',
-      guestTimerDisplay: true,
-      sessionTimer: {
-        remaining: 15 * 60, // 15 minutes left
-        total: 45 * 60,
-        isActive: true,
-        startedAt: threeHoursAgo
-      }
-    },
-
-    // Edge Cases & Escalations
-    {
-      id: 'demo-6',
-      tableId: 'T-006',
-      customerName: 'John Smith',
-      customerPhone: '+1-555-0128',
-      flavor: 'Custom Mix',
-      amount: 2800,
-      status: 'STAFF_HOLD',
-      currentStage: 'BOH',
-      assignedStaff: { boh: 'staff-boh-2', foh: 'staff-foh-2' },
-      createdAt: now - (20 * 60 * 1000),
-      updatedAt: now - (5 * 60 * 1000),
-      sessionStartTime: now - (20 * 60 * 1000),
-      sessionDuration: 45 * 60,
-      coalStatus: 'needs_refill',
-      refillStatus: 'none',
-      notes: 'Customer requested flavor change - on hold',
-      edgeCase: 'Customer requested flavor change - on hold',
-      bohState: 'PREPARING',
-      guestTimerDisplay: false
-    },
-    {
-      id: 'demo-7',
-      tableId: 'T-007',
-      customerName: 'Maria Garcia',
-      customerPhone: '+1-555-0129',
-      flavor: 'Strawberry Mojito',
-      amount: 2600,
-      status: 'STOCK_BLOCKED',
-      currentStage: 'BOH',
-      assignedStaff: { boh: 'staff-boh-1', foh: undefined },
-      createdAt: now - (15 * 60 * 1000),
-      updatedAt: now - (2 * 60 * 1000),
-      sessionStartTime: now - (15 * 60 * 1000),
-      sessionDuration: 45 * 60,
-      coalStatus: 'burnt_out',
-      refillStatus: 'none',
-      notes: 'Out of strawberry flavor - waiting for restock',
-      edgeCase: 'Customer requested flavor change - on hold',
-      bohState: 'PREPARING',
-      guestTimerDisplay: false
-    },
-    {
-      id: 'demo-8',
-      tableId: 'T-008',
-      customerName: 'David Kim',
-      customerPhone: '+1-555-0130',
-      flavor: 'Watermelon Mint',
-      amount: 2900,
-      status: 'REMAKE',
-      currentStage: 'BOH',
-      assignedStaff: { boh: 'staff-boh-2', foh: 'staff-foh-1' },
-      createdAt: now - (10 * 60 * 1000),
-      updatedAt: now - (1 * 60 * 1000),
-      sessionStartTime: now - (10 * 60 * 1000),
-      sessionDuration: 45 * 60,
-      coalStatus: 'needs_refill',
-      refillStatus: 'none',
-      notes: 'Customer not satisfied with flavor - remaking',
-      edgeCase: 'Customer requested flavor change - on hold',
       bohState: 'PREPARING',
       guestTimerDisplay: false
     }
@@ -257,6 +92,42 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
     try {
       setLoading(true);
       setError(null);
+
+      // Check if we're in demo mode from URL
+      const isDemoMode = typeof window !== 'undefined' && 
+        window.location &&
+        new URLSearchParams(window.location.search).get('mode') === 'demo';
+
+      // In demo mode, skip API calls and use demo data directly
+      if (isDemoMode) {
+        console.log('[useLiveSessionData] 🎭 Demo Mode: Using in-memory demo data (no API calls)');
+        const demoData = generateRichDemoData();
+        setSessions(demoData);
+        
+        // Calculate metrics from demo data
+        const demoMetrics = {
+          activeSessions: demoData.filter(s => ['ACTIVE', 'DELIVERED', 'OUT_FOR_DELIVERY'].includes(s.status)).length,
+          revenue: demoData.reduce((sum, s) => sum + (s.amount / 100), 0),
+          avgDuration: 45,
+          alerts: demoData.filter(s => s.edgeCase !== null).length,
+          staffAssigned: new Set([
+            ...demoData.map(s => s.assignedStaff.boh).filter(Boolean),
+            ...demoData.map(s => s.assignedStaff.foh).filter(Boolean)
+          ]).size,
+          totalSessions: demoData.length,
+          changes: {
+            activeSessions: '+0%',
+            revenue: '+0%',
+            avgDuration: '0%',
+            alerts: '0%',
+            staffAssigned: '+0%',
+            totalSessions: '+0%'
+          }
+        };
+        setMetrics(demoMetrics);
+        setLoading(false);
+        return;
+      }
 
       console.log('[useLiveSessionData] Starting to load sessions...');
       
@@ -444,6 +315,38 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
 
   // Load live metrics
   const loadMetrics = useCallback(async () => {
+    // Check if we're in demo mode
+    const isDemoMode = typeof window !== 'undefined' && 
+      window.location &&
+      new URLSearchParams(window.location.search).get('mode') === 'demo';
+
+    // In demo mode, calculate metrics from current sessions (no API call)
+    if (isDemoMode) {
+      console.log('[useLiveSessionData] 🎭 Demo Mode: Calculating metrics from in-memory sessions');
+      const demoMetrics = {
+        activeSessions: sessions.filter(s => ['ACTIVE', 'DELIVERED', 'OUT_FOR_DELIVERY'].includes(s.status)).length,
+        revenue: sessions.reduce((sum, s) => sum + (s.amount / 100), 0),
+        avgDuration: 45,
+        alerts: sessions.filter(s => s.edgeCase !== null).length,
+        staffAssigned: new Set([
+          ...sessions.map(s => s.assignedStaff.boh).filter(Boolean),
+          ...sessions.map(s => s.assignedStaff.foh).filter(Boolean)
+        ]).size,
+        totalSessions: sessions.length,
+        changes: {
+          activeSessions: '+0%',
+          revenue: '+0%',
+          avgDuration: '0%',
+          alerts: '0%',
+          staffAssigned: '+0%',
+          totalSessions: '+0%'
+        }
+      };
+      setMetrics(demoMetrics);
+      return;
+    }
+
+    // Production mode: call API
     try {
       console.log('[useLiveSessionData] Loading metrics...');
       const metricsResponse = await fetch('/api/metrics/live');
@@ -498,10 +401,116 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
         }
       });
     }
-  }, []);
+  }, [sessions]);
 
   // Update session state
   const updateSessionState = useCallback(async (sessionId: string, action: string) => {
+    // Check if we're in demo mode
+    const isDemoMode = typeof window !== 'undefined' && 
+      window.location &&
+      new URLSearchParams(window.location.search).get('mode') === 'demo';
+
+    // In demo mode, update in-memory without API calls
+    if (isDemoMode) {
+      try {
+        setLoading(true);
+        console.log(`[Demo Mode] 🎭 Updating session ${sessionId} with action: ${action}`);
+        
+        // Import state machine utilities
+        const { nextStateWithTrust } = await import('../lib/sessionStateMachine');
+        
+        // Find the session
+        const sessionIndex = sessions.findIndex(s => s.id === sessionId);
+        if (sessionIndex === -1) {
+          throw new Error('Session not found');
+        }
+
+        const currentSession = sessions[sessionIndex];
+        
+        // Map action string to SessionAction type (handle both uppercase and lowercase)
+        // SimpleFSDDesign passes lowercase actions like 'claim_prep', 'start_active', etc.
+        const actionMap: Record<string, string> = {
+          'claim_prep': 'CLAIM_PREP',
+          'heat_up': 'HEAT_UP',
+          'ready_for_delivery': 'READY_FOR_DELIVERY',
+          'deliver_now': 'DELIVER_NOW',
+          'mark_delivered': 'MARK_DELIVERED',
+          'start_active': 'START_ACTIVE',
+          'pause_session': 'PAUSE_SESSION',
+          'resume_session': 'RESUME_SESSION',
+          'close_session': 'CLOSE_SESSION',
+          'put_on_hold': 'PUT_ON_HOLD',
+          'resolve_hold': 'RESOLVE_HOLD',
+          'request_remake': 'REQUEST_REMAKE',
+          'complete': 'CLOSE_SESSION',
+          'pause': 'PAUSE_SESSION',
+          // Also handle uppercase versions
+          'CLAIM_PREP': 'CLAIM_PREP',
+          'HEAT_UP': 'HEAT_UP',
+          'READY_FOR_DELIVERY': 'READY_FOR_DELIVERY',
+          'DELIVER_NOW': 'DELIVER_NOW',
+          'MARK_DELIVERED': 'MARK_DELIVERED',
+          'START_ACTIVE': 'START_ACTIVE',
+          'PAUSE_SESSION': 'PAUSE_SESSION',
+          'RESUME_SESSION': 'RESUME_SESSION',
+          'CLOSE_SESSION': 'CLOSE_SESSION',
+          'PUT_ON_HOLD': 'PUT_ON_HOLD',
+          'RESOLVE_HOLD': 'RESOLVE_HOLD',
+          'REQUEST_REMAKE': 'REQUEST_REMAKE'
+        };
+
+        const normalizedAction = action.toLowerCase();
+        const sessionAction = (actionMap[normalizedAction] || actionMap[action] || action.toUpperCase()) as any;
+        
+        // Apply state machine transition
+        const updatedSession = nextStateWithTrust(
+          currentSession,
+          { 
+            type: sessionAction as any, 
+            operatorId: 'demo-user',
+            timestamp: Date.now()
+          },
+          'MANAGER' // Allow all actions in demo mode
+        );
+
+        // Update session in state
+        const updatedSessions = [...sessions];
+        updatedSessions[sessionIndex] = updatedSession;
+        setSessions(updatedSessions);
+
+        // Update metrics
+        const updatedMetrics = {
+          activeSessions: updatedSessions.filter(s => ['ACTIVE', 'DELIVERED', 'OUT_FOR_DELIVERY'].includes(s.status)).length,
+          revenue: updatedSessions.reduce((sum, s) => sum + (s.amount / 100), 0),
+          avgDuration: 45,
+          alerts: updatedSessions.filter(s => s.edgeCase !== null).length,
+          staffAssigned: new Set([
+            ...updatedSessions.map(s => s.assignedStaff.boh).filter(Boolean),
+            ...updatedSessions.map(s => s.assignedStaff.foh).filter(Boolean)
+          ]).size,
+          totalSessions: updatedSessions.length,
+          changes: {
+            activeSessions: '+0%',
+            revenue: '+0%',
+            avgDuration: '0%',
+            alerts: '0%',
+            staffAssigned: '+0%',
+            totalSessions: '+0%'
+          }
+        };
+        setMetrics(updatedMetrics);
+
+        console.log(`[Demo Mode] ✅ Session updated: ${currentSession.status} → ${updatedSession.status}`);
+      } catch (err) {
+        console.error('[Demo Mode] Error updating session:', err);
+        setError(err instanceof Error ? err.message : 'Failed to update session');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // Production mode: call API
     try {
       setLoading(true);
       
@@ -532,7 +541,7 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
     } finally {
       setLoading(false);
     }
-  }, [loadSessions, loadMetrics]);
+  }, [sessions, loadSessions, loadMetrics]);
 
   // Refresh all data
   const refreshSessions = useCallback(async () => {

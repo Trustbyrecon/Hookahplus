@@ -74,10 +74,12 @@ export default function SyncIndicator({
 
   return (
     <div className={`flex items-center gap-2 text-xs ${className}`}>
-      <div className={`flex items-center gap-1.5 ${getStatusColor()}`}>
-        {getStatusIcon()}
-        <span>Last updated: {timeAgo}</span>
-      </div>
+      {!isDemoMode && (
+        <div className={`flex items-center gap-1.5 ${getStatusColor()}`}>
+          {getStatusIcon()}
+          <span>Last updated: {timeAgo}</span>
+        </div>
+      )}
       {isStale && !isDemoMode && (
         <span className="text-yellow-400 text-xs">• Data may be stale</span>
       )}

@@ -8,7 +8,7 @@ out/
 node_modules/
 package-lock.json
 
-# Environment files
+# Environment files (includes RESEND_API_KEY and other secrets)
 .env
 .env.*
 *.env
@@ -17,6 +17,16 @@ apps/*/.env.*
 *.log
 /logs/
 /.env.*
+# Explicitly protect API keys and secrets (in filenames, not content)
+*_API_KEY
+*_API_KEY.*
+*_SECRET
+*_SECRET.*
+*_PASSWORD
+*_PASSWORD.*
+*.key
+*.secret
+*.pem
 
 # Database connection strings (security)
 *DATABASE_URL*
