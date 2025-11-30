@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { cn } from '../utils/cn';
@@ -902,4 +902,13 @@ const GlobalNavigation: React.FC = () => {
   );
 };
 
-export default GlobalNavigation;
+// Wrapper component with Suspense boundary for useSearchParams
+const GlobalNavigationWithSuspense: React.FC = () => {
+  return (
+    <Suspense fallback={<div className="h-16 bg-zinc-950 border-b border-zinc-800"></div>}>
+      <GlobalNavigation />
+    </Suspense>
+  );
+};
+
+export default GlobalNavigationWithSuspense;
