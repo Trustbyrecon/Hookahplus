@@ -81,31 +81,55 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// GET /api/lounges - Retrieve lounge layout
+// GET /api/lounges - Retrieve lounge layout and list of available lounges
 export async function GET(req: NextRequest) {
   try {
-    const layoutSetting = await prisma.orgSetting.findUnique({
-      where: { key: 'lounge_layout' }
-    });
+    const { searchParams } = new URL(req.url);
+    const layoutOnly = searchParams.get('layout') === 'true'; // For layout data specifically
 
-    if (!layoutSetting) {
+    // Default: Return lounge list (for QR generator dropdown)
+    // This is what the QR generator expects: { success: true, lounges: [...] }
+    const lounges = [
+      {
+        lounge_id: 'HOPE_GLOBAL_FORUM',
+        lounge_name: 'Hope Global Forum',
+        slug: 'hope-global-forum',
+      },
+      // Add other lounges here as needed
+    ];
+
+    // If specifically requesting layout data
+    if (layoutOnly) {
+      const layoutSetting = await prisma.orgSetting.findUnique({
+        where: { key: 'lounge_layout' }
+      });
+
+      if (!layoutSetting) {
+        return NextResponse.json({
+          success: true,
+          layout: null,
+          message: 'No layout configured yet'
+        });
+      }
+
+      const layoutData = JSON.parse(layoutSetting.value);
+      
       return NextResponse.json({
         success: true,
-        layout: null,
-        message: 'No layout configured yet'
+        layout: layoutData
       });
     }
 
-    const layoutData = JSON.parse(layoutSetting.value);
-    
+    // Default: Return lounge list for QR generator
     return NextResponse.json({
       success: true,
-      layout: layoutData
+      lounges,
+      total: lounges.length,
     });
   } catch (error) {
-    console.error('Error retrieving layout:', error);
+    console.error('Error retrieving lounges:', error);
     return NextResponse.json({ 
-      error: 'Failed to retrieve layout',
+      error: 'Failed to retrieve lounges',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
