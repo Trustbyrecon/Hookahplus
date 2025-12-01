@@ -341,6 +341,7 @@ function FireSessionDashboardContent() {
           isDemoMode={isDemoMode}
           demoMenuFlavors={demoMenuFlavors}
           isDemoSlug={isDemoSlug}
+          demoSource={demoSource || (isDemoSlug ? 'onboarding' : 'marketing')}
         />
     </div>
   );

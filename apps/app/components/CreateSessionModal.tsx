@@ -12,6 +12,8 @@ interface CreateSessionModalProps {
   onCreateSession: (sessionData: any) => Promise<string | undefined>; // Returns session ID for payment linking
   isDemoMode?: boolean; // Optional: if true, skip real Stripe payments
   demoMenuFlavors?: string[] | null; // For demo mode: flavors from uploaded menu
+  isDemoSlug?: boolean; // True when accessed via /demo/[slug] route
+  demoSource?: 'onboarding' | 'marketing'; // Demo source for routing
 }
 
 interface SessionData {
