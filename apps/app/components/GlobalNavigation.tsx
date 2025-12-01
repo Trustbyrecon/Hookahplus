@@ -26,6 +26,7 @@ import {
 import { ThemeToggle } from './ThemeToggle';
 import { SecureRoleSelector } from './SecureRoleSelector';
 import { clientClient } from '../lib/supabase-client';
+import FunctionalHelp from './FunctionalHelp';
 
 // AI Agent Collaboration Interface
 interface FlowState {
@@ -78,6 +79,7 @@ const GlobalNavigation: React.FC = () => {
   const [trustLockStatus, setTrustLockStatus] = useState<'active' | 'pending' | 'verified'>('active');
   const [trustLockVerificationRate, setTrustLockVerificationRate] = useState<number>(100);
   const [reflexScore, setReflexScore] = useState<number>(87);
+  const [showHelp, setShowHelp] = useState(false);
   const [isAdminVerified, setIsAdminVerified] = useState(false);
 
   // Close Quick Access dropdown when clicking outside
@@ -371,6 +373,7 @@ const GlobalNavigation: React.FC = () => {
   };
 
   return (
+    <>
     <nav className="relative z-50 bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-800/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Status Bar - Simplified for demo mode */}
@@ -463,17 +466,18 @@ const GlobalNavigation: React.FC = () => {
               </>
             )}
             
-            {/* Quick Access Dropdown - Desktop */}
-            <div className="relative quick-access-dropdown">
-              <button
-                onClick={() => setQuickAccessOpen(!quickAccessOpen)}
-                className="flex items-center space-x-1 text-zinc-300 hover:text-white transition-colors font-medium"
-                aria-label="Quick Access Menu"
-                aria-expanded={quickAccessOpen}
-              >
-                <span>Quick Access</span>
-                <ChevronDown className={`w-4 h-4 transition-transform ${quickAccessOpen ? 'rotate-180' : ''}`} />
-              </button>
+            {/* Quick Access Dropdown - Desktop - Hidden in demo mode */}
+            {!isDemoMode && (
+              <div className="relative quick-access-dropdown">
+                <button
+                  onClick={() => setQuickAccessOpen(!quickAccessOpen)}
+                  className="flex items-center space-x-1 text-zinc-300 hover:text-white transition-colors font-medium"
+                  aria-label="Quick Access Menu"
+                  aria-expanded={quickAccessOpen}
+                >
+                  <span>Quick Access</span>
+                  <ChevronDown className={`w-4 h-4 transition-transform ${quickAccessOpen ? 'rotate-180' : ''}`} />
+                </button>
               
               {quickAccessOpen && (
                 <div className="absolute top-full left-0 mt-2 w-96 md:w-[28rem] lg:w-96 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl z-[9999] max-h-[80vh] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
@@ -657,6 +661,7 @@ const GlobalNavigation: React.FC = () => {
                 </div>
               )}
             </div>
+            )}
           </div>
 
           {/* Right Side Actions - Hide advanced features in demo mode */}
@@ -692,13 +697,13 @@ const GlobalNavigation: React.FC = () => {
               </>
             )}
             {isDemoMode && (
-              <Link
-                href="/help"
+              <button
+                onClick={() => setShowHelp(true)}
                 className="flex items-center space-x-1 text-zinc-400 hover:text-white transition-colors"
               >
                 <HelpCircle className="w-4 h-4" />
                 <span className="text-sm">Help</span>
-              </Link>
+              </button>
             )}
           </div>
         </div>
@@ -707,8 +712,9 @@ const GlobalNavigation: React.FC = () => {
       {/* Mobile Navigation */}
       <div className="md:hidden border-t border-zinc-800">
         <div className="px-4 py-2 space-y-1">
-          {/* Mobile Quick Access Button */}
-          <div className="mb-4 pb-4 border-b border-zinc-800">
+          {/* Mobile Quick Access Button - Hidden in demo mode */}
+          {!isDemoMode && (
+            <div className="mb-4 pb-4 border-b border-zinc-800">
             <button
               onClick={() => setQuickAccessOpen(!quickAccessOpen)}
               className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-zinc-300 hover:text-white hover:bg-zinc-800 transition-all"
@@ -865,7 +871,8 @@ const GlobalNavigation: React.FC = () => {
                 </div>
               </div>
             )}
-          </div>
+            </div>
+          )}
 
           {/* Regular Mobile Navigation Items */}
           {navigationGroups.map((group) => (
@@ -899,6 +906,14 @@ const GlobalNavigation: React.FC = () => {
         </div>
       </div>
     </nav>
+    
+    {/* Functional Help Modal */}
+    <FunctionalHelp 
+      isOpen={showHelp} 
+      onClose={() => setShowHelp(false)}
+      isDemoMode={isDemoMode}
+    />
+  </>
   );
 };
 

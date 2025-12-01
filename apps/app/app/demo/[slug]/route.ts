@@ -20,6 +20,7 @@ export async function GET(
   const url = new URL('/fire-session-dashboard', req.url);
   url.searchParams.set('mode', 'demo');
   url.searchParams.set('lounge', slug);
+  url.searchParams.set('source', 'onboarding'); // Mark as onboarding flow
 
   return NextResponse.redirect(url.toString(), { status: 302 });
 }

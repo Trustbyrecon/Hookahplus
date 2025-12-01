@@ -49,7 +49,10 @@ function FireSessionDashboardContent() {
   
   // Check for demo mode from URL params
   const isDemoMode = searchParams.get('mode') === 'demo';
+  const paymentConfirmed = searchParams.get('payment') === 'confirmed';
+  const sessionIdFromUrl = searchParams.get('session');
   const demoLounge = searchParams.get('lounge') || null;
+  const isDemoSlug = isDemoMode && demoLounge !== null; // True when accessed via /demo/[slug]
   const demoFlavorsParam = searchParams.get('flavors');
   const demoMenuFlavors = demoFlavorsParam ? demoFlavorsParam.split(',').filter(Boolean) : null;
   
@@ -223,15 +226,17 @@ function FireSessionDashboardContent() {
           ]}
         />
 
-        {/* Daily Pulse Card */}
-        <div className="mb-6">
-          <PulseCard 
-            compact={true} 
-            window="24h" 
-            autoRefresh={true}
-            loungeId={isDemoMode ? (demoLounge || 'demo-lounge') : undefined}
-          />
-        </div>
+        {/* Daily Pulse Card - Hidden in demo mode */}
+        {!isDemoMode && (
+          <div className="mb-6">
+            <PulseCard 
+              compact={true} 
+              window="24h" 
+              autoRefresh={true}
+              loungeId={demoLounge || undefined}
+            />
+          </div>
+        )}
 
         {/* Sync Indicator - Hidden in demo mode */}
         {!isDemoMode && (
@@ -335,6 +340,7 @@ function FireSessionDashboardContent() {
           onCreateSession={handleCreateSession}
           isDemoMode={isDemoMode}
           demoMenuFlavors={demoMenuFlavors}
+          isDemoSlug={isDemoSlug}
         />
     </div>
   );

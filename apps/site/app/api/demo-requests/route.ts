@@ -89,6 +89,7 @@ export async function POST(req: NextRequest) {
         if (onboardingResponse.ok) {
           const result = await onboardingResponse.json();
           console.log('[Onboarding Submission] ✅ Lead created in Operator Onboarding:', result.leadId || result.id);
+          
         } else {
           const errorText = await onboardingResponse.text();
           let errorData;

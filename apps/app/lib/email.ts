@@ -23,13 +23,13 @@ export async function sendNewLeadNotification(leadData: {
   location?: string;
   source?: string;
   stage?: string;
-}) {
+}, customRecipient?: string) {
   if (!resend || !process.env.RESEND_API_KEY) {
     console.warn('[Email] RESEND_API_KEY not configured, skipping lead notification email');
     return { success: false, error: 'Email service not configured' };
   }
 
-  const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'clark.dwayne@gmail.com';
+  const adminEmail = customRecipient || process.env.ADMIN_NOTIFICATION_EMAIL || 'clark.dwayne@gmail.com';
   const adminPhone = process.env.ADMIN_NOTIFICATION_PHONE || '470-2269219';
 
   try {
@@ -95,10 +95,13 @@ export async function sendNewLeadNotification(leadData: {
               </div>
 
               <div style="text-align: center; margin-top: 30px;">
-                <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/admin/operator-onboarding" 
+                <a href="${process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/onboarding" 
                    style="display: inline-block; background: linear-gradient(135deg, #14b8a6, #06b6d4); color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
-                  View Lead in Dashboard →
+                  Complete Your Setup →
                 </a>
+                <p style="color: #888; font-size: 12px; margin-top: 12px;">
+                  We'll send you a test link within 24-48 hours to review your personalized dashboard.
+                </p>
               </div>
 
               <div style="text-align: center; margin-top: 20px; color: #888; font-size: 12px;">

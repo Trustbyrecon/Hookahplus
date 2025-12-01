@@ -27,21 +27,82 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { flavors, addOns, tableId, loungeId, amount, total, pricingModel, sessionDuration, dollarTestMode, sessionId, isDemo } = body;
     
-    // Check for demo mode - short-circuit Stripe and return demo payment confirmation
+    // Check for demo mode - route through Stripe test workflow
     const isDemoMode = isDemo === true || isDemo === 'true';
     
     if (isDemoMode) {
-      console.log('[Checkout API] 🎭 Demo Mode: Short-circuiting Stripe payment');
-      return NextResponse.json({
-        success: true,
-        demo: true,
-        sessionId: sessionId,
-        paymentIntent: 'demo_payment_intent_' + Date.now(),
-        clientSecret: null, // No Stripe client secret needed in demo
-        message: 'Demo payment confirmed - no real charges',
-        checkoutUrl: null, // No checkout URL needed
-        redirectUrl: `/fire-session-dashboard?mode=demo&session=${sessionId}&payment=confirmed`
-      });
+      console.log('[Checkout API] 🎭 Demo Mode: Routing through Stripe test workflow');
+      
+      // In demo mode, create a Stripe test checkout session
+      // This allows users to experience the full payment flow with test cards
+      if (!stripe) {
+        // If Stripe not configured, return demo confirmation
+        return NextResponse.json({
+          success: true,
+          demo: true,
+          sessionId: sessionId,
+          paymentIntent: 'demo_payment_intent_' + Date.now(),
+          clientSecret: null,
+          message: 'Demo payment confirmed - no real charges',
+          checkoutUrl: null,
+          redirectUrl: `/fire-session-dashboard?mode=demo&session=${sessionId}&payment=confirmed`
+        });
+      }
+      
+      // Create Stripe test checkout session for demo
+      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+      const successUrl = `${baseUrl}/checkout/success?session_id=${sessionId}&mode=demo`;
+      const cancelUrl = `${baseUrl}/checkout/cancel?session_id=${sessionId}&mode=demo`;
+      
+      try {
+        const session = await stripe.checkout.sessions.create({
+          mode: 'payment',
+          payment_method_types: ['card'],
+          line_items: [
+            {
+              price_data: {
+                currency: 'usd',
+                product_data: {
+                  name: `Hookah Session - ${flavors.join(' + ')}`,
+                  description: `Demo Session - Flavor mix: ${flavors.join(', ')}`,
+                },
+                unit_amount: amount,
+              },
+              quantity: 1,
+            },
+          ],
+          success_url: successUrl,
+          cancel_url: cancelUrl,
+          metadata: {
+            h_session: sessionId,
+            h_order: `H+ ${sessionId.substring(0, 8)}`,
+            is_demo: 'true'
+          },
+        });
+        
+        return NextResponse.json({
+          success: true,
+          demo: true,
+          sessionId: sessionId,
+          url: session.url,
+          checkoutUrl: session.url,
+          redirectUrl: session.url,
+          message: 'Demo Stripe test checkout created - use test card: 4242 4242 4242 4242'
+        });
+      } catch (stripeError: any) {
+        console.error('[Checkout API] Demo Stripe error:', stripeError);
+        // Fallback to demo confirmation if Stripe fails
+        return NextResponse.json({
+          success: true,
+          demo: true,
+          sessionId: sessionId,
+          paymentIntent: 'demo_payment_intent_' + Date.now(),
+          clientSecret: null,
+          message: 'Demo payment confirmed - no real charges',
+          checkoutUrl: null,
+          redirectUrl: `/fire-session-dashboard?mode=demo&session=${sessionId}&payment=confirmed`
+        });
+      }
     }
     
     // SECURITY: sessionId is required - we only send opaque IDs to Stripe

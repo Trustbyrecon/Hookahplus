@@ -70,7 +70,7 @@ const timerDurations = [
   { value: 120, label: '2 hours', description: 'Ultimate session' }
 ];
 
-export default function CreateSessionModal({ isOpen, onClose, onCreateSession, isDemoMode = false, demoMenuFlavors = null }: CreateSessionModalProps) {
+export default function CreateSessionModal({ isOpen, onClose, onCreateSession, isDemoMode = false, demoMenuFlavors = null, isDemoSlug = false, demoSource = 'marketing' }: CreateSessionModalProps) {
   // Handle escape key
   React.useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -155,12 +155,22 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
   // Handle flavor mix changes
   const handleFlavorMixChange = (flavors: string[], totalPrice: number) => {
     setFormData(prev => {
+      // Ensure flavor prices are properly calculated (not zeroed in non-demo mode)
+      const flavorPrice = isDemoMode ? 0 : totalPrice;
       const updated = {
         ...prev,
         flavorMix: flavors,
-        flavorMixPrice: isDemoMode ? 0 : totalPrice, // Free in demo mode
-        amount: calculateTotalAmount(prev.pricingModel, prev.timerDuration, isDemoMode ? 0 : totalPrice)
+        flavorMixPrice: flavorPrice, // $2.00-$4.50 per flavor, properly calculated
+        amount: calculateTotalAmount(prev.pricingModel, prev.timerDuration, flavorPrice)
       };
+      console.log('[CreateSessionModal] Flavor mix updated:', {
+        flavors,
+        totalPrice,
+        flavorPrice,
+        calculatedAmount: updated.amount,
+        pricingModel: prev.pricingModel,
+        timerDuration: prev.timerDuration
+      });
       return updated;
     });
   };
@@ -216,23 +226,104 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
         return;
       }
       
-      // In demo mode, skip Stripe checkout and auto-confirm payment
+      // Calculate total amount in cents (same as pre-order)
+      // Ensure cart items are calculated and reflected
+      const totalAmountCents = Math.round(formData.amount * 100);
+      const totalAmountDollars = formData.amount;
+      
+      // Calculate cart breakdown for display
+      const cartItems = [
+        {
+          name: `Hookah Session - ${formData.flavorMix.length > 0 ? formData.flavorMix.join(' + ') : (formData.flavor || 'Custom Mix')}`,
+          quantity: 1,
+          price: totalAmountDollars,
+          priceCents: totalAmountCents
+        }
+      ];
+      
+      console.log('[CreateSessionModal] Cart items calculated:', {
+        items: cartItems,
+        total: totalAmountDollars,
+        totalCents: totalAmountCents
+      });
+      
+      // In demo mode, route through new demo-session API
       if (isDemoMode) {
-        console.log('[CreateSessionModal] 🎭 Demo Mode: Skipping Stripe checkout, payment auto-confirmed');
-        // In demo mode, payment is already confirmed in the session creation
-        // Just close the modal and refresh
-        onClose();
-        // Trigger a refresh of the session list
-        window.dispatchEvent(new Event('refreshSessions'));
-        return;
+        console.log('[CreateSessionModal] 🎭 Demo Mode: Routing through demo-session API');
+        try {
+          const response = await fetch('/api/demo-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              loungeId: (isDemoSlug ? 'demo-lounge' : 'default-lounge'),
+              operatorId: undefined,
+              source: demoSource,
+              sessionData: {
+                tableId: formData.tableId || selectedTable?.id || 'table-001',
+                customerName: formData.customerName,
+                customerPhone: formData.customerPhone,
+                flavorMix: formData.flavorMix.length > 0 ? formData.flavorMix : [formData.flavor || 'Custom Mix'],
+                amount: totalAmountDollars,
+                pricingModel: formData.pricingModel,
+                timerDuration: formData.timerDuration,
+              },
+            })
+          });
+          
+          const data = await response.json();
+          
+          if (data.status === 'error') {
+            throw new Error(data.reason || 'Failed to create demo session');
+          }
+          
+          // Show user-facing message
+          if (data.message) {
+            console.log('[CreateSessionModal] Demo mode message:', data.message);
+          }
+          
+          if (data.mode === 'stripe_test' && data.checkoutUrl) {
+            // Stripe test mode - redirect to Stripe checkout
+            console.log('[CreateSessionModal] 🎭 Stripe Test Mode: Redirecting to Stripe checkout');
+            window.location.href = data.checkoutUrl;
+            return;
+          } else if (data.mode === 'simulated' && data.simulatedSessionId) {
+            // Simulated mode - complete payment immediately
+            console.log('[CreateSessionModal] 🎭 Simulated Mode: Completing payment');
+            
+            // Call complete endpoint to finalize simulated payment
+            const completeResponse = await fetch('/api/demo-session/complete', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                simulatedSessionId: data.simulatedSessionId,
+                sessionId: sessionId,
+                loungeId: (isDemoSlug ? 'demo-lounge' : 'default-lounge'),
+                amountCents: totalAmountCents,
+                flavorMix: formData.flavorMix.length > 0 ? JSON.stringify(formData.flavorMix) : null,
+                tableId: formData.tableId || selectedTable?.id || 'table-001',
+                customerPhone: formData.customerPhone,
+              })
+            });
+            
+            if (completeResponse.ok) {
+              console.log('[CreateSessionModal] 🎭 Simulated payment completed');
+              onClose();
+              window.dispatchEvent(new Event('refreshSessions'));
+              return;
+            } else {
+              throw new Error('Failed to complete simulated payment');
+            }
+          }
+        } catch (error) {
+          console.error('[CreateSessionModal] Demo session error:', error);
+          alert(`Demo session error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          // Don't close modal on error - let user retry
+          return;
+        }
       }
       
-      // Immediately trigger payment (Stripe checkout) with session ID - same pattern as pre-order
+      // Production mode: Immediately trigger payment (Stripe checkout) with session ID
       try {
-        // Calculate total amount in cents (same as pre-order)
-        const totalAmountCents = Math.round(formData.amount * 100);
-        const totalAmountDollars = formData.amount;
-        
         console.log('[CreateSessionModal] Creating Stripe checkout with session ID:', sessionId);
         
         const response = await fetch('/api/checkout-session', {
@@ -602,24 +693,26 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
                 </select>
               </div>
 
-              {/* Assign FOH Staff */}
-              <div>
-                <label className="block text-sm font-medium text-white mb-2 font-semibold">
-                  Assign FOH Staff
-                </label>
-                <select
-                  value={formData.fohStaff}
-                  onChange={(e) => handleInputChange('fohStaff', e.target.value)}
-                  className="w-full px-4 py-3 bg-zinc-800/80 border border-zinc-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                >
-                  <option value="">Select FOH Staff</option>
-                  {fohStaff.map((staff) => (
-                    <option key={staff} value={staff}>
-                      {staff}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* Assign FOH Staff - Hidden in demo slug experience */}
+              {!isDemoSlug && (
+                <div>
+                  <label className="block text-sm font-medium text-white mb-2 font-semibold">
+                    Assign FOH Staff
+                  </label>
+                  <select
+                    value={formData.fohStaff}
+                    onChange={(e) => handleInputChange('fohStaff', e.target.value)}
+                    className="w-full px-4 py-3 bg-zinc-800/80 border border-zinc-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  >
+                    <option value="">Select FOH Staff</option>
+                    {fohStaff.map((staff) => (
+                      <option key={staff} value={staff}>
+                        {staff}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           </div>
 

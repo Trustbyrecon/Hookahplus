@@ -19,6 +19,20 @@ function CheckoutSuccessContent() {
 
   useEffect(() => {
     const checkoutSessionId = searchParams.get('session_id');
+    const mode = searchParams.get('mode');
+    const payment = searchParams.get('payment');
+    const isDemoMode = mode === 'demo';
+    
+    // Handle demo mode payment confirmation redirect
+    if (isDemoMode && payment === 'confirmed') {
+      const sessionId = checkoutSessionId || searchParams.get('session');
+      if (sessionId) {
+        console.log('[Checkout Success] 🎭 Demo Mode: Payment confirmed, redirecting to FSD');
+        // Redirect to FSD with demo mode and session ID
+        window.location.href = `/fire-session-dashboard?mode=demo&session=${sessionId}&payment=confirmed`;
+        return;
+      }
+    }
     
     if (!checkoutSessionId) {
       setError('No session ID found');
@@ -29,6 +43,19 @@ function CheckoutSuccessContent() {
     // Fetch session details from Stripe and then find/create database session
     const fetchSessionDetails = async () => {
       try {
+        // In demo mode, skip Stripe API call and use demo session
+        if (isDemoMode) {
+          console.log('[Checkout Success] 🎭 Demo Mode: Using demo session data');
+          setSessionId(checkoutSessionId);
+          setSessionData({
+            tableId: 'table-001',
+            flavorMix: 'Demo Flavor Mix',
+            amount: 3000, // $30.00 in cents
+          });
+          setLoading(false);
+          return;
+        }
+        
         // First get Stripe checkout session details
         // Use path parameter format: /api/checkout-session/[sessionId]
         const stripeResponse = await fetch(`/api/checkout-session/${checkoutSessionId}`);

@@ -449,36 +449,36 @@ export async function POST(req: NextRequest) {
       }
 
       // Get the lead event once (avoid duplicate lookup)
-      const event = await prisma.reflexEvent.findUnique({
-        where: { id: leadId }
-      });
+        const event = await prisma.reflexEvent.findUnique({
+          where: { id: leadId }
+        });
 
-      if (!event || !event.payload) {
-        return NextResponse.json({
-          success: false,
-          error: 'Lead not found or has no payload'
-        }, { status: 404 });
-      }
+        if (!event || !event.payload) {
+          return NextResponse.json({
+            success: false,
+            error: 'Lead not found or has no payload'
+          }, { status: 404 });
+        }
 
       // Parse payload once
-      let payload: any;
-      try {
-        payload = JSON.parse(event.payload);
-      } catch (parseError) {
+        let payload: any;
+        try {
+          payload = JSON.parse(event.payload);
+        } catch (parseError) {
         console.error('[Operator Onboarding API] Failed to parse lead payload for send_test_link:', parseError);
-        return NextResponse.json({
-          success: false,
+          return NextResponse.json({
+            success: false,
           error: 'Failed to parse lead payload',
-        }, { status: 500 });
-      }
+          }, { status: 500 });
+        }
 
       // Extract lead data
-      let data: any;
-      if (payload.behavior && payload.behavior.payload) {
-        data = { ...payload, ...payload.behavior.payload };
-      } else {
-        data = payload.data || payload;
-      }
+        let data: any;
+        if (payload.behavior && payload.behavior.payload) {
+          data = { ...payload, ...payload.behavior.payload };
+        } else {
+          data = payload.data || payload;
+        }
 
       // If testLink not provided, create demo session first
       let finalTestLink = testLink;
@@ -938,6 +938,23 @@ export async function POST(req: NextRequest) {
           console.log('[Operator Onboarding API] Lead notification email sent');
         } catch (emailError) {
           console.error('[Operator Onboarding API] Failed to send lead notification email (non-blocking):', emailError);
+          // Continue anyway - email failure shouldn't block lead creation
+        }
+
+        // Also send email notification to hookahplusconnector@gmail.com (non-blocking)
+        try {
+          await sendNewLeadNotification({
+            businessName: leadData.businessName,
+            ownerName: leadData.ownerName,
+            email: leadData.email,
+            phone: leadData.phone,
+            location: leadData.location,
+            source: leadData.source || 'website',
+            stage: leadData.stage || 'intake',
+          }, 'hookahplusconnector@gmail.com');
+          console.log('[Operator Onboarding API] Lead notification email sent to hookahplusconnector@gmail.com');
+        } catch (connectorEmailError) {
+          console.error('[Operator Onboarding API] Failed to send notification to hookahplusconnector@gmail.com (non-blocking):', connectorEmailError);
           // Continue anyway - email failure shouldn't block lead creation
         }
 
