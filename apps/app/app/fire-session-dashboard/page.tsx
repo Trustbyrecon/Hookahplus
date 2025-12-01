@@ -52,9 +52,13 @@ function FireSessionDashboardContent() {
   const paymentConfirmed = searchParams.get('payment') === 'confirmed';
   const sessionIdFromUrl = searchParams.get('session');
   const demoLounge = searchParams.get('lounge') || null;
+  const demoSource = searchParams.get('source') as 'onboarding' | 'marketing' | null;
   const isDemoSlug = isDemoMode && demoLounge !== null; // True when accessed via /demo/[slug]
   const demoFlavorsParam = searchParams.get('flavors');
   const demoMenuFlavors = demoFlavorsParam ? demoFlavorsParam.split(',').filter(Boolean) : null;
+  
+  // Determine demo source: onboarding (from /demo/[slug]) or marketing (direct FSD access)
+  const effectiveDemoSource: 'onboarding' | 'marketing' = demoSource || (isDemoSlug ? 'onboarding' : 'marketing');
   
   // Use session context for shared state
   const { sessions, metrics, loading, error, refreshSessions, updateSessionState, lastUpdated } = useSessionContext();
@@ -341,7 +345,7 @@ function FireSessionDashboardContent() {
           isDemoMode={isDemoMode}
           demoMenuFlavors={demoMenuFlavors}
           isDemoSlug={isDemoSlug}
-          demoSource={demoSource || (isDemoSlug ? 'onboarding' : 'marketing')}
+          demoSource={effectiveDemoSource}
         />
     </div>
   );
