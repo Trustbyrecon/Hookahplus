@@ -97,13 +97,33 @@ export default function QRGeneratorApp() {
     try {
       setIsLoadingLounges(true);
       const response = await fetch('/api/lounges');
+      
+      if (!response.ok) {
+        console.error('[QR Generator] API response not OK:', response.status, response.statusText);
+        return;
+      }
+      
       const data = await response.json();
       
-      if (data.success) {
+      console.log('[QR Generator] Loaded lounges response:', JSON.stringify(data, null, 2));
+      console.log('[QR Generator] Response has success?', 'success' in data);
+      console.log('[QR Generator] Response has lounges?', 'lounges' in data);
+      console.log('[QR Generator] data.success value:', data.success);
+      console.log('[QR Generator] data.lounges value:', data.lounges);
+      
+      if (data.success && Array.isArray(data.lounges)) {
+        console.log('[QR Generator] Setting lounges:', data.lounges);
         setLounges(data.lounges);
+      } else {
+        console.warn('[QR Generator] Unexpected response format. Full response:', data);
+        // Try to extract lounges even if format is slightly different
+        if (data.lounges && Array.isArray(data.lounges)) {
+          console.log('[QR Generator] Found lounges array, using it anyway');
+          setLounges(data.lounges);
+        }
       }
     } catch (error) {
-      console.error('Failed to load lounges:', error);
+      console.error('[QR Generator] Failed to load lounges:', error);
     } finally {
       setIsLoadingLounges(false);
     }

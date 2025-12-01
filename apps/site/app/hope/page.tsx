@@ -151,8 +151,12 @@ export default function HopePage() {
         {/* Footer Note */}
         <div className="mt-12 text-center text-zinc-500 text-sm">
           <p>Questions? Reach out at{' '}
-            <a href="mailto:hello@hookahplus.net" className="text-teal-400 hover:text-teal-300">
-              hello@hookahplus.net
+            <a href="mailto:hookahplusconnector@gmail.com" className="text-teal-400 hover:text-teal-300">
+              hookahplusconnector@gmail.com
+            </a>
+            {' '}or{' '}
+            <a href="mailto:clark.dwayne@gmail.com" className="text-teal-400 hover:text-teal-300">
+              clark.dwayne@gmail.com
             </a>
           </p>
         </div>

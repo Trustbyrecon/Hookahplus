@@ -44,6 +44,8 @@ export async function middleware(request: NextRequest) {
     '/api/webhooks',
     '/api/tenants', // Allow tenant creation during signup
     '/api/memberships', // Allow membership creation during signup (uses service role internally)
+    '/api/lounges', // Allow lounge list access for QR generator
+    '/api/qr-generator', // Allow QR generator API access
     '/login',
     '/signup',
     '/admin/login', // Admin login page is public

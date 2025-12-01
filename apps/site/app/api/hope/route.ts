@@ -1,7 +1,77 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { sendHopeLeadNotification } from '../../../lib/email';
+import { prisma } from '../../../lib/db';
+import crypto from 'crypto';
+
+// Helper function to generate TrustEvent ID
+function generateTrustEventId(sequence: number): string {
+  const year = new Date().getFullYear();
+  return `TE-${year}-${String(sequence).padStart(6, '0')}`;
+}
+
+// Create REM-compliant TrustEvent payload for onboarding
+function createREMCompliantOnboardingEvent(
+  payload: any,
+  ip: string,
+  userAgent?: string,
+  source: string = 'manual'
+): any {
+  const sequence = Date.now() % 1000000;
+  const now = new Date();
+  
+  // Hash email/IP for PII minimal actor
+  const emailHash = payload.email ? 
+    `sha256:${crypto.createHash('sha256').update(payload.email).digest('hex')}` :
+    `sha256:${crypto.createHash('sha256').update(ip).digest('hex')}`;
+  
+  // Hash IP for security
+  const ipHash = `sha256:${crypto.createHash('sha256').update(ip).digest('hex')}`;
+  
+  // Create signature from payload
+  const signaturePayload = JSON.stringify(payload);
+  const signature = `ed25519:${crypto.createHash('sha256').update(signaturePayload).digest('hex')}`;
+  
+  return {
+    id: generateTrustEventId(sequence),
+    ts_utc: now.toISOString(),
+    type: 'fast_checkout',
+    actor: {
+      anon_hash: emailHash,
+      device_id: userAgent || source,
+    },
+    context: {
+      vertical: 'hookah',
+      time_local: now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }),
+    },
+    behavior: {
+      action: 'onboarding.signup',
+      payload: {
+        businessName: payload.businessName,
+        ownerName: payload.ownerName,
+        email: payload.email,
+        phone: payload.phone,
+        location: payload.location,
+        stage: payload.stage || 'intake',
+        source: payload.source || 'hope_global_forum',
+        createdAt: payload.createdAt,
+        notes: payload.notes || [],
+      },
+    },
+    effect: {
+      loyalty_delta: 0,
+      credit_type: 'HPLUS_CREDIT',
+    },
+    security: {
+      signature: signature,
+      device_id: userAgent || source,
+      ip_hash: ipHash,
+    },
+  };
+}
 
 // Handle email submissions from Hope Global Forum landing page
-// Creates leads in Operator Onboarding Management
+// Creates leads directly in Operator Onboarding Management database
+// Sends email notifications to admin and connector
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -16,46 +86,139 @@ export async function POST(req: NextRequest) {
 
     console.log('[Hope Landing] Email submission:', { email, source: 'hope_global_forum' });
 
-    // Create lead in Operator Onboarding Management via app API
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
-    
-    try {
-      const onboardingResponse = await fetch(`${appUrl}/api/admin/operator-onboarding`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'create_lead',
-          leadData: {
-            businessName: 'Hope Global Forum Contact',
-            ownerName: email.split('@')[0], // Use email prefix as name placeholder
-            email: email,
-            phone: '',
-            location: '',
-            stage: 'intake',
-            source: 'hope_global_forum',
-            createdAt: new Date().toISOString(),
-            notes: 'Contact from Hope Global Forum landing page - interested in pilot summary',
-          },
-        }),
-      });
+    // Prepare lead data
+    const leadData = {
+      businessName: 'Hope Global Forum Contact',
+      ownerName: email.split('@')[0], // Use email prefix as name placeholder
+      email: email,
+      phone: '',
+      location: '',
+      stage: 'intake',
+      source: 'hope_global_forum',
+      createdAt: new Date().toISOString(),
+      notes: 'Contact from Hope Global Forum landing page - interested in pilot summary',
+    };
 
-      if (onboardingResponse.ok) {
-        const onboardingData = await onboardingResponse.json();
-        console.log('[Hope Landing] Lead created successfully:', onboardingData);
-      } else {
-        const errorData = await onboardingResponse.json().catch(() => ({}));
-        console.warn('[Hope Landing] Failed to create lead (non-blocking):', errorData);
-        // Continue anyway - we'll still return success to user
+    // Create lead directly in database
+    let createdEventId: string | null = null;
+    try {
+      console.log('[Hope Landing] Creating lead directly in database...');
+      
+      // Get IP and user agent
+      const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || 
+                 req.headers.get('x-real-ip') || 
+                 '0.0.0.0';
+      const userAgent = req.headers.get('user-agent') || undefined;
+      
+      // Create REM-compliant TrustEvent payload
+      const remPayload = createREMCompliantOnboardingEvent(leadData, ip, userAgent, 'hope_global_forum');
+      
+      // Determine CTA source
+      const ctaSource = 'website'; // Hope landing page is website source
+      
+      try {
+        // Try Prisma create first (works if all columns exist)
+        const newEvent = await prisma.reflexEvent.create({
+          data: {
+            type: 'onboarding.signup',
+            source: 'ui', // Web submission
+            payload: JSON.stringify(remPayload),
+            ctaSource: ctaSource,
+            ctaType: 'onboarding_signup',
+            userAgent: userAgent,
+            ip: ip,
+            trustEventTypeV1: 'fast_checkout',
+            // tenantId is optional - can be null for public submissions
+          }
+        });
+        
+        createdEventId = newEvent.id;
+        console.log('[Hope Landing] ✅ Lead created successfully via Prisma:', createdEventId);
+      } catch (prismaError: any) {
+        // If trustEventTypeV1 column doesn't exist, use raw SQL fallback
+        if (prismaError?.message?.includes('trustEventTypeV1') || 
+            prismaError?.message?.includes('does not exist') ||
+            prismaError?.code === 'P2021') {
+          console.warn('[Hope Landing] trustEventTypeV1 column not found, using raw SQL fallback');
+          
+          const referrer = req.headers.get('referer') || req.headers.get('referrer') || null;
+          
+          // Use raw SQL to insert without trustEventTypeV1 column
+          const insertResult = await prisma.$queryRawUnsafe(`
+            INSERT INTO reflex_events (
+              id, type, source, payload, "ctaSource", "ctaType", 
+              "userAgent", ip, referrer, "campaignId", metadata, "createdAt"
+            )
+            VALUES (
+              gen_random_uuid()::text,
+              $1,
+              $2,
+              $3,
+              $4,
+              $5,
+              $6,
+              $7,
+              $8,
+              $9,
+              $10,
+              NOW()
+            )
+            RETURNING id, type, source, "createdAt"
+          `,
+            'onboarding.signup',
+            'ui',
+            JSON.stringify(remPayload),
+            ctaSource,
+            'onboarding_signup',
+            userAgent,
+            ip,
+            referrer,
+            null, // campaignId
+            null  // metadata
+          ) as any[];
+          
+          if (insertResult && insertResult.length > 0) {
+            createdEventId = insertResult[0].id;
+            console.log('[Hope Landing] ✅ Lead created via raw SQL fallback:', createdEventId);
+          } else {
+            throw new Error('Raw SQL insert returned no rows');
+          }
+        } else {
+          // Re-throw if it's a different error
+          throw prismaError;
+        }
       }
     } catch (leadError) {
-      console.error('[Hope Landing] Error creating lead (non-blocking):', leadError);
-      // Continue anyway - lead can be created manually later if needed
+      console.error('[Hope Landing] ❌ Error creating lead:', {
+        error: leadError instanceof Error ? leadError.message : 'Unknown error',
+        stack: leadError instanceof Error ? leadError.stack : undefined,
+      });
+      // Continue anyway - email notifications will still be sent
     }
 
-    // Send confirmation email (optional - can be added later)
-    // For now, we'll just return success
+    // Send email notifications to admin and connector (non-blocking)
+    try {
+      const submissionTime = new Date().toLocaleString('en-US', {
+        timeZone: 'America/New_York',
+        dateStyle: 'full',
+        timeStyle: 'long'
+      });
+      
+      const emailResult = await sendHopeLeadNotification({
+        email: email,
+        source: 'hope_global_forum',
+        submissionTime: submissionTime,
+      });
+      
+      if (emailResult.success) {
+        console.log('[Hope Landing] ✅ Email notifications sent successfully');
+      } else {
+        console.warn('[Hope Landing] ⚠️ Some email notifications failed (non-blocking):', emailResult);
+      }
+    } catch (emailError) {
+      console.error('[Hope Landing] ❌ Failed to send email notifications (non-blocking):', emailError);
+      // Continue anyway - email failure shouldn't block the submission
+    }
 
     return NextResponse.json({
       success: true,

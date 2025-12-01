@@ -161,6 +161,115 @@ export async function sendNewsletterConfirmation(email: string, name?: string) {
 }
 
 /**
+ * Send new lead notification email to admin/connector
+ */
+export async function sendHopeLeadNotification(leadData: {
+  email: string;
+  source?: string;
+  submissionTime?: string;
+}) {
+  if (!resend || !process.env.RESEND_API_KEY) {
+    console.warn('[Email] RESEND_API_KEY not configured, skipping lead notification email');
+    return { success: false, error: 'Email service not configured' };
+  }
+
+  const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'clark.dwayne@gmail.com';
+  const connectorEmail = 'hookahplusconnector@gmail.com';
+
+  const submissionTime = leadData.submissionTime || new Date().toLocaleString();
+
+  const emailContent = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>New Hope Global Forum Lead</title>
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+        <div style="background-color: #0a0a0a; border-radius: 12px; padding: 40px; color: #fff;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <div style="display: inline-block; width: 48px; height: 48px; background: linear-gradient(135deg, #14b8a6, #06b6d4); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+              <span style="color: white; font-weight: bold; font-size: 20px;">H+</span>
+            </div>
+            <h1 style="color: #fff; margin: 0; font-size: 28px; font-weight: bold;">🎯 New Lead from Hope Global Forum</h1>
+          </div>
+          
+          <div style="background-color: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; padding: 24px; margin-bottom: 30px;">
+            <h2 style="color: #14b8a6; font-size: 18px; margin-top: 0; margin-bottom: 16px;">Lead Details</h2>
+            <table style="width: 100%; color: #d4d4d4; font-size: 14px;">
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #fff;">Email:</td>
+                <td style="padding: 8px 0;"><a href="mailto:${leadData.email}" style="color: #14b8a6; text-decoration: none;">${leadData.email}</a></td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #fff;">Source:</td>
+                <td style="padding: 8px 0;">${leadData.source || 'Hope Global Forum'}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #fff;">Submitted:</td>
+                <td style="padding: 8px 0;">${submissionTime}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="text-align: center; margin-top: 30px;">
+            <a href="${SITE_URL}/admin/operator-onboarding?source=hope_global_forum" 
+               style="display: inline-block; background: linear-gradient(135deg, #14b8a6, #06b6d4); color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+              View Lead in Dashboard →
+            </a>
+          </div>
+
+          <div style="margin-top: 40px; padding-top: 30px; border-top: 1px solid #2a2a2a; color: #737373; font-size: 14px; text-align: center;">
+            <p style="margin: 0;">This lead was submitted from the Hope Global Forum landing page.</p>
+            <p style="margin: 16px 0 0 0;">© ${new Date().getFullYear()} HookahPlus. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  const results = [];
+
+  // Send to admin email
+  try {
+    const adminResult = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: adminEmail,
+      subject: `🎯 New Hope Global Forum Lead: ${leadData.email}`,
+      html: emailContent,
+    });
+    results.push({ recipient: adminEmail, success: true, id: adminResult.data?.id });
+    console.log('[Email] Hope lead notification sent to admin:', adminEmail);
+  } catch (error) {
+    console.error('[Email] Failed to send Hope lead notification to admin:', error);
+    results.push({ recipient: adminEmail, success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+  }
+
+  // Send to connector email
+  try {
+    const connectorResult = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: connectorEmail,
+      subject: `🎯 New Hope Global Forum Lead: ${leadData.email}`,
+      html: emailContent,
+    });
+    results.push({ recipient: connectorEmail, success: true, id: connectorResult.data?.id });
+    console.log('[Email] Hope lead notification sent to connector:', connectorEmail);
+  } catch (error) {
+    console.error('[Email] Failed to send Hope lead notification to connector:', error);
+    results.push({ recipient: connectorEmail, success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+  }
+
+  const allSuccess = results.every(r => r.success);
+  return { 
+    success: allSuccess, 
+    results,
+    error: allSuccess ? undefined : 'Some emails failed to send'
+  };
+}
+
+/**
  * Send demo request confirmation email
  */
 export async function sendDemoRequestConfirmation(email: string, name: string, loungeName?: string) {
