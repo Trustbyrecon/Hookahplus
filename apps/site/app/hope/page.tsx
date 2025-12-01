@@ -56,9 +56,9 @@ export default function HopePage() {
           </p>
         </div>
 
-        {/* Value Proposition for Small/Immigrant-Owned Businesses */}
+        {/* How Hookah+ Aligns & Supports Small Business */}
         <Card className="mb-12 bg-zinc-800/50 border-zinc-700">
-          <h2 className="text-2xl font-bold mb-6 text-center">Built for Small & Immigrant-Owned Businesses</h2>
+          <h2 className="text-2xl font-bold mb-6 text-center">How Hookah+ Aligns & Supports Small Business</h2>
           
           <div className="space-y-6">
             <div className="flex items-start gap-4">
@@ -106,7 +106,7 @@ export default function HopePage() {
               <CheckCircle className="w-16 h-16 text-teal-400 mx-auto mb-4" />
               <h3 className="text-2xl font-bold mb-2">Thank You!</h3>
               <p className="text-zinc-300">
-                We'll send you our 1-page pilot summary shortly.
+                We'll send you information about how Hookah+ supports small businesses shortly.
               </p>
             </div>
           ) : (
@@ -115,7 +115,7 @@ export default function HopePage() {
                 Are you connected to hospitality or small business owners?
               </h2>
               <p className="text-zinc-300 mb-8 text-lg">
-                Drop your email – I'll share our 1-page pilot summary.
+                Drop your email – I'll share how Hookah+ aligns with and supports small businesses.
               </p>
 
               <form onSubmit={handleSubmit} className="max-w-md mx-auto">
@@ -137,7 +137,7 @@ export default function HopePage() {
                     leftIcon={<Mail className="w-5 h-5" />}
                     className="whitespace-nowrap"
                   >
-                    {isSubmitting ? 'Sending...' : 'Get Summary'}
+                    {isSubmitting ? 'Sending...' : 'Get Info'}
                   </Button>
                 </div>
                 {error && (
