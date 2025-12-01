@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import crypto from 'crypto';
 import {
   DemoSessionRequest,
   DemoSessionResponse,
@@ -7,9 +8,13 @@ import {
   DemoSessionSource,
   DemoSessionMeta,
 } from '../../../types/demoSession';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, SessionSource } from '@prisma/client';
 
 const prisma = new PrismaClient();
+
+// Trust signature generation (same pattern as sessions route)
+const seal = (o: unknown) =>
+  crypto.createHash("sha256").update(JSON.stringify(o)).digest("hex");
 
 const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -105,12 +110,23 @@ async function createSimulatedSession(
   // Create session record (payment will be confirmed via /api/demo-session/complete)
   try {
     const sessionData = payload.sessionData || {};
+    
+    // Generate trust signature (required by Prisma schema)
+    const trustSignature = seal({
+      loungeId: payload.loungeId,
+      source: SessionSource.QR,
+      externalRef: simulatedSessionId,
+      customerPhone: sessionData.customerPhone || null,
+      flavorMix: sessionData.flavorMix || null,
+    });
+    
     await prisma.session.create({
       data: {
         id: sessionId,
         externalRef: simulatedSessionId,
-        source: 'QR' as any,
+        source: SessionSource.QR,
         state: 'PENDING' as any,
+        trustSignature,
         tableId: sessionData.tableId || 'table-001',
         customerRef: sessionData.customerName || 'Demo Customer',
         customerPhone: sessionData.customerPhone || null,

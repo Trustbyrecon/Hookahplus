@@ -95,7 +95,7 @@ export async function sendNewLeadNotification(leadData: {
               </div>
 
               <div style="text-align: center; margin-top: 30px;">
-                <a href="${process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/onboarding" 
+                <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://hookahplus.net'}/onboarding" 
                    style="display: inline-block; background: linear-gradient(135deg, #14b8a6, #06b6d4); color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
                   Complete Your Setup →
                 </a>
