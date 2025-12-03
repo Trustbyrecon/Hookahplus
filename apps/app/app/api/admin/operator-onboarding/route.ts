@@ -805,21 +805,23 @@ export async function POST(req: NextRequest) {
         // Create MenuFile records for uploaded files
         let createdEventId: string | null = null;
         
+        // Map source to valid enum value (ui | server | cron | webhook | backend | agent)
+        // Database CHECK constraint only allows these values
+        // Define outside try-catch so it's accessible in both Prisma create and raw SQL fallback
+        const sourceMapping: Record<string, string> = {
+          'website': 'ui',
+          'manual': 'ui',      // Manual entry is UI action
+          'admin': 'ui',       // Admin panel is UI action
+          'api': 'backend',
+          'server': 'server',
+          'cron': 'cron',
+          'webhook': 'webhook',
+          'agent': 'agent'
+        };
+        const validSource = sourceMapping[leadData.source || ''] || 'ui'; // Default to 'ui' for unknown sources
+        
         try {
           // Try Prisma create first (works if all columns exist)
-          // Map source to valid enum value (ui | server | cron | webhook | backend | agent)
-          // Database CHECK constraint only allows these values
-          const sourceMapping: Record<string, string> = {
-            'website': 'ui',
-            'manual': 'ui',      // Manual entry is UI action
-            'admin': 'ui',       // Admin panel is UI action
-            'api': 'backend',
-            'server': 'server',
-            'cron': 'cron',
-            'webhook': 'webhook',
-            'agent': 'agent'
-          };
-          const validSource = sourceMapping[leadData.source || ''] || 'ui'; // Default to 'ui' for unknown sources
           
           // Ensure userAgent and ip are never undefined (use empty string or default)
           const safeUserAgent = userAgent || 'manual-entry';
