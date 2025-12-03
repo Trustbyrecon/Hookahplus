@@ -19,34 +19,18 @@ export default function OperationsChecklistPage() {
     setIsSubmitting(true);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
-      const response = await fetch(`${apiUrl}/api/lead-magnets/download`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email,
-          name: name || undefined,
-          leadMagnetId: 'operations-checklist',
-          metadata: {
-            page: window.location.pathname,
-            component: 'OperationsChecklistPage'
-          }
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to track download');
+      // Lightweight approach: Direct download without API call to avoid CORS issues
+      // Track conversion locally (non-blocking)
+      if (typeof trackLeadMagnetDownloadConversion === 'function') {
+        try {
+          trackLeadMagnetDownloadConversion('operations-checklist', {
+            email,
+            name: name || undefined
+          });
+        } catch (trackError) {
+          console.warn('Conversion tracking failed (non-blocking):', trackError);
+        }
       }
-
-      const result = await response.json();
-      
-      // Track conversion
-      trackLeadMagnetDownloadConversion('operations-checklist', {
-        email,
-        name: name || undefined
-      });
       
       // Trigger download - use direct PDF link
       const link = document.createElement('a');

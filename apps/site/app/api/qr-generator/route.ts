@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import QRCode from 'qrcode';
 
 interface QRCodeData {
   id: string;
@@ -19,13 +20,33 @@ const qrCodes = new Map<string, QRCodeData>();
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { loungeId, tableId, campaignRef, url, qrCodeData } = body;
+    const { loungeId, tableId, campaignRef, targetUrl, url } = body;
 
-    if (!loungeId || !url || !qrCodeData) {
+    // Use targetUrl if provided, otherwise use url
+    const finalUrl = targetUrl || url;
+
+    if (!loungeId || !finalUrl) {
       return NextResponse.json({ 
-        error: 'Missing required fields: loungeId, url, qrCodeData' 
+        error: 'Missing required fields: loungeId and url (or targetUrl)' 
       }, { status: 400 });
     }
+
+    // Special handling for World Shisha 2026
+    let qrUrl = finalUrl;
+    if (loungeId === 'WORLD_SHISHA_2026' || loungeId === 'world_shisha_2026') {
+      // URL is already constructed with referral params
+      qrUrl = finalUrl;
+    }
+
+    // Generate QR code
+    const qrOptions = {
+      width: 512,
+      margin: 2,
+      color: { dark: '#000000', light: '#ffffff' },
+      errorCorrectionLevel: 'M' as const,
+    };
+
+    const qrCodeData = await QRCode.toDataURL(qrUrl, qrOptions);
 
     const qrId = body.id || `qr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const now = new Date().toISOString();
@@ -35,7 +56,7 @@ export async function POST(req: NextRequest) {
       loungeId,
       tableId,
       campaignRef,
-      url,
+      url: qrUrl,
       qrCodeData,
       createdAt: now,
       usageCount: 0,

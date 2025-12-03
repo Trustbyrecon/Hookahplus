@@ -807,10 +807,19 @@ export async function POST(req: NextRequest) {
         
         try {
           // Try Prisma create first (works if all columns exist)
-          // Map source to valid enum value (ui | backend | agent)
-          const validSource = leadData.source === 'website' ? 'ui' : 
-                              leadData.source === 'api' ? 'backend' :
-                              leadData.source || 'ui'; // Default to 'ui' for web submissions
+          // Map source to valid enum value (ui | server | cron | webhook | backend | agent)
+          // Database CHECK constraint only allows these values
+          const sourceMapping: Record<string, string> = {
+            'website': 'ui',
+            'manual': 'ui',      // Manual entry is UI action
+            'admin': 'ui',       // Admin panel is UI action
+            'api': 'backend',
+            'server': 'server',
+            'cron': 'cron',
+            'webhook': 'webhook',
+            'agent': 'agent'
+          };
+          const validSource = sourceMapping[leadData.source || ''] || 'ui'; // Default to 'ui' for unknown sources
           
           // Ensure userAgent and ip are never undefined (use empty string or default)
           const safeUserAgent = userAgent || 'manual-entry';
@@ -884,7 +893,7 @@ export async function POST(req: NextRequest) {
                 RETURNING id, type, source, "createdAt"
               `,
                 'onboarding.signup',
-                leadData.source === 'website' ? 'ui' : leadData.source === 'api' ? 'backend' : 'ui', // Map to valid enum
+                validSource, // Use same mapping as Prisma create (handles 'manual', 'admin', etc.)
                 JSON.stringify(remPayload), // Use REM-compliant payload
                 ctaSource,
                 'onboarding_signup',
@@ -1219,7 +1228,7 @@ export async function POST(req: NextRequest) {
           await prisma.reflexEvent.create({
             data: {
               type: 'admin.operator_onboarding.update',
-              source: 'admin',
+              source: 'ui', // Map 'admin' to 'ui' (admin panel is UI action) - database constraint requires valid enum
               payload: JSON.stringify({
                 leadId,
                 action,

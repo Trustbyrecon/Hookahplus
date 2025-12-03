@@ -7,9 +7,10 @@ interface CreateSessionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (sessionData: any) => void;
+  isDemoMode?: boolean;
 }
 
-export default function CreateSessionModal({ isOpen, onClose, onSave }: CreateSessionModalProps) {
+export default function CreateSessionModal({ isOpen, onClose, onSave, isDemoMode = false }: CreateSessionModalProps) {
   const [sessionData, setSessionData] = useState({
     table: '',
     customerName: '',
@@ -30,16 +31,20 @@ export default function CreateSessionModal({ isOpen, onClose, onSave }: CreateSe
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave(sessionData);
-    onClose();
-    // Reset form
-    setSessionData({
-      table: '',
-      customerName: '',
-      customerPhone: '',
-      sessionType: 'walk-in',
-      basePrice: 30,
-      addons: []
-    });
+    // In demo mode, don't close immediately - let the success handler close it
+    // In production mode, close immediately after save
+    if (!isDemoMode) {
+      onClose();
+      // Reset form
+      setSessionData({
+        table: '',
+        customerName: '',
+        customerPhone: '',
+        sessionType: 'walk-in',
+        basePrice: 30,
+        addons: []
+      });
+    }
   };
 
   if (!isOpen) return null;
@@ -56,7 +61,7 @@ export default function CreateSessionModal({ isOpen, onClose, onSave }: CreateSe
         <div className="flex items-center justify-between p-6 border-b border-zinc-700 sticky top-0 bg-zinc-900">
           <h2 className="text-2xl font-bold text-white flex items-center gap-2">
             <Flame className="w-6 h-6 text-orange-400" />
-            Create New Session
+            Create New Session{isDemoMode ? ' (Demo)' : ''}
           </h2>
           <button
             onClick={onClose}
@@ -198,9 +203,17 @@ export default function CreateSessionModal({ isOpen, onClose, onSave }: CreateSe
               className="px-6 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg transition-colors flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
-              Create Session
+              {isDemoMode ? 'Try Demo Session' : 'Create Session'}
             </button>
           </div>
+          
+          {isDemoMode && (
+            <div className="mt-4 p-3 bg-teal-500/10 border border-teal-500/30 rounded-lg">
+              <p className="text-xs text-zinc-400 text-center">
+                💡 This is a demo experience. Complete onboarding to create real sessions and manage your lounge.
+              </p>
+            </div>
+          )}
         </form>
       </div>
     </div>

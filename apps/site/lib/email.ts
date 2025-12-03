@@ -338,3 +338,390 @@ export async function sendDemoRequestConfirmation(email: string, name: string, l
   }
 }
 
+/**
+ * Send World Shisha 2026 lead notification
+ */
+export async function sendWorldShishaLeadNotification(data: {
+  email: string;
+  source?: string;
+  exhibitor?: string | null;
+  campaign?: string;
+}) {
+  if (!resend || !process.env.RESEND_API_KEY) {
+    console.warn('[Email] RESEND_API_KEY not configured, skipping email send');
+    return { success: false, error: 'Email service not configured' };
+  }
+
+  const connectorEmail = 'hookahplusconnector@gmail.com';
+  const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'clark.dwayne@gmail.com';
+  const submissionTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Dubai' });
+
+  const emailContent = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>New World Shisha 2026 Lead</title>
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+        <div style="background-color: #0a0a0a; border-radius: 12px; padding: 40px; color: #fff;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <div style="display: inline-block; width: 48px; height: 48px; background: linear-gradient(135deg, #14b8a6, #06b6d4); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+              <span style="color: white; font-weight: bold; font-size: 20px;">H+</span>
+            </div>
+            <h1 style="color: #fff; margin: 0; font-size: 28px; font-weight: bold;">🎯 New World Shisha 2026 Lead</h1>
+          </div>
+          
+          <div style="background-color: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; padding: 24px; margin-bottom: 30px;">
+            <h2 style="color: #14b8a6; font-size: 18px; margin-top: 0; margin-bottom: 16px;">Lead Details</h2>
+            <table style="width: 100%; color: #d4d4d4; font-size: 14px;">
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #fff;">Email:</td>
+                <td style="padding: 8px 0;"><a href="mailto:${data.email}" style="color: #14b8a6; text-decoration: none;">${data.email}</a></td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #fff;">Source:</td>
+                <td style="padding: 8px 0;">${data.source || 'World Shisha 2026 Landing'}</td>
+              </tr>
+              ${data.exhibitor ? `
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #fff;">Exhibitor:</td>
+                <td style="padding: 8px 0;">${data.exhibitor}</td>
+              </tr>
+              ` : ''}
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #fff;">Submitted:</td>
+                <td style="padding: 8px 0;">${submissionTime}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="text-align: center; margin-top: 30px;">
+            <a href="${SITE_URL}/admin/operator-onboarding?source=world_shisha_2026" 
+               style="display: inline-block; background: linear-gradient(135deg, #14b8a6, #06b6d4); color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+              View Lead in Dashboard →
+            </a>
+          </div>
+
+          <div style="margin-top: 40px; padding-top: 30px; border-top: 1px solid #2a2a2a; color: #737373; font-size: 14px; text-align: center;">
+            <p style="margin: 0;">This lead was submitted from the World Shisha 2026 landing page.</p>
+            <p style="margin: 16px 0 0 0;">© ${new Date().getFullYear()} HookahPlus. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  const results = [];
+
+  // Send to connector email (primary)
+  try {
+    const connectorResult = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: connectorEmail,
+      subject: `🎯 New World Shisha 2026 Lead: ${data.email}`,
+      html: emailContent,
+    });
+    results.push({ recipient: connectorEmail, success: true, id: connectorResult.data?.id });
+    console.log('[Email] World Shisha lead notification sent to connector:', connectorEmail);
+  } catch (error) {
+    console.error('[Email] Failed to send World Shisha lead notification to connector:', error);
+    results.push({ recipient: connectorEmail, success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+  }
+
+  // Send to admin email (fallback)
+  try {
+    const adminResult = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: adminEmail,
+      subject: `🎯 New World Shisha 2026 Lead: ${data.email}`,
+      html: emailContent,
+    });
+    results.push({ recipient: adminEmail, success: true, id: adminResult.data?.id });
+    console.log('[Email] World Shisha lead notification sent to admin:', adminEmail);
+  } catch (error) {
+    console.error('[Email] Failed to send World Shisha lead notification to admin:', error);
+    results.push({ recipient: adminEmail, success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+  }
+
+  const allSuccess = results.every(r => r.success);
+  return { 
+    success: allSuccess, 
+    results,
+    error: allSuccess ? undefined : 'Some emails failed to send'
+  };
+}
+
+/**
+ * Send World Shisha 2026 brief download notification
+ */
+export async function sendWorldShishaBriefDownloadNotification(data: {
+  email: string;
+  name?: string;
+  exhibitor?: string | null;
+  campaign?: string;
+}) {
+  if (!resend || !process.env.RESEND_API_KEY) {
+    console.warn('[Email] RESEND_API_KEY not configured, skipping email send');
+    return { success: false, error: 'Email service not configured' };
+  }
+
+  const connectorEmail = 'hookahplusconnector@gmail.com';
+  const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'clark.dwayne@gmail.com';
+  const submissionTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Dubai' });
+
+  const emailContent = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>World Shisha 2026 Brief Download</title>
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+        <div style="background-color: #0a0a0a; border-radius: 12px; padding: 40px; color: #fff;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <div style="display: inline-block; width: 48px; height: 48px; background: linear-gradient(135deg, #14b8a6, #06b6d4); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+              <span style="color: white; font-weight: bold; font-size: 20px;">H+</span>
+            </div>
+            <h1 style="color: #fff; margin: 0; font-size: 28px; font-weight: bold;">📥 Smart Lounge Playbook Downloaded</h1>
+          </div>
+          
+          <div style="background-color: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; padding: 24px; margin-bottom: 30px;">
+            <h2 style="color: #14b8a6; font-size: 18px; margin-top: 0; margin-bottom: 16px;">Download Details</h2>
+            <table style="width: 100%; color: #d4d4d4; font-size: 14px;">
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #fff;">Email:</td>
+                <td style="padding: 8px 0;"><a href="mailto:${data.email}" style="color: #14b8a6; text-decoration: none;">${data.email}</a></td>
+              </tr>
+              ${data.name ? `
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #fff;">Name:</td>
+                <td style="padding: 8px 0;">${data.name}</td>
+              </tr>
+              ` : ''}
+              ${data.exhibitor ? `
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #fff;">Exhibitor:</td>
+                <td style="padding: 8px 0;">${data.exhibitor}</td>
+              </tr>
+              ` : ''}
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #fff;">Downloaded:</td>
+                <td style="padding: 8px 0;">${submissionTime}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="text-align: center; margin-top: 30px;">
+            <a href="${SITE_URL}/admin/operator-onboarding?source=world_shisha_2026&type=brief_download" 
+               style="display: inline-block; background: linear-gradient(135deg, #14b8a6, #06b6d4); color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+              View Lead in Dashboard →
+            </a>
+          </div>
+
+          <div style="margin-top: 40px; padding-top: 30px; border-top: 1px solid #2a2a2a; color: #737373; font-size: 14px; text-align: center;">
+            <p style="margin: 0;">Smart Lounge Playbook 2026 download from World Shisha 2026 campaign.</p>
+            <p style="margin: 16px 0 0 0;">© ${new Date().getFullYear()} HookahPlus. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  const results = [];
+
+  // Send to connector email (primary)
+  try {
+    const connectorResult = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: connectorEmail,
+      subject: `📥 World Shisha 2026: Brief Downloaded by ${data.email}`,
+      html: emailContent,
+    });
+    results.push({ recipient: connectorEmail, success: true, id: connectorResult.data?.id });
+    console.log('[Email] World Shisha brief download notification sent to connector:', connectorEmail);
+  } catch (error) {
+    console.error('[Email] Failed to send World Shisha brief download notification to connector:', error);
+    results.push({ recipient: connectorEmail, success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+  }
+
+  // Send to admin email (fallback)
+  try {
+    const adminResult = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: adminEmail,
+      subject: `📥 World Shisha 2026: Brief Downloaded by ${data.email}`,
+      html: emailContent,
+    });
+    results.push({ recipient: adminEmail, success: true, id: adminResult.data?.id });
+    console.log('[Email] World Shisha brief download notification sent to admin:', adminEmail);
+  } catch (error) {
+    console.error('[Email] Failed to send World Shisha brief download notification to admin:', error);
+    results.push({ recipient: adminEmail, success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+  }
+
+  const allSuccess = results.every(r => r.success);
+  return { 
+    success: allSuccess, 
+    results,
+    error: allSuccess ? undefined : 'Some emails failed to send'
+  };
+}
+
+/**
+ * Send World Shisha 2026 Pilot Pack signup notification
+ */
+export async function sendWorldShishaPilotPackSignupNotification(data: {
+  businessName: string;
+  ownerName: string;
+  email: string;
+  phone?: string;
+  location?: string;
+  city?: string;
+  country?: string;
+  currentPOS?: string;
+  numberOfLocations?: string;
+  exhibitor?: string | null;
+  referralCode?: string | null;
+  campaign?: string;
+}) {
+  if (!resend || !process.env.RESEND_API_KEY) {
+    console.warn('[Email] RESEND_API_KEY not configured, skipping email send');
+    return { success: false, error: 'Email service not configured' };
+  }
+
+  const connectorEmail = 'hookahplusconnector@gmail.com';
+  const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'clark.dwayne@gmail.com';
+  const submissionTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Dubai' });
+
+  const emailContent = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>World Shisha 2026 Pilot Pack Signup</title>
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+        <div style="background-color: #0a0a0a; border-radius: 12px; padding: 40px; color: #fff;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <div style="display: inline-block; width: 48px; height: 48px; background: linear-gradient(135deg, #14b8a6, #06b6d4); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+              <span style="color: white; font-weight: bold; font-size: 20px;">H+</span>
+            </div>
+            <h1 style="color: #fff; margin: 0; font-size: 28px; font-weight: bold;">🚀 New Pilot Pack Signup!</h1>
+          </div>
+          
+          <div style="background-color: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; padding: 24px; margin-bottom: 30px;">
+            <h2 style="color: #14b8a6; font-size: 18px; margin-top: 0; margin-bottom: 16px;">Business Details</h2>
+            <table style="width: 100%; color: #d4d4d4; font-size: 14px;">
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #fff;">Business Name:</td>
+                <td style="padding: 8px 0;">${data.businessName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #fff;">Owner Name:</td>
+                <td style="padding: 8px 0;">${data.ownerName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #fff;">Email:</td>
+                <td style="padding: 8px 0;"><a href="mailto:${data.email}" style="color: #14b8a6; text-decoration: none;">${data.email}</a></td>
+              </tr>
+              ${data.phone ? `
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #fff;">Phone:</td>
+                <td style="padding: 8px 0;">${data.phone}</td>
+              </tr>
+              ` : ''}
+              ${data.city || data.country ? `
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #fff;">Location:</td>
+                <td style="padding: 8px 0;">${[data.city, data.country].filter(Boolean).join(', ') || data.location || 'Not provided'}</td>
+              </tr>
+              ` : ''}
+              ${data.currentPOS ? `
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #fff;">Current POS:</td>
+                <td style="padding: 8px 0;">${data.currentPOS}</td>
+              </tr>
+              ` : ''}
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #fff;">Number of Locations:</td>
+                <td style="padding: 8px 0;">${data.numberOfLocations || '1'}</td>
+              </tr>
+              ${data.exhibitor ? `
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #fff;">How They Heard:</td>
+                <td style="padding: 8px 0;">${data.exhibitor}</td>
+              </tr>
+              ` : ''}
+              ${data.referralCode ? `
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #fff;">Referral Code:</td>
+                <td style="padding: 8px 0;">${data.referralCode}</td>
+              </tr>
+              ` : ''}
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #fff;">Submitted:</td>
+                <td style="padding: 8px 0;">${submissionTime}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="text-align: center; margin-top: 30px;">
+            <a href="${SITE_URL}/admin/operator-onboarding?source=world_shisha_2026&type=pilot_pack" 
+               style="display: inline-block; background: linear-gradient(135deg, #14b8a6, #06b6d4); color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+              View Lead in Dashboard →
+            </a>
+          </div>
+
+          <div style="margin-top: 40px; padding-top: 30px; border-top: 1px solid #2a2a2a; color: #737373; font-size: 14px; text-align: center;">
+            <p style="margin: 0;">World Shisha 2026 Pilot Pack signup - 60-day pilot requested.</p>
+            <p style="margin: 16px 0 0 0;">© ${new Date().getFullYear()} HookahPlus. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  const results = [];
+
+  // Send to connector email (primary)
+  try {
+    const connectorResult = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: connectorEmail,
+      subject: `🚀 World Shisha 2026: Pilot Pack Signup - ${data.businessName}`,
+      html: emailContent,
+    });
+    results.push({ recipient: connectorEmail, success: true, id: connectorResult.data?.id });
+    console.log('[Email] World Shisha pilot pack signup notification sent to connector:', connectorEmail);
+  } catch (error) {
+    console.error('[Email] Failed to send World Shisha pilot pack signup notification to connector:', error);
+    results.push({ recipient: connectorEmail, success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+  }
+
+  // Send to admin email (fallback)
+  try {
+    const adminResult = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: adminEmail,
+      subject: `🚀 World Shisha 2026: Pilot Pack Signup - ${data.businessName}`,
+      html: emailContent,
+    });
+    results.push({ recipient: adminEmail, success: true, id: adminResult.data?.id });
+    console.log('[Email] World Shisha pilot pack signup notification sent to admin:', adminEmail);
+  } catch (error) {
+    console.error('[Email] Failed to send World Shisha pilot pack signup notification to admin:', error);
+    results.push({ recipient: adminEmail, success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+  }
+
+  const allSuccess = results.every(r => r.success);
+  return { 
+    success: allSuccess, 
+    results,
+    error: allSuccess ? undefined : 'Some emails failed to send'
+  };
+}
+

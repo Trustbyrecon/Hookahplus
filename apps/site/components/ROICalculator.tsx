@@ -43,8 +43,8 @@ export default function ROICalculator() {
         <div className="lg:col-span-2">
           <Card className="border border-zinc-700 bg-zinc-800/50">
             <div className="p-6">
-              <h3 className="text-xl font-semibold text-teal-300 mb-4">Your Lounge Metrics</h3>
-              <p className="text-sm text-zinc-400 mb-6">Adjust the numbers to match your lounge.</p>
+              <h3 className="text-xl font-semibold text-teal-300 mb-4">Your Business Metrics</h3>
+              <p className="text-sm text-zinc-400 mb-6">Adjust the numbers to match your lounge, mobile operation, or pop-up location.</p>
 
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <label className="flex flex-col gap-1">

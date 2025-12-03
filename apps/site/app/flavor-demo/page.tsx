@@ -4,6 +4,7 @@ import React, { useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Wand2, Sparkles, FlaskConical, ListFilter, CircleDot, ChevronRight, RotateCcw, ArrowRight, Play, Clock, Shield, Zap } from "lucide-react";
 import PageHero from '../../components/PageHero';
+import HookahTrackerDemo from '../../components/HookahTrackerDemo';
 
 /**
  * Hookah+ Flavor Wheel Demo — Site Build Marketing
@@ -193,10 +194,6 @@ export default function FlavorWheelDemo() {
           icon: <Sparkles className="w-6 h-6 text-teal-400" />
         }}
         primaryCTA={{
-          text: "Try Full Experience",
-          onClick: () => window.open('https://guest.hookahplus.net', '_blank')
-        }}
-        secondaryCTA={{
           text: "Contact us for Demo",
           onClick: () => window.open('/contact', '_blank')
         }}
@@ -291,6 +288,27 @@ export default function FlavorWheelDemo() {
           {/* Mix Preview Card */}
           <MixPreview selected={selected} recommended={recommended} totalPrice={totalPrice} />
         </div>
+
+        {/* Hookah Tracker Demo - Guest-Operator Flow */}
+        {selected.length > 0 && (
+          <div className="mt-8">
+            <div className="text-center mb-6">
+              <h3 className="text-2xl font-bold text-white mb-2">See the Complete Flow</h3>
+              <p className="text-zinc-400">
+                Watch how your flavor selection flows from guest to operator. This is what your customers will see after placing an order.
+              </p>
+            </div>
+            
+            <HookahTrackerDemo
+              sessionId="demo-session-1"
+              tableId="T-005"
+              flavorMix={selected.map(id => findFlavorLabel(id))}
+              onComplete={() => {
+                console.log('Demo tracker completed');
+              }}
+            />
+          </div>
+        )}
 
         {/* Features Section */}
         <div className="mt-16 grid md:grid-cols-3 gap-8">

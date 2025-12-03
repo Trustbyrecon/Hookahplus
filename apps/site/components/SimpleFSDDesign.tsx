@@ -61,6 +61,8 @@ interface SimpleFSDDesignProps {
   userRole?: 'BOH' | 'FOH' | 'MANAGER' | 'ADMIN';
   onSessionAction?: (action: string, sessionId: string) => void;
   className?: string;
+  isDemoMode?: boolean;
+  showOnlyCreateButton?: boolean; // If true, only show the create button, hide dashboard
 }
 
 // Enhanced State Machine - Complete Hookah Lounge Operations
@@ -126,7 +128,9 @@ export default function SimpleFSDDesign({
   sessions = [],
   userRole = 'MANAGER',
   onSessionAction,
-  className = ''
+  className = '',
+  isDemoMode = false,
+  showOnlyCreateButton = false
 }: SimpleFSDDesignProps) {
   const [activeTab, setActiveTab] = useState('overview');
   const [hoveredAction, setHoveredAction] = useState<string | null>(null);
@@ -800,7 +804,39 @@ export default function SimpleFSDDesign({
   const tabCounts = getTabCounts();
 
   const handleCreateSessionSave = async (sessionData: any) => {
-    // Create session via proxy route (handles CORS and production URLs)
+    // In demo mode, don't actually create a session - just show success and guide to onboarding
+    if (isDemoMode) {
+      const flavorMix = sessionData.addons && sessionData.addons.length > 0 
+        ? sessionData.addons 
+        : ['Custom Mix'];
+      
+      const total = sessionData.basePrice + sessionData.addons.reduce((sum: number, addon: string) => {
+        const item = [{ id: 'mint', price: 2.50 }, { id: 'mango', price: 2.00 }, { id: 'strawberry', price: 2.00 }, { id: 'peach', price: 2.50 }].find(a => a.id === addon);
+        return sum + (item?.price || 0);
+      }, 0);
+      
+      // Close modal first
+      setShowCreateModal(false);
+      
+      // Show success message and guide to onboarding
+      const confirmed = window.confirm(
+        `✅ Demo Session Created!\n\n` +
+        `Table: ${sessionData.table}\n` +
+        `Customer: ${sessionData.customerName}\n` +
+        `Flavors: ${flavorMix.join(' + ')}\n` +
+        `Total: $${total.toFixed(2)}\n\n` +
+        `This was a demo experience. To start managing real sessions, complete your onboarding to set up your lounge.\n\n` +
+        `Would you like to start onboarding now?`
+      );
+      
+      if (confirmed) {
+        // Redirect to customer-facing onboarding flow
+        window.location.href = '/onboarding';
+      }
+      return;
+    }
+    
+    // Production mode: Create session via proxy route (handles CORS and production URLs)
     try {
       const flavorMix = sessionData.addons && sessionData.addons.length > 0 
         ? sessionData.addons 
@@ -843,6 +879,31 @@ export default function SimpleFSDDesign({
       alert(`Failed to create session: ${error.message}`);
     }
   };
+
+  // If showOnlyCreateButton is true, only render the create button
+  if (showOnlyCreateButton) {
+    return (
+      <div className={className}>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="flex items-center justify-center space-x-2 px-6 py-4 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white rounded-lg transition-all shadow-lg shadow-teal-500/20 text-lg font-semibold w-full max-w-md mx-auto"
+        >
+          <Plus className="w-5 h-5" />
+          <span>Create New Session (Demo)</span>
+        </button>
+        
+        {/* Create Session Modal */}
+        {showCreateModal && (
+          <CreateSessionModal
+            isOpen={showCreateModal}
+            onClose={() => setShowCreateModal(false)}
+            onSave={handleCreateSessionSave}
+            isDemoMode={isDemoMode}
+          />
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className={className}>
@@ -890,7 +951,7 @@ export default function SimpleFSDDesign({
               className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white rounded-lg transition-all shadow-lg shadow-teal-500/20"
             >
               <Plus className="w-4 h-4" />
-              <span>New Session</span>
+              <span>New Session{isDemoMode ? ' (Demo)' : ''}</span>
             </button>
           </div>
         </div>
@@ -941,6 +1002,7 @@ export default function SimpleFSDDesign({
           isOpen={showCreateModal}
           onClose={() => setShowCreateModal(false)}
           onSave={handleCreateSessionSave}
+          isDemoMode={isDemoMode}
         />
       )}
 
