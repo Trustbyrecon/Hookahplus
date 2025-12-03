@@ -340,8 +340,19 @@ export default function OperatorOnboardingPage() {
         })
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to create lead');
+        const errorMsg = data.details || data.error || 'Failed to create lead';
+        console.error('Create lead error:', {
+          status: response.status,
+          error: data.error,
+          details: data.details,
+          hint: data.hint,
+          stack: data.stack
+        });
+        alert(`Failed to create lead: ${errorMsg}${data.hint ? `\n\nHint: ${data.hint}` : ''}`);
+        return;
       }
 
       // Reset form
@@ -359,7 +370,8 @@ export default function OperatorOnboardingPage() {
       showActionMessage('Manual lead created');
     } catch (err) {
       console.error('Create lead error:', err);
-      alert('Failed to create lead. Please try again.');
+      const errorMsg = err instanceof Error ? err.message : 'Failed to create lead. Please try again.';
+      alert(errorMsg);
     }
   };
 

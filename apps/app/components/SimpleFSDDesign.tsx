@@ -62,6 +62,7 @@ interface SimpleFSDDesignProps {
   onSessionAction?: (action: string, sessionId: string) => void;
   refreshSessions?: () => void | Promise<void>;
   className?: string;
+  isDemoMode?: boolean;
 }
 
 // Enhanced State Machine - Complete Hookah Lounge Operations
@@ -128,7 +129,8 @@ export default function SimpleFSDDesign({
   userRole = 'MANAGER',
   onSessionAction,
   refreshSessions,
-  className = ''
+  className = '',
+  isDemoMode = false
 }: SimpleFSDDesignProps) {
   const [activeTab, setActiveTab] = useState('overview');
   const [hoveredAction, setHoveredAction] = useState<string | null>(null);
@@ -803,10 +805,64 @@ export default function SimpleFSDDesign({
                     return;
                   }
                   
-                  // For now, process first unpaid session
-                  const session = unpaidSessions[0];
+                  // For now, process first unpaid session (or "Sarah & Friends" in demo)
+                  let session = unpaidSessions[0];
+                  
+                  // In demo mode, prefer "Sarah & Friends" session if it exists
+                  if (isDemoMode) {
+                    const sarahSession = unpaidSessions.find(s => 
+                      s.customerName?.includes('Sarah') || s.customerName === 'Sarah & Friends'
+                    );
+                    if (sarahSession) {
+                      session = sarahSession;
+                    }
+                  }
+                  
                   const amount = session.amount || 3000;
                   
+                  // Demo mode: Mock payment confirmation and trigger NAN workflow
+                  if (isDemoMode) {
+                    try {
+                      const sessionId = session.id;
+                      if (!sessionId) {
+                        throw new Error('Session ID not found');
+                      }
+                      
+                      console.log('[Demo Mode] 🎭 Mocking payment confirmation for session:', sessionId);
+                      
+                      // Call demo-session complete API to trigger NAN workflow
+                      const response = await fetch('/api/demo-session/complete', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          sessionId: sessionId,
+                          amount: amount,
+                          flavorMix: session.flavor || session.flavorMix || 'Custom Mix',
+                          tableId: session.tableId,
+                          customerPhone: session.customerPhone,
+                        })
+                      });
+                      
+                      const data = await response.json();
+                      
+                      if (data.success) {
+                        alert(`✅ Payment confirmed (Demo Mode)!\n\nSession "${session.customerName || session.tableId}" is now ready for BOH prep → FOH delivery → Light!`);
+                        
+                        // Refresh sessions to show updated state
+                        if (refreshSessions) {
+                          await refreshSessions();
+                        }
+                      } else {
+                        throw new Error(data.error || 'Failed to confirm payment');
+                      }
+                    } catch (error) {
+                      console.error('[Demo Mode] Payment confirmation error:', error);
+                      alert(`❌ Demo payment error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                    }
+                    return;
+                  }
+                  
+                  // Production mode: Create Stripe checkout
                   try {
                     // SECURITY: Use existing session ID (session already exists)
                     const sessionId = session.id;
@@ -852,7 +908,7 @@ export default function SimpleFSDDesign({
                 className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm"
               >
                 <DollarSign className="w-4 h-4" />
-                <span>Confirm Payment</span>
+                <span>Confirm Payment{isDemoMode ? ' (Demo)' : ''}</span>
               </button>
               <button
                 onClick={async () => {

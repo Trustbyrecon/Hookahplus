@@ -7,21 +7,42 @@ function getCorsHeaders(req?: NextRequest) {
   // Allow requests from site build, app build, or guest build
   const origin = req?.headers.get('origin');
   const allowedOrigins = [
-    process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+    // Production domains
+    'https://hookahplus.net',
+    'https://www.hookahplus.net',
+    'https://app.hookahplus.net',
+    'https://guest.hookahplus.net',
+    // Environment variable (can override)
+    process.env.NEXT_PUBLIC_SITE_URL,
+    // Local development
     'http://localhost:3000',
     'http://localhost:3002',
     'http://localhost:3001', // Guest build
-  ];
+  ].filter(Boolean); // Remove undefined values
   
-  // If origin matches allowed list, use it; otherwise use default
-  const allowedOrigin = origin && allowedOrigins.includes(origin) 
-    ? origin 
-    : allowedOrigins[0];
+  // If origin matches allowed list, use it; otherwise check if it's a hookahplus.net domain
+  let allowedOrigin = allowedOrigins[0]; // Default to first allowed origin
+  
+  if (origin) {
+    // Exact match
+    if (allowedOrigins.includes(origin)) {
+      allowedOrigin = origin;
+    } 
+    // Allow any hookahplus.net subdomain in production
+    else if (origin.includes('hookahplus.net') && process.env.NODE_ENV === 'production') {
+      allowedOrigin = origin;
+    }
+    // Allow localhost in development
+    else if (origin.includes('localhost') && process.env.NODE_ENV === 'development') {
+      allowedOrigin = origin;
+    }
+  }
     
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Credentials': 'true',
   };
 }
 

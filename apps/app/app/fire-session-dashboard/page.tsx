@@ -295,6 +295,7 @@ function FireSessionDashboardContent() {
           userRole={userRole}
           refreshSessions={refreshSessions}
           onSessionAction={handleStatusChange}
+          isDemoMode={isDemoMode}
         />
 
         {/* Related Features - Hidden in demo mode */}

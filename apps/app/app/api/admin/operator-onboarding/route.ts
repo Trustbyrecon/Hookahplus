@@ -782,20 +782,48 @@ export async function POST(req: NextRequest) {
       try {
         let newEvent: any;
         
-      // Create REM-compliant TrustEvent payload
-      const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || '0.0.0.0';
-      const userAgent = req.headers.get('user-agent') || undefined;
-      const remPayload = await createREMCompliantOnboardingEvent(payload, ip, userAgent, leadData.source || 'manual');
-      
-      // Create MenuFile records for uploaded files
-      let createdEventId: string | null = null;
-      
-      try {
+        // Get IP and user agent first (needed for both REM payload and database insert)
+        const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || '0.0.0.0';
+        const userAgent = req.headers.get('user-agent') || undefined;
+        
+        // Create REM-compliant TrustEvent payload
+        let remPayload: TrustEvent;
+        try {
+          console.log('[Operator Onboarding API] Creating REM payload with:', {
+            email: payload.email,
+            businessName: payload.businessName,
+            ip,
+            hasUserAgent: !!userAgent
+          });
+          remPayload = await createREMCompliantOnboardingEvent(payload, ip, userAgent, leadData.source || 'manual');
+          console.log('[Operator Onboarding API] REM payload created successfully');
+        } catch (remError) {
+          console.error('[Operator Onboarding API] Failed to create REM payload:', remError);
+          throw new Error(`Failed to create REM-compliant payload: ${remError instanceof Error ? remError.message : 'Unknown error'}`);
+        }
+        
+        // Create MenuFile records for uploaded files
+        let createdEventId: string | null = null;
+        
+        try {
           // Try Prisma create first (works if all columns exist)
           // Map source to valid enum value (ui | backend | agent)
           const validSource = leadData.source === 'website' ? 'ui' : 
                               leadData.source === 'api' ? 'backend' :
                               leadData.source || 'ui'; // Default to 'ui' for web submissions
+          
+          // Ensure userAgent and ip are never undefined (use empty string or default)
+          const safeUserAgent = userAgent || 'manual-entry';
+          const safeIp = ip || '0.0.0.0';
+          
+          console.log('[Operator Onboarding API] Attempting Prisma create with:', {
+            type: 'onboarding.signup',
+            source: validSource,
+            ctaSource,
+            tenantId: tenantId || 'null',
+            userAgent: safeUserAgent,
+            ip: safeIp
+          });
           
           newEvent = await prisma.reflexEvent.create({
             data: {
@@ -804,69 +832,86 @@ export async function POST(req: NextRequest) {
               payload: JSON.stringify(remPayload), // Store REM-compliant TrustEvent
               ctaSource: ctaSource,
               ctaType: 'onboarding_signup',
-              userAgent: userAgent,
-              ip: ip,
+              userAgent: safeUserAgent, // Ensure it's never undefined
+              ip: safeIp, // Ensure it's never undefined
               trustEventTypeV1: 'fast_checkout', // Map onboarding.signup to fast_checkout (new customer acquisition)
-              tenantId: tenantId // Multi-tenant: associate with current tenant
+              tenantId: tenantId // Multi-tenant: associate with current tenant (can be null in dev)
             }
           });
+          
+          console.log('[Operator Onboarding API] Prisma create successful:', newEvent.id);
         } catch (prismaError: any) {
+          console.error('[Operator Onboarding API] Prisma create error:', {
+            message: prismaError?.message,
+            code: prismaError?.code,
+            meta: prismaError?.meta
+          });
+          
           // If trustEventTypeV1 column doesn't exist, use raw SQL fallback
           if (prismaError?.message?.includes('trustEventTypeV1') || 
               prismaError?.message?.includes('does not exist') ||
               prismaError?.code === 'P2021') {
             console.warn('[Operator Onboarding API] trustEventTypeV1 column not found, using raw SQL fallback');
             
-            const userAgent = req.headers.get('user-agent') || null;
-            const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || null;
+            const fallbackUserAgent = req.headers.get('user-agent') || 'manual-entry';
+            const fallbackIp = req.headers.get('x-forwarded-for')?.split(',')[0] || '0.0.0.0';
             const referrer = req.headers.get('referer') || req.headers.get('referrer') || null;
             
-            // Use raw SQL to insert without trustEventTypeV1 column
-            // Store REM-compliant payload
-            // Note: This fallback should be removed once migration is complete
-            const insertResult = await prisma.$queryRawUnsafe(`
-              INSERT INTO reflex_events (
-                id, type, source, payload, "ctaSource", "ctaType", 
-                "userAgent", ip, referrer, "campaignId", metadata, tenant_id, "createdAt"
-              )
-              VALUES (
-                gen_random_uuid()::text,
-                $1,
-                $2,
-                $3,
-                $4,
-                $5,
-                $6,
-                $7,
-                $8,
-                $9,
-                $10,
-                $11,
-                NOW()
-              )
-              RETURNING id, type, source, "createdAt"
-            `,
-              'onboarding.signup',
-              leadData.source === 'website' ? 'ui' : leadData.source === 'api' ? 'backend' : 'ui', // Map to valid enum
-              JSON.stringify(remPayload), // Use REM-compliant payload
-              ctaSource,
-              'onboarding_signup',
-              userAgent,
-              ip,
-              referrer,
-              null, // campaignId
-              null, // metadata
-              tenantId // Multi-tenant: associate with current tenant
-            ) as any[];
-            
-            if (insertResult && insertResult.length > 0) {
-              newEvent = insertResult[0];
-              console.log('[Operator Onboarding API] Lead created via raw SQL fallback:', newEvent.id);
-            } else {
-              throw new Error('Raw SQL insert returned no rows');
+            try {
+              // Use raw SQL to insert without trustEventTypeV1 column
+              // Store REM-compliant payload
+              // Note: This fallback should be removed once migration is complete
+              const insertResult = await prisma.$queryRawUnsafe(`
+                INSERT INTO reflex_events (
+                  id, type, source, payload, "ctaSource", "ctaType", 
+                  "userAgent", ip, referrer, "campaignId", metadata, tenant_id, "createdAt"
+                )
+                VALUES (
+                  gen_random_uuid()::text,
+                  $1,
+                  $2,
+                  $3,
+                  $4,
+                  $5,
+                  $6,
+                  $7,
+                  $8,
+                  $9,
+                  $10,
+                  $11,
+                  NOW()
+                )
+                RETURNING id, type, source, "createdAt"
+              `,
+                'onboarding.signup',
+                leadData.source === 'website' ? 'ui' : leadData.source === 'api' ? 'backend' : 'ui', // Map to valid enum
+                JSON.stringify(remPayload), // Use REM-compliant payload
+                ctaSource,
+                'onboarding_signup',
+                fallbackUserAgent, // Use safe default
+                fallbackIp, // Use safe default
+                referrer,
+                null, // campaignId
+                null, // metadata
+                tenantId // Multi-tenant: associate with current tenant (can be null in dev)
+              ) as any[];
+              
+              if (insertResult && insertResult.length > 0) {
+                newEvent = insertResult[0];
+                console.log('[Operator Onboarding API] Lead created via raw SQL fallback:', newEvent.id);
+              } else {
+                throw new Error('Raw SQL insert returned no rows');
+              }
+            } catch (sqlError: any) {
+              console.error('[Operator Onboarding API] Raw SQL fallback also failed:', {
+                message: sqlError?.message,
+                code: sqlError?.code
+              });
+              throw sqlError;
             }
           } else {
             // Re-throw if it's a different error
+            console.error('[Operator Onboarding API] Unexpected Prisma error, re-throwing:', prismaError);
             throw prismaError;
           }
         }

@@ -111,12 +111,13 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
   const [errors, setErrors] = useState<Partial<Record<keyof SessionData, string>>>({});
 
   // Calculate total amount based on pricing model
-  const calculateTotalAmount = (pricingModel: 'flat' | 'time-based', timerDuration: number, flavorMixPrice: number) => {
+  const calculateTotalAmount = (pricingModel: 'flat' | 'time-based', timerDuration: number, flavorMixPrice: number, basePrice: number = 30, tableMultiplier: number = 1) => {
     if (pricingModel === 'flat') {
-      return 30 + flavorMixPrice; // Flat $30 + flavor add-ons
+      // Base price with table multiplier + flavor add-ons
+      return (basePrice * tableMultiplier) + flavorMixPrice;
     } else {
       // Time-based: $0.50 per minute + flavor add-ons
-      const timeBasedPrice = (timerDuration * 0.50);
+      const timeBasedPrice = timerDuration * 0.50;
       return timeBasedPrice + flavorMixPrice;
     }
   };
@@ -127,10 +128,13 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
       
       // Recalculate amount when pricing model or duration changes
       if (field === 'pricingModel' || field === 'timerDuration') {
+        const tableMultiplier = selectedTable?.priceMultiplier || 1;
         updated.amount = calculateTotalAmount(
           field === 'pricingModel' ? value as 'flat' | 'time-based' : updated.pricingModel,
           field === 'timerDuration' ? value as number : updated.timerDuration,
-          updated.flavorMixPrice
+          updated.flavorMixPrice,
+          updated.basePrice,
+          tableMultiplier
         );
       }
       
@@ -145,12 +149,21 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
 
   const handleTableSelect = (table: TableType) => {
     setSelectedTable(table);
-    setFormData(prev => ({
-      ...prev,
-      tableId: table.id,
-      tableType: table,
-      amount: 30 * table.priceMultiplier + prev.flavorMixPrice // Base price + flavor mix price
-    }));
+    setFormData(prev => {
+      const newAmount = calculateTotalAmount(
+        prev.pricingModel,
+        prev.timerDuration,
+        prev.flavorMixPrice,
+        prev.basePrice,
+        table.priceMultiplier
+      );
+      return {
+        ...prev,
+        tableId: table.id,
+        tableType: table,
+        amount: newAmount
+      };
+    });
     setShowTableSelector(false);
   };
 
@@ -159,11 +172,19 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
     setFormData(prev => {
       // Ensure flavor prices are properly calculated (not zeroed in non-demo mode)
       const flavorPrice = isDemoMode ? 0 : totalPrice;
+      const tableMultiplier = selectedTable?.priceMultiplier || 1;
+      const newAmount = calculateTotalAmount(
+        prev.pricingModel,
+        prev.timerDuration,
+        flavorPrice,
+        prev.basePrice,
+        tableMultiplier
+      );
       const updated = {
         ...prev,
         flavorMix: flavors,
         flavorMixPrice: flavorPrice, // $2.00-$4.50 per flavor, properly calculated
-        amount: calculateTotalAmount(prev.pricingModel, prev.timerDuration, flavorPrice)
+        amount: newAmount
       };
       console.log('[CreateSessionModal] Flavor mix updated:', {
         flavors,
@@ -171,7 +192,8 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
         flavorPrice,
         calculatedAmount: updated.amount,
         pricingModel: prev.pricingModel,
-        timerDuration: prev.timerDuration
+        timerDuration: prev.timerDuration,
+        tableMultiplier
       });
       return updated;
     });
@@ -570,16 +592,27 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
                     isDemoMode={isDemoMode}
                   />
                 </div>
-                {formData.flavorMixPrice > 0 && !isDemoMode && (
-                  <div className="mt-2 text-sm text-green-400">
-                    Flavor Add-ons: +${formData.flavorMixPrice.toFixed(2)}
-                  </div>
-                )}
-                {isDemoMode && (
-                  <div className="mt-2 text-sm text-zinc-400">
-                    Flavors are free in demo mode (pricing can be configured later)
-                  </div>
-                )}
+                {/* Show flavor pricing breakdown - professional display even in demo */}
+                <div className="mt-2 text-sm">
+                  {formData.flavorMix.length > 0 ? (
+                    <div className="space-y-1">
+                      <div className="text-zinc-300">
+                        Selected: {formData.flavorMix.length} flavor{formData.flavorMix.length > 1 ? 's' : ''}
+                      </div>
+                      {isDemoMode ? (
+                        <div className="text-zinc-400 italic">
+                          Flavors: Free (demo mode) • Base: ${formData.basePrice.toFixed(2)} = Total: ${formData.amount.toFixed(2)}
+                        </div>
+                      ) : (
+                        <div className="text-green-400">
+                          Flavor Add-ons: +${formData.flavorMixPrice.toFixed(2)} • Base: ${formData.basePrice.toFixed(2)} = Total: ${formData.amount.toFixed(2)}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-zinc-400">No flavors selected</div>
+                  )}
+                </div>
                 {errors.flavor && (
                   <p className="text-red-400 text-sm mt-1">{errors.flavor}</p>
                 )}
@@ -641,11 +674,48 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
                     placeholder="0.00"
                   />
                 </div>
-                <div className="mt-1 text-xs text-zinc-400">
-                  {formData.pricingModel === 'flat' 
-                    ? `Base: $30.00 + Flavors: $${formData.flavorMixPrice.toFixed(2)} = $${formData.amount.toFixed(2)}`
-                    : `Time: $${(formData.timerDuration * 0.50).toFixed(2)} + Flavors: $${formData.flavorMixPrice.toFixed(2)} = $${formData.amount.toFixed(2)}`
-                  }
+                {/* Professional cart breakdown display */}
+                <div className="mt-2 p-3 bg-zinc-800/50 rounded-lg border border-zinc-700">
+                  <div className="text-xs font-semibold text-zinc-300 mb-2">Cart Breakdown:</div>
+                  <div className="space-y-1 text-xs">
+                    {formData.pricingModel === 'flat' ? (
+                      <>
+                        <div className="flex justify-between text-zinc-400">
+                          <span>Base Session (Flat Rate):</span>
+                          <span>${formData.basePrice.toFixed(2)}</span>
+                        </div>
+                        {formData.flavorMix.length > 0 && (
+                          <div className="flex justify-between text-zinc-400">
+                            <span>Flavor Mix ({formData.flavorMix.length}):</span>
+                            <span>{isDemoMode ? 'Free (Demo)' : `+$${formData.flavorMixPrice.toFixed(2)}`}</span>
+                          </div>
+                        )}
+                        {selectedTable && selectedTable.priceMultiplier !== 1 && (
+                          <div className="flex justify-between text-zinc-400">
+                            <span>Table Premium ({selectedTable.name}):</span>
+                            <span>+${((formData.basePrice * selectedTable.priceMultiplier) - formData.basePrice).toFixed(2)}</span>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex justify-between text-zinc-400">
+                          <span>Time-Based ({formData.timerDuration} min @ $0.50/min):</span>
+                          <span>${(formData.timerDuration * 0.50).toFixed(2)}</span>
+                        </div>
+                        {formData.flavorMix.length > 0 && (
+                          <div className="flex justify-between text-zinc-400">
+                            <span>Flavor Mix ({formData.flavorMix.length}):</span>
+                            <span>{isDemoMode ? 'Free (Demo)' : `+$${formData.flavorMixPrice.toFixed(2)}`}</span>
+                          </div>
+                        )}
+                      </>
+                    )}
+                    <div className="border-t border-zinc-700 pt-1 mt-1 flex justify-between font-semibold text-white">
+                      <span>Total:</span>
+                      <span>${formData.amount.toFixed(2)}</span>
+                    </div>
+                  </div>
                 </div>
                 {errors.amount && (
                   <p className="text-red-400 text-sm mt-1">{errors.amount}</p>

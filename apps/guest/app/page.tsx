@@ -279,28 +279,29 @@ export default function GuestPortal() {
         console.log('✅ Session created successfully:', result);
         
         // Get app session ID for Stripe checkout
-        // Check multiple possible locations for the session ID
-        const appSessionId = result.session?.appSessionId || 
-                            result.session?.appSession?.id || 
-                            result.session?.id || 
-                            result.appSessionId ||
-                            result.id;
+        // Check multiple possible locations for the session ID (in order of likelihood)
+        const appSessionId = result.session?.id ||           // Most common: session.id
+                            result.id ||                     // Top-level id
+                            result.sessionId ||              // Alternative: sessionId
+                            result.session?.sessionId ||     // Nested sessionId
+                            result.appSessionId ||           // Legacy: appSessionId
+                            result.session?.appSessionId;     // Legacy nested: session.appSessionId
+        
         const loungeId = result.session?.loungeId || 
-                        result.session?.appSession?.loungeId ||
+                        result.loungeId ||
                         sessionData.loungeId || 
                         'default-lounge';
         
         console.log('[Fire Session] Extracted session ID:', appSessionId, 'from result:', {
           hasSession: !!result.session,
-          hasAppSessionId: !!result.session?.appSessionId,
-          hasAppSession: !!result.session?.appSession,
-          hasAppSessionIdInAppSession: !!result.session?.appSession?.id,
-          hasId: !!result.session?.id,
-          hasTopLevelId: !!result.id
+          sessionId: result.session?.id,
+          topLevelId: result.id,
+          sessionSessionId: result.session?.sessionId,
+          fullResult: JSON.stringify(result, null, 2).substring(0, 500) // First 500 chars for debugging
         });
         
         if (!appSessionId) {
-          console.error('[Fire Session] No session ID found in result:', result);
+          console.error('[Fire Session] No session ID found in result. Full response:', JSON.stringify(result, null, 2));
           throw new Error('Session created but no session ID returned. Please check the server response.');
         }
         

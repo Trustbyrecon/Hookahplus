@@ -141,12 +141,12 @@ export default function SimpleFSDDesign({
   const [realSessions, setRealSessions] = useState<any[]>([]);
   const [isLoadingSessions, setIsLoadingSessions] = useState(false);
 
-  // Load sessions from app build API
+  // Load sessions from app build API via proxy (handles CORS and production URLs)
   const loadSessions = async () => {
     setIsLoadingSessions(true);
     try {
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
-      const response = await fetch(`${appUrl}/api/sessions`, {
+      // Use proxy route to avoid CORS issues and handle production URLs
+      const response = await fetch('/api/sessions/proxy', {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -800,14 +800,13 @@ export default function SimpleFSDDesign({
   const tabCounts = getTabCounts();
 
   const handleCreateSessionSave = async (sessionData: any) => {
-    // Create session via app build API
+    // Create session via proxy route (handles CORS and production URLs)
     try {
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
       const flavorMix = sessionData.addons && sessionData.addons.length > 0 
         ? sessionData.addons 
         : ['Custom Mix'];
       
-      const response = await fetch(`${appUrl}/api/sessions`, {
+      const response = await fetch('/api/sessions/proxy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

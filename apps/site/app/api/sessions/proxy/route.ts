@@ -1,47 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
- * Proxy endpoint for site build to forward session actions to app build
+ * Proxy endpoint for site build to forward session requests to app build
  * Handles CORS, authentication, and error handling
+ * Supports GET, POST, and PATCH methods
  */
-export async function PATCH(req: NextRequest) {
+
+// Get app build URL - use production URL in production, localhost in dev
+function getAppUrl() {
+  return process.env.NEXT_PUBLIC_APP_URL || 
+    (process.env.NODE_ENV === 'production' 
+      ? 'https://app.hookahplus.net' 
+      : 'http://localhost:3002');
+}
+
+// Forward request to app build with proper error handling
+async function forwardRequest(method: string, req: NextRequest, body?: any) {
   try {
-    const body = await req.json();
-    const { sessionId, action, userRole, operatorId, notes, edgeCase, edgeNote } = body;
-
-    // Validate required fields
-    if (!sessionId || !action || !userRole) {
-      return NextResponse.json(
-        { error: 'Missing required fields: sessionId, action, and userRole are required' },
-        { status: 400 }
-      );
-    }
-
-    // Get app build URL
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
+    const appUrl = getAppUrl();
+    const url = new URL(req.url);
+    const path = url.pathname.replace('/api/sessions/proxy', '/api/sessions');
+    const targetUrl = `${appUrl}${path}${url.search}`;
     
-    console.log('[Site Build Proxy] Forwarding session action to app build:', {
-      sessionId,
-      action,
-      userRole,
-      appUrl: `${appUrl}/api/sessions`
-    });
-
-    // Forward request to app build API
-    const appResponse = await fetch(`${appUrl}/api/sessions`, {
-      method: 'PATCH',
+    console.log(`[Site Build Proxy] Forwarding ${method} to app build:`, targetUrl);
+    
+    const appResponse = await fetch(targetUrl, {
+      method,
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        sessionId,
-        action,
-        userRole,
-        operatorId,
-        notes,
-        edgeCase,
-        edgeNote
-      }),
+      body: body ? JSON.stringify(body) : undefined,
     });
 
     // Get response text first (might not be JSON)
@@ -64,8 +52,8 @@ export async function PATCH(req: NextRequest) {
       status: appResponse.status,
       headers: {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'PATCH, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       }
     });
 
@@ -82,13 +70,30 @@ export async function PATCH(req: NextRequest) {
   }
 }
 
+// GET handler - fetch sessions
+export async function GET(req: NextRequest) {
+  return forwardRequest('GET', req);
+}
+
+// POST handler - create session
+export async function POST(req: NextRequest) {
+  const body = await req.json();
+  return forwardRequest('POST', req, body);
+}
+
+// PATCH handler - update session
+export async function PATCH(req: NextRequest) {
+  const body = await req.json();
+  return forwardRequest('PATCH', req, body);
+}
+
 // Handle CORS preflight
 export async function OPTIONS(req: NextRequest) {
   return NextResponse.json({}, {
     headers: {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'PATCH, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     }
   });
 }
