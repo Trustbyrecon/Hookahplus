@@ -441,7 +441,7 @@ export default function WorldShishaBriefPage() {
                     QR-Based Ordering Workflow
                   </h3>
                   <p className="text-zinc-300 text-sm">
-                    Customer scans QR → Selects flavors/add-ons → Order sent to BOH → 
+                    Customer scans QR → Selects flavors/add-ons → Order sent to Back of the House → 
                     Session tracked automatically → Payment processed via your POS → 
                     Analytics captured in real-time.
                   </p>

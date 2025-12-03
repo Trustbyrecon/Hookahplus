@@ -45,6 +45,16 @@ export default function WorldShisha2026Page() {
     }
   };
 
+  const handleVideoLinkClick = () => {
+    trackConversion({
+      eventName: 'world_shisha_2026_video_complete',
+      eventCategory: 'engagement',
+      eventLabel: 'video_link_click',
+      metadata: { campaign: 'world_shisha_2026' }
+    });
+    window.open('https://share.icloud.com/photos/039GZiYEysighV6V9qnoJCHgw', '_blank', 'noopener,noreferrer');
+  };
+
   const handleCalendarClick = () => {
     setShowCalendar(true);
     trackConversion({
@@ -158,27 +168,18 @@ export default function WorldShisha2026Page() {
               Watch a 60-90 second walkthrough of our Operator Dashboard and session flow. See how real lounges use Hookah+ to increase revenue and delight customers.
             </p>
             
-            {/* Video Embed Placeholder - Replace with actual video URL */}
+            {/* Product Demo Video */}
             <div className="relative aspect-video bg-zinc-800 rounded-lg overflow-hidden border border-zinc-700">
-              {!videoPlaying ? (
-                <div className="absolute inset-0 flex items-center justify-center cursor-pointer" onClick={handleVideoPlay}>
-                  <div className="text-center">
-                    <div className="w-20 h-20 bg-teal-500/20 rounded-full flex items-center justify-center mx-auto mb-4 hover:bg-teal-500/30 transition-colors">
-                      <Play className="w-10 h-10 text-teal-400 ml-1" />
-                    </div>
-                    <p className="text-zinc-300 font-medium">Click to play product demo</p>
+              <div className="absolute inset-0 flex items-center justify-center cursor-pointer" onClick={handleVideoLinkClick}>
+                <div className="text-center p-8">
+                  <div className="w-20 h-20 bg-teal-500/20 rounded-full flex items-center justify-center mx-auto mb-4 hover:bg-teal-500/30 transition-colors">
+                    <Play className="w-10 h-10 text-teal-400 ml-1" />
                   </div>
+                  <h3 className="text-xl font-semibold text-white mb-2">Hookah+ Product Demo</h3>
+                  <p className="text-zinc-300 font-medium mb-4">Click to watch product walkthrough</p>
+                  <p className="text-sm text-zinc-400">Opens in new tab</p>
                 </div>
-              ) : (
-                <iframe
-                  className="w-full h-full"
-                  src="https://www.youtube.com/embed/dQw4w9WgXcQ" // Replace with actual video URL
-                  title="Hookah+ Product Demo"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              )}
+              </div>
             </div>
           </div>
         </Card>
