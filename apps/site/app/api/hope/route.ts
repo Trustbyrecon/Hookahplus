@@ -105,10 +105,11 @@ export async function POST(req: NextRequest) {
       console.log('[Hope Landing] Creating lead directly in database...');
       
       // Get IP and user agent
+      // Ensure these are never undefined (use safe defaults)
       const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || 
                  req.headers.get('x-real-ip') || 
                  '0.0.0.0';
-      const userAgent = req.headers.get('user-agent') || undefined;
+      const userAgent = req.headers.get('user-agent') || 'manual-entry';
       
       // Create REM-compliant TrustEvent payload
       const remPayload = createREMCompliantOnboardingEvent(leadData, ip, userAgent, 'hope_global_forum');
