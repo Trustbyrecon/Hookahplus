@@ -318,8 +318,15 @@ export async function GET(req: NextRequest) {
       });
     }
     
+    // Provide user-friendly error message
+    const userMessage = errorMessage.includes('Can\'t reach database') || 
+                        errorMessage.includes('connection') ||
+                        error?.code === 'P1001'
+      ? 'Unable to connect to database. Using demo data.'
+      : 'Internal server error';
+    
     return NextResponse.json({ 
-      error: 'Internal server error',
+      error: userMessage,
       details: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
       stack: process.env.NODE_ENV === 'development' ? errorStack : undefined
     }, { 
