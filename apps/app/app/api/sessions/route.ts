@@ -46,7 +46,7 @@ function getCorsHeaders(req?: NextRequest) {
   ].filter(Boolean); // Remove undefined values
   
   // If origin matches allowed list, use it; otherwise check if it's a hookahplus.net domain
-  let allowedOrigin = allowedOrigins[0]; // Default to first allowed origin
+  let allowedOrigin: string = allowedOrigins[0] || 'https://hookahplus.net'; // Default fallback
   
   if (origin) {
     // Exact match
