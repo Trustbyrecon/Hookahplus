@@ -52,7 +52,7 @@ export default function WorldShisha2026Page() {
       eventLabel: 'video_link_click',
       metadata: { campaign: 'world_shisha_2026' }
     });
-    window.open('https://share.icloud.com/photos/039GZiYEysighV6V9qnoJCHgw', '_blank', 'noopener,noreferrer');
+    window.open('https://youtube.com/shorts/LjbGwWOI_Nk', '_blank', 'noopener,noreferrer');
   };
 
   const handleCalendarClick = () => {
@@ -168,18 +168,21 @@ export default function WorldShisha2026Page() {
               Watch a 60-90 second walkthrough of our Operator Dashboard and session flow. See how real lounges use Hookah+ to increase revenue and delight customers.
             </p>
             
-            {/* Product Demo Video */}
+            {/* Product Demo Video - YouTube Embed */}
             <div className="relative aspect-video bg-zinc-800 rounded-lg overflow-hidden border border-zinc-700">
-              <div className="absolute inset-0 flex items-center justify-center cursor-pointer" onClick={handleVideoLinkClick}>
-                <div className="text-center p-8">
-                  <div className="w-20 h-20 bg-teal-500/20 rounded-full flex items-center justify-center mx-auto mb-4 hover:bg-teal-500/30 transition-colors">
-                    <Play className="w-10 h-10 text-teal-400 ml-1" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-white mb-2">Hookah+ Product Demo</h3>
-                  <p className="text-zinc-300 font-medium mb-4">Click to watch product walkthrough</p>
-                  <p className="text-sm text-zinc-400">Opens in new tab</p>
-                </div>
-              </div>
+              <iframe
+                className="w-full h-full"
+                src="https://www.youtube.com/embed/LjbGwWOI_Nk"
+                title="Hookah+ Product Demo"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                onLoad={() => {
+                  if (!videoPlaying) {
+                    handleVideoPlay();
+                  }
+                }}
+              />
             </div>
           </div>
         </Card>
@@ -204,7 +207,7 @@ export default function WorldShisha2026Page() {
               <p className="text-zinc-400 mb-6">
                 Not enough time to talk on the floor? Book a private Smart Lounge walkthrough during World Shisha 2026 show hours (Dubai time).
               </p>
-              <CalendlyEmbed url={process.env.NEXT_PUBLIC_CALENDLY_URL} />
+              <CalendlyEmbed url="https://calendly.com/clark-dwayne/new-meeting?embed_domain=hookahplus.net&embed_type=Inline" />
             </div>
           </Card>
         )}

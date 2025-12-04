@@ -88,6 +88,18 @@ export default function Hero() {
             >
               See How It Works
             </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              className="px-8 py-4 text-lg border-2 border-purple-500/50 text-purple-400 hover:bg-purple-500/10 hover:border-purple-400 transition-all"
+              onClick={() => {
+                trackDemoRequest('Hero', { action: 'navigate_to_world_shisha' });
+                window.location.href = '/world-shisha-2026';
+              }}
+            >
+              World Shisha 2026
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
           </motion.div>
 
           {/* Trust Indicators */}

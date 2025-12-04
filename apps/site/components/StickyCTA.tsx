@@ -40,7 +40,7 @@ export default function StickyCTA() {
             </button>
             <div className="p-6">
               <h2 className="text-2xl font-bold text-white mb-4">Schedule Your Demo</h2>
-              <CalendlyEmbed url={process.env.NEXT_PUBLIC_CALENDLY_URL} />
+              <CalendlyEmbed url="https://calendly.com/clark-dwayne/new-meeting?embed_domain=hookahplus.net&embed_type=Inline" />
             </div>
           </div>
         </div>
