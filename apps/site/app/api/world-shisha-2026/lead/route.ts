@@ -16,22 +16,43 @@ export async function POST(req: NextRequest) {
 
     // Create lead in reflex_events table
     try {
-      await prisma.reflexEvent.create({
-        data: {
-          eventType: 'world_shisha_2026_lead',
-          source: 'backend', // Map to valid enum value
-          metadata: {
-            email,
-            campaign: campaign || 'world_shisha_2026',
-            source: source || 'landing_page',
-            exhibitor: exhibitor || null,
-            referralCode: referralCode || null,
-            timestamp: new Date().toISOString()
-          },
-          userAgent: 'world-shisha-2026-landing',
-          ip: '0.0.0.0' // Public form, no IP tracking
-        }
+      // Get IP and user agent from request
+      const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || 
+                 req.headers.get('x-real-ip') || 
+                 '0.0.0.0';
+      const userAgent = req.headers.get('user-agent') || 'world-shisha-2026-landing';
+
+      // Store metadata in payload as JSON string
+      const payload = JSON.stringify({
+        email,
+        campaign: campaign || 'world_shisha_2026',
+        source: source || 'landing_page',
+        exhibitor: exhibitor || null,
+        referralCode: referralCode || null,
+        timestamp: new Date().toISOString()
       });
+
+      // Use raw SQL to insert event
+      await prisma.$queryRawUnsafe(`
+        INSERT INTO reflex_events (
+          id, type, source, payload, "userAgent", ip, "createdAt"
+        )
+        VALUES (
+          gen_random_uuid()::text,
+          $1,
+          $2,
+          $3,
+          $4,
+          $5,
+          NOW()
+        )
+      `,
+        'world_shisha_2026_lead',
+        'backend',
+        payload,
+        userAgent,
+        ip
+      );
     } catch (dbError: any) {
       console.error('[World Shisha 2026 Lead] Database error:', dbError);
       // Continue even if DB insert fails - still send email
