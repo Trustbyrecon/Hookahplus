@@ -117,76 +117,67 @@ export async function POST(req: NextRequest) {
       // Determine CTA source
       const ctaSource = 'website'; // Hope landing page is website source
       
+      // Use raw SQL directly since ctaSource, ctaType fields are not in root Prisma schema
+      const referrer = req.headers.get('referer') || req.headers.get('referrer') || null;
+      
       try {
-        // Try Prisma create first (works if all columns exist)
-        const newEvent = await prisma.reflexEvent.create({
-          data: {
-            type: 'onboarding.signup',
-            source: 'ui', // Web submission
-            payload: JSON.stringify(remPayload),
-            ctaSource: ctaSource,
-            ctaType: 'onboarding_signup',
-            userAgent: userAgent,
-            ip: ip,
-            trustEventTypeV1: 'fast_checkout',
-            // tenantId is optional - can be null for public submissions
-          }
-        });
+        // Use raw SQL to insert with all extended fields
+        const insertResult = await prisma.$queryRawUnsafe(`
+          INSERT INTO reflex_events (
+            id, type, source, payload, "ctaSource", "ctaType", 
+            "userAgent", ip, referrer, "campaignId", metadata, "createdAt"
+          )
+          VALUES (
+            gen_random_uuid()::text,
+            $1,
+            $2,
+            $3,
+            $4,
+            $5,
+            $6,
+            $7,
+            $8,
+            $9,
+            $10,
+            NOW()
+          )
+          RETURNING id, type, source, "createdAt"
+        `,
+          'onboarding.signup',
+          'ui',
+          JSON.stringify(remPayload),
+          ctaSource,
+          'onboarding_signup',
+          userAgent,
+          ip,
+          referrer,
+          null, // campaignId
+          null  // metadata
+        ) as any[];
         
-        createdEventId = newEvent.id;
-        console.log('[Hope Landing] ✅ Lead created successfully via Prisma:', createdEventId);
-      } catch (prismaError: any) {
-        // If trustEventTypeV1 column doesn't exist, use raw SQL fallback
-        if (prismaError?.message?.includes('trustEventTypeV1') || 
-            prismaError?.message?.includes('does not exist') ||
-            prismaError?.code === 'P2021') {
-          console.warn('[Hope Landing] trustEventTypeV1 column not found, using raw SQL fallback');
-          
-          const referrer = req.headers.get('referer') || req.headers.get('referrer') || null;
-          
-          // Use raw SQL to insert without trustEventTypeV1 column
-          const insertResult = await prisma.$queryRawUnsafe(`
-            INSERT INTO reflex_events (
-              id, type, source, payload, "ctaSource", "ctaType", 
-              "userAgent", ip, referrer, "campaignId", metadata, "createdAt"
-            )
-            VALUES (
-              gen_random_uuid()::text,
-              $1,
-              $2,
-              $3,
-              $4,
-              $5,
-              $6,
-              $7,
-              $8,
-              $9,
-              $10,
-              NOW()
-            )
-            RETURNING id, type, source, "createdAt"
-          `,
-            'onboarding.signup',
-            'ui',
-            JSON.stringify(remPayload),
-            ctaSource,
-            'onboarding_signup',
-            userAgent,
-            ip,
-            referrer,
-            null, // campaignId
-            null  // metadata
-          ) as any[];
-          
-          if (insertResult && insertResult.length > 0) {
-            createdEventId = insertResult[0].id;
-            console.log('[Hope Landing] ✅ Lead created via raw SQL fallback:', createdEventId);
-          } else {
-            throw new Error('Raw SQL insert returned no rows');
-          }
+        if (insertResult && insertResult.length > 0) {
+          createdEventId = insertResult[0].id;
+          console.log('[Hope Landing] ✅ Lead created via raw SQL:', createdEventId);
         } else {
-          // Re-throw if it's a different error
-          throw prismaError;
+          throw new Error('Raw SQL insert returned no rows');
+        }
+      } catch (sqlError: any) {
+        // Fallback: try basic Prisma create without extended fields
+        console.warn('[Hope Landing] Raw SQL failed, trying basic Prisma create:', sqlError?.message);
+        try {
+          const newEvent = await prisma.reflexEvent.create({
+            data: {
+              type: 'onboarding.signup',
+              source: 'ui',
+              payload: JSON.stringify(remPayload),
+              userAgent: userAgent,
+              ip: ip,
+            }
+          });
+          createdEventId = newEvent.id;
+          console.log('[Hope Landing] ✅ Lead created via Prisma fallback:', createdEventId);
+        } catch (prismaError: any) {
+          throw new Error(`Failed to create lead: ${prismaError?.message || 'Unknown error'}`);
         }
       }
     } catch (leadError) {
