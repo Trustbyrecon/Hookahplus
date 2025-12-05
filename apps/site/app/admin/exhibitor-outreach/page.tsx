@@ -154,7 +154,7 @@ export default function ExhibitorOutreachPage() {
             <div className="p-6 text-center">
               <Mail className="w-8 h-8 text-teal-400 mx-auto mb-3" />
               <div className="text-3xl font-bold text-white mb-2">
-                {exhibitors.filter(e => e.contactStatus !== 'not_contacted').length}
+                {exhibitors.filter(e => e.contactStatus !== 'new').length}
               </div>
               <p className="text-zinc-400">Contacted</p>
             </div>
@@ -164,7 +164,7 @@ export default function ExhibitorOutreachPage() {
             <div className="p-6 text-center">
               <CheckCircle className="w-8 h-8 text-teal-400 mx-auto mb-3" />
               <div className="text-3xl font-bold text-white mb-2">
-                {exhibitors.filter(e => e.contactStatus === 'partner').length}
+                {exhibitors.filter(e => e.contactStatus === 'partnered').length}
               </div>
               <p className="text-zinc-400">Partners</p>
             </div>

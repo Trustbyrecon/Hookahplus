@@ -150,3 +150,12 @@ export function getDubaiTime(): string {
   });
 }
 
+/**
+ * Campaign object exported for use in API routes
+ * Matches the expected import name in exhibitor-outreach route
+ */
+export const worldShisha2026Campaign = {
+  id: WORLD_SHISHA_2026_CONFIG.campaignId,
+  ...WORLD_SHISHA_2026_CONFIG
+};
+
