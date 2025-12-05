@@ -21,6 +21,7 @@
     "lint": "next lint",
     "clean": "rm -rf .next",
     "stripe:seed": "node scripts/stripe-catalog/seed.js",
+    "seed:stripe": "node scripts/seed-stripe-subscriptions.js",
     "reflex:smoke": "tsx scripts/reflex-smoke.ts",
     "cmd:test:sync:golden": "tsx scripts/cmd.test.sync.guestToApp.golden.ts",
     "cmd:test:sync:faults": "tsx scripts/cmd.test.sync.guestToApp.faults.ts",

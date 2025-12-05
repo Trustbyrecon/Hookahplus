@@ -359,7 +359,46 @@ export default function PricingPage() {
                   <Button
                     variant={tier.popular ? 'primary' : 'outline'}
                     className="w-full mb-6"
-                    onClick={() => window.location.href = '/onboarding'}
+                    onClick={async () => {
+                      try {
+                        // Map tier name to API format
+                        const tierMap: Record<string, string> = {
+                          'Starter': 'starter',
+                          'Pro': 'pro',
+                          'Trust+': 'trust_plus'
+                        };
+                        const apiTier = tierMap[tier.name] || 'pro';
+
+                        // Create Stripe checkout session
+                        const response = await fetch('/api/subscribe', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({
+                            tier: apiTier,
+                            billingCycle: billingCycle,
+                          }),
+                        });
+
+                        if (!response.ok) {
+                          const errorData = await response.json().catch(() => ({ error: 'Failed to create checkout' }));
+                          throw new Error(errorData.error || 'Failed to create checkout session');
+                        }
+
+                        const data = await response.json();
+                        
+                        if (data.url) {
+                          // Redirect to Stripe checkout
+                          window.location.href = data.url;
+                        } else {
+                          throw new Error('No checkout URL received');
+                        }
+                      } catch (error: any) {
+                        console.error('Subscription checkout error:', error);
+                        alert(`Failed to start checkout: ${error.message || 'Unknown error'}. Please try again or contact support.`);
+                      }
+                    }}
                   >
                     Get Started
                     <ArrowRight className="w-4 h-4 ml-2" />

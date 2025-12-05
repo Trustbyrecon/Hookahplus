@@ -35,6 +35,7 @@ import {
 import CreateSessionModal from './CreateSessionModal';
 import SessionDetailModal from './SessionDetailModal';
 import GuestIntelligenceModal from './GuestIntelligenceModal';
+import DemoStripeModal from './DemoStripeModal';
 import { mockSiteData } from '../lib/mockData';
 import { 
   SessionStatus, 
@@ -136,6 +137,8 @@ export default function SimpleFSDDesign({
   const [hoveredAction, setHoveredAction] = useState<string | null>(null);
   const [currentRole, setCurrentRole] = useState<string>(userRole || 'MANAGER');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showStripeModal, setShowStripeModal] = useState(false);
+  const [stripeSessionData, setStripeSessionData] = useState<any>(null);
   const [selectedSession, setSelectedSession] = useState<FireSession | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -804,35 +807,33 @@ export default function SimpleFSDDesign({
   const tabCounts = getTabCounts();
 
   const handleCreateSessionSave = async (sessionData: any) => {
-    // In demo mode, don't actually create a session - just show success and guide to onboarding
+    // In demo mode, show simulated Stripe modal instead of creating actual session
     if (isDemoMode) {
       const flavorMix = sessionData.addons && sessionData.addons.length > 0 
         ? sessionData.addons 
         : ['Custom Mix'];
       
-      const total = sessionData.basePrice + sessionData.addons.reduce((sum: number, addon: string) => {
+      const total = sessionData.basePrice + (sessionData.addons || []).reduce((sum: number, addon: string) => {
         const item = [{ id: 'mint', price: 2.50 }, { id: 'mango', price: 2.00 }, { id: 'strawberry', price: 2.00 }, { id: 'peach', price: 2.50 }].find(a => a.id === addon);
         return sum + (item?.price || 0);
       }, 0);
       
-      // Close modal first
+      // Close create modal and show Stripe modal
       setShowCreateModal(false);
       
-      // Show success message and guide to onboarding
-      const confirmed = window.confirm(
-        `✅ Demo Session Created!\n\n` +
-        `Table: ${sessionData.table}\n` +
-        `Customer: ${sessionData.customerName}\n` +
-        `Flavors: ${flavorMix.join(' + ')}\n` +
-        `Total: $${total.toFixed(2)}\n\n` +
-        `This was a demo experience. To start managing real sessions, complete your onboarding to set up your lounge.\n\n` +
-        `Would you like to start onboarding now?`
-      );
+      // Prepare session data for Stripe modal
+      setStripeSessionData({
+        table: sessionData.table,
+        customerName: sessionData.customerName,
+        customerPhone: sessionData.customerPhone,
+        basePrice: sessionData.basePrice,
+        addons: sessionData.addons || [],
+        total: total,
+        flavorMix: flavorMix
+      });
       
-      if (confirmed) {
-        // Redirect to customer-facing onboarding flow
-        window.location.href = '/onboarding';
-      }
+      // Show Stripe modal
+      setShowStripeModal(true);
       return;
     }
     
@@ -899,6 +900,38 @@ export default function SimpleFSDDesign({
             onClose={() => setShowCreateModal(false)}
             onSave={handleCreateSessionSave}
             isDemoMode={isDemoMode}
+          />
+        )}
+
+        {/* Demo Stripe Modal */}
+        {showStripeModal && stripeSessionData && (
+          <DemoStripeModal
+            isOpen={showStripeModal}
+            onClose={() => {
+              setShowStripeModal(false);
+              setStripeSessionData(null);
+            }}
+            onSuccess={() => {
+              setShowStripeModal(false);
+              setStripeSessionData(null);
+              
+              // Show success message and guide to onboarding
+              const confirmed = window.confirm(
+                `✅ Payment Successful!\n\n` +
+                `Demo Session Created:\n` +
+                `Table: ${stripeSessionData.table}\n` +
+                `Customer: ${stripeSessionData.customerName}\n` +
+                `Flavors: ${stripeSessionData.flavorMix.join(' + ')}\n` +
+                `Total: $${stripeSessionData.total.toFixed(2)}\n\n` +
+                `This was a demo experience. To start managing real sessions with actual payments, complete your onboarding to set up your lounge.\n\n` +
+                `Would you like to start onboarding now?`
+              );
+              
+              if (confirmed) {
+                window.location.href = '/onboarding';
+              }
+            }}
+            sessionData={stripeSessionData}
           />
         )}
       </div>
@@ -1003,6 +1036,38 @@ export default function SimpleFSDDesign({
           onClose={() => setShowCreateModal(false)}
           onSave={handleCreateSessionSave}
           isDemoMode={isDemoMode}
+        />
+      )}
+
+      {/* Demo Stripe Modal */}
+      {showStripeModal && stripeSessionData && (
+        <DemoStripeModal
+          isOpen={showStripeModal}
+          onClose={() => {
+            setShowStripeModal(false);
+            setStripeSessionData(null);
+          }}
+          onSuccess={() => {
+            setShowStripeModal(false);
+            setStripeSessionData(null);
+            
+            // Show success message and guide to onboarding
+            const confirmed = window.confirm(
+              `✅ Payment Successful!\n\n` +
+              `Demo Session Created:\n` +
+              `Table: ${stripeSessionData.table}\n` +
+              `Customer: ${stripeSessionData.customerName}\n` +
+              `Flavors: ${stripeSessionData.flavorMix.join(' + ')}\n` +
+              `Total: $${stripeSessionData.total.toFixed(2)}\n\n` +
+              `This was a demo experience. To start managing real sessions with actual payments, complete your onboarding to set up your lounge.\n\n` +
+              `Would you like to start onboarding now?`
+            );
+            
+            if (confirmed) {
+              window.location.href = '/onboarding';
+            }
+          }}
+          sessionData={stripeSessionData}
         />
       )}
 

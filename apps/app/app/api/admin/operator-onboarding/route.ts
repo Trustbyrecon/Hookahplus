@@ -409,9 +409,15 @@ export async function POST(req: NextRequest) {
     }
 
     // Auth + tenant selection
+    // Allow webhook calls with API key to bypass auth (for ManyChat, etc.)
+    const webhookApiKey = req.headers.get('x-webhook-api-key');
+    const validWebhookKey = process.env.WEBHOOK_API_KEY;
+    const isWebhookCall = webhookApiKey && validWebhookKey && webhookApiKey === validWebhookKey;
+    
     let tenantId: string | null = null;
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === 'production' && !isWebhookCall) {
       // In production: enforce owner/admin and require an active tenant
+      // Skip if this is a valid webhook call
       const { user, role } = await requireRole(req, ['owner', 'admin']);
       tenantId = await getCurrentTenant(req);
       
@@ -422,8 +428,12 @@ export async function POST(req: NextRequest) {
         }, { status: 400 });
       }
     } else {
-      // In development: allow access without auth/tenant, to unblock local testing
-      console.log('[Operator Onboarding API] DEV mode - skipping auth and tenant checks for POST');
+      // In development or webhook call: allow access without auth/tenant
+      if (isWebhookCall) {
+        console.log('[Operator Onboarding API] Webhook call detected - skipping auth and tenant checks');
+      } else {
+        console.log('[Operator Onboarding API] DEV mode - skipping auth and tenant checks for POST');
+      }
     }
 
     const body = await req.json();
