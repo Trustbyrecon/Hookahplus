@@ -26,6 +26,10 @@ import {
 export default function PricingPage() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
   const [hoveredAddon, setHoveredAddon] = useState<number | null>(null);
+  const [selectedAddons, setSelectedAddons] = useState<number[]>([]);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [email, setEmail] = useState('');
+  const [pendingTier, setPendingTier] = useState<string | null>(null);
 
   const subscriptionTiers = [
     {
@@ -119,6 +123,7 @@ export default function PricingPage() {
 
   const addOns = [
     {
+      key: 'flavor_intelligence',
       name: 'Flavor Intelligence',
       price: {
         monthly: 29,
@@ -136,6 +141,7 @@ export default function PricingPage() {
       ]
     },
     {
+      key: 'advanced_analytics',
       name: 'Advanced Analytics',
       price: {
         monthly: 49,
@@ -153,6 +159,7 @@ export default function PricingPage() {
       ]
     },
     {
+      key: 'staff_performance',
       name: 'Staff Performance Suite',
       price: {
         monthly: 39,
@@ -170,6 +177,7 @@ export default function PricingPage() {
       ]
     },
     {
+      key: 'custom_integrations',
       name: 'Custom Integrations',
       price: {
         monthly: 99,
@@ -187,6 +195,7 @@ export default function PricingPage() {
       ]
     },
     {
+      key: 'priority_support',
       name: 'Priority Support',
       price: {
         monthly: 79,
@@ -359,45 +368,18 @@ export default function PricingPage() {
                   <Button
                     variant={tier.popular ? 'primary' : 'outline'}
                     className="w-full mb-6"
-                    onClick={async () => {
-                      try {
-                        // Map tier name to API format
-                        const tierMap: Record<string, string> = {
-                          'Starter': 'starter',
-                          'Pro': 'pro',
-                          'Trust+': 'trust_plus'
-                        };
-                        const apiTier = tierMap[tier.name] || 'pro';
-
-                        // Create Stripe checkout session
-                        const response = await fetch('/api/subscribe', {
-                          method: 'POST',
-                          headers: {
-                            'Content-Type': 'application/json',
-                          },
-                          body: JSON.stringify({
-                            tier: apiTier,
-                            billingCycle: billingCycle,
-                          }),
-                        });
-
-                        if (!response.ok) {
-                          const errorData = await response.json().catch(() => ({ error: 'Failed to create checkout' }));
-                          throw new Error(errorData.error || 'Failed to create checkout session');
-                        }
-
-                        const data = await response.json();
-                        
-                        if (data.url) {
-                          // Redirect to Stripe checkout
-                          window.location.href = data.url;
-                        } else {
-                          throw new Error('No checkout URL received');
-                        }
-                      } catch (error: any) {
-                        console.error('Subscription checkout error:', error);
-                        alert(`Failed to start checkout: ${error.message || 'Unknown error'}. Please try again or contact support.`);
-                      }
+                    onClick={() => {
+                      // Map tier name to API format
+                      const tierMap: Record<string, string> = {
+                        'Starter': 'starter',
+                        'Pro': 'pro',
+                        'Trust+': 'trust_plus'
+                      };
+                      const apiTier = tierMap[tier.name] || 'pro';
+                      
+                      // Store pending tier and show email modal
+                      setPendingTier(apiTier);
+                      setShowEmailModal(true);
                     }}
                   >
                     Get Started
@@ -508,12 +490,18 @@ export default function PricingPage() {
                   </div>
                   
                   <Button
-                    variant="outline"
+                    variant={selectedAddons.includes(index) ? "primary" : "outline"}
                     size="sm"
                     className="w-full"
-                    onClick={() => window.location.href = '/contact'}
+                    onClick={() => {
+                      if (selectedAddons.includes(index)) {
+                        setSelectedAddons(selectedAddons.filter(i => i !== index));
+                      } else {
+                        setSelectedAddons([...selectedAddons, index]);
+                      }
+                    }}
                   >
-                    Add to Plan
+                    {selectedAddons.includes(index) ? 'Remove from Cart' : 'Add to Plan'}
                   </Button>
                 </div>
               </Card>
@@ -547,6 +535,119 @@ export default function PricingPage() {
           </div>
         </div>
       </div>
+
+      {/* Email Collection Modal */}
+      {showEmailModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <Card className="bg-zinc-900 border-zinc-700 max-w-md w-full">
+            <div className="p-6">
+              <h3 className="text-2xl font-bold mb-2">Almost There!</h3>
+              <p className="text-zinc-400 mb-6">
+                Enter your email to continue to checkout. We'll send you a confirmation and setup instructions.
+              </p>
+              
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  autoFocus
+                />
+              </div>
+
+              {selectedAddons.length > 0 && (
+                <div className="mb-6 p-4 bg-zinc-800/50 rounded-lg border border-zinc-700">
+                  <p className="text-sm text-zinc-400 mb-2">Selected Add-ons:</p>
+                  <ul className="space-y-1">
+                    {selectedAddons.map((idx) => (
+                      <li key={idx} className="text-sm text-zinc-300 flex justify-between">
+                        <span>{addOns[idx].name}</span>
+                        <span className="text-teal-400">${getPrice(addOns[idx].price)}/{billingCycle === 'monthly' ? 'mo' : 'yr'}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    setShowEmailModal(false);
+                    setEmail('');
+                    setPendingTier(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="primary"
+                  className="flex-1"
+                  onClick={async () => {
+                    if (!email || !email.includes('@')) {
+                      alert('Please enter a valid email address');
+                      return;
+                    }
+
+                    try {
+                      // Map tier name to API format
+                      const tierMap: Record<string, string> = {
+                        'Starter': 'starter',
+                        'Pro': 'pro',
+                        'Trust+': 'trust_plus'
+                      };
+                      const apiTier = pendingTier || 'pro';
+
+                      // Create Stripe checkout session with email and add-ons
+                      const response = await fetch('/api/subscribe', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                          tier: apiTier,
+                          billingCycle: billingCycle,
+                          email: email,
+                          addons: selectedAddons.map(idx => ({
+                            key: addOns[idx].key,
+                            name: addOns[idx].name
+                          }))
+                        }),
+                      });
+
+                      if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({ error: 'Failed to create checkout' }));
+                        throw new Error(errorData.error || 'Failed to create checkout session');
+                      }
+
+                      const data = await response.json();
+                      
+                      if (data.url) {
+                        // Redirect to Stripe checkout
+                        window.location.href = data.url;
+                      } else {
+                        throw new Error('No checkout URL received');
+                      }
+                    } catch (error: any) {
+                      console.error('Subscription checkout error:', error);
+                      alert(`Failed to start checkout: ${error.message || 'Unknown error'}. Please try again or contact support.`);
+                    }
+                  }}
+                >
+                  Continue to Checkout
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

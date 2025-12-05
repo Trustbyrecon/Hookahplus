@@ -1,0 +1,45 @@
+{
+  "products": {
+    "starter": "prod_TY8NhGaNHedp2G",
+    "pro": "prod_TY8NLqydH6wzPZ",
+    "trust_plus": "prod_TY8NWiCjzQiZXH"
+  },
+  "prices": {
+    "monthly": {
+      "starter": "price_1Sb26IDHM3T5fq9r5hLg8Wek",
+      "pro": "price_1Sb26KDHM3T5fq9rOVcSp9OL",
+      "trust_plus": "price_1Sb26LDHM3T5fq9rIIaGZ1nU"
+    },
+    "annual": {
+      "starter": "price_1Sb26JDHM3T5fq9rCiHcE284",
+      "pro": "price_1Sb26KDHM3T5fq9rkbqgW2Hk",
+      "trust_plus": "price_1Sb26LDHM3T5fq9r5HRveCHY"
+    }
+  },
+  "envEntries": [],
+  "addons": {
+    "products": {
+      "flavor_intelligence": "prod_TY9ssaR1u1wwXo",
+      "advanced_analytics": "prod_TY9sk2FYwRdRAj",
+      "staff_performance": "prod_TY9siZrBsg05Jo",
+      "custom_integrations": "prod_TY9sTFQOv61zt7",
+      "priority_support": "prod_TY9saoh5PPvvqH"
+    },
+    "prices": {
+      "monthly": {
+        "flavor_intelligence": "price_1Sb3YkDHM3T5fq9rEWVfWob3",
+        "advanced_analytics": "price_1Sb3YlDHM3T5fq9rG0Dw1IMD",
+        "staff_performance": "price_1Sb3YmDHM3T5fq9rFY2jmNJt",
+        "custom_integrations": "price_1Sb3YnDHM3T5fq9rLYg4dvCO",
+        "priority_support": "price_1Sb3YoDHM3T5fq9r5KFg1IEt"
+      },
+      "annual": {
+        "flavor_intelligence": "price_1Sb3YkDHM3T5fq9rzqFRxCyD",
+        "advanced_analytics": "price_1Sb3YlDHM3T5fq9r5U5ELY5d",
+        "staff_performance": "price_1Sb3YmDHM3T5fq9ryEubju6p",
+        "custom_integrations": "price_1Sb3YoDHM3T5fq9rB1CF1r4I",
+        "priority_support": "price_1Sb3YpDHM3T5fq9rS6Mj0cC4"
+      }
+    }
+  }
+}

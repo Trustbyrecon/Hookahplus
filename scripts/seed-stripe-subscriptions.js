@@ -15,11 +15,14 @@ const fs = require('fs');
 const path = require('path');
 
 // Try loading .env files in order of preference
+// Based on historical documentation, keys are often in apps/app/.env.local
 const envPaths = [
-  path.join(process.cwd(), '.env.local'),
-  path.join(process.cwd(), '.env'),
-  path.join(process.cwd(), 'apps', 'site', '.env.local'),
-  path.join(process.cwd(), 'apps', 'app', '.env.local')
+  path.join(process.cwd(), 'apps', 'app', '.env.local'),  // Check this FIRST (historical location per docs)
+  path.join(process.cwd(), 'stripe-seed', '.env'),        // stripe-seed directory
+  path.join(process.cwd(), '.env.local'),                 // Root .env.local
+  path.join(process.cwd(), '.env'),                       // Root .env
+  path.join(process.cwd(), 'apps', 'site', '.env.local'), // Site build
+  path.join(process.cwd(), 'apps', 'guest', '.env.local') // Guest build
 ];
 
 let envLoaded = false;
@@ -134,6 +137,75 @@ const subscriptionTiers = [
     annual: {
       amount: 499000, // $4990.00 in cents
       lookupKey: 'tier_trust_plus_annual'
+    }
+  }
+];
+
+// Add-on configuration
+const addOns = [
+  {
+    name: 'Hookah+ Flavor Intelligence',
+    addonKey: 'flavor_intelligence',
+    description: 'AI-powered flavor preference learning and recommendations',
+    monthly: {
+      amount: 2900, // $29.00 in cents
+      lookupKey: 'addon_flavor_intelligence_monthly'
+    },
+    annual: {
+      amount: 29000, // $290.00 in cents
+      lookupKey: 'addon_flavor_intelligence_annual'
+    }
+  },
+  {
+    name: 'Hookah+ Advanced Analytics',
+    addonKey: 'advanced_analytics',
+    description: 'Deep dive into performance metrics and insights',
+    monthly: {
+      amount: 4900, // $49.00 in cents
+      lookupKey: 'addon_advanced_analytics_monthly'
+    },
+    annual: {
+      amount: 49000, // $490.00 in cents
+      lookupKey: 'addon_advanced_analytics_annual'
+    }
+  },
+  {
+    name: 'Hookah+ Staff Performance Suite',
+    addonKey: 'staff_performance',
+    description: 'Comprehensive staff management and performance tracking',
+    monthly: {
+      amount: 3900, // $39.00 in cents
+      lookupKey: 'addon_staff_performance_monthly'
+    },
+    annual: {
+      amount: 39000, // $390.00 in cents
+      lookupKey: 'addon_staff_performance_annual'
+    }
+  },
+  {
+    name: 'Hookah+ Custom Integrations',
+    addonKey: 'custom_integrations',
+    description: 'Seamless integration with your existing POS and systems',
+    monthly: {
+      amount: 9900, // $99.00 in cents
+      lookupKey: 'addon_custom_integrations_monthly'
+    },
+    annual: {
+      amount: 99000, // $990.00 in cents
+      lookupKey: 'addon_custom_integrations_annual'
+    }
+  },
+  {
+    name: 'Hookah+ Priority Support',
+    addonKey: 'priority_support',
+    description: 'Fast-track support with guaranteed response times',
+    monthly: {
+      amount: 7900, // $79.00 in cents
+      lookupKey: 'addon_priority_support_monthly'
+    },
+    annual: {
+      amount: 79000, // $790.00 in cents
+      lookupKey: 'addon_priority_support_annual'
     }
   }
 ];
@@ -270,6 +342,129 @@ const subscriptionTiers = [
       results.prices.annual[tier.tierKey] = annualPrice.id;
     }
 
+    // Process Add-ons
+    console.log('\n\n📦 Processing Add-ons');
+    console.log('═'.repeat(60));
+    
+    const addonResults = {
+      products: {},
+      prices: {
+        monthly: {},
+        annual: {}
+      }
+    };
+
+    for (const addon of addOns) {
+      console.log(`\n📦 Processing: ${addon.name}`);
+      console.log('─'.repeat(50));
+
+      // Step 1: Find or create product
+      let product = null;
+      
+      try {
+        const products = await stripe.products.list({ limit: 100 });
+        product = products.data.find(p => 
+          p.metadata && p.metadata.addon_key === addon.addonKey
+        ) || null;
+        
+        if (product) {
+          console.log(`   ✅ Found existing product: ${product.id}`);
+        }
+      } catch (error) {
+        // Continue to create
+      }
+
+      // Create product if it doesn't exist
+      if (!product) {
+        product = await stripe.products.create({
+          name: addon.name,
+          description: addon.description,
+          metadata: {
+            addon_key: addon.addonKey,
+            type: 'addon'
+          }
+        });
+        console.log(`   ✅ Created product: ${product.id}`);
+      }
+
+      addonResults.products[addon.addonKey] = product.id;
+
+      // Step 2: Create or find monthly price
+      let monthlyPrice = null;
+      try {
+        const existingPrices = await stripe.prices.list({
+          product: product.id,
+          limit: 100
+        });
+        
+        monthlyPrice = existingPrices.data.find(p => 
+          p.lookup_key === addon.monthly.lookupKey
+        );
+      } catch (error) {
+        // Continue to create
+      }
+
+      if (!monthlyPrice) {
+        monthlyPrice = await stripe.prices.create({
+          product: product.id,
+          unit_amount: addon.monthly.amount,
+          currency: 'usd',
+          recurring: {
+            interval: 'month'
+          },
+          lookup_key: addon.monthly.lookupKey,
+          metadata: {
+            addon_key: addon.addonKey,
+            billing_cycle: 'monthly'
+          }
+        });
+        console.log(`   ✅ Created monthly price: ${monthlyPrice.id} ($${(addon.monthly.amount / 100).toFixed(2)}/mo)`);
+      } else {
+        console.log(`   ✅ Found existing monthly price: ${monthlyPrice.id} ($${(addon.monthly.amount / 100).toFixed(2)}/mo)`);
+      }
+
+      addonResults.prices.monthly[addon.addonKey] = monthlyPrice.id;
+
+      // Step 3: Create or find annual price
+      let annualPrice = null;
+      try {
+        const existingPrices = await stripe.prices.list({
+          product: product.id,
+          limit: 100
+        });
+        
+        annualPrice = existingPrices.data.find(p => 
+          p.lookup_key === addon.annual.lookupKey
+        );
+      } catch (error) {
+        // Continue to create
+      }
+
+      if (!annualPrice) {
+        annualPrice = await stripe.prices.create({
+          product: product.id,
+          unit_amount: addon.annual.amount,
+          currency: 'usd',
+          recurring: {
+            interval: 'year'
+          },
+          lookup_key: addon.annual.lookupKey,
+          metadata: {
+            addon_key: addon.addonKey,
+            billing_cycle: 'annual'
+          }
+        });
+        console.log(`   ✅ Created annual price: ${annualPrice.id} ($${(addon.annual.amount / 100).toFixed(2)}/yr)`);
+      } else {
+        console.log(`   ✅ Found existing annual price: ${annualPrice.id} ($${(addon.annual.amount / 100).toFixed(2)}/yr)`);
+      }
+
+      addonResults.prices.annual[addon.addonKey] = annualPrice.id;
+    }
+
+    // Merge addon results into main results
+    results.addons = addonResults;
+
     // Step 4: Output results
     console.log('\n' + '='.repeat(60));
     console.log('🎉 Seeding completed successfully!\n');
@@ -288,6 +483,20 @@ const subscriptionTiers = [
     console.log(`PRICE_TIER_PRO_ANNUAL=${results.prices.annual.pro}`);
     console.log(`PRICE_TIER_TRUST_PLUS=${results.prices.monthly.trust_plus}`);
     console.log(`PRICE_TIER_TRUST_PLUS_ANNUAL=${results.prices.annual.trust_plus}`);
+    console.log('');
+    console.log('# Stripe Add-on Price IDs');
+    if (results.addons) {
+      console.log(`PRICE_ADDON_FLAVOR_INTELLIGENCE=${results.addons.prices.monthly.flavor_intelligence}`);
+      console.log(`PRICE_ADDON_FLAVOR_INTELLIGENCE_ANNUAL=${results.addons.prices.annual.flavor_intelligence}`);
+      console.log(`PRICE_ADDON_ADVANCED_ANALYTICS=${results.addons.prices.monthly.advanced_analytics}`);
+      console.log(`PRICE_ADDON_ADVANCED_ANALYTICS_ANNUAL=${results.addons.prices.annual.advanced_analytics}`);
+      console.log(`PRICE_ADDON_STAFF_PERFORMANCE=${results.addons.prices.monthly.staff_performance}`);
+      console.log(`PRICE_ADDON_STAFF_PERFORMANCE_ANNUAL=${results.addons.prices.annual.staff_performance}`);
+      console.log(`PRICE_ADDON_CUSTOM_INTEGRATIONS=${results.addons.prices.monthly.custom_integrations}`);
+      console.log(`PRICE_ADDON_CUSTOM_INTEGRATIONS_ANNUAL=${results.addons.prices.annual.custom_integrations}`);
+      console.log(`PRICE_ADDON_PRIORITY_SUPPORT=${results.addons.prices.monthly.priority_support}`);
+      console.log(`PRICE_ADDON_PRIORITY_SUPPORT_ANNUAL=${results.addons.prices.annual.priority_support}`);
+    }
     console.log('');
 
     // Display summary table

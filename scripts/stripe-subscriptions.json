@@ -1,0 +1,89 @@
+{
+  "currency": "usd",
+  "subscriptionTiers": [
+    {
+      "name": "Hookah+ Starter",
+      "tierKey": "starter",
+      "description": "Perfect for mobile hookah operators and small lounges",
+      "monthly": {
+        "amount": 7900,
+        "lookupKey": "tier_starter_monthly",
+        "displayPrice": "$79.00/month"
+      },
+      "annual": {
+        "amount": 79000,
+        "lookupKey": "tier_starter_annual",
+        "displayPrice": "$790.00/year"
+      },
+      "features": [
+        "Up to 150 sessions/month",
+        "1 lounge or pop-up location",
+        "Perfect for mobile operators",
+        "Basic session management",
+        "QR code generation",
+        "Email support",
+        "Mobile dashboard access",
+        "Basic analytics"
+      ]
+    },
+    {
+      "name": "Hookah+ Pro",
+      "tierKey": "pro",
+      "description": "For growing lounges that need advanced features",
+      "monthly": {
+        "amount": 24900,
+        "lookupKey": "tier_pro_monthly",
+        "displayPrice": "$249.00/month"
+      },
+      "annual": {
+        "amount": 249000,
+        "lookupKey": "tier_pro_annual",
+        "displayPrice": "$2490.00/year"
+      },
+      "features": [
+        "Up to 600 sessions/month",
+        "Up to 3 lounges",
+        "Advanced session management",
+        "AI-powered flavor recommendations",
+        "Loyalty scoring system",
+        "Staff memory & tracking",
+        "Priority email support",
+        "Custom branding",
+        "Advanced analytics & reporting",
+        "Staff management tools",
+        "Real-time notifications"
+      ]
+    },
+    {
+      "name": "Hookah+ Trust+",
+      "tierKey": "trust_plus",
+      "description": "For large operations requiring custom solutions",
+      "monthly": {
+        "amount": 49900,
+        "lookupKey": "tier_trust_plus_monthly",
+        "displayPrice": "$499.00/month"
+      },
+      "annual": {
+        "amount": 499000,
+        "lookupKey": "tier_trust_plus_annual",
+        "displayPrice": "$4990.00/year"
+      },
+      "features": [
+        "Unlimited sessions",
+        "Up to 7 lounges",
+        "Everything in Pro",
+        "Multi-location cloud scaling",
+        "Custom support channels",
+        "Advanced API access",
+        "White-label options",
+        "Dedicated account manager"
+      ]
+    }
+  ],
+  "notes": {
+    "usage": "This file serves as a reference for subscription tier configuration. The actual seeding is performed by scripts/seed-stripe-subscriptions.js",
+    "lastUpdated": "2025-01-16",
+    "pricingSource": "Based on apps/site/app/pricing/page.tsx configuration"
+  }
+}
+

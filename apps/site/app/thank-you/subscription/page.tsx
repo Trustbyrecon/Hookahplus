@@ -83,12 +83,7 @@ function SubscriptionThankYouContent() {
               </div>
             </div>
 
-            {sessionId && (
-              <div className="mb-6 p-4 bg-zinc-800/50 rounded-lg border border-zinc-700">
-                <p className="text-sm text-zinc-400 mb-1">Session ID</p>
-                <p className="text-xs font-mono text-zinc-300 break-all">{sessionId}</p>
-              </div>
-            )}
+            {/* Session ID is stored server-side and used for account creation via webhook */}
 
             <div className="space-y-4 mb-8">
               <div className="flex items-start gap-3">
@@ -96,7 +91,7 @@ function SubscriptionThankYouContent() {
                 <div>
                   <h3 className="font-semibold text-white mb-1">Check Your Email</h3>
                   <p className="text-sm text-zinc-400">
-                    We've sent you a confirmation email with your subscription details and next steps.
+                    We'll send you a welcome email with your account setup instructions and login details once your subscription is fully processed (usually within a few minutes).
                   </p>
                 </div>
               </div>
@@ -126,9 +121,13 @@ function SubscriptionThankYouContent() {
                 variant="outline"
                 size="lg"
                 className="flex-1"
-                onClick={() => window.location.href = '/dashboard'}
+                onClick={() => {
+                  // Route to onboarding since account isn't created yet
+                  // Dashboard will be available after onboarding completes
+                  window.location.href = '/onboarding';
+                }}
               >
-                Go to Dashboard
+                Complete Setup
               </Button>
             </div>
           </div>
