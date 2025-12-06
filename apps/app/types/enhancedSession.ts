@@ -62,6 +62,8 @@ export interface FireSession {
   bohState?: 'PREPARING' | 'WARMING_UP' | 'READY_FOR_PICKUP' | 'PICKED_UP';
   guestTimerDisplay?: boolean;
   source?: 'QR' | 'RESERVE' | 'WALK_IN' | 'POS' | string; // Session source from Prisma
+  externalRef?: string | null; // Stripe checkout session ID or other external reference
+  paymentStatus?: string | null; // Payment status from Stripe
 }
 
 // State transition validation

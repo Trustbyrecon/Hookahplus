@@ -155,7 +155,9 @@ export function convertPrismaSessionToFireSession(session: any): FireSession {
     } : undefined,
     bohState: 'PREPARING' as const,
     guestTimerDisplay: session.state === 'ACTIVE',
-    source: session.source // Include source from Prisma session
+    source: session.source, // Include source from Prisma session
+    externalRef: session.externalRef || null, // Include Stripe checkout session ID
+    paymentStatus: session.paymentStatus || null // Include payment status
   };
 }
 
