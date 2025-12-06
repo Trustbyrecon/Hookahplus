@@ -60,24 +60,16 @@ export async function generateDailyPulse(
     },
   });
   } catch (dbError) {
-    // Database connection failed - use demo data
-    console.warn('[Pulse Generator] Database unavailable, using demo data:', dbError instanceof Error ? dbError.message : 'Unknown error');
-    const USE_DEMO_MODE = process.env.NEXT_PUBLIC_USE_DEMO_MODE === 'true';
-    const IS_DEVELOPMENT = process.env.NODE_ENV === 'development';
-    
-    if (USE_DEMO_MODE && IS_DEVELOPMENT) {
-      return generateDemoPulse(window);
-    } else {
-      // Production: return empty pulse
-      return {
-        summary: `No data available for ${window === 'pm' ? '12-hour' : '24-hour'} period`,
-        metrics: { sessions: 0, revenue: 0, avgDuration: 0, edgeCases: 0 },
-        topFlavors: [],
-        recommendations: ['Database connection unavailable - please check configuration'],
-        timestamp: now.toISOString(),
-        window: window === 'pm' ? '12h' : '24h',
-      };
-    }
+    // First Light: Database connection failed - return empty pulse (no demo data)
+    console.error('[Pulse Generator] Database unavailable:', dbError instanceof Error ? dbError.message : 'Unknown error');
+    return {
+      summary: `No data available for ${window === 'pm' ? '12-hour' : '24-hour'} period`,
+      metrics: { sessions: 0, revenue: 0, avgDuration: 0, edgeCases: 0 },
+      topFlavors: [],
+      recommendations: ['Database connection unavailable - please check DATABASE_URL and ensure database is running'],
+      timestamp: now.toISOString(),
+      window: window === 'pm' ? '12h' : '24h',
+    };
   }
 
   // Calculate metrics

@@ -162,7 +162,7 @@ const GlobalNavigation: React.FC = () => {
           }
         }
 
-        // Fetch Trust-Lock status
+        // Fetch Trust-Lock status (skip if 401 in First Light mode - expected)
         const trustLockResponse = await fetch('/api/trust-lock/status');
         if (trustLockResponse.ok) {
           const trustLockData = await trustLockResponse.json();
@@ -170,6 +170,10 @@ const GlobalNavigation: React.FC = () => {
             setTrustLockStatus(trustLockData.status);
             setTrustLockVerificationRate(trustLockData.metrics?.verificationRate || 100);
           }
+        } else if (trustLockResponse.status === 401) {
+          // In First Light mode, 401 is expected - don't log as error
+          // The endpoint should return 200 in First Light mode, but if it doesn't, just skip
+          console.log('[GlobalNavigation] Trust-Lock status: Skipped (First Light mode)');
         }
 
         // Fetch Reflex score (placeholder - implement API later)

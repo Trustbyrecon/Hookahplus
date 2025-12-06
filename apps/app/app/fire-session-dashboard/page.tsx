@@ -12,7 +12,8 @@ import {
   Flame, 
   AlertCircle,
   RefreshCw,
-  Shield
+  Shield,
+  CheckCircle
 } from 'lucide-react';
 import { SessionStatus } from '../../types/session';
 import Breadcrumbs from '../../components/Breadcrumbs';
@@ -20,6 +21,9 @@ import PageHero from '../../components/PageHero';
 import SyncIndicator from '../../components/SyncIndicator';
 import RelatedSessions from '../../components/RelatedSessions';
 import PulseCard from '../../components/PulseCard';
+import FirstLightBanner from '../../components/FirstLightBanner';
+import FirstLightHealthCard from '../../components/FirstLightHealthCard';
+import FirstLightChecklist from '../../components/FirstLightChecklist';
 
 export default function FireSessionDashboard() {
   return (
@@ -46,6 +50,12 @@ function FireSessionDashboardContent() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [userRole, setUserRole] = useState<'BOH' | 'FOH' | 'MANAGER' | 'ADMIN'>('MANAGER');
   const [demoSessionCreated, setDemoSessionCreated] = useState(false);
+  const [firstLightFocus, setFirstLightFocus] = useState(false);
+  const [databaseConnected, setDatabaseConnected] = useState(false);
+  const [firstLightAchieved, setFirstLightAchieved] = useState(false);
+  const [previousSessionCount, setPreviousSessionCount] = useState(0);
+  const [alphaStabilityMode, setAlphaStabilityMode] = useState(false);
+  const [metricsEnabled, setMetricsEnabled] = useState(false);
   
   // Check for demo mode from URL params
   const isDemoMode = searchParams.get('mode') === 'demo';
@@ -63,6 +73,72 @@ function FireSessionDashboardContent() {
   // Use session context for shared state
   const { sessions, metrics, loading, error, refreshSessions, updateSessionState, lastUpdated } = useSessionContext();
   const { currentTheme } = useTheme();
+
+  // Check database connection status
+  useEffect(() => {
+    const checkDatabase = async () => {
+      try {
+        const response = await fetch('/api/health');
+        const data = await response.json();
+        setDatabaseConnected(data.database === 'connected');
+      } catch {
+        setDatabaseConnected(false);
+      }
+    };
+    checkDatabase();
+    const interval = setInterval(checkDatabase, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Check for First Light achievement (session created and persists)
+  useEffect(() => {
+    if (!isDemoMode && databaseConnected && sessions.length > 0 && sessions.length > previousSessionCount) {
+      // Session was created - check if it persists after a delay
+      const checkPersist = setTimeout(async () => {
+        await refreshSessions();
+        // If session count is still > 0 after refresh, First Light is achieved
+        if (sessions.length > 0) {
+          setFirstLightAchieved(true);
+          // Show celebration for 10 seconds
+          setTimeout(() => {
+            // Keep it achieved but don't auto-hide - user can dismiss manually
+          }, 10000);
+        }
+      }, 2000);
+      return () => clearTimeout(checkPersist);
+    }
+    setPreviousSessionCount(sessions.length);
+  }, [sessions.length, databaseConnected, isDemoMode, previousSessionCount, refreshSessions]);
+  
+  // Check if session from URL exists (for paid sessions from checkout)
+  useEffect(() => {
+    if (sessionIdFromUrl && searchParams.get('paid') === 'true') {
+      // Check if this session exists in the list
+      const sessionExists = sessions.some(s => s.id === sessionIdFromUrl || s.externalRef === sessionIdFromUrl);
+      if (sessionExists && !firstLightAchieved) {
+        // This is a paid session - celebrate First Light!
+        setFirstLightAchieved(true);
+        // Refresh to ensure we have the latest session data
+        refreshSessions();
+      } else if (!sessionExists) {
+        // Session not found yet - keep polling
+        const pollInterval = setInterval(async () => {
+          await refreshSessions();
+          const updatedSessions = await fetch('/api/sessions').then(r => r.json()).catch(() => ({ sessions: [] }));
+          const found = (updatedSessions.sessions || updatedSessions).some((s: any) => 
+            s.id === sessionIdFromUrl || s.externalRef === sessionIdFromUrl
+          );
+          if (found) {
+            clearInterval(pollInterval);
+            setFirstLightAchieved(true);
+          }
+        }, 2000);
+        // Stop polling after 30 seconds
+        setTimeout(() => clearInterval(pollInterval), 30000);
+        return () => clearInterval(pollInterval);
+      }
+    }
+  }, [sessionIdFromUrl, sessions, firstLightAchieved, searchParams, refreshSessions]);
   
   // In demo mode, sessions are generated in-memory by useLiveSessionData
   // No API calls needed - demo data is automatically used when database is unavailable
@@ -186,6 +262,15 @@ function FireSessionDashboardContent() {
         <GlobalNavigation />
       </Suspense>
       
+      {/* First Light Banner - Show when not in demo mode */}
+      {!isDemoMode && (
+        <FirstLightBanner 
+          onRunTest={() => {
+            setShowCreateModal(true);
+          }}
+        />
+      )}
+
       {/* Demo Mode Banner */}
       {isDemoMode && (
         <div className="bg-gradient-to-r from-teal-500/20 to-blue-500/20 border-b border-teal-500/30 px-4 py-3">
@@ -274,18 +359,308 @@ function FireSessionDashboardContent() {
                   <option value="ADMIN">ADMIN</option>
                 </select>
               </div>
+              {!isDemoMode && (
+                <div className="flex items-center space-x-2">
+                  <label className="flex items-center gap-2 text-sm text-zinc-400 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={firstLightFocus}
+                      onChange={(e) => setFirstLightFocus(e.target.checked)}
+                      className="w-4 h-4 rounded border-zinc-600 bg-zinc-800 text-teal-500 focus:ring-teal-500"
+                    />
+                    <span>First Light Focus</span>
+                  </label>
+                </div>
+              )}
             </div>
           </div>
         )}
 
-        {/* Error Display - Hidden in demo mode */}
+        {/* First Light Achievement Celebration */}
+        {!isDemoMode && firstLightAchieved && (
+          <div className="mb-6 animate-in fade-in slide-in-from-top duration-500">
+            <div className="bg-gradient-to-r from-teal-500/20 via-emerald-500/20 to-green-500/20 border-2 border-teal-500/50 rounded-lg p-6 shadow-lg shadow-teal-500/20">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-teal-400 to-emerald-500 rounded-full flex items-center justify-center animate-pulse">
+                    <CheckCircle className="w-8 h-8 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-white mb-1">
+                      🎉 First Light Achieved! 🎉
+                    </h3>
+                    <p className="text-teal-200">
+                      Your first session has been created and persisted to the database!
+                    </p>
+                    <p className="text-teal-300/80 text-sm mt-1">
+                      Session count: <span className="font-bold text-teal-200">{sessions.length}</span> • Database: <span className="font-bold text-teal-200">Connected</span>
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setFirstLightAchieved(false)}
+                  className="text-zinc-400 hover:text-white transition-colors px-3 py-1"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* First Light Health Card and Checklist - Show when First Light Focus is ON */}
+        {!isDemoMode && firstLightFocus && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <FirstLightHealthCard />
+            <FirstLightChecklist 
+              sessionsCount={sessions.length}
+              databaseConnected={databaseConnected}
+            />
+          </div>
+        )}
+
+        {/* Clear Old Sessions Button - First Light Mode Only */}
+        {!isDemoMode && firstLightFocus && (
+          <div className="mb-4 flex justify-end">
+            <button
+              onClick={async () => {
+                if (confirm('Clear all sessions older than 1 hour? This will help focus on First Light testing.\n\nOnly sessions from the last hour will be kept.')) {
+                  try {
+                    const response = await fetch('/api/sessions/clear-old?keepRecent=1', {
+                      method: 'DELETE',
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                      alert(`✅ Cleared ${data.deleted} old sessions.\n\nKept sessions from the last hour.`);
+                      await refreshSessions();
+                    } else {
+                      alert(`❌ Failed to clear sessions: ${data.error || 'Unknown error'}`);
+                    }
+                  } catch (error) {
+                    console.error('Failed to clear old sessions:', error);
+                    alert('❌ Failed to clear old sessions. Check console for details.');
+                  }
+                }
+              }}
+              className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              🗑️ Clear Old Sessions (Keep Last Hour)
+            </button>
+          </div>
+        )}
+
+        {/* Error Display - First Light messaging */}
         {error && !isDemoMode && (
           <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6">
-            <div className="flex items-center gap-2 text-red-300">
+            <div className="flex items-center gap-2 text-red-300 mb-2">
               <AlertCircle className="w-5 h-5" />
-              <span className="font-medium">Error</span>
+              <span className="font-medium">Sessions Engine Blocked</span>
             </div>
-            <p className="text-red-200 text-sm mt-2">{error}</p>
+            <p className="text-red-200 text-sm mb-2">
+              We could not connect to the database.
+            </p>
+            <p className="text-red-200/80 text-xs mb-3">
+              Demo mode is disabled in First Light.
+            </p>
+            <div className="text-red-200/70 text-xs mb-3">
+              <div className="font-medium mb-1">What this means:</div>
+              <div>Your data is not persisting yet.</div>
+            </div>
+            <div className="text-red-200/70 text-xs mb-3">
+              <div className="font-medium mb-1">Likely causes:</div>
+              <ul className="list-disc list-inside space-y-0.5">
+                <li>DATABASE_URL missing in this environment</li>
+                <li>Database is asleep or unreachable</li>
+                <li>Driver or pooling mismatch</li>
+              </ul>
+            </div>
+            <div className="flex gap-2 mt-3">
+              <button
+                onClick={() => refreshSessions()}
+                className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors"
+              >
+                Retry
+              </button>
+              <a
+                href="/docs/setup-guide"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-white text-sm rounded transition-colors"
+              >
+                Open Setup Guide
+              </a>
+            </div>
+          </div>
+        )}
+
+        {/* Metrics Status Message */}
+        {!isDemoMode && firstLightFocus && !metricsEnabled && (
+          <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-3 mb-6 text-sm text-zinc-400">
+            Metrics are paused during First Light. Sessions are the only required system for this milestone.
+          </div>
+        )}
+        
+        {/* Alpha Stability Banner */}
+        {!isDemoMode && alphaStabilityMode && (
+          <div className="mb-6 animate-in fade-in slide-in-from-top duration-500">
+            <div className="bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-purple-500/20 border-2 border-blue-500/50 rounded-lg p-6 shadow-lg shadow-blue-500/20">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center animate-pulse">
+                    <Shield className="w-8 h-8 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-white mb-1">
+                      🚀 Alpha Stability Mode Active
+                    </h3>
+                    <p className="text-blue-200">
+                      Metrics are now enabled. Real-time analytics and performance monitoring are active.
+                    </p>
+                    <p className="text-blue-300/80 text-sm mt-1">
+                      Metrics: <span className="font-bold text-blue-200">{metricsEnabled ? 'Enabled' : 'Disabled'}</span> • 
+                      Sessions: <span className="font-bold text-blue-200">{sessions.length}</span> • 
+                      Database: <span className="font-bold text-blue-200">Connected</span>
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setAlphaStabilityMode(false);
+                    localStorage.removeItem('alphaStabilityMode');
+                  }}
+                  className="text-zinc-400 hover:text-white transition-colors px-3 py-1"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* First Light Achievement Celebration */}
+        {!isDemoMode && firstLightAchieved && !alphaStabilityMode && (
+          <div className="bg-gradient-to-r from-green-900/30 to-teal-900/30 border border-green-700/50 rounded-lg p-6 mb-6">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+                  <CheckCircle className="w-8 h-8 text-white" />
+                </div>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-green-200 mb-2">
+                  FIRST LIGHT ACHIEVED
+                </h3>
+                <p className="text-green-100 text-sm mb-4">
+                  The core sessions engine has run successfully with live data.
+                  You have cleared the baseline for business-grade stabilization.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={async () => {
+                      // Enable metrics API
+                      setMetricsEnabled(true);
+                      setFirstLightFocus(false);
+                      // Store in localStorage to persist across refreshes
+                      localStorage.setItem('metricsEnabled', 'true');
+                      // Refresh metrics to load real data
+                      await refreshSessions();
+                      console.log('[Dashboard] ✅ Metrics enabled - Alpha Stability mode activated');
+                    }}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
+                  >
+                    Enable Metrics
+                  </button>
+                  <button
+                    onClick={async () => {
+                      // Transition to Alpha Stability
+                      setAlphaStabilityMode(true);
+                      setMetricsEnabled(true);
+                      setFirstLightFocus(false);
+                      // Store in localStorage
+                      localStorage.setItem('alphaStabilityMode', 'true');
+                      localStorage.setItem('metricsEnabled', 'true');
+                      // Refresh sessions to ensure we have the latest data
+                      await refreshSessions();
+                      // Hide the celebration banner
+                      setFirstLightAchieved(false);
+                      // Scroll to sessions
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                      console.log('[Dashboard] ✅ Alpha Stability mode activated - Metrics enabled');
+                    }}
+                    className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-sm font-medium transition-colors"
+                  >
+                    Continue to Alpha Stability
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Persistent Alpha Stability Controls - Show even after banner is dismissed */}
+        {!isDemoMode && !alphaStabilityMode && !metricsEnabled && (
+          <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-sm font-semibold text-white mb-1">🚀 Spark the Flywheel</h4>
+                <p className="text-xs text-zinc-400">First Light complete! Enable metrics and activate Alpha Stability to unlock the full Night After Night flow.</p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={async () => {
+                    setMetricsEnabled(true);
+                    localStorage.setItem('metricsEnabled', 'true');
+                    await refreshSessions();
+                  }}
+                  className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-sm font-medium transition-colors"
+                >
+                  Enable Metrics
+                </button>
+                <button
+                  onClick={async () => {
+                    setAlphaStabilityMode(true);
+                    setMetricsEnabled(true);
+                    localStorage.setItem('alphaStabilityMode', 'true');
+                    localStorage.setItem('metricsEnabled', 'true');
+                    await refreshSessions();
+                  }}
+                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium transition-colors"
+                >
+                  Alpha Stability
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Flywheel Status - Show when we have paid sessions ready for workflow */}
+        {!isDemoMode && sessions.some(s => {
+          const status = s.status || (s.state === 'PENDING' && (s.paymentStatus === 'succeeded' || s.externalRef?.startsWith('cs_')) ? 'PAID_CONFIRMED' : 'NEW');
+          return status === 'PAID_CONFIRMED';
+        }) && (
+          <div className="mb-6 bg-gradient-to-r from-orange-500/20 via-amber-500/20 to-yellow-500/20 border-2 border-orange-500/50 rounded-lg p-6 shadow-lg shadow-orange-500/20">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-amber-500 rounded-full flex items-center justify-center animate-pulse">
+                <Flame className="w-8 h-8 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-2xl font-bold text-white mb-1">
+                  🔥 Flywheel Ready to Spark!
+                </h3>
+                <p className="text-orange-200 mb-2">
+                  You have paid sessions ready for the Night After Night flow.
+                </p>
+                <p className="text-orange-300/80 text-sm">
+                  Paid Sessions: <span className="font-bold text-orange-200">
+                    {sessions.filter(s => {
+                      const status = s.status || (s.state === 'PENDING' && (s.paymentStatus === 'succeeded' || s.externalRef?.startsWith('cs_')) ? 'PAID_CONFIRMED' : 'NEW');
+                      return status === 'PAID_CONFIRMED';
+                    }).length}
+                  </span> • 
+                  Next Action: <span className="font-bold text-orange-200">BOH: Claim Prep</span>
+                </p>
+              </div>
+            </div>
           </div>
         )}
 

@@ -29,9 +29,10 @@ const SessionConfirmation: React.FC<SessionConfirmationProps> = ({
       
       try {
         setQrLoading(true);
-        // Generate QR code with URL that routes to staff scan page
+        // Generate QR code with URL that routes to dashboard for staff to see paid status and start Night after Night flow
         const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://app.hookahplus.net';
-        const qrUrl = `${baseUrl}/staff/scan/${sessionId}`;
+        // Route to dashboard with session ID - staff can see it's paid and start the workflow
+        const qrUrl = `${baseUrl}/fire-session-dashboard?session=${sessionId}&paid=true`;
         
         console.log('[SessionConfirmation] Generating QR code for:', qrUrl);
         
@@ -127,7 +128,7 @@ const SessionConfirmation: React.FC<SessionConfirmationProps> = ({
           )}
         </div>
         <p className="text-sm text-zinc-400 text-center mt-4">
-          Staff can scan this QR code to access your session details
+          Staff can scan this QR code to view the session in the dashboard, see payment status, and start the Night after Night flow
         </p>
       </div>
     </Card>

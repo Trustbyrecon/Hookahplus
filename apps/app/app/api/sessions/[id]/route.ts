@@ -62,14 +62,98 @@ export async function GET(
     const sessionId = params.id;
 
     // Find session by ID or externalRef (Stripe checkout session ID)
-    const session = await prisma.session.findFirst({
-      where: {
-        OR: [
-          { id: sessionId },
-          { externalRef: sessionId },
-        ],
-      },
-    });
+    // Use select to avoid querying columns that don't exist
+    let session: any;
+    try {
+      session = await prisma.session.findFirst({
+        where: {
+          OR: [
+            { id: sessionId },
+            { externalRef: sessionId },
+          ],
+        },
+        select: {
+          id: true,
+          externalRef: true,
+          source: true,
+          trustSignature: true,
+          tableId: true,
+          customerRef: true,
+          customerPhone: true,
+          flavor: true,
+          flavorMix: true,
+          loungeId: true,
+          priceCents: true,
+          state: true,
+          edgeCase: true,
+          edgeNote: true,
+          assignedBOHId: true,
+          assignedFOHId: true,
+          startedAt: true,
+          endedAt: true,
+          durationSecs: true,
+          paymentIntent: true,
+          paymentStatus: true,
+          orderItems: true,
+          posMode: true,
+          version: true,
+          createdAt: true,
+          updatedAt: true,
+          timerDuration: true,
+          timerStartedAt: true,
+          timerPausedAt: true,
+          timerPausedDuration: true,
+          timerStatus: true,
+          zone: true,
+          fohUserId: true,
+          specialRequests: true,
+          tableNotes: true,
+          qrCodeUrl: true,
+          sessionStateV1: true,
+          paused: true,
+          tenantId: true,
+        },
+      });
+    } catch (dbError: any) {
+      // If query fails due to missing columns, try with minimal select
+      if (dbError?.code === 'P2022' || dbError?.message?.includes('does not exist')) {
+        console.warn('[Session API] Column missing, trying minimal query:', dbError?.message);
+        try {
+          session = await prisma.session.findFirst({
+            where: {
+              OR: [
+                { id: sessionId },
+                { externalRef: sessionId },
+              ],
+            },
+            select: {
+              id: true,
+              externalRef: true,
+              source: true,
+              trustSignature: true,
+              tableId: true,
+              customerRef: true,
+              customerPhone: true,
+              flavor: true,
+              flavorMix: true,
+              loungeId: true,
+              priceCents: true,
+              state: true,
+              paymentIntent: true,
+              paymentStatus: true,
+              createdAt: true,
+              updatedAt: true,
+              tenantId: true,
+            },
+          });
+        } catch (fallbackError: any) {
+          console.error('[Session API] Fallback query also failed:', fallbackError?.message);
+          throw fallbackError;
+        }
+      } else {
+        throw dbError;
+      }
+    }
 
     if (!session) {
       return NextResponse.json(
@@ -95,10 +179,14 @@ export async function GET(
       }, {
         headers: getCorsHeaders(request),
       });
-  } catch (error) {
-    console.error('[Session API] Error fetching session:', error);
+  } catch (error: any) {
+    console.error('[Session API] Error fetching session:', error?.message || error);
     return NextResponse.json(
-      { error: 'Failed to fetch session' },
+      { 
+        error: 'Failed to fetch session',
+        details: error?.message || 'Unknown error',
+        code: error?.code
+      },
       { 
         status: 500,
         headers: getCorsHeaders(request),

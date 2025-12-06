@@ -106,7 +106,7 @@ export function formatDuration(seconds: number): string {
 // Business logic descriptions for each state
 export const STATE_DESCRIPTIONS: Record<SessionStatus, string> = {
   'NEW': 'New session created, awaiting payment confirmation',
-  'PAID_CONFIRMED': 'Payment confirmed, ready for BOH preparation',
+  'PAID_CONFIRMED': 'Payment confirmed. Ready for BOH prep → FOH delivery → Light!',
   'PREP_IN_PROGRESS': 'BOH preparing hookah: bowl packing, flavor mixing',
   'HEAT_UP': 'BOH heating coals, final preparation phase',
   'READY_FOR_DELIVERY': 'Hookah ready, awaiting FOH pickup',

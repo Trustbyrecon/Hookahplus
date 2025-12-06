@@ -6,28 +6,113 @@ const useFallbackData = true;
 
 export async function GET(request: NextRequest) {
   try {
-    // Check for demo mode - bypass auth in demo mode
+    // Check for demo mode or Alpha Stability mode
     const { searchParams } = new URL(request.url);
     const isDemoMode = searchParams.get('mode') === 'demo' || searchParams.get('isDemo') === 'true';
+    const alphaStabilityMode = process.env.ALPHA_STABILITY_MODE === 'true' || 
+                                searchParams.get('alphaStability') === 'true' ||
+                                searchParams.get('metricsEnabled') === 'true';
+    const firstLightMode = process.env.FIRST_LIGHT_MODE === 'true';
+    
+    // In Alpha Stability mode, use real metrics from database
+    // In First Light mode, use fallback data (metrics not required)
+    const useRealMetrics = alphaStabilityMode && !firstLightMode;
     
     if (isDemoMode) {
       console.log('[metrics/live] Demo mode: Bypassing auth, returning demo metrics');
+    } else if (useRealMetrics) {
+      console.log('[metrics/live] Alpha Stability mode: Using real metrics from database');
     } else {
-      console.log('[metrics/live] Using fallback data to avoid production issues');
+      console.log('[metrics/live] First Light mode: Using fallback data (metrics not required)');
     }
     
     // Get current timestamp for calculations
     const now = new Date();
     
-    // Use fallback data to avoid webpack module issues
-    const activeSessions = [
-      {
-        priceCents: 3500,
-        startedAt: new Date(Date.now() - 30 * 60 * 1000),
-        assignedBOHId: 'staff-1',
-        assignedFOHId: 'staff-2'
+    let activeSessions: any[] = [];
+    let alerts = 0;
+    let staffAssigned = 0;
+    let totalSessionsToday = 0;
+    
+    // In Alpha Stability mode, calculate real metrics from database
+    if (useRealMetrics) {
+      try {
+        const { prisma } = await import('../../../../lib/db');
+        
+        // Get active sessions from database
+        const dbSessions = await prisma.session.findMany({
+          where: {
+            state: {
+              in: ['PENDING', 'ACTIVE', 'PAUSED']
+            }
+          },
+          select: {
+            id: true,
+            priceCents: true,
+            startedAt: true,
+            assignedBOHId: true,
+            assignedFOHId: true,
+            edgeCase: true,
+            createdAt: true,
+          }
+        });
+        
+        activeSessions = dbSessions.map(s => ({
+          priceCents: s.priceCents || 0,
+          startedAt: s.startedAt,
+          assignedBOHId: s.assignedBOHId,
+          assignedFOHId: s.assignedFOHId
+        }));
+        
+        // Count alerts (sessions with edge cases)
+        alerts = dbSessions.filter(s => s.edgeCase !== null).length;
+        
+        // Count unique staff assigned
+        const staffIds = new Set([
+          ...dbSessions.map(s => s.assignedBOHId).filter(Boolean),
+          ...dbSessions.map(s => s.assignedFOHId).filter(Boolean)
+        ]);
+        staffAssigned = staffIds.size;
+        
+        // Count sessions created today
+        const todayStart = new Date(now);
+        todayStart.setHours(0, 0, 0, 0);
+        totalSessionsToday = await prisma.session.count({
+          where: {
+            createdAt: {
+              gte: todayStart
+            }
+          }
+        });
+        
+        console.log('[metrics/live] ✅ Calculated real metrics from database:', {
+          activeSessions: activeSessions.length,
+          alerts,
+          staffAssigned,
+          totalSessionsToday
+        });
+      } catch (dbError: any) {
+        console.error('[metrics/live] Failed to calculate real metrics, using fallback:', dbError?.message);
+        // Fall back to default values if database query fails
+        activeSessions = [];
+        alerts = 0;
+        staffAssigned = 0;
+        totalSessionsToday = 0;
       }
-    ];
+    } else {
+      // First Light mode: Use fallback data
+      activeSessions = [
+        {
+          priceCents: 3500,
+          startedAt: new Date(Date.now() - 30 * 60 * 1000),
+          assignedBOHId: 'staff-1',
+          assignedFOHId: 'staff-2'
+        }
+      ];
+      alerts = 0;
+      staffAssigned = 2;
+      totalSessionsToday = 1;
+    }
 
     // Calculate metrics
     const activeSessionCount = activeSessions.length;
@@ -45,11 +130,6 @@ export async function GET(request: NextRequest) {
           return sum + duration;
         }, 0) / sessionsWithDuration.length
       : 0;
-
-    // Use fallback values to avoid database issues
-    const alerts = 0;
-    const staffAssigned = 2;
-    const totalSessionsToday = 1;
 
     // Calculate percentage changes (mock for now - would need historical data)
     const metrics = {

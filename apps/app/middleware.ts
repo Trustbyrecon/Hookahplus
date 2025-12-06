@@ -36,6 +36,9 @@ export async function middleware(request: NextRequest) {
   // Get current user
   const { data: { user }, error } = await supabase.auth.getUser();
 
+  // Check if First Light mode is enabled (bypasses auth for core routes)
+  const firstLightMode = process.env.FIRST_LIGHT_MODE === 'true';
+  
   // Public routes that don't require authentication
   const publicRoutes = [
     '/api/health',
@@ -53,6 +56,8 @@ export async function middleware(request: NextRequest) {
     '/demo', // Demo/test link routes are public (no auth required)
     '/_next',
     '/favicon.ico',
+    // First Light mode: allow metrics without auth
+    ...(firstLightMode ? ['/api/metrics'] : []),
     // Dev-only: allow direct access to admin routes without auth
     ...(process.env.NODE_ENV !== 'production'
       ? [
@@ -99,7 +104,14 @@ export async function middleware(request: NextRequest) {
   }
 
   // Protect other API routes
+  // First Light mode: allow /api/sessions and /api/metrics without auth
   if (pathname.startsWith('/api') && !isPublicRoute) {
+    // First Light mode bypass for core routes
+    if (firstLightMode && (pathname.startsWith('/api/sessions') || pathname.startsWith('/api/metrics'))) {
+      // Allow access in First Light mode
+      return response;
+    }
+    
     if (!user) {
       return NextResponse.json(
         { error: 'Unauthorized', message: 'Authentication required' },

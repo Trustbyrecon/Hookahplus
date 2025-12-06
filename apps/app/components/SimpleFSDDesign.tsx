@@ -427,15 +427,18 @@ export default function SimpleFSDDesign({
       return session.status as SessionStatus;
     }
     
-    // Check if PENDING state with succeeded payment = PAID_CONFIRMED
+    // Check if PENDING state with succeeded payment OR externalRef (Stripe checkout) = PAID_CONFIRMED
     const state = session.state || session.status || 'NEW';
-    if (state === 'PENDING' && session.paymentStatus === 'succeeded') {
+    const hasPayment = session.paymentStatus === 'succeeded' || 
+                      (session.externalRef && session.externalRef.startsWith('cs_'));
+    
+    if (state === 'PENDING' && hasPayment) {
       return 'PAID_CONFIRMED';
     }
     
     // Map database state to FireSession status
     const stateMap: Record<string, SessionStatus> = {
-      'PENDING': session.paymentStatus === 'succeeded' ? 'PAID_CONFIRMED' : 'NEW',
+      'PENDING': hasPayment ? 'PAID_CONFIRMED' : 'NEW',
       'ACTIVE': 'ACTIVE',
       'PAUSED': 'STAFF_HOLD',
       'CLOSED': 'CLOSED',
@@ -529,6 +532,20 @@ export default function SimpleFSDDesign({
             <span className="text-xs text-zinc-500">
               {sessionStage}
             </span>
+            {/* Payment Confirmed Indicator */}
+            {sessionStatus === 'PAID_CONFIRMED' && (
+              <div className="flex items-center gap-1 px-2 py-1 bg-green-900/40 border border-green-500/50 rounded">
+                <CheckCircle className="w-3 h-3 text-green-400" />
+                <span className="text-xs font-semibold text-green-300">PAID</span>
+              </div>
+            )}
+            {/* Payment Pending Indicator */}
+            {sessionStatus === 'NEW' && !session.externalRef && (
+              <div className="flex items-center gap-1 px-2 py-1 bg-yellow-900/40 border border-yellow-500/50 rounded">
+                <CreditCard className="w-3 h-3 text-yellow-400" />
+                <span className="text-xs font-semibold text-yellow-300">AWAITING PAYMENT</span>
+              </div>
+            )}
             <div className="flex items-center gap-1 px-2 py-1 bg-zinc-900/50 rounded">
               <Shield className="w-3 h-3 text-zinc-400" />
               <span className={`text-xs font-semibold ${trustScoreColor}`}>
@@ -545,6 +562,47 @@ export default function SimpleFSDDesign({
               </div>
             )}
           </div>
+        </div>
+
+        {/* Session Details - High Value Data */}
+        <div className="mb-3 space-y-2">
+          {/* Customer Name */}
+          {session.customer_name || session.customerName ? (
+            <div className="p-2 bg-zinc-900/50 rounded text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-zinc-400">Customer:</span>
+                <span className="text-white font-medium">{session.customer_name || session.customerName}</span>
+              </div>
+            </div>
+          ) : null}
+          
+          {/* Flavor Mix */}
+          {session.flavor ? (
+            <div className="p-2 bg-zinc-900/50 rounded text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-zinc-400">Flavor Mix:</span>
+                <span className="text-white font-medium">{session.flavor}</span>
+              </div>
+            </div>
+          ) : null}
+          
+          {/* Table ID */}
+          <div className="p-2 bg-zinc-900/50 rounded text-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-zinc-400">Table:</span>
+              <span className="text-white font-medium">{session.table_id || session.tableId}</span>
+            </div>
+          </div>
+          
+          {/* Amount */}
+          {session.amount ? (
+            <div className="p-2 bg-zinc-900/50 rounded text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-zinc-400">Amount:</span>
+                <span className="text-green-400 font-semibold">${(session.amount / 100).toFixed(2)}</span>
+              </div>
+            </div>
+          ) : null}
         </div>
 
         {/* Enhanced State Description */}
@@ -862,7 +920,7 @@ export default function SimpleFSDDesign({
                     return;
                   }
                   
-                  // Production mode: Create Stripe checkout
+                  // Production mode: Check if payment already exists or create Stripe checkout
                   try {
                     // SECURITY: Use existing session ID (session already exists)
                     const sessionId = session.id;
@@ -870,17 +928,44 @@ export default function SimpleFSDDesign({
                       throw new Error('Session ID not found');
                     }
                     
-                    // Create Stripe checkout session with session ID
+                    // Check if session already has a payment (externalRef might be Stripe checkout session ID)
+                    if (session.externalRef && session.externalRef.startsWith('cs_')) {
+                      // Session already has a Stripe checkout session - check if it's paid
+                      try {
+                        const checkoutResponse = await fetch(`/api/checkout-session/${session.externalRef}`);
+                        if (checkoutResponse.ok) {
+                          const checkoutData = await checkoutResponse.json();
+                          if (checkoutData.session?.payment_status === 'paid') {
+                            alert(`✅ Payment already confirmed for ${session.tableId || session.table_id}.\n\nSession is ready for BOH prep → FOH delivery → Light!`);
+                            // Refresh to show updated status
+                            if (refreshSessions) await refreshSessions();
+                            return;
+                          } else {
+                            // Payment not completed - open existing checkout
+                            const checkoutUrl = checkoutData.session?.url;
+                            if (checkoutUrl) {
+                              window.open(checkoutUrl, '_blank');
+                              alert(`✅ Opening existing payment checkout for ${session.tableId || session.table_id}.\n\nComplete payment to proceed.`);
+                              return;
+                            }
+                          }
+                        }
+                      } catch (checkoutError) {
+                        console.warn('[Payment] Could not check existing checkout, creating new one:', checkoutError);
+                      }
+                    }
+                    
+                    // No existing checkout - create new Stripe checkout session
                     const response = await fetch('/api/checkout-session', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
                         sessionId: sessionId, // SECURITY: Only send opaque session ID to Stripe
-                        flavors: [session.flavor || 'Custom Mix'],
-                        tableId: session.tableId,
+                        flavors: session.flavor ? [session.flavor] : ['Custom Mix'],
+                        tableId: session.tableId || session.table_id,
                         amount: amount, // Already in cents
                         total: amount / 100, // For display
-                        sessionDuration: session.durationSecs || 2700,
+                        sessionDuration: session.durationSecs || session.sessionDuration || 2700,
                         dollarTestMode: true // Use $1 test mode for sandbox
                       })
                     });
@@ -889,7 +974,7 @@ export default function SimpleFSDDesign({
                     if (data.success && data.sessionUrl) {
                       // Open Stripe checkout in new window
                       window.open(data.sessionUrl, '_blank');
-                      alert(`✅ Payment checkout opened for ${session.tableId}.\n\nAfter payment confirmation, session will be ready for BOH prep → FOH delivery → Light!`);
+                      alert(`✅ Payment checkout opened for ${session.tableId || session.table_id}.\n\nAfter payment confirmation, session will be ready for BOH prep → FOH delivery → Light!`);
                     } else if (data.error && data.error.includes('Stripe not configured')) {
                       alert(
                         `❌ Stripe not configured.\n\n` +

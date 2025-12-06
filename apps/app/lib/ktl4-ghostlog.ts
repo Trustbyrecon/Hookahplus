@@ -76,8 +76,11 @@ class Ktl4GhostLog {
     console.log(`[KTL-4 GhostLog] 🔒 ${event.flowName}.${event.eventType}: ${event.status}`);
     console.log(`[KTL-4 GhostLog] 📝 Trust Signature: ${trustSignature}`);
 
-    // Emit to external systems if configured
-    await this.emitToExternalSystems(ktl4Event);
+    // Emit to external systems if configured (non-blocking)
+    this.emitToExternalSystems(ktl4Event).catch(err => {
+      // Silently fail - don't block event logging
+      console.warn('[KTL-4 GhostLog] Failed to emit to external systems (non-blocking):', err.message);
+    });
 
     return ktl4Event;
   }
@@ -153,11 +156,22 @@ class Ktl4GhostLog {
 
   /**
    * Emit events to external systems (API, database, etc.)
+   * Non-blocking - failures are logged but don't prevent event storage
    */
   private async emitToExternalSystems(event: Ktl4Event): Promise<void> {
+    // Only emit if we're in a browser context (client-side)
+    // Server-side: skip external API calls to avoid URL errors
+    if (typeof window === 'undefined') {
+      // Server-side: skip fetch calls that would fail with relative URLs
+      return;
+    }
+
     try {
+      // Build absolute URL for client-side fetch
+      const baseUrl = window.location.origin;
+      
       // Emit to GhostLog API
-      await fetch('/api/ghost-log', {
+      await fetch(`${baseUrl}/api/ghost-log`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -168,7 +182,7 @@ class Ktl4GhostLog {
       });
 
       // Emit to Reflex events
-      await fetch('/api/reflex/track', {
+      await fetch(`${baseUrl}/api/reflex/track`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -179,8 +193,12 @@ class Ktl4GhostLog {
           payload: event.details
         })
       });
-    } catch (error) {
-      console.error('[KTL-4 GhostLog] Failed to emit to external systems:', error);
+    } catch (error: any) {
+      // Silently fail - don't block event logging
+      // This is expected in server-side contexts
+      if (error?.code !== 'ERR_INVALID_URL') {
+        console.warn('[KTL-4 GhostLog] Failed to emit to external systems (non-blocking):', error?.message || error);
+      }
     }
   }
 

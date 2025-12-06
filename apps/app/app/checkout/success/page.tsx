@@ -87,16 +87,36 @@ function CheckoutSuccessContent() {
           
           // Poll for database session (webhook may still be processing)
           let attempts = 0;
-          const maxAttempts = 10; // Try for up to 10 seconds (10 attempts * 1 second)
+          const maxAttempts = 20; // Try for up to 20 seconds (20 attempts * 1 second) - webhooks can be slow
           
           const pollForDatabaseSession = async (): Promise<string | null> => {
             while (attempts < maxAttempts) {
-              // Find database session by externalRef (Stripe checkout session ID)
+              // Try finding by externalRef first (Stripe checkout session ID)
               const dbResponse = await fetch(`/api/sessions/${checkoutSessionId}`);
               
               if (dbResponse.ok) {
                 const dbSession = await dbResponse.json();
-                return dbSession.id; // Use actual database session ID
+                const sessionId = dbSession.id || dbSession.session?.id;
+                if (sessionId) {
+                  return sessionId; // Use actual database session ID
+                }
+              }
+              
+              // Also try finding by searching all sessions for this externalRef
+              try {
+                const allSessionsResponse = await fetch('/api/sessions');
+                if (allSessionsResponse.ok) {
+                  const allSessionsData = await allSessionsResponse.json();
+                  const sessions = allSessionsData.sessions || allSessionsData;
+                  const foundSession = Array.isArray(sessions) 
+                    ? sessions.find((s: any) => s.externalRef === checkoutSessionId || s.id === checkoutSessionId)
+                    : null;
+                  if (foundSession) {
+                    return foundSession.id;
+                  }
+                }
+              } catch (searchError) {
+                console.warn('[Checkout Success] Error searching all sessions:', searchError);
               }
               
               // Wait 1 second before retrying
@@ -110,10 +130,11 @@ function CheckoutSuccessContent() {
           
           if (dbSessionId) {
             setSessionId(dbSessionId); // Use database session ID for QR code
-            console.log('[Checkout Success] Found database session:', dbSessionId);
+            console.log('[Checkout Success] ✅ Found database session:', dbSessionId);
           } else {
             // Fallback to Stripe session ID (API endpoint can handle it)
-            console.warn('[Checkout Success] Database session not found after polling. Webhook may still be processing.');
+            console.warn('[Checkout Success] ⚠️ Database session not found after polling. Webhook may still be processing.');
+            console.warn('[Checkout Success] Using Stripe session ID as fallback:', checkoutSessionId);
             setSessionId(checkoutSessionId);
             // Note: The QR code will still work because the API endpoint handles externalRef lookup
           }

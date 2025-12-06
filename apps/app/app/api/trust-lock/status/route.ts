@@ -5,8 +5,25 @@ import { prisma } from '../../../../lib/db';
  * GET /api/trust-lock/status
  * 
  * Returns Trust-Lock system status and verification metrics
+ * In First Light mode, bypasses auth and returns basic status
  */
 export async function GET(req: NextRequest) {
+  // In First Light mode, return simple status without auth
+  if (process.env.FIRST_LIGHT_MODE === 'true') {
+    return NextResponse.json({
+      success: true,
+      status: 'active',
+      metrics: {
+        totalSessions: 0,
+        verifiedSessions: 0,
+        verificationRate: 100,
+        unverifiedSessions: 0
+      },
+      firstLightMode: true,
+      message: 'Trust-Lock status simplified for First Light mode'
+    });
+  }
+
   try {
     // Count sessions with trust signatures
     // Use raw SQL to avoid sessionStateV1 column issues

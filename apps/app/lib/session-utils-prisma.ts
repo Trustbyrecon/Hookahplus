@@ -2,14 +2,23 @@ import { FireSession, SessionStatus } from '../types/enhancedSession';
 import { SessionState } from '@prisma/client';
 
 // Helper function to map Prisma session state (enum) to FireSession status
-function mapPrismaStateToFireSession(state: string | SessionState, paymentStatus?: string | null): SessionStatus {
+function mapPrismaStateToFireSession(state: string | SessionState, paymentStatus?: string | null, externalRef?: string | null, assignedBOHId?: string | null): SessionStatus {
   // Convert enum to string if needed
   const stateStr = typeof state === 'string' ? state : String(state);
   
   // Special handling: PENDING + paymentStatus 'succeeded' = PAID_CONFIRMED
+  // OR: PENDING + externalRef (Stripe checkout session ID) = PAID_CONFIRMED (payment confirmed via Stripe)
   // This is the key fix: after Stripe payment, sessions should show as PAID_CONFIRMED
-  if (stateStr === 'PENDING' && paymentStatus === 'succeeded') {
+  if (stateStr === 'PENDING' && (paymentStatus === 'succeeded' || (externalRef && externalRef.startsWith('cs_')))) {
     return 'PAID_CONFIRMED';
+  }
+  
+  // Special handling: ACTIVE + assignedBOHId + payment confirmed = PREP_IN_PROGRESS
+  // This handles CLAIM_PREP action which sets state to ACTIVE but should show as PREP_IN_PROGRESS
+  if (stateStr === 'ACTIVE' && assignedBOHId && (paymentStatus === 'succeeded' || (externalRef && externalRef.startsWith('cs_')))) {
+    // Check if this is a prep session (has BOH assigned but not yet delivered)
+    // We can infer this from the fact that it's ACTIVE with BOH assigned and payment confirmed
+    return 'PREP_IN_PROGRESS';
   }
   
   const stateMap: Record<string, SessionStatus> = {
@@ -120,7 +129,7 @@ export function convertPrismaSessionToFireSession(session: any): FireSession {
     customerPhone: session.customerPhone || '',
     flavor: flavorMix,
     amount: session.priceCents || 0,
-    status: mapPrismaStateToFireSession(session.state, session.paymentStatus),
+    status: mapPrismaStateToFireSession(session.state, session.paymentStatus, session.externalRef, session.assignedBOHId),
     currentStage: mapStateToStage(session.state),
     sessionType: normalizedSessionType,
     hadRefill,

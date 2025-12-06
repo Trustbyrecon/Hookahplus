@@ -80,13 +80,16 @@ export async function OPTIONS(req: NextRequest) {
 }
 
 // Helper function to map Prisma session state (enum) to FireSession status
-function mapPrismaStateToFireSession(state: string | SessionState, paymentStatus?: string | null): SessionStatus {
+// NOTE: This is a duplicate - the real function is in lib/session-utils-prisma.ts
+// Keeping for backward compatibility but should use convertPrismaSessionToFireSession instead
+function mapPrismaStateToFireSession(state: string | SessionState, paymentStatus?: string | null, externalRef?: string | null): SessionStatus {
   // Convert enum to string if needed
   const stateStr = typeof state === 'string' ? state : String(state);
   
   // Special handling: PENDING + paymentStatus 'succeeded' = PAID_CONFIRMED
+  // OR: PENDING + externalRef (Stripe checkout session ID) = PAID_CONFIRMED (payment confirmed via Stripe)
   // This is the key fix: after Stripe payment, sessions should show as PAID_CONFIRMED
-  if (stateStr === 'PENDING' && paymentStatus === 'succeeded') {
+  if (stateStr === 'PENDING' && (paymentStatus === 'succeeded' || (externalRef && externalRef.startsWith('cs_')))) {
     return 'PAID_CONFIRMED';
   }
   
@@ -223,43 +226,151 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Check for demo mode from query params
+    // Check for demo mode from query params or First Light mode from env
     const isDemoMode = searchParams.get('mode') === 'demo' || searchParams.get('isDemo') === 'true';
+    const firstLightMode = process.env.FIRST_LIGHT_MODE === 'true';
+    const firstLightFocus = searchParams.get('firstLightFocus') === 'true';
     
-    // In demo mode, bypass auth/tenant checks
+    // In demo mode or First Light mode, bypass auth/tenant checks
     let user = null;
     let tenantId: string | null = null;
     
-    if (!isDemoMode) {
+    if (!isDemoMode && !firstLightMode) {
       // Fetch all sessions from database
       // Filter by tenant_id if user is authenticated (RLS will also enforce this)
       user = await getCurrentUser(req);
       tenantId = user ? await getCurrentTenant(req) : null;
     } else {
-      console.log('[Sessions API] Demo mode: Bypassing auth/tenant checks');
+      if (firstLightMode) {
+        console.log('[Sessions API] First Light mode: Bypassing auth/tenant checks');
+      } else {
+        console.log('[Sessions API] Demo mode: Bypassing auth/tenant checks');
+      }
     }
+    
+    // Build where clause outside try block so it's available in catch
+    const whereClause: any = {};
+    
+    // If authenticated, filter by tenant_id (RLS will also enforce)
+    if (tenantId) {
+      whereClause.tenantId = tenantId;
+    }
+    
+    // CRITICAL: Only show sessions with payment confirmed
+    // Sessions should only appear after payment is verified
+    whereClause.OR = [
+      { paymentStatus: 'succeeded' },
+      { externalRef: { not: null } } // Has Stripe checkout session ID
+    ];
+    console.log('[Sessions API] Filtering: Only showing sessions with payment confirmed');
+    
+    // First Light Focus: Only show sessions from the last hour
+    if (firstLightMode && firstLightFocus) {
+      const oneHourAgo = new Date();
+      oneHourAgo.setHours(oneHourAgo.getHours() - 1);
+      whereClause.createdAt = {
+        gte: oneHourAgo,
+      };
+      console.log('[Sessions API] First Light Focus: Showing only sessions from the last hour');
+    }
+    // If not authenticated, this is a public route - RLS will handle filtering
     
     let dbSessions;
     try {
-      const whereClause: any = {};
-      
-      // If authenticated, filter by tenant_id (RLS will also enforce)
-      if (tenantId) {
-        whereClause.tenantId = tenantId;
-      }
-      // If not authenticated, this is a public route - RLS will handle filtering
-      
+      // Use select to only query columns that definitely exist
+      // This prevents errors if optional columns like session_type don't exist yet
       dbSessions = await prisma.session.findMany({
         where: whereClause,
+        select: {
+          id: true,
+          externalRef: true,
+          source: true,
+          trustSignature: true,
+          tableId: true,
+          customerRef: true,
+          customerPhone: true,
+          flavor: true,
+          flavorMix: true,
+          loungeId: true,
+          priceCents: true,
+          // sessionType: true, // Commented out - column may not exist
+          // hadRefill: true, // Commented out - column may not exist
+          // refillCount: true, // Commented out - column may not exist
+          state: true,
+          edgeCase: true,
+          edgeNote: true,
+          assignedBOHId: true,
+          assignedFOHId: true,
+          startedAt: true,
+          endedAt: true,
+          durationSecs: true,
+          paymentIntent: true,
+          paymentStatus: true,
+          orderItems: true,
+          posMode: true,
+          version: true,
+          createdAt: true,
+          updatedAt: true,
+          timerDuration: true,
+          timerStartedAt: true,
+          timerPausedAt: true,
+          timerPausedDuration: true,
+          timerStatus: true,
+          zone: true,
+          fohUserId: true,
+          specialRequests: true,
+          tableNotes: true,
+          qrCodeUrl: true,
+          sessionStateV1: true,
+          paused: true,
+          tenantId: true,
+        },
         orderBy: {
           createdAt: 'desc'
         }
       });
     } catch (dbError: any) {
-      // If sessionStateV1 column doesn't exist, use raw SQL to select only existing columns
-      // If Prisma query fails, log and return empty array (no raw SQL fallback)
-      console.error('[Sessions API] Failed to fetch sessions:', dbError?.message);
-      throw dbError;
+      // If query fails due to missing columns, try with minimal select
+      if (dbError?.code === 'P2022' || dbError?.message?.includes('does not exist')) {
+        console.warn('[Sessions API] Column missing, trying minimal query:', dbError?.message);
+        try {
+          // Fallback: query only essential columns
+          dbSessions = await prisma.session.findMany({
+            where: whereClause,
+            select: {
+              id: true,
+              tableId: true,
+              customerRef: true,
+              customerPhone: true,
+              flavor: true,
+              flavorMix: true,
+              priceCents: true,
+              state: true,
+              assignedBOHId: true,
+              assignedFOHId: true,
+              startedAt: true,
+              endedAt: true,
+              durationSecs: true,
+              paymentStatus: true,
+              externalRef: true, // Required for payment detection
+              createdAt: true,
+              updatedAt: true,
+              timerDuration: true,
+              timerStartedAt: true,
+              timerStatus: true,
+            },
+            orderBy: {
+              createdAt: 'desc'
+            }
+          });
+        } catch (fallbackError: any) {
+          console.error('[Sessions API] Fallback query also failed:', fallbackError?.message);
+          throw fallbackError;
+        }
+      } else {
+        console.error('[Sessions API] Failed to fetch sessions:', dbError?.message);
+        throw dbError;
+      }
     }
 
     // Convert to FireSession format
@@ -318,17 +429,21 @@ export async function GET(req: NextRequest) {
       });
     }
     
-    // Provide user-friendly error message
+    // Provide user-friendly error message (First Light: no demo data fallback)
     const userMessage = errorMessage.includes('Can\'t reach database') || 
                         errorMessage.includes('connection') ||
                         error?.code === 'P1001'
-      ? 'Unable to connect to database. Using demo data.'
+      ? 'Database connection failed. Check DATABASE_URL and ensure database is running.'
       : 'Internal server error';
     
     return NextResponse.json({ 
       error: userMessage,
       details: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
-      stack: process.env.NODE_ENV === 'development' ? errorStack : undefined
+      stack: process.env.NODE_ENV === 'development' ? errorStack : undefined,
+      diagnostic: {
+        errorCode: error?.code,
+        hint: 'First Light mode: Demo data is disabled. Database connection is required.'
+      }
     }, { 
       status: 500,
       headers: getCorsHeaders(req),
@@ -562,14 +677,19 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if session already exists for this table (simplified duplicate check)
-    // Use raw SQL to avoid Prisma trying to select sessionStateV1 if column doesn't exist
+    // Use minimal select to avoid columns that don't exist
     let existingSession: any = null;
-    // Use Prisma Client only - no raw SQL
     try {
       existingSession = await prisma.session.findFirst({
         where: {
           tableId: data.tableId,
           state: { notIn: ['CLOSED', 'CANCELED'] as any }
+        },
+        select: {
+          id: true,
+          tableId: true,
+          state: true,
+          customerRef: true,
         }
       });
     } catch (prismaError: any) {
@@ -657,32 +777,103 @@ export async function POST(req: NextRequest) {
     const sessionId = crypto.randomUUID();
     
     // Create session using Prisma Client only
+    // Only include columns that exist in the database (First Light: handle missing columns gracefully)
     let newSession: any;
     try {
-      newSession = await prisma.session.create({
-        data: {
-          id: sessionId,
-          externalRef: finalExternalRef,
-          source: data.source as SessionSource,
-          state: 'PENDING' as SessionState,
-          trustSignature,
-          tableId: data.tableId,
-          customerRef: data.customerName,
-          customerPhone: data.customerPhone,
-          flavor: finalFlavor,
-          flavorMix: finalFlavorMix,
-          loungeId: finalLoungeId,
-          priceCents: finalPriceCents,
-          sessionType: sessionPricingType,
-          assignedBOHId: data.assignedBoh,
-          assignedFOHId: data.assignedFoh,
-          tableNotes: data.notes,
-          durationSecs: data.sessionDuration,
-          tenantId: finalTenantId, // Multi-tenant: associate with tenant
-          paymentStatus: isDemoMode ? 'succeeded' : null, // Demo mode: auto-confirm payment
-          // Note: sessionStateV1 and paused columns skipped - migration may not be run yet
+      // Build minimal create data with only essential columns that definitely exist
+      const createData: any = {
+        id: sessionId,
+        externalRef: finalExternalRef,
+        source: data.source as SessionSource,
+        state: 'PENDING' as SessionState,
+        trustSignature,
+        tableId: data.tableId,
+        customerRef: data.customerName,
+        customerPhone: data.customerPhone || null,
+        flavor: finalFlavor,
+        flavorMix: finalFlavorMix,
+        loungeId: finalLoungeId,
+        priceCents: finalPriceCents,
+        // sessionType: sessionPricingType, // Commented out - column may not exist
+        assignedBOHId: data.assignedBoh || null,
+        assignedFOHId: data.assignedFoh || null,
+        tableNotes: data.notes || null,
+        durationSecs: data.sessionDuration || null,
+        // tenantId: finalTenantId || null, // Commented out - column doesn't exist in database
+        paymentStatus: isDemoMode ? 'succeeded' : null,
+        // Note: hadRefill, refillCount, sessionType, sessionStateV1, paused columns skipped
+        // These may not exist in the database yet - migrations may not be run
+      };
+
+      try {
+        newSession = await prisma.session.create({
+          data: createData
+        });
+      } catch (createError: any) {
+        // If creation fails due to missing columns, use raw SQL to insert only existing columns
+        if (createError?.code === 'P2022' || createError?.message?.includes('does not exist')) {
+          console.warn('[Sessions API] Column missing, using raw SQL fallback:', createError?.message);
+          try {
+            // Use raw SQL to insert only columns that exist (bypasses Prisma defaults)
+            // Escape values for SQL injection safety
+            const escapeSql = (val: any) => {
+              if (val === null || val === undefined) return 'NULL';
+              if (typeof val === 'string') return `'${val.replace(/'/g, "''")}'`;
+              if (typeof val === 'number') return String(val);
+              return `'${String(val).replace(/'/g, "''")}'`;
+            };
+            
+            // Only include columns that exist in the database
+            // tenantId column doesn't exist - removed from INSERT
+            const insertResult = await prisma.$queryRawUnsafe(`
+              INSERT INTO "Session" (
+                id, "externalRef", source, "trustSignature", "tableId", 
+                "customerRef", "customerPhone", flavor, "flavorMix", 
+                "loungeId", "priceCents", state, 
+                "assignedBOHId", "assignedFOHId", "tableNotes", 
+                "durationSecs", "paymentStatus", 
+                "createdAt", "updatedAt"
+              )
+              VALUES (
+                ${escapeSql(sessionId)},
+                ${escapeSql(finalExternalRef)},
+                ${escapeSql(data.source)},
+                ${escapeSql(trustSignature)},
+                ${escapeSql(data.tableId)},
+                ${escapeSql(data.customerName)},
+                ${escapeSql(data.customerPhone || null)},
+                ${escapeSql(finalFlavor || 'Custom Mix')},
+                ${escapeSql(finalFlavorMix || null)},
+                ${escapeSql(finalLoungeId)},
+                ${escapeSql(finalPriceCents)},
+                ${escapeSql('PENDING')},
+                ${escapeSql(data.assignedBoh || null)},
+                ${escapeSql(data.assignedFoh || null)},
+                ${escapeSql(data.notes || null)},
+                ${escapeSql(data.sessionDuration || null)},
+                ${escapeSql(isDemoMode ? 'succeeded' : null)},
+                NOW(),
+                NOW()
+              )
+              RETURNING id, "externalRef", source, state, "tableId", "customerRef", "customerPhone", 
+                        flavor, "flavorMix", "loungeId", "priceCents", "assignedBOHId", "assignedFOHId", 
+                        "tableNotes", "durationSecs", "paymentStatus", "createdAt", "updatedAt"
+            `) as any[];
+            
+            if (insertResult && insertResult.length > 0) {
+              newSession = insertResult[0];
+              console.log('[Sessions API] ✅ Session created via raw SQL fallback:', newSession.id);
+            } else {
+              throw new Error('Raw SQL insert returned no rows');
+            }
+          } catch (sqlError: any) {
+            console.error('[Sessions API] Raw SQL fallback also failed:', sqlError?.message);
+            throw sqlError;
+          }
+        } else {
+          throw createError;
         }
-      });
+      }
       
       // In demo mode, log that this is a demo session
       if (isDemoMode) {
@@ -933,14 +1124,29 @@ export async function POST(req: NextRequest) {
         });
       }
       
+      // Log full error details for debugging
+      console.error('[Sessions API] ❌ Session creation failed:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        code: (error as any)?.code,
+        meta: (error as any)?.meta,
+        stack: error instanceof Error ? error.stack : undefined,
+        body: body ? {
+          tableId: body.tableId,
+          customerName: body.customerName,
+          source: body.source,
+        } : null,
+      });
+      
       const errorResponse: any = {
         error: error instanceof Error ? error.message : 'Internal server error',
         details: errorMessage,
+        code: (error as any)?.code,
       };
       
       // Include stack in development
       if (process.env.NODE_ENV === 'development') {
         errorResponse.stack = error instanceof Error ? error.stack : undefined;
+        errorResponse.meta = (error as any)?.meta;
       }
       
       // Include request context for debugging
@@ -1114,7 +1320,7 @@ export async function PATCH(req: NextRequest) {
         'CLOSED': 'CLOSED', // CLOSE_SESSION action results in CLOSED status
         'VOIDED': 'CANCELED',
         'FAILED_PAYMENT': 'FAILED_PAYMENT',
-        'PAID_CONFIRMED': 'NEW', // Maps to NEW as payment is confirmed
+        'PAID_CONFIRMED': 'PENDING', // PAID_CONFIRMED maps to PENDING (payment confirmed, ready for prep)
         'CLOSE_PENDING': 'NEW', // Maps to NEW for pending close
         'STOCK_BLOCKED': 'NEW', // Maps to NEW for stock issues
         'REMAKE': 'NEW', // Maps to NEW for remake
@@ -1122,11 +1328,31 @@ export async function PATCH(req: NextRequest) {
         'REFUNDED': 'CANCELED', // Maps to CANCELED for refunded
       };
 
-      const newState = stateMap[updatedSession.status] || dbSession.state;
+      // Map FireSession status to Prisma SessionState enum
+      // Handle CLAIM_PREP action specifically
+      let newState: SessionState = dbSession.state;
       
-      // Ensure HEAT_UP properly transitions from PREP_IN_PROGRESS
-      // Ensure PAUSE_SESSION properly pauses active sessions
-      // Ensure CLOSE_SESSION properly closes sessions
+      if (action === 'CLAIM_PREP') {
+        // CLAIM_PREP transitions from PAID_CONFIRMED to PREP_IN_PROGRESS
+        // Since Prisma doesn't have PREP_IN_PROGRESS enum, we store it as a string in a custom field
+        // For now, use ACTIVE to represent PREP_IN_PROGRESS (BOH is actively working on it)
+        // The actual status string will be stored separately if needed
+        newState = SessionState.ACTIVE;
+        console.log(`[Sessions API] CLAIM_PREP: Transitioning from ${currentSession.status} to PREP_IN_PROGRESS (stored as ACTIVE in Prisma)`);
+      } else {
+        // Use state map for other actions
+        const mappedState = stateMap[updatedSession.status];
+        if (mappedState) {
+          // Map string status to SessionState enum
+          if (mappedState === 'ACTIVE') newState = SessionState.ACTIVE;
+          else if (mappedState === 'PAUSED') newState = SessionState.PAUSED;
+          else if (mappedState === 'CLOSED') newState = SessionState.CLOSED;
+          else if (mappedState === 'CANCELED') newState = SessionState.CANCELED;
+          else if (mappedState === 'NEW') newState = SessionState.PENDING;
+          // For other statuses, keep current state or use PENDING as default
+          else newState = SessionState.PENDING;
+        }
+      }
 
       // Update session in database
       const updateData: any = {
@@ -1135,6 +1361,11 @@ export async function PATCH(req: NextRequest) {
         edgeCase: edgeCase !== undefined ? edgeCase : dbSession.edgeCase,
         edgeNote: edgeNote !== undefined ? edgeNote : dbSession.edgeNote,
       };
+      
+      // For CLAIM_PREP, also update assignedBOHId if provided
+      if (action === 'CLAIM_PREP' && operatorId) {
+        updateData.assignedBOHId = operatorId;
+      }
 
       // Update startedAt if transitioning to ACTIVE
       if (updatedSession.status === 'ACTIVE' && !dbSession.startedAt) {
@@ -1231,6 +1462,10 @@ function getAvailableActions(session: FireSession): SessionAction[] {
   // Add actions based on current status
   switch (session.status) {
     case 'NEW':
+      actions.push('CLAIM_PREP', 'PUT_ON_HOLD');
+      break;
+    case 'PAID_CONFIRMED':
+      // Payment confirmed - ready for BOH to claim prep
       actions.push('CLAIM_PREP', 'PUT_ON_HOLD');
       break;
     case 'PREP_IN_PROGRESS':

@@ -132,8 +132,14 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
       console.log('[useLiveSessionData] Starting to load sessions...');
       
       // Load active sessions from root Prisma API
-      console.log('[useLiveSessionData] Fetching from: /api/sessions');
-      const sessionsResponse = await fetch('/api/sessions');
+      // Add firstLightFocus param if First Light mode is enabled
+      const sessionsUrl = new URL('/api/sessions', window.location.origin);
+      if (process.env.NEXT_PUBLIC_FIRST_LIGHT_MODE === 'true' || 
+          window.location.search.includes('firstLightFocus=true')) {
+        sessionsUrl.searchParams.set('firstLightFocus', 'true');
+      }
+      console.log('[useLiveSessionData] Fetching from:', sessionsUrl.pathname + sessionsUrl.search);
+      const sessionsResponse = await fetch(sessionsUrl.toString());
       console.log('[useLiveSessionData] Sessions response status:', sessionsResponse.status);
       
       if (!sessionsResponse.ok) {
@@ -144,13 +150,13 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
           body: errorText
         });
         
-        // Provide user-friendly error message
+        // Provide user-friendly error message (First Light: no demo data fallback)
         if (sessionsResponse.status === 500) {
-          throw new Error('Server error: Unable to connect to database. Using demo data.');
+          throw new Error('Server error: Database connection failed. Check DATABASE_URL and ensure database is running.');
         } else if (sessionsResponse.status === 404) {
-          throw new Error('Sessions endpoint not found. Using demo data.');
+          throw new Error('Sessions endpoint not found.');
         } else {
-          throw new Error(`HTTP ${sessionsResponse.status}: ${sessionsResponse.statusText || 'Failed to load sessions'}. Using demo data.`);
+          throw new Error(`HTTP ${sessionsResponse.status}: ${sessionsResponse.statusText || 'Failed to load sessions'}`);
         }
       }
       
@@ -214,20 +220,8 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
 
         console.log('[useLiveSessionData] Successfully loaded sessions:', fireSessions.length);
         
-        // If no sessions from API, conditionally load demo data
-        if (fireSessions.length === 0) {
-          if (USE_DEMO_MODE && IS_DEVELOPMENT) {
-            // Dev mode: Load demo data when no real sessions
-            console.log('[Dev Mode] No sessions from API, loading demo data');
-            const demoData = generateRichDemoData();
-            setSessions(demoData);
-          } else {
-            // Production: Show empty state
-            setSessions([]);
-          }
-        } else {
-          setSessions(fireSessions);
-        }
+        // First Light: Always use real data, show empty state if no sessions
+        setSessions(fireSessions);
 
         // Update session timers
         const timers: Record<string, SessionTimer> = {};
@@ -245,69 +239,34 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
       console.error('[useLiveSessionData] Error loading sessions:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to load sessions';
       
-      // Extract user-friendly message if it's already formatted
+      // First Light: No demo data fallback - fail hard with clear error
       let displayError = errorMessage;
-      if (errorMessage.includes('HTTP 500')) {
-        displayError = 'Server error: Database connection issue. Using demo data.';
+      if (errorMessage.includes('HTTP 500') || errorMessage.includes('Database connection')) {
+        displayError = 'Database connection failed. Check DATABASE_URL and ensure database is running.';
       } else if (errorMessage.includes('HTTP')) {
         // Keep the formatted error message
         displayError = errorMessage;
-      } else {
-        displayError = `${errorMessage}. Using demo data.`;
       }
       
-      // Hybrid Demo Data Approach:
-      // - Development: Silent fallback to demo data (no error shown)
-      // - Production/Load Testing: Show error, require real database
-      if (USE_DEMO_MODE && IS_DEVELOPMENT) {
-        // Dev mode: Silent fallback to demo data
-        console.warn('[Dev Mode] Using demo data - database connection failed');
-        const demoData = generateRichDemoData();
-        setSessions(demoData);
-        setError(null); // Don't show error in dev mode
-        
-        // Calculate metrics from demo data
-        const demoMetrics = {
-          activeSessions: demoData.filter(s => ['ACTIVE', 'DELIVERED', 'OUT_FOR_DELIVERY'].includes(s.status)).length,
-          revenue: demoData.reduce((sum, s) => sum + (s.amount / 100), 0),
-          avgDuration: 45,
-          alerts: demoData.filter(s => s.edgeCase !== null).length,
-          staffAssigned: new Set([
-            ...demoData.map(s => s.assignedStaff.boh).filter(Boolean),
-            ...demoData.map(s => s.assignedStaff.foh).filter(Boolean)
-          ]).size,
-          totalSessions: demoData.length,
-          changes: {
-            activeSessions: '+0%',
-            revenue: '+0%',
-            avgDuration: '0%',
-            alerts: '0%',
-            staffAssigned: '+0%',
-            totalSessions: '+0%'
-          }
-        };
-        setMetrics(demoMetrics);
-      } else {
-        // Production/Load Testing: Show error, require real database
-        setError(displayError);
-        setSessions([]); // Empty state - require real data
-        setMetrics({
-          activeSessions: 0,
-          revenue: 0,
-          avgDuration: 0,
-          alerts: 0,
-          staffAssigned: 0,
-          totalSessions: 0,
-          changes: {
-            activeSessions: '0%',
-            revenue: '0%',
-            avgDuration: '0%',
-            alerts: '0%',
-            staffAssigned: '0%',
-            totalSessions: '0%'
-          }
-        });
-      }
+      // First Light: Always show error, require real database
+      setError(displayError);
+      setSessions([]); // Empty state - require real data
+      setMetrics({
+        activeSessions: 0,
+        revenue: 0,
+        avgDuration: 0,
+        alerts: 0,
+        staffAssigned: 0,
+        totalSessions: 0,
+        changes: {
+          activeSessions: '0%',
+          revenue: '0%',
+          avgDuration: '0%',
+          alerts: '0%',
+          staffAssigned: '0%',
+          totalSessions: '0%'
+        }
+      });
     } finally {
       setLoading(false);
     }
@@ -319,6 +278,10 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
     const isDemoMode = typeof window !== 'undefined' && 
       window.location &&
       new URLSearchParams(window.location.search).get('mode') === 'demo';
+    
+    // Check if metrics are enabled (Alpha Stability mode)
+    const metricsEnabled = typeof window !== 'undefined' && 
+      localStorage.getItem('metricsEnabled') === 'true';
 
     // In demo mode, calculate metrics from current sessions (no API call)
     if (isDemoMode) {
@@ -348,8 +311,17 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
 
     // Production mode: call API
     try {
+      // Check if metrics are enabled (Alpha Stability mode)
+      const metricsEnabled = typeof window !== 'undefined' && 
+        localStorage.getItem('metricsEnabled') === 'true';
+      
       console.log('[useLiveSessionData] Loading metrics...');
-      const metricsResponse = await fetch('/api/metrics/live');
+      const metricsUrl = new URL('/api/metrics/live', window.location.origin);
+      if (metricsEnabled) {
+        metricsUrl.searchParams.set('metricsEnabled', 'true');
+        metricsUrl.searchParams.set('alphaStability', 'true');
+      }
+      const metricsResponse = await fetch(metricsUrl.toString());
       console.log('[useLiveSessionData] Metrics response status:', metricsResponse.status);
       
       if (!metricsResponse.ok) {
