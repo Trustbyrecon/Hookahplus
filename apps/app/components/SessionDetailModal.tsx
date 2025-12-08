@@ -201,7 +201,9 @@ const SessionDetailModal: React.FC<SessionDetailModalProps> = ({
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+        // Use detailed error message from API if available
+        const errorMessage = errorData.details || errorData.error || `HTTP ${response.status}: ${response.statusText}`;
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();

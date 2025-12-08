@@ -79,6 +79,23 @@ const GlobalNavigation: React.FC = () => {
   const [trustLockStatus, setTrustLockStatus] = useState<'active' | 'pending' | 'verified'>('active');
   const [trustLockVerificationRate, setTrustLockVerificationRate] = useState<number>(100);
   const [reflexScore, setReflexScore] = useState<number>(87);
+  const [workflowProgress, setWorkflowProgress] = useState<{
+    payment: number;
+    prep: number;
+    heat: number;
+    ready: number;
+    deliver: number;
+    light: number;
+    currentStage: string;
+  }>({
+    payment: 0,
+    prep: 0,
+    heat: 0,
+    ready: 0,
+    deliver: 0,
+    light: 0,
+    currentStage: 'Payment'
+  });
   const [showHelp, setShowHelp] = useState(false);
   const [isAdminVerified, setIsAdminVerified] = useState(false);
 
@@ -153,47 +170,161 @@ const GlobalNavigation: React.FC = () => {
   useEffect(() => {
     const updateSystemStatus = async () => {
       try {
-        // Fetch real session count
+        // Fetch real session count and calculate workflow progress
         const sessionsResponse = await fetch('/api/sessions');
         if (sessionsResponse.ok) {
           const sessionsData = await sessionsResponse.json();
           if (sessionsData.success && sessionsData.sessions) {
-            setSessionCount(sessionsData.sessions.length);
+            const sessions = sessionsData.sessions;
+            setSessionCount(sessions.length);
+            
+            // Calculate workflow progress across all sessions
+            const workflowStages = {
+              payment: 0,
+              prep: 0,
+              heat: 0,
+              ready: 0,
+              deliver: 0,
+              light: 0
+            };
+            
+            let currentStage = 'Payment';
+            let maxProgress = 0;
+            
+            sessions.forEach((session: any) => {
+              const status = session.status || session.state || 'NEW';
+              
+              // Count sessions at each stage
+              if (['PAID_CONFIRMED', 'PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(status)) {
+                workflowStages.payment++;
+              }
+              if (['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(status)) {
+                workflowStages.prep++;
+              }
+              if (['HEAT_UP', 'READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(status)) {
+                workflowStages.heat++;
+              }
+              if (['READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(status)) {
+                workflowStages.ready++;
+              }
+              if (['OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(status)) {
+                workflowStages.deliver++;
+              }
+              if (['DELIVERED', 'ACTIVE'].includes(status)) {
+                workflowStages.light++;
+              }
+              
+              // Determine current stage (most advanced)
+              if (status === 'ACTIVE' && workflowStages.light > maxProgress) {
+                currentStage = 'Light';
+                maxProgress = workflowStages.light;
+              } else if (status === 'DELIVERED' && workflowStages.light > maxProgress) {
+                currentStage = 'Light';
+                maxProgress = workflowStages.light;
+              } else if (status === 'OUT_FOR_DELIVERY' && workflowStages.deliver > maxProgress) {
+                currentStage = 'Deliver';
+                maxProgress = workflowStages.deliver;
+              } else if (status === 'READY_FOR_DELIVERY' && workflowStages.ready > maxProgress) {
+                currentStage = 'Ready';
+                maxProgress = workflowStages.ready;
+              } else if (status === 'HEAT_UP' && workflowStages.heat > maxProgress) {
+                currentStage = 'Heat';
+                maxProgress = workflowStages.heat;
+              } else if (status === 'PREP_IN_PROGRESS' && workflowStages.prep > maxProgress) {
+                currentStage = 'Prep';
+                maxProgress = workflowStages.prep;
+              } else if (status === 'PAID_CONFIRMED' && workflowStages.payment > maxProgress) {
+                currentStage = 'Payment';
+                maxProgress = workflowStages.payment;
+              }
+            });
+            
+            // Convert to percentages
+            const total = sessions.length || 1;
+            setWorkflowProgress({
+              payment: Math.round((workflowStages.payment / total) * 100),
+              prep: Math.round((workflowStages.prep / total) * 100),
+              heat: Math.round((workflowStages.heat / total) * 100),
+              ready: Math.round((workflowStages.ready / total) * 100),
+              deliver: Math.round((workflowStages.deliver / total) * 100),
+              light: Math.round((workflowStages.light / total) * 100),
+              currentStage
+            });
           }
         }
 
         // Fetch Trust-Lock status (skip if 401 in First Light mode - expected)
+        let currentTrustLockStatus: 'active' | 'pending' | 'verified' = 'active';
+        let currentVerificationRate = 100;
+        
         const trustLockResponse = await fetch('/api/trust-lock/status');
         if (trustLockResponse.ok) {
           const trustLockData = await trustLockResponse.json();
           if (trustLockData.success) {
-            setTrustLockStatus(trustLockData.status);
-            setTrustLockVerificationRate(trustLockData.metrics?.verificationRate || 100);
+            currentTrustLockStatus = trustLockData.status;
+            currentVerificationRate = trustLockData.metrics?.verificationRate || (trustLockData.firstLightMode ? 100 : 0);
+            setTrustLockStatus(currentTrustLockStatus);
+            setTrustLockVerificationRate(currentVerificationRate);
+            console.log('[GlobalNavigation] Trust-Lock status:', currentTrustLockStatus, 'Verification rate:', currentVerificationRate);
           }
         } else if (trustLockResponse.status === 401) {
           // In First Light mode, 401 is expected - don't log as error
           // The endpoint should return 200 in First Light mode, but if it doesn't, just skip
           console.log('[GlobalNavigation] Trust-Lock status: Skipped (First Light mode)');
+          // Set default values for First Light mode
+          currentTrustLockStatus = 'active';
+          currentVerificationRate = 100;
+          setTrustLockStatus('active');
+          setTrustLockVerificationRate(100);
+        } else {
+          // Other errors - set to pending with low rate
+          console.warn('[GlobalNavigation] Trust-Lock status fetch failed:', trustLockResponse.status);
+          currentTrustLockStatus = 'pending';
+          currentVerificationRate = 0;
+          setTrustLockStatus('pending');
+          setTrustLockVerificationRate(0);
         }
 
-        // Fetch Reflex score (placeholder - implement API later)
-        // For now, calculate based on Trust-Lock status
-        if (trustLockStatus === 'verified') {
+        // Calculate Reflex score based on Trust-Lock verification rate
+        // Score formula: Verified (95%+): 92, Active (80-94%): 87-91, Pending (<80%): 60-82
+        if (currentTrustLockStatus === 'verified') {
           setReflexScore(92);
-        } else if (trustLockStatus === 'active') {
-          setReflexScore(87);
+        } else if (currentTrustLockStatus === 'active') {
+          // Scale score based on verification rate: 80% = 87, 94% = 91
+          const baseScore = 87;
+          const rateBonus = Math.min((currentVerificationRate - 80) * 0.25, 4); // Max +4 points
+          setReflexScore(Math.min(Math.round(baseScore + rateBonus), 91));
         } else {
-          setReflexScore(82);
+          // Pending: scale from 60 (0%) to 82 (80%)
+          const minScore = 60;
+          const maxScore = 82;
+          const rateFactor = Math.min(currentVerificationRate / 80, 1); // Cap at 80%
+          setReflexScore(Math.round(minScore + (maxScore - minScore) * rateFactor));
         }
       } catch (error) {
         console.error('[GlobalNavigation] Error fetching system status:', error);
       }
     };
 
+    // Update immediately on mount
     updateSystemStatus();
-    const interval = setInterval(updateSystemStatus, 30000); // Update every 30 seconds
-    return () => clearInterval(interval);
-  }, [trustLockStatus]);
+    
+    // Listen for session updates to refresh status immediately
+    const handleSessionUpdate = () => {
+      console.log('[GlobalNavigation] Session updated event received, refreshing status...');
+      updateSystemStatus();
+    };
+    
+    window.addEventListener('sessionUpdated', handleSessionUpdate);
+    
+    // Also update periodically (reduced to 15 seconds for better responsiveness)
+    const interval = setInterval(updateSystemStatus, 15000); // Update every 15 seconds
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('sessionUpdated', handleSessionUpdate);
+    };
+  }, []); // Remove trustLockStatus dependency to avoid infinite loops
 
   const navigationGroups: NavGroup[] = [
     {
@@ -417,6 +548,19 @@ const GlobalNavigation: React.FC = () => {
                   'bg-yellow-400'
                 }`}></div>
                 <span className="text-zinc-300">Reflex Score {reflexScore}%</span>
+              </div>
+              {/* Workflow Progress Indicator */}
+              <div className="flex items-center space-x-2 px-2 py-1 bg-zinc-800/50 rounded border border-zinc-700">
+                <span className="text-[10px] text-zinc-400 font-medium">NAN:</span>
+                <div className="flex items-center gap-0.5">
+                  <div className={`w-1.5 h-1.5 rounded ${workflowProgress.payment > 0 ? 'bg-green-500' : 'bg-zinc-600'}`} title={`Payment: ${workflowProgress.payment}%`} />
+                  <div className={`w-1.5 h-1.5 rounded ${workflowProgress.prep > 0 ? 'bg-green-500' : 'bg-zinc-600'}`} title={`Prep: ${workflowProgress.prep}%`} />
+                  <div className={`w-1.5 h-1.5 rounded ${workflowProgress.heat > 0 ? workflowProgress.currentStage === 'Heat' ? 'bg-teal-400 animate-pulse' : 'bg-green-500' : 'bg-zinc-600'}`} title={`Heat: ${workflowProgress.heat}%`} />
+                  <div className={`w-1.5 h-1.5 rounded ${workflowProgress.ready > 0 ? workflowProgress.currentStage === 'Ready' ? 'bg-teal-400 animate-pulse' : 'bg-green-500' : 'bg-zinc-600'}`} title={`Ready: ${workflowProgress.ready}%`} />
+                  <div className={`w-1.5 h-1.5 rounded ${workflowProgress.deliver > 0 ? workflowProgress.currentStage === 'Deliver' ? 'bg-teal-400 animate-pulse' : 'bg-green-500' : 'bg-zinc-600'}`} title={`Deliver: ${workflowProgress.deliver}%`} />
+                  <div className={`w-1.5 h-1.5 rounded ${workflowProgress.light > 0 ? workflowProgress.currentStage === 'Light' ? 'bg-orange-400 animate-pulse' : 'bg-orange-500' : 'bg-zinc-600'}`} title={`Light: ${workflowProgress.light}%`} />
+                </div>
+                <span className="text-[10px] text-teal-400 font-semibold ml-1">{workflowProgress.currentStage}</span>
               </div>
               <div className="flex items-center space-x-1">
                 <div className="w-2 h-2 bg-blue-400 rounded-full"></div>

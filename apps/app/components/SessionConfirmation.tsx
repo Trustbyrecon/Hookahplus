@@ -30,7 +30,11 @@ const SessionConfirmation: React.FC<SessionConfirmationProps> = ({
       try {
         setQrLoading(true);
         // Generate QR code with URL that routes to dashboard for staff to see paid status and start Night after Night flow
-        const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://app.hookahplus.net';
+        // Always use production URL for QR codes - never localhost (recipients can't access localhost)
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                        (typeof window !== 'undefined' && !window.location.origin.includes('localhost') 
+                          ? window.location.origin 
+                          : 'https://app.hookahplus.net');
         // Route to dashboard with session ID - staff can see it's paid and start the workflow
         const qrUrl = `${baseUrl}/fire-session-dashboard?session=${sessionId}&paid=true`;
         

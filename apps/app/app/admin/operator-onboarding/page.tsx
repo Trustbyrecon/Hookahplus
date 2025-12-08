@@ -183,6 +183,11 @@ export default function OperatorOnboardingPage() {
       }
 
       const data = await response.json();
+      
+      // Log diagnostic info if no leads found
+      if (data.leads && data.leads.length === 0) {
+        console.log('[Operator Onboarding] No leads found. Check /api/admin/operator-onboarding/debug for diagnostic info.');
+      }
       setLeads(data.leads || []);
       setStats(data.stats || {
         total: 0,
@@ -689,26 +694,66 @@ export default function OperatorOnboardingPage() {
         </div>
 
         {/* Filters */}
-        <div className="mb-6 flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-zinc-400" />
-            <span className="text-sm text-zinc-400">Filter by Stage:</span>
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Filter className="w-5 h-5 text-zinc-400" />
+              <span className="text-sm text-zinc-400">Filter by Stage:</span>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {(['all', 'new-leads', 'intake', 'follow-up', 'scheduled', 'onboarding', 'complete'] as const).map((stage) => (
+                <button
+                  key={stage}
+                  onClick={() => setSelectedStage(stage)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    selectedStage === stage
+                      ? 'bg-teal-600 text-white'
+                      : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                  }`}
+                >
+                  {stage === 'all' ? 'All' : stage === 'new-leads' ? 'New Leads' : stage.charAt(0).toUpperCase() + stage.slice(1)}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="flex gap-2 flex-wrap">
-            {(['all', 'new-leads', 'intake', 'follow-up', 'scheduled', 'onboarding', 'complete'] as const).map((stage) => (
-              <button
-                key={stage}
-                onClick={() => setSelectedStage(stage)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  selectedStage === stage
-                    ? 'bg-teal-600 text-white'
-                    : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-                }`}
-              >
-                {stage === 'all' ? 'All' : stage === 'new-leads' ? 'New Leads' : stage.charAt(0).toUpperCase() + stage.slice(1)}
-              </button>
-            ))}
-          </div>
+          <button
+            onClick={async () => {
+              try {
+                setIsLoading(true);
+                const response = await fetch('/api/admin/operator-onboarding/debug?limit=1000');
+                const data = await response.json();
+                if (data.success) {
+                  console.log('🔍 Diagnostic Results:', data.summary);
+                  console.log('📋 All Events:', data.allLeads);
+                  console.log('✅ Potential Leads:', data.potentialLeads);
+                  alert(`Found ${data.summary.totalEvents} total events, ${data.summary.potentialLeads} potential leads.\n\nCheck browser console (F12) for full details.\n\nBy Type: ${JSON.stringify(data.summary.byType, null, 2)}`);
+                } else {
+                  alert(`Error: ${data.error || 'Failed to query database'}\n\nDetails: ${data.details || 'No details available'}`);
+                }
+              } catch (err) {
+                console.error('Diagnostic query error:', err);
+                alert('Failed to run diagnostic query. Check console for details.');
+              } finally {
+                setIsLoading(false);
+              }
+            }}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm"
+            title="Query all leads in database (bypasses filters)"
+          >
+            <Zap className="w-4 h-4" />
+            <span>Find All Leads (Debug)</span>
+          </button>
+          <button
+            onClick={() => {
+              // Download CSV export
+              window.open('/api/admin/operator-onboarding/export', '_blank');
+            }}
+            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm"
+            title="Export all leads to CSV (for Google Sheets, Notion, etc.)"
+          >
+            <Download className="w-4 h-4" />
+            <span>Export to CSV</span>
+          </button>
         </div>
 
         {/* Error Message */}

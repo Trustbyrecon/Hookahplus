@@ -17,9 +17,33 @@ export function generateSlug(businessName: string): string {
 
 /**
  * Generate demo link URL
+ * Always uses production URL when available, never localhost for email links
  */
 export function generateDemoLink(slug: string, baseUrl?: string): string {
-  const appUrl = baseUrl || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
+  // Priority: baseUrl > NEXT_PUBLIC_APP_URL > production URL > localhost (dev only)
+  let appUrl = baseUrl;
+  
+  if (!appUrl) {
+    appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  }
+  
+  // If still no URL and we're in production, use production domain
+  if (!appUrl && process.env.NODE_ENV === 'production') {
+    appUrl = 'https://app.hookahplus.net';
+  }
+  
+  // Last resort: localhost (only for local dev)
+  if (!appUrl) {
+    appUrl = 'http://localhost:3002';
+    console.warn('[generateDemoLink] Using localhost - set NEXT_PUBLIC_APP_URL for production');
+  }
+  
+  // Never use localhost in production
+  if (appUrl.includes('localhost') && process.env.NODE_ENV === 'production') {
+    console.error('[generateDemoLink] ERROR: localhost URL detected in production! Using fallback.');
+    appUrl = 'https://app.hookahplus.net';
+  }
+  
   return `${appUrl}/demo/${slug}`;
 }
 

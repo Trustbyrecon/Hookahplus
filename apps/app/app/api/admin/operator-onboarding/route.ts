@@ -166,10 +166,15 @@ export async function GET(req: NextRequest) {
     ];
 
     // Multi-tenant filter in production only (or when tenantId is available)
-    if (tenantId) {
+    // In dev mode, show all leads regardless of tenantId to help with debugging
+    if (tenantId && process.env.NODE_ENV === 'production') {
       andConditions.push({
         tenantId: tenantId
       });
+    } else {
+      // In dev mode, include leads with null tenantId OR any tenantId
+      // This ensures we don't miss leads that were created before tenantId was set
+      console.log('[Operator Onboarding API] DEV mode - showing all leads (no tenantId filter)');
     }
 
     const whereClause: any = {
@@ -193,7 +198,7 @@ export async function GET(req: NextRequest) {
         orderBy: {
           createdAt: 'desc'
         },
-        take: 100, // Limit to recent 100 entries
+        take: 1000, // Increased limit to show more leads (was 100)
         select: {
           id: true,
           type: true,
@@ -499,8 +504,9 @@ export async function POST(req: NextRequest) {
           // Create demo session
           const businessName = data.businessName || data.loungeName || 'Demo Lounge';
           const slug = generateSlug(businessName);
+          // Always use production URL for email links - never localhost
           const appUrl = process.env.NEXT_PUBLIC_APP_URL || 
-                        (req.headers.get('origin') || 'http://localhost:3002');
+                        'https://app.hookahplus.net'; // Production fallback
           finalTestLink = generateDemoLink(slug, appUrl);
 
           // Find or create tenant
@@ -635,9 +641,10 @@ export async function POST(req: NextRequest) {
         const demoTenantId = await findOrCreateDemoTenant(businessName, prisma);
         console.log(`[Operator Onboarding API] Demo tenant ID: ${demoTenantId} for "${businessName}"`);
 
-        // Generate demo link
+        // Generate demo link - always use production URL for emails
+        // Never use localhost for email links - recipients can't access localhost
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || 
-                      (req.headers.get('origin') || 'http://localhost:3002');
+                      'https://app.hookahplus.net'; // Production fallback
         const demoLink = generateDemoLink(slug, appUrl);
 
         // Update lead payload with demo link and tenant info

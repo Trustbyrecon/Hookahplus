@@ -50,14 +50,15 @@ export async function middleware(request: NextRequest) {
     '/api/lounges', // Allow lounge list access for QR generator
     '/api/qr-generator', // Allow QR generator API access
     '/api/preorder/calculate-price', // Pre-order price calculation (public for QR access)
+    '/api/test-session', // Test endpoints for development
     '/login',
     '/signup',
     '/admin/login', // Admin login page is public
     '/demo', // Demo/test link routes are public (no auth required)
     '/_next',
     '/favicon.ico',
-    // First Light mode: allow metrics without auth
-    ...(firstLightMode ? ['/api/metrics'] : []),
+    // First Light mode: allow metrics, trust-lock, and pulse without auth
+    ...(firstLightMode ? ['/api/metrics', '/api/trust-lock', '/api/pulse'] : []),
     // Dev-only: allow direct access to admin routes without auth
     ...(process.env.NODE_ENV !== 'production'
       ? [

@@ -164,10 +164,11 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
       console.log('[useLiveSessionData] Sessions result:', sessionsResult);
 
       if (sessionsResult.success) {
-        // Convert Prisma API sessions to FireSession format
+        // API already converts sessions using convertPrismaSessionToFireSession
+        // which correctly sets the status field. Use that status directly instead of re-mapping.
         const fireSessions: FireSession[] = sessionsResult.sessions.map((session: any) => {
           // Parse flavorMix if it's a JSON string
-          let flavorMix = session.flavorMix || 'Custom Mix';
+          let flavorMix = session.flavorMix || session.flavor || 'Custom Mix';
           if (typeof flavorMix === 'string') {
             try {
               const parsed = JSON.parse(flavorMix);
@@ -177,35 +178,50 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
             }
           }
           
-          // Map Prisma state to FireSession status (same logic as API route)
-          // Handle undefined/null state gracefully
-          const sessionState = session.state || 'PENDING';
-          let fireSessionStatus = mapPrismaStateToFireSession(sessionState);
-          // Special handling: PENDING + paymentStatus 'succeeded' = PAID_CONFIRMED
-          if (sessionState === 'PENDING' && session.paymentStatus === 'succeeded') {
-            fireSessionStatus = 'PAID_CONFIRMED';
+          // Use the status from the API (already correctly mapped by convertPrismaSessionToFireSession)
+          // The API's convertPrismaSessionToFireSession correctly handles:
+          // - ACTIVE + assignedBOHId + payment → PREP_IN_PROGRESS
+          // - PENDING + payment → PAID_CONFIRMED
+          // So we should trust the API's status field
+          let fireSessionStatus = session.status;
+          
+          // Fallback: if status is missing, use the same logic as the API
+          if (!fireSessionStatus) {
+            const sessionState = session.state || 'PENDING';
+            fireSessionStatus = mapPrismaStateToFireSession(sessionState);
+            // Special handling: PENDING + paymentStatus 'succeeded' = PAID_CONFIRMED
+            if (sessionState === 'PENDING' && session.paymentStatus === 'succeeded') {
+              fireSessionStatus = 'PAID_CONFIRMED';
+            }
+            // Special handling: ACTIVE + assignedBOHId + payment = PREP_IN_PROGRESS
+            const hasPayment = session.paymentStatus === 'succeeded' || 
+                              (session.externalRef && (session.externalRef.startsWith('cs_') || session.externalRef.startsWith('test_cs_')));
+            const assignedBOHId = session.assignedBOHId || session.assignedStaff?.boh;
+            if (sessionState === 'ACTIVE' && assignedBOHId && hasPayment) {
+              fireSessionStatus = 'PREP_IN_PROGRESS';
+            }
           }
           
           return {
             id: session.id,
             tableId: session.tableId || session.externalRef || 'Unknown',
-            customerName: session.customerRef || 'Anonymous',
+            customerName: session.customerRef || session.customerName || 'Anonymous',
             customerPhone: session.customerPhone || '',
             flavor: flavorMix,
-            amount: session.priceCents || 0,
+            amount: session.priceCents || session.amount || 0,
             status: fireSessionStatus,
-            currentStage: mapStateToStage(session.state),
+            currentStage: mapStateToStage(session.state || session.status),
             assignedStaff: {
-              boh: session.assignedBOHId,
-              foh: session.assignedFOHId
+              boh: session.assignedBOHId || session.assignedStaff?.boh || '',
+              foh: session.assignedFOHId || session.assignedStaff?.foh || ''
             },
             createdAt: new Date(session.createdAt).getTime(),
             updatedAt: new Date(session.updatedAt).getTime(),
             sessionStartTime: session.startedAt ? new Date(session.startedAt).getTime() : undefined,
-            sessionDuration: session.durationSecs || 45 * 60,
+            sessionDuration: session.durationSecs || session.sessionDuration || 45 * 60,
             coalStatus: 'active' as const,
             refillStatus: 'none' as const,
-            notes: session.tableNotes || '',
+            notes: session.tableNotes || session.notes || '',
             edgeCase: session.edgeCase,
             sessionTimer: session.timerStartedAt ? {
               remaining: calculateRemainingTimeFromPrisma(session),
@@ -214,7 +230,12 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
               startedAt: new Date(session.timerStartedAt).getTime()
             } : undefined,
             bohState: 'PREPARING' as const,
-            guestTimerDisplay: session.state === 'ACTIVE'
+            guestTimerDisplay: session.state === 'ACTIVE',
+            // Include raw database fields for getSessionStatus to work correctly
+            state: session.state,
+            assignedBOHId: session.assignedBOHId || session.assignedStaff?.boh,
+            paymentStatus: session.paymentStatus,
+            externalRef: session.externalRef
           };
         });
 
@@ -482,21 +503,46 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
       return;
     }
 
-    // Production mode: call API
+    // Production mode: call API using PATCH /api/sessions
     try {
       setLoading(true);
       
-      const response = await fetch(`/api/sessions/${sessionId}/transition`, {
-        method: 'POST',
+      // Map action to SessionAction format
+      const actionMap: Record<string, string> = {
+        'claim_prep': 'CLAIM_PREP',
+        'heat_up': 'HEAT_UP',
+        'ready_for_delivery': 'READY_FOR_DELIVERY',
+        'deliver_now': 'DELIVER_NOW',
+        'mark_delivered': 'MARK_DELIVERED',
+        'start_active': 'START_ACTIVE',
+        'pause_session': 'PAUSE_SESSION',
+        'resume_session': 'RESUME_SESSION',
+        'close_session': 'CLOSE_SESSION',
+        'put_on_hold': 'PUT_ON_HOLD',
+        'resolve_hold': 'RESOLVE_HOLD',
+        'request_remake': 'REQUEST_REMAKE',
+      };
+      
+      const mappedAction = actionMap[action.toLowerCase()] || action.toUpperCase();
+      
+      const response = await fetch(`/api/sessions`, {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action,
+          sessionId,
+          action: mappedAction,
+          userRole: 'MANAGER',
           operatorId: 'enhanced_fsd',
-          timestamp: new Date().toISOString()
+          notes: `Action ${mappedAction} executed via dashboard`
         }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || errorData.details || `HTTP ${response.status}: ${response.statusText}`);
+      }
 
       const result = await response.json();
 
@@ -505,7 +551,7 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
         await loadSessions();
         await loadMetrics();
       } else {
-        throw new Error(result.error || 'Failed to update session');
+        throw new Error(result.error || result.details || 'Failed to update session');
       }
     } catch (err) {
       console.error('Error updating session:', err);

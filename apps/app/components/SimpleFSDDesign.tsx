@@ -184,14 +184,15 @@ export default function SimpleFSDDesign({
   const handleSessionAction = async (action: string, sessionId: string) => {
     console.log(`Action: ${action} on session: ${sessionId}`);
     
-    // Check if we're in demo mode
+    // Check if we're in demo mode OR if this is a demo session (starts with 'demo-session-')
     const isDemoMode = typeof window !== 'undefined' && 
       window.location &&
       new URLSearchParams(window.location.search).get('mode') === 'demo';
+    const isDemoSession = sessionId.startsWith('demo-session-');
 
-    // In demo mode, use the callback (which updates in-memory state) instead of API
-    if (isDemoMode && onSessionAction) {
-      console.log(`[Demo Mode] 🎭 Using callback for action: ${action}`);
+    // In demo mode OR for demo sessions, use the callback (which updates in-memory state) instead of API
+    if ((isDemoMode || isDemoSession) && onSessionAction) {
+      console.log(`[Demo Mode] 🎭 Using callback for action: ${action} on session: ${sessionId}`);
       try {
         await onSessionAction(action, sessionId);
         if (refreshSessions) {
@@ -203,6 +204,13 @@ export default function SimpleFSDDesign({
         alert(`Failed to execute action: ${error instanceof Error ? error.message : 'Unknown error'}`);
         return;
       }
+    }
+    
+    // If it's a demo session but no callback, warn and return early
+    if (isDemoSession && !onSessionAction) {
+      console.warn('[Demo Mode] Demo session action attempted but no callback provided:', { action, sessionId });
+      alert('Demo session actions require demo mode. Please access via /demo/[slug] or with ?mode=demo');
+      return;
     }
     
     // Special handling for RESOLVE_HOLD - show modal instead of direct API call
@@ -316,13 +324,60 @@ export default function SimpleFSDDesign({
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+        const errorMessage = errorData.details || errorData.error || `HTTP ${response.status}: ${response.statusText}`;
+        console.error('[SimpleFSDDesign] API Error:', {
+          status: response.status,
+          error: errorData,
+          sessionId,
+          action: mappedAction
+        });
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
 
       if (result.success) {
         console.log('Session action successful:', result);
+        
+        // Immediately refresh sessions to show updated state before showing success message
+        if (refreshSessions) {
+          try {
+            await refreshSessions();
+          } catch (refreshError) {
+            console.warn('Failed to refresh sessions after action, will retry:', refreshError);
+          }
+        }
+        
+        // Show success feedback based on action
+        const successMessages: Record<string, string> = {
+          'CLAIM_PREP': '✅ Prep claimed successfully! BOH is now preparing the hookah.',
+          'HEAT_UP': '🔥 Coals heating... Final preparation phase in progress.',
+          'READY_FOR_DELIVERY': '✅ Hookah ready! Awaiting FOH pickup.',
+          'DELIVER_NOW': '🚚 Out for delivery! FOH transporting hookah to table.',
+          'MARK_DELIVERED': '✅ Delivered to table! Hookah setup complete.',
+          'START_ACTIVE': '🔥 Session is LIT! Timer started. Customer can now enjoy.',
+          'PAUSE_SESSION': '⏸️ Session paused.',
+          'RESUME_SESSION': '▶️ Session resumed.',
+          'CLOSE_SESSION': '✅ Session closed.',
+          'PUT_ON_HOLD': '⏸️ Session put on hold.',
+          'RESOLVE_HOLD': '✅ Hold resolved. Session resuming.',
+        };
+        
+        const successMessage = successMessages[mappedAction];
+        if (successMessage) {
+          // Show brief success notification (non-blocking)
+          const notification = document.createElement('div');
+          notification.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-in fade-in slide-in-from-right';
+          notification.textContent = successMessage;
+          document.body.appendChild(notification);
+          
+          // Remove after 3 seconds
+          setTimeout(() => {
+            notification.classList.add('animate-out', 'fade-out', 'slide-out-to-right');
+            setTimeout(() => notification.remove(), 300);
+          }, 3000);
+        }
+        
         // Trigger a custom event to refresh sessions
         window.dispatchEvent(new CustomEvent('sessionUpdated', { detail: { sessionId, action: mappedAction } }));
         
@@ -352,7 +407,18 @@ export default function SimpleFSDDesign({
         if (error.message.includes('Session not found')) {
           errorMessage = 'Session not found. It may have been closed or removed.';
         } else if (error.message.includes('Invalid transition') || error.message.includes('State transition') || error.message.includes('not available')) {
-          errorMessage = 'State transition failed: This action is not available for the current session state.';
+          // Show the detailed error message from the API which includes current status, target status, and valid transitions
+          // The API returns detailed info in the error message, so use it directly
+          errorMessage = error.message;
+          
+          // If the session is already in the target state, provide a helpful message
+          if (error.message.includes('PREP_IN_PROGRESS') && error.message.includes('CLAIM_PREP')) {
+            errorMessage = '✅ This session is already in prep! The prep was already claimed. Refresh the page to see the updated status and continue with "Heat Coals".';
+            // Auto-refresh sessions to show updated state
+            if (refreshSessions) {
+              setTimeout(() => refreshSessions(), 1000);
+            }
+          }
         } else if (error.message.includes('Permission denied') || error.message.includes('403')) {
           errorMessage = 'You do not have permission to perform this action.';
         } else if (error.message.includes('Network') || error.message.includes('Failed to fetch')) {
@@ -360,11 +426,13 @@ export default function SimpleFSDDesign({
         } else if (error.message.includes('500') || error.message.includes('Internal server')) {
           errorMessage = 'Server error. Please try again in a moment.';
         } else {
+          // Use the full error message which should contain detailed API response
           errorMessage = error.message;
         }
       }
       
       // Show user-friendly error with actionable message
+      // For state transition errors, show the full detailed message
       alert(`Error: ${errorMessage}`);
       
       // Log to analytics
@@ -422,21 +490,81 @@ export default function SimpleFSDDesign({
   };
 
   const getSessionStatus = (session: any): SessionStatus => {
-    // If session already has a status, use it (might be from convertPrismaSessionToFireSession)
-    if (session.status && session.status !== 'NEW' && session.status !== 'PENDING') {
-      return session.status as SessionStatus;
+    // Always check the actual database fields first, not the cached status
+    // This ensures we show the correct state even if the session object has stale data
+    const state = session.state || 'NEW';
+    const hasPayment = session.paymentStatus === 'succeeded' || 
+                      (session.externalRef && (session.externalRef.startsWith('cs_') || session.externalRef.startsWith('test_cs_')));
+    const assignedBOHId = session.assignedBOHId || session.assigned_boh_id || session.assignedStaff?.boh;
+    
+    // Debug logging for troubleshooting (can be removed later)
+    if (session.id && (state === 'ACTIVE' || session.status === 'PAID_CONFIRMED' || session.status === 'PREP_IN_PROGRESS')) {
+      console.log('[getSessionStatus] Debug:', {
+        sessionId: session.id,
+        state,
+        assignedBOHId,
+        hasPayment,
+        paymentStatus: session.paymentStatus,
+        externalRef: session.externalRef,
+        cachedStatus: session.status,
+        assignedStaff: session.assignedStaff
+      });
     }
     
-    // Check if PENDING state with succeeded payment OR externalRef (Stripe checkout) = PAID_CONFIRMED
-    const state = session.state || session.status || 'NEW';
-    const hasPayment = session.paymentStatus === 'succeeded' || 
-                      (session.externalRef && session.externalRef.startsWith('cs_'));
+    // Special handling: ACTIVE + assignedBOHId + payment confirmed = PREP_IN_PROGRESS
+    // This MUST match the logic in mapPrismaStateToFireSession (session-utils-prisma.ts)
+    // This handles CLAIM_PREP action which sets state to ACTIVE but should show as PREP_IN_PROGRESS
+    if (state === 'ACTIVE' && assignedBOHId && hasPayment) {
+      // Check tableNotes for workflow stage hints (HEAT_UP, READY_FOR_DELIVERY, etc.)
+      // Since database only stores ACTIVE for workflow stages, we infer from tableNotes
+      const notes = session.tableNotes || '';
+      
+      // Check for most recent workflow action in notes (work backwards from most recent)
+      if (notes.includes('Action START_ACTIVE') || notes.includes('Action MARK_DELIVERED')) {
+        // Delivered and active - check if it's ACTIVE or DELIVERED
+        if (notes.includes('Action START_ACTIVE')) {
+          return 'ACTIVE';
+        }
+        return 'DELIVERED';
+      }
+      if (notes.includes('Action DELIVER_NOW') || notes.includes('Action OUT_FOR_DELIVERY')) {
+        console.log('[getSessionStatus] Mapping ACTIVE + assignedBOHId + DELIVER note → OUT_FOR_DELIVERY');
+        return 'OUT_FOR_DELIVERY';
+      }
+      if (notes.includes('Action READY_FOR_DELIVERY') || notes.includes('Ready for delivery') || notes.includes('Ready')) {
+        console.log('[getSessionStatus] Mapping ACTIVE + assignedBOHId + READY note → READY_FOR_DELIVERY');
+        return 'READY_FOR_DELIVERY';
+      }
+      if (notes.includes('Action HEAT_UP') || notes.includes('Heat Up') || notes.includes('Coals heating')) {
+        console.log('[getSessionStatus] Mapping ACTIVE + assignedBOHId + HEAT_UP note → HEAT_UP');
+        return 'HEAT_UP';
+      }
+      // Default: ACTIVE + assignedBOHId = PREP_IN_PROGRESS (after CLAIM_PREP, before HEAT_UP)
+      console.log('[getSessionStatus] Mapping ACTIVE + assignedBOHId + payment → PREP_IN_PROGRESS');
+      return 'PREP_IN_PROGRESS';
+    }
     
+    // Also handle ACTIVE without assignedBOHId (could be delivered/active session)
+    if (state === 'ACTIVE' && !assignedBOHId && hasPayment) {
+      const notes = session.tableNotes || '';
+      if (notes.includes('Action START_ACTIVE')) {
+        return 'ACTIVE';
+      }
+      if (notes.includes('Action MARK_DELIVERED')) {
+        return 'DELIVERED';
+      }
+      // Default: ACTIVE without BOH = active session (delivered and running)
+      return 'ACTIVE';
+    }
+    
+    // Special handling: PENDING + payment confirmed = PAID_CONFIRMED
+    // This MUST match the logic in mapPrismaStateToFireSession
     if (state === 'PENDING' && hasPayment) {
       return 'PAID_CONFIRMED';
     }
     
     // Map database state to FireSession status
+    // Define stateMap here so it can be used in the cached status check below
     const stateMap: Record<string, SessionStatus> = {
       'PENDING': hasPayment ? 'PAID_CONFIRMED' : 'NEW',
       'ACTIVE': 'ACTIVE',
@@ -450,9 +578,48 @@ export default function SimpleFSDDesign({
       'OUT_FOR_DELIVERY': 'OUT_FOR_DELIVERY',
       'DELIVERED': 'DELIVERED',
       'PAID_CONFIRMED': 'PAID_CONFIRMED',
+      // Handle lowercase variants (just in case)
+      'pending': hasPayment ? 'PAID_CONFIRMED' : 'NEW',
+      'active': assignedBOHId && hasPayment ? 'PREP_IN_PROGRESS' : 'ACTIVE',
+      'new': 'NEW',
+      'prep_in_progress': 'PREP_IN_PROGRESS',
+      'heat_up': 'HEAT_UP',
+      'ready_for_delivery': 'READY_FOR_DELIVERY',
+      'out_for_delivery': 'OUT_FOR_DELIVERY',
+      'delivered': 'DELIVERED',
+      'paid_confirmed': 'PAID_CONFIRMED',
     };
     
-    return stateMap[state] || (session.status as SessionStatus) || 'NEW';
+    // If session already has a status from API conversion and state doesn't override it, use it
+    // But only if the state mapping logic above didn't catch it
+    if (session.status && session.status !== 'NEW' && session.status !== 'PENDING') {
+      // Double-check: if state is ACTIVE with assignedBOHId, we should show PREP_IN_PROGRESS
+      // This handles cases where the API conversion might have missed it
+      if (state === 'ACTIVE' && assignedBOHId && hasPayment && session.status === 'PAID_CONFIRMED') {
+        console.log('[getSessionStatus] Overriding cached PAID_CONFIRMED → PREP_IN_PROGRESS (ACTIVE + assignedBOHId + payment)');
+        return 'PREP_IN_PROGRESS';
+      }
+      // Don't trust cached status if state has changed - always check state first
+      // Only use cached status if state mapping doesn't provide a clear answer
+      // This prevents stale cached status from overriding actual database state
+      const mappedStatus = stateMap[state];
+      if (mappedStatus && mappedStatus !== 'NEW' && mappedStatus !== 'PENDING') {
+        // State mapping provides a clear status - use it instead of cached
+        return mappedStatus;
+      }
+      
+      // Fallback to cached status only if state mapping is unclear
+      return session.status as SessionStatus;
+    }
+    
+    // Always prioritize state mapping over cached status
+    const mappedStatus = stateMap[state];
+    if (mappedStatus) {
+      return mappedStatus;
+    }
+    
+    // Last resort: use cached status or default to NEW
+    return (session.status as SessionStatus) || 'NEW';
   };
 
   const getSessionStage = (session: any): string => {
@@ -564,6 +731,62 @@ export default function SimpleFSDDesign({
           </div>
         </div>
 
+        {/* Workflow Progress Indicator */}
+        {['PAID_CONFIRMED', 'PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(sessionStatus) && (
+          <div className="mb-3 p-3 bg-zinc-900/50 rounded-lg border border-zinc-700">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-zinc-400">Night After Night Flow</span>
+              <span className="text-xs font-semibold text-teal-400">{sessionStage}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              {/* Payment */}
+              <div className={`flex-1 h-2 rounded transition-all ${
+                ['PAID_CONFIRMED', 'PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(sessionStatus)
+                  ? sessionStatus === 'PAID_CONFIRMED' ? 'bg-teal-400 animate-pulse' : 'bg-green-500'
+                  : 'bg-zinc-700'
+              }`} title="Payment Confirmed" />
+              {/* Prep */}
+              <div className={`flex-1 h-2 rounded transition-all ${
+                ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(sessionStatus)
+                  ? sessionStatus === 'PREP_IN_PROGRESS' ? 'bg-teal-400 animate-pulse' : 'bg-green-500'
+                  : 'bg-zinc-700'
+              }`} title="BOH Prep" />
+              {/* Heat */}
+              <div className={`flex-1 h-2 rounded transition-all ${
+                ['HEAT_UP', 'READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(sessionStatus)
+                  ? sessionStatus === 'HEAT_UP' ? 'bg-teal-400 animate-pulse' : 'bg-green-500'
+                  : 'bg-zinc-700'
+              }`} title="Heat Coals" />
+              {/* Ready */}
+              <div className={`flex-1 h-2 rounded transition-all ${
+                ['READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(sessionStatus)
+                  ? sessionStatus === 'READY_FOR_DELIVERY' ? 'bg-teal-400 animate-pulse' : 'bg-green-500'
+                  : 'bg-zinc-700'
+              }`} title="Ready" />
+              {/* Deliver */}
+              <div className={`flex-1 h-2 rounded transition-all ${
+                ['OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(sessionStatus)
+                  ? sessionStatus === 'OUT_FOR_DELIVERY' ? 'bg-teal-400 animate-pulse' : 'bg-green-500'
+                  : 'bg-zinc-700'
+              }`} title="Deliver" />
+              {/* Light */}
+              <div className={`flex-1 h-2 rounded transition-all ${
+                ['DELIVERED', 'ACTIVE'].includes(sessionStatus)
+                  ? sessionStatus === 'DELIVERED' ? 'bg-orange-400 animate-pulse' : sessionStatus === 'ACTIVE' ? 'bg-red-500 animate-pulse' : 'bg-orange-500'
+                  : 'bg-zinc-700'
+              }`} title="Light Session" />
+            </div>
+            <div className="flex items-center justify-between mt-2 text-[10px]">
+              <span className={sessionStatus === 'PAID_CONFIRMED' ? 'text-teal-400 font-semibold' : 'text-zinc-500'}>Payment</span>
+              <span className={sessionStatus === 'PREP_IN_PROGRESS' ? 'text-teal-400 font-semibold' : 'text-zinc-500'}>Prep</span>
+              <span className={sessionStatus === 'HEAT_UP' ? 'text-teal-400 font-semibold' : 'text-zinc-500'}>Heat</span>
+              <span className={sessionStatus === 'READY_FOR_DELIVERY' ? 'text-teal-400 font-semibold' : 'text-zinc-500'}>Ready</span>
+              <span className={sessionStatus === 'OUT_FOR_DELIVERY' ? 'text-teal-400 font-semibold' : 'text-zinc-500'}>Deliver</span>
+              <span className={['DELIVERED', 'ACTIVE'].includes(sessionStatus) ? 'text-orange-400 font-semibold' : 'text-zinc-500'}>Light</span>
+            </div>
+          </div>
+        )}
+
         {/* Session Details - High Value Data */}
         <div className="mb-3 space-y-2">
           {/* Customer Name */}
@@ -672,62 +895,162 @@ export default function SimpleFSDDesign({
           </div>
         )}
 
-        {/* Available Actions */}
+        {/* Quick Action Controls - Prominent buttons for common actions */}
         {availableActions.length > 0 && (
-          <div className="space-y-2">
-            <div className="flex items-center space-x-1 text-xs text-zinc-400">
-              <Zap className="w-3 h-3" />
-              <span className="font-medium">Available Actions:</span>
-            </div>
+          <div className="mt-3 pt-3 border-t border-zinc-700 space-y-3">
+            {/* Primary Quick Actions - Most common workflow actions */}
             <div className="flex flex-wrap gap-2">
-              {availableActions.map((action) => {
-                const canPerform = canUserPerformAction(action, userRole);
-                return (
-                  <div key={action} className="relative">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        canPerform && handleSessionAction(action.toLowerCase(), sessionId);
-                      }}
-                      disabled={!canPerform}
-                      onMouseEnter={() => setHoveredAction(action)}
-                      onMouseLeave={() => setHoveredAction(null)}
-                      className={`flex items-center space-x-1 px-3 py-1 rounded text-xs font-medium transition-colors ${
-                        canPerform 
-                          ? ACTION_COLORS[action]
-                          : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                      }`}
-                    >
-                      {ACTION_ICONS[action]}
-                      <span>{action.replace(/_/g, ' ')}</span>
-                      <Info className="w-3 h-3" />
-                    </button>
-                    
-                    {/* Enhanced Business Logic Tooltip */}
-                    {hoveredAction === action && (
-                      <div className="absolute bottom-full left-0 mb-2 w-64 p-3 bg-zinc-900 border border-zinc-700 rounded-lg shadow-lg z-10">
-                        <div className="flex items-center space-x-1 mb-2">
-                          <Info className="w-3 h-3 text-blue-400" />
-                          <span className="text-xs font-medium text-blue-400">Business Logic</span>
-                        </div>
-                        <p className="text-xs text-zinc-300 mb-2">{ACTION_DESCRIPTIONS[action]}</p>
-                        <div className="pt-2 border-t border-zinc-700">
-                          <p className="text-xs text-zinc-400">
-                            <span className="font-medium">Next State:</span> {getSessionDisplayName(ACTION_TO_STATUS[action])}
-                          </p>
-                          <p className="text-xs text-zinc-400">
-                            <span className="font-medium">Stage:</span> {STATUS_TO_STAGE[ACTION_TO_STATUS[action]]}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              {/* CLAIM_PREP - For PAID_CONFIRMED sessions */}
+              {availableActions.includes('CLAIM_PREP') && canUserPerformAction('CLAIM_PREP', userRole) && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSessionAction('claim_prep', sessionId);
+                  }}
+                  className="flex items-center space-x-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors flex-1 min-w-[140px] justify-center"
+                  title={ACTION_DESCRIPTIONS['CLAIM_PREP']}
+                >
+                  <ChefHat className="w-4 h-4" />
+                  <span className="text-sm font-medium">Claim Prep</span>
+                </button>
+              )}
+              
+              {/* HEAT_UP - For PREP_IN_PROGRESS sessions */}
+              {availableActions.includes('HEAT_UP') && canUserPerformAction('HEAT_UP', userRole) && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSessionAction('heat_up', sessionId);
+                  }}
+                  className="flex items-center space-x-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors flex-1 min-w-[140px] justify-center"
+                  title={ACTION_DESCRIPTIONS['HEAT_UP']}
+                >
+                  <Flame className="w-4 h-4" />
+                  <span className="text-sm font-medium">Heat Coals</span>
+                </button>
+              )}
+              
+              {/* READY_FOR_DELIVERY - For HEAT_UP sessions */}
+              {availableActions.includes('READY_FOR_DELIVERY') && canUserPerformAction('READY_FOR_DELIVERY', userRole) && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSessionAction('ready_for_delivery', sessionId);
+                  }}
+                  className="flex items-center space-x-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors flex-1 min-w-[140px] justify-center"
+                  title={ACTION_DESCRIPTIONS['READY_FOR_DELIVERY']}
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  <span className="text-sm font-medium">Ready</span>
+                </button>
+              )}
+              
+              {/* DELIVER_NOW - For READY_FOR_DELIVERY sessions */}
+              {availableActions.includes('DELIVER_NOW') && canUserPerformAction('DELIVER_NOW', userRole) && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSessionAction('deliver_now', sessionId);
+                  }}
+                  className="flex items-center space-x-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors flex-1 min-w-[140px] justify-center"
+                  title={ACTION_DESCRIPTIONS['DELIVER_NOW']}
+                >
+                  <Truck className="w-4 h-4" />
+                  <span className="text-sm font-medium">Deliver</span>
+                </button>
+              )}
+              
+              {/* MARK_DELIVERED - For OUT_FOR_DELIVERY sessions */}
+              {availableActions.includes('MARK_DELIVERED') && canUserPerformAction('MARK_DELIVERED', userRole) && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSessionAction('mark_delivered', sessionId);
+                  }}
+                  className="flex items-center space-x-2 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-lg transition-colors flex-1 min-w-[140px] justify-center"
+                  title={ACTION_DESCRIPTIONS['MARK_DELIVERED']}
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  <span className="text-sm font-medium">Delivered</span>
+                </button>
+              )}
+              
+              {/* START_ACTIVE (Light Session) - For DELIVERED sessions */}
+              {availableActions.includes('START_ACTIVE') && canUserPerformAction('START_ACTIVE', userRole) && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSessionAction('start_active', sessionId);
+                  }}
+                  className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white rounded-lg transition-colors flex-1 min-w-[140px] justify-center font-bold shadow-lg shadow-red-500/50"
+                  title={ACTION_DESCRIPTIONS['START_ACTIVE']}
+                >
+                  <Flame className="w-4 h-4" />
+                  <span className="text-sm font-medium">🔥 Light Session</span>
+                </button>
+              )}
             </div>
             
+            {/* Secondary Actions - Less common but available */}
+            {(availableActions.filter(a => !['CLAIM_PREP', 'HEAT_UP', 'READY_FOR_DELIVERY', 'DELIVER_NOW', 'MARK_DELIVERED', 'START_ACTIVE'].includes(a)).length > 0) && (
+              <div className="pt-2 border-t border-zinc-800">
+                <div className="flex items-center space-x-1 text-xs text-zinc-400 mb-2">
+                  <Zap className="w-3 h-3" />
+                  <span className="font-medium">More Actions:</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {availableActions
+                    .filter(a => !['CLAIM_PREP', 'HEAT_UP', 'READY_FOR_DELIVERY', 'DELIVER_NOW', 'MARK_DELIVERED', 'START_ACTIVE'].includes(a))
+                    .map((action) => {
+                      const canPerform = canUserPerformAction(action, userRole);
+                      return (
+                        <div key={action} className="relative">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              canPerform && handleSessionAction(action.toLowerCase(), sessionId);
+                            }}
+                            disabled={!canPerform}
+                            onMouseEnter={() => setHoveredAction(action)}
+                            onMouseLeave={() => setHoveredAction(null)}
+                            className={`flex items-center space-x-1 px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                              canPerform 
+                                ? ACTION_COLORS[action]
+                                : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                            }`}
+                          >
+                            {ACTION_ICONS[action]}
+                            <span>{action.replace(/_/g, ' ')}</span>
+                            <Info className="w-3 h-3" />
+                          </button>
+                          
+                          {/* Enhanced Business Logic Tooltip */}
+                          {hoveredAction === action && (
+                            <div className="absolute bottom-full left-0 mb-2 w-64 p-3 bg-zinc-900 border border-zinc-700 rounded-lg shadow-lg z-10">
+                              <div className="flex items-center space-x-1 mb-2">
+                                <Info className="w-3 h-3 text-blue-400" />
+                                <span className="text-xs font-medium text-blue-400">Business Logic</span>
+                              </div>
+                              <p className="text-xs text-zinc-300 mb-2">{ACTION_DESCRIPTIONS[action]}</p>
+                              <div className="pt-2 border-t border-zinc-700">
+                                <p className="text-xs text-zinc-400">
+                                  <span className="font-medium">Next State:</span> {getSessionDisplayName(ACTION_TO_STATUS[action])}
+                                </p>
+                                <p className="text-xs text-zinc-400">
+                                  <span className="font-medium">Stage:</span> {STATUS_TO_STAGE[ACTION_TO_STATUS[action]]}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
+            
             {/* Intelligence Button */}
-            <div className="mt-3 pt-3 border-t border-zinc-700">
+            <div className="pt-2 border-t border-zinc-800">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -739,6 +1062,18 @@ export default function SimpleFSDDesign({
                 <Brain className="w-3 h-3" />
                 <span className="text-xs font-medium">View Intelligence</span>
               </button>
+            </div>
+          </div>
+        )}
+        
+        {/* No Actions Available Message */}
+        {availableActions.length === 0 && (
+          <div className="mt-3 pt-3 border-t border-zinc-700">
+            <div className="text-center py-4">
+              <p className="text-xs text-zinc-500 mb-2">No actions available for this session state.</p>
+              <p className="text-xs text-zinc-600">
+                Current status: <span className="font-medium text-zinc-400">{getSessionDisplayName(sessionStatus)}</span>
+              </p>
             </div>
           </div>
         )}
@@ -807,6 +1142,45 @@ export default function SimpleFSDDesign({
           <Plus className="w-4 h-4" />
           <span>New Session</span>
         </button>
+        {/* Test Session Button - Show in non-demo mode for testing */}
+        {!isDemoMode && (
+          <button
+            onClick={async () => {
+              try {
+                const response = await fetch('/api/test-session/create-paid', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    tableId: `table-${Math.floor(Math.random() * 100) + 1}`,
+                    customerName: `Test Customer ${Math.floor(Math.random() * 100)}`,
+                    flavorMix: ['Mint', 'Grape'],
+                    amount: 3000
+                  })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                  alert(`✅ Test session created!\n\nSession ID: ${result.session.id}\nTable: ${result.session.tableId}\nStatus: ${result.session.status}\n\nRefresh to see it in the dashboard.`);
+                  if (refreshSessions) {
+                    await refreshSessions();
+                  } else {
+                    window.location.reload();
+                  }
+                } else {
+                  throw new Error(result.error || 'Failed to create test session');
+                }
+              } catch (error) {
+                console.error('Error creating test session:', error);
+                alert(`Failed to create test session: ${error instanceof Error ? error.message : 'Unknown error'}`);
+              }
+            }}
+            className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+            title="Create a test session with payment already confirmed - ready for workflow testing"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Create Test Paid Session</span>
+          </button>
+        )}
       </div>
 
       {/* Tabs */}

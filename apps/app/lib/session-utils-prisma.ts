@@ -7,15 +7,18 @@ function mapPrismaStateToFireSession(state: string | SessionState, paymentStatus
   const stateStr = typeof state === 'string' ? state : String(state);
   
   // Special handling: PENDING + paymentStatus 'succeeded' = PAID_CONFIRMED
-  // OR: PENDING + externalRef (Stripe checkout session ID) = PAID_CONFIRMED (payment confirmed via Stripe)
+  // OR: PENDING + externalRef (Stripe checkout session ID or test session) = PAID_CONFIRMED
   // This is the key fix: after Stripe payment, sessions should show as PAID_CONFIRMED
-  if (stateStr === 'PENDING' && (paymentStatus === 'succeeded' || (externalRef && externalRef.startsWith('cs_')))) {
+  const isPaid = paymentStatus === 'succeeded' || 
+                 (externalRef && (externalRef.startsWith('cs_') || externalRef.startsWith('test_cs_')));
+  
+  if (stateStr === 'PENDING' && isPaid) {
     return 'PAID_CONFIRMED';
   }
   
   // Special handling: ACTIVE + assignedBOHId + payment confirmed = PREP_IN_PROGRESS
   // This handles CLAIM_PREP action which sets state to ACTIVE but should show as PREP_IN_PROGRESS
-  if (stateStr === 'ACTIVE' && assignedBOHId && (paymentStatus === 'succeeded' || (externalRef && externalRef.startsWith('cs_')))) {
+  if (stateStr === 'ACTIVE' && assignedBOHId && isPaid) {
     // Check if this is a prep session (has BOH assigned but not yet delivered)
     // We can infer this from the fact that it's ACTIVE with BOH assigned and payment confirmed
     return 'PREP_IN_PROGRESS';
@@ -118,6 +121,11 @@ export function convertPrismaSessionToFireSession(session: any): FireSession {
     refillStatus = 'delivered';
   }
 
+  // Get payment status and external ref for state mapping
+  const paymentStatus = session.paymentStatus || null;
+  const externalRef = session.externalRef || null;
+  const assignedBOHId = session.assignedBOHId || null;
+  
   // Simple pricing rule: first refill on TIME_BASED sessions is free, subsequent are billable
   const isTimeBased = normalizedSessionType === 'TIME_BASED';
   const isRefillBillable = isTimeBased ? refillCount >= 1 : false;

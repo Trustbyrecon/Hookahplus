@@ -96,9 +96,9 @@ export async function POST(req: NextRequest) {
     if (!demoLink) {
       const finalBusinessName = businessName || lead.businessName || lead.loungeName || 'Demo Lounge';
       const slug = generateSlug(finalBusinessName);
+      // Always use production URL for email links - never localhost
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || 
-                    req.headers.get('origin') || 
-                    'http://localhost:3002';
+                    'https://app.hookahplus.net'; // Production fallback
       
       demoLink = generateDemoLink(slug, appUrl);
       demoSlug = slug;

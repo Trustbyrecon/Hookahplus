@@ -20,13 +20,62 @@ This guide walks you through setting up the Hot IG Lead Engine that automaticall
 - Webhook endpoint deployed and accessible
 - Environment variables configured
 
+## Quick Start: Automated Setup
+
+**Want to automate the setup?** Run our setup script to generate secrets and configure environment variables:
+
+```bash
+# On Linux/Mac:
+bash scripts/setup-manychat.sh
+
+# On Windows (PowerShell):
+.\scripts\setup-manychat.ps1
+```
+
+This script will:
+- ✅ Generate secure webhook secrets
+- ✅ Create/update `.env.local` with required variables
+- ✅ Verify API endpoints exist
+- ❌ Cannot configure ManyChat dashboard (manual step required)
+
+**What still needs to be done manually:**
+- Configure webhook in ManyChat dashboard (Step 2)
+- Set up Instagram triggers (Step 3)
+- Create qualification flow (Step 4)
+- Configure API calls in flow (Step 5)
+
+---
+
 ## Step 1: Configure Environment Variables
+
+**Important:** The webhook secret and verify token are values that YOU generate/choose yourself - they are NOT found in ManyChat's Public API settings page. You'll enter these same values into ManyChat when configuring the webhook in Step 2.
+
+### Generate Required Values
+
+1. **Generate Webhook Secret:**
+   ```bash
+   # On Linux/Mac:
+   openssl rand -hex 32
+   
+   # On Windows (PowerShell):
+   -join ((48..57) + (65..90) + (97..122) | Get-Random -Count 32 | % {[char]$_})
+   
+   # Or use an online generator: https://randomkeygen.com/
+   ```
+   This should be a secure random string, minimum 32 characters.
+
+2. **Choose Verify Token:**
+   - You can use the default: `hookahplus_manychat_verify`
+   - Or choose your own custom token (e.g., `your_company_verify_token_2024`)
+   - This token will be used during webhook verification
+
+### Add to Environment Variables
 
 Add these to your `.env.local` (local) and Vercel environment variables (production):
 
 ```bash
 # ManyChat Integration
-MANYCHAT_WEBHOOK_SECRET=your_manychat_webhook_secret_here
+MANYCHAT_WEBHOOK_SECRET=your_generated_secret_here_minimum_32_chars
 MANYCHAT_VERIFY_TOKEN=hookahplus_manychat_verify
 
 # Webhook API Key (for internal webhook calls to bypass auth in production)
@@ -37,8 +86,9 @@ NEXT_PUBLIC_CALENDLY_URL=https://calendly.com/your-username/your-event-type
 ```
 
 **Note:** 
-- Generate a secure random string for `MANYCHAT_WEBHOOK_SECRET` (minimum 32 characters)
-- Generate a secure random string for `WEBHOOK_API_KEY` (minimum 32 characters) - this allows webhook calls to bypass authentication in production
+- `MANYCHAT_WEBHOOK_SECRET`: Use the secret you generated above (minimum 32 characters)
+- `MANYCHAT_VERIFY_TOKEN`: Use the token you chose (default: `hookahplus_manychat_verify`)
+- `WEBHOOK_API_KEY`: Generate another secure random string (minimum 32 characters) - this allows webhook calls to bypass authentication in production
 
 ## Step 2: Configure ManyChat Webhook
 
@@ -48,10 +98,11 @@ NEXT_PUBLIC_CALENDLY_URL=https://calendly.com/your-username/your-event-type
 
 2. **In ManyChat Dashboard:**
    - Go to **Settings** → **Integrations** → **Webhooks**
-   - Click **Add Webhook**
-   - **Webhook URL**: Enter your webhook URL
-   - **Verify Token**: Enter `hookahplus_manychat_verify` (or your custom token)
-   - **Secret**: Enter the same value as `MANYCHAT_WEBHOOK_SECRET`
+     - ⚠️ **Note:** This is NOT the "Public API" section (which only shows API keys). Webhooks are configured separately.
+   - Click **Add Webhook** or **Create Webhook**
+   - **Webhook URL**: Enter your webhook URL (e.g., `https://app.hookahplus.net/api/webhooks/manychat`)
+   - **Verify Token**: Enter the same value you set for `MANYCHAT_VERIFY_TOKEN` (e.g., `hookahplus_manychat_verify`)
+   - **Secret**: Enter the same value you set for `MANYCHAT_WEBHOOK_SECRET` (the secret you generated in Step 1)
    - **Events to Subscribe**: Select:
      - `message` (DMs)
      - `comment` (Post/Reel comments)
@@ -266,6 +317,26 @@ Expected response:
 - Monitor which triggers convert best
 - A/B test qualification questions
 - Optimize follow-up timing
+
+## FAQ
+
+### Where do I find the Webhook Secret and Verify Token?
+
+**Answer:** You don't find them in ManyChat - you generate/choose them yourself!
+
+- **Webhook Secret**: Generate a secure random string (see Step 1 for commands)
+- **Verify Token**: Choose any token you want (default: `hookahplus_manychat_verify`)
+
+These values are stored in your environment variables and also entered into ManyChat when configuring the webhook. They must match on both sides.
+
+**Common Mistake:** The "Public API" section in ManyChat Settings only shows API keys for making API calls - it does NOT contain webhook settings. Webhook configuration is found in **Settings → Integrations → Webhooks**.
+
+### What's the difference between API Key and Webhook Secret?
+
+- **API Key** (Public API section): Used when YOUR application makes API calls TO ManyChat
+- **Webhook Secret** (Webhooks section): Used when ManyChat sends webhook events TO YOUR application
+
+These are different features and configured in different places.
 
 ## Troubleshooting
 

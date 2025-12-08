@@ -35,10 +35,17 @@ export function BOHActions({ sessionId, state, userRoles, onStateChange }: Sessi
     if (busy) return;
     setBusy(true);
     try {
-      const response = await fetch(`/api/sessions/${sessionId}/transition`, {
-        method: 'POST',
+      // Use PATCH /api/sessions endpoint (correct endpoint)
+      const response = await fetch(`/api/sessions`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transition, ...extra }),
+        body: JSON.stringify({ 
+          sessionId,
+          action: transition,
+          userRole: 'MANAGER',
+          operatorId: 'session_actions',
+          ...extra 
+        }),
       });
       
       if (response.ok) {
@@ -103,10 +110,17 @@ export function FOHActions({ sessionId, state, userRoles, onStateChange }: Sessi
     if (busy) return;
     setBusy(true);
     try {
-      const response = await fetch(`/api/sessions/${sessionId}/transition`, {
-        method: 'POST',
+      // Use PATCH /api/sessions endpoint (correct endpoint)
+      const response = await fetch(`/api/sessions`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transition, ...extra }),
+        body: JSON.stringify({ 
+          sessionId,
+          action: transition,
+          userRole: 'MANAGER',
+          operatorId: 'session_actions',
+          ...extra 
+        }),
       });
       
       if (response.ok) {
@@ -239,10 +253,17 @@ export function ManagerActions({ sessionId, state, userRoles, onStateChange, onF
         });
       }
 
-      const response = await fetch(`/api/sessions/${sessionId}/transition`, {
-        method: 'POST',
+      // Use PATCH /api/sessions endpoint (correct endpoint)
+      const response = await fetch(`/api/sessions`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transition, ...extra }),
+        body: JSON.stringify({ 
+          sessionId,
+          action: transition,
+          userRole: 'MANAGER',
+          operatorId: 'session_actions',
+          ...extra 
+        }),
       });
       
       if (response.ok) {
