@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || 
                     'https://app.hookahplus.net'; // Production fallback
       
-      demoLink = generateDemoLink(slug, appUrl);
+      demoLink = generateDemoLink(slug, appUrl, true); // Force production URL for emails
       demoSlug = slug;
 
       // Find or create tenant

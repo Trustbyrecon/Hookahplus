@@ -18,8 +18,11 @@ export function generateSlug(businessName: string): string {
 /**
  * Generate demo link URL
  * Always uses production URL when available, never localhost for email links
+ * @param slug - The lounge slug for the demo link
+ * @param baseUrl - Optional base URL to use (overrides env vars)
+ * @param forceProduction - If true, never use localhost (for email links)
  */
-export function generateDemoLink(slug: string, baseUrl?: string): string {
+export function generateDemoLink(slug: string, baseUrl?: string, forceProduction: boolean = false): string {
   // Priority: baseUrl > NEXT_PUBLIC_APP_URL > production URL > localhost (dev only)
   let appUrl = baseUrl;
   
@@ -27,13 +30,19 @@ export function generateDemoLink(slug: string, baseUrl?: string): string {
     appUrl = process.env.NEXT_PUBLIC_APP_URL;
   }
   
+  // If forceProduction is true, never use localhost
+  if (forceProduction && (!appUrl || appUrl.includes('localhost'))) {
+    appUrl = 'https://app.hookahplus.net';
+    console.warn('[generateDemoLink] Force production mode: using production URL');
+  }
+  
   // If still no URL and we're in production, use production domain
   if (!appUrl && process.env.NODE_ENV === 'production') {
     appUrl = 'https://app.hookahplus.net';
   }
   
-  // Last resort: localhost (only for local dev)
-  if (!appUrl) {
+  // Last resort: localhost (only for local dev, and only if not forceProduction)
+  if (!appUrl && !forceProduction) {
     appUrl = 'http://localhost:3002';
     console.warn('[generateDemoLink] Using localhost - set NEXT_PUBLIC_APP_URL for production');
   }

@@ -48,12 +48,21 @@ export async function POST(req: NextRequest) {
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
         console.log('[Onboarding Submission] Connecting to app build at:', appUrl);
         
+        // Include webhook API key to bypass auth in production
+        const headers: Record<string, string> = { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        };
+        
+        // Add webhook API key if available (for production auth bypass)
+        const webhookApiKey = process.env.WEBHOOK_API_KEY;
+        if (webhookApiKey) {
+          headers['x-webhook-api-key'] = webhookApiKey;
+        }
+        
         const onboardingResponse = await fetch(`${appUrl}/api/admin/operator-onboarding`, {
           method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
+          headers,
           body: JSON.stringify({
             action: 'create_lead',
             leadData: {
@@ -151,9 +160,21 @@ export async function POST(req: NextRequest) {
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
         console.log('[Demo Request] Connecting to app build at:', appUrl);
         
+        // Include webhook API key to bypass auth in production
+        const headers: Record<string, string> = { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        };
+        
+        // Add webhook API key if available (for production auth bypass)
+        const webhookApiKey = process.env.WEBHOOK_API_KEY;
+        if (webhookApiKey) {
+          headers['x-webhook-api-key'] = webhookApiKey;
+        }
+        
         const onboardingResponse = await fetch(`${appUrl}/api/admin/operator-onboarding`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({
             action: 'create_lead',
             leadData: {

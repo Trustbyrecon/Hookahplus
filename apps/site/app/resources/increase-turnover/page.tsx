@@ -19,7 +19,10 @@ export default function IncreaseTurnoverPage() {
     setIsSubmitting(true);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
+      // Prefer deployed API; fall back to current origin in the browser
+      const apiUrl = process.env.NEXT_PUBLIC_APP_URL 
+        || process.env.NEXT_PUBLIC_API_URL
+        || (typeof window !== 'undefined' ? window.location.origin : '');
       const response = await fetch(`${apiUrl}/api/lead-magnets/download`, {
         method: 'POST',
         headers: {

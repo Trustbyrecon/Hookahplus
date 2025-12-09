@@ -497,8 +497,15 @@ export async function POST(req: NextRequest) {
 
       // If testLink not provided, create demo session first
       let finalTestLink = testLink;
+      
+      // CRITICAL: Never use localhost for email links - always use production URL
+      if (finalTestLink && finalTestLink.includes('localhost')) {
+        console.warn('[Operator Onboarding API] Rejecting localhost testLink, will auto-generate production URL');
+        finalTestLink = undefined; // Force auto-generation with production URL
+      }
+      
       if (!finalTestLink) {
-        if (data.demoLink) {
+        if (data.demoLink && !data.demoLink.includes('localhost')) {
           finalTestLink = data.demoLink;
         } else {
           // Create demo session
@@ -507,7 +514,7 @@ export async function POST(req: NextRequest) {
           // Always use production URL for email links - never localhost
           const appUrl = process.env.NEXT_PUBLIC_APP_URL || 
                         'https://app.hookahplus.net'; // Production fallback
-          finalTestLink = generateDemoLink(slug, appUrl);
+          finalTestLink = generateDemoLink(slug, appUrl, true); // Force production URL for emails
 
           // Find or create tenant
           const demoTenantId = await findOrCreateDemoTenant(businessName, prisma);
@@ -645,7 +652,7 @@ export async function POST(req: NextRequest) {
         // Never use localhost for email links - recipients can't access localhost
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || 
                       'https://app.hookahplus.net'; // Production fallback
-        const demoLink = generateDemoLink(slug, appUrl);
+        const demoLink = generateDemoLink(slug, appUrl, true); // Force production URL for emails
 
         // Update lead payload with demo link and tenant info
         const targetPayload = payload.behavior?.payload || payload;

@@ -13,6 +13,7 @@ function CheckoutSuccessContent() {
     tableId?: string;
     flavorMix?: string;
     amount?: number;
+    demoSlug?: string;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,6 +22,7 @@ function CheckoutSuccessContent() {
     const checkoutSessionId = searchParams.get('session_id');
     const mode = searchParams.get('mode');
     const payment = searchParams.get('payment');
+    const lounge = searchParams.get('lounge'); // Demo slug from URL
     const isDemoMode = mode === 'demo';
     
     // Handle demo mode payment confirmation redirect
@@ -51,6 +53,7 @@ function CheckoutSuccessContent() {
             tableId: 'table-001',
             flavorMix: 'Demo Flavor Mix',
             amount: 3000, // $30.00 in cents
+            demoSlug: lounge || undefined, // Pass demo slug for QR code routing
           });
           setLoading(false);
           return;
@@ -206,6 +209,8 @@ function CheckoutSuccessContent() {
             tableId={sessionData?.tableId}
             flavorMix={sessionData?.flavorMix}
             amount={sessionData?.amount}
+            demoSlug={sessionData?.demoSlug || lounge || undefined}
+            isDemo={isDemoMode}
           />
 
           <div className="mt-6 flex gap-4 justify-center">

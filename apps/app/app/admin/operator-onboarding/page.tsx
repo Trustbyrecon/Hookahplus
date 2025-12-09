@@ -924,7 +924,7 @@ export default function OperatorOnboardingPage() {
                                   .replace(/[^a-z0-9]+/g, '-')
                                   .replace(/^-+|-+$/g, '');
                                 const base =
-                                  process.env.NEXT_PUBLIC_APP_URL || 'https://app.hookahplus.com';
+                                  process.env.NEXT_PUBLIC_APP_URL || 'https://app.hookahplus.net';
                                 setTestLinkUrl(`${base}/demo/${slug || 'your-lounge'}`);
                               }
                             }}

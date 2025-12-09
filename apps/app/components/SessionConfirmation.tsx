@@ -11,6 +11,8 @@ interface SessionConfirmationProps {
   flavorMix?: string;
   amount?: number;
   className?: string;
+  demoSlug?: string; // Demo lounge slug for demo sessions
+  isDemo?: boolean; // Whether this is a demo session
 }
 
 const SessionConfirmation: React.FC<SessionConfirmationProps> = ({
@@ -19,6 +21,8 @@ const SessionConfirmation: React.FC<SessionConfirmationProps> = ({
   flavorMix,
   amount,
   className,
+  demoSlug,
+  isDemo = false,
 }) => {
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
   const [qrLoading, setQrLoading] = useState(true);
@@ -31,12 +35,29 @@ const SessionConfirmation: React.FC<SessionConfirmationProps> = ({
         setQrLoading(true);
         // Generate QR code with URL that routes to dashboard for staff to see paid status and start Night after Night flow
         // Always use production URL for QR codes - never localhost (recipients can't access localhost)
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
-                        (typeof window !== 'undefined' && !window.location.origin.includes('localhost') 
-                          ? window.location.origin 
-                          : 'https://app.hookahplus.net');
-        // Route to dashboard with session ID - staff can see it's paid and start the workflow
-        const qrUrl = `${baseUrl}/fire-session-dashboard?session=${sessionId}&paid=true`;
+        let baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+        
+        // If no env var or it's localhost, use production fallback
+        if (!baseUrl || baseUrl.includes('localhost')) {
+          // Only use window.location.origin if it's NOT localhost (e.g., deployed preview)
+          if (typeof window !== 'undefined' && !window.location.origin.includes('localhost')) {
+            baseUrl = window.location.origin;
+          } else {
+            baseUrl = 'https://app.hookahplus.net'; // Production fallback
+          }
+        }
+        // Route to demo slug if this is a demo session, otherwise route to dashboard
+        // Demo sessions should route to /demo/[slug] so all participants see the same demo state
+        let qrUrl: string;
+        if (isDemo && demoSlug) {
+          // Demo session: route to demo slug so all participants are in sync
+          qrUrl = `${baseUrl}/demo/${demoSlug}`;
+          console.log('[SessionConfirmation] Demo QR code routing to demo slug:', qrUrl);
+        } else {
+          // Production session: route to dashboard with session ID
+          qrUrl = `${baseUrl}/fire-session-dashboard?session=${sessionId}&paid=true`;
+          console.log('[SessionConfirmation] Production QR code routing to dashboard:', qrUrl);
+        }
         
         console.log('[SessionConfirmation] Generating QR code for:', qrUrl);
         

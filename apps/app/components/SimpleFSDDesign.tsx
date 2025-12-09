@@ -363,19 +363,42 @@ export default function SimpleFSDDesign({
           'RESOLVE_HOLD': '✅ Hold resolved. Session resuming.',
         };
         
-        const successMessage = successMessages[mappedAction];
+        let successMessage = successMessages[mappedAction] || `✅ ${mappedAction.replace(/_/g, ' ')} successful!`;
+        
+        // Add next action suggestion if available
+        if (result.primaryNextAction && result.nextActionDescription) {
+          const nextActionName = result.primaryNextAction.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+          successMessage += `\n\nNext: ${nextActionName} - ${result.nextActionDescription}`;
+        }
+        
         if (successMessage) {
           // Show brief success notification (non-blocking)
           const notification = document.createElement('div');
-          notification.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-in fade-in slide-in-from-right';
+          notification.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg z-50 max-w-md';
+          notification.style.whiteSpace = 'pre-line';
           notification.textContent = successMessage;
           document.body.appendChild(notification);
           
-          // Remove after 3 seconds
+          // Remove after 5 seconds (longer if next action is shown)
           setTimeout(() => {
-            notification.classList.add('animate-out', 'fade-out', 'slide-out-to-right');
+            notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
             setTimeout(() => notification.remove(), 300);
-          }, 3000);
+          }, result.primaryNextAction ? 5000 : 3000);
+        }
+        
+        // Auto-scroll to next action button if primary next action exists
+        if (result.primaryNextAction) {
+          setTimeout(() => {
+            const nextActionButton = document.querySelector(`[data-action="${result.primaryNextAction}"]`);
+            if (nextActionButton) {
+              nextActionButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              // Highlight the button briefly
+              nextActionButton.classList.add('ring-2', 'ring-teal-400', 'ring-opacity-75');
+              setTimeout(() => {
+                nextActionButton.classList.remove('ring-2', 'ring-teal-400', 'ring-opacity-75');
+              }, 2000);
+            }
+          }, 500);
         }
         
         // Trigger a custom event to refresh sessions
@@ -662,6 +685,10 @@ export default function SimpleFSDDesign({
     const displayName = getSessionDisplayName(sessionStatus);
     const statusColor = STATUS_COLORS[sessionStatus];
     const stateIcon = STATE_ICONS[sessionStatus];
+    
+    // Get primary next action (first action in workflow sequence)
+    const primaryActions = ['CLAIM_PREP', 'HEAT_UP', 'READY_FOR_DELIVERY', 'DELIVER_NOW', 'MARK_DELIVERED', 'START_ACTIVE'];
+    const primaryNextAction = availableActions.find(a => primaryActions.includes(a));
 
     const trustScore = calculateSingleSessionTrustScore(session as FireSession);
     const trustScoreColor = getTrustScoreColor(trustScore);
@@ -895,6 +922,19 @@ export default function SimpleFSDDesign({
           </div>
         )}
 
+        {/* Next Steps Section - Highlight primary next action */}
+        {availableActions.length > 0 && primaryNextAction && (
+          <div className="mt-3 pt-3 border-t border-zinc-700 bg-teal-900/20 border-teal-700/30 rounded-lg p-3">
+            <div className="flex items-center space-x-2 mb-2">
+              <Zap className="w-4 h-4 text-teal-400" />
+              <span className="text-sm font-semibold text-teal-300">Next Step:</span>
+            </div>
+            <p className="text-xs text-zinc-400 mb-2">
+              {ACTION_DESCRIPTIONS[primaryNextAction]}
+            </p>
+          </div>
+        )}
+
         {/* Quick Action Controls - Prominent buttons for common actions */}
         {availableActions.length > 0 && (
           <div className="mt-3 pt-3 border-t border-zinc-700 space-y-3">
@@ -903,90 +943,126 @@ export default function SimpleFSDDesign({
               {/* CLAIM_PREP - For PAID_CONFIRMED sessions */}
               {availableActions.includes('CLAIM_PREP') && canUserPerformAction('CLAIM_PREP', userRole) && (
                 <button
+                  data-action="CLAIM_PREP"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleSessionAction('claim_prep', sessionId);
                   }}
-                  className="flex items-center space-x-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors flex-1 min-w-[140px] justify-center"
+                  className={`flex items-center space-x-2 px-4 py-2 text-white rounded-lg transition-colors flex-1 min-w-[140px] justify-center ${
+                    primaryNextAction === 'CLAIM_PREP' 
+                      ? 'bg-orange-600 hover:bg-orange-700 ring-2 ring-orange-400 ring-opacity-50' 
+                      : 'bg-orange-500 hover:bg-orange-600'
+                  }`}
                   title={ACTION_DESCRIPTIONS['CLAIM_PREP']}
                 >
                   <ChefHat className="w-4 h-4" />
                   <span className="text-sm font-medium">Claim Prep</span>
+                  {primaryNextAction === 'CLAIM_PREP' && <Zap className="w-3 h-3 ml-1" />}
                 </button>
               )}
               
               {/* HEAT_UP - For PREP_IN_PROGRESS sessions */}
               {availableActions.includes('HEAT_UP') && canUserPerformAction('HEAT_UP', userRole) && (
                 <button
+                  data-action="HEAT_UP"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleSessionAction('heat_up', sessionId);
                   }}
-                  className="flex items-center space-x-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors flex-1 min-w-[140px] justify-center"
+                  className={`flex items-center space-x-2 px-4 py-2 text-white rounded-lg transition-colors flex-1 min-w-[140px] justify-center ${
+                    primaryNextAction === 'HEAT_UP' 
+                      ? 'bg-red-600 hover:bg-red-700 ring-2 ring-red-400 ring-opacity-50' 
+                      : 'bg-red-500 hover:bg-red-600'
+                  }`}
                   title={ACTION_DESCRIPTIONS['HEAT_UP']}
                 >
                   <Flame className="w-4 h-4" />
                   <span className="text-sm font-medium">Heat Coals</span>
+                  {primaryNextAction === 'HEAT_UP' && <Zap className="w-3 h-3 ml-1" />}
                 </button>
               )}
               
               {/* READY_FOR_DELIVERY - For HEAT_UP sessions */}
               {availableActions.includes('READY_FOR_DELIVERY') && canUserPerformAction('READY_FOR_DELIVERY', userRole) && (
                 <button
+                  data-action="READY_FOR_DELIVERY"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleSessionAction('ready_for_delivery', sessionId);
                   }}
-                  className="flex items-center space-x-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors flex-1 min-w-[140px] justify-center"
+                  className={`flex items-center space-x-2 px-4 py-2 text-white rounded-lg transition-colors flex-1 min-w-[140px] justify-center ${
+                    primaryNextAction === 'READY_FOR_DELIVERY' 
+                      ? 'bg-green-600 hover:bg-green-700 ring-2 ring-green-400 ring-opacity-50' 
+                      : 'bg-green-500 hover:bg-green-600'
+                  }`}
                   title={ACTION_DESCRIPTIONS['READY_FOR_DELIVERY']}
                 >
                   <CheckCircle className="w-4 h-4" />
                   <span className="text-sm font-medium">Ready</span>
+                  {primaryNextAction === 'READY_FOR_DELIVERY' && <Zap className="w-3 h-3 ml-1" />}
                 </button>
               )}
               
               {/* DELIVER_NOW - For READY_FOR_DELIVERY sessions */}
               {availableActions.includes('DELIVER_NOW') && canUserPerformAction('DELIVER_NOW', userRole) && (
                 <button
+                  data-action="DELIVER_NOW"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleSessionAction('deliver_now', sessionId);
                   }}
-                  className="flex items-center space-x-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors flex-1 min-w-[140px] justify-center"
+                  className={`flex items-center space-x-2 px-4 py-2 text-white rounded-lg transition-colors flex-1 min-w-[140px] justify-center ${
+                    primaryNextAction === 'DELIVER_NOW' 
+                      ? 'bg-purple-600 hover:bg-purple-700 ring-2 ring-purple-400 ring-opacity-50' 
+                      : 'bg-purple-500 hover:bg-purple-600'
+                  }`}
                   title={ACTION_DESCRIPTIONS['DELIVER_NOW']}
                 >
                   <Truck className="w-4 h-4" />
                   <span className="text-sm font-medium">Deliver</span>
+                  {primaryNextAction === 'DELIVER_NOW' && <Zap className="w-3 h-3 ml-1" />}
                 </button>
               )}
               
               {/* MARK_DELIVERED - For OUT_FOR_DELIVERY sessions */}
               {availableActions.includes('MARK_DELIVERED') && canUserPerformAction('MARK_DELIVERED', userRole) && (
                 <button
+                  data-action="MARK_DELIVERED"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleSessionAction('mark_delivered', sessionId);
                   }}
-                  className="flex items-center space-x-2 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-lg transition-colors flex-1 min-w-[140px] justify-center"
+                  className={`flex items-center space-x-2 px-4 py-2 text-white rounded-lg transition-colors flex-1 min-w-[140px] justify-center ${
+                    primaryNextAction === 'MARK_DELIVERED' 
+                      ? 'bg-teal-600 hover:bg-teal-700 ring-2 ring-teal-400 ring-opacity-50' 
+                      : 'bg-teal-500 hover:bg-teal-600'
+                  }`}
                   title={ACTION_DESCRIPTIONS['MARK_DELIVERED']}
                 >
                   <CheckCircle className="w-4 h-4" />
                   <span className="text-sm font-medium">Delivered</span>
+                  {primaryNextAction === 'MARK_DELIVERED' && <Zap className="w-3 h-3 ml-1" />}
                 </button>
               )}
               
               {/* START_ACTIVE (Light Session) - For DELIVERED sessions */}
               {availableActions.includes('START_ACTIVE') && canUserPerformAction('START_ACTIVE', userRole) && (
                 <button
+                  data-action="START_ACTIVE"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleSessionAction('start_active', sessionId);
                   }}
-                  className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white rounded-lg transition-colors flex-1 min-w-[140px] justify-center font-bold shadow-lg shadow-red-500/50"
+                  className={`flex items-center space-x-2 px-4 py-2 text-white rounded-lg transition-colors flex-1 min-w-[140px] justify-center font-bold shadow-lg ${
+                    primaryNextAction === 'START_ACTIVE' 
+                      ? 'bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 ring-2 ring-red-400 ring-opacity-50 shadow-red-500/50' 
+                      : 'bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 shadow-red-500/50'
+                  }`}
                   title={ACTION_DESCRIPTIONS['START_ACTIVE']}
                 >
                   <Flame className="w-4 h-4" />
                   <span className="text-sm font-medium">🔥 Light Session</span>
+                  {primaryNextAction === 'START_ACTIVE' && <Zap className="w-3 h-3 ml-1" />}
                 </button>
               )}
             </div>
@@ -1067,10 +1143,23 @@ export default function SimpleFSDDesign({
         )}
         
         {/* No Actions Available Message */}
+        {/* Show actions even if getAvailableActions returns empty - check workflow state directly */}
         {availableActions.length === 0 && (
           <div className="mt-3 pt-3 border-t border-zinc-700">
             <div className="text-center py-4">
-              <p className="text-xs text-zinc-500 mb-2">No actions available for this session state.</p>
+              <p className="text-xs text-zinc-500 mb-2">
+                {sessionStatus === 'ACTIVE' && session.sessionTimer?.isActive 
+                  ? 'Session is active. Use pause/refill/close actions from session detail modal.'
+                  : sessionStatus === 'CLOSED'
+                  ? 'Session completed.'
+                  : 'No actions available for this session state.'}
+              </p>
+              {/* Fallback: Show workflow actions if status detection failed but we're in workflow */}
+              {['PAID_CONFIRMED', 'PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(sessionStatus) && (
+                <div className="mt-2 text-xs text-yellow-400">
+                  <p>Status detection may be delayed. Try refreshing or check session detail modal for actions.</p>
+                </div>
+              )}
               <p className="text-xs text-zinc-600">
                 Current status: <span className="font-medium text-zinc-400">{getSessionDisplayName(sessionStatus)}</span>
               </p>
@@ -1506,21 +1595,23 @@ export default function SimpleFSDDesign({
               <span>Back of House Operations</span>
             </h3>
             <div className="space-y-4">
-              {sessions.filter(s => {
-                const status = getSessionStatus(s);
-                return ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(status);
-              }).length === 0 ? (
-                <div className="text-center py-12">
-                  <Package className="w-16 h-16 mx-auto mb-4 text-zinc-600" />
-                  <h3 className="text-lg font-medium text-zinc-300 mb-2">No BOH Sessions</h3>
-                  <p className="text-zinc-500">No sessions currently in Back of House stage</p>
-                </div>
-              ) : (
-                sessions.filter(s => {
+              {(() => {
+                const bohSessions = sessions.filter(s => {
                   const status = getSessionStatus(s);
-                  return ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(status);
-                }).map(renderSessionCard)
-              )}
+                  // Include PAID_CONFIRMED (ready for prep), PREP_IN_PROGRESS, HEAT_UP, READY_FOR_DELIVERY
+                  // Also include STAFF_HOLD and REMAKE (edge cases that need BOH attention)
+                  return ['PAID_CONFIRMED', 'PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY', 'STAFF_HOLD', 'REMAKE'].includes(status);
+                });
+                return bohSessions.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Package className="w-16 h-16 mx-auto mb-4 text-zinc-600" />
+                    <h3 className="text-lg font-medium text-zinc-300 mb-2">No BOH Sessions</h3>
+                    <p className="text-zinc-500">No sessions currently in Back of House stage</p>
+                  </div>
+                ) : (
+                  bohSessions.map(renderSessionCard)
+                );
+              })()}
             </div>
           </div>
         </div>
@@ -1535,21 +1626,23 @@ export default function SimpleFSDDesign({
               <span>Front of House Operations</span>
             </h3>
             <div className="space-y-4">
-              {sessions.filter(s => {
-                const status = getSessionStatus(s);
-                return ['OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(status);
-              }).length === 0 ? (
-                <div className="text-center py-12">
-                  <Truck className="w-16 h-16 mx-auto mb-4 text-zinc-600" />
-                  <h3 className="text-lg font-medium text-zinc-300 mb-2">No FOH Sessions</h3>
-                  <p className="text-zinc-500">No sessions currently in Front of House stage</p>
-                </div>
-              ) : (
-                sessions.filter(s => {
+              {(() => {
+                const fohSessions = sessions.filter(s => {
                   const status = getSessionStatus(s);
-                  return ['OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(status);
-                }).map(renderSessionCard)
-              )}
+                  // Include READY_FOR_DELIVERY (FOH can pick up), OUT_FOR_DELIVERY, DELIVERED, ACTIVE
+                  // Also include CLOSE_PENDING (FOH handles closing)
+                  return ['READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE', 'CLOSE_PENDING'].includes(status);
+                });
+                return fohSessions.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Truck className="w-16 h-16 mx-auto mb-4 text-zinc-600" />
+                    <h3 className="text-lg font-medium text-zinc-300 mb-2">No FOH Sessions</h3>
+                    <p className="text-zinc-500">No sessions currently in Front of House stage</p>
+                  </div>
+                ) : (
+                  fohSessions.map(renderSessionCard)
+                );
+              })()}
             </div>
           </div>
         </div>

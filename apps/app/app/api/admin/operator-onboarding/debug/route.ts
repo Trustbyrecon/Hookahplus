@@ -40,9 +40,10 @@ export async function GET(req: NextRequest) {
 
   try {
     // Test database connection by attempting a simple query
+    // Use findFirst instead of $queryRaw to avoid prepared statement issues with poolers
     // If this fails, we'll catch it and return a helpful error
     try {
-      await prisma.$queryRaw`SELECT 1`;
+      await prisma.reflexEvent.findFirst({ take: 1 });
       console.log('[Operator Onboarding Debug] Database connection successful');
     } catch (dbError: any) {
       console.error('[Operator Onboarding Debug] Database connection test failed:', {
@@ -90,7 +91,6 @@ export async function GET(req: NextRequest) {
           ctaType: true,
           payload: true,
           createdAt: true,
-          updatedAt: true,
           tenantId: true,
           userAgent: true,
           ip: true,
@@ -161,7 +161,6 @@ export async function GET(req: NextRequest) {
         ctaType: event.ctaType,
         tenantId: event.tenantId,
         createdAt: event.createdAt,
-        updatedAt: event.updatedAt,
         
         // Lead details
         businessName: data.businessName || data.loungeName || 'Unknown',

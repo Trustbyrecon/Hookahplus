@@ -16,7 +16,8 @@ import {
   canPerformAction, 
   isValidTransition, 
   nextStateWithTrust,
-  calculateRemainingTime
+  calculateRemainingTime,
+  ACTION_DESCRIPTIONS
 } from '../../../lib/sessionStateMachine';
 import {
   initializeReflexChain,
@@ -1855,12 +1856,25 @@ export async function PATCH(req: NextRequest) {
         console.error('[Reflex Chain] Error processing layer:', reflexError);
       }
 
+      // Get available actions and prioritize by workflow sequence
+      const allNextActions = getAvailableActions(fireSession);
+      const primaryActions = ['CLAIM_PREP', 'HEAT_UP', 'READY_FOR_DELIVERY', 'DELIVER_NOW', 'MARK_DELIVERED', 'START_ACTIVE'];
+      const primaryNextAction = allNextActions.find(a => primaryActions.includes(a));
+      const secondaryActions = allNextActions.filter(a => !primaryActions.includes(a));
+      
+      // Prioritize actions: primary first, then secondary
+      const prioritizedActions = primaryNextAction 
+        ? [primaryNextAction, ...secondaryActions]
+        : allNextActions;
+      
       return NextResponse.json({ 
         success: true, 
         session: fireSession,
         message: `Session ${action} successful`,
         businessLogic: `Session transitioned from ${currentSession.status} to ${updatedSession.status}`,
-        nextActions: getAvailableActions(fireSession),
+        nextActions: prioritizedActions,
+        primaryNextAction: primaryNextAction || null,
+        nextActionDescription: primaryNextAction ? ACTION_DESCRIPTIONS[primaryNextAction] : null,
         stage: fireSession.currentStage
       }, {
         headers: getCorsHeaders(req),

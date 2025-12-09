@@ -2,6 +2,36 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/db';
 import crypto from 'crypto';
 
+// Allow the marketing site to call this API from a different origin
+const ALLOWED_ORIGINS = [
+  'https://hookahplus.net',
+  'https://www.hookahplus.net',
+  'http://localhost:3000',
+  ...(process.env.CORS_ALLOW_ORIGINS ? process.env.CORS_ALLOW_ORIGINS.split(',').map(o => o.trim()) : [])
+].filter(Boolean);
+
+function getOrigin(req: NextRequest): string | null {
+  return req.headers.get('origin');
+}
+
+function applyCors(res: NextResponse, origin: string | null) {
+  const isAllowed = origin && ALLOWED_ORIGINS.includes(origin);
+  const allowOrigin = isAllowed ? origin : (ALLOWED_ORIGINS[0] || '*');
+  res.headers.set('Access-Control-Allow-Origin', allowOrigin);
+  res.headers.set('Vary', 'Origin');
+  res.headers.set('Access-Control-Allow-Methods', 'POST,GET,OPTIONS');
+  res.headers.set('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+  res.headers.set('Access-Control-Max-Age', '86400');
+  return res;
+}
+
+export async function OPTIONS(req: NextRequest) {
+  return applyCors(
+    NextResponse.json({ ok: true }),
+    getOrigin(req)
+  );
+}
+
 /**
  * POST /api/lead-magnets/download
  * 
@@ -9,6 +39,7 @@ import crypto from 'crypto';
  */
 export async function POST(req: NextRequest) {
   try {
+    const origin = getOrigin(req);
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || '0.0.0.0';
     const userAgent = req.headers.get('user-agent') || '';
     const referrer = req.headers.get('referer') || req.headers.get('referrer') || null;
@@ -23,19 +54,19 @@ export async function POST(req: NextRequest) {
 
     // Validation
     if (!email || !leadMagnetId) {
-      return NextResponse.json({
+      return applyCors(NextResponse.json({
         success: false,
         error: 'Missing required fields: email, leadMagnetId'
-      }, { status: 400 });
+      }, { status: 400 }), origin);
     }
 
     // Validate leadMagnetId
     const validLeadMagnets = ['operations-checklist', 'increase-turnover', 'roi-template'];
     if (!validLeadMagnets.includes(leadMagnetId)) {
-      return NextResponse.json({
+      return applyCors(NextResponse.json({
         success: false,
         error: `Invalid leadMagnetId. Must be one of: ${validLeadMagnets.join(', ')}`
-      }, { status: 400 });
+      }, { status: 400 }), origin);
     }
 
     // Build payload
@@ -73,13 +104,13 @@ export async function POST(req: NextRequest) {
 
     if (duplicate) {
       // Still return download URL but mark as duplicate
-      return NextResponse.json({
+      return applyCors(NextResponse.json({
         success: true,
         id: duplicate.id,
         deduped: true,
         downloadUrl: getDownloadUrl(leadMagnetId),
         message: 'Download already tracked (deduped)'
-      });
+      }), origin);
     }
 
     // Create ReflexEvent
@@ -101,20 +132,20 @@ export async function POST(req: NextRequest) {
     // Log success
     console.log(`[Lead Magnet] Created event ${event.id} for ${leadMagnetId} download`);
 
-    return NextResponse.json({
+    return applyCors(NextResponse.json({
       success: true,
       id: event.id,
       downloadUrl: getDownloadUrl(leadMagnetId),
       message: 'Download tracked successfully'
-    });
+    }), origin);
 
   } catch (error) {
     console.error('[Lead Magnet Download] Error:', error);
-    return NextResponse.json({
+    return applyCors(NextResponse.json({
       success: false,
       error: 'Failed to track download',
       details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    }, { status: 500 }), getOrigin(req));
   }
 }
 
@@ -140,6 +171,7 @@ function getDownloadUrl(leadMagnetId: string): string {
  */
 export async function GET(req: NextRequest) {
   try {
+    const origin = getOrigin(req);
     const { searchParams } = new URL(req.url);
     const leadMagnetId = searchParams.get('leadMagnetId');
     const days = parseInt(searchParams.get('days') || '30');
@@ -184,19 +216,19 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    return NextResponse.json({
+    return applyCors(NextResponse.json({
       success: true,
       stats,
       events: events.slice(0, 100) // Return first 100 for preview
-    });
+    }), origin);
 
   } catch (error) {
     console.error('[Lead Magnet Download] GET Error:', error);
-    return NextResponse.json({
+    return applyCors(NextResponse.json({
       success: false,
       error: 'Failed to fetch download statistics',
       details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    }, { status: 500 }), getOrigin(req));
   }
 }
 
