@@ -138,9 +138,14 @@ export default function OperatorOnboardingPage() {
     email: '',
     phone: '',
     location: '',
+    instagramUrl: '',
+    facebookUrl: '',
+    websiteUrl: '',
     source: 'manual',
     stage: 'new-leads' as Lead['stage']
   });
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [extractionStatus, setExtractionStatus] = useState<string | null>(null);
   const [selectedLeadIds, setSelectedLeadIds] = useState<Set<string>>(new Set());
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [showTestLinkModal, setShowTestLinkModal] = useState(false);
@@ -324,6 +329,62 @@ export default function OperatorOnboardingPage() {
     }
   };
 
+  const extractSocialMediaInfo = async () => {
+    const hasSocialLinks = newLeadData.instagramUrl || newLeadData.facebookUrl || newLeadData.websiteUrl;
+    if (!hasSocialLinks) {
+      alert('Please enter at least one social media link (Instagram, Facebook, or Website)');
+      return;
+    }
+
+    setIsExtracting(true);
+    setExtractionStatus('Extracting information from social media...');
+
+    try {
+      const response = await fetch('/api/admin/operator-onboarding/extract-social', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instagramUrl: newLeadData.instagramUrl,
+          facebookUrl: newLeadData.facebookUrl,
+          websiteUrl: newLeadData.websiteUrl
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to extract information');
+      }
+
+      // Auto-populate form fields with extracted data
+      if (data.extracted) {
+        setNewLeadData(prev => ({
+          ...prev,
+          businessName: prev.businessName || data.extracted.businessName || '',
+          ownerName: prev.ownerName || data.extracted.ownerName || '',
+          email: prev.email || data.extracted.email || '',
+          phone: prev.phone || data.extracted.phone || '',
+          location: prev.location || data.extracted.location || '',
+          instagramUrl: prev.instagramUrl || data.extracted.instagramUrl || '',
+          facebookUrl: prev.facebookUrl || data.extracted.facebookUrl || '',
+          websiteUrl: prev.websiteUrl || data.extracted.websiteUrl || ''
+        }));
+        setExtractionStatus('✅ Information extracted successfully! Form fields updated.');
+        setTimeout(() => setExtractionStatus(null), 3000);
+      } else {
+        setExtractionStatus('⚠️ No information could be extracted. You can still fill the form manually.');
+        setTimeout(() => setExtractionStatus(null), 3000);
+      }
+    } catch (err) {
+      console.error('Extraction error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to extract information';
+      setExtractionStatus(`❌ ${errorMessage}`);
+      setTimeout(() => setExtractionStatus(null), 5000);
+    } finally {
+      setIsExtracting(false);
+    }
+  };
+
   const createManualLead = async () => {
     if (!newLeadData.businessName || !newLeadData.email) {
       alert('Please fill in required fields (Business Name and Email)');
@@ -361,18 +422,35 @@ export default function OperatorOnboardingPage() {
       }
 
       // Reset form
+      const createdLeadId = data.leadId || data.lead?.id;
       setNewLeadData({
         businessName: '',
         ownerName: '',
         email: '',
         phone: '',
         location: '',
+        instagramUrl: '',
+        facebookUrl: '',
+        websiteUrl: '',
         source: 'manual',
         stage: 'new-leads'
       });
       setShowAddLeadModal(false);
       await loadLeads();
       showActionMessage('Manual lead created');
+      
+      // Optionally open test link modal if lead was created
+      if (createdLeadId) {
+        const newLead = leads.find(l => l.id === createdLeadId) || await fetch(`/api/admin/operator-onboarding?leadId=${createdLeadId}`).then(r => r.json()).then(d => d.leads?.[0]).catch(() => null);
+        if (newLead) {
+          setSelectedLead(newLead);
+          setTimeout(() => {
+            if (confirm('Lead created! Would you like to send a test link email now?')) {
+              setShowTestLinkModal(true);
+            }
+          }, 500);
+        }
+      }
     } catch (err) {
       console.error('Create lead error:', err);
       const errorMsg = err instanceof Error ? err.message : 'Failed to create lead. Please try again.';
@@ -1166,6 +1244,76 @@ export default function OperatorOnboardingPage() {
                   placeholder="Enter location"
                 />
               </div>
+              
+              {/* Social Media Links Section */}
+              <div className="border-t border-zinc-700 pt-4 mt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="block text-sm font-medium text-zinc-300">Social Media Links</label>
+                  <button
+                    type="button"
+                    onClick={extractSocialMediaInfo}
+                    disabled={isExtracting || (!newLeadData.instagramUrl && !newLeadData.facebookUrl && !newLeadData.websiteUrl)}
+                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-700 disabled:cursor-not-allowed text-white text-xs rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    {isExtracting ? (
+                      <>
+                        <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Extracting...
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="w-3 h-3" />
+                        Extract Info
+                      </>
+                    )}
+                  </button>
+                </div>
+                {extractionStatus && (
+                  <div className={`mb-3 p-2 rounded text-xs ${
+                    extractionStatus.includes('✅') ? 'bg-teal-500/20 text-teal-300' :
+                    extractionStatus.includes('⚠️') ? 'bg-yellow-500/20 text-yellow-300' :
+                    'bg-red-500/20 text-red-300'
+                  }`}>
+                    {extractionStatus}
+                  </div>
+                )}
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-400 mb-1">Instagram URL</label>
+                    <input
+                      type="url"
+                      value={newLeadData.instagramUrl}
+                      onChange={(e) => setNewLeadData({ ...newLeadData, instagramUrl: e.target.value })}
+                      className="w-full px-4 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      placeholder="https://instagram.com/username or @username"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-400 mb-1">Facebook URL</label>
+                    <input
+                      type="url"
+                      value={newLeadData.facebookUrl}
+                      onChange={(e) => setNewLeadData({ ...newLeadData, facebookUrl: e.target.value })}
+                      className="w-full px-4 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      placeholder="https://facebook.com/username"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-400 mb-1">Website URL</label>
+                    <input
+                      type="url"
+                      value={newLeadData.websiteUrl}
+                      onChange={(e) => setNewLeadData({ ...newLeadData, websiteUrl: e.target.value })}
+                      className="w-full px-4 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      placeholder="https://example.com"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-zinc-500 mt-2">
+                  💡 Enter social media links and click "Extract Info" to auto-fill business details
+                </p>
+              </div>
+              
               <div>
                 <label className="block text-sm font-medium text-zinc-300 mb-2">Initial Stage</label>
                 <select
