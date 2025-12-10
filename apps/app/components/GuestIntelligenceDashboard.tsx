@@ -99,6 +99,7 @@ interface SessionNote {
 interface GuestIntelligenceDashboardProps {
   session?: FireSession;
   sessionId?: string;
+  customerId?: string; // Alternative to sessionId for wallet integration
   tableId?: string;
   onClose: () => void;
 }
@@ -106,6 +107,7 @@ interface GuestIntelligenceDashboardProps {
 export default function GuestIntelligenceDashboard({ 
   session, 
   sessionId, 
+  customerId,
   tableId, 
   onClose 
 }: GuestIntelligenceDashboardProps) {
@@ -125,7 +127,26 @@ export default function GuestIntelligenceDashboard({
         let realData: BehavioralMemory | null = null;
         let useDemo = false;
         
-        if (sessionId && sessionId !== 'session_demo') {
+        // Try customerId first (for wallet integration), then sessionId
+        if (customerId) {
+          try {
+            const response = await fetch(`/api/wallet/${customerId}/intelligence`);
+            if (response.ok) {
+              const data = await response.json();
+              if (data.success && data.behavioralMemory) {
+                realData = data.behavioralMemory;
+                useDemo = false;
+              } else {
+                useDemo = true;
+              }
+            } else {
+              useDemo = true;
+            }
+          } catch (error) {
+            console.warn('[GID] Failed to fetch customer intelligence, using demo:', error);
+            useDemo = true;
+          }
+        } else if (sessionId && sessionId !== 'session_demo') {
           try {
             const response = await fetch(`/api/guest-intelligence/${sessionId}`);
             if (response.ok) {

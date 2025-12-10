@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic"; // disable Next caching of this route
 
 import { prisma } from "@/lib/prisma";
 import { extractIdempotencyKey, withIdempotency } from "@/lib/idempotency";
+import { getOrCreateCustomerByPhone } from "@/lib/wallet";
 import crypto from "crypto";
 
 const seal = (o: unknown) =>
@@ -58,27 +59,40 @@ export async function POST(req: Request) {
 
     const trustSignature = seal({ loungeId, source, externalRef, customerPhone, flavorMix });
 
+    // Link customer if phone provided
+    let customerId: string | null = null;
+    if (customerPhone) {
+      try {
+        const { customer } = await getOrCreateCustomerByPhone(customerPhone);
+        customerId = customer.id;
+      } catch (error) {
+        // Continue without customer link if lookup fails
+        console.warn("Failed to link customer:", error);
+      }
+    }
+
     const { result: session, cached } = await withIdempotency({
       key: idempotencyKey,
       eventType: "session_started",
-      payload: { loungeId, source, externalRef, customerPhone, flavorMix, trustSignature },
+      payload: { loungeId, source, externalRef, customerPhone, flavorMix, trustSignature, customerId },
       sessionIdFromResult: (s) => (s as any)?.id,
       handler: async () =>
         prisma.session.upsert({
-          where: {
-            loungeId_externalRef: {
-              loungeId,
+      where: { 
+        loungeId_externalRef: { 
+          loungeId, 
               externalRef,
             },
-          },
-          update: {}, // creation is idempotent—no update on duplicate create
-          create: {
-            loungeId,
-            source,
-            externalRef,
-            customerPhone,
-            flavorMix,
-            trustSignature,
+      },
+      update: {}, // creation is idempotent—no update on duplicate create
+      create: {
+        loungeId, 
+        source, 
+        externalRef, 
+        customerPhone, 
+        customerId,
+        flavorMix, 
+        trustSignature,
           },
         }),
     });

@@ -7,7 +7,7 @@ import { extractIdempotencyKey, withIdempotency } from "@/lib/idempotency";
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   const sessionId = params.id;
   const idempotencyKey = extractIdempotencyKey(req);
-
+  
   // seed if missing (for local/dev)
   const s0 = getSession(sessionId) || seedSession(sessionId);
 
@@ -45,7 +45,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         const next = reduce(structuredClone(s0), cmd, actor, data);
         putSession(next);
 
-        // publish to per-session & role topics
+    // publish to per-session & role topics
         publishSessionEvent(sessionId, { session: next, cmd, data });
         return next;
       },
@@ -53,7 +53,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
     return NextResponse.json(
       {
-        ok: true,
+      ok: true, 
         new_state: result.state,
         message: `Session state changed from ${s0.state} to ${result.state} by ${actor}`,
         session: result,

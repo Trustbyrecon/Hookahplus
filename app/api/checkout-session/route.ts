@@ -43,10 +43,10 @@ export async function POST(request: NextRequest) {
             cancel_url: cancelUrl,
             payment_method_types: ["card"],
             billing_address_collection: "auto",
-            shipping_address_collection: {
+      shipping_address_collection: {
               allowed_countries: ["US", "CA"],
-            },
-            metadata: {
+      },
+      metadata: {
               source: "hookahplus-web",
               session_type: "hookah_session",
               session_id: body.sessionId ?? "",

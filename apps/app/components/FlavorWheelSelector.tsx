@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Wand2, Sparkles, FlaskConical, ListFilter, CircleDot, ChevronRight, RotateCcw, X } from 'lucide-react';
+import { Search, Wand2, Sparkles, FlaskConical, ListFilter, CircleDot, ChevronRight, RotateCcw, X, TrendingUp } from 'lucide-react';
 
 // Staff-optimized flavor categories with pricing
 const FLAVOR_CATEGORIES = [
@@ -131,6 +131,8 @@ interface FlavorWheelSelectorProps {
   className?: string;
   customFlavors?: string[]; // For demo mode: flavors from uploaded menu
   isDemoMode?: boolean; // If true, flavors are free
+  sortByPopularity?: boolean; // Sort flavors by popularity (default: true)
+  loungeId?: string; // Optional lounge ID for popularity calculation
 }
 
 export default function FlavorWheelSelector({
@@ -140,11 +142,44 @@ export default function FlavorWheelSelector({
   mode = 'staff',
   className = '',
   customFlavors = [],
-  isDemoMode = false
+  isDemoMode = false,
+  sortByPopularity = true,
+  loungeId
 }: FlavorWheelSelectorProps) {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string[]>(selectedFlavors);
   const [showPresets, setShowPresets] = useState(customFlavors && customFlavors.length > 0 ? false : true); // Hide presets if using custom flavors
+  const [popularityData, setPopularityData] = useState<Map<string, number>>(new Map());
+  const [loadingPopularity, setLoadingPopularity] = useState(false);
+
+  // Fetch popularity data
+  useEffect(() => {
+    if (!sortByPopularity || customFlavors.length > 0) return; // Skip for custom flavors
+
+    async function fetchPopularity() {
+      setLoadingPopularity(true);
+      try {
+        const period = '30d';
+        const url = `/api/flavors/popular?period=${period}${loungeId ? `&loungeId=${loungeId}` : ''}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        
+        if (res.ok && data.popularity) {
+          const popularityMap = new Map<string, number>();
+          data.popularity.forEach((item: { flavorId: string; count: number }) => {
+            popularityMap.set(item.flavorId, item.count);
+          });
+          setPopularityData(popularityMap);
+        }
+      } catch (error) {
+        console.warn('Failed to fetch flavor popularity:', error);
+      } finally {
+        setLoadingPopularity(false);
+      }
+    }
+
+    fetchPopularity();
+  }, [sortByPopularity, loungeId, customFlavors.length]);
 
   // Build available flavors: use customFlavors if provided (demo mode), otherwise use FLAVOR_CATEGORIES
   const availableFlavors = useMemo(() => {
@@ -186,7 +221,7 @@ export default function FlavorWheelSelector({
     }, 0);
   }, [selected, isDemoMode, customFlavors]);
 
-  // Filter categories based on search
+  // Filter and sort categories based on search and popularity
   const filteredCategories = useMemo(() => {
     const q = query.toLowerCase();
     if (customFlavors && customFlavors.length > 0) {
@@ -207,12 +242,31 @@ export default function FlavorWheelSelector({
       }
       return [];
     }
-    if (!q) return FLAVOR_CATEGORIES;
-    return FLAVOR_CATEGORIES.map((c) => ({
-      ...c,
-      items: c.items.filter((i) => i.label.toLowerCase().includes(q)),
-    })).filter((c) => c.items.length);
-  }, [query, customFlavors, isDemoMode]);
+    
+    let categories = FLAVOR_CATEGORIES;
+    
+    // Apply search filter
+    if (q) {
+      categories = categories.map((c) => ({
+        ...c,
+        items: c.items.filter((i) => i.label.toLowerCase().includes(q)),
+      })).filter((c) => c.items.length);
+    }
+    
+    // Apply popularity sorting within each category
+    if (sortByPopularity && popularityData.size > 0) {
+      categories = categories.map((c) => ({
+        ...c,
+        items: [...c.items].sort((a, b) => {
+          const aPopularity = popularityData.get(a.id) || 0;
+          const bPopularity = popularityData.get(b.id) || 0;
+          return bPopularity - aPopularity; // Most popular first
+        }),
+      }));
+    }
+    
+    return categories;
+  }, [query, customFlavors, isDemoMode, sortByPopularity, popularityData]);
 
   // Handle flavor selection
   const toggleFlavor = (flavorId: string) => {
@@ -422,9 +476,16 @@ export default function FlavorWheelSelector({
                         : 'bg-zinc-700 border-zinc-600 text-zinc-300 hover:bg-zinc-600 hover:border-zinc-500'
                   }`}
                 >
-                  <div className="flex justify-between items-center">
-                    <span>{flavor.label}</span>
-                    <span className="text-green-400">${flavor.price.toFixed(2)}</span>
+                  <div className="flex justify-between items-center gap-2">
+                    <div className="flex items-center gap-1 flex-1 min-w-0">
+                      <span className="truncate">{flavor.label}</span>
+                      {sortByPopularity && popularityData.get(flavor.id) && popularityData.get(flavor.id)! > 0 && (
+                        <span className="flex items-center gap-0.5 text-yellow-400 flex-shrink-0" title={`Used ${popularityData.get(flavor.id)} times`}>
+                          <TrendingUp className="w-3 h-3" />
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-green-400 flex-shrink-0">${flavor.price.toFixed(2)}</span>
                   </div>
                 </button>
               ))}

@@ -30,7 +30,7 @@ export default function PreOrderTable({ params }: { params: { tableId: string } 
     try {
       setBusy(true);
       setMsg("");
-
+      
       // Track GA event if available
       if (typeof window !== 'undefined' && (window as any).gtag) {
         (window as any).gtag('event', 'Preorder_Submit', {
@@ -89,7 +89,7 @@ export default function PreOrderTable({ params }: { params: { tableId: string } 
           qrLink: preview.qrLink
         }),
       });
-
+      
       const json = await res.json();
       if (!json.sessionId) throw new Error(json.error || "No session");
 
@@ -231,7 +231,7 @@ export default function PreOrderTable({ params }: { params: { tableId: string } 
               <p className="text-xs text-zinc-500">Staff confirmation required before payment.</p>
             </div>
           )}
-
+          
           <button
             className="w-full py-4 px-6 rounded-lg font-bold text-lg bg-teal-600 hover:bg-teal-700 text-white shadow-lg hover:shadow-xl transition-all disabled:opacity-60"
             onClick={submitPreorder}

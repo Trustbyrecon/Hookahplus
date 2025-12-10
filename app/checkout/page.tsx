@@ -38,7 +38,7 @@ export default function Checkout() {
     try {
       setBusy(true);
       setMsg("");
-
+      
       // Track GA event if available
       if (typeof window !== 'undefined' && (window as any).gtag) {
         (window as any).gtag('event', 'Checkout_Pay', {

@@ -26,7 +26,7 @@ model Item {
   categoryId   String
   name         String
   description  String?
-  priceCents   Int      // Price in cents
+  priceCents   Int // Price in cents
   displayOrder Int      @default(0)
   isPopular    Boolean  @default(false)
   prepTime     Int      @default(0)
@@ -45,7 +45,7 @@ model OrgSetting {
   id          String   @id @default(cuid())
   key         String   @unique
   value       String
-  description String?  // Optional description field
+  description String? // Optional description field
   category    String   @default("general")
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
@@ -59,22 +59,22 @@ model OrgSetting {
 model Badge {
   id     String  @id
   label  String
-  scope  String  // 'lounge' | 'network'
-  rule   String  // JSON as string for SQLite compatibility
+  scope  String // 'lounge' | 'network'
+  rule   String // JSON as string for SQLite compatibility
   active Boolean @default(true)
   awards Award[]
 }
 
 model Award {
-  id         String   @id
-  profileId  String
-  badgeId    String
-  badge      Badge    @relation(fields: [badgeId], references: [id])
-  venueId    String?
-  progress   Int      @default(100)
-  awardedAt  DateTime @default(now())
-  awardedBy  String?
-  revoked    Boolean  @default(false)
+  id        String   @id
+  profileId String
+  badgeId   String
+  badge     Badge    @relation(fields: [badgeId], references: [id])
+  venueId   String?
+  progress  Int      @default(100)
+  awardedAt DateTime @default(now())
+  awardedBy String?
+  revoked   Boolean  @default(false)
 
   @@index([profileId, badgeId, venueId, revoked])
 }
@@ -82,7 +82,7 @@ model Award {
 model Event {
   id        String   @id @default(cuid())
   ts        DateTime @default(now())
-  type      String   // 'check_in' | 'visit_closed' | 'mix_ordered'
+  type      String // 'check_in' | 'visit_closed' | 'mix_ordered'
   profileId String
   venueId   String?
   comboHash String?
@@ -93,92 +93,95 @@ model Event {
 }
 
 model Session {
-  id           String   @id @default(cuid())
-  externalRef  String?  // qrToken | reservationId | stripeCheckoutId
-  source       String   // QR | RESERVE | WALK_IN
+  id             String              @id @default(cuid())
+  externalRef    String? // qrToken | reservationId | stripeCheckoutId
+  source         String // QR | RESERVE | WALK_IN
   trustSignature String
-  state        String   @default("PENDING") // PENDING | ACTIVE | PAUSED | CLOSED | CANCELED
-  customerPhone String?
-  flavorMix    String?  // JSON as string for SQLite compatibility
-  loungeId     String
-  tableId      String?  // Table identifier for the session
-  version      Int @default(1)
-  edgeCase     String?  // Edge case identifier
-  edgeNote     String?  // Edge case description
-  priceCents   Int?     // Price in cents
-  orderItems   String?  // JSON as string for SQLite compatibility
-  posMode      String?  // POS integration mode
-  durationSecs Int?     // Session duration in seconds
-  startedAt    DateTime? // Session start time
-  endedAt      DateTime? // Session end time
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  events       SessionEvent[]
-  transitions  SessionTransition[]
+  state          String              @default("PENDING") // PENDING | ACTIVE | PAUSED | CLOSED | CANCELED
+  customerPhone  String?
+  flavorMix      String? // JSON as string for SQLite compatibility
+  loungeId       String
+  tableId        String? // Table identifier for the session
+  version        Int                 @default(1)
+  edgeCase       String? // Edge case identifier
+  edgeNote       String? // Edge case description
+  priceCents     Int? // Price in cents
+  orderItems     String? // JSON as string for SQLite compatibility
+  posMode        String? // POS integration mode
+  durationSecs   Int? // Session duration in seconds
+  startedAt      DateTime? // Session start time
+  endedAt        DateTime? // Session end time
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  events         SessionEvent[]
+  transitions    SessionTransition[]
+  customer       Customer?           @relation(fields: [customerId], references: [id])
+  customerId     String?
 
+  @@unique([loungeId, externalRef]) // idempotent anchor
   @@index([loungeId, state])
   @@index([loungeId, tableId])
-  @@unique([loungeId, externalRef]) // idempotent anchor
+  @@index([customerId])
 }
 
 model SessionEvent {
-  id              String   @id @default(cuid()) // event_id
-  sessionId       String?                                  // session_id (nullable to allow pre-session idempotency anchors)
-  type            String                                   // event_type
-  payload         String?  @default("{}")                  // canonical payload blob (JSON string for SQLite)
-  payloadSeal     String
-  data            String   @default("{}")                  // legacy JSON string payload
-  idempotencyKey  String? @unique
-  createdAt       DateTime @default(now())
-  session         Session? @relation(fields: [sessionId], references: [id])
+  id             String   @id @default(cuid()) // event_id
+  sessionId      String? // session_id (nullable to allow pre-session idempotency anchors)
+  type           String // event_type
+  payload        String?  @default("{}") // canonical payload blob (JSON string for SQLite)
+  payloadSeal    String
+  data           String   @default("{}") // legacy JSON string payload
+  idempotencyKey String?  @unique
+  createdAt      DateTime @default(now())
+  session        Session? @relation(fields: [sessionId], references: [id])
 
   @@index([sessionId, createdAt])
   @@index([createdAt])
 }
 
 model SessionTransition {
-  id          String   @id @default(cuid())
-  sessionId   String
-  fromState   String
-  toState     String
-  transition  String
-  userId      String?  // User who triggered the transition
-  note        String?  // Additional notes about the transition
-  createdAt   DateTime @default(now())
-  session     Session  @relation(fields: [sessionId], references: [id])
+  id         String   @id @default(cuid())
+  sessionId  String
+  fromState  String
+  toState    String
+  transition String
+  userId     String? // User who triggered the transition
+  note       String? // Additional notes about the transition
+  createdAt  DateTime @default(now())
+  session    Session  @relation(fields: [sessionId], references: [id])
 
   @@index([sessionId])
 }
 
 model ReflexEvent {
-  id            String    @id @default(cuid())
+  id            String   @id @default(cuid())
   type          String
-  source        String    @default("ui")
+  source        String   @default("ui")
   sessionId     String?
   paymentIntent String?
-  payload       String?   // JSON as string for SQLite compatibility
+  payload       String? // JSON as string for SQLite compatibility
   payloadHash   String?
   userAgent     String
   ip            String
-  createdAt     DateTime  @default(now())
+  createdAt     DateTime @default(now())
 
   @@index([type, createdAt])
   @@index([ip, type, payloadHash, createdAt])
 }
 
 model SettlementReconciliation {
-  id              String   @id @default(cuid())
-  stripeChargeId  String?  // Stripe charge ID
-  posTicketId     String?  // POS ticket ID
-  sessionId       String?  // Session ID
-  amount          Int?     // Amount in cents
-  currency        String?  // Currency code
-  status          String   @default("pending") // pending, matched, orphaned
-  matchedAt       DateTime?
-  reconciledAt    DateTime? // When reconciliation was completed
-  repairRunId     String?  // Repair run identifier
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String    @id @default(cuid())
+  stripeChargeId String? // Stripe charge ID
+  posTicketId    String? // POS ticket ID
+  sessionId      String? // Session ID
+  amount         Int? // Amount in cents
+  currency       String? // Currency code
+  status         String    @default("pending") // pending, matched, orphaned
+  matchedAt      DateTime?
+  reconciledAt   DateTime? // When reconciliation was completed
+  repairRunId    String? // Repair run identifier
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   @@index([status])
   @@index([stripeChargeId])
@@ -187,17 +190,17 @@ model SettlementReconciliation {
 }
 
 model PosTicket {
-  id              String   @id @default(cuid())
-  ticketId        String   // POS system ticket ID
-  stripeChargeId  String?  // Associated Stripe charge ID
-  sessionId       String?  // Associated session ID
-  amountCents     Int?     // Amount in cents
-  currency        String?  // Currency code
-  status          String   @default("pending") // pending, paid, refunded
-  posSystem       String?  // POS system identifier
-  items           String?  // JSON string of items
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String   @id @default(cuid())
+  ticketId       String // POS system ticket ID
+  stripeChargeId String? // Associated Stripe charge ID
+  sessionId      String? // Associated session ID
+  amountCents    Int? // Amount in cents
+  currency       String? // Currency code
+  status         String   @default("pending") // pending, paid, refunded
+  posSystem      String? // POS system identifier
+  items          String? // JSON string of items
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@index([ticketId])
   @@index([stripeChargeId])
@@ -206,15 +209,15 @@ model PosTicket {
 }
 
 model Ktl4HealthCheck {
-  id           String   @id @default(cuid())
-  flowName     String
-  checkType    String
-  status       String
-  details      String?  // JSON as string for SQLite compatibility
-  threshold    Float?
-  actualValue  Float?
-  operatorId   String?
-  createdAt    DateTime @default(now())
+  id          String   @id @default(cuid())
+  flowName    String
+  checkType   String
+  status      String
+  details     String? // JSON as string for SQLite compatibility
+  threshold   Float?
+  actualValue Float?
+  operatorId  String?
+  createdAt   DateTime @default(now())
 
   @@index([flowName])
   @@index([checkType])
@@ -223,12 +226,12 @@ model Ktl4HealthCheck {
 }
 
 model SessionHeartbeat {
-  id          String   @id @default(cuid())
-  sessionId   String
-  lastPing    DateTime
-  status      String   @default("active") // active, inactive, stale
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  sessionId String
+  lastPing  DateTime
+  status    String   @default("active") // active, inactive, stale
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([sessionId])
   @@index([lastPing])
@@ -281,18 +284,89 @@ model Referral {
 }
 
 model Payout {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   partnerId   String
-  period      String   // YYYY-MM format
+  period      String // YYYY-MM format
   gross       Float
   revSharePct Float
   net         Float
-  status      String   @default("pending") // pending, paid, failed
+  status      String    @default("pending") // pending, paid, failed
   paidAt      DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@index([partnerId])
   @@index([period])
   @@index([status])
+}
+
+model Customer {
+  id        String          @id @default(cuid())
+  name      String?
+  phone     String?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  wallet    CustomerWallet?
+  stats     CustomerStats?
+  rewards   RewardToken[]
+  sessions  Session[]
+
+  @@unique([phone])
+  @@index([phone])
+}
+
+model CustomerWallet {
+  id            String   @id @default(cuid())
+  customerId    String   @unique
+  walletQrToken String   @unique
+  status        String   @default("active") // active | inactive
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  customer      Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([walletQrToken])
+  @@index([status])
+}
+
+model CustomerStats {
+  id          String    @id @default(cuid())
+  customerId  String    @unique
+  visitCount  Int       @default(0)
+  lastVisitAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  customer    Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([visitCount])
+  @@index([lastVisitAt])
+}
+
+model RewardToken {
+  id         String    @id @default(cuid())
+  customerId String
+  type       String // discount | add-on
+  value      String // JSON string: { amountCents: number } or { addOnName: string }
+  expiresAt  DateTime?
+  redeemedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  customer   Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+  @@index([expiresAt])
+  @@index([redeemedAt])
+}
+
+model FlavorPopularity {
+  id          String   @id @default(cuid())
+  flavorId    String
+  count       Int      @default(0)
+  period      String // 7d | 30d
+  lastUpdated DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([flavorId, period])
+  @@index([count])
+  @@index([lastUpdated])
 }

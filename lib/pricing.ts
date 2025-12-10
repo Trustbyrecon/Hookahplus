@@ -1,3 +1,5 @@
+import { applyTokenToSession } from "@/lib/reward-tokens";
+
 type AddOn = { name: string; priceCents: number; quantity?: number; premium?: boolean };
 
 const toInt = (value: any, fallback: number) => {
@@ -16,16 +18,19 @@ export type ReceiptPreviewInput = {
   sessionId?: string;
   qrLink?: string;
   tableId?: string;
+  rewardToken?: any; // RewardToken from database
 };
 
 export type ReceiptPreview = {
   basePriceCents: number;
   premiumAddOns: AddOn[];
   loungeMarginCents: number;
+  discountCents: number;
   totalCents: number;
   sessionId?: string;
   qrLink?: string;
   tableId?: string;
+  appliedRewardToken?: any;
   stripeLineItems: Array<{
     price_data: {
       currency: "usd";
@@ -51,7 +56,23 @@ export function buildReceiptPreview(input: ReceiptPreviewInput): ReceiptPreview 
     (sum, a) => sum + a.priceCents * (a.quantity ?? 1),
     0
   );
-  const totalCents = basePriceCents + loungeMarginCents + addOnsTotal;
+  const subtotalCents = basePriceCents + loungeMarginCents + addOnsTotal;
+
+  // Apply reward token discount if provided
+  let discountCents = 0;
+  let appliedRewardToken = null;
+  if (input.rewardToken) {
+    const result = applyTokenToSession(
+      input.rewardToken,
+      basePriceCents,
+      premiumAddOns,
+      loungeMarginCents
+    );
+    discountCents = result.discountCents;
+    appliedRewardToken = result.appliedToken;
+  }
+
+  const totalCents = Math.max(0, subtotalCents - discountCents);
 
   const stripeLineItems = [
     {
@@ -80,14 +101,28 @@ export function buildReceiptPreview(input: ReceiptPreviewInput): ReceiptPreview 
     },
   ];
 
+  // Add discount line item if applicable
+  if (discountCents > 0) {
+    stripeLineItems.push({
+      price_data: {
+        currency: "usd" as const,
+        product_data: { name: "Reward Discount" },
+        unit_amount: -discountCents, // Negative for discount
+      },
+      quantity: 1,
+    });
+  }
+
   return {
     basePriceCents,
     premiumAddOns,
     loungeMarginCents,
+    discountCents,
     totalCents,
     sessionId: input.sessionId,
     qrLink: input.qrLink,
     tableId: input.tableId,
+    appliedRewardToken,
     stripeLineItems,
   };
 }
