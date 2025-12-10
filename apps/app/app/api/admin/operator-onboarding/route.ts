@@ -319,6 +319,8 @@ export async function GET(req: NextRequest) {
         instagramUrl: payload.lead?.instagramUrl || data.instagramUrl || data.instagram || null,
         facebookUrl: payload.lead?.facebookUrl || data.facebookUrl || data.facebook || null,
         websiteUrl: payload.lead?.websiteUrl || data.websiteUrl || data.website || null,
+        // Demo link (for leads without email - IG DM workflow)
+        demoLink: payload.lead?.demoLink || data.demoLink || payload.demoLink || null,
         // Instagram scraped data (for agent review)
         instagramScrapedData: payload.lead?.instagramScrapedData || data.instagramScrapedData || null,
         // Menu files (uploaded files)
@@ -520,13 +522,21 @@ export async function POST(req: NextRequest) {
           const demoTenantId = await findOrCreateDemoTenant(businessName, prisma);
 
           // Update lead payload with demo link
+          // Store demo link in both locations for easy access
           const targetPayload = payload.behavior?.payload || payload;
           targetPayload.demoLink = finalTestLink;
           targetPayload.demoSlug = slug;
           targetPayload.demoTenantId = demoTenantId;
           targetPayload.demoCreatedAt = new Date().toISOString();
-
-          // Update the event
+          
+          // Also store in behavior.payload if it exists (for REM TrustEvent format)
+          if (payload.behavior) {
+            payload.behavior.payload.demoLink = finalTestLink;
+            payload.behavior.payload.demoSlug = slug;
+            payload.behavior.payload.demoTenantId = demoTenantId;
+            payload.behavior.payload.demoCreatedAt = new Date().toISOString();
+          }
+          
           await prisma.reflexEvent.update({
             where: { id: leadId },
             data: {
@@ -543,13 +553,17 @@ export async function POST(req: NextRequest) {
       const businessName = data.businessName || data.loungeName || '';
       const ownerName = data.ownerName || '';
 
-      if (!email) {
+      // If no email, just store the demo link and return success (for IG DM workflow)
+      if (!email || email === 'No email') {
         return NextResponse.json({
-          success: false,
-          error: 'Lead email not found in payload',
-        }, { status: 400 });
+          success: true,
+          message: 'Demo link generated and stored. No email to send to.',
+          demoLink: finalTestLink,
+          note: 'Use this link to DM via Instagram or ManyChat'
+        });
       }
 
+      // Send email if email is available
       try {
         const result = await sendTestLinkEmail({
           email,
@@ -563,16 +577,19 @@ export async function POST(req: NextRequest) {
           const errorMessage = result.error || 'Unknown error';
           const isConfigError = errorMessage.includes('not configured') || errorMessage.includes('RESEND_API_KEY');
           
+          // Even if email fails, demo link is stored, so return partial success
           return NextResponse.json({
-            success: false,
+            success: true,
+            warning: 'Demo link stored but email failed to send',
+            demoLink: finalTestLink,
             error: isConfigError 
               ? 'Email service not configured. Please set RESEND_API_KEY environment variable.'
               : 'Failed to send test link email',
             details: errorMessage,
             hint: isConfigError 
-              ? 'To enable email sending, configure RESEND_API_KEY in your environment variables.'
-              : undefined
-          }, { status: 500 });
+              ? 'To enable email sending, configure RESEND_API_KEY in your environment variables. Demo link is available for manual sharing.'
+              : 'Demo link is available for manual sharing via Instagram DM or ManyChat.'
+          }, { status: 200 }); // Return 200 since demo link was stored
         }
 
         return NextResponse.json({
@@ -722,11 +739,17 @@ export async function POST(req: NextRequest) {
 
     // Handle create_lead action
     if (action === 'create_lead') {
-      if (!leadData || !leadData.businessName || !leadData.email) {
+      if (!leadData || !leadData.businessName) {
         return NextResponse.json({
           success: false,
-          error: 'Missing required fields: businessName, email'
+          error: 'Missing required field: businessName'
         }, { status: 400 });
+      }
+      
+      // Email is optional - use placeholder if not provided (for IG DM workflow)
+      if (!leadData.email) {
+        leadData.email = 'No email'; // Placeholder for leads without email
+        console.log('[Operator Onboarding API] Creating lead without email - will use IG DM workflow');
       }
 
       // Process Instagram URL if provided - scrape for menu data
@@ -1004,38 +1027,150 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        // Send email notification to admin (non-blocking)
-        try {
-          await sendNewLeadNotification({
-            businessName: leadData.businessName,
-            ownerName: leadData.ownerName,
-            email: leadData.email,
-            phone: leadData.phone,
-            location: leadData.location,
-            source: leadData.source || 'website',
-            stage: leadData.stage || 'intake',
-          });
-          console.log('[Operator Onboarding API] Lead notification email sent');
-        } catch (emailError) {
-          console.error('[Operator Onboarding API] Failed to send lead notification email (non-blocking):', emailError);
-          // Continue anyway - email failure shouldn't block lead creation
+        // Only send email notifications for non-manual leads (skip for manual entries)
+        if (leadData.source !== 'manual') {
+          // Send email notification to admin (non-blocking)
+          try {
+            await sendNewLeadNotification({
+              businessName: leadData.businessName,
+              ownerName: leadData.ownerName,
+              email: leadData.email,
+              phone: leadData.phone,
+              location: leadData.location,
+              source: leadData.source || 'website',
+              stage: leadData.stage || 'intake',
+            });
+            console.log('[Operator Onboarding API] Lead notification email sent');
+          } catch (emailError) {
+            console.error('[Operator Onboarding API] Failed to send lead notification email (non-blocking):', emailError);
+            // Continue anyway - email failure shouldn't block lead creation
+          }
+
+          // Also send email notification to hookahplusconnector@gmail.com (non-blocking)
+          try {
+            await sendNewLeadNotification({
+              businessName: leadData.businessName,
+              ownerName: leadData.ownerName,
+              email: leadData.email,
+              phone: leadData.phone,
+              location: leadData.location,
+              source: leadData.source || 'website',
+              stage: leadData.stage || 'intake',
+            }, 'hookahplusconnector@gmail.com');
+            console.log('[Operator Onboarding API] Lead notification email sent to hookahplusconnector@gmail.com');
+          } catch (connectorEmailError) {
+            console.error('[Operator Onboarding API] Failed to send notification to hookahplusconnector@gmail.com (non-blocking):', connectorEmailError);
+            // Continue anyway - email failure shouldn't block lead creation
+          }
+        } else {
+          console.log('[Operator Onboarding API] Skipping email notifications for manual lead creation');
         }
 
-        // Also send email notification to hookahplusconnector@gmail.com (non-blocking)
-        try {
-          await sendNewLeadNotification({
-            businessName: leadData.businessName,
-            ownerName: leadData.ownerName,
-            email: leadData.email,
-            phone: leadData.phone,
-            location: leadData.location,
-            source: leadData.source || 'website',
-            stage: leadData.stage || 'intake',
-          }, 'hookahplusconnector@gmail.com');
-          console.log('[Operator Onboarding API] Lead notification email sent to hookahplusconnector@gmail.com');
-        } catch (connectorEmailError) {
-          console.error('[Operator Onboarding API] Failed to send notification to hookahplusconnector@gmail.com (non-blocking):', connectorEmailError);
-          // Continue anyway - email failure shouldn't block lead creation
+        // Auto-generate test link and DM message if Instagram URL is provided
+        if (leadData.instagramUrl && instagramMenuData) {
+          try {
+            // Generate test link
+            const businessName = leadData.businessName || 'Demo Lounge';
+            const slug = generateSlug(businessName);
+            const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.hookahplus.net';
+            const demoLink = generateDemoLink(slug, appUrl, true);
+            const demoTenantId = await findOrCreateDemoTenant(businessName, prisma);
+
+            // Update lead payload with demo link
+            const updatedPayload = JSON.parse(newEvent.payload);
+            const targetPayload = updatedPayload.behavior?.payload || updatedPayload;
+            targetPayload.demoLink = demoLink;
+            targetPayload.demoSlug = slug;
+            targetPayload.demoTenantId = demoTenantId;
+            targetPayload.demoCreatedAt = new Date().toISOString();
+            
+            if (updatedPayload.behavior) {
+              updatedPayload.behavior.payload.demoLink = demoLink;
+              updatedPayload.behavior.payload.demoSlug = slug;
+              updatedPayload.behavior.payload.demoTenantId = demoTenantId;
+              updatedPayload.behavior.payload.demoCreatedAt = new Date().toISOString();
+            }
+
+            await prisma.reflexEvent.update({
+              where: { id: newEvent.id },
+              data: {
+                payload: JSON.stringify(updatedPayload),
+                tenantId: demoTenantId
+              }
+            });
+
+            // Generate and save DM message as note
+            const generateWarmDM = (data: any, instaData: any, link: string): string => {
+              const businessName = data.businessName || 'your lounge';
+              const ownerName = data.ownerName || 'there';
+              const demoLink = link || '';
+              
+              let message = `Hey ${ownerName}! 👋\n\n`;
+              
+              if (instaData) {
+                if (instaData.flavors && instaData.flavors.length > 0) {
+                  const topFlavors = instaData.flavors.slice(0, 3).join(', ');
+                  message += `I noticed ${businessName} offers ${topFlavors}${instaData.flavors.length > 3 ? ' and more' : ''} - great selection! 🍃\n\n`;
+                }
+                
+                if (instaData.basePrice) {
+                  message += `I see your base price is around $${instaData.basePrice}. `;
+                }
+                
+                if (instaData.menuItems && instaData.menuItems.length > 0) {
+                  message += `Your menu looks solid!\n\n`;
+                }
+              }
+              
+              message += `I'd love to show you how Hookah+ can help ${businessName}:\n\n`;
+              message += `✨ Increase table turnover\n`;
+              message += `📊 Track session times & revenue\n`;
+              message += `💳 Accept payments seamlessly\n`;
+              message += `📱 Give guests a modern ordering experience\n\n`;
+              
+              if (demoLink) {
+                message += `I've set up a personalized demo for you:\n${demoLink}\n\n`;
+                message += `Check it out when you have a moment - it's customized for ${businessName}!\n\n`;
+              } else {
+                message += `Would you be open to a quick 15-min demo? I can show you exactly how it works for your setup.\n\n`;
+              }
+              
+              message += `Let me know what works best for you! 🙌`;
+              
+              return message;
+            };
+
+            const dmMessage = generateWarmDM(leadData, instagramMenuData, demoLink);
+            
+            // Save DM message as note
+            const targetPayloadForNote = updatedPayload.behavior?.payload || updatedPayload;
+            if (!targetPayloadForNote.notes) {
+              targetPayloadForNote.notes = [];
+            }
+            targetPayloadForNote.notes.push({
+              id: `note_${Date.now()}`,
+              content: `📱 Instagram DM Message:\n\n${dmMessage}`,
+              author: 'system',
+              createdAt: new Date().toISOString(),
+              noteType: 'dm_template'
+            });
+
+            if (updatedPayload.behavior) {
+              updatedPayload.behavior.payload.notes = targetPayloadForNote.notes;
+            }
+
+            await prisma.reflexEvent.update({
+              where: { id: newEvent.id },
+              data: {
+                payload: JSON.stringify(updatedPayload)
+              }
+            });
+
+            console.log('[Operator Onboarding API] Auto-generated test link and DM message for Instagram lead');
+          } catch (autoGenError) {
+            console.error('[Operator Onboarding API] Error auto-generating test link/DM (non-blocking):', autoGenError);
+            // Continue anyway - this is non-blocking
+          }
         }
 
         return NextResponse.json({

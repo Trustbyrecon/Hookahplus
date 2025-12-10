@@ -16,24 +16,19 @@ import {
   Calendar,
   MessageSquare,
   Star,
-  Zap
+  Zap,
+  Info
 } from 'lucide-react';
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    company: '',
-    loungeName: '',
-    location: '',
-    currentPOS: '',
-    integrationType: '',
-    timeline: '',
-    message: '',
-    pricingModel: 'time-based'
+    instagramUrl: '',
+    facebookUrl: '',
+    websiteUrl: ''
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -45,6 +40,13 @@ export default function ContactPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate at least one social media link
+    if (!formData.instagramUrl && !formData.facebookUrl && !formData.websiteUrl) {
+      alert('Please provide at least one social media link (Instagram, Facebook, or Website).');
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
@@ -56,42 +58,38 @@ export default function ContactPage() {
         body: JSON.stringify({
           action: 'request_demo',
           data: {
-            name: formData.name,
-            email: formData.email,
-            company: formData.company,
-            loungeName: formData.loungeName,
-            location: formData.location,
-            currentPOS: formData.currentPOS,
-            integrationType: formData.integrationType,
-            timeline: formData.timeline,
-            message: formData.message,
-            pricingModel: formData.pricingModel
+            instagramUrl: formData.instagramUrl,
+            facebookUrl: formData.facebookUrl,
+            websiteUrl: formData.websiteUrl,
+            businessName: 'From Social Media', // Will be extracted from social media
+            source: 'website'
           }
         }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Failed to submit demo request' }));
-        throw new Error(errorData.error || 'Failed to submit demo request');
+        const errorData = await response.json().catch(() => ({ error: 'Failed to submit request' }));
+        throw new Error(errorData.error || 'Failed to submit request');
       }
 
       const result = await response.json();
       setIsSubmitting(false);
+      setSubmitted(true);
       
       // Track conversion
       trackContactFormConversion({
-        email: formData.email,
-        name: formData.name
+        email: formData.instagramUrl || formData.facebookUrl || formData.websiteUrl,
+        name: 'Social Media Lead'
       });
 
-      // Show success message and redirect to home
-      // Users should never see the admin Operator Onboarding Management page
-      alert('✅ Thank you! Your demo request has been submitted successfully. Our team will contact you within 24 hours.');
-      window.location.href = '/';
+      // Reset form after 3 seconds
+      setTimeout(() => {
+        setFormData({ instagramUrl: '', facebookUrl: '', websiteUrl: '' });
+        setSubmitted(false);
+      }, 3000);
     } catch (error) {
       console.error('Error submitting form:', error);
       setIsSubmitting(false);
-      // Show error message to user
       alert(`Failed to submit request: ${error instanceof Error ? error.message : 'Please try again.'}`);
     }
   };
@@ -119,344 +117,109 @@ export default function ContactPage() {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-6xl font-bold mb-6">
-            Contact Us for Demo
+            Get Your Demo Link
           </h1>
           <p className="text-xl text-zinc-400 mb-8 max-w-3xl mx-auto">
-            Experience Hookah+ in your lounge. Schedule a personalized demo and see how our system can transform your business.
+            Share your social media links and we'll create a personalized demo for your lounge. We'll extract information from your Instagram, Facebook, or website to customize your experience.
           </p>
         </div>
 
-        {/* Pricing Model Notice */}
-        <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-lg p-6 mb-8">
-          <div className="flex items-start space-x-3">
-            <AlertCircle className="w-6 h-6 text-yellow-400 flex-shrink-0 mt-1" />
-            <div>
-              <h3 className="text-lg font-semibold text-yellow-400 mb-2">Smart Payment Architecture</h3>
-              <p className="text-zinc-300 mb-3">
-                Hookah+ connects seamlessly with your existing payment system, supporting <strong>time-based pricing</strong> and <strong>flat-rate pricing</strong> models. 
-                Our hospitality-grade ritual intelligence platform abstracts payment complexity while focusing on experience flow and trust capture.
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {pricingModels.map((model) => (
-                  <div key={model.id} className={`p-4 rounded-lg border ${
-                    model.recommended 
-                      ? 'border-green-500/30 bg-green-500/10' 
-                      : 'border-zinc-600 bg-zinc-800/50'
-                  }`}>
-                    <div className="flex items-center space-x-2 mb-2">
-                      <h4 className="font-semibold text-white">{model.name}</h4>
-                      {model.recommended && (
-                        <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full">
-                          Recommended
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-zinc-400 mb-3">{model.description}</p>
-                    <ul className="space-y-1">
-                      {model.features.map((feature, index) => (
-                        <li key={index} className="text-xs text-zinc-300 flex items-center space-x-2">
-                          <CheckCircle className="w-3 h-3 text-green-400" />
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div className="max-w-2xl mx-auto">
           {/* Contact Form */}
           <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-8">
-            <h2 className="text-2xl font-bold text-white mb-6">Request a Demo</h2>
-            
-            <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Personal Information */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {submitted ? (
+              <div className="text-center py-12">
+                <CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-4" />
+                <h2 className="text-2xl font-bold text-white mb-4">Thank You!</h2>
+                <p className="text-zinc-300 mb-2">
+                  We've received your social media links and will create a personalized demo for you.
+                </p>
+                <p className="text-zinc-400 text-sm">
+                  Our team will review your information and send you a test link within 24-48 hours.
+                </p>
+              </div>
+            ) : (
+              <>
+                <h2 className="text-2xl font-bold text-white mb-6">Share Your Social Media</h2>
+                
+                <form onSubmit={handleSubmit} className="space-y-6">
                   <div>
                     <label className="block text-sm font-medium text-zinc-300 mb-2">
-                      Full Name *
+                      Instagram URL
                     </label>
                     <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
+                      type="url"
+                      name="instagramUrl"
+                      value={formData.instagramUrl}
                       onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:border-primary-500"
-                      placeholder="John Doe"
+                      className="w-full px-4 py-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:border-teal-500"
+                      placeholder="https://instagram.com/yourlounge"
                     />
                   </div>
+
                   <div>
                     <label className="block text-sm font-medium text-zinc-300 mb-2">
-                      Email Address *
+                      Facebook URL
                     </label>
                     <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
+                      type="url"
+                      name="facebookUrl"
+                      value={formData.facebookUrl}
                       onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:border-primary-500"
-                      placeholder="john@example.com"
+                      className="w-full px-4 py-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:border-teal-500"
+                      placeholder="https://facebook.com/yourlounge"
                     />
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-zinc-300 mb-2">
-                    Company
-                  </label>
-                  <input
-                    type="text"
-                    name="company"
-                    value={formData.company}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:border-primary-500"
-                    placeholder="Your Company"
-                  />
-                </div>
-
-                {/* Lounge Information */}
-                <div className="border-t border-zinc-700 pt-6">
-                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
-                    <Building className="w-5 h-5 text-primary-400" />
-                    <span>Lounge Information</span>
-                  </h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-zinc-300 mb-2">
-                        Lounge Name *
-                      </label>
-                      <input
-                        type="text"
-                        name="loungeName"
-                        value={formData.loungeName}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-4 py-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:border-primary-500"
-                        placeholder="The Cloud Lounge"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-zinc-300 mb-2">
-                        Location *
-                      </label>
-                      <input
-                        type="text"
-                        name="location"
-                        value={formData.location}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-4 py-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:border-primary-500"
-                        placeholder="New York, NY"
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">
+                      Website URL
+                    </label>
+                    <input
+                      type="url"
+                      name="websiteUrl"
+                      value={formData.websiteUrl}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:border-teal-500"
+                      placeholder="https://yourlounge.com"
+                    />
                   </div>
-                </div>
 
-                {/* Integration Details */}
-                <div className="border-t border-zinc-700 pt-6">
-                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
-                    <Zap className="w-5 h-5 text-primary-400" />
-                    <span>Integration Details</span>
-                  </h3>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-zinc-300 mb-2">
-                        Current Payment System
-                      </label>
-                      <select
-                        name="currentPOS"
-                        value={formData.currentPOS}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:border-primary-500"
-                      >
-                        <option value="">Select your current payment system</option>
-                        <option value="existing">Existing Payment System</option>
-                        <option value="other">Other System</option>
-                        <option value="none">No current payment system</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-zinc-300 mb-2">
-                        Preferred Pricing Model *
-                      </label>
-                      <div className="space-y-2">
-                        {pricingModels.map((model) => (
-                          <label key={model.id} className="flex items-center space-x-3 p-3 bg-zinc-700/50 rounded-lg cursor-pointer hover:bg-zinc-700 transition-colors">
-                            <input
-                              type="radio"
-                              name="pricingModel"
-                              value={model.id}
-                              checked={formData.pricingModel === model.id}
-                              onChange={handleInputChange}
-                              className="w-4 h-4 text-primary-600"
-                            />
-                            <div className="flex-1">
-                              <div className="flex items-center space-x-2">
-                                <span className="font-medium text-white">{model.name}</span>
-                                {model.recommended && (
-                                  <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full">
-                                    Recommended
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-sm text-zinc-400">{model.description}</p>
-                            </div>
-                          </label>
-                        ))}
+                  <div className="bg-teal-500/10 border border-teal-500/30 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <Info className="w-5 h-5 text-teal-400 flex-shrink-0 mt-0.5" />
+                      <div className="text-sm text-zinc-300">
+                        <p className="font-medium text-white mb-1">What happens next?</p>
+                        <ul className="space-y-1 text-zinc-400">
+                          <li>• We'll extract business information from your social media</li>
+                          <li>• Create a personalized demo link for your lounge</li>
+                          <li>• Send you the test link via Instagram DM or email</li>
+                        </ul>
                       </div>
                     </div>
+                  </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-zinc-300 mb-2">
-                        Timeline for Implementation
-                      </label>
-                      <select
-                        name="timeline"
-                        value={formData.timeline}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:border-primary-500"
-                      >
-                        <option value="">Select timeline</option>
-                        <option value="immediate">Immediate (within 1 month)</option>
-                        <option value="short">Short term (1-3 months)</option>
-                        <option value="medium">Medium term (3-6 months)</option>
-                        <option value="long">Long term (6+ months)</option>
-                        <option value="exploring">Just exploring options</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Message */}
-                <div>
-                  <label className="block text-sm font-medium text-zinc-300 mb-2">
-                    Additional Message
-                  </label>
-                  <textarea
-                    name="message"
-                    value={formData.message}
-                    onChange={handleInputChange}
-                    rows={4}
-                    className="w-full px-4 py-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:border-primary-500"
-                    placeholder="Tell us about your specific needs, questions, or any other information..."
-                  />
-                </div>
-
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full px-6 py-4 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 disabled:from-zinc-600 disabled:to-zinc-700 text-white rounded-lg font-semibold transition-all duration-200 flex items-center justify-center space-x-2"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Submitting...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-5 h-5" />
-                      <span>Request Demo</span>
-                    </>
-                  )}
-                </button>
-              </form>
-            </div>
-
-          {/* Contact Information */}
-          <div className="space-y-8">
-            {/* Contact Details */}
-            <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-white mb-4">Get in Touch</h3>
-              <div className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <Mail className="w-5 h-5 text-primary-400" />
-                  <div>
-                    <p className="text-white font-medium">Email</p>
-                    <p className="text-zinc-400">hookahplusconnector@gmail.com</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <Clock className="w-5 h-5 text-primary-400" />
-                  <div>
-                    <p className="text-white font-medium">Business Hours</p>
-                    <p className="text-zinc-400">Mon-Fri: 9AM-6PM EST</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Demo Benefits */}
-            <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-white mb-4">What to Expect</h3>
-              <div className="space-y-3">
-                <div className="flex items-start space-x-3">
-                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-1" />
-                  <div>
-                    <p className="text-white font-medium">Personalized Demo</p>
-                    <p className="text-zinc-400 text-sm">See Hookah+ tailored to your lounge's needs</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-1" />
-                  <div>
-                    <p className="text-white font-medium">Integration Assessment</p>
-                    <p className="text-zinc-400 text-sm">We'll evaluate your current payment system compatibility</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-1" />
-                  <div>
-                    <p className="text-white font-medium">Custom Pricing</p>
-                    <p className="text-zinc-400 text-sm">Get a tailored quote for your lounge</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-1" />
-                  <div>
-                    <p className="text-white font-medium">Implementation Plan</p>
-                    <p className="text-zinc-400 text-sm">Detailed roadmap for your integration</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Testimonials */}
-            <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-white mb-4">What Our Partners Say</h3>
-              <div className="space-y-4">
-                <div className="bg-zinc-900/50 rounded-lg p-4">
-                  <div className="flex items-center space-x-2 mb-2">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
-                    ))}
-                  </div>
-                  <p className="text-zinc-300 text-sm mb-2">
-                    "Hookah+ transformed our customer experience. The flavor wheel is a game-changer."
-                  </p>
-                  <p className="text-zinc-400 text-xs">- Sarah M., Cloud Lounge NYC</p>
-                </div>
-                <div className="bg-zinc-900/50 rounded-lg p-4">
-                  <div className="flex items-center space-x-2 mb-2">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
-                    ))}
-                  </div>
-                  <p className="text-zinc-300 text-sm mb-2">
-                    "The integration was seamless. Our staff loves the new system."
-                  </p>
-                  <p className="text-zinc-400 text-xs">- Mike C., Downtown Hookah</p>
-                </div>
-              </div>
-            </div>
+                  {/* Submit Button */}
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full px-6 py-4 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 disabled:from-zinc-600 disabled:to-zinc-700 text-white rounded-lg font-semibold transition-all duration-200 flex items-center justify-center space-x-2"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Creating your demo...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-5 h-5" />
+                        <span>Get My Demo Link</span>
+                      </>
+                    )}
+                  </button>
+                </form>
+              </>
+            )}
           </div>
         </div>
       </div>

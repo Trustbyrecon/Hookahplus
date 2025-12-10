@@ -178,14 +178,18 @@ export async function POST(req: NextRequest) {
           body: JSON.stringify({
             action: 'create_lead',
             leadData: {
-              businessName: data.loungeName || data.company || 'Unknown Business',
-              ownerName: data.name,
-              email: data.email,
+              businessName: data.loungeName || data.company || data.businessName || 'Unknown Business',
+              ownerName: data.name || '',
+              email: data.email || 'No email',
               phone: data.phone || '',
               location: data.location || '',
               stage: 'new-leads',
-              source: 'website',
-              createdAt: new Date().toISOString()
+              source: data.source || 'website',
+              createdAt: new Date().toISOString(),
+              // Social media links
+              instagramUrl: data.instagramUrl || null,
+              facebookUrl: data.facebookUrl || null,
+              websiteUrl: data.websiteUrl || null
             }
           })
         });

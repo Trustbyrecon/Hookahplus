@@ -2,6 +2,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic"; // disable Next caching of this route
 
 import { prisma } from "@/lib/prisma";
+import { extractIdempotencyKey, withIdempotency } from "@/lib/idempotency";
 import crypto from "crypto";
 
 const seal = (o: unknown) =>
@@ -48,7 +49,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const idempotencyKey = req.headers.get("x-idempotency-key") ?? "";
+    const idempotencyKey = extractIdempotencyKey(req);
     const { loungeId, source, externalRef, customerPhone, flavorMix } = await req.json();
 
     if (!loungeId || !source || !externalRef) {
@@ -57,32 +58,32 @@ export async function POST(req: Request) {
 
     const trustSignature = seal({ loungeId, source, externalRef, customerPhone, flavorMix });
 
-    const session = await prisma.session.upsert({
-      where: { 
-        loungeId_externalRef: { 
-          loungeId, 
-          externalRef 
-        } 
-      },
-      update: {}, // creation is idempotent—no update on duplicate create
-      create: {
-        loungeId, 
-        source, 
-        externalRef, 
-        customerPhone, 
-        flavorMix, 
-        trustSignature,
-        events: {
+    const { result: session, cached } = await withIdempotency({
+      key: idempotencyKey,
+      eventType: "session_started",
+      payload: { loungeId, source, externalRef, customerPhone, flavorMix, trustSignature },
+      sessionIdFromResult: (s) => (s as any)?.id,
+      handler: async () =>
+        prisma.session.upsert({
+          where: {
+            loungeId_externalRef: {
+              loungeId,
+              externalRef,
+            },
+          },
+          update: {}, // creation is idempotent—no update on duplicate create
           create: {
-            type: "CREATED",
-            payloadSeal: trustSignature,
-            data: JSON.stringify({ idempotencyKey, source, customerPhone, flavorMix })
-          }
-        }
-      },
+            loungeId,
+            source,
+            externalRef,
+            customerPhone,
+            flavorMix,
+            trustSignature,
+          },
+        }),
     });
 
-    return Response.json({ session }, { 
+    return Response.json({ session, idempotent: cached }, { 
       status: 201, 
       headers: { "Cache-Control": "no-store" } 
     });

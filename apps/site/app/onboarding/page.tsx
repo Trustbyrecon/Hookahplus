@@ -56,6 +56,10 @@ export default function OnboardingPage() {
     baseHookahPrice: '',
     refillPrice: '',
     menuLink: '',
+    // Social media links
+    instagramUrl: '',
+    facebookUrl: '',
+    websiteUrl: '',
     menuFiles: [] as Array<{
       id: string;
       fileName: string;
@@ -523,6 +527,57 @@ export default function OnboardingPage() {
               <p className="mt-2 text-xs text-zinc-500">
                 If you prefer, you can paste a link instead of uploading files.
               </p>
+            </div>
+
+            <div className="mt-6 pt-6 border-t border-zinc-700">
+              <h3 className="text-lg font-semibold text-white mb-4">Social Media Links (Optional)</h3>
+              <p className="text-sm text-zinc-400 mb-4">
+                Share your social media links so we can learn more about your lounge and create a personalized demo.
+              </p>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">
+                    Instagram URL
+                  </label>
+                  <input
+                    type="url"
+                    name="instagramUrl"
+                    value={formData.instagramUrl}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:border-teal-500 focus:outline-none"
+                    placeholder="https://instagram.com/yourlounge"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">
+                    Facebook URL
+                  </label>
+                  <input
+                    type="url"
+                    name="facebookUrl"
+                    value={formData.facebookUrl}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:border-teal-500 focus:outline-none"
+                    placeholder="https://facebook.com/yourlounge"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">
+                    Website URL
+                  </label>
+                  <input
+                    type="url"
+                    name="websiteUrl"
+                    value={formData.websiteUrl}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:border-teal-500 focus:outline-none"
+                    placeholder="https://yourlounge.com"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         );

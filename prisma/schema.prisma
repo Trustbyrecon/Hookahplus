@@ -122,15 +122,18 @@ model Session {
 }
 
 model SessionEvent {
-  id          String   @id @default(cuid())
-  sessionId   String
-  type        String
-  payloadSeal String
-  data        String   // JSON as string for SQLite compatibility
-  createdAt   DateTime @default(now())
-  session     Session  @relation(fields: [sessionId], references: [id])
+  id              String   @id @default(cuid()) // event_id
+  sessionId       String?                                  // session_id (nullable to allow pre-session idempotency anchors)
+  type            String                                   // event_type
+  payload         String?  @default("{}")                  // canonical payload blob (JSON string for SQLite)
+  payloadSeal     String
+  data            String   @default("{}")                  // legacy JSON string payload
+  idempotencyKey  String? @unique
+  createdAt       DateTime @default(now())
+  session         Session? @relation(fields: [sessionId], references: [id])
 
-  @@index([sessionId])
+  @@index([sessionId, createdAt])
+  @@index([createdAt])
 }
 
 model SessionTransition {

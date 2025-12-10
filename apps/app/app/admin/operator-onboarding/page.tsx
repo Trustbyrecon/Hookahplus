@@ -72,6 +72,7 @@ interface Lead {
   instagramUrl?: string | null;
   facebookUrl?: string | null;
   websiteUrl?: string | null;
+  demoLink?: string | null;
   instagramScrapedData?: {
     menuItems?: Array<{ name: string; price?: number; description?: string }>;
     flavors?: string[];
@@ -386,9 +387,15 @@ export default function OperatorOnboardingPage() {
   };
 
   const createManualLead = async () => {
-    if (!newLeadData.businessName || !newLeadData.email) {
-      alert('Please fill in required fields (Business Name and Email)');
+    if (!newLeadData.businessName) {
+      alert('Please fill in required field: Business Name');
       return;
+    }
+    
+    // Email is optional - if not provided, use placeholder for IG DM workflow
+    if (!newLeadData.email) {
+      const proceed = confirm('No email provided. This lead will be stored for Instagram DM workflow. Continue?');
+      if (!proceed) return;
     }
 
     try {
@@ -439,17 +446,28 @@ export default function OperatorOnboardingPage() {
       await loadLeads();
       showActionMessage('Manual lead created');
       
-      // Optionally open test link modal if lead was created
+      // Optionally prompt to send test link after lead is created
       if (createdLeadId) {
-        const newLead = leads.find(l => l.id === createdLeadId) || await fetch(`/api/admin/operator-onboarding?leadId=${createdLeadId}`).then(r => r.json()).then(d => d.leads?.[0]).catch(() => null);
-        if (newLead) {
-          setSelectedLead(newLead);
-          setTimeout(() => {
-            if (confirm('Lead created! Would you like to send a test link email now?')) {
+        setTimeout(() => {
+          if (confirm('Lead created successfully! Would you like to send a test link email now?')) {
+            // Find the newly created lead
+            const newLead = leads.find(l => l.id === createdLeadId);
+            if (newLead) {
+              setSelectedLead(newLead);
               setShowTestLinkModal(true);
+            } else {
+              // Reload leads to get the new one
+              loadLeads().then(() => {
+                const updatedLeads = leads;
+                const foundLead = updatedLeads.find(l => l.id === createdLeadId);
+                if (foundLead) {
+                  setSelectedLead(foundLead);
+                  setShowTestLinkModal(true);
+                }
+              });
             }
-          }, 500);
-        }
+          }
+        }, 500);
       }
     } catch (err) {
       console.error('Create lead error:', err);
@@ -1172,8 +1190,8 @@ export default function OperatorOnboardingPage() {
       {/* Add Lead Modal */}
       {showAddLeadModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-zinc-800 rounded-xl p-6 w-full max-w-md">
-            <div className="flex items-center justify-between mb-4">
+          <div className="bg-zinc-800 rounded-xl w-full max-w-md max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between p-6 pb-4 border-b border-zinc-700 flex-shrink-0">
               <h3 className="text-xl font-bold text-white">Add New Lead</h3>
               <button
                 onClick={() => {
@@ -1184,16 +1202,21 @@ export default function OperatorOnboardingPage() {
                     email: '',
                     phone: '',
                     location: '',
+                    instagramUrl: '',
+                    facebookUrl: '',
+                    websiteUrl: '',
                     source: 'manual',
                     stage: 'new-leads'
                   });
+                  setExtractionStatus(null);
                 }}
                 className="text-zinc-400 hover:text-white"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="space-y-4">
+            <div className="overflow-y-auto flex-1 px-6 py-4">
+              <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-zinc-300 mb-2">Business Name *</label>
                 <input
@@ -1215,14 +1238,21 @@ export default function OperatorOnboardingPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-2">Email *</label>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                  Email <span className="text-zinc-500 text-xs">(optional - for IG DM workflow)</span>
+                </label>
                 <input
                   type="email"
                   value={newLeadData.email}
                   onChange={(e) => setNewLeadData({ ...newLeadData, email: e.target.value })}
                   className="w-full px-4 py-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  placeholder="Enter email address"
+                  placeholder="Enter email address (optional)"
                 />
+                {!newLeadData.email && (
+                  <p className="text-xs text-zinc-500 mt-1">
+                    💡 No email? Demo link will be available for Instagram DM
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-zinc-300 mb-2">Phone</label>
@@ -1328,12 +1358,13 @@ export default function OperatorOnboardingPage() {
                   <option value="onboarding">Onboarding</option>
                 </select>
               </div>
+              </div>
             </div>
-            <div className="flex gap-3 mt-6">
+            <div className="flex gap-3 p-6 pt-4 border-t border-zinc-700 flex-shrink-0">
               <Button
                 onClick={createManualLead}
                 className="flex-1"
-                disabled={!newLeadData.businessName || !newLeadData.email}
+                disabled={!newLeadData.businessName}
               >
                 Create Lead
               </Button>
@@ -1346,9 +1377,13 @@ export default function OperatorOnboardingPage() {
                     email: '',
                     phone: '',
                     location: '',
+                    instagramUrl: '',
+                    facebookUrl: '',
+                    websiteUrl: '',
                     source: 'manual',
                     stage: 'new-leads'
                   });
+                  setExtractionStatus(null);
                 }}
                 variant="outline"
                 className="flex-1"
@@ -1405,9 +1440,11 @@ export default function OperatorOnboardingPage() {
               <div className="flex items-center gap-3">
                 <Send className="w-5 h-5 text-teal-400" />
                 <div>
-                  <h2 className="text-lg font-semibold text-white">Send Test Link Email</h2>
+                  <h2 className="text-lg font-semibold text-white">Send Test Link</h2>
                   <p className="text-xs text-zinc-400">
-                    This will email a private test link to {selectedLead.email}. The link will be auto-generated if not provided.
+                    {selectedLead.email && selectedLead.email !== 'No email' 
+                      ? `This will email a private test link to ${selectedLead.email}. The link will be auto-generated if not provided.`
+                      : `No email available. Generate a demo link to share via Instagram DM or ManyChat.`}
                   </p>
                 </div>
               </div>
@@ -1479,14 +1516,35 @@ export default function OperatorOnboardingPage() {
               >
                 Cancel
               </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={sendTestLinkEmail}
-              >
-                Send Email
-                <Send className="w-4 h-4 ml-2" />
-              </Button>
+              {selectedLead.email && selectedLead.email !== 'No email' ? (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={sendTestLinkEmail}
+                >
+                  Send Email
+                  <Send className="w-4 h-4 ml-2" />
+                </Button>
+              ) : (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={async () => {
+                    if (!testLinkUrl) {
+                      await createDemoSession();
+                    }
+                    if (testLinkUrl) {
+                      navigator.clipboard.writeText(testLinkUrl);
+                      showActionMessage('Demo link copied! Ready to paste in IG DM or ManyChat');
+                      setShowTestLinkModal(false);
+                    }
+                  }}
+                  disabled={!testLinkUrl}
+                >
+                  Copy Link for DM
+                  <LinkIcon className="w-4 h-4 ml-2" />
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -1515,6 +1573,93 @@ function LeadDetailModal({
   showActionMessage: (message: string) => void;
   loadLeads: () => Promise<void>;
 }) {
+  const generateWarmDM = (lead: Lead): string => {
+    const businessName = lead.businessName || 'your lounge';
+    const ownerName = lead.ownerName || 'there';
+    const demoLink = lead.demoLink || '';
+    
+    // Build personalized message based on Instagram data
+    let message = `Hey ${ownerName}! 👋\n\n`;
+    
+    // Personalize based on Instagram analysis
+    if (lead.instagramScrapedData) {
+      const instaData = lead.instagramScrapedData;
+      
+      // Mention flavors if found
+      if (instaData.flavors && instaData.flavors.length > 0) {
+        const topFlavors = instaData.flavors.slice(0, 3).join(', ');
+        message += `I noticed ${businessName} offers ${topFlavors}${instaData.flavors.length > 3 ? ' and more' : ''} - great selection! 🍃\n\n`;
+      }
+      
+      // Mention pricing if found
+      if (instaData.basePrice) {
+        message += `I see your base price is around $${instaData.basePrice}. `;
+      }
+      
+      // Mention menu items if found
+      if (instaData.menuItems && instaData.menuItems.length > 0) {
+        message += `Your menu looks solid!\n\n`;
+      }
+    }
+    
+    // Main value proposition
+    message += `I'd love to show you how Hookah+ can help ${businessName}:\n\n`;
+    message += `✨ Increase table turnover\n`;
+    message += `📊 Track session times & revenue\n`;
+    message += `💳 Accept payments seamlessly\n`;
+    message += `📱 Give guests a modern ordering experience\n\n`;
+    
+    // Add demo link if available
+    if (demoLink) {
+      message += `I've set up a personalized demo for you:\n${demoLink}\n\n`;
+      message += `Check it out when you have a moment - it's customized for ${businessName}!\n\n`;
+    } else {
+      message += `Would you be open to a quick 15-min demo? I can show you exactly how it works for your setup.\n\n`;
+    }
+    
+    // Friendly close
+    message += `Let me know what works best for you! 🙌`;
+    
+    return message;
+  };
+
+  const copyDMToClipboard = () => {
+    const dmMessage = generateWarmDM(lead);
+    navigator.clipboard.writeText(dmMessage);
+    showActionMessage('DM message copied to clipboard! Ready to paste in Instagram.');
+  };
+
+  const saveDMAsNote = async () => {
+    const dmMessage = generateWarmDM(lead);
+    
+    try {
+      const response = await fetch('/api/admin/operator-onboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'add_note',
+          leadId: lead.id,
+          updates: {
+            note: `📱 Instagram DM Message:\n\n${dmMessage}`,
+            author: 'system',
+            noteType: 'dm_template'
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save note');
+      }
+
+      showActionMessage('DM message saved as note');
+      await loadLeads();
+    } catch (err) {
+      console.error('Save DM as note error:', err);
+      alert('Failed to save note. Message copied to clipboard instead.');
+      navigator.clipboard.writeText(dmMessage);
+    }
+  };
+
   const getStageColor = (stage: Lead['stage']) => {
     switch (stage) {
       case 'intake': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
@@ -1605,6 +1750,30 @@ function LeadDetailModal({
                         </a>
                       </div>
                     )}
+                  </div>
+                )}
+                {lead.demoLink && (
+                  <div className="pt-3 border-t border-zinc-800">
+                    <div className="text-xs text-zinc-500 mb-2">Demo Link</div>
+                    <div className="flex items-center gap-2 p-2 bg-teal-500/10 border border-teal-500/30 rounded-lg">
+                      <LinkIcon className="w-4 h-4 text-teal-400 flex-shrink-0" />
+                      <span className="text-teal-300 text-sm font-mono break-all flex-1">{lead.demoLink}</span>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(lead.demoLink || '');
+                          showActionMessage('Demo link copied to clipboard!');
+                        }}
+                        className="px-2 py-1 bg-teal-600 hover:bg-teal-700 text-white text-xs rounded transition-colors"
+                        title="Copy link for IG DM"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                    {!lead.email || lead.email === 'No email' ? (
+                      <p className="text-xs text-yellow-400 mt-2">
+                        💡 No email - Use this link to DM via Instagram
+                      </p>
+                    ) : null}
                   </div>
                 )}
               </div>
@@ -1757,9 +1926,29 @@ function LeadDetailModal({
                   {/* Instagram Scraped Data */}
                   {lead.instagramScrapedData && lead.instagramUrl && (
                     <div className="mt-4 p-3 bg-pink-500/10 border border-pink-500/30 rounded-lg">
-                      <div className="flex items-center gap-2 mb-2">
-                        <LinkIcon className="w-4 h-4 text-pink-400" />
-                        <span className="text-xs font-semibold text-pink-400 uppercase">Instagram Analysis</span>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <LinkIcon className="w-4 h-4 text-pink-400" />
+                          <span className="text-xs font-semibold text-pink-400 uppercase">Instagram Analysis</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={copyDMToClipboard}
+                            className="px-2 py-1 bg-pink-600 hover:bg-pink-700 text-white text-xs rounded transition-colors flex items-center gap-1"
+                            title="Copy warm DM message"
+                          >
+                            <MessageSquare className="w-3 h-3" />
+                            Copy DM
+                          </button>
+                          <button
+                            onClick={saveDMAsNote}
+                            className="px-2 py-1 bg-zinc-700 hover:bg-zinc-600 text-white text-xs rounded transition-colors flex items-center gap-1"
+                            title="Save DM as note"
+                          >
+                            <FileText className="w-3 h-3" />
+                            Save
+                          </button>
+                        </div>
                       </div>
                       {lead.instagramScrapedData.menuItems && lead.instagramScrapedData.menuItems.length > 0 && (
                         <div className="mt-2">
@@ -1797,6 +1986,25 @@ function LeadDetailModal({
                           Scraped: {new Date(lead.instagramScrapedData.extractedAt).toLocaleString()}
                         </p>
                       )}
+                      
+                      {/* Preview DM Message */}
+                      <div className="mt-3 pt-3 border-t border-pink-500/20">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-xs text-zinc-400">💬 Generated DM Message:</p>
+                          <button
+                            onClick={copyDMToClipboard}
+                            className="text-xs text-pink-400 hover:text-pink-300 underline"
+                          >
+                            Copy
+                          </button>
+                        </div>
+                        <div className="p-2 bg-zinc-900/50 rounded text-xs text-zinc-300 whitespace-pre-wrap max-h-40 overflow-y-auto font-mono border border-zinc-700">
+                          {generateWarmDM(lead)}
+                        </div>
+                        <p className="text-xs text-zinc-500 mt-1">
+                          💡 Click "Copy DM" button above or "Save" to store as note
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>

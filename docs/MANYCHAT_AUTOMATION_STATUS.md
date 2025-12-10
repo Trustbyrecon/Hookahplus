@@ -185,3 +185,4 @@ Even for manual steps, I can:
 2. **Follow the guide** for manual ManyChat configuration
 3. **Ask me questions** if you get stuck on any step
 4. **Test thoroughly** before going to production
+

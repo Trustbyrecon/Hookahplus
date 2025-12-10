@@ -54,7 +54,6 @@ export async function GET(req: NextRequest) {
           ctaSource: true,
           payload: true,
           createdAt: true,
-          updatedAt: true,
         },
       });
     } catch (queryError: any) {
@@ -85,6 +84,9 @@ export async function GET(req: NextRequest) {
         data = payload.data || payload;
       }
 
+      // Extract demo link if available
+      const demoLink = data.demoLink || payload.demoLink || '';
+      
       return {
         id: event.id,
         type: event.type,
@@ -95,9 +97,12 @@ export async function GET(req: NextRequest) {
         email: data.email || '',
         phone: data.phone || '',
         location: data.location || data.city || '',
+        instagramUrl: data.instagramUrl || data.instagram || '',
+        facebookUrl: data.facebookUrl || data.facebook || '',
+        websiteUrl: data.websiteUrl || data.website || '',
+        demoLink: demoLink,
         stage: data.stage || '',
-        createdAt: event.createdAt,
-        updatedAt: event.updatedAt,
+        createdAt: event.createdAt.toISOString(),
       };
     });
 
@@ -112,9 +117,12 @@ export async function GET(req: NextRequest) {
       'Email',
       'Phone',
       'Location',
+      'Instagram URL',
+      'Facebook URL',
+      'Website URL',
+      'Demo Link',
       'Stage',
-      'Created At',
-      'Updated At'
+      'Created At'
     ];
 
     const csvRows = [
@@ -124,14 +132,17 @@ export async function GET(req: NextRequest) {
         `"${lead.type}"`,
         `"${lead.source}"`,
         `"${lead.ctaSource}"`,
-        `"${lead.businessName.replace(/"/g, '""')}"`,
-        `"${lead.ownerName.replace(/"/g, '""')}"`,
-        `"${lead.email}"`,
-        `"${lead.phone}"`,
-        `"${lead.location.replace(/"/g, '""')}"`,
-        `"${lead.stage}"`,
-        `"${lead.createdAt}"`,
-        `"${lead.updatedAt}"`
+        `"${String(lead.businessName || '').replace(/"/g, '""')}"`,
+        `"${String(lead.ownerName || '').replace(/"/g, '""')}"`,
+        `"${String(lead.email || '').replace(/"/g, '""')}"`,
+        `"${String(lead.phone || '').replace(/"/g, '""')}"`,
+        `"${String(lead.location || '').replace(/"/g, '""')}"`,
+        `"${String(lead.instagramUrl || '').replace(/"/g, '""')}"`,
+        `"${String(lead.facebookUrl || '').replace(/"/g, '""')}"`,
+        `"${String(lead.websiteUrl || '').replace(/"/g, '""')}"`,
+        `"${String(lead.demoLink || '').replace(/"/g, '""')}"`,
+        `"${String(lead.stage || '').replace(/"/g, '""')}"`,
+        `"${lead.createdAt}"`
       ].join(','))
     ];
 

@@ -910,6 +910,12 @@ export default function SessionsDashboard() {
                     >
                       {session.status === 'ended' ? 'Session Ended' : '⏹️ End Session'}
                     </button>
+                    <a
+                      href={`/sessions/${session.id}/timeline`}
+                      className="flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-zinc-800 border border-zinc-700 text-white hover:border-teal-500 text-center"
+                    >
+                      🕑 Timeline
+                    </a>
                   </div>
 
                   {/* Delivery Status */}
