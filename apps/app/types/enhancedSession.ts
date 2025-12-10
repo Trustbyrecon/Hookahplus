@@ -64,6 +64,7 @@ export interface FireSession {
   source?: 'QR' | 'RESERVE' | 'WALK_IN' | 'POS' | string; // Session source from Prisma
   externalRef?: string | null; // Stripe checkout session ID or other external reference
   paymentStatus?: string | null; // Payment status from Stripe
+  state?: string | null; // Raw database state value (PENDING, ACTIVE, CLOSED, etc.)
 }
 
 // State transition validation
