@@ -17,13 +17,15 @@ function CheckoutSuccessContent() {
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Extract search params at component level for use in return statement
+  const lounge = searchParams.get('lounge'); // Demo slug from URL
+  const mode = searchParams.get('mode');
+  const isDemoMode = mode === 'demo';
 
   useEffect(() => {
     const checkoutSessionId = searchParams.get('session_id');
-    const mode = searchParams.get('mode');
     const payment = searchParams.get('payment');
-    const lounge = searchParams.get('lounge'); // Demo slug from URL
-    const isDemoMode = mode === 'demo';
     
     // Handle demo mode payment confirmation redirect
     if (isDemoMode && payment === 'confirmed') {
@@ -209,7 +211,7 @@ function CheckoutSuccessContent() {
             tableId={sessionData?.tableId}
             flavorMix={sessionData?.flavorMix}
             amount={sessionData?.amount}
-            demoSlug={sessionData?.demoSlug || lounge || undefined}
+            demoSlug={sessionData?.demoSlug || (lounge ? lounge : undefined)}
             isDemo={isDemoMode}
           />
 
