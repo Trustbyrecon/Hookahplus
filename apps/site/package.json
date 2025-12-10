@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --port 3000",
     "dev:default": "next dev",
-    "build": "next build && node scripts/generate-sitemap.js",
+    "build": "npx prisma generate --schema=../../prisma/schema.prisma && next build && node scripts/generate-sitemap.js",
     "start": "next start",
     "lint": "next lint",
     "generate-playbook-pdf": "node scripts/generate-smart-lounge-playbook-pdf.js"

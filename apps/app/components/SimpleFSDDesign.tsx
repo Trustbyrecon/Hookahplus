@@ -367,7 +367,7 @@ export default function SimpleFSDDesign({
         
         // Add next action suggestion if available
         if (result.primaryNextAction && result.nextActionDescription) {
-          const nextActionName = result.primaryNextAction.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+          const nextActionName = result.primaryNextAction.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase());
           successMessage += `\n\nNext: ${nextActionName} - ${result.nextActionDescription}`;
         }
         
