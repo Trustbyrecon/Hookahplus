@@ -615,7 +615,7 @@ export default function SimpleFSDDesign({
     
     // If session already has a status from API conversion and state doesn't override it, use it
     // But only if the state mapping logic above didn't catch it
-    if (session.status && session.status !== 'NEW' && session.status !== 'PENDING') {
+    if (session.status && session.status !== 'NEW') {
       // Double-check: if state is ACTIVE with assignedBOHId, we should show PREP_IN_PROGRESS
       // This handles cases where the API conversion might have missed it
       if (state === 'ACTIVE' && assignedBOHId && hasPayment && session.status === 'PAID_CONFIRMED') {
@@ -626,7 +626,7 @@ export default function SimpleFSDDesign({
       // Only use cached status if state mapping doesn't provide a clear answer
       // This prevents stale cached status from overriding actual database state
       const mappedStatus = stateMap[state];
-      if (mappedStatus && mappedStatus !== 'NEW' && mappedStatus !== 'PENDING') {
+      if (mappedStatus && mappedStatus !== 'NEW') {
         // State mapping provides a clear status - use it instead of cached
         return mappedStatus;
       }
