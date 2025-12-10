@@ -47,6 +47,12 @@ export function generateDemoLink(slug: string, baseUrl?: string, forceProduction
     console.warn('[generateDemoLink] Using localhost - set NEXT_PUBLIC_APP_URL for production');
   }
   
+  // Final fallback: ensure appUrl is always defined
+  if (!appUrl) {
+    appUrl = 'https://app.hookahplus.net';
+    console.warn('[generateDemoLink] No URL found, using production fallback');
+  }
+  
   // Never use localhost in production
   if (appUrl.includes('localhost') && process.env.NODE_ENV === 'production') {
     console.error('[generateDemoLink] ERROR: localhost URL detected in production! Using fallback.');
