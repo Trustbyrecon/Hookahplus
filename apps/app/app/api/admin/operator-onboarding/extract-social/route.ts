@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
           const potentialName = pageSlug
             .replace(/[_-]/g, ' ')
             .split(' ')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
             .join(' ');
           
           if (!extracted.businessName) {
