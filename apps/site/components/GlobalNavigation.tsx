@@ -261,18 +261,6 @@ const GlobalNavigation: React.FC = () => {
           agentOptimized: false,
           flowScore: 95,
           usageFrequency: 60
-        },
-        {
-          label: 'Lounge Layout',
-          href: '/lounge-layout',
-          icon: <LayoutGrid className="w-4 h-4" />,
-          description: 'Digitize your physical lounge space',
-          flowState: 'active',
-          nextAction: 'Configure lounge layout',
-          priority: 'high',
-          agentOptimized: false,
-          flowScore: 88,
-          usageFrequency: 50
         }
       ]
     },

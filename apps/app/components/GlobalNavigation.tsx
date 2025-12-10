@@ -174,6 +174,22 @@ const GlobalNavigation: React.FC = () => {
         const sessionsResponse = await fetch('/api/sessions');
         if (sessionsResponse.ok) {
           const sessionsData = await sessionsResponse.json();
+          
+          // Handle graceful fallback mode (database not configured)
+          if (sessionsData.fallbackMode) {
+            setSessionCount(0);
+            setWorkflowProgress({
+              payment: 0,
+              prep: 0,
+              heat: 0,
+              ready: 0,
+              deliver: 0,
+              light: 0,
+              currentStage: 'Payment'
+            });
+            return; // Exit early, no error state needed
+          }
+          
           if (sessionsData.success && sessionsData.sessions) {
             const sessions = sessionsData.sessions;
             setSessionCount(sessions.length);

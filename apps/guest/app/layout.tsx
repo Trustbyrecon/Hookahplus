@@ -9,7 +9,13 @@ import ScrollManager from '../components/ScrollManager'
 export const metadata = {
   title: 'HookahPlus Guest Portal',
   description: 'Extend your session, request refills, and manage your hookah experience.',
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://placeholder.vercel.app')
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://placeholder.vercel.app'),
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 5,
+    userScalable: true,
+  }
 }
 
 export default function RootLayout({
@@ -25,6 +31,7 @@ export default function RootLayout({
       <body className="min-h-screen bg-zinc-950 text-white mobile-content-container">
         <ScrollManager />
         <CartProvider>
+          <GlobalNavigation />
           {children}
         </CartProvider>
       </body>

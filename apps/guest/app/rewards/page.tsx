@@ -5,7 +5,6 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { GuestProfile, FeatureFlags } from '@guest-types';
 import { featureFlags } from '../../config/flags';
-import GlobalNavigation from '../../components/GlobalNavigation';
 import RewardsBadgeStrip from '../../components/guest/RewardsBadgeStrip';
 import MemoryBreadcrumbs from '../../components/guest/MemoryBreadcrumbs';
 import ReferralQR from '../../components/guest/ReferralQR';
@@ -105,7 +104,6 @@ function RewardsContent() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
-        <GlobalNavigation currentPage="rewards" />
         <div className="flex items-center justify-center min-h-[80vh]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
@@ -119,7 +117,6 @@ function RewardsContent() {
   if (error || !guestProfile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
-        <GlobalNavigation currentPage="rewards" />
         <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
           <div className="bg-red-900/20 border border-red-500/50 rounded-xl p-6">
             <div className="flex items-center space-x-3 mb-4">
@@ -205,7 +202,6 @@ export default function RewardsPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
-        <GlobalNavigation currentPage="rewards" />
         <div className="flex items-center justify-center min-h-[80vh]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>

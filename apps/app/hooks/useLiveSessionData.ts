@@ -150,6 +150,39 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
           body: errorText
         });
         
+        // Try to parse error response for fallback mode
+        try {
+          const errorData = JSON.parse(errorText);
+          if (errorData.fallbackMode) {
+            // Fallback mode - return empty state gracefully
+            console.warn('[useLiveSessionData] ⚠️ Fallback mode active - database not configured');
+            setSessions([]);
+            setError(null);
+            setMetrics({
+              activeSessions: 0,
+              revenue: 0,
+              avgDuration: 0,
+              alerts: 0,
+              staffAssigned: 0,
+              totalSessions: 0,
+              changes: {
+                activeSessions: '0%',
+                revenue: '0%',
+                avgDuration: '0%',
+                alerts: '0%',
+                staffAssigned: '0%',
+                totalSessions: '0%'
+              }
+            });
+            if (errorData.message) {
+              console.info('[useLiveSessionData]', errorData.message);
+            }
+            return;
+          }
+        } catch {
+          // Not JSON or no fallback mode, continue with error handling
+        }
+        
         // Provide user-friendly error message (First Light: no demo data fallback)
         if (sessionsResponse.status === 500) {
           throw new Error('Server error: Database connection failed. Check DATABASE_URL and ensure database is running.');
@@ -162,6 +195,34 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
       
       const sessionsResult = await sessionsResponse.json();
       console.log('[useLiveSessionData] Sessions result:', sessionsResult);
+
+      // Handle graceful fallback mode (database not configured)
+      if (sessionsResult.fallbackMode) {
+        console.warn('[useLiveSessionData] ⚠️ Fallback mode active - database not configured');
+        setSessions([]);
+        setError(null); // Don't show error, just empty state
+        setMetrics({
+          activeSessions: 0,
+          revenue: 0,
+          avgDuration: 0,
+          alerts: 0,
+          staffAssigned: 0,
+          totalSessions: 0,
+          changes: {
+            activeSessions: '0%',
+            revenue: '0%',
+            avgDuration: '0%',
+            alerts: '0%',
+            staffAssigned: '0%',
+            totalSessions: '0%'
+          }
+        });
+        // Log the message for developers
+        if (sessionsResult.message) {
+          console.info('[useLiveSessionData]', sessionsResult.message);
+        }
+        return;
+      }
 
       if (sessionsResult.success) {
         // API already converts sessions using convertPrismaSessionToFireSession

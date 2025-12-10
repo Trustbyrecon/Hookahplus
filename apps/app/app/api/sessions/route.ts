@@ -172,11 +172,41 @@ function calculateRemainingTimeFromPrisma(session: any): number {
 }
 
 export async function GET(req: NextRequest) {
-  // Diagnostic: Check if DATABASE_URL is loaded
+  // Graceful fallback: Check if DATABASE_URL is loaded
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  const allowFallback = isDevelopment || process.env.ALLOW_DB_FALLBACK === 'true';
+  
   if (!process.env.DATABASE_URL) {
-    console.error('[Sessions API] ❌ DATABASE_URL is not set!');
-    console.error('[Sessions API] NODE_ENV:', process.env.NODE_ENV);
-    console.error('[Sessions API] process.cwd():', process.cwd());
+    console.warn('[Sessions API] ⚠️ DATABASE_URL is not set!');
+    console.warn('[Sessions API] NODE_ENV:', process.env.NODE_ENV);
+    console.warn('[Sessions API] process.cwd():', process.cwd());
+    
+    // In development or when fallback is explicitly allowed, return empty results gracefully
+    if (allowFallback) {
+      console.warn('[Sessions API] Using graceful fallback mode - returning empty results');
+      return NextResponse.json(
+        {
+          success: true,
+          sessions: [],
+          total: 0,
+          stages: {
+            BOH: 0,
+            FOH: 0,
+            CUSTOMER: 0
+          },
+          fallbackMode: true,
+          message: 'Database not configured. Sessions will not persist. Set DATABASE_URL to enable database features.',
+          diagnostic: {
+            nodeEnv: process.env.NODE_ENV,
+            cwd: process.cwd(),
+            hint: 'Check if .env.local exists in apps/app directory with DATABASE_URL=file:./prisma/dev.db'
+          }
+        },
+        { status: 200, headers: getCorsHeaders(req) }
+      );
+    }
+    
+    // In production without fallback, return error
     return NextResponse.json(
       {
         success: false,
@@ -419,9 +449,42 @@ export async function GET(req: NextRequest) {
     const errorStack = error instanceof Error ? error.stack : undefined;
     
     // Check for database connection errors
-    if (errorMessage.includes('Can\'t reach database') || 
-        errorMessage.includes('connection') ||
-        error?.code === 'P1001') {
+    const isDbConnectionError = errorMessage.includes('Can\'t reach database') || 
+                                errorMessage.includes('connection') ||
+                                errorMessage.includes('the URL must start with the protocol') ||
+                                error?.code === 'P1001' ||
+                                error?.code === 'P1012';
+    
+    // Graceful fallback in development mode
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    const allowFallback = isDevelopment || process.env.ALLOW_DB_FALLBACK === 'true';
+    
+    if (isDbConnectionError && allowFallback) {
+      console.warn('[Sessions API] Database connection error in fallback mode - returning empty results');
+      return NextResponse.json({ 
+        success: true,
+        sessions: [],
+        total: 0,
+        stages: {
+          BOH: 0,
+          FOH: 0,
+          CUSTOMER: 0
+        },
+        fallbackMode: true,
+        message: 'Database connection unavailable. Sessions will not persist. Configure DATABASE_URL to enable database features.',
+        error: 'Database connection failed (fallback mode active)',
+        details: isDevelopment ? errorMessage : undefined,
+        diagnostic: {
+          errorCode: error?.code,
+          hint: 'Set DATABASE_URL=file:./prisma/dev.db in .env.local for SQLite, or configure PostgreSQL connection string'
+        }
+      }, { 
+        status: 200,
+        headers: getCorsHeaders(req),
+      });
+    }
+    
+    if (isDbConnectionError) {
       return NextResponse.json({ 
         error: 'Database connection failed',
         details: errorMessage,
@@ -433,9 +496,7 @@ export async function GET(req: NextRequest) {
     }
     
     // Provide user-friendly error message (First Light: no demo data fallback)
-    const userMessage = errorMessage.includes('Can\'t reach database') || 
-                        errorMessage.includes('connection') ||
-                        error?.code === 'P1001'
+    const userMessage = isDbConnectionError
       ? 'Database connection failed. Check DATABASE_URL and ensure database is running.'
       : 'Internal server error';
     

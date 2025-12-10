@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import GlobalNavigation from '../../components/GlobalNavigation';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import { 
@@ -86,7 +85,6 @@ export default function DocsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
-      <GlobalNavigation currentPage="docs" />
       
       <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <div className="text-center mb-8">

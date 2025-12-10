@@ -10,7 +10,6 @@ import Badge from '../components/Badge';
 import { StatusIndicator } from '../components/StatusIndicator';
 import { useCart } from '@/components/cart/CartProvider';
 import { SessionTimerAwareness } from '../components/SessionTimerAwareness';
-import GlobalNavigation from '../components/GlobalNavigation';
 import QRCodeScanner from '../components/QRCodeScanner';
 import RealTimeSessionSync from '../components/RealTimeSessionSync';
 import GuestIntelligenceDashboard from '../components/EnhancedStaffPanel';
@@ -523,7 +522,6 @@ export default function GuestPortal() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
-      <GlobalNavigation currentPage="home" />
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
         {/* QR Scanner & Table Status with Pricing Options */}
