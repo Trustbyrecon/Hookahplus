@@ -103,12 +103,12 @@ export default function AboutPage() {
                 </p>
               </div>
             </div>
-            <div className="relative h-64 md:h-80 rounded-lg overflow-hidden border border-zinc-700">
+            <div className="relative h-96 md:h-[32rem] rounded-lg overflow-hidden border border-zinc-700">
               <Image
-                src="/images/about/trade-show-panel.jpg"
+                src="/images/about/trade-show-panel.png"
                 alt="Hookah+ team panel discussion at trade show"
                 fill
-                className="object-cover"
+                className="object-cover object-center"
               />
             </div>
           </div>
