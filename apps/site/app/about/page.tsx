@@ -305,16 +305,6 @@ export default function AboutPage() {
             For Owners, Staff, and Guests
           </h2>
           
-          {/* Lounge Scene Image */}
-          <div className="relative w-full h-64 md:h-80 mb-8 rounded-lg overflow-hidden border border-zinc-700">
-            <Image
-              src="/images/about/lounge-staff.jpg"
-              alt="Hookah+ staff member assisting guest in lounge setting"
-              fill
-              className="object-cover"
-            />
-          </div>
-          
           <div className="grid md:grid-cols-3 gap-6">
             <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
               <div className="flex items-center gap-3 mb-4">
