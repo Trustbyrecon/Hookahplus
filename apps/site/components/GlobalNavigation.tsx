@@ -29,7 +29,8 @@ import {
   Workflow,
   DollarSign,
   LayoutGrid,
-  UserPlus
+  UserPlus,
+  Info
 } from 'lucide-react';
 
 // AI Agent Collaboration Interface
@@ -432,6 +433,32 @@ const GlobalNavigation: React.FC = () => {
                 </div>
               </div>
             ))}
+            
+            {/* Standalone About H+ Navigation Item */}
+            <div className="relative group ml-2">
+              <a
+                href="/about"
+                className={cn(
+                  'flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative',
+                  pathname === '/about'
+                    ? 'bg-primary-600 text-white'
+                    : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
+                )}
+              >
+                <Info className="w-4 h-4" />
+                <span>About H+</span>
+              </a>
+              
+              {/* Tooltip with short blurb */}
+              <div className="absolute top-full left-0 mt-2 w-80 bg-zinc-900 border border-zinc-700 rounded-lg p-4 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50 pointer-events-none">
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-white">About H+</h3>
+                  <p className="text-xs text-zinc-300 leading-relaxed">
+                    Hookah+ is a modern session-first POS and lounge OS built for hookah lounges. We help owners track time, flavor mixes, and revenue in one clean dashboard, so staff can focus on vibe and guests can feel the difference.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Enhanced Right Side Actions */}
@@ -491,6 +518,22 @@ const GlobalNavigation: React.FC = () => {
               })}
             </div>
           ))}
+          
+          {/* Standalone About H+ for Mobile */}
+          <div className="pt-4 border-t border-zinc-800 mt-4">
+            <a
+              href="/about"
+              className={cn(
+                'flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
+                pathname === '/about'
+                  ? 'bg-primary-600 text-white'
+                  : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
+              )}
+            >
+              <Info className="w-4 h-4" />
+              <span>About H+</span>
+            </a>
+          </div>
         </div>
       </div>
     </nav>
