@@ -1,98 +1,101 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
 
-// In-memory storage for orders (in production, this would be a database)
-let orders: Array<{
-  id: string;
-  payment_intent_id: string;
-  lounge_id: string;
-  flavor_mix: string[];
-  amount: number;
-  currency: string;
-  ref_source?: string;
-  ref_campaign?: string;
-  ref_code?: string;
-  status: 'pending' | 'paid' | 'cancelled' | 'refunded';
-  created_at: string;
-  paid_at?: string;
-}> = [];
+const prisma = new PrismaClient();
 
+/**
+ * GET /api/orders
+ * Prep bar view of orders
+ * 
+ * Query params:
+ *   - loungeId: Filter by lounge
+ *   - status: Filter by status (PENDING, IN_PROGRESS, READY, SERVED, CANCELLED)
+ *   - type: Filter by order type (HOOKAH, FOOD, DRINK, ADDON)
+ */
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const payment_intent_id = searchParams.get('payment_intent_id');
+    const loungeId = searchParams.get('loungeId');
+    const status = searchParams.get('status');
+    const type = searchParams.get('type');
 
-    if (payment_intent_id) {
-      const order = orders.find(o => o.payment_intent_id === payment_intent_id);
-      if (!order) {
-        return NextResponse.json({ error: 'Order not found' }, { status: 404 });
-      }
-      return NextResponse.json({ order });
+    const where: any = {};
+    
+    if (status) {
+      where.status = status.toUpperCase();
+    } else {
+      // Default: show pending and in-progress orders for prep bar
+      where.status = { in: ['PENDING', 'IN_PROGRESS'] };
     }
 
-    // Return all orders if no payment_intent_id specified
-    return NextResponse.json({ orders });
-
-  } catch (error) {
-    console.error('Error retrieving orders:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
-
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const { 
-      payment_intent_id, 
-      lounge_id, 
-      flavor_mix, 
-      amount, 
-      currency,
-      ref_source,
-      ref_campaign,
-      ref_code
-    } = body;
-
-    // Validate required fields
-    if (!payment_intent_id) {
-      return NextResponse.json({ error: 'Payment intent ID is required' }, { status: 400 });
+    if (type) {
+      where.type = type.toUpperCase();
     }
 
-    // Check if order already exists
-    const existingOrder = orders.find(o => o.payment_intent_id === payment_intent_id);
-    if (existingOrder) {
-      return NextResponse.json({ 
-        order: existingOrder,
-        dupe: true,
-        message: 'Order already exists'
-      });
+    // If loungeId provided, filter by session's loungeId
+    if (loungeId) {
+      where.session = {
+        loungeId
+      };
     }
 
-    // Create new order
-    const order = {
-      id: `order_${Date.now()}`,
-      payment_intent_id,
-      lounge_id,
-      flavor_mix,
-      amount,
-      currency,
-      ref_source,
-      ref_campaign,
-      ref_code,
-      status: 'paid' as const,
-      created_at: new Date().toISOString(),
-      paid_at: new Date().toISOString()
-    };
+    const orders = await prisma.order.findMany({
+      where,
+      include: {
+        session: {
+          select: {
+            id: true,
+            tableId: true,
+            loungeId: true,
+            flavor: true
+          }
+        },
+        items: true,
+        events: {
+          orderBy: { createdAt: 'desc' },
+          take: 5 // Latest 5 events
+        }
+      },
+      orderBy: { createdAt: 'asc' }, // Oldest first for prep bar
+      take: 50 // Limit results
+    });
 
-    orders.push(order);
-
-    return NextResponse.json({ 
-      success: true, 
-      order,
-      message: 'Order created successfully'
+    return NextResponse.json({
+      success: true,
+      orders: orders.map(order => ({
+        id: order.id,
+        sessionId: order.sessionId,
+        type: order.type,
+        status: order.status,
+        tableId: order.session.tableId,
+        loungeId: order.session.loungeId,
+        items: order.items.map(item => ({
+          id: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          priceCents: item.priceCents
+        })),
+        specialInstructions: order.specialInstructions,
+        priceSnapshot: order.priceSnapshot ? JSON.parse(order.priceSnapshot) : null,
+        events: order.events.map(e => ({
+          eventType: e.eventType,
+          staffId: e.staffId,
+          createdAt: e.createdAt.toISOString()
+        })),
+        createdAt: order.createdAt.toISOString(),
+        updatedAt: order.updatedAt.toISOString()
+      })),
+      total: orders.length
     });
 
   } catch (error) {
-    console.error('Error creating order:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Error fetching orders:', error);
+    return NextResponse.json(
+      {
+        error: 'Failed to fetch orders',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
   }
 }

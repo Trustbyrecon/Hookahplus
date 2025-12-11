@@ -43,12 +43,12 @@ model Session {
   customerPhone  String?
   flavor         String?
   flavorMix      String? // JSON as string for SQLite compatibility
-  loungeId       String  @default("default-lounge") // Required field with default
+  loungeId       String        @default("default-lounge") // Required field with default
   priceCents     Int
   // Pricing / refill metadata
-  sessionType    String?  @map("session_type") // TIME_BASED | FLAT
-  hadRefill      Boolean  @default(false) @map("had_refill")
-  refillCount    Int      @default(0) @map("refill_count")
+  sessionType    String?       @map("session_type") // TIME_BASED | FLAT
+  hadRefill      Boolean       @default(false) @map("had_refill")
+  refillCount    Int           @default(0) @map("refill_count")
   state          SessionState  @default(PENDING)
   edgeCase       String? // 'EQUIPMENT_ISSUE', 'CUSTOMER_NOT_FOUND', 'PAYMENT_FAILED', 'HEALTH_SAFETY', 'OTHER'
   edgeNote       String?
@@ -61,9 +61,9 @@ model Session {
   paymentStatus  String? // requires "succeeded" to complete
   orderItems     String? // JSON as string for SQLite compatibility
   posMode        String? // POS integration mode
-  version        Int       @default(1)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  version        Int           @default(1)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   // Timer fields
   timerDuration       Int? // in minutes
@@ -80,17 +80,33 @@ model Session {
   qrCodeUrl       String? // URL to QR code image/data URL for staff scanning (fraud prevention)
 
   // Taxonomy v1 fields (dual-write pattern)
-  sessionStateV1  String? @map("session_state_v1") // Taxonomy v1: queued | prep | handoff | delivering | delivered | checkout | closed | canceled
-  paused          Boolean @default(false) // PAUSED is a modifier flag, not a state
+  sessionStateV1 String? @map("session_state_v1") // Taxonomy v1: queued | prep | handoff | delivering | delivered | checkout | closed | canceled
+  paused         Boolean @default(false) // PAUSED is a modifier flag, not a state
 
   // Multi-tenant field
-  tenantId        String? @map("tenant_id") @db.Uuid
+  tenantId String? @map("tenant_id") @db.Uuid
+
+  // New fields for night-after-night engine
+  preorderId          String? @map("preorder_id")
+  loungeConfigVersion Int?    @map("lounge_config_version") // Config version used for pricing
+  seatId              String? @map("seat_id") // Link to Seat model
+  zoneId              String? @map("zone_id") // Link to Zone model
 
   // Relations
-  tenant   Tenant?   @relation(fields: [tenantId], references: [id], onDelete: SetNull)
-  payments Payment[] // One session can have multiple payments
+  tenant       Tenant?       @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  payments     Payment[] // One session can have multiple payments
+  preorder     PreOrder?     @relation(fields: [preorderId], references: [id], onDelete: SetNull)
+  seat         Seat?         @relation(fields: [seatId], references: [id], onDelete: SetNull)
+  zoneRelation Zone?         @relation("SessionZone", fields: [zoneId], references: [id], onDelete: SetNull)
+  orders       Order[]
+  deliveries   Delivery[]
+  notes        SessionNote[]
 
   @@index([tenantId])
+  @@index([preorderId])
+  @@index([seatId])
+  @@index([zoneId])
+  @@index([loungeConfigVersion])
   @@map("Session")
 }
 
@@ -186,9 +202,9 @@ model Tenant {
 
   // Relations
   memberships Membership[]
-  sessions     Session[]
-  events       ReflexEvent[]
-  payments     Payment[]
+  sessions    Session[]
+  events      ReflexEvent[]
+  payments    Payment[]
 
   @@map("tenants")
 }
@@ -311,19 +327,19 @@ model ReflexEvent {
   userAgent     String?
   ip            String?
   createdAt     DateTime @default(now())
-  
+
   // CTA Tracking Fields
-  ctaSource     String? // 'website' | 'instagram' | 'linkedin' | 'email' | 'calendly'
-  ctaType       String? // 'demo_request' | 'onboarding_signup' | 'contact_form' | 'social_click'
-  referrer      String? // HTTP referrer or social media referrer
-  campaignId    String? // Marketing campaign identifier
-  metadata      String? // Additional JSON metadata for source-specific data
+  ctaSource  String? // 'website' | 'instagram' | 'linkedin' | 'email' | 'calendly'
+  ctaType    String? // 'demo_request' | 'onboarding_signup' | 'contact_form' | 'social_click'
+  referrer   String? // HTTP referrer or social media referrer
+  campaignId String? // Marketing campaign identifier
+  metadata   String? // Additional JSON metadata for source-specific data
 
   // Taxonomy v1 fields (dual-write pattern)
   trustEventTypeV1 String? // Taxonomy v1: on_time_delivery | fav_used | fast_checkout | corrected_issue | staff_greeting | loyalty_redeemed
 
   // Multi-tenant field
-  tenantId        String? @map("tenant_id") @db.Uuid
+  tenantId String? @map("tenant_id") @db.Uuid
 
   // Relations
   tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: SetNull)
@@ -392,18 +408,18 @@ model PosTicket {
 }
 
 model MenuFile {
-  id           String    @id @default(uuid())
-  leadId       String?   @map("lead_id") // Link to ReflexEvent (lead) - stored as string ID
-  fileName     String    @map("file_name")
-  fileUrl      String    @map("file_url") // Supabase storage URL
-  fileType     String    @map("file_type") // "application/pdf" | "image/jpeg" | "image/png"
-  fileSize     Int       @map("file_size") // bytes
-  uploadedAt   DateTime  @default(now()) @map("uploaded_at")
-  processedAt  DateTime? @map("processed_at")
-  status       String    @default("pending") // "pending" | "processing" | "extracted" | "failed" | "deleted"
-  extractedData Json?    @map("extracted_data") // Menu/flavor data extracted by agent
-  tenantId     String?   @map("tenant_id") @db.Uuid
-  deletedAt    DateTime? @map("deleted_at") // Soft delete for retention tracking
+  id            String    @id @default(uuid())
+  leadId        String?   @map("lead_id") // Link to ReflexEvent (lead) - stored as string ID
+  fileName      String    @map("file_name")
+  fileUrl       String    @map("file_url") // Supabase storage URL
+  fileType      String    @map("file_type") // "application/pdf" | "image/jpeg" | "image/png"
+  fileSize      Int       @map("file_size") // bytes
+  uploadedAt    DateTime  @default(now()) @map("uploaded_at")
+  processedAt   DateTime? @map("processed_at")
+  status        String    @default("pending") // "pending" | "processing" | "extracted" | "failed" | "deleted"
+  extractedData Json?     @map("extracted_data") // Menu/flavor data extracted by agent
+  tenantId      String?   @map("tenant_id") @db.Uuid
+  deletedAt     DateTime? @map("deleted_at") // Soft delete for retention tracking
 
   @@index([leadId])
   @@index([status])
@@ -566,4 +582,300 @@ model TaxonomyUnknown {
   @@index([count])
   @@index([lastSeen])
   @@map("TaxonomyUnknown")
+}
+
+// ============================================================================
+// Night After Night Engine Models
+// ============================================================================
+
+// Order Models
+model Order {
+  id                  String    @id @default(cuid())
+  sessionId           String    @map("session_id")
+  type                String // "HOOKAH" | "FOOD" | "DRINK" | "ADDON"
+  status              String    @default("PENDING") // PENDING | IN_PROGRESS | READY | SERVED | CANCELLED
+  priceSnapshot       String?   @map("price_snapshot") // JSON: pricing at time of order
+  specialInstructions String?   @map("special_instructions")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  servedAt            DateTime? @map("served_at")
+
+  // Relations
+  session  Session      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  items    OrderItem[]
+  events   OrderEvent[]
+  delivery Delivery?
+
+  @@index([sessionId])
+  @@index([status, createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id         String  @id @default(cuid())
+  orderId    String  @map("order_id")
+  itemType   String  @map("item_type") // "FLAVOR" | "BASE" | "ADDON" | "COAL_REFILL"
+  itemId     String? @map("item_id") // Reference to menu item or flavor
+  name       String
+  quantity   Int     @default(1)
+  priceCents Int     @map("price_cents")
+  metadata   String? // JSON: additional item details
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+model OrderEvent {
+  id        String   @id @default(cuid())
+  orderId   String   @map("order_id")
+  eventType String   @map("event_type") // "CREATED" | "PREP_STARTED" | "COAL_CHANGED" | "READY" | "SERVED"
+  staffId   String?  @map("staff_id")
+  metadata  String? // JSON: event details
+  createdAt DateTime @default(now()) @map("created_at")
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, createdAt])
+  @@map("order_events")
+}
+
+// PreOrder Model
+model PreOrder {
+  id            String    @id @default(cuid())
+  loungeId      String    @map("lounge_id")
+  guestHandle   String?   @map("guest_handle") // Phone, email, or anonymous token
+  qrCode        String?   @unique @map("qr_code")
+  status        String    @default("PENDING") // PENDING | CONVERTED | EXPIRED | CANCELLED
+  scheduledTime DateTime? @map("scheduled_time")
+  partySize     Int       @map("party_size")
+  flavorMixJson String?   @map("flavor_mix_json") // JSON: selected flavors
+  basePrice     Int       @map("base_price")
+  lockedPrice   Int?      @map("locked_price") // Price locked at pre-order time
+  metadata      String? // JSON: special requests, notes
+  sessionId     String?   @unique @map("session_id") // Linked session when converted (one-to-one)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  convertedAt   DateTime? @map("converted_at")
+  expiresAt     DateTime? @map("expires_at")
+
+  // Relations
+  // The relation is defined on Session.preorderId (Session owns the foreign key)
+  // sessionId is a back-reference - we maintain it manually, not as a Prisma relation
+  sessions      Session[] // Sessions that came from this PreOrder (via Session.preorderId)
+
+  @@index([loungeId, status])
+  @@index([qrCode])
+  @@index([sessionId])
+  @@map("preorders")
+}
+
+// Delivery Model
+model Delivery {
+  id          String   @id @default(cuid())
+  sessionId   String   @map("session_id")
+  orderId     String   @unique @map("order_id")
+  deliveredBy String   @map("delivered_by") // Staff ID
+  deliveredAt DateTime @default(now()) @map("delivered_at")
+  notes       String?
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([deliveredBy, deliveredAt])
+  @@map("deliveries")
+}
+
+// SessionNotes & Memory Layer
+model SessionNote {
+  id             String   @id @default(cuid())
+  sessionId      String   @map("session_id")
+  noteType       String   @map("note_type") // "PREFERENCE" | "BEHAVIOR" | "ISSUE" | "STAFF_OBSERVATION"
+  text           String
+  sentiment      String? // "POSITIVE" | "NEUTRAL" | "NEGATIVE"
+  loyaltyImpact  Int?     @map("loyalty_impact") // 0-100 impact on loyalty score
+  behavioralTags String?  @map("behavioral_tags") // JSON: array of tags
+  createdBy      String   @map("created_by") // Staff ID
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  // Relations
+  session         Session              @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  loyaltyBindings LoyaltyNoteBinding[]
+
+  @@index([sessionId])
+  @@index([noteType, createdAt])
+  @@map("session_notes")
+}
+
+model LoyaltyProfile {
+  id                String    @id @default(cuid())
+  loungeId          String    @map("lounge_id")
+  guestKey          String    @map("guest_key") // Hashed phone/email or anonymous token
+  cumulativeSpend   Int       @default(0) @map("cumulative_spend") // Total spend in cents
+  visitCount        Int       @default(0) @map("visit_count")
+  lastVisitAt       DateTime? @map("last_visit_at")
+  preferenceSummary String?   @map("preference_summary") // JSON: favorite flavors, time slots, etc.
+  trustScore        Int       @default(50) @map("trust_score") // 0-100
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  noteBindings LoyaltyNoteBinding[]
+
+  @@unique([loungeId, guestKey])
+  @@index([loungeId])
+  @@map("loyalty_profiles")
+}
+
+model LoyaltyNoteBinding {
+  id               String @id @default(cuid())
+  loyaltyProfileId String @map("loyalty_profile_id")
+  sessionNoteId    String @map("session_note_id")
+
+  loyaltyProfile LoyaltyProfile @relation(fields: [loyaltyProfileId], references: [id], onDelete: Cascade)
+  sessionNote    SessionNote    @relation(fields: [sessionNoteId], references: [id], onDelete: Cascade)
+
+  @@unique([loyaltyProfileId, sessionNoteId])
+  @@map("loyalty_note_bindings")
+}
+
+// Lounge Layout Models
+model Zone {
+  id           String   @id @default(cuid())
+  loungeId     String   @map("lounge_id")
+  name         String // "VIP", "Main Floor", "Patio"
+  zoneType     String   @map("zone_type") // "VIP" | "STANDARD" | "OUTDOOR" | "PRIVATE"
+  displayOrder Int      @default(0) @map("display_order")
+  metadata     String? // JSON: bounds, color, etc.
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  seats    Seat[]
+  sessions Session[] @relation("SessionZone")
+
+  @@index([loungeId])
+  @@map("zones")
+}
+
+model Seat {
+  id              String   @id @default(cuid())
+  loungeId        String   @map("lounge_id")
+  zoneId          String   @map("zone_id")
+  tableId         String   @unique @map("table_id") // e.g., "T-01", "VIP-3"
+  name            String?
+  capacity        Int
+  coordinates     String? // JSON: {x, y, width, height}
+  qrEnabled       Boolean  @default(true) @map("qr_enabled")
+  status          String   @default("ACTIVE") // ACTIVE | RESERVED | MAINTENANCE
+  priceMultiplier Float    @default(1.0) @map("price_multiplier")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  zone     Zone      @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  sessions Session[]
+
+  @@index([loungeId, zoneId])
+  @@index([tableId])
+  @@map("seats")
+}
+
+model Station {
+  id          String   @id @default(cuid())
+  loungeId    String   @map("lounge_id")
+  name        String // "Prep Station 1", "Coal Station"
+  stationType String   @map("station_type") // "PREP" | "COAL" | "BAR"
+  zoneId      String?  @map("zone_id")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([loungeId])
+  @@map("stations")
+}
+
+// Menu & Catalog Models
+model Flavor {
+  id          String   @id @default(cuid())
+  loungeId    String?  @map("lounge_id")
+  name        String
+  description String?
+  tags        String? // JSON: ["fruity", "mint", "dark_leaf"]
+  isPremium   Boolean  @default(false) @map("is_premium")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([loungeId])
+  @@map("flavors")
+}
+
+model MixTemplate {
+  id         String   @id @default(cuid())
+  loungeId   String   @map("lounge_id")
+  name       String // "House Mix", "Summer Special"
+  flavorIds  String   @map("flavor_ids") // JSON: array of flavor IDs
+  priceCents Int?     @map("price_cents")
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([loungeId])
+  @@map("mix_templates")
+}
+
+model PricingRule {
+  id          String    @id @default(cuid())
+  loungeId    String    @map("lounge_id")
+  ruleType    String    @map("rule_type") // "BASE_SESSION" | "PREMIUM_ADDON" | "TIME_BASED" | "ZONE_MULTIPLIER"
+  ruleConfig  String    @map("rule_config") // JSON: rule-specific configuration
+  version     Int       @default(1)
+  isActive    Boolean   @default(true) @map("is_active")
+  effectiveAt DateTime  @default(now()) @map("effective_at")
+  expiresAt   DateTime? @map("expires_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([loungeId, isActive, effectiveAt])
+  @@map("pricing_rules")
+}
+
+// Config Versioning & Reliability Models
+model LoungeConfig {
+  id          String   @id @default(cuid())
+  loungeId    String   @unique @map("lounge_id")
+  configData  String   @map("config_data") // JSON: full YAML-derived config
+  version     Int      @default(1)
+  effectiveAt DateTime @default(now()) @map("effective_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([loungeId, version])
+  @@map("lounge_configs")
+}
+
+model SyncBacklog {
+  id          String    @id @default(cuid())
+  deviceId    String    @map("device_id") // Tablet/station identifier
+  loungeId    String    @map("lounge_id")
+  operation   String // "CREATE_SESSION" | "UPDATE_ORDER" | "ADD_NOTE"
+  payload     String // JSON: operation data
+  status      String    @default("PENDING") // PENDING | SYNCED | FAILED
+  retryCount  Int       @default(0) @map("retry_count")
+  lastAttempt DateTime? @map("last_attempt")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  syncedAt    DateTime? @map("synced_at")
+
+  @@index([deviceId, status])
+  @@index([loungeId, status, createdAt])
+  @@map("sync_backlog")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  loungeId   String?  @map("lounge_id")
+  userId     String?  @map("user_id")
+  action     String // "CONFIG_CHANGED" | "PRICING_UPDATED" | "MANUAL_OVERRIDE"
+  entityType String?  @map("entity_type") // "Session" | "Order" | "Config"
+  entityId   String?  @map("entity_id")
+  changes    String? // JSON: before/after
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([loungeId, createdAt])
+  @@index([userId, createdAt])
+  @@map("audit_logs")
 }
