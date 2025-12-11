@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
       utm_campaign,
       amount,
       currency,
-      timestamp: preorder.created_at,
+      timestamp: preorder.createdAt,
       // HiTrust signals
       hitrust_signals: {
         trust_level: 'HIGH',
@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
             trust_level: 'HIGH'
           },
           source: 'preorder_api',
-          timestamp: preorder.created_at
+          timestamp: preorder.createdAt
         })
       });
     } catch (reflexError) {
