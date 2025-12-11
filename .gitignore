@@ -165,6 +165,9 @@ dist
 # Gatsby files
 .cache/
 public
+# Exception: Allow Next.js public assets
+!apps/site/public/
+!apps/site/public/**/*
 
 # Storybook build outputs
 .out
