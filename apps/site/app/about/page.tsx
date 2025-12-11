@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
+import ImageWithFallback from '../../components/ImageWithFallback';
 import { 
   Clock, 
   Sparkles, 
@@ -32,7 +33,7 @@ export default function AboutPage() {
               </p>
             </div>
             <div className="relative h-64 md:h-96 rounded-lg overflow-hidden border border-zinc-700">
-              <Image
+              <ImageWithFallback
                 src="/images/about/lounge-community.jpg"
                 alt="Hookah+ community gathering at an outdoor lounge with string lights"
                 fill
@@ -104,7 +105,7 @@ export default function AboutPage() {
               </div>
             </div>
             <div className="relative h-96 md:h-[32rem] rounded-lg overflow-hidden border border-zinc-700">
-              <Image
+              <ImageWithFallback
                 src="/images/about/trade-show-panel.png"
                 alt="Hookah+ team panel discussion at trade show"
                 fill
@@ -171,7 +172,7 @@ export default function AboutPage() {
           
           {/* Technology Image */}
           <div className="relative w-full h-64 md:h-96 mb-8 rounded-lg overflow-hidden border border-zinc-700">
-            <Image
+            <ImageWithFallback
               src="/images/about/dashboard-tech.jpg"
               alt="Hookah+ dashboard technology with holographic interfaces"
               fill
@@ -252,7 +253,7 @@ export default function AboutPage() {
               </h2>
             </div>
             <div className="relative h-64 md:h-80 rounded-lg overflow-hidden border border-zinc-700">
-              <Image
+              <ImageWithFallback
                 src="/images/about/team-member.jpg"
                 alt="Hookah+ team member speaking at event"
                 fill

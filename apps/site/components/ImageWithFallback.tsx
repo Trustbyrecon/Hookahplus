@@ -26,15 +26,18 @@ export default function ImageWithFallback({
   height,
 }: ImageWithFallbackProps) {
   const [hasError, setHasError] = useState(false);
-  const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const [useUnoptimized, setUseUnoptimized] = useState(false);
 
-  // Check if image exists by attempting to load it
-  useEffect(() => {
-    const img = new window.Image();
-    img.onload = () => setIsImageLoaded(true);
-    img.onerror = () => setHasError(true);
-    img.src = src;
-  }, [src]);
+  // Handle image load errors - try unoptimized as fallback
+  const handleError = () => {
+    if (!useUnoptimized) {
+      // First error: try unoptimized version
+      setUseUnoptimized(true);
+    } else {
+      // Second error: show fallback UI
+      setHasError(true);
+    }
+  };
 
   if (hasError) {
     return (
@@ -63,8 +66,8 @@ export default function ImageWithFallback({
       height={!fill ? height : undefined}
       className={className}
       priority={priority}
-      onError={() => setHasError(true)}
-      onLoad={() => setIsImageLoaded(true)}
+      unoptimized={useUnoptimized}
+      onError={handleError}
     />
   );
 }
