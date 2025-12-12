@@ -23,9 +23,7 @@ export default function Hero() {
             transition={{ duration: 0.6 }}
             className="text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight"
           >
-            Make every session smoother.
-            <br />
-            <span className="text-teal-400">Earn repeat visits automatically.</span>
+            The Session-First Layer for Hookah Lounges
           </motion.h1>
 
           {/* Subheadline */}
@@ -33,26 +31,30 @@ export default function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="mt-6 text-lg md:text-xl text-zinc-300 max-w-3xl mx-auto mb-8"
+            className="mt-6 text-lg md:text-xl text-zinc-300 max-w-3xl mx-auto mb-4"
           >
-            Hookah+ connects QR ordering, staff flow, and loyalty into one
-            <span className="text-teal-400 font-semibold"> hospitality intelligence layer</span>
-            —no rip-and-replace.
+            Hookah+ sits on top of your POS to track session time, flavor mixes, and table performance — so every night runs smoother and earns more.
           </motion.p>
 
-          {/* Quantifiable Benefit */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="inline-flex items-center gap-3 bg-gradient-to-r from-teal-900/30 to-cyan-900/30 border border-teal-500/30 rounded-xl px-6 py-4 mb-8"
+          {/* Power Line */}
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.15 }}
+            className="text-lg md:text-xl text-zinc-300 max-w-3xl mx-auto mb-4"
           >
-            <TrendingDown className="w-6 h-6 text-teal-400" />
-            <div className="text-left">
-              <div className="text-2xl font-bold text-teal-400">Reduce Management Friction by 40%</div>
-              <div className="text-sm text-zinc-400">Streamline staff, inventory, and table service into automated workflows</div>
-            </div>
-          </motion.div>
+            Make every session smoother. Earn repeat visits automatically.
+          </motion.p>
+
+          {/* Trust Line */}
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-sm text-zinc-400 max-w-3xl mx-auto mb-8"
+          >
+            No rip-and-replace. Works with your current workflow.
+          </motion.p>
 
           {/* CTAs */}
           <motion.div
@@ -81,24 +83,16 @@ export default function Hero() {
               size="lg"
               className="px-8 py-4 text-lg border-2 border-teal-500/50 text-teal-400 hover:bg-teal-500/10 hover:border-teal-400 transition-all"
               onClick={() => {
-                // Navigate directly to Sessions page on site build
-                const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-                window.location.href = `${siteUrl}/sessions`;
+                // Scroll to "What Hookah+ Does" section or go to docs
+                const element = document.getElementById('what-hookah-does');
+                if (element) {
+                  element.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                  window.location.href = '/docs';
+                }
               }}
             >
-              See How It Works
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              className="px-8 py-4 text-lg border-2 border-purple-500/50 text-purple-400 hover:bg-purple-500/10 hover:border-purple-400 transition-all"
-              onClick={() => {
-                trackDemoRequest('Hero', { action: 'navigate_to_world_shisha' });
-                window.location.href = '/world-shisha-2026';
-              }}
-            >
-              World Shisha 2026
-              <ArrowRight className="w-5 h-5 ml-2" />
+              Read Product Overview
             </Button>
           </motion.div>
 

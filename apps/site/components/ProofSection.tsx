@@ -89,26 +89,20 @@ export default function ProofSection() {
               </ul>
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button
-                  variant="outline"
-                  className="border-teal-500/50 text-teal-400 hover:bg-teal-500/10"
-                  onClick={() => {
-                    // Download case study PDF
-                    const link = document.createElement('a');
-                    link.href = '/case-study-hookahplus-transformation.pdf';
-                    link.download = 'hookahplus-case-study.pdf';
-                    link.click();
-                  }}
+                  variant="primary"
+                  className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white"
+                  onClick={() => window.location.href = '/onboarding'}
                 >
-                  <FileText className="w-4 h-4 mr-2" />
-                  Download Full Case Study
+                  Book 15-min Demo
+                  <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
                 <Button
                   variant="outline"
                   className="border-teal-500/50 text-teal-400 hover:bg-teal-500/10"
-                  onClick={() => window.location.href = '/contact'}
+                  onClick={() => window.location.href = '/results/case-study'}
                 >
-                  Request Custom Assessment
-                  <ArrowRight className="w-4 h-4 ml-2" />
+                  <FileText className="w-4 h-4 mr-2" />
+                  View Case Study
                 </Button>
               </div>
             </div>

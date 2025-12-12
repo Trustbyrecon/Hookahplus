@@ -48,15 +48,11 @@ export default function PricingTeaser() {
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12" id="pricing">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Simple Pricing
+            Simple pricing for serious lounges
           </h2>
           <p className="text-lg text-zinc-400 max-w-2xl mx-auto mb-4">
-            Auto-upgrades when you're ready. No long-term contracts.
+            Starter, Pro, and Lounge Network options — built for any volume of sessions.
           </p>
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-teal-500/10 border border-teal-500/30 rounded-lg">
-            <CheckCircle className="w-4 h-4 text-teal-400" />
-            <span className="text-sm text-teal-400">Cancel anytime • 3-day grace period</span>
-          </div>
         </div>
 
         {/* Simplified 3-tier layout - reduced cognitive load */}
@@ -124,22 +120,14 @@ export default function PricingTeaser() {
 
         <div className="text-center">
           <Button
-            variant="primary"
+            variant="outline"
             size="lg"
-            className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white px-8 py-4 text-lg font-semibold shadow-lg shadow-teal-500/20"
-            onClick={() => {
-              trackOnboardingSignup(undefined, { action: 'start_pilot', component: 'PricingTeaser' });
-              window.location.href = '/onboarding';
-            }}
+            className="border-teal-500/50 text-teal-400 hover:bg-teal-500/10 hover:border-teal-400 px-8 py-4"
+            onClick={() => window.location.href = '/pricing'}
           >
-            Start 30-day Pilot
-            <ArrowRight className="w-5 h-5 ml-2" />
+            See Pricing
+            <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
-          <p className="text-sm text-zinc-400 mt-4">
-            <a href="/pricing" className="text-teal-400 hover:text-teal-300 underline">
-              View full pricing details
-            </a>
-          </p>
         </div>
       </div>
     </section>

@@ -33,15 +33,15 @@ export default function DocsPage() {
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
       {/* Hero Section */}
       <PageHero
-        headline="Hookah+ — Session Intelligence Layer for Shisha Lounges"
-        subheadline="A software layer that sits on top of your existing POS and workflow, focusing on session time, flavor mixes, and table performance"
-        benefit={{
-          value: "Increase revenue per seat, run smoother nights",
-          description: "Built for owners, staff, and networks"
-        }}
+        headline="Hookah+ Product Overview & Integration Docs"
+        subheadline="Built for owners, staff, and networks. A software layer that sits on top of your existing POS and workflow, focusing on session time, flavor mixes, and table performance."
         primaryCTA={{
-          text: "View Technical Docs",
-          onClick: () => window.location.href = '/docs/technical'
+          text: "Book 15-min Demo",
+          onClick: () => window.location.href = '/onboarding'
+        }}
+        secondaryCTA={{
+          text: "← Back to Homepage",
+          onClick: () => window.location.href = '/'
         }}
         trustIndicators={[
           { icon: <Clock className="w-4 h-4 text-teal-400" />, text: "Session tracking" },

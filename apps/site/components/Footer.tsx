@@ -35,28 +35,28 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Quick Links */}
+          {/* Product Links */}
           <div>
             <h3 className="text-white font-semibold mb-4">Product</h3>
             <ul className="space-y-2 text-sm">
               <li>
                 <Link href="/#how-it-works" className="text-zinc-400 hover:text-teal-400 transition-colors">
-                  How It Works
+                  Overview
                 </Link>
               </li>
               <li>
-                <Link href="/#demo" className="text-zinc-400 hover:text-teal-400 transition-colors">
-                  Demo
+                <Link href="/sessions" className="text-zinc-400 hover:text-teal-400 transition-colors">
+                  Sessions
+                </Link>
+              </li>
+              <li>
+                <Link href="/fire-session-dashboard" className="text-zinc-400 hover:text-teal-400 transition-colors">
+                  Dashboard
                 </Link>
               </li>
               <li>
                 <Link href="/pricing" className="text-zinc-400 hover:text-teal-400 transition-colors">
                   Pricing
-                </Link>
-              </li>
-              <li>
-                <Link href="/flavor-demo" className="text-zinc-400 hover:text-teal-400 transition-colors">
-                  Flavor Demo
                 </Link>
               </li>
             </ul>
@@ -77,13 +77,13 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/resources/operations-checklist" className="text-zinc-400 hover:text-teal-400 transition-colors">
-                  Operations Checklist
+                <Link href="/results/case-study" className="text-zinc-400 hover:text-teal-400 transition-colors">
+                  Case Study
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="text-zinc-400 hover:text-teal-400 transition-colors">
-                  Contact Us
+                <Link href="/#roi-calculator" className="text-zinc-400 hover:text-teal-400 transition-colors">
+                  ROI Calculator
                 </Link>
               </li>
             </ul>
