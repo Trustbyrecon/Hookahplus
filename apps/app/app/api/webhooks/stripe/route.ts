@@ -146,18 +146,36 @@ export async function POST(req: Request) {
       });
 
       // Update session with payment confirmation
-      await prisma.session.update({
+      // Ensure state is properly set to PENDING with paymentStatus 'succeeded' 
+      // This will be mapped to PAID_CONFIRMED by the session utils
+      const updateData: any = {
+        paymentStatus: session.payment_status === 'paid' ? 'succeeded' : session.payment_status,
+        paymentIntent: paymentIntentId,
+        priceCents: priceCents,
+        externalRef: externalRef, // Store Stripe checkout session ID
+        updatedAt: new Date(),
+      };
+
+      // Only update state if payment succeeded and session is not already in a later state
+      if (session.payment_status === 'paid') {
+        // Check current state - only update if it's NEW or PENDING
+        const currentState = existingSession.state;
+        if (currentState === SessionState.PENDING || currentState === SessionState.NEW || !currentState) {
+          updateData.state = SessionState.PENDING; // Will be mapped to PAID_CONFIRMED by session utils
+        }
+        // If already in a later state (e.g., ACTIVE), don't downgrade it
+      }
+
+      const updatedSession = await prisma.session.update({
         where: { id: sessionId },
-        data: {
-          paymentStatus: session.payment_status === 'paid' ? 'succeeded' : session.payment_status,
-          paymentIntent: paymentIntentId,
-          priceCents: priceCents,
-          externalRef: externalRef, // Store Stripe checkout session ID
-          // Update state to PAID_CONFIRMED if payment succeeded
-          ...(session.payment_status === 'paid' && {
-            state: SessionState.PENDING, // Will transition to PAID_CONFIRMED via state machine
-          }),
-        },
+        data: updateData,
+      });
+
+      console.log('[Webhook] Session updated:', {
+        sessionId,
+        paymentStatus: updateData.paymentStatus,
+        state: updatedSession.state,
+        externalRef: updateData.externalRef,
       });
 
       // Create Payment record in payments table (multi-tenant)

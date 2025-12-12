@@ -210,8 +210,12 @@ function CheckoutSuccessContent() {
       const loungeId = sessionData.loungeId || 'default-lounge';
       const tableId = sessionData.tableId || 'T-001';
       
+      // Check if this is demo mode
+      const isDemo = isDemoMode || sessionId.startsWith('demo_');
+      const demoParam = isDemo ? '&demo=true&mode=demo' : '';
+      
       // Redirect to guest tracker for hookah tracking experience
-      const trackerUrl = `${guestTrackerUrl}/hookah-tracker?sessionId=${sessionId}&loungeId=${loungeId}&tableId=${tableId}`;
+      const trackerUrl = `${guestTrackerUrl}/hookah-tracker?sessionId=${sessionId}&loungeId=${loungeId}&tableId=${tableId}${demoParam}`;
       
       console.log('[Checkout Success] ✅ Payment confirmed, redirecting guest to hookah tracker:', trackerUrl);
       
@@ -222,7 +226,7 @@ function CheckoutSuccessContent() {
       
       return () => clearTimeout(redirectTimer);
     }
-  }, [sessionId, sessionData]);
+  }, [sessionId, sessionData, isDemoMode]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
@@ -263,7 +267,7 @@ function CheckoutSuccessContent() {
             
             <div className="mt-6 flex gap-4 justify-center">
               <a
-                href={`${process.env.NEXT_PUBLIC_GUEST_URL || 'https://guest.hookahplus.net'}/hookah-tracker?sessionId=${sessionId}&loungeId=${sessionData?.loungeId || 'default-lounge'}&tableId=${sessionData?.tableId || 'T-001'}`}
+                href={`${process.env.NEXT_PUBLIC_GUEST_URL || 'https://guest.hookahplus.net'}/hookah-tracker?sessionId=${sessionId}&loungeId=${sessionData?.loungeId || 'default-lounge'}&tableId=${sessionData?.tableId || 'T-001'}${isDemoMode ? '&demo=true&mode=demo' : ''}`}
                 className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white px-6 py-3 rounded-lg transition-colors"
               >
                 View Hookah Tracker

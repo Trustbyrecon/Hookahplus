@@ -133,59 +133,157 @@ export const HookahTracker: React.FC<HookahTrackerProps> = ({
   // Fetch real session data from app build
   useEffect(() => {
     const fetchSessionData = async () => {
-      if (!sessionId || sessionId === 'session_demo') {
+      // Check for demo mode from URL params
+      const urlParams = new URLSearchParams(window.location.search);
+      const isDemoMode = urlParams.get('demo') === 'true' || 
+                        urlParams.get('mode') === 'demo' ||
+                        sessionId?.startsWith('demo_') ||
+                        sessionId === 'session_demo';
+
+      if (!sessionId || isDemoMode) {
+        console.log('[HookahTracker] Demo mode detected, using demo data');
         setUseDemo(true);
         setIsLoading(false);
         return;
       }
 
       try {
+        // Import retry utility dynamically
+        const { fetchWithRetry } = await import('../lib/apiRetry');
+        
+        // Request notification permission on first load (non-blocking)
+        if (typeof window !== 'undefined' && !window.localStorage.getItem('notification-permission-requested')) {
+          import('../lib/notifications').then(({ notificationManager }) => {
+            notificationManager.requestPermission().catch(err => {
+              console.log('[HookahTracker] Notification permission request failed:', err);
+            });
+          });
+          window.localStorage.setItem('notification-permission-requested', 'true');
+        }
+
+        // Try session status API first (better format for tracker) with retry logic
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
-        const response = await fetch(`${appUrl}/api/sessions/${sessionId}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
+        let response = await fetchWithRetry(
+          `${appUrl}/api/sessions/status?sessionId=${sessionId}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
           },
-        });
+          {
+            maxRetries: 3,
+            initialDelay: 1000,
+            onRetry: (attempt, error) => {
+              console.log(`[HookahTracker] Retry attempt ${attempt} after error:`, error);
+            },
+          }
+        );
+
+        // If status API fails, try the main sessions endpoint
+        if (!response.ok) {
+          console.log('[HookahTracker] Status API failed, trying main sessions endpoint');
+          response = await fetchWithRetry(
+            `${appUrl}/api/sessions/${sessionId}`,
+            {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            },
+            {
+              maxRetries: 2,
+              initialDelay: 1000,
+            }
+          );
+        }
 
         if (response.ok) {
           const data = await response.json();
-          if (data.success && data.id) {
-            setSessionData(data);
+          
+          // Handle both response formats
+          const session = data.session || data;
+          const sessionIdFromResponse = session.id || data.id;
+          
+          if (sessionIdFromResponse) {
+            setSessionData(session);
             setUseDemo(false);
             
             // Map session status to tracker step
-            const step = getStepFromStatus(data.status || data.state || 'NEW');
+            const status = session.status || data.status || session.state || data.state || 'NEW';
+            const step = getStepFromStatus(status);
             setCurrentStep(step);
             
             // Set actual start time from session
-            if (data.createdAt) {
-              setActualStartTime(new Date(data.createdAt));
+            const startTime = session.startedAt || session.createdAt || data.startedAt || data.createdAt;
+            if (startTime) {
+              setActualStartTime(new Date(startTime));
             } else {
               setActualStartTime(new Date());
             }
             
             // Calculate estimated time based on session duration
-            if (data.sessionDuration) {
-              const minutes = Math.floor(data.sessionDuration / 60);
+            const duration = session.sessionDuration || session.duration || data.sessionDuration || data.duration;
+            if (duration) {
+              const minutes = Math.floor(duration / 60);
               setEstimatedTotalTime(`${minutes}-${minutes + 5} minutes`);
+            } else {
+              setEstimatedTotalTime('15-20 minutes');
             }
             
             // Add notification based on current status
-            if (data.status === 'PREP_IN_PROGRESS' || data.status === 'HEAT_UP') {
+            if (status === 'PREP_IN_PROGRESS' || status === 'HEAT_UP') {
               addNotification('Your hookah is being prepared!');
-            } else if (data.status === 'READY_FOR_DELIVERY' || data.status === 'OUT_FOR_DELIVERY') {
+              // Send browser notification (non-blocking)
+              if (typeof window !== 'undefined') {
+                import('../lib/notifications').then(({ notificationManager }) => {
+                  notificationManager.notifySessionStatusChange(sessionId, status).catch(err => {
+                    console.log('[HookahTracker] Notification failed:', err);
+                  });
+                });
+              }
+            } else if (status === 'READY_FOR_DELIVERY' || status === 'OUT_FOR_DELIVERY') {
               addNotification('Your hookah is ready and on its way!');
-            } else if (data.status === 'DELIVERED' || data.status === 'ACTIVE') {
+              if (typeof window !== 'undefined') {
+                import('../lib/notifications').then(({ notificationManager }) => {
+                  notificationManager.notifySessionStatusChange(sessionId, status).catch(err => {
+                    console.log('[HookahTracker] Notification failed:', err);
+                  });
+                });
+              }
+            } else if (status === 'DELIVERED' || status === 'ACTIVE') {
               addNotification('Enjoy your hookah session!');
+              if (typeof window !== 'undefined') {
+                import('../lib/notifications').then(({ notificationManager }) => {
+                  notificationManager.notifySessionStatusChange(sessionId, status).catch(err => {
+                    console.log('[HookahTracker] Notification failed:', err);
+                  });
+                });
+              }
+            }
+            
+            // Check for time warnings if session is active
+            if (status === 'ACTIVE' && session.timeRemaining !== undefined) {
+              const minutesRemaining = Math.floor(session.timeRemaining / 60);
+              if (minutesRemaining <= 5 && minutesRemaining > 0) {
+                if (typeof window !== 'undefined') {
+                  import('../lib/notifications').then(({ notificationManager }) => {
+                    notificationManager.notifyTimeWarning(sessionId, minutesRemaining).catch(err => {
+                      console.log('[HookahTracker] Time warning notification failed:', err);
+                    });
+                  });
+                }
+              }
             }
           } else {
-            // No real data, use demo
+            // No valid session data, use demo
+            console.warn('[HookahTracker] No valid session data in response, using demo');
             setUseDemo(true);
           }
         } else {
           // API error, use demo
-          console.warn('[HookahTracker] Failed to fetch session, using demo:', response.status);
+          const errorText = await response.text();
+          console.warn('[HookahTracker] Failed to fetch session, using demo:', response.status, errorText);
           setUseDemo(true);
         }
       } catch (error) {
@@ -200,14 +298,14 @@ export const HookahTracker: React.FC<HookahTrackerProps> = ({
 
     // Poll for updates every 5 seconds if we have real data
     let pollInterval: NodeJS.Timeout | null = null;
-    if (sessionId && sessionId !== 'session_demo' && !useDemo) {
+    if (sessionId && sessionId !== 'session_demo' && !sessionId.startsWith('demo_') && !useDemo) {
       pollInterval = setInterval(fetchSessionData, 5000);
     }
 
     return () => {
       if (pollInterval) clearInterval(pollInterval);
     };
-  }, [sessionId, useDemo]);
+  }, [sessionId]);
 
   // Demo mode: Simulate the tracking progression
   useEffect(() => {
