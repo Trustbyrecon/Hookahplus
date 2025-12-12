@@ -18,6 +18,7 @@ export interface NotificationOptions {
   requireInteraction?: boolean;
   actions?: NotificationAction[];
   data?: any;
+  vibrate?: number[];
 }
 
 export class NotificationManager {

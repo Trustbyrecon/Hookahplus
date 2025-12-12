@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../../lib/db";
 import { convertPrismaSessionToFireSession } from "../../../../lib/session-utils-prisma";
+import { SessionState } from "@prisma/client";
 
 // CORS headers helper
 function getCorsHeaders(req?: NextRequest) {
@@ -107,7 +108,7 @@ export async function GET(req: NextRequest) {
           OR: [
             sessionId ? { id: sessionId } : {},
             sessionId ? { externalRef: sessionId } : {},
-            tableId ? { tableId: tableId, state: { in: ['ACTIVE', 'PENDING', 'PAID_CONFIRMED', 'PREP_IN_PROGRESS', 'READY_FOR_DELIVERY', 'DELIVERED'] } } : {},
+            tableId ? { tableId: tableId, state: { in: [SessionState.ACTIVE, SessionState.PENDING, SessionState.PAUSED] } } : {},
           ].filter(condition => Object.keys(condition).length > 0),
         },
         select: {
