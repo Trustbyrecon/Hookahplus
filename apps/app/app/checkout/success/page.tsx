@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { CheckCircle, ArrowLeft } from 'lucide-react';
-import SessionConfirmation from '../../../components/SessionConfirmation';
+import { CheckCircle } from 'lucide-react';
 import GlobalNavigation from '../../../components/GlobalNavigation';
 
 function CheckoutSuccessContent() {
@@ -14,6 +13,7 @@ function CheckoutSuccessContent() {
     flavorMix?: string;
     amount?: number;
     demoSlug?: string;
+    loungeId?: string;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +55,8 @@ function CheckoutSuccessContent() {
             tableId: 'table-001',
             flavorMix: 'Demo Flavor Mix',
             amount: 3000, // $30.00 in cents
-            demoSlug: lounge || undefined, // Pass demo slug for QR code routing
+            demoSlug: lounge || undefined,
+            loungeId: 'demo-lounge',
           });
           setLoading(false);
           return;
@@ -148,6 +149,7 @@ function CheckoutSuccessContent() {
             tableId: stripeSession.metadata?.tableId,
             flavorMix: stripeSession.metadata?.flavorMix || stripeSession.metadata?.flavors,
             amount: stripeSession.amount_total,
+            loungeId: stripeSession.metadata?.loungeId,
           });
         }
       } catch (err) {
@@ -158,6 +160,7 @@ function CheckoutSuccessContent() {
           tableId: undefined,
           flavorMix: undefined,
           amount: undefined,
+          loungeId: undefined,
         });
       } finally {
         setLoading(false);
@@ -200,35 +203,72 @@ function CheckoutSuccessContent() {
     );
   }
 
+  // Redirect guests to hookah tracker after payment confirmation
+  useEffect(() => {
+    if (sessionId && sessionData) {
+      const guestTrackerUrl = process.env.NEXT_PUBLIC_GUEST_URL || 'https://guest.hookahplus.net';
+      const loungeId = sessionData.loungeId || 'default-lounge';
+      const tableId = sessionData.tableId || 'T-001';
+      
+      // Redirect to guest tracker for hookah tracking experience
+      const trackerUrl = `${guestTrackerUrl}/hookah-tracker?sessionId=${sessionId}&loungeId=${loungeId}&tableId=${tableId}`;
+      
+      console.log('[Checkout Success] ✅ Payment confirmed, redirecting guest to hookah tracker:', trackerUrl);
+      
+      // Small delay to show confirmation message before redirect
+      const redirectTimer = setTimeout(() => {
+        window.location.href = trackerUrl;
+      }, 2000);
+      
+      return () => clearTimeout(redirectTimer);
+    }
+  }, [sessionId, sessionData]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
       <GlobalNavigation />
       
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
-          <SessionConfirmation
-            sessionId={sessionId}
-            tableId={sessionData?.tableId}
-            flavorMix={sessionData?.flavorMix}
-            amount={sessionData?.amount}
-            demoSlug={sessionData?.demoSlug || (lounge ? lounge : undefined)}
-            isDemo={isDemoMode}
-          />
-
-          <div className="mt-6 flex gap-4 justify-center">
-            <a
-              href="/fire-session-dashboard"
-              className="inline-flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              View All Sessions
-            </a>
-            <a
-              href="/"
-              className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white px-6 py-3 rounded-lg transition-colors"
-            >
-              Return to Dashboard
-            </a>
+          <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-8 text-center">
+            <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-8 h-8 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2">Payment Confirmed!</h2>
+            <p className="text-zinc-400 mb-4">Your hookah session has been created successfully</p>
+            
+            {sessionData?.tableId && (
+              <p className="text-zinc-300 mb-6">
+                Table: <span className="font-semibold">{sessionData.tableId}</span>
+              </p>
+            )}
+            
+            <div className="space-y-4 mb-6">
+              <div className="flex items-center justify-between p-3 bg-zinc-900 rounded-lg">
+                <span className="text-zinc-300">Session ID:</span>
+                <span className="text-white font-mono text-sm">{sessionId}</span>
+              </div>
+              
+              {sessionData?.amount && (
+                <div className="flex items-center justify-between p-3 bg-zinc-900 rounded-lg">
+                  <span className="text-zinc-300">Amount Paid:</span>
+                  <span className="text-green-400 font-semibold">${(sessionData.amount / 100).toFixed(2)}</span>
+                </div>
+              )}
+            </div>
+            
+            <p className="text-teal-400 mb-4 animate-pulse">
+              Redirecting to hookah tracker...
+            </p>
+            
+            <div className="mt-6 flex gap-4 justify-center">
+              <a
+                href={`${process.env.NEXT_PUBLIC_GUEST_URL || 'https://guest.hookahplus.net'}/hookah-tracker?sessionId=${sessionId}&loungeId=${sessionData?.loungeId || 'default-lounge'}&tableId=${sessionData?.tableId || 'T-001'}`}
+                className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white px-6 py-3 rounded-lg transition-colors"
+              >
+                View Hookah Tracker
+              </a>
+            </div>
           </div>
         </div>
       </div>
