@@ -100,9 +100,9 @@ export class NotificationManager {
           ...options,
           icon: options.icon || '/icon-192x192.png',
           badge: options.badge || '/badge-72x72.png',
-          vibrate: [200, 100, 200],
+          vibrate: options.vibrate || [200, 100, 200],
           requireInteraction: options.requireInteraction ?? false,
-        });
+        } as any);
       } else {
         // Fallback to browser notification
         const notification = new Notification(title, {

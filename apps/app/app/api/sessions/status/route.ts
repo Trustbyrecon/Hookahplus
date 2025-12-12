@@ -230,7 +230,6 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       ok: true,
-      success: true,
       ...sessionData,
       session: sessionData, // Also include as 'session' for backward compatibility
     }, {
