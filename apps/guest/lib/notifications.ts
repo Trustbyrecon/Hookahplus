@@ -3,6 +3,12 @@
  * Handles browser notifications for session status updates
  */
 
+export interface NotificationAction {
+  action: string;
+  title: string;
+  icon?: string;
+}
+
 export interface NotificationOptions {
   title: string;
   body: string;
