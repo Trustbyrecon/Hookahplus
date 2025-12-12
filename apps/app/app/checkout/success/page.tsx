@@ -264,14 +264,14 @@ function CheckoutSuccessContent() {
             <p className="text-teal-400 mb-4 animate-pulse">
               Redirecting to hookah tracker...
             </p>
-            
-            <div className="mt-6 flex gap-4 justify-center">
-              <a
+
+          <div className="mt-6 flex gap-4 justify-center">
+            <a
                 href={`${process.env.NEXT_PUBLIC_GUEST_URL || 'https://guest.hookahplus.net'}/hookah-tracker?sessionId=${sessionId}&loungeId=${sessionData?.loungeId || 'default-lounge'}&tableId=${sessionData?.tableId || 'T-001'}${isDemoMode ? '&demo=true&mode=demo' : ''}`}
-                className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white px-6 py-3 rounded-lg transition-colors"
-              >
+              className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white px-6 py-3 rounded-lg transition-colors"
+            >
                 View Hookah Tracker
-              </a>
+            </a>
             </div>
           </div>
         </div>

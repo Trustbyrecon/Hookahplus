@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
           case 'CREATE_SESSION':
             // Replay session creation
             await prisma.session.create({
-              data: op.payload
+              data: op.payload as any // Type assertion needed as payload comes from sync backlog
             });
             break;
 

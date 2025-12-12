@@ -10,7 +10,7 @@ export interface NotificationAction {
 }
 
 export interface NotificationOptions {
-  title: string;
+  title?: string; // Optional since title is passed as separate parameter to sendNotification
   body: string;
   icon?: string;
   badge?: string;

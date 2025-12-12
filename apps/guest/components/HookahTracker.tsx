@@ -186,10 +186,10 @@ export const HookahTracker: React.FC<HookahTrackerProps> = ({
           response = await fetchWithRetry(
             `${appUrl}/api/sessions/${sessionId}`,
             {
-              method: 'GET',
-              headers: {
-                'Content-Type': 'application/json',
-              },
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
             },
             {
               maxRetries: 2,

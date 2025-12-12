@@ -149,10 +149,10 @@ export async function POST(req: Request) {
       // Ensure state is properly set to PENDING with paymentStatus 'succeeded' 
       // This will be mapped to PAID_CONFIRMED by the session utils
       const updateData: any = {
-        paymentStatus: session.payment_status === 'paid' ? 'succeeded' : session.payment_status,
-        paymentIntent: paymentIntentId,
-        priceCents: priceCents,
-        externalRef: externalRef, // Store Stripe checkout session ID
+          paymentStatus: session.payment_status === 'paid' ? 'succeeded' : session.payment_status,
+          paymentIntent: paymentIntentId,
+          priceCents: priceCents,
+          externalRef: externalRef, // Store Stripe checkout session ID
         updatedAt: new Date(),
       };
 

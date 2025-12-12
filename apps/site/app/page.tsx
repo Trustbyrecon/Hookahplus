@@ -41,7 +41,7 @@ export default function Home() {
 
       {/* ROI Calculator (for anchor links) */}
       <div id="roi-calculator">
-        <ROICalculator />
+      <ROICalculator />
       </div>
 
       {/* Proof & Social Signals */}

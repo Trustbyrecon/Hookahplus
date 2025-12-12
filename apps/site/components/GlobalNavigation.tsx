@@ -16,7 +16,8 @@ import {
   ChevronDown,
   Calendar,
   TrendingUp,
-  DollarSign
+  DollarSign,
+  Briefcase
 } from 'lucide-react';
 import Button from './Button';
 import { trackDemoRequest } from '../lib/ctaTracking';
@@ -49,6 +50,7 @@ const resultsDropdown: Dropdown = {
   items: [
     { label: 'Case Study', href: '/results/case-study', icon: <FileText className="w-4 h-4" /> },
     { label: 'ROI Calculator', href: '/#roi-calculator', icon: <TrendingUp className="w-4 h-4" /> },
+    { label: 'Investor Overview', href: '/investors', icon: <Briefcase className="w-4 h-4" /> },
   ],
 };
 
@@ -102,23 +104,23 @@ const GlobalNavigation: React.FC = () => {
                   {productDropdown.items.map((item) => (
                     <Link
                       key={item.href}
-                      href={item.href}
+                          href={item.href}
                       onClick={() => setActiveDropdown(null)}
-                      className={cn(
+                          className={cn(
                         'flex items-center space-x-2 px-4 py-2 text-sm transition-colors',
                         isActive(item.href)
                           ? 'bg-teal-500/20 text-teal-400'
                           : 'text-zinc-300 hover:bg-zinc-800 hover:text-white'
-                      )}
-                    >
-                      {item.icon}
-                      <span>{item.label}</span>
+                          )}
+                        >
+                          {item.icon}
+                          <span>{item.label}</span>
                     </Link>
                   ))}
-                </div>
-              )}
-            </div>
-
+                              </div>
+                            )}
+                          </div>
+            
             {/* Results Dropdown */}
             <div className="relative">
               <button
@@ -251,7 +253,7 @@ const GlobalNavigation: React.FC = () => {
                 ))}
               </div>
             </div>
-
+          
             {/* Results Section */}
             <div>
               <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
@@ -308,13 +310,13 @@ const GlobalNavigation: React.FC = () => {
               <Link
                 href="/support"
                 onClick={() => setMobileMenuOpen(false)}
-                className={cn(
-                  'flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
+              className={cn(
+                'flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
                   isActive('/support')
                     ? 'bg-teal-500/20 text-teal-400'
-                    : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
-                )}
-              >
+                  : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
+              )}
+            >
                 <HelpCircle className="w-4 h-4" />
                 <span>Support</span>
               </Link>
