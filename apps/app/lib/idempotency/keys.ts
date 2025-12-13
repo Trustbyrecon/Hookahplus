@@ -146,7 +146,9 @@ export function cleanupIdempotencyCache(): number {
   const now = Date.now();
   let cleaned = 0;
 
-  for (const [key, value] of idempotencyCache.entries()) {
+  // Convert iterator to array for ES5 compatibility
+  const entries = Array.from(idempotencyCache.entries());
+  for (const [key, value] of entries) {
     if (value.expiresAt <= now) {
       idempotencyCache.delete(key);
       cleaned++;
