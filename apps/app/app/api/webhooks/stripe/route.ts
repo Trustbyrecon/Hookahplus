@@ -158,9 +158,9 @@ export async function POST(req: Request) {
 
       // Only update state if payment succeeded and session is not already in a later state
       if (session.payment_status === 'paid') {
-        // Check current state - only update if it's NEW or PENDING
+        // Check current state - only update if it's PENDING or null/undefined (new session)
         const currentState = existingSession.state;
-        if (currentState === SessionState.PENDING || currentState === SessionState.NEW || !currentState) {
+        if (currentState === SessionState.PENDING || !currentState) {
           updateData.state = SessionState.PENDING; // Will be mapped to PAID_CONFIRMED by session utils
         }
         // If already in a later state (e.g., ACTIVE), don't downgrade it
