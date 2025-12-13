@@ -43,3 +43,14 @@ Drive city-cluster adoption (network > single operator). Seed consumer pull.
 3. Build leaderboard mini-site
 4. Generate QR/signage packs
 5. Set up installer/reseller channels
+
+---
+
+## Content Operations (EchoPrime Integration)
+
+**Note:** Social media content operations are handled by EchoPrime (growth_agent). See `docs/CONTENT_OPS_MONTHLY_LOOP_V1.md` for the complete content operations playbook.
+
+**Coordination:** EP.Growth works with EchoPrime on:
+- City-specific content for launch markets
+- Venue signage that aligns with social content
+- Leaderboard content that supports social momentum

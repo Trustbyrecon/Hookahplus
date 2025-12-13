@@ -53,6 +53,7 @@ x-venue-id: venue_001
 |------|-------|-------|
 | Award badges, track progress | Aliethia.Identity | — |
 | City rollout, signage, leaderboards | EP.Growth | Approve venues & offers |
+| Social media content ops, content marketing | EchoPrime (growth_agent) | Approve brand voice, hero films |
 | Stealth/risk monitoring | Sentinel.POS | Decide partner vs stealth |
 | Exports/deletions | Care.DPO | Approve edge cases |
 | Consent copy, retention changes | — | DPO/legal approval |

@@ -36,6 +36,13 @@ Drive awareness and conversions for an intelligent operational management platfo
    - Video script for 60-second explainer video
    - Carousel ad designs showing before/after workflow comparisons
    - Instagram Reels/TikTok concept: "Day in the life of a modern lounge manager"
+   - **Instagram Lead Automation Setup (EchoPrime Scope):**
+     - ManyChat/Instagram integration configuration
+     - Automated lead capture from Instagram comments, DMs, and story replies
+     - Keyword-triggered qualification flows (DEMO, HOOKAH, HOOKAHPLUS)
+     - Automated demo link delivery via Instagram DMs
+     - Lead qualification automation keeping all engagement on-platform for algorithm favorability
+     - Integration with operator onboarding system for seamless lead handoff
 
 3. **Email Marketing Sequence (5-email drip)**
    - Subject lines optimized for open rates
@@ -56,6 +63,18 @@ Drive awareness and conversions for an intelligent operational management platfo
    - Emphasize: "40% reduction in management friction" and "See it in action - Get the Demo"
    - Time-sensitive offers and urgency messaging
    - Behavioral triggers: "You viewed our dashboard - Here's what you're missing"
+
+6. **Instagram Lead Automation & ManyChat Integration (EchoPrime Scope)**
+   - ManyChat account setup and Instagram Business Account connection
+   - Webhook configuration for automated lead capture from Instagram interactions
+   - Instagram trigger setup (comment keywords: DEMO, HOOKAH, HOOKAHPLUS, LOUNGE)
+   - DM keyword triggers and story reply automation
+   - Qualification flow creation in ManyChat with multi-step lead qualification
+   - Automated demo link generation and delivery via Instagram DMs
+   - Lead tagging and segmentation (Operator, Future Owner, Curious) for follow-up campaigns
+   - Integration with operator onboarding dashboard for seamless lead handoff
+   - All interactions designed to stay on Instagram for algorithm favorability
+   - Smart delay follow-ups and re-engagement automation
 
 **Tone & Messaging Guidelines:**
 - Professional yet approachable
@@ -126,4 +145,24 @@ Generate campaign assets with clear, action-oriented language that speaks direct
 3. **Control**: "Master your lounge operations"
 4. **Automation**: "Streamline complex workflows"
 5. **Results**: "Increase revenue and optimize performance"
+6. **Instagram-Native Engagement**: "Capture leads where they engage - all interactions stay on-platform for algorithm optimization"
+
+## EchoPrime Scope: Instagram Lead Automation
+
+**Technical Implementation:**
+- ManyChat account setup and Instagram Business Account connection
+- Webhook configuration (`/api/webhooks/manychat`) for automated lead capture
+- Instagram trigger setup (comment keywords, DM keywords, story replies)
+- Qualification flow creation in ManyChat with conditional logic
+- Automated demo link generation and delivery via Instagram DMs
+- Lead tagging and segmentation for follow-up campaigns
+- Integration with operator onboarding dashboard (`/admin/operator-onboarding`)
+- All interactions designed to stay on Instagram for algorithm favorability
+
+**Key Features:**
+- Keyword-triggered automation (DEMO, HOOKAH, HOOKAHPLUS, LOUNGE)
+- Multi-step qualification keeping users engaged on Instagram
+- Smart delay follow-ups (1-2 hour re-engagement)
+- Automated demo link delivery without leaving Instagram
+- Lead data sync to operator onboarding system
 

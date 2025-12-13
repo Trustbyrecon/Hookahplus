@@ -11,7 +11,7 @@
 | **Noor (session_agent)** | Session Lifecycle | Session management, Reflex Ops flow validation | 0% (dormant) → P0 Activate |
 | **Lumi (pricing_agent)** | Revenue Optimization | Dynamic pricing, revenue reporting, pricing tiers | ⏳ Needs validation |
 | **Jules (loyalty_agent)** | Customer Retention | Loyalty program, retention tracking, tier progression | ⏳ Needs validation |
-| **EchoPrime (growth_agent)** | Customer Acquisition | Analytics, conversion tracking, operational metrics | ✅ Framework complete |
+| **EchoPrime (growth_agent)** | Customer Acquisition | Analytics, conversion tracking, operational metrics, social media content ops | ✅ Framework complete |
 | **Aliethia (reflex_agent)** | Reflex Chain | Reflex Chain validation, trust scoring, POS/Loyalty sync | ✅ 100% complete |
 | **database_agent** | Database Performance | RLS optimization, connection pooling, performance | ✅ 95% complete |
 | **deployment_agent** | Production Deployment | Vercel config, environment variables, deployment | ⚠️ 45% (escalated) |
@@ -132,17 +132,27 @@
   - [ ] Session creation sources
   - [ ] Extension rates
   - [ ] Revenue by source
+- [ ] **Social Media Content Operations**
+  - [ ] Execute weekly content cadence (5 posts/week: Mon, Tue, Thu, Fri, Sat)
+  - [ ] Generate Operator POV series (20-30s clips)
+  - [ ] Track content KPIs (save rate, operator comments, partner inquiries)
+  - [ ] Maintain Trust Triad filter (staff ease, owner confidence, customer vibe)
+  - [ ] Follow monthly workflow (Week 1: Identity, Week 2: Pain to relief, Week 3: Feature trust, Week 4: Launch runway)
 
 ### Files to Work With
 - Analytics implementation
 - Conversion tracking
 - `apps/app/components/AnalyticsScript.tsx`
 - Analytics dashboard (to be created)
+- `docs/CONTENT_OPS_MONTHLY_LOOP_V1.md` - Content operations playbook
 
 ### Success Criteria
 - ✅ Conversion tracking shows 15%+ rate
 - ✅ Analytics dashboard functional
 - ✅ Operational metrics tracked
+- ✅ Weekly content cadence maintained (5 posts/week)
+- ✅ At least 1 operator-comment per week
+- ✅ At least 1 partner inquiry per month
 
 ---
 
