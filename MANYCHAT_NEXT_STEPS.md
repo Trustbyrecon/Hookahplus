@@ -29,24 +29,110 @@ NEXT_PUBLIC_CALENDLY_URL=https://calendly.com/your-username/your-event-type
 
 ---
 
-## 📱 Step 2: Configure ManyChat Webhook
+## 📱 Step 2: Set Up External Request Actions in Automations
 
-**Go to:** https://manychat.com → Dashboard → Settings → Integrations → Webhooks
+**⚠️ Important:** ManyChat uses External Request actions within automations (not a global webhook config). This feature requires a paid plan (Pro starts at $15/month).
 
-**⚠️ Important:** This is NOT the "Public API" section. Webhooks are configured separately.
+**For each trigger type, you'll create an automation with an External Request action:**
 
-**Click "Add Webhook" or "Create Webhook" and enter:**
+### A. Comment Trigger Automation
 
-- **Webhook URL:** `https://app.hookahplus.net/api/webhooks/manychat`
-- **Verify Token:** `hookahplus_manychat_verify` (or the token you generated)
-- **Secret:** `<paste the MANYCHAT_WEBHOOK_SECRET from your terminal>`
-- **Events to Subscribe:** Select all of these:
-  - ✅ `message` (DMs)
-  - ✅ `comment` (Post/Reel comments)
-  - ✅ `story_reply` (Story replies)
-  - ✅ `flow_started` (User enters automation)
+1. Go to **Automation** → **Instagram** → **Comments**
+2. Create new automation
+3. **Trigger Settings:**
+   - **Post/Reel**: "Any post" (or specific posts)
+   - **Keywords**: `DEMO`, `HOOKAH`, `HOOKAHPLUS`, `LOUNGE`
+4. **Add Action: External Request**
+   - **Method**: POST
+   - **URL**: `https://app.hookahplus.net/api/webhooks/manychat`
+   - **Headers**: 
+     ```
+     Content-Type: application/json
+     ```
+   - **Body (JSON)**:
+     ```json
+     {
+       "event_type": "comment",
+       "user": {
+         "id": "{{subscriber_id}}",
+         "instagram_username": "{{instagram_username}}",
+         "name": "{{first_name}} {{last_name}}",
+         "email": "{{email}}",
+         "tags": {{tags}},
+         "custom_fields": {
+           "business_name": "{{custom_field.business_name}}",
+           "order_method": "{{custom_field.order_method}}"
+         }
+       },
+       "comment": {
+         "text": "{{comment_text}}"
+       }
+     }
+     ```
+5. **Then add:** Send to Flow → **"Hot IG Lead – Operator Demo"**
 
-**Test:** ManyChat will automatically send a GET request to verify the webhook. Check your Vercel logs to confirm it succeeded.
+### B. DM Keyword Trigger Automation
+
+1. Go to **Automation** → **Instagram** → **Keywords**
+2. Create new automation
+3. **Trigger Settings:**
+   - **Keywords**: `DEMO`, `HOOKAHPLUS`, `DASHBOARD`
+4. **Add Action: External Request**
+   - Same configuration as above, but use:
+     ```json
+     {
+       "event_type": "message",
+       "user": {
+         "id": "{{subscriber_id}}",
+         "instagram_username": "{{instagram_username}}",
+         "name": "{{first_name}} {{last_name}}",
+         "email": "{{email}}",
+         "tags": {{tags}},
+         "custom_fields": {
+           "business_name": "{{custom_field.business_name}}",
+           "order_method": "{{custom_field.order_method}}"
+         }
+       },
+       "message": {
+         "text": "{{message_text}}"
+       }
+     }
+     ```
+5. **Then:** Send to Flow → **"Hot IG Lead – Operator Demo"**
+
+### C. Story Reply Trigger Automation
+
+1. Go to **Automation** → **Instagram** → **Story Reply**
+2. Create new automation
+3. **Trigger Settings:**
+   - **Story**: "Any Story"
+4. **Add Action: External Request**
+   - Same configuration, but use:
+     ```json
+     {
+       "event_type": "story_reply",
+       "user": {
+         "id": "{{subscriber_id}}",
+         "instagram_username": "{{instagram_username}}",
+         "name": "{{first_name}} {{last_name}}",
+         "email": "{{email}}",
+         "tags": {{tags}},
+         "custom_fields": {
+           "business_name": "{{custom_field.business_name}}",
+           "order_method": "{{custom_field.order_method}}"
+         }
+       },
+       "story_reply": {
+         "text": "{{story_reply_text}}"
+       }
+     }
+     ```
+5. **Then:** Send to Flow → **"Hot IG Lead – Operator Demo"**
+
+**Important Notes:**
+- ✅ External Request must come BEFORE "Send to Flow" so webhook fires first
+- ✅ Use ManyChat variables like `{{subscriber_id}}`, `{{instagram_username}}`, `{{tags}}`
+- ✅ Test each automation after setup
 
 ---
 
@@ -67,6 +153,8 @@ NEXT_PUBLIC_CALENDLY_URL=https://calendly.com/your-username/your-event-type
 
 ## 🔔 Step 4: Set Up Instagram Triggers
 
+**Note:** The External Request actions are already configured in Step 2. This step is for reference on trigger settings.
+
 ### A. Comment Trigger (Keywords in Comments)
 
 **Go to:** Automation → Instagram → Comments
@@ -74,7 +162,7 @@ NEXT_PUBLIC_CALENDLY_URL=https://calendly.com/your-username/your-event-type
 **Create new automation:**
 - **Post/Reel:** Select "Any post" (or specific posts)
 - **Keywords:** `DEMO`, `HOOKAH`, `HOOKAHPLUS`, `LOUNGE`
-- **Action:** Send to Flow → **"Hot IG Lead – Operator Demo"** (you'll create this in Step 5)
+- **Action:** External Request (configured in Step 2) → Then Send to Flow → **"Hot IG Lead – Operator Demo"**
 
 ### B. DM Keyword Trigger
 
@@ -82,7 +170,7 @@ NEXT_PUBLIC_CALENDLY_URL=https://calendly.com/your-username/your-event-type
 
 **Create new automation:**
 - **Keywords:** `DEMO`, `HOOKAHPLUS`, `DASHBOARD`
-- **Action:** Send to Flow → **"Hot IG Lead – Operator Demo"**
+- **Action:** External Request (configured in Step 2) → Then Send to Flow → **"Hot IG Lead – Operator Demo"**
 
 ### C. Story Reply Trigger
 
@@ -90,7 +178,7 @@ NEXT_PUBLIC_CALENDLY_URL=https://calendly.com/your-username/your-event-type
 
 **Create new automation:**
 - **Story:** "Any Story" (or specific stories)
-- **Action:** Send to Flow → **"Hot IG Lead – Operator Demo"**
+- **Action:** External Request (configured in Step 2) → Then Send to Flow → **"Hot IG Lead – Operator Demo"**
 
 ---
 
@@ -227,7 +315,7 @@ curl "https://app.hookahplus.net/api/webhooks/manychat?hub.mode=subscribe&hub.ve
 ## 🎉 Success Criteria
 
 You're all set when:
-- ✅ Webhook verified in ManyChat
+- ✅ External Request actions configured in all automations
 - ✅ Instagram connected and triggers active
 - ✅ Flow created and linked to triggers
 - ✅ API request configured and tested
@@ -239,10 +327,11 @@ You're all set when:
 ## 🆘 Troubleshooting
 
 ### Webhook Not Receiving Events
-- Check webhook URL is correct in ManyChat
-- Verify webhook secret matches
+- Check External Request URL is correct: `https://app.hookahplus.net/api/webhooks/manychat`
+- Verify External Request is configured BEFORE "Send to Flow" action
 - Check Vercel server logs for errors
 - Ensure Instagram is connected to ManyChat
+- Verify you're on a paid ManyChat plan (External Request requires Pro+)
 
 ### Leads Not Creating
 - Check webhook logs for errors

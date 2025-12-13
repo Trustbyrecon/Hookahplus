@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
           case 'ADD_NOTE':
             // Replay note addition
             await prisma.sessionNote.create({
-              data: op.payload
+              data: op.payload as any // Type assertion needed as payload comes from sync backlog
             });
             break;
 
