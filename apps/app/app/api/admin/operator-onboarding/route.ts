@@ -100,13 +100,22 @@ async function createREMCompliantOnboardingEvent(
  * Only accessible to ADMIN role
  */
 export async function GET(req: NextRequest) {
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:102',message:'GET /api/admin/operator-onboarding entry',data:{hasDatabaseUrl:!!process.env.DATABASE_URL,dbUrlPrefix:process.env.DATABASE_URL?.substring(0,20)||'NOT_SET',nodeEnv:process.env.NODE_ENV},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+  // #endregion
   try {
     // Test database connection first
     try {
       await prisma.$connect();
       console.log('[Operator Onboarding API] Database connection successful');
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:107',message:'Database connection successful',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
     } catch (dbError) {
       console.error('[Operator Onboarding API] Database connection failed:', dbError);
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:110',message:'Database connection failed',data:{error:dbError instanceof Error?dbError.message:'Unknown',code:(dbError as any)?.code},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
       return NextResponse.json({ 
         success: false,
         error: 'Database connection failed',
@@ -138,6 +147,10 @@ export async function GET(req: NextRequest) {
     const source = searchParams.get('source');
     const ctaSource = searchParams.get('ctaSource'); // Filter by CTA source
 
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:136',message:'Query parameters',data:{stage,source,ctaSource,nodeEnv:process.env.NODE_ENV},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
+
     // Query ReflexEvent for onboarding-related events including CTAs
     // Exclude audit events (admin.operator_onboarding.update) to prevent duplicates
     const andConditions: any[] = [
@@ -164,6 +177,9 @@ export async function GET(req: NextRequest) {
         }
       }
     ];
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:166',message:'Query conditions built',data:{andConditionsCount:andConditions.length,orConditionsCount:andConditions[0]?.OR?.length||0},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
 
     // Multi-tenant filter in production only (or when tenantId is available)
     // In dev mode, show all leads regardless of tenantId to help with debugging
@@ -171,10 +187,16 @@ export async function GET(req: NextRequest) {
       andConditions.push({
         tenantId: tenantId
       });
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:170',message:'Tenant filter added',data:{tenantId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
     } else {
       // In dev mode, include leads with null tenantId OR any tenantId
       // This ensures we don't miss leads that were created before tenantId was set
       console.log('[Operator Onboarding API] DEV mode - showing all leads (no tenantId filter)');
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:177',message:'No tenant filter (dev mode)',data:{tenantId,nodeEnv:process.env.NODE_ENV},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
     }
 
     const whereClause: any = {
@@ -192,6 +214,9 @@ export async function GET(req: NextRequest) {
 
     let events;
     try {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:194',message:'Before query execution',data:{whereClause:JSON.stringify(whereClause).substring(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
       // Query events - exclude trustEventTypeV1 which may not be migrated yet
       events = await prisma.reflexEvent.findMany({
         where: whereClause,
@@ -219,6 +244,10 @@ export async function GET(req: NextRequest) {
         },
       });
       console.log(`[Operator Onboarding API] Found ${events.length} events`);
+      // #region agent log
+      const eventTypes = [...new Set(events.map(e=>e.type))];
+      fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:221',message:'After query execution',data:{eventCount:events.length,eventTypes,hasPayload:events.filter(e=>e.payload).length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
     } catch (queryError: any) {
       console.error('[Operator Onboarding API] Query error:', queryError);
       // Check if it's a table doesn't exist error

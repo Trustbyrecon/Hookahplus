@@ -38,6 +38,9 @@ export async function GET(req: NextRequest) {
     console.log('[Operator Onboarding Debug] DEV mode - skipping auth and tenant checks');
   }
 
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'debug/route.ts:12',message:'Debug endpoint entry',data:{hasDatabaseUrl:!!process.env.DATABASE_URL,dbUrlPrefix:process.env.DATABASE_URL?.substring(0,20)||'NOT_SET',nodeEnv:process.env.NODE_ENV},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+  // #endregion
   try {
     // Test database connection by attempting a simple query
     // Use findFirst instead of $queryRaw to avoid prepared statement issues with poolers
@@ -45,6 +48,9 @@ export async function GET(req: NextRequest) {
     try {
       await prisma.reflexEvent.findFirst({ take: 1 });
       console.log('[Operator Onboarding Debug] Database connection successful');
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'debug/route.ts:46',message:'Database connection test successful',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
     } catch (dbError: any) {
       console.error('[Operator Onboarding Debug] Database connection test failed:', {
         message: dbError?.message,
@@ -77,6 +83,9 @@ export async function GET(req: NextRequest) {
         };
       }
 
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'debug/route.ts:80',message:'Before debug query',data:{whereClause:JSON.stringify(whereClause).substring(0,200),limit},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+      // #endregion
       events = await prisma.reflexEvent.findMany({
         where: whereClause,
         orderBy: {
@@ -98,6 +107,11 @@ export async function GET(req: NextRequest) {
       });
       
       console.log(`[Operator Onboarding Debug] Found ${events.length} total events`);
+      // #region agent log
+      const allEventTypes = [...new Set(events.map(e=>e.type))];
+      const allSources = [...new Set(events.map(e=>e.source).filter(Boolean))];
+      fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'debug/route.ts:100',message:'After debug query',data:{eventCount:events.length,eventTypes:allEventTypes,eventTypesCount:allEventTypes.length,sources:allSources,hasPayload:events.filter(e=>e.payload).length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+      // #endregion
     } catch (queryError: any) {
       console.error('[Operator Onboarding Debug] Query error:', {
         message: queryError?.message,
@@ -136,8 +150,16 @@ export async function GET(req: NextRequest) {
       let payload: any = {};
       try {
         payload = event.payload ? JSON.parse(event.payload) : {};
+        // #region agent log
+        if(events.indexOf(event) < 5) { // Log first 5 for payload structure
+          fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'debug/route.ts:138',message:'Payload parsed',data:{eventId:event.id,eventType:event.type,payloadKeys:Object.keys(payload),hasBehavior:!!payload.behavior,hasLead:!!payload.lead},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+        }
+        // #endregion
       } catch (e) {
         console.warn(`[Operator Onboarding Debug] Failed to parse payload for event ${event.id}`);
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'debug/route.ts:141',message:'Payload parse failed',data:{eventId:event.id,eventType:event.type,error:e instanceof Error?e.message:'Unknown'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+        // #endregion
       }
 
       // Extract lead information from various payload formats
