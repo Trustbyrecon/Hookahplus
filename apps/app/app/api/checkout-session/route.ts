@@ -1,11 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
+// Initialize Stripe instance - will be validated in demo mode
 const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, {
       apiVersion: '2025-08-27.basil' as any,
     })
   : null;
+
+// Helper to get test Stripe instance for demo mode
+function getTestStripeInstance(): Stripe | null {
+  // Priority: STRIPE_TEST_SECRET_KEY (demo-specific) > STRIPE_SECRET_KEY (if test) > null
+  const demoTestKey = process.env.STRIPE_TEST_SECRET_KEY;
+  const mainKey = process.env.STRIPE_SECRET_KEY;
+  
+  // Use demo-specific test key if available
+  if (demoTestKey && demoTestKey.startsWith('sk_test_')) {
+    console.log('[Checkout API] ✅ Using STRIPE_TEST_SECRET_KEY for demo mode');
+    return new Stripe(demoTestKey, {
+      apiVersion: '2025-08-27.basil' as any,
+    });
+  }
+  
+  // Fallback to main key if it's a test key
+  if (mainKey && mainKey.startsWith('sk_test_')) {
+    console.log('[Checkout API] ✅ Using STRIPE_SECRET_KEY (test key) for demo mode');
+    return new Stripe(mainKey, {
+      apiVersion: '2025-08-27.basil' as any,
+    });
+  }
+  
+  // If main key is live, reject it for demo mode
+  if (mainKey && mainKey.startsWith('sk_live_')) {
+    console.error('[Checkout API] ❌ Demo mode requires test Stripe keys (sk_test_...). Live keys (sk_live_...) are not allowed.');
+    return null;
+  }
+  
+  // No key configured
+  return null;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,40 +67,28 @@ export async function POST(request: NextRequest) {
       console.log('[Checkout API] 🎭 Demo Mode: Routing through Stripe test workflow');
       
       // SECURITY: In demo mode, ensure we're using test keys only
-      const isTestMode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_') ?? false;
-      if (stripe && !isTestMode) {
+      const testStripe = getTestStripeInstance();
+      if (!testStripe) {
         console.error('[Checkout API] ❌ Demo mode requires test Stripe keys (sk_test_...)');
+        const currentKey = process.env.STRIPE_SECRET_KEY?.substring(0, 10) || 'not set';
         return NextResponse.json({
           success: false,
           error: 'Demo mode requires Stripe test keys',
-          details: 'STRIPE_SECRET_KEY must start with sk_test_ for demo mode. Live keys (sk_live_...) are not allowed in demo.',
-          hint: 'Update STRIPE_SECRET_KEY to a test key (sk_test_...) in your environment variables'
+          details: `STRIPE_SECRET_KEY must start with sk_test_ for demo mode. Current key starts with: ${currentKey}`,
+          hint: 'Update STRIPE_SECRET_KEY to a test key (sk_test_...) in your environment variables. Live keys (sk_live_...) are not allowed in demo mode.',
+          fallback: 'Using simulated payment mode instead'
         }, { status: 400 });
       }
       
-      // In demo mode, create a Stripe test checkout session
-      // This allows users to experience the full payment flow with test cards
-      if (!stripe) {
-        // If Stripe not configured, return demo confirmation
-        return NextResponse.json({
-          success: true,
-          demo: true,
-          sessionId: sessionId,
-          paymentIntent: 'demo_payment_intent_' + Date.now(),
-          clientSecret: null,
-          message: 'Demo payment confirmed - no real charges',
-          checkoutUrl: null,
-          redirectUrl: `/fire-session-dashboard?mode=demo&session=${sessionId}&payment=confirmed`
-        });
-      }
-      
-      // Create Stripe test checkout session for demo
-      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+      // Create Stripe test checkout session for demo using test instance
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3002';
       const successUrl = `${baseUrl}/checkout/success?session_id=${sessionId}&mode=demo`;
       const cancelUrl = `${baseUrl}/checkout/cancel?session_id=${sessionId}&mode=demo`;
       
       try {
-        const session = await stripe.checkout.sessions.create({
+        console.log('[Checkout API] 🎭 Creating Stripe TEST checkout session for demo mode');
+        console.log('[Checkout API] ✅ Using test Stripe keys - checkout will be in sandbox/test mode');
+        const session = await testStripe.checkout.sessions.create({
           mode: 'payment',
           payment_method_types: ['card'],
           line_items: [

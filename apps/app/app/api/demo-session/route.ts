@@ -16,6 +16,38 @@ const prisma = new PrismaClient();
 const seal = (o: unknown) =>
   crypto.createHash("sha256").update(JSON.stringify(o)).digest("hex");
 
+// Helper to get test Stripe instance for demo mode (always uses test keys)
+function getTestStripeInstance(): Stripe | null {
+  // Priority: STRIPE_TEST_SECRET_KEY (demo-specific) > STRIPE_SECRET_KEY (if test) > null
+  const demoTestKey = process.env.STRIPE_TEST_SECRET_KEY;
+  const mainKey = process.env.STRIPE_SECRET_KEY;
+  
+  // Use demo-specific test key if available
+  if (demoTestKey && demoTestKey.startsWith('sk_test_')) {
+    console.log('[Demo Session] ✅ Using STRIPE_TEST_SECRET_KEY for demo mode');
+    return new Stripe(demoTestKey, {
+      apiVersion: '2025-08-27.basil' as any,
+    });
+  }
+  
+  // Fallback to main key if it's a test key
+  if (mainKey && mainKey.startsWith('sk_test_')) {
+    console.log('[Demo Session] ✅ Using STRIPE_SECRET_KEY (test key) for demo mode');
+    return new Stripe(mainKey, {
+      apiVersion: '2025-08-27.basil' as any,
+    });
+  }
+  
+  // If main key is live, reject it for demo mode
+  if (mainKey && mainKey.startsWith('sk_live_')) {
+    console.warn('[Demo Session] ⚠️ STRIPE_SECRET_KEY is a live key. Demo mode requires sk_test_ keys.');
+    return null;
+  }
+  
+  // No key configured
+  return null;
+}
+
 const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, {
       apiVersion: '2025-08-27.basil' as any,
@@ -27,7 +59,9 @@ const stripeWebhookConfigured =
   process.env.STRIPE_WEBHOOK_SECRET !== 'whsec_placeholder';
 
 function isStripeReady(): boolean {
-  return !!stripe && stripeWebhookConfigured;
+  // For demo mode, only consider Stripe ready if we have test keys
+  const testStripe = getTestStripeInstance();
+  return !!testStripe && stripeWebhookConfigured;
 }
 
 function resolveDemoMode(
@@ -57,17 +91,14 @@ async function createStripeTestSession(
   payload: DemoSessionRequest,
   sessionId: string
 ): Promise<string> {
-  if (!stripe) {
-    throw new Error('Stripe not configured on server');
-  }
-  
-  // SECURITY: Demo mode requires test keys only
-  const isTestMode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_') ?? false;
-  if (!isTestMode) {
-    throw new Error('Demo mode requires Stripe test keys (sk_test_...). Live keys (sk_live_...) are not allowed in demo.');
+  // SECURITY: Demo mode requires test keys only - get test instance
+  const testStripe = getTestStripeInstance();
+  if (!testStripe) {
+    const currentKey = process.env.STRIPE_SECRET_KEY?.substring(0, 10) || 'not set';
+    throw new Error(`Demo mode requires Stripe test keys (sk_test_...). Current key starts with: ${currentKey}. Live keys (sk_live_...) are not allowed in demo.`);
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3002';
   const successUrl = `${baseUrl}/checkout/success?session_id=${sessionId}&mode=demo&source=${payload.source || 'onboarding'}`;
   const cancelUrl = `${baseUrl}/checkout/cancel?session_id=${sessionId}&mode=demo&source=${payload.source || 'onboarding'}`;
 
@@ -75,7 +106,8 @@ async function createStripeTestSession(
   const flavors = sessionData.flavorMix || ['Custom Mix'];
   const amount = sessionData.amount ? Math.round(sessionData.amount * 100) : 3000;
 
-  const session = await stripe.checkout.sessions.create({
+  console.log('[Demo Session] 🎭 Creating Stripe TEST checkout session with test keys');
+  const session = await testStripe.checkout.sessions.create({
     mode: 'payment',
     payment_method_types: ['card'],
     line_items: [

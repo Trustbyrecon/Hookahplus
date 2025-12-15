@@ -361,7 +361,7 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
             total: totalAmountDollars, // Total in dollars for display
             sessionDuration: formData.timerDuration * 60,
             loungeId: 'default-lounge', // Default lounge ID
-            isDemo: false // Explicitly set to false for non-demo sessions
+            isDemo: isDemoMode // Pass demo mode flag to ensure test keys are used
           })
         });
         

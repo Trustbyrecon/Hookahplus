@@ -42,9 +42,12 @@ apps/*/.env.*
 *.key
 
 # Stripe Keys & Secrets (PROTECTED)
-# Never commit live Stripe keys!
+# Never commit live OR test Stripe keys!
+# CRITICAL: All Stripe keys are protected - test and live keys
 *sk_live_*
+*sk_test_*
 *pk_live_*
+*pk_test_*
 *whsec_*
 *stripe*.key
 *stripe*.secret
@@ -56,6 +59,14 @@ apps/*/.env.*
 *STRIPE_KEY*.md
 *STRIPE_KEY*.txt
 STRIPE_KEY_ADDED.md
+# Environment variables containing Stripe keys
+*STRIPE_SECRET_KEY*
+*STRIPE_TEST_SECRET_KEY*
+*STRIPE_PUBLISHABLE_KEY*
+*STRIPE_WEBHOOK_SECRET*
+# Additional protection: Any file containing Stripe key patterns
+*/*stripe*key*
+*/*STRIPE*KEY*
 
 # Local Netlify folder
 .netlify
