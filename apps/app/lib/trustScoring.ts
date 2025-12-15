@@ -167,23 +167,40 @@ function generateRecommendations(factors: TrustScoreFactors, tier: string): stri
 export function calculateSingleSessionTrustScore(session: FireSession): number {
   let score = 50; // Base score
 
-  // Session completion bonus
-  if (session.status === 'CLOSED' || session.status === 'ACTIVE') {
-    score += 20;
-  }
-
   // Payment success bonus
   if (session.amount > 0) {
     score += 15;
   }
 
-  // Session duration bonus
-  if (session.sessionDuration > 30 * 60) { // 30 minutes
-    score += 10;
+  // Workflow progress bonuses (incremental as session progresses)
+  if (session.status === 'PAID_CONFIRMED') {
+    score += 5; // Payment confirmed
+  } else if (session.status === 'PREP_IN_PROGRESS') {
+    score += 10; // BOH claimed prep
+  } else if (session.status === 'HEAT_UP') {
+    score += 15; // Coals heating
+  } else if (session.status === 'READY_FOR_DELIVERY') {
+    score += 20; // Ready for delivery
+  } else if (session.status === 'OUT_FOR_DELIVERY') {
+    score += 25; // Out for delivery
+  } else if (session.status === 'DELIVERED') {
+    score += 30; // Delivered to table
+  } else if (session.status === 'ACTIVE') {
+    score += 35; // Session active
+  } else if (session.status === 'CLOSED') {
+    score += 40; // Session completed
   }
 
-  // Staff assignment bonus
-  if (session.assignedStaff && session.assignedStaff.boh && session.assignedStaff.foh) {
+  // Staff assignment bonuses (incremental)
+  if (session.assignedStaff?.boh) {
+    score += 3; // BOH assigned
+  }
+  if (session.assignedStaff?.foh) {
+    score += 2; // FOH assigned
+  }
+
+  // Session duration bonus
+  if (session.sessionDuration > 30 * 60) { // 30 minutes
     score += 5;
   }
 

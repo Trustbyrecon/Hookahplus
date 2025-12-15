@@ -56,12 +56,27 @@ NEXT_PUBLIC_CALENDLY_URL=https://calendly.com/your-username/your-event-type
        "user": {
          "id": "{{subscriber_id}}",
          "instagram_username": "{{instagram_username}}",
+         "instagram_id": "{{instagram_id}}",
          "name": "{{first_name}} {{last_name}}",
          "email": "{{email}}",
+         "phone": "{{phone}}",
          "tags": {{tags}},
          "custom_fields": {
            "business_name": "{{custom_field.business_name}}",
-           "order_method": "{{custom_field.order_method}}"
+           "order_method": "{{custom_field.order_method}}",
+           "location": "{{custom_field.location}}",
+           "seating_types": "{{custom_field.seating_types}}",
+           "total_capacity": "{{custom_field.total_capacity}}",
+           "number_of_tables": "{{custom_field.number_of_tables}}",
+           "average_session_duration": "{{custom_field.average_session_duration}}",
+           "current_pos": "{{custom_field.current_pos}}",
+           "pricing_model": "{{custom_field.pricing_model}}",
+           "preferred_features": "{{custom_field.preferred_features}}",
+           "facebook_url": "{{custom_field.facebook_url}}",
+           "website_url": "{{custom_field.website_url}}",
+           "base_hookah_price": "{{custom_field.base_hookah_price}}",
+           "refill_price": "{{custom_field.refill_price}}",
+           "menu_link": "{{custom_field.menu_link}}"
          }
        },
        "comment": {
@@ -85,12 +100,27 @@ NEXT_PUBLIC_CALENDLY_URL=https://calendly.com/your-username/your-event-type
        "user": {
          "id": "{{subscriber_id}}",
          "instagram_username": "{{instagram_username}}",
+         "instagram_id": "{{instagram_id}}",
          "name": "{{first_name}} {{last_name}}",
          "email": "{{email}}",
+         "phone": "{{phone}}",
          "tags": {{tags}},
          "custom_fields": {
            "business_name": "{{custom_field.business_name}}",
-           "order_method": "{{custom_field.order_method}}"
+           "order_method": "{{custom_field.order_method}}",
+           "location": "{{custom_field.location}}",
+           "seating_types": "{{custom_field.seating_types}}",
+           "total_capacity": "{{custom_field.total_capacity}}",
+           "number_of_tables": "{{custom_field.number_of_tables}}",
+           "average_session_duration": "{{custom_field.average_session_duration}}",
+           "current_pos": "{{custom_field.current_pos}}",
+           "pricing_model": "{{custom_field.pricing_model}}",
+           "preferred_features": "{{custom_field.preferred_features}}",
+           "facebook_url": "{{custom_field.facebook_url}}",
+           "website_url": "{{custom_field.website_url}}",
+           "base_hookah_price": "{{custom_field.base_hookah_price}}",
+           "refill_price": "{{custom_field.refill_price}}",
+           "menu_link": "{{custom_field.menu_link}}"
          }
        },
        "message": {
@@ -114,12 +144,27 @@ NEXT_PUBLIC_CALENDLY_URL=https://calendly.com/your-username/your-event-type
        "user": {
          "id": "{{subscriber_id}}",
          "instagram_username": "{{instagram_username}}",
+         "instagram_id": "{{instagram_id}}",
          "name": "{{first_name}} {{last_name}}",
          "email": "{{email}}",
+         "phone": "{{phone}}",
          "tags": {{tags}},
          "custom_fields": {
            "business_name": "{{custom_field.business_name}}",
-           "order_method": "{{custom_field.order_method}}"
+           "order_method": "{{custom_field.order_method}}",
+           "location": "{{custom_field.location}}",
+           "seating_types": "{{custom_field.seating_types}}",
+           "total_capacity": "{{custom_field.total_capacity}}",
+           "number_of_tables": "{{custom_field.number_of_tables}}",
+           "average_session_duration": "{{custom_field.average_session_duration}}",
+           "current_pos": "{{custom_field.current_pos}}",
+           "pricing_model": "{{custom_field.pricing_model}}",
+           "preferred_features": "{{custom_field.preferred_features}}",
+           "facebook_url": "{{custom_field.facebook_url}}",
+           "website_url": "{{custom_field.website_url}}",
+           "base_hookah_price": "{{custom_field.base_hookah_price}}",
+           "refill_price": "{{custom_field.refill_price}}",
+           "menu_link": "{{custom_field.menu_link}}"
          }
        },
        "story_reply": {

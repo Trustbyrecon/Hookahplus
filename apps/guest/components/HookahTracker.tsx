@@ -139,11 +139,16 @@ export const HookahTracker: React.FC<HookahTrackerProps> = ({
                         urlParams.get('mode') === 'demo' ||
                         sessionId?.startsWith('demo_') ||
                         sessionId === 'session_demo';
+      const isAccelerated = urlParams.get('accelerated') === 'true';
 
       if (!sessionId || isDemoMode) {
-        console.log('[HookahTracker] Demo mode detected, using demo data');
+        console.log('[HookahTracker] Demo mode detected, using demo data', isAccelerated ? '(accelerated 2-3 min trial)' : '(quick 18s demo)');
         setUseDemo(true);
         setIsLoading(false);
+        // Store accelerated flag in component state for use in demo simulation
+        if (isAccelerated) {
+          (window as any).__hookahTrackerAccelerated = true;
+        }
         return;
       }
 
@@ -314,28 +319,53 @@ export const HookahTracker: React.FC<HookahTrackerProps> = ({
     const startTime = new Date();
     setActualStartTime(startTime);
 
+    // Check if accelerated mode is enabled (2-3 minute trial)
+    const isAccelerated = (window as any).__hookahTrackerAccelerated === true;
+    
+    // Accelerated mode: 2-3 minute realistic trial
+    // Quick mode: 18 second fast demo
+    const timings = isAccelerated ? {
+      step1: 20000,   // 20s - Order received → Prep in progress
+      step2: 60000,   // 60s - Prep → Heat up (40s after step1)
+      step3: 120000,  // 120s - Heat up → Ready for delivery (60s after step2)
+      complete: 150000 // 150s - Ready → Delivered (30s after step3) = 2.5 minutes total
+    } : {
+      step1: 3000,    // 3s - Quick demo
+      step2: 8000,    // 8s
+      step3: 15000,   // 15s
+      complete: 18000 // 18s
+    };
+
+    if (isAccelerated) {
+      setEstimatedTotalTime('2-3 minutes');
+      addNotification('🎭 Accelerated Demo Mode - Experience the full guest journey in 2-3 minutes!');
+    }
+
     // Simulate progression through steps
     const timeouts = [
       setTimeout(() => {
         setCurrentStep(1);
         addNotification('Your hookah is being prepared!');
-      }, 3000),
+      }, timings.step1),
       
       setTimeout(() => {
         setCurrentStep(2);
         addNotification('Coals are heating up - almost ready!');
-      }, 8000),
+      }, timings.step2),
       
       setTimeout(() => {
         setCurrentStep(3);
         addNotification('Your hookah is ready and on its way!');
-      }, 15000),
+      }, timings.step3),
       
       setTimeout(() => {
         setIsComplete(true);
         addNotification('Enjoy your hookah session!');
+        if (isAccelerated) {
+          addNotification('✨ Demo complete! This is what your customers experience.');
+        }
         onComplete?.();
-      }, 18000)
+      }, timings.complete)
     ];
 
     return () => {
@@ -399,9 +429,25 @@ export const HookahTracker: React.FC<HookahTrackerProps> = ({
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  const isAccelerated = (window as any).__hookahTrackerAccelerated === true;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white p-4">
       <div className="max-w-2xl mx-auto">
+        {/* Accelerated Demo Banner */}
+        {useDemo && isAccelerated && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-r from-teal-500/20 to-blue-500/20 border border-teal-500/30 rounded-lg p-3 mb-6 text-center"
+          >
+            <p className="text-sm font-medium text-teal-200 flex items-center justify-center gap-2">
+              <Zap className="w-4 h-4" />
+              Accelerated Demo Mode — Full guest experience in 2-3 minutes
+            </p>
+          </motion.div>
+        )}
+
         {/* Header */}
         <div className="text-center mb-8">
           <motion.div

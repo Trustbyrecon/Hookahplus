@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import CreateSessionModal from '../../components/CreateSessionModal';
 import GlobalNavigation from '../../components/GlobalNavigation';
@@ -56,6 +56,8 @@ function FireSessionDashboardContent() {
   const [previousSessionCount, setPreviousSessionCount] = useState(0);
   const [alphaStabilityMode, setAlphaStabilityMode] = useState(false);
   const [metricsEnabled, setMetricsEnabled] = useState(false);
+  const [sessionClaimTimes, setSessionClaimTimes] = useState<Map<string, number>>(new Map());
+  const demoProgressionTimersRef = useRef<Map<string, NodeJS.Timeout[]>>(new Map());
   
   // Check for demo mode from URL params
   const isDemoMode = searchParams.get('mode') === 'demo';
@@ -169,6 +171,28 @@ function FireSessionDashboardContent() {
     };
   }, []);
 
+  // Track when sessions are claimed for automatic progression
+  useEffect(() => {
+    if (!isDemoMode) return;
+
+    sessions.forEach(session => {
+      const status = session.status || session.state;
+      const hasBeenClaimed = session.assignedStaff?.boh && 
+                            (status === 'PREP_IN_PROGRESS' || status === 'HEAT_UP' || 
+                             status === 'READY_FOR_DELIVERY' || status === 'OUT_FOR_DELIVERY' || 
+                             status === 'DELIVERED' || status === 'ACTIVE');
+      
+      // Record claim time if session was just claimed
+      if (hasBeenClaimed && !sessionClaimTimes.has(session.id)) {
+        setSessionClaimTimes(prev => {
+          const newMap = new Map(prev);
+          newMap.set(session.id, Date.now());
+          return newMap;
+        });
+      }
+    });
+  }, [sessions, isDemoMode, sessionClaimTimes]);
+
   const handleCreateSession = async (sessionData: any) => {
     // In demo mode, don't call API - just return a demo session ID
     if (isDemoMode) {
@@ -252,6 +276,109 @@ function FireSessionDashboardContent() {
     await updateSessionState(sessionId, action);
   };
 
+  // Automatic progression for demo sessions in accelerated mode
+  // Must be after handleStatusChange is declared
+  useEffect(() => {
+    if (!isDemoMode) return;
+
+    // Clean up timers for sessions that no longer exist or are complete
+    demoProgressionTimersRef.current.forEach((timers, sessionId) => {
+      const session = sessions.find(s => s.id === sessionId);
+      const status = session?.status || session?.state;
+      const isComplete = !session || status === 'ACTIVE' || status === 'CLOSED' || status === 'CLOSE_PENDING';
+      
+      if (isComplete) {
+        timers.forEach(clearTimeout);
+        demoProgressionTimersRef.current.delete(sessionId);
+      }
+    });
+
+    // Set up progression timers for sessions that need them
+    sessions.forEach(session => {
+      const status = session.status || session.state;
+      const claimTime = sessionClaimTimes.get(session.id);
+      
+      // Only progress sessions that have been claimed
+      if (!claimTime || !session.assignedStaff?.boh) return;
+      
+      // Don't progress if already active or closed
+      if (status === 'ACTIVE' || status === 'CLOSED' || status === 'CLOSE_PENDING') return;
+      
+      // Don't set up new timers if already running
+      if (demoProgressionTimersRef.current.has(session.id)) return;
+
+      const elapsed = Date.now() - claimTime;
+      const timers: NodeJS.Timeout[] = [];
+
+      // Accelerated demo timing (matches guest tracker 2-3 minute trial)
+      const timings = {
+        heatUp: 20000,        // 20s after CLAIM_PREP
+        readyForDelivery: 60000,  // 60s total (40s after HEAT_UP)
+        deliverNow: 120000,   // 120s total (60s after READY)
+        markDelivered: 150000, // 150s total (30s after OUT_FOR_DELIVERY)
+        startActive: 151000   // 151s total (1s after DELIVERED)
+      };
+
+      // Progress from PREP_IN_PROGRESS to HEAT_UP
+      if (status === 'PREP_IN_PROGRESS' && elapsed < timings.heatUp) {
+        const delay = Math.max(0, timings.heatUp - elapsed);
+        timers.push(setTimeout(() => {
+          console.log(`[Demo Auto-Progression] ${session.id}: PREP_IN_PROGRESS → HEAT_UP`);
+          handleStatusChange(session.id, 'HEAT_UP');
+        }, delay));
+      }
+
+      // Progress from HEAT_UP to READY_FOR_DELIVERY
+      if (status === 'HEAT_UP' && elapsed < timings.readyForDelivery) {
+        const delay = Math.max(0, timings.readyForDelivery - elapsed);
+        timers.push(setTimeout(() => {
+          console.log(`[Demo Auto-Progression] ${session.id}: HEAT_UP → READY_FOR_DELIVERY`);
+          handleStatusChange(session.id, 'READY_FOR_DELIVERY');
+        }, delay));
+      }
+
+      // Progress from READY_FOR_DELIVERY to OUT_FOR_DELIVERY (DELIVER_NOW)
+      if (status === 'READY_FOR_DELIVERY' && elapsed < timings.deliverNow) {
+        const delay = Math.max(0, timings.deliverNow - elapsed);
+        timers.push(setTimeout(() => {
+          console.log(`[Demo Auto-Progression] ${session.id}: READY_FOR_DELIVERY → OUT_FOR_DELIVERY`);
+          handleStatusChange(session.id, 'DELIVER_NOW');
+        }, delay));
+      }
+
+      // Progress from OUT_FOR_DELIVERY to DELIVERED
+      if (status === 'OUT_FOR_DELIVERY' && elapsed < timings.markDelivered) {
+        const delay = Math.max(0, timings.markDelivered - elapsed);
+        timers.push(setTimeout(() => {
+          console.log(`[Demo Auto-Progression] ${session.id}: OUT_FOR_DELIVERY → DELIVERED`);
+          handleStatusChange(session.id, 'MARK_DELIVERED');
+        }, delay));
+      }
+
+      // Progress from DELIVERED to ACTIVE
+      if (status === 'DELIVERED' && elapsed < timings.startActive) {
+        const delay = Math.max(0, timings.startActive - elapsed);
+        timers.push(setTimeout(() => {
+          console.log(`[Demo Auto-Progression] ${session.id}: DELIVERED → ACTIVE`);
+          handleStatusChange(session.id, 'START_ACTIVE');
+        }, delay));
+      }
+
+      // Store timers in ref
+      if (timers.length > 0) {
+        demoProgressionTimersRef.current.set(session.id, timers);
+      }
+    });
+
+    // Cleanup function
+    return () => {
+      demoProgressionTimersRef.current.forEach((timers) => {
+        timers.forEach(clearTimeout);
+      });
+      demoProgressionTimersRef.current.clear();
+    };
+  }, [sessions, isDemoMode, sessionClaimTimes, handleStatusChange]);
+
   const getThemeClasses = () => {
     return `bg-gradient-to-br ${currentTheme.gradients.background} text-${currentTheme.colors.text}`;
   };
@@ -286,6 +413,25 @@ function FireSessionDashboardContent() {
                 </p>
               )}
             </div>
+            <button
+              onClick={() => {
+                // Create a demo session and redirect to guest tracker
+                const demoSessionId = `demo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                const guestTrackerUrl = process.env.NEXT_PUBLIC_GUEST_URL || 'https://guest.hookahplus.net';
+                const loungeId = demoLounge || 'default-lounge';
+                const tableId = 'T-001';
+                
+                // Use accelerated demo mode (2-3 minute trial)
+                const trackerUrl = `${guestTrackerUrl}/hookah-tracker?sessionId=${demoSessionId}&loungeId=${loungeId}&tableId=${tableId}&demo=true&mode=demo&accelerated=true`;
+                
+                console.log('[Demo Mode] 🎭 Launching accelerated guest experience:', trackerUrl);
+                window.open(trackerUrl, '_blank');
+              }}
+              className="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+            >
+              <CheckCircle className="w-4 h-4" />
+              Try Guest Experience (2-3 min)
+            </button>
           </div>
         </div>
       )}

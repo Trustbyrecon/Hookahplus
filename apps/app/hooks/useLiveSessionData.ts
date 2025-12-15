@@ -22,6 +22,9 @@ function generateRichDemoData(): FireSession[] {
       flavor: 'Blue Mist + Mint Fresh',
       amount: 3500,
       status: 'PAID_CONFIRMED', // Starting point for night after night flow
+      state: 'PENDING', // Database state - PENDING with payment = PAID_CONFIRMED
+      paymentStatus: 'succeeded', // Required for hasPayment check
+      externalRef: 'test_cs_demo_session_1', // Required for hasPayment check
       currentStage: 'BOH',
       assignedStaff: { boh: undefined, foh: undefined },
       createdAt: thirtyMinutesAgo,
@@ -86,6 +89,8 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
   const [sessionTimers, setSessionTimers] = useState<Record<string, SessionTimer>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Store updated demo sessions to persist across refreshes
+  const [updatedDemoSessions, setUpdatedDemoSessions] = useState<Record<string, FireSession>>({});
 
   // Load live session data
   const loadSessions = useCallback(async () => {
@@ -102,19 +107,42 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
       if (isDemoMode) {
         console.log('[useLiveSessionData] 🎭 Demo Mode: Using in-memory demo data (no API calls)');
         const demoData = generateRichDemoData();
-        setSessions(demoData);
         
-        // Calculate metrics from demo data
-        const demoMetrics = {
-          activeSessions: demoData.filter(s => ['ACTIVE', 'DELIVERED', 'OUT_FOR_DELIVERY'].includes(s.status)).length,
-          revenue: demoData.reduce((sum, s) => sum + (s.amount / 100), 0),
+        // Merge updated demo sessions with generated demo data
+        // This preserves user actions (like Claim Prep) across refreshes
+        const mergedSessions = demoData.map(session => {
+          const updatedSession = updatedDemoSessions[session.id];
+          if (updatedSession) {
+            console.log(`[Demo Mode] 🔄 Merging updated session: ${session.id}`, {
+              original: session.status,
+              updated: updatedSession.status
+            });
+            return updatedSession;
+          }
+          return session;
+        });
+        
+        // Also add any new sessions that were created but don't exist in demo data
+        Object.values(updatedDemoSessions).forEach(updatedSession => {
+          if (!mergedSessions.find(s => s.id === updatedSession.id)) {
+            console.log(`[Demo Mode] ➕ Adding new updated session: ${updatedSession.id}`);
+            mergedSessions.push(updatedSession);
+          }
+        });
+        
+        setSessions(mergedSessions);
+        
+        // Calculate metrics from merged data (reflects current state)
+        const mergedMetrics = {
+          activeSessions: mergedSessions.filter(s => ['ACTIVE', 'DELIVERED', 'OUT_FOR_DELIVERY'].includes(s.status)).length,
+          revenue: mergedSessions.reduce((sum, s) => sum + (s.amount / 100), 0),
           avgDuration: 45,
-          alerts: demoData.filter(s => s.edgeCase !== null).length,
+          alerts: mergedSessions.filter(s => s.edgeCase !== null).length,
           staffAssigned: new Set([
-            ...demoData.map(s => s.assignedStaff.boh).filter(Boolean),
-            ...demoData.map(s => s.assignedStaff.foh).filter(Boolean)
+            ...mergedSessions.map(s => s.assignedStaff.boh).filter(Boolean),
+            ...mergedSessions.map(s => s.assignedStaff.foh).filter(Boolean)
           ]).size,
-          totalSessions: demoData.length,
+          totalSessions: mergedSessions.length,
           changes: {
             activeSessions: '+0%',
             revenue: '+0%',
@@ -124,7 +152,7 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
             totalSessions: '+0%'
           }
         };
-        setMetrics(demoMetrics);
+        setMetrics(mergedMetrics);
         setLoading(false);
         return;
       }
@@ -282,7 +310,7 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
             sessionDuration: session.durationSecs || session.sessionDuration || 45 * 60,
             coalStatus: 'active' as const,
             refillStatus: 'none' as const,
-            notes: session.tableNotes || session.notes || '',
+            notes: session.notes || '',
             edgeCase: session.edgeCase,
             sessionTimer: session.timerStartedAt ? {
               remaining: calculateRemainingTimeFromPrisma(session),
@@ -294,7 +322,6 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
             guestTimerDisplay: session.state === 'ACTIVE',
             // Include raw database fields for getSessionStatus to work correctly
             state: session.state,
-            assignedBOHId: session.assignedBOHId || session.assignedStaff?.boh,
             paymentStatus: session.paymentStatus,
             externalRef: session.externalRef
           };
@@ -352,7 +379,7 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [updatedDemoSessions]);
 
   // Load live metrics
   const loadMetrics = useCallback(async () => {
@@ -527,12 +554,58 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
           'MANAGER' // Allow all actions in demo mode
         );
 
+        // Handle special actions that require additional updates
+        if (sessionAction === 'CLAIM_PREP') {
+          // Set BOH staff assignment when prep is claimed
+          updatedSession.assignedStaff = {
+            ...updatedSession.assignedStaff,
+            boh: 'demo-boh-staff'
+          };
+          // Update state to ACTIVE (database representation) for PREP_IN_PROGRESS
+          updatedSession.state = 'ACTIVE';
+          // Add note to track workflow stage
+          updatedSession.notes = (updatedSession.notes || '') + '\nAction CLAIM_PREP executed by MANAGER';
+        } else if (sessionAction === 'READY_FOR_DELIVERY') {
+          // Optionally assign FOH when ready for delivery
+          updatedSession.assignedStaff = {
+            ...updatedSession.assignedStaff,
+            foh: 'demo-foh-staff'
+          };
+          updatedSession.notes = (updatedSession.notes || '') + '\nAction READY_FOR_DELIVERY executed by MANAGER';
+        } else if (sessionAction === 'HEAT_UP') {
+          updatedSession.notes = (updatedSession.notes || '') + '\nAction HEAT_UP executed by MANAGER';
+        } else if (sessionAction === 'DELIVER_NOW') {
+          updatedSession.notes = (updatedSession.notes || '') + '\nAction DELIVER_NOW executed by MANAGER';
+        } else if (sessionAction === 'MARK_DELIVERED') {
+          updatedSession.notes = (updatedSession.notes || '') + '\nAction MARK_DELIVERED executed by MANAGER';
+        } else if (sessionAction === 'START_ACTIVE') {
+          updatedSession.notes = (updatedSession.notes || '') + '\nAction START_ACTIVE executed by MANAGER';
+        }
+
+        // Ensure state is set for all workflow stages (ACTIVE in database)
+        if (['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(updatedSession.status)) {
+          updatedSession.state = 'ACTIVE';
+        }
+
         // Update session in state
         const updatedSessions = [...sessions];
         updatedSessions[sessionIndex] = updatedSession;
         setSessions(updatedSessions);
+        
+        // Store updated session in updatedDemoSessions to persist across refreshes
+        setUpdatedDemoSessions(prev => ({
+          ...prev,
+          [sessionId]: updatedSession
+        }));
+        
+        console.log(`[Demo Mode] ✅ Session state updated:`, {
+          id: updatedSession.id,
+          status: updatedSession.status,
+          state: updatedSession.state,
+          assignedStaff: updatedSession.assignedStaff
+        });
 
-        // Update metrics
+        // Update metrics from updated sessions
         const updatedMetrics = {
           activeSessions: updatedSessions.filter(s => ['ACTIVE', 'DELIVERED', 'OUT_FOR_DELIVERY'].includes(s.status)).length,
           revenue: updatedSessions.reduce((sum, s) => sum + (s.amount / 100), 0),

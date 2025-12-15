@@ -1264,6 +1264,46 @@ export async function PATCH(req: NextRequest) {
       }, { status: 400 });
     }
 
+    // Check for demo mode from query params or session ID pattern
+    const { searchParams } = new URL(req.url);
+    const isDemo = searchParams.get('mode') === 'demo' || 
+                   searchParams.get('demo') === 'true' ||
+                   sessionId.startsWith('demo-') ||
+                   sessionId.startsWith('demo_');
+
+    // Demo mode: return demo session data (read-only for now)
+    if (isDemo) {
+      const demoSession = {
+        id: sessionId,
+        tableId: 'T-005',
+        customerRef: 'Sarah & Friends',
+        customerPhone: '+1 (555) 234-5678',
+        flavor: 'Blue Mist + Mint Fresh',
+        flavorMix: ['Blue Mist', 'Mint Fresh'],
+        priceCents: 3500,
+        state: 'PAID_CONFIRMED',
+        paymentStatus: 'succeeded',
+        assignedBOHId: null,
+        assignedFOHId: null,
+        startedAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+        createdAt: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+        durationSecs: 60 * 60,
+        edgeCase: null,
+        edgeNote: 'Demo session - ready to test night after night flow',
+        source: 'demo',
+        loungeId: 'demo-lounge',
+        tableNotes: notes || 'Demo session - ready to test night after night flow',
+      };
+
+      const fireSession = convertPrismaSessionToFireSession(demoSession);
+      return NextResponse.json({ 
+        success: true, 
+        session: fireSession,
+        message: 'Demo mode: Session data returned (no database updates in demo)',
+        businessLogic: 'Demo sessions are read-only'
+      });
+    }
+
     // Handle UPDATE_NOTES as a special case (no state transition needed)
     if (action === 'UPDATE_NOTES') {
       const dbSession = await prisma.session.findFirst({

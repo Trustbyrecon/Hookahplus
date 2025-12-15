@@ -60,6 +60,12 @@ async function createStripeTestSession(
   if (!stripe) {
     throw new Error('Stripe not configured on server');
   }
+  
+  // SECURITY: Demo mode requires test keys only
+  const isTestMode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_') ?? false;
+  if (!isTestMode) {
+    throw new Error('Demo mode requires Stripe test keys (sk_test_...). Live keys (sk_live_...) are not allowed in demo.');
+  }
 
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   const successUrl = `${baseUrl}/checkout/success?session_id=${sessionId}&mode=demo&source=${payload.source || 'onboarding'}`;

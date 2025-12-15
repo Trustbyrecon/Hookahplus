@@ -170,6 +170,35 @@ function CheckoutSuccessContent() {
     fetchSessionDetails();
   }, [searchParams]);
 
+  // Redirect guests to hookah tracker after payment confirmation
+  // This must be called before any early returns to follow Rules of Hooks
+  useEffect(() => {
+    if (sessionId && sessionData) {
+      const guestTrackerUrl = process.env.NEXT_PUBLIC_GUEST_URL || 'https://guest.hookahplus.net';
+      const loungeId = sessionData.loungeId || 'default-lounge';
+      const tableId = sessionData.tableId || 'T-001';
+      
+      // Check if this is demo mode
+      const isDemo = isDemoMode || sessionId.startsWith('demo_');
+      const demoParam = isDemo ? '&demo=true&mode=demo' : '';
+      
+      // In demo mode, use accelerated trial (2-3 minutes) for better demo experience
+      const acceleratedParam = isDemo ? '&accelerated=true' : '';
+      
+      // Redirect to guest tracker for hookah tracking experience
+      const trackerUrl = `${guestTrackerUrl}/hookah-tracker?sessionId=${sessionId}&loungeId=${loungeId}&tableId=${tableId}${demoParam}${acceleratedParam}`;
+      
+      console.log('[Checkout Success] ✅ Payment confirmed, redirecting guest to hookah tracker:', trackerUrl);
+      
+      // Small delay to show confirmation message before redirect
+      const redirectTimer = setTimeout(() => {
+        window.location.href = trackerUrl;
+      }, 2000);
+      
+      return () => clearTimeout(redirectTimer);
+    }
+  }, [sessionId, sessionData, isDemoMode]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white flex items-center justify-center">
@@ -202,31 +231,6 @@ function CheckoutSuccessContent() {
       </div>
     );
   }
-
-  // Redirect guests to hookah tracker after payment confirmation
-  useEffect(() => {
-    if (sessionId && sessionData) {
-      const guestTrackerUrl = process.env.NEXT_PUBLIC_GUEST_URL || 'https://guest.hookahplus.net';
-      const loungeId = sessionData.loungeId || 'default-lounge';
-      const tableId = sessionData.tableId || 'T-001';
-      
-      // Check if this is demo mode
-      const isDemo = isDemoMode || sessionId.startsWith('demo_');
-      const demoParam = isDemo ? '&demo=true&mode=demo' : '';
-      
-      // Redirect to guest tracker for hookah tracking experience
-      const trackerUrl = `${guestTrackerUrl}/hookah-tracker?sessionId=${sessionId}&loungeId=${loungeId}&tableId=${tableId}${demoParam}`;
-      
-      console.log('[Checkout Success] ✅ Payment confirmed, redirecting guest to hookah tracker:', trackerUrl);
-      
-      // Small delay to show confirmation message before redirect
-      const redirectTimer = setTimeout(() => {
-        window.location.href = trackerUrl;
-      }, 2000);
-      
-      return () => clearTimeout(redirectTimer);
-    }
-  }, [sessionId, sessionData, isDemoMode]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
@@ -267,7 +271,7 @@ function CheckoutSuccessContent() {
 
           <div className="mt-6 flex gap-4 justify-center">
             <a
-                href={`${process.env.NEXT_PUBLIC_GUEST_URL || 'https://guest.hookahplus.net'}/hookah-tracker?sessionId=${sessionId}&loungeId=${sessionData?.loungeId || 'default-lounge'}&tableId=${sessionData?.tableId || 'T-001'}${isDemoMode ? '&demo=true&mode=demo' : ''}`}
+                href={`${process.env.NEXT_PUBLIC_GUEST_URL || 'https://guest.hookahplus.net'}/hookah-tracker?sessionId=${sessionId}&loungeId=${sessionData?.loungeId || 'default-lounge'}&tableId=${sessionData?.tableId || 'T-001'}${isDemoMode ? '&demo=true&mode=demo&accelerated=true' : ''}`}
               className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white px-6 py-3 rounded-lg transition-colors"
             >
                 View Hookah Tracker

@@ -60,6 +60,52 @@ export async function GET(
 ) {
   try {
     const sessionId = params.id;
+    
+    // Check for demo mode from query params or session ID pattern
+    const { searchParams } = new URL(request.url);
+    const isDemo = searchParams.get('mode') === 'demo' || 
+                   searchParams.get('demo') === 'true' ||
+                   sessionId.startsWith('demo-') ||
+                   sessionId.startsWith('demo_');
+
+    // Demo mode: return demo session data
+    if (isDemo) {
+      // Match demo session ID from in-memory data
+      const demoSession = {
+        id: sessionId,
+        tableId: 'T-005',
+        customerRef: 'Sarah & Friends',
+        customerPhone: '+1 (555) 234-5678',
+        flavor: 'Blue Mist + Mint Fresh',
+        flavorMix: ['Blue Mist', 'Mint Fresh'],
+        priceCents: 3500,
+        state: 'PAID_CONFIRMED',
+        paymentStatus: 'succeeded',
+        paymentIntent: 'demo_payment_intent_' + Date.now(),
+        assignedBOHId: null,
+        assignedFOHId: null,
+        startedAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+        createdAt: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+        durationSecs: 60 * 60, // 60 minutes
+        edgeCase: null,
+        edgeNote: 'Demo session - ready to test night after night flow',
+        source: 'demo',
+        loungeId: 'demo-lounge',
+        tenantId: null,
+      };
+
+      const fireSession = convertPrismaSessionToFireSession(demoSession);
+      return NextResponse.json({
+        success: true,
+        ...fireSession,
+        table_id: demoSession.tableId,
+        customer_name: demoSession.customerRef,
+        price_cents: demoSession.priceCents,
+        status: fireSession.status,
+      }, {
+        headers: getCorsHeaders(request),
+      });
+    }
 
     // Find session by ID or externalRef (Stripe checkout session ID)
     // Use select to avoid querying columns that don't exist

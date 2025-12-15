@@ -174,25 +174,56 @@ export async function POST(req: NextRequest) {
                         instagramUsername || 
                         'Unknown Business';
 
+    // Parse array fields (comma-separated strings from ManyChat)
+    const parseArrayField = (value: string | undefined): string[] => {
+      if (!value) return [];
+      if (typeof value === 'string') {
+        return value.split(',').map(s => s.trim()).filter(Boolean);
+      }
+      return Array.isArray(value) ? value : [];
+    };
+
     const leadData = {
       businessName,
       ownerName: instagramName,
       email: email || `instagram_${instagramUsername || instagramId}@manychat.placeholder`, // Placeholder if no email
       phone: phone || '',
       location: customFields.location || '',
+      // Business details
+      seatingTypes: parseArrayField(customFields.seating_types),
+      totalCapacity: customFields.total_capacity || '',
+      numberOfTables: customFields.number_of_tables || '',
+      averageSessionDuration: customFields.average_session_duration || '',
+      currentPOS: customFields.current_pos || '',
+      pricingModel: customFields.pricing_model || '',
+      preferredFeatures: parseArrayField(customFields.preferred_features),
+      // Social media links
+      facebookUrl: customFields.facebook_url || '',
+      websiteUrl: customFields.website_url || '',
+      // Menu & pricing
+      baseHookahPrice: customFields.base_hookah_price || '',
+      refillPrice: customFields.refill_price || '',
+      menuLink: customFields.menu_link || '',
+      // Lead management
       stage: 'new-leads',
       source: 'instagram-manychat',
       createdAt: new Date().toISOString(),
       instagramUrl,
-      // Store ManyChat-specific metadata
+      // Store ManyChat-specific metadata for inspection and learning
       metadata: {
         manychatUserId: user.id || instagramId,
         manychatTags: tagNames,
         orderMethod,
         eventType,
         messageText,
-        customFields,
-        instagramId
+        customFields, // Store all custom fields for complete metadata
+        instagramId,
+        // Engagement metadata
+        engagementPlatform: 'instagram',
+        engagementType: eventType, // comment, message, story_reply
+        engagementTimestamp: new Date().toISOString(),
+        // All raw custom fields for learning
+        rawCustomFields: customFields
       }
     };
 

@@ -195,6 +195,44 @@ export default function SimpleFSDDesign({
       console.log(`[Demo Mode] 🎭 Using callback for action: ${action} on session: ${sessionId}`);
       try {
         await onSessionAction(action, sessionId);
+        
+        // Show success message for demo mode (same as API path)
+        const actionMap: Record<string, string> = {
+          'claim_prep': 'CLAIM_PREP',
+          'heat_up': 'HEAT_UP',
+          'ready_for_delivery': 'READY_FOR_DELIVERY',
+          'deliver_now': 'DELIVER_NOW',
+          'mark_delivered': 'MARK_DELIVERED',
+          'start_active': 'START_ACTIVE',
+        };
+        const mappedAction = actionMap[action.toLowerCase()] || action.toUpperCase();
+        
+        const successMessages: Record<string, string> = {
+          'CLAIM_PREP': '✅ Prep claimed successfully! BOH is now preparing the hookah.',
+          'HEAT_UP': '🔥 Coals heating... Final preparation phase in progress.',
+          'READY_FOR_DELIVERY': '✅ Hookah ready! Awaiting FOH pickup.',
+          'DELIVER_NOW': '🚚 Out for delivery! FOH transporting hookah to table.',
+          'MARK_DELIVERED': '✅ Delivered to table! Hookah setup complete.',
+          'START_ACTIVE': '🔥 Session is LIT! Timer started. Customer can now enjoy.',
+        };
+        
+        const successMessage = successMessages[mappedAction] || `✅ ${mappedAction.replace(/_/g, ' ')} successful!`;
+        
+        if (successMessage) {
+          // Show success notification (non-blocking)
+          const notification = document.createElement('div');
+          notification.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg z-50 max-w-md';
+          notification.style.whiteSpace = 'pre-line';
+          notification.textContent = successMessage;
+          document.body.appendChild(notification);
+          
+          // Remove after 3 seconds
+          setTimeout(() => {
+            notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+            setTimeout(() => notification.remove(), 300);
+          }, 3000);
+        }
+        
         if (refreshSessions) {
           await refreshSessions();
         }
@@ -515,9 +553,12 @@ export default function SimpleFSDDesign({
   const getSessionStatus = (session: any): SessionStatus => {
     // Always check the actual database fields first, not the cached status
     // This ensures we show the correct state even if the session object has stale data
-    const state = session.state || 'NEW';
+    // For demo sessions, check status first if state is not available
+    const state = session.state || (session.status === 'PAID_CONFIRMED' ? 'PENDING' : session.status === 'PREP_IN_PROGRESS' ? 'ACTIVE' : 'NEW');
     const hasPayment = session.paymentStatus === 'succeeded' || 
-                      (session.externalRef && (session.externalRef.startsWith('cs_') || session.externalRef.startsWith('test_cs_')));
+                      (session.externalRef && (session.externalRef.startsWith('cs_') || session.externalRef.startsWith('test_cs_'))) ||
+                      session.status === 'PAID_CONFIRMED' || // Demo mode: status indicates payment
+                      (session.amount && session.amount > 0); // Has amount = paid
     const assignedBOHId = session.assignedBOHId || session.assigned_boh_id || session.assignedStaff?.boh;
     
     // Debug logging for troubleshooting (can be removed later)

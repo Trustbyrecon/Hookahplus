@@ -245,7 +245,7 @@ export async function GET(req: NextRequest) {
       });
       console.log(`[Operator Onboarding API] Found ${events.length} events`);
       // #region agent log
-      const eventTypes = [...new Set(events.map(e=>e.type))];
+      const eventTypes = Array.from(new Set(events.map(e=>e.type)));
       fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:221',message:'After query execution',data:{eventCount:events.length,eventTypes,hasPayload:events.filter(e=>e.payload).length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
       // #endregion
     } catch (queryError: any) {

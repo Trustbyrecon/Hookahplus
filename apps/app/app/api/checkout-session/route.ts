@@ -33,6 +33,18 @@ export async function POST(request: NextRequest) {
     if (isDemoMode) {
       console.log('[Checkout API] 🎭 Demo Mode: Routing through Stripe test workflow');
       
+      // SECURITY: In demo mode, ensure we're using test keys only
+      const isTestMode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_') ?? false;
+      if (stripe && !isTestMode) {
+        console.error('[Checkout API] ❌ Demo mode requires test Stripe keys (sk_test_...)');
+        return NextResponse.json({
+          success: false,
+          error: 'Demo mode requires Stripe test keys',
+          details: 'STRIPE_SECRET_KEY must start with sk_test_ for demo mode. Live keys (sk_live_...) are not allowed in demo.',
+          hint: 'Update STRIPE_SECRET_KEY to a test key (sk_test_...) in your environment variables'
+        }, { status: 400 });
+      }
+      
       // In demo mode, create a Stripe test checkout session
       // This allows users to experience the full payment flow with test cards
       if (!stripe) {

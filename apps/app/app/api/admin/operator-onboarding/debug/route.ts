@@ -108,8 +108,8 @@ export async function GET(req: NextRequest) {
       
       console.log(`[Operator Onboarding Debug] Found ${events.length} total events`);
       // #region agent log
-      const allEventTypes = [...new Set(events.map(e=>e.type))];
-      const allSources = [...new Set(events.map(e=>e.source).filter(Boolean))];
+      const allEventTypes = Array.from(new Set(events.map(e=>e.type)));
+      const allSources = Array.from(new Set(events.map(e=>e.source).filter(Boolean)));
       fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'debug/route.ts:100',message:'After debug query',data:{eventCount:events.length,eventTypes:allEventTypes,eventTypesCount:allEventTypes.length,sources:allSources,hasPayload:events.filter(e=>e.payload).length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
       // #endregion
     } catch (queryError: any) {

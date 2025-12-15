@@ -64,7 +64,11 @@ export async function GET(req: NextRequest) {
     }
 
     // Demo mode: return demo session data
-    if (isDemo || (sessionId && sessionId.startsWith('demo_'))) {
+    // Handle both demo_ (underscore) and demo- (hyphen) patterns
+    const isDemoSession = isDemo || 
+                          (sessionId && (sessionId.startsWith('demo_') || sessionId.startsWith('demo-')));
+    
+    if (isDemoSession) {
       const demoSession = {
         id: sessionId || 'demo_session_001',
         tableId: tableId || 'T-001',
