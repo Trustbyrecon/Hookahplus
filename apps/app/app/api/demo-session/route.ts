@@ -107,6 +107,14 @@ async function createStripeTestSession(
   const amount = sessionData.amount ? Math.round(sessionData.amount * 100) : 3000;
 
   console.log('[Demo Session] 🎭 Creating Stripe TEST checkout session with test keys');
+  
+  // CRITICAL: Double-check we're using test keys before creating session
+  const keyInUse = process.env.STRIPE_TEST_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
+  if (!keyInUse || !keyInUse.startsWith('sk_test_')) {
+    throw new Error(`Cannot create demo checkout: Live Stripe keys detected. Demo mode requires sk_test_ keys only. Current key starts with: ${keyInUse?.substring(0, 10) || 'not set'}`);
+  }
+  
+  console.log('[Demo Session] 🔒 Security check passed - using test keys only');
   const session = await testStripe.checkout.sessions.create({
     mode: 'payment',
     payment_method_types: ['card'],
@@ -132,6 +140,19 @@ async function createStripeTestSession(
       demo_mode: 'stripe_test',
       demo_source: payload.source || 'onboarding',
     },
+  });
+
+  // Verify the session ID starts with cs_test_ (test mode) not cs_live_ (live mode)
+  if (session.id && !session.id.startsWith('cs_test_')) {
+    console.error('[Demo Session] ❌ CRITICAL ERROR: Created session has live ID:', session.id);
+    console.error('[Demo Session] This indicates a live Stripe key was used despite test key check!');
+    throw new Error(`Security error: Live Stripe session detected in demo mode. Session ID ${session.id} indicates live mode. Demo mode must use test keys only.`);
+  }
+  
+  console.log('[Demo Session] ✅ Demo checkout session created successfully:', {
+    sessionId: session.id,
+    isTestMode: session.id.startsWith('cs_test_'),
+    url: session.url
   });
 
   return session.url || '';

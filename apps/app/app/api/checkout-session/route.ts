@@ -14,6 +14,13 @@ function getTestStripeInstance(): Stripe | null {
   const demoTestKey = process.env.STRIPE_TEST_SECRET_KEY;
   const mainKey = process.env.STRIPE_SECRET_KEY;
   
+  console.log('[Checkout API] 🔍 Checking Stripe keys for demo mode:', {
+    hasSTRIPE_TEST_SECRET_KEY: !!demoTestKey,
+    hasSTRIPE_SECRET_KEY: !!mainKey,
+    testKeyPrefix: demoTestKey?.substring(0, 10) || 'not set',
+    mainKeyPrefix: mainKey?.substring(0, 10) || 'not set'
+  });
+  
   // Use demo-specific test key if available
   if (demoTestKey && demoTestKey.startsWith('sk_test_')) {
     console.log('[Checkout API] ✅ Using STRIPE_TEST_SECRET_KEY for demo mode');
@@ -33,10 +40,12 @@ function getTestStripeInstance(): Stripe | null {
   // If main key is live, reject it for demo mode
   if (mainKey && mainKey.startsWith('sk_live_')) {
     console.error('[Checkout API] ❌ Demo mode requires test Stripe keys (sk_test_...). Live keys (sk_live_...) are not allowed.');
+    console.error('[Checkout API] Current STRIPE_SECRET_KEY starts with:', mainKey.substring(0, 10));
     return null;
   }
   
   // No key configured
+  console.error('[Checkout API] ❌ No valid test Stripe key found for demo mode');
   return null;
 }
 
@@ -65,12 +74,18 @@ export async function POST(request: NextRequest) {
     
     if (isDemoMode) {
       console.log('[Checkout API] 🎭 Demo Mode: Routing through Stripe test workflow');
+      console.log('[Checkout API] 🔍 Checking Stripe key configuration...');
       
       // SECURITY: In demo mode, ensure we're using test keys only
       const testStripe = getTestStripeInstance();
       if (!testStripe) {
         console.error('[Checkout API] ❌ Demo mode requires test Stripe keys (sk_test_...)');
         const currentKey = process.env.STRIPE_SECRET_KEY?.substring(0, 10) || 'not set';
+        const testKey = process.env.STRIPE_TEST_SECRET_KEY?.substring(0, 10) || 'not set';
+        console.error('[Checkout API] Current keys:', {
+          STRIPE_SECRET_KEY: currentKey,
+          STRIPE_TEST_SECRET_KEY: testKey
+        });
         return NextResponse.json({
           success: false,
           error: 'Demo mode requires Stripe test keys',
@@ -80,6 +95,22 @@ export async function POST(request: NextRequest) {
         }, { status: 400 });
       }
       
+      // CRITICAL: Verify the test instance is actually using a test key
+      const testKeyUsed = process.env.STRIPE_TEST_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
+      if (testKeyUsed && !testKeyUsed.startsWith('sk_test_')) {
+        console.error('[Checkout API] ❌ CRITICAL: Test instance is using a live key!', {
+          keyPrefix: testKeyUsed.substring(0, 10)
+        });
+        return NextResponse.json({
+          success: false,
+          error: 'Invalid Stripe key configuration for demo mode',
+          details: 'Demo mode detected a live Stripe key. This should never happen.',
+          hint: 'Check your environment variables - STRIPE_SECRET_KEY or STRIPE_TEST_SECRET_KEY must start with sk_test_'
+        }, { status: 500 });
+      }
+      
+      console.log('[Checkout API] ✅ Verified test Stripe instance is using test keys');
+      
       // Create Stripe test checkout session for demo using test instance
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3002';
       const successUrl = `${baseUrl}/checkout/success?session_id=${sessionId}&mode=demo`;
@@ -88,6 +119,14 @@ export async function POST(request: NextRequest) {
       try {
         console.log('[Checkout API] 🎭 Creating Stripe TEST checkout session for demo mode');
         console.log('[Checkout API] ✅ Using test Stripe keys - checkout will be in sandbox/test mode');
+        
+        // CRITICAL: Double-check we're using test keys before creating session
+        const keyInUse = process.env.STRIPE_TEST_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
+        if (!keyInUse || !keyInUse.startsWith('sk_test_')) {
+          throw new Error('Cannot create demo checkout: Live Stripe keys detected. Demo mode requires sk_test_ keys only.');
+        }
+        
+        console.log('[Checkout API] 🔒 Security check passed - using test keys only');
         const session = await testStripe.checkout.sessions.create({
           mode: 'payment',
           payment_method_types: ['card'],
@@ -111,6 +150,24 @@ export async function POST(request: NextRequest) {
             h_order: `H+ ${sessionId.substring(0, 8)}`,
             is_demo: 'true'
           },
+        });
+        
+        // Verify the session ID starts with cs_test_ (test mode) not cs_live_ (live mode)
+        if (session.id && !session.id.startsWith('cs_test_')) {
+          console.error('[Checkout API] ❌ CRITICAL ERROR: Created session has live ID:', session.id);
+          console.error('[Checkout API] This indicates a live Stripe key was used despite test key check!');
+          return NextResponse.json({
+            success: false,
+            error: 'Security error: Live Stripe session detected in demo mode',
+            details: `Session ID ${session.id} indicates live mode. Demo mode must use test keys only.`,
+            hint: 'Check your STRIPE_SECRET_KEY and STRIPE_TEST_SECRET_KEY environment variables'
+          }, { status: 500 });
+        }
+        
+        console.log('[Checkout API] ✅ Demo checkout session created successfully:', {
+          sessionId: session.id,
+          isTestMode: session.id.startsWith('cs_test_'),
+          url: session.url
         });
         
         return NextResponse.json({
