@@ -36,6 +36,9 @@ const finalDatabaseUrl = hasQueryTimeout
     ? `${databaseUrl}&query_timeout=5000`
     : `${databaseUrl}?query_timeout=5000`;
 
+// #region agent log
+try{const logData={location:'db.ts:39',message:'Creating PrismaClient',data:{hasDatabaseUrl:!!process.env.DATABASE_URL,databaseUrlLength:finalDatabaseUrl.length,urlPrefix:finalDatabaseUrl.substring(0,20),nodeEnv:process.env.NODE_ENV},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B'};fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logData)}).catch(()=>{});}catch(e){}
+// #endregion
 const prismaInstance = globalForPrisma.prisma ?? new PrismaClient({ 
   log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
   datasources: {
@@ -44,6 +47,9 @@ const prismaInstance = globalForPrisma.prisma ?? new PrismaClient({
     },
   },
 });
+// #region agent log
+try{const logData={location:'db.ts:46',message:'PrismaClient created',data:{hasInstance:!!prismaInstance},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'};fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logData)}).catch(()=>{});}catch(e){}
+// #endregion
 
 // P0: PrismaClient automatically uses connection pool settings from DATABASE_URL
 // Connection pooling is handled by Prisma internally via the connection string parameters:

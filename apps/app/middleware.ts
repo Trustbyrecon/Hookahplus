@@ -1,7 +1,22 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { randomUUID } from 'crypto';
+
+/**
+ * Generate UUID using Web Crypto API (Edge Runtime compatible)
+ */
+function generateUUID(): string {
+  // Use Web Crypto API for Edge Runtime compatibility
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback for environments without crypto.randomUUID
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
 
 /**
  * Middleware for Supabase Auth with multi-tenant RLS
@@ -11,7 +26,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
   // Generate or use existing request ID for request correlation
-  const requestId = request.headers.get('X-Request-ID') || randomUUID();
+  const requestId = request.headers.get('X-Request-ID') || generateUUID();
   
   const response = NextResponse.next({
     request: {
