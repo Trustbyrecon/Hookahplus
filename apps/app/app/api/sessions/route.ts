@@ -176,9 +176,6 @@ function calculateRemainingTimeFromPrisma(session: any): number {
 }
 
 export const GET = withRequestContext(async (req: NextRequest): Promise<NextResponse> => {
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:178',message:'Sessions GET handler entry',data:{hasDatabaseUrl:!!process.env.DATABASE_URL,nodeEnv:process.env.NODE_ENV,cwd:process.cwd()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
   // Graceful fallback: Check if DATABASE_URL is loaded
   const isDevelopment = process.env.NODE_ENV === 'development';
   const allowFallback = isDevelopment || process.env.ALLOW_DB_FALLBACK === 'true';
@@ -187,9 +184,6 @@ export const GET = withRequestContext(async (req: NextRequest): Promise<NextResp
     logWithRequestId('[Sessions API] ⚠️ DATABASE_URL is not set!');
     logWithRequestId('[Sessions API] NODE_ENV:', process.env.NODE_ENV);
     logWithRequestId('[Sessions API] process.cwd():', process.cwd());
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:183',message:'DATABASE_URL not set',data:{isDevelopment,allowFallback},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
     
     // In development or when fallback is explicitly allowed, return empty results gracefully
     if (allowFallback) {
@@ -320,9 +314,6 @@ export const GET = withRequestContext(async (req: NextRequest): Promise<NextResp
     
     let dbSessions;
     try {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:314',message:'About to query database',data:{hasPrisma:!!prisma},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B,C'})}).catch(()=>{});
-      // #endregion
       // Use select to only query columns that definitely exist
       // This prevents errors if optional columns like session_type don't exist yet
       dbSessions = await withQueryTimeout(
@@ -464,9 +455,6 @@ export const GET = withRequestContext(async (req: NextRequest): Promise<NextResp
     console.error('[Sessions API] Error retrieving sessions:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const errorStack = error instanceof Error ? error.stack : undefined;
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:454',message:'Error caught in sessions GET',data:{errorMessage,errorCode:error?.code,errorName:error?.name,hasConnection:errorMessage.toLowerCase().includes('connection'),hasDatabase:errorMessage.toLowerCase().includes('database'),hasUrl:errorMessage.toLowerCase().includes('url'),isP1001:error?.code==='P1001',isP1012:error?.code==='P1012'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B,C,D'})}).catch(()=>{});
-    // #endregion
     
     // Check for database connection errors
     const isDbConnectionError = errorMessage.includes('Can\'t reach database') || 
@@ -474,9 +462,6 @@ export const GET = withRequestContext(async (req: NextRequest): Promise<NextResp
                                 errorMessage.includes('the URL must start with the protocol') ||
                                 error?.code === 'P1001' ||
                                 error?.code === 'P1012';
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:464',message:'Database connection error check',data:{isDbConnectionError,errorMessage,errorCode:error?.code},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B,C'})}).catch(()=>{});
-    // #endregion
     
     // Graceful fallback in development mode
     const isDevelopment = process.env.NODE_ENV === 'development';

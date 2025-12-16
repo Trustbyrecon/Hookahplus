@@ -53,9 +53,6 @@ export async function trackCTA(params: CTATrackingData): Promise<void> {
     const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
     
     try {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ctaTracking.ts:56',message:'Fetch request starting',data:{apiUrl,origin:typeof window!=='undefined'?window.location.origin:null,method:'POST'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B,C'})}).catch(()=>{});
-      // #endregion
       const response = await fetch(`${apiUrl}/api/cta/track`, {
         method: 'POST',
         headers: {
@@ -66,9 +63,6 @@ export async function trackCTA(params: CTATrackingData): Promise<void> {
       });
 
       clearTimeout(timeoutId);
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ctaTracking.ts:65',message:'Fetch response received',data:{status:response.status,statusText:response.statusText,headers:Object.fromEntries(response.headers.entries()),hasCorsHeader:response.headers.has('access-control-allow-origin')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,D'})}).catch(()=>{});
-      // #endregion
 
       if (!response.ok) {
         // Only log in development to reduce console noise
@@ -83,9 +77,6 @@ export async function trackCTA(params: CTATrackingData): Promise<void> {
       }
     } catch (fetchError: any) {
       clearTimeout(timeoutId);
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ctaTracking.ts:78',message:'Fetch error caught',data:{errorName:fetchError?.name,errorMessage:fetchError?.message,errorStack:fetchError?.stack?.substring(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B,C'})}).catch(()=>{});
-      // #endregion
       // Only log connection errors in development
       // Connection refused is expected if app build isn't running
       if (process.env.NODE_ENV === 'development' && !fetchError.message?.includes('aborted')) {

@@ -63,11 +63,6 @@ export async function OPTIONS(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
-    // #region agent log
-    const origin = req.headers.get('origin');
-    const logData = { origin, method: req.method, url: req.url, hasOrigin: !!origin };
-    fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:12',message:'POST request received',data:logData,timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B,C'})}).catch(()=>{});
-    // #endregion
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || '0.0.0.0';
     const userAgent = req.headers.get('user-agent') || '';
     const referrer = req.headers.get('referer') || req.headers.get('referrer') || null;
@@ -198,10 +193,6 @@ export async function POST(req: NextRequest) {
     // Log success
     console.log(`[CTA Track] Created event ${event.id} for ${ctaSource}/${ctaType}`);
 
-    // #region agent log
-    const corsHeaders = getCorsHeaders(req);
-    fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:133',message:'POST response sending',data:{corsHeaders,eventId:event.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,D'})}).catch(()=>{});
-    // #endregion
     return NextResponse.json({
       success: true,
       id: event.id,
@@ -216,9 +207,6 @@ export async function POST(req: NextRequest) {
 
   } catch (error) {
     console.error('[CTA Track] Error:', error);
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:143',message:'POST error caught',data:{errorMessage:error instanceof Error?error.message:'Unknown'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
     return NextResponse.json({
       success: false,
       error: 'Failed to track CTA',
