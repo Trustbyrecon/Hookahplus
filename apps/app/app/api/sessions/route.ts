@@ -538,7 +538,7 @@ export const GET = withRequestContext(async (req: NextRequest): Promise<NextResp
   }
 });
 
-export const POST = withRequestContext(async (req: NextRequest) => {
+export const POST = withRequestContext(async (req: NextRequest): Promise<NextResponse> => {
   let body: any;
   try {
     console.log('[Sessions API] POST request received');
