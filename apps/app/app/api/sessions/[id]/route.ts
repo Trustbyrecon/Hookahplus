@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../../lib/db';
-import { convertPrismaSessionToFireSession } from '../../../../../lib/session-utils-prisma';
+import { prisma } from '@/lib/db';
+import { convertPrismaSessionToFireSession } from '@/lib/session-utils-prisma';
 
 // CORS headers helper - accepts request to get origin
 function getCorsHeaders(req?: NextRequest) {

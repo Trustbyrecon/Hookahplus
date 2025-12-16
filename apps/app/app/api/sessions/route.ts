@@ -375,34 +375,35 @@ export const GET = withRequestContext(async (req: NextRequest) => {
         try {
           // Fallback: query only essential columns
           dbSessions = await withQueryTimeout(
-        prisma.session.findMany({
-            where: whereClause,
-            select: {
-              id: true,
-              tableId: true,
-              customerRef: true,
-              customerPhone: true,
-              flavor: true,
-              flavorMix: true,
-              priceCents: true,
-              state: true,
-              assignedBOHId: true,
-              assignedFOHId: true,
-              startedAt: true,
-              endedAt: true,
-              durationSecs: true,
-              paymentStatus: true,
-              externalRef: true, // Required for payment detection
-              createdAt: true,
-              updatedAt: true,
-              timerDuration: true,
-              timerStartedAt: true,
-              timerStatus: true,
-            },
-            orderBy: {
-              createdAt: 'desc'
-            }
-          });
+            prisma.session.findMany({
+              where: whereClause,
+              select: {
+                id: true,
+                tableId: true,
+                customerRef: true,
+                customerPhone: true,
+                flavor: true,
+                flavorMix: true,
+                priceCents: true,
+                state: true,
+                assignedBOHId: true,
+                assignedFOHId: true,
+                startedAt: true,
+                endedAt: true,
+                durationSecs: true,
+                paymentStatus: true,
+                externalRef: true, // Required for payment detection
+                createdAt: true,
+                updatedAt: true,
+                timerDuration: true,
+                timerStartedAt: true,
+                timerStatus: true,
+              },
+              orderBy: {
+                createdAt: 'desc'
+              }
+            })
+          );
         } catch (fallbackError: any) {
           console.error('[Sessions API] Fallback query also failed:', fallbackError?.message);
           throw fallbackError;
