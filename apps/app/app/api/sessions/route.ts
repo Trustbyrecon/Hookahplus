@@ -1044,6 +1044,15 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
           headers: getCorsHeaders(req),
         });
       }
+      
+      // Fallback: If newSession is somehow not set, return error
+      return NextResponse.json({ 
+        error: 'Session creation failed',
+        details: 'Session was not created successfully'
+      }, {
+        status: 500,
+        headers: getCorsHeaders(req),
+      });
     } catch (createError: any) {
       // Log Prisma create error
       console.error('[Sessions API] ❌ Session creation failed:', {
