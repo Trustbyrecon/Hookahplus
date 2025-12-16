@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { withStripeRetry } from '../../lib/http-retry';
+import { withStripeRetry } from '../../../lib/http-retry';
 
 // Initialize Stripe instance - will be validated in demo mode
 const stripe = process.env.STRIPE_SECRET_KEY

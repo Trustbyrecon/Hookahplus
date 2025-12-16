@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../lib/db';
+import { prisma } from '../../../../../lib/db';
 import { 
   createAdjustment, 
   getSessionAdjustments, 
   getSessionLedger,
   AdjustmentType 
-} from '../../../../lib/session-adjustments';
-import { hasRole, getCurrentUser } from '../../../../lib/auth';
+} from '../../../../../lib/session-adjustments';
+import { hasRole, getCurrentUser } from '../../../../../lib/auth';
 
 /**
  * POST /api/sessions/[id]/adjustments

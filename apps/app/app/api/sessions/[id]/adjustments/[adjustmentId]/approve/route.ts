@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { approveAdjustment } from '../../../../../../lib/session-adjustments';
-import { hasRole, getCurrentUser } from '../../../../../../lib/auth';
+import { approveAdjustment } from '../../../../../../../lib/session-adjustments';
+import { hasRole, getCurrentUser } from '../../../../../../../lib/auth';
 
 /**
  * POST /api/sessions/[id]/adjustments/[adjustmentId]/approve
