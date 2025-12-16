@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { HookahTracker } from '../../components/HookahTracker';
 
-export default function HookahTrackerPage() {
+function HookahTrackerContent() {
   const searchParams = useSearchParams();
   const [sessionId, setSessionId] = useState('session_demo');
   const [loungeId, setLoungeId] = useState('lounge_001');
@@ -32,5 +32,17 @@ export default function HookahTrackerPage() {
         onComplete={handleTrackerComplete}
       />
     </div>
+  );
+}
+
+export default function HookahTrackerPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    }>
+      <HookahTrackerContent />
+    </Suspense>
   );
 }

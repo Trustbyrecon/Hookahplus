@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { deleteLoungeData, getRetentionPolicy } from '../../../../lib/data-retention';
-import { hasRole, getCurrentTenant } from '../../../../lib/auth';
+import { deleteLoungeData, getRetentionPolicy } from '../../../../../lib/data-retention';
+import { hasRole, getCurrentTenant } from '../../../../../lib/auth';
 
 /**
  * DELETE /api/lounges/[loungeId]/data

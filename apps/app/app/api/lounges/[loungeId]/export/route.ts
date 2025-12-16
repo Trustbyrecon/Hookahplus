@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { exportLoungeData } from '../../../../lib/data-retention';
-import { hasRole, getCurrentTenant } from '../../../../lib/auth';
+import { exportLoungeData } from '../../../../../lib/data-retention';
+import { hasRole, getCurrentTenant } from '../../../../../lib/auth';
 
 /**
  * GET /api/lounges/[loungeId]/export

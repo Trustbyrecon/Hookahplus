@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { withStripeRetry } from '../../lib/http-retry';
 
 // Initialize Stripe instance - will be validated in demo mode
 const stripe = process.env.STRIPE_SECRET_KEY
@@ -157,7 +158,8 @@ export const POST = withRequestContext(async (request: NextRequest) => {
             h_order: `H+ ${sessionId.substring(0, 8)}`,
             is_demo: 'true'
           },
-        });
+          })
+        );
         
         // Verify the session ID starts with cs_test_ (test mode) not cs_live_ (live mode)
         if (session.id && !session.id.startsWith('cs_test_')) {
