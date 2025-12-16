@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { resolve } from "path";
+import { testDatabaseConnection } from "./db-helpers";
 
 // CRITICAL: Load .env.local BEFORE PrismaClient initialization
 // Next.js loads .env.local automatically, but PrismaClient validates DATABASE_URL
@@ -51,8 +52,22 @@ const prismaInstance = globalForPrisma.prisma ?? new PrismaClient({
 // No additional retry wrapper needed - Prisma handles connection management internally
 const prisma = prismaInstance;
 
+// Test connection on startup with retry logic
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prismaInstance;
+  
+  // Test connection in development (non-blocking)
+  testDatabaseConnection(prismaInstance, { maxRetries: 3 })
+    .then(connected => {
+      if (connected) {
+        console.log('[db.ts] ✅ Database connection successful');
+      } else {
+        console.warn('[db.ts] ⚠️ Database connection failed after retries');
+      }
+    })
+    .catch(() => {
+      // Silent fail - connection will be tested on first query
+    });
 }
 
 export { prisma };

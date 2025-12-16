@@ -1,5 +1,15 @@
 import { NextRequest } from 'next/server';
 
+/**
+ * Rate Limiting Module
+ * 
+ * NOTE: This module is being migrated to Redis-based rate limiting.
+ * See lib/rate-limit-redis.ts for the new implementation.
+ * 
+ * This file is kept for backward compatibility.
+ * New code should use rate-limit-redis.ts
+ */
+
 // In-memory store for rate limiting (in production, use Redis)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 

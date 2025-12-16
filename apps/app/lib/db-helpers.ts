@@ -1,6 +1,6 @@
 /**
  * Database Helper Utilities
- * Provides timeout wrappers and query utilities for database operations
+ * Provides timeout wrappers, retry logic, and query utilities for database operations
  */
 
 /**
@@ -23,6 +23,7 @@ export async function withQueryTimeout<T>(
 
 /**
  * Execute a query with retry logic and timeout
+ * Includes connection retry for database connection errors
  */
 export async function withQueryRetry<T>(
   query: () => Promise<T>,
@@ -30,12 +31,22 @@ export async function withQueryRetry<T>(
     maxRetries?: number;
     timeoutMs?: number;
     retryDelayMs?: number;
+    retryableErrors?: string[];
   } = {}
 ): Promise<T> {
   const {
     maxRetries = 3,
     timeoutMs = 5000,
     retryDelayMs = 1000,
+    retryableErrors = [
+      'ECONNREFUSED',
+      'ETIMEDOUT',
+      'ENOTFOUND',
+      'ECONNRESET',
+      'P1001', // Prisma connection error
+      'P1008', // Prisma connection timeout
+      'P1017', // Prisma connection closed
+    ],
   } = options;
 
   let lastError: Error | null = null;
@@ -47,7 +58,19 @@ export async function withQueryRetry<T>(
       lastError = error instanceof Error ? error : new Error(String(error));
       
       // Don't retry on timeout - it's likely a real issue
-      if (lastError.message.includes('timeout')) {
+      if (lastError.message.includes('timeout') && !lastError.message.includes('connection')) {
+        throw lastError;
+      }
+
+      // Check if error is retryable
+      const isRetryable = retryableErrors.some(code => 
+        lastError?.message.includes(code) || 
+        lastError?.code === code ||
+        (error as any)?.code === code
+      );
+
+      if (!isRetryable) {
+        // Not a retryable error, throw immediately
         throw lastError;
       }
 
@@ -63,6 +86,38 @@ export async function withQueryRetry<T>(
   }
 
   throw lastError || new Error('Query failed after retries');
+}
+
+/**
+ * Test database connection with retry logic
+ */
+export async function testDatabaseConnection(
+  prisma: any,
+  options: {
+    maxRetries?: number;
+    retryDelayMs?: number;
+  } = {}
+): Promise<boolean> {
+  const { maxRetries = 3, retryDelayMs = 1000 } = options;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      return true;
+    } catch (error) {
+      const isLastAttempt = attempt === maxRetries - 1;
+      
+      if (isLastAttempt) {
+        return false;
+      }
+
+      // Wait before retrying (exponential backoff)
+      const delay = retryDelayMs * Math.pow(2, attempt);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+
+  return false;
 }
 
 /**

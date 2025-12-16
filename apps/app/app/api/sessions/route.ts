@@ -3,7 +3,9 @@ import { prisma } from '../../../lib/db';
 import { SessionSource, SessionState } from '@prisma/client';
 import { getCurrentUser, getCurrentTenant } from '../../../lib/auth';
 import crypto from 'crypto';
-import { withRequestContext, logWithRequestId } from '../../../lib/api-helpers';
+import { withRequestContext, logWithRequestId, getRequestIdForLogging } from '../../../lib/api-helpers';
+import { getCached, setCached, generateCacheKey } from '../../../lib/cache';
+import { logger } from '../../../lib/logger';
 import { 
   FireSession, 
   SessionStatus, 
@@ -364,7 +366,8 @@ export const GET = withRequestContext(async (req: NextRequest) => {
         orderBy: {
           createdAt: 'desc'
         }
-      });
+      })
+    );
     } catch (dbError: any) {
       // If query fails due to missing columns, try with minimal select
       if (dbError?.code === 'P2022' || dbError?.message?.includes('does not exist')) {

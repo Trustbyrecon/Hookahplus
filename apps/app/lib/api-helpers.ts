@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { runWithContextAsync, createRequestContext, getRequestId } from './requestContext';
 import { randomUUID } from 'crypto';
+import { logger } from './logger';
 
 /**
  * API Route Helper Utilities
@@ -54,10 +55,13 @@ export function getRequestIdForLogging(): string {
 }
 
 /**
- * Log with request ID prefix
+ * Log with request ID prefix (deprecated - use logger instead)
  */
 export function logWithRequestId(message: string, ...args: any[]): void {
   const requestId = getRequestIdForLogging();
-  console.log(`[${requestId}] ${message}`, ...args);
+  logger.info(message, {
+    requestId,
+    ...(args.length > 0 && { args }),
+  });
 }
 

@@ -1,14 +1,21 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { HookahTracker } from '../../components/HookahTracker';
 
 export default function HookahTrackerPage() {
-  // Get URL parameters
-  const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
-  const sessionId = searchParams.get('sessionId') || 'session_demo';
-  const loungeId = searchParams.get('loungeId') || 'lounge_001';
-  const tableId = searchParams.get('tableId') || 'T-001';
+  const searchParams = useSearchParams();
+  const [sessionId, setSessionId] = useState('session_demo');
+  const [loungeId, setLoungeId] = useState('lounge_001');
+  const [tableId, setTableId] = useState('T-001');
+
+  useEffect(() => {
+    // Get URL parameters on client side only
+    setSessionId(searchParams.get('sessionId') || 'session_demo');
+    setLoungeId(searchParams.get('loungeId') || 'lounge_001');
+    setTableId(searchParams.get('tableId') || 'T-001');
+  }, [searchParams]);
 
   const handleTrackerComplete = () => {
     // When tracking is complete, redirect to App build FSM/FSD

@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { getCached, setCached, generateCacheKey } from '../../../lib/cache';
+import { logger } from '../../../lib/logger';
 
 const prisma = new PrismaClient();
 
@@ -14,6 +16,14 @@ const prisma = new PrismaClient();
  * This endpoint now uses readiness logic.
  */
 export async function GET() {
+  const cacheKey = generateCacheKey('health', {});
+  
+  // Try to get from cache (short TTL for health checks)
+  const cached = await getCached<any>(cacheKey);
+  if (cached) {
+    return NextResponse.json(cached.data, { status: cached.status });
+  }
+
   const timestamp = new Date().toISOString();
   const firstLightMode = process.env.FIRST_LIGHT_MODE === 'true';
   
@@ -29,10 +39,11 @@ export async function GET() {
       // Simple connection test
       await prisma.$queryRaw`SELECT 1`;
       databaseStatus = 'connected';
+      logger.info('Health check: Database connected', { component: 'health' });
     } catch (error) {
       databaseStatus = 'disconnected';
       databaseError = error instanceof Error ? error.message : 'Unknown database error';
-      console.error('[Health Check] Database connection failed:', databaseError);
+      logger.error('Health check: Database connection failed', { component: 'health' }, error instanceof Error ? error : new Error(String(error)));
     }
   } else {
     databaseError = 'DATABASE_URL environment variable is not set';
@@ -68,6 +79,9 @@ export async function GET() {
   
   // Return 503 if down, 200 otherwise
   const statusCode = status === 'down' ? 503 : 200;
+  
+  // Cache for 10 seconds (health checks should be fresh but not too frequent)
+  await setCached(cacheKey, { data: healthData, status: statusCode }, { ttl: 10 });
   
   return NextResponse.json(healthData, { status: statusCode });
 }

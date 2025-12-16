@@ -117,8 +117,10 @@ export const POST = withRequestContext(async (request: NextRequest) => {
       const cancelUrl = `${baseUrl}/checkout/cancel?session_id=${sessionId}&mode=demo`;
       
       try {
-        console.log('[Checkout API] 🎭 Creating Stripe TEST checkout session for demo mode');
-        console.log('[Checkout API] ✅ Using test Stripe keys - checkout will be in sandbox/test mode');
+        logger.info('Creating Stripe TEST checkout session for demo mode', {
+          component: 'checkout',
+          action: 'create_demo_session',
+        });
         
         // CRITICAL: Double-check we're using test keys before creating session
         const keyInUse = process.env.STRIPE_TEST_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
@@ -126,8 +128,13 @@ export const POST = withRequestContext(async (request: NextRequest) => {
           throw new Error('Cannot create demo checkout: Live Stripe keys detected. Demo mode requires sk_test_ keys only.');
         }
         
-        console.log('[Checkout API] 🔒 Security check passed - using test keys only');
-        const session = await testStripe.checkout.sessions.create({
+        logger.info('Security check passed - using test keys only', {
+          component: 'checkout',
+          action: 'create_demo_session',
+        });
+        
+        const session = await withStripeRetry(
+          () => testStripe.checkout.sessions.create({
           mode: 'payment',
           payment_method_types: ['card'],
           line_items: [
