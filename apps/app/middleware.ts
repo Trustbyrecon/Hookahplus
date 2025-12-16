@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { randomUUID } from 'crypto';
 
 /**
  * Middleware for Supabase Auth with multi-tenant RLS
@@ -8,11 +9,18 @@ import type { NextRequest } from 'next/server';
  */
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  
+  // Generate or use existing request ID for request correlation
+  const requestId = request.headers.get('X-Request-ID') || randomUUID();
+  
   const response = NextResponse.next({
     request: {
       headers: request.headers,
     },
   });
+  
+  // Add request ID to response headers for client correlation
+  response.headers.set('X-Request-ID', requestId);
 
   // Create Supabase client for middleware
   const supabase = createServerClient(
@@ -42,6 +50,8 @@ export async function middleware(request: NextRequest) {
   // Public routes that don't require authentication
   const publicRoutes = [
     '/api/health',
+    '/api/health/live',
+    '/api/health/ready',
     '/api/sessions', // QR code access (POST only)
     '/api/checkout-session',
     '/api/webhooks',

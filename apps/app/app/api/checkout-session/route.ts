@@ -49,10 +49,10 @@ function getTestStripeInstance(): Stripe | null {
   return null;
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withRequestContext(async (request: NextRequest) => {
   try {
     if (!stripe) {
-      console.error('[Checkout API] ❌ STRIPE_SECRET_KEY not configured');
+      logWithRequestId('[Checkout API] ❌ STRIPE_SECRET_KEY not configured');
       return NextResponse.json(
         { 
           success: false,
@@ -494,5 +494,5 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 

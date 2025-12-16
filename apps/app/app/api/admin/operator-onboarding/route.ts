@@ -5,6 +5,7 @@ import { sendNewLeadNotification, sendTestLinkEmail } from '../../../../lib/emai
 import { requireRole, getCurrentTenant } from '../../../../lib/auth';
 import { generateSlug, generateDemoLink, findOrCreateDemoTenant } from '../../../../lib/demo';
 import crypto from 'crypto';
+import { withRequestContext, logWithRequestId } from '../../../../lib/api-helpers';
 
 /**
  * Create REM-compliant TrustEvent from onboarding payload

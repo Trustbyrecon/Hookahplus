@@ -1,4 +1,16 @@
 import { reflexScoreAudit, scoreActions } from './reflexScoreAudit';
+import { getRequestId } from './requestContext';
+
+// Conditionally import Sentry only if DSN is configured
+let Sentry: typeof import('@sentry/nextjs') | null = null;
+try {
+  if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
+    Sentry = require('@sentry/nextjs');
+  }
+} catch (e) {
+  // Sentry not installed or not configured
+  console.warn('[TelemetryService] Sentry not available:', e);
+}
 
 export interface TelemetryEvent {
   id: string;
@@ -8,6 +20,7 @@ export interface TelemetryEvent {
   action: string;
   data: Record<string, any>;
   metadata: {
+    requestId?: string;
     userId?: string;
     sessionId?: string;
     tableId?: string;
@@ -39,6 +52,9 @@ export class TelemetryService {
     data: Record<string, any> = {},
     metadata: Partial<TelemetryEvent['metadata']> = {}
   ): void {
+    // Get request ID from context if available
+    const requestId = getRequestId();
+    
     const event: TelemetryEvent = {
       id: `telemetry_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       timestamp: new Date().toISOString(),
@@ -49,6 +65,7 @@ export class TelemetryService {
       metadata: {
         environment: process.env.NODE_ENV || 'development',
         version: process.env.npm_package_version || '1.0.0',
+        ...(requestId && { requestId }),
         ...metadata
       }
     };
@@ -123,6 +140,34 @@ export class TelemetryService {
       errorMessage: errorData.message,
       ...additionalData
     }, metadata);
+
+    // Send to Sentry if configured
+    if (Sentry && typeof error !== 'string') {
+      try {
+        Sentry.captureException(error, {
+          tags: {
+            component,
+            action,
+            environment: metadata.environment || process.env.NODE_ENV || 'development',
+          },
+          extra: {
+            ...additionalData,
+            requestId: metadata.requestId,
+            userId: metadata.userId,
+            sessionId: metadata.sessionId,
+            tableId: metadata.tableId,
+            userRole: metadata.userRole,
+          },
+          contexts: {
+            request: {
+              requestId: metadata.requestId,
+            },
+          },
+        });
+      } catch (sentryError) {
+        console.warn('[TelemetryService] Failed to send error to Sentry:', sentryError);
+      }
+    }
   }
 
   /**

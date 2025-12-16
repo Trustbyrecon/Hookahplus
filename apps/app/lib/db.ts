@@ -26,8 +26,22 @@ const globalForPrisma = global as unknown as { prisma?: PrismaClient };
 // P0: Optimize PrismaClient for high concurrency
 // - Connection pool settings are controlled via DATABASE_URL (?connection_limit=30&pool_timeout=10)
 // - Prisma automatically uses these settings from the connection string
+// - Add query_timeout to prevent long-running queries from hanging
+const databaseUrl = process.env.DATABASE_URL || '';
+const hasQueryTimeout = databaseUrl.includes('query_timeout');
+const finalDatabaseUrl = hasQueryTimeout 
+  ? databaseUrl 
+  : databaseUrl.includes('?')
+    ? `${databaseUrl}&query_timeout=5000`
+    : `${databaseUrl}?query_timeout=5000`;
+
 const prismaInstance = globalForPrisma.prisma ?? new PrismaClient({ 
   log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+  datasources: {
+    db: {
+      url: finalDatabaseUrl,
+    },
+  },
 });
 
 // P0: PrismaClient automatically uses connection pool settings from DATABASE_URL

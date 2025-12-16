@@ -3,6 +3,16 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+/**
+ * Legacy Health Check Endpoint
+ * 
+ * This endpoint is kept for backward compatibility.
+ * For new deployments, use:
+ * - /api/health/live - Liveness check (server running)
+ * - /api/health/ready - Readiness check (can serve traffic)
+ * 
+ * This endpoint now uses readiness logic.
+ */
 export async function GET() {
   const timestamp = new Date().toISOString();
   const firstLightMode = process.env.FIRST_LIGHT_MODE === 'true';
@@ -28,7 +38,7 @@ export async function GET() {
     databaseError = 'DATABASE_URL environment variable is not set';
   }
   
-  // Determine overall status
+  // Determine overall status (readiness logic)
   let status: 'ok' | 'degraded' | 'down' = 'ok';
   if (databaseStatus === 'disconnected') {
     status = 'down';
@@ -47,6 +57,13 @@ export async function GET() {
     version: '1.0.5',
     app: 'hookahplus-app',
     env: process.env.NODE_ENV || 'development',
+    // Deprecation notice
+    deprecated: true,
+    message: 'This endpoint is deprecated. Use /api/health/live for liveness and /api/health/ready for readiness checks.',
+    newEndpoints: {
+      live: '/api/health/live',
+      ready: '/api/health/ready',
+    },
   };
   
   // Return 503 if down, 200 otherwise

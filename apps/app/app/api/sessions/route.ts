@@ -3,6 +3,7 @@ import { prisma } from '../../../lib/db';
 import { SessionSource, SessionState } from '@prisma/client';
 import { getCurrentUser, getCurrentTenant } from '../../../lib/auth';
 import crypto from 'crypto';
+import { withRequestContext, logWithRequestId } from '../../../lib/api-helpers';
 import { 
   FireSession, 
   SessionStatus, 
@@ -29,6 +30,7 @@ import { logKtl4Event, updateKtl4Health, getKtl4HealthStatus } from '../../../li
 import { mapSessionState } from '../../../lib/taxonomy/enums-v1';
 import { trackUnknown } from '../../../lib/taxonomy/unknown-tracker';
 import { convertPrismaSessionToFireSession } from '../../../lib/session-utils-prisma';
+import { withQueryTimeout, QUERY_TIMEOUTS } from '../../../lib/db-helpers';
 
 // CORS headers helper - accepts request to get origin
 function getCorsHeaders(req?: NextRequest) {
@@ -171,15 +173,15 @@ function calculateRemainingTimeFromPrisma(session: any): number {
   return Math.max(0, session.timerDuration - elapsed + pausedTime);
 }
 
-export async function GET(req: NextRequest) {
+export const GET = withRequestContext(async (req: NextRequest) => {
   // Graceful fallback: Check if DATABASE_URL is loaded
   const isDevelopment = process.env.NODE_ENV === 'development';
   const allowFallback = isDevelopment || process.env.ALLOW_DB_FALLBACK === 'true';
   
   if (!process.env.DATABASE_URL) {
-    console.warn('[Sessions API] ⚠️ DATABASE_URL is not set!');
-    console.warn('[Sessions API] NODE_ENV:', process.env.NODE_ENV);
-    console.warn('[Sessions API] process.cwd():', process.cwd());
+    logWithRequestId('[Sessions API] ⚠️ DATABASE_URL is not set!');
+    logWithRequestId('[Sessions API] NODE_ENV:', process.env.NODE_ENV);
+    logWithRequestId('[Sessions API] process.cwd():', process.cwd());
     
     // In development or when fallback is explicitly allowed, return empty results gracefully
     if (allowFallback) {
@@ -312,7 +314,8 @@ export async function GET(req: NextRequest) {
     try {
       // Use select to only query columns that definitely exist
       // This prevents errors if optional columns like session_type don't exist yet
-      dbSessions = await prisma.session.findMany({
+      dbSessions = await withQueryTimeout(
+        prisma.session.findMany({
         where: whereClause,
         select: {
           id: true,
@@ -368,7 +371,8 @@ export async function GET(req: NextRequest) {
         console.warn('[Sessions API] Column missing, trying minimal query:', dbError?.message);
         try {
           // Fallback: query only essential columns
-          dbSessions = await prisma.session.findMany({
+          dbSessions = await withQueryTimeout(
+        prisma.session.findMany({
             where: whereClause,
             select: {
               id: true,
@@ -513,9 +517,9 @@ export async function GET(req: NextRequest) {
       headers: getCorsHeaders(req),
     });
   }
-}
+});
 
-export async function POST(req: NextRequest) {
+export const POST = withRequestContext(async (req: NextRequest) => {
   let body: any;
   try {
     console.log('[Sessions API] POST request received');
@@ -1228,6 +1232,7 @@ export async function POST(req: NextRequest) {
       });
     }
   }
+});
 
 // New PATCH endpoint for session actions
 // Note: This endpoint is kept for backward compatibility but should use /api/sessions/[id]/transition
