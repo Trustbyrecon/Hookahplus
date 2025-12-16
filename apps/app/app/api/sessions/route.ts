@@ -1689,7 +1689,7 @@ export async function PATCH(req: NextRequest) {
 
       // Log session event before state update (append-only ledger)
       try {
-        const { logSessionEvent } = await import('../../../../lib/session-events');
+        const { logSessionEvent } = await import('@/lib/session-events');
         const eventTypeMap: Record<string, string> = {
           'CLAIM_PREP': 'claimed',
           'HEAT_UP': 'claimed',
