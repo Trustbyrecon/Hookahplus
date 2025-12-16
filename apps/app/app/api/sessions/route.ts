@@ -1687,6 +1687,40 @@ export async function PATCH(req: NextRequest) {
         updateData.endedAt = new Date();
       }
 
+      // Log session event before state update (append-only ledger)
+      try {
+        const { logSessionEvent } = await import('../../../../lib/session-events');
+        const eventTypeMap: Record<string, string> = {
+          'CLAIM_PREP': 'claimed',
+          'HEAT_UP': 'claimed',
+          'READY_FOR_DELIVERY': 'claimed',
+          'DELIVER_NOW': 'delivered',
+          'MARK_DELIVERED': 'delivered',
+          'START_ACTIVE': 'started',
+          'PAUSE': 'paused',
+          'RESUME': 'resumed',
+          'END': 'ended',
+          'CANCEL': 'canceled',
+        };
+        const eventType = eventTypeMap[action] || 'adjusted';
+        await logSessionEvent({
+          eventType: eventType as any,
+          sessionId: dbSession.id,
+          eventData: {
+            action,
+            previousState: dbSession.state,
+            newState: String(newState),
+            userRole,
+            operatorId,
+          },
+          actorId: operatorId,
+          actorRole: userRole,
+        });
+      } catch (eventError) {
+        console.warn('[Sessions API] Failed to log session event:', eventError);
+        // Don't fail the request if event logging fails
+      }
+
       // Try to update session, with fallback for missing columns
       let updatedDbSession: any;
       try {

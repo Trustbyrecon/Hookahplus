@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { logSessionEvent } from '../../../../lib/session-events';
 
 const prisma = new PrismaClient();
 
@@ -47,6 +48,19 @@ export async function POST(
         state: 'ACTIVE',
         startedAt: session.startedAt || new Date()
       }
+    });
+
+    // Log session event (append-only ledger)
+    await logSessionEvent({
+      eventType: 'started',
+      sessionId,
+      eventData: {
+        durationMinutes: timerDuration / 60,
+        startedAt: updated.timerStartedAt?.toISOString(),
+        state: 'ACTIVE',
+      },
+      actorId: staffId,
+      actorRole: 'staff',
     });
 
     // Log audit

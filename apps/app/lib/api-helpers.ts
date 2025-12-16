@@ -65,3 +65,58 @@ export function logWithRequestId(message: string, ...args: any[]): void {
   });
 }
 
+/**
+ * Filter staff-only notes from response data
+ * Use this in all customer-facing endpoints to ensure notes are never exposed
+ */
+export function filterStaffNotesFromResponse<T extends Record<string, any>>(
+  data: T
+): Omit<T, 'notes'> {
+  if (!data || typeof data !== 'object') {
+    return data;
+  }
+  
+  const { notes, ...rest } = data;
+  
+  // Recursively filter nested objects
+  const filtered: any = {};
+  for (const key in rest) {
+    if (rest[key] && typeof rest[key] === 'object' && !Array.isArray(rest[key])) {
+      filtered[key] = filterStaffNotesFromResponse(rest[key]);
+    } else {
+      filtered[key] = rest[key];
+    }
+  }
+  
+  return filtered as Omit<T, 'notes'>;
+}
+
+/**
+ * Middleware wrapper to ensure staff notes are never returned
+ * Use this to wrap customer-facing API route handlers
+ */
+export function withStaffNoteFilter<T>(
+  handler: (req: NextRequest, context?: { params?: any }) => Promise<NextResponse<T>>
+) {
+  return async (req: NextRequest, context?: { params?: any }): Promise<NextResponse<T>> => {
+    const response = await handler(req, context);
+    
+    // Only filter if response is JSON
+    if (response.headers.get('content-type')?.includes('application/json')) {
+      try {
+        const data = await response.json();
+        const filtered = filterStaffNotesFromResponse(data);
+        return NextResponse.json(filtered, {
+          status: response.status,
+          headers: response.headers,
+        });
+      } catch (error) {
+        // If JSON parsing fails, return original response
+        return response;
+      }
+    }
+    
+    return response;
+  };
+}
+

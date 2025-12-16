@@ -101,6 +101,9 @@ model Session {
   orders       Order[]
   deliveries   Delivery[]
   notes        SessionNote[]
+  pricingSnapshot PricingSnapshot?
+  events       SessionEvent[]
+  adjustments  SessionAdjustment[]
 
   @@index([tenantId])
   @@index([preorderId])
@@ -454,6 +457,78 @@ model PricingLock {
 
   @@index([sessionId])
   @@map("pricing_locks")
+}
+
+model PricingSnapshot {
+  id              String   @id @default(cuid())
+  sessionId       String   @unique
+  configVersion   Int      @map("config_version")
+  basePriceCents  Int
+  addOnsPriceCents Int     @default(0) @map("add_ons_price_cents")
+  adjustmentsCents Int     @default(0) @map("adjustments_cents")
+  finalPriceCents Int
+  breakdown       Json     // Full pricing breakdown JSON
+  mixItems        Json?    @map("mix_items") // Flavor mix items
+  premiumDetected Boolean  @default(false) @map("premium_detected")
+  createdAt       DateTime @default(now()) @map("created_at")
+  
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  @@index([sessionId])
+  @@index([configVersion])
+  @@map("pricing_snapshots")
+}
+
+model SessionEvent {
+  id          String   @id @default(cuid())
+  sessionId   String   @map("session_id")
+  eventType   String   @map("event_type") // 'started', 'paused', 'resumed', 'ended', 'transferred', 'adjusted'
+  eventData   Json?    @map("event_data") // Event-specific data
+  actorId     String?  @map("actor_id") // Staff/user who triggered event
+  actorRole   String?  @map("actor_role") // Role of actor
+  timestamp   DateTime @default(now())
+  
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  @@index([sessionId, timestamp])
+  @@index([eventType, timestamp])
+  @@map("session_events")
+}
+
+model SessionAdjustment {
+  id            String   @id @default(cuid())
+  sessionId     String   @map("session_id")
+  adjustmentType String  @map("adjustment_type") // 'DISCOUNT', 'COMP', 'SURCHARGE', 'REFUND'
+  amountCents   Int     @map("amount_cents") // Positive for surcharge, negative for discount/comp
+  reason         String
+  approvedBy     String? @map("approved_by") // Manager ID who approved
+  approvedAt     DateTime? @map("approved_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+  createdBy     String   @map("created_by") // Staff who created adjustment
+  
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  @@index([sessionId])
+  @@index([adjustmentType, createdAt])
+  @@map("session_adjustments")
+}
+
+model IntegrationEvent {
+  id              String   @id @default(cuid())
+  integrationType String   @map("integration_type") // 'square', 'toast', 'clover'
+  externalEventId String   @map("external_event_id") // Event ID from POS system
+  eventType       String   @map("event_type")
+  payload         Json
+  status          String   // 'pending', 'processed', 'failed', 'dlq'
+  retryCount      Int      @default(0) @map("retry_count")
+  processedAt     DateTime? @map("processed_at")
+  errorMessage    String? @map("error_message")
+  createdAt       DateTime @default(now()) @map("created_at")
+  
+  @@unique([integrationType, externalEventId])
+  @@index([status, createdAt])
+  @@index([integrationType, status])
+  @@map("integration_events")
 }
 
 model Ktl4Alert {

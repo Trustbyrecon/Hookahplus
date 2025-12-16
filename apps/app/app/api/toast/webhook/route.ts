@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { makePosAdapter } from '../../../../lib/pos/factory';
 import { ToastAdapter } from '../../../../lib/pos/toast';
+import { processWebhookWithIdempotency } from '../../../../lib/pos/webhook-framework';
 
 /** Toast Webhook Handler
  * 
@@ -31,36 +32,54 @@ export async function POST(req: NextRequest) {
       return new NextResponse('Invalid signature', { status: 401 });
     }
 
-    // Route webhook events
+    // Route webhook events with idempotency
     const eventType = event.eventType || event.type;
+    const externalEventId = event.id || event.eventId || event.checkGuid || `${eventType}_${Date.now()}`;
+    
     console.log(`[Toast Webhook] Received event: ${eventType}`, event);
 
-    switch (eventType) {
-      case 'CHECK_CREATED':
-        await handleCheckCreated(event);
-        break;
-        
-      case 'CHECK_UPDATED':
-        await handleCheckUpdated(event);
-        break;
-        
-      case 'CHECK_CLOSED':
-        await handleCheckClosed(event);
-        break;
-        
-      case 'PAYMENT_PROCESSED':
-        await handlePaymentProcessed(event);
-        break;
-        
-      case 'MENU_ITEM_UPDATED':
-        await handleMenuItemUpdated(event);
-        break;
-        
-      default:
-        console.log(`[Toast Webhook] Unhandled event type: ${eventType}`);
-    }
+    // Process with idempotency and retry logic
+    const result = await processWebhookWithIdempotency(
+      {
+        integrationType: 'toast',
+        externalEventId,
+        eventType,
+        payload: event,
+      },
+      async (webhookEvent) => {
+        // Process the event
+        switch (webhookEvent.eventType) {
+          case 'CHECK_CREATED':
+            await handleCheckCreated(webhookEvent.payload);
+            break;
+            
+          case 'CHECK_UPDATED':
+            await handleCheckUpdated(webhookEvent.payload);
+            break;
+            
+          case 'CHECK_CLOSED':
+            await handleCheckClosed(webhookEvent.payload);
+            break;
+            
+          case 'PAYMENT_PROCESSED':
+            await handlePaymentProcessed(webhookEvent.payload);
+            break;
+            
+          case 'MENU_ITEM_UPDATED':
+            await handleMenuItemUpdated(webhookEvent.payload);
+            break;
+            
+          default:
+            console.log(`[Toast Webhook] Unhandled event type: ${webhookEvent.eventType}`);
+        }
+      }
+    );
 
-    return NextResponse.json({ received: true });
+    return NextResponse.json({ 
+      received: true,
+      eventId: result.id,
+      status: result.status,
+    });
   } catch (error) {
     console.error('[Toast Webhook] Handler error:', error);
     return new NextResponse('Webhook handler error', { status: 500 });

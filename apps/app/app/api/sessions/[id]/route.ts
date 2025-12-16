@@ -214,9 +214,13 @@ export async function GET(
       // Use the same conversion function as the main sessions route
       const fireSession = convertPrismaSessionToFireSession(session);
 
+      // SECURITY: Ensure notes are never included in customer-facing responses
+      // The session query already excludes notes relation, but we double-check here
+      const { notes, ...sessionWithoutNotes } = fireSession as any;
+
       return NextResponse.json({
         success: true,
-        ...fireSession, // fireSession already includes 'id'
+        ...sessionWithoutNotes, // fireSession already includes 'id', but excludes notes
         // Also include raw fields for backward compatibility
         table_id: session.tableId,
         customer_name: session.customerRef,

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { createPricingSnapshot } from '../../../../lib/pricing-snapshots';
 
 const prisma = new PrismaClient();
 
@@ -142,6 +143,45 @@ export async function POST(
         console.warn('Stripe payment intent creation failed:', stripeError);
         // Continue without payment intent - can be created later
       }
+    }
+
+    // Create pricing snapshot before checkout
+    // This ensures we have an immutable record of pricing at checkout time
+    const breakdown = {
+      basePrice: basePrice / 100, // Convert to dollars
+      addOns: orderItems.map(item => ({
+        name: item.description,
+        priceCents: item.priceCents,
+      })),
+      premiumFlavors: [], // TODO: Detect premium flavors from mix
+      adjustments: [], // TODO: Include adjustments from SessionAdjustment
+      subtotal: subtotal / 100,
+      finalPrice: total / 100,
+    };
+
+    // Parse flavor mix if available
+    let mixItems: Array<{ name: string; quantity: number }> | undefined;
+    if (session.flavorMix) {
+      try {
+        const mix = typeof session.flavorMix === 'string' 
+          ? JSON.parse(session.flavorMix) 
+          : session.flavorMix;
+        if (Array.isArray(mix)) {
+          mixItems = mix.map((flavor: string) => ({
+            name: flavor,
+            quantity: 1,
+          }));
+        }
+      } catch (e) {
+        // Ignore parse errors
+      }
+    }
+
+    try {
+      await createPricingSnapshot(sessionId, breakdown, mixItems);
+    } catch (snapshotError) {
+      console.error('Failed to create pricing snapshot:', snapshotError);
+      // Don't fail checkout if snapshot creation fails, but log it
     }
 
     // Log audit
