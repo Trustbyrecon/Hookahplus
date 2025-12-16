@@ -1235,7 +1235,6 @@ export const POST = withRequestContext(async (req: NextRequest) => {
         headers: getCorsHeaders(req),
       });
     }
-  }
 });
 
 // New PATCH endpoint for session actions
