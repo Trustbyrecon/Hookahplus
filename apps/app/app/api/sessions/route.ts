@@ -175,7 +175,7 @@ function calculateRemainingTimeFromPrisma(session: any): number {
   return Math.max(0, session.timerDuration - elapsed + pausedTime);
 }
 
-export const GET = withRequestContext(async (req: NextRequest) => {
+export const GET = withRequestContext(async (req: NextRequest): Promise<NextResponse> => {
   // #region agent log
   fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:178',message:'Sessions GET handler entry',data:{hasDatabaseUrl:!!process.env.DATABASE_URL,nodeEnv:process.env.NODE_ENV,cwd:process.cwd()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
   // #endregion
