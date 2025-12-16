@@ -29,7 +29,7 @@ export default function Footer() {
               <a href="https://www.linkedin.com/company/hookahplus-net/?viewAsMember=true" target="_blank" rel="noopener noreferrer" className="hover:text-teal-400 transition-colors">
                 <Linkedin className="w-5 h-5" />
               </a>
-              <a href="https://www.instagram.com/hplus_labs/" target="_blank" rel="noopener noreferrer" className="hover:text-teal-400 transition-colors">
+              <a href="https://www.instagram.com/hookahplusnet/" target="_blank" rel="noopener noreferrer" className="hover:text-teal-400 transition-colors">
                 <Instagram className="w-5 h-5" />
               </a>
             </div>

@@ -2,6 +2,58 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/db';
 import crypto from 'crypto';
 
+// CORS headers helper - accepts request to get origin
+function getCorsHeaders(req?: NextRequest) {
+  // Allow requests from site build, app build, or guest build
+  const origin = req?.headers.get('origin');
+  const allowedOrigins = [
+    // Production domains
+    'https://hookahplus.net',
+    'https://www.hookahplus.net',
+    'https://app.hookahplus.net',
+    'https://guest.hookahplus.net',
+    // Environment variable (can override)
+    process.env.NEXT_PUBLIC_SITE_URL,
+    // Local development
+    'http://localhost:3000',
+    'http://localhost:3002',
+    'http://localhost:3001', // Guest build
+  ].filter(Boolean); // Remove undefined values
+  
+  // If origin matches allowed list, use it; otherwise check if it's a hookahplus.net domain
+  let allowedOrigin: string = allowedOrigins[0] || 'https://hookahplus.net'; // Default fallback
+  
+  if (origin) {
+    // Exact match
+    if (allowedOrigins.includes(origin)) {
+      allowedOrigin = origin;
+    } 
+    // Allow any hookahplus.net subdomain in production
+    else if (origin.includes('hookahplus.net') && process.env.NODE_ENV === 'production') {
+      allowedOrigin = origin;
+    }
+    // Allow localhost in development
+    else if (origin.includes('localhost') && process.env.NODE_ENV === 'development') {
+      allowedOrigin = origin;
+    }
+  }
+    
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+}
+
+// Handle CORS preflight requests
+export async function OPTIONS(req: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: getCorsHeaders(req),
+  });
+}
+
 /**
  * POST /api/cta/track
  * 
@@ -11,6 +63,11 @@ import crypto from 'crypto';
  */
 export async function POST(req: NextRequest) {
   try {
+    // #region agent log
+    const origin = req.headers.get('origin');
+    const logData = { origin, method: req.method, url: req.url, hasOrigin: !!origin };
+    fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:12',message:'POST request received',data:logData,timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B,C'})}).catch(()=>{});
+    // #endregion
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || '0.0.0.0';
     const userAgent = req.headers.get('user-agent') || '';
     const referrer = req.headers.get('referer') || req.headers.get('referrer') || null;
@@ -31,7 +88,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: false,
         error: 'Missing required fields: ctaSource, ctaType'
-      }, { status: 400 });
+      }, { 
+        status: 400,
+        headers: getCorsHeaders(req)
+      });
     }
 
     // Validate ctaSource
@@ -40,7 +100,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: false,
         error: `Invalid ctaSource. Must be one of: ${validSources.join(', ')}`
-      }, { status: 400 });
+      }, { 
+        status: 400,
+        headers: getCorsHeaders(req)
+      });
     }
 
     // Validate ctaType
@@ -49,7 +112,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: false,
         error: `Invalid ctaType. Must be one of: ${validTypes.join(', ')}`
-      }, { status: 400 });
+      }, { 
+        status: 400,
+        headers: getCorsHeaders(req)
+      });
     }
 
     // Build event type
@@ -107,6 +173,8 @@ export async function POST(req: NextRequest) {
         id: duplicate.id,
         deduped: true,
         message: 'Duplicate CTA event detected and ignored'
+      }, {
+        headers: getCorsHeaders(req)
       });
     }
 
@@ -130,6 +198,10 @@ export async function POST(req: NextRequest) {
     // Log success
     console.log(`[CTA Track] Created event ${event.id} for ${ctaSource}/${ctaType}`);
 
+    // #region agent log
+    const corsHeaders = getCorsHeaders(req);
+    fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:133',message:'POST response sending',data:{corsHeaders,eventId:event.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,D'})}).catch(()=>{});
+    // #endregion
     return NextResponse.json({
       success: true,
       id: event.id,
@@ -138,15 +210,23 @@ export async function POST(req: NextRequest) {
       ctaType,
       stage: initialStage,
       message: 'CTA tracked successfully'
+    }, {
+      headers: getCorsHeaders(req)
     });
 
   } catch (error) {
     console.error('[CTA Track] Error:', error);
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:143',message:'POST error caught',data:{errorMessage:error instanceof Error?error.message:'Unknown'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     return NextResponse.json({
       success: false,
       error: 'Failed to track CTA',
       details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    }, { 
+      status: 500,
+      headers: getCorsHeaders(req)
+    });
   }
 }
 
@@ -212,6 +292,8 @@ export async function GET(req: NextRequest) {
       success: true,
       stats,
       events: events.slice(0, 100) // Return first 100 for preview
+    }, {
+      headers: getCorsHeaders(req)
     });
 
   } catch (error) {
@@ -220,7 +302,10 @@ export async function GET(req: NextRequest) {
       success: false,
       error: 'Failed to fetch CTA statistics',
       details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    }, { 
+      status: 500,
+      headers: getCorsHeaders(req)
+    });
   }
 }
 

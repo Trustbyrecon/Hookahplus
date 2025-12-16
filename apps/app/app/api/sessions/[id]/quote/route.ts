@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../lib/db';
-import { getPricingSnapshot, createPricingSnapshot } from '../../../../lib/pricing-snapshots';
+import { prisma } from '@/lib/db';
+import { getPricingSnapshot, createPricingSnapshot } from '@/lib/pricing-snapshots';
 
 /**
  * GET /api/sessions/[id]/quote

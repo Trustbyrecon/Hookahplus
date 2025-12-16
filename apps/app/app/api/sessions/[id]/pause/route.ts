@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { logSessionEvent } from '../../../../lib/session-events';
+import { logSessionEvent } from '@/lib/session-events';
 
 const prisma = new PrismaClient();
 

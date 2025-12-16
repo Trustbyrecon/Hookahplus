@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { createPricingSnapshot } from '../../../../lib/pricing-snapshots';
+import { createPricingSnapshot } from '@/lib/pricing-snapshots';
 
 const prisma = new PrismaClient();
 

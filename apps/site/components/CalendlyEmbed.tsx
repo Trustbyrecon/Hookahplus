@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { Calendar, X } from 'lucide-react';
+import React, { useEffect, useRef } from 'react';
+import { Calendar } from 'lucide-react';
 
 interface CalendlyEmbedProps {
   url?: string;
@@ -9,6 +9,21 @@ interface CalendlyEmbedProps {
 }
 
 export default function CalendlyEmbed({ url, className = '' }: CalendlyEmbedProps) {
+  const calendlyRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Load Calendly widget script only if it doesn't already exist
+    const scriptUrl = 'https://assets.calendly.com/assets/external/widget.js';
+    let existingScript = document.querySelector(`script[src="${scriptUrl}"]`);
+    
+    if (!existingScript) {
+      const script = document.createElement('script');
+      script.src = scriptUrl;
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, []);
+
   // If no URL provided, show placeholder with contact link
   if (!url) {
     return (
@@ -33,13 +48,18 @@ export default function CalendlyEmbed({ url, className = '' }: CalendlyEmbedProp
     );
   }
 
+  // Extract Calendly URL path (remove query parameters for widget)
+  // URL format: https://calendly.com/username/event-type?params
+  const urlObj = new URL(url);
+  const calendlyUrl = `${urlObj.origin}${urlObj.pathname}`;
+
   return (
     <div className={`rounded-xl overflow-hidden border border-zinc-700 bg-zinc-900 ${className}`}>
-      <iframe
-        src={url}
-        className="w-full h-full min-h-[600px]"
-        title="Hookah+ Demo Booking"
-        frameBorder="0"
+      <div
+        ref={calendlyRef}
+        className="calendly-inline-widget w-full min-h-[600px]"
+        data-url={calendlyUrl}
+        style={{ minWidth: '320px', height: '600px' }}
       />
     </div>
   );

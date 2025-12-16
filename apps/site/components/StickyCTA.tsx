@@ -23,7 +23,7 @@ export default function StickyCTA() {
           }}
         >
           <Calendar className="w-5 h-5" />
-          Book 15-min Demo
+          Book 15-min Demo via Calendly
         </Button>
       </div>
 
