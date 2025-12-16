@@ -36,7 +36,7 @@
     "dotenv": "17.2.3",
     "framer-motion": "12.23.24",
     "lucide-react": "^0.263.1",
-    "next": "14.2.7",
+    "next": "14.2.35",
     "prisma": "^5.22.0",
     "qrcode": "^1.5.3",
     "react": "^18.0.0",
