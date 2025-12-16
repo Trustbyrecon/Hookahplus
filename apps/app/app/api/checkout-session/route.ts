@@ -52,7 +52,7 @@ function getTestStripeInstance(): Stripe | null {
   return null;
 }
 
-export const POST = withRequestContext(async (request: NextRequest) => {
+export const POST = withRequestContext(async (request: NextRequest): Promise<NextResponse> => {
   try {
     if (!stripe) {
       logWithRequestId('[Checkout API] ❌ STRIPE_SECRET_KEY not configured');
@@ -197,6 +197,7 @@ export const POST = withRequestContext(async (request: NextRequest) => {
           success: true,
           demo: true,
           sessionId: sessionId,
+          url: null,
           paymentIntent: 'demo_payment_intent_' + Date.now(),
           clientSecret: null,
           message: 'Demo payment confirmed - no real charges',
@@ -449,8 +450,12 @@ export const POST = withRequestContext(async (request: NextRequest) => {
 
     return NextResponse.json({
       success: true,
+      demo: false,
       sessionId: session.id,
       url: session.url,
+      checkoutUrl: session.url,
+      redirectUrl: session.url,
+      message: 'Checkout session created successfully',
       expiresAt: session.expires_at,
       mode: isTestMode ? 'test' : 'live',
     });
