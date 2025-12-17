@@ -704,7 +704,7 @@ function GuidedMode({ selected, onToggle, mood, setMood, recommended, maxSelecti
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {baseIds.length ? (
-                      baseIds.map((id) => renderChip(id, "base"))
+                      baseIds.map((id: string) => renderChip(id, "base"))
                     ) : (
                       <span className="text-[11px] text-neutral-500">
                         Pick a vibe to see a master-recommended base.
@@ -718,7 +718,7 @@ function GuidedMode({ selected, onToggle, mood, setMood, recommended, maxSelecti
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {accentIds.length ? (
-                      accentIds.map((id) => renderChip(id, "accent"))
+                      accentIds.map((id: string) => renderChip(id, "accent"))
                     ) : (
                       <span className="text-[11px] text-neutral-500">
                         Start with a base or use the Wheel to discover accents.

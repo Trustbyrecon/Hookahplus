@@ -38,8 +38,6 @@ export async function GET(request: NextRequest) {
       refillEvents,
       avgDurationResult,
       sessionsBySource,
-      sessionsByPricingType,
-      timeBasedDurationAgg,
       sessionsForZoneMetrics
     ] = await Promise.all([
       // Get session counts by state
@@ -132,31 +130,7 @@ export async function GET(request: NextRequest) {
           id: true
         }
       }),
-
-      // Get sessions by pricing type (TIME_BASED vs FLAT)
-      prisma.session.groupBy({
-        by: ['sessionType'],
-        where: whereClause,
-        _count: {
-          id: true
-        }
-      }),
-
-      // Average duration for TIME_BASED sessions (closed only)
-      prisma.session.aggregate({
-        where: {
-          ...whereClause,
-          state: 'CLOSED',
-          sessionType: 'TIME_BASED',
-          durationSecs: {
-            not: null
-          }
-        },
-        _avg: {
-          durationSecs: true
-        }
-      }),
-
+      
       // Lightweight dataset for zone-level refill metrics
       prisma.session.findMany({
         where: whereClause,
@@ -173,18 +147,12 @@ export async function GET(request: NextRequest) {
       : 0;
 
     // Time-based vs flat share
-    const timeBasedBucket = sessionsByPricingType.find(
-      (s: any) => s.sessionType === 'TIME_BASED'
-    );
-    const timeBasedSessions = timeBasedBucket?._count?.id ?? 0;
-    const timeBasedShare =
-      totalSessions > 0 ? timeBasedSessions / totalSessions : 0;
-
-    const timeBasedAvgDurationMinutes = timeBasedDurationAgg._avg.durationSecs
-      ? Math.round(
-          (timeBasedDurationAgg._avg.durationSecs / 60) * 10
-        ) / 10
-      : 0;
+    // NOTE: The current Session schema does not include a dedicated pricing/sessionType field.
+    // Until that is added, these metrics are reported as zero and the breakdown is empty.
+    const sessionsByPricingType: any[] = [];
+    const timeBasedSessions = 0;
+    const timeBasedShare = 0;
+    const timeBasedAvgDurationMinutes = 0;
 
     // Global refill rate & per-zone refill rates
     const refillSessionCount = sessionsForZoneMetrics.filter(
