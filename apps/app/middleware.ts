@@ -90,7 +90,8 @@ export async function middleware(request: NextRequest) {
           '/admin',
           '/admin/operator-onboarding',
           '/api/admin',
-          '/api/admin/operator-onboarding'
+          '/api/admin/operator-onboarding',
+          '/api/analytics', // Allow analytics APIs without auth in development
         ]
       : []),
   ];

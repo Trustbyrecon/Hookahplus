@@ -186,6 +186,12 @@ export default function AnalyticsPage() {
     }
   ] : [];
 
+  const hasAnalyticsData = !!analytics && (
+    (analytics.sessions?.total ?? 0) > 0 ||
+    (analytics.revenue?.total ?? 0) > 0 ||
+    (analytics.customers?.total ?? 0) > 0
+  );
+
   const formatValue = (value: number, format: string) => {
     switch (format) {
       case 'currency':
@@ -834,11 +840,20 @@ export default function AnalyticsPage() {
           </Card>
         )}
 
+        {/* Empty-state helper */}
+        {!loading && !error && analytics && !hasAnalyticsData && (
+          <Card className="p-6 mb-6">
+            <p className="text-zinc-300">
+              No analytics yet for this window. Run a few paid sessions and click Refresh.
+            </p>
+          </Card>
+        )}
+
         {/* Content */}
-        {!loading && !error && analytics && renderContent()}
+        {!loading && !error && analytics && hasAnalyticsData && renderContent()}
 
         {/* Conversion Funnel Section (in Overview) */}
-        {!loading && !error && analytics && analytics.conversion && viewMode === 'overview' && (
+        {!loading && !error && analytics && hasAnalyticsData && analytics.conversion && viewMode === 'overview' && (
           <div className="mt-8">
             <Card className="p-6">
               <h3 className="text-lg font-semibold text-white mb-4">Conversion Funnel</h3>

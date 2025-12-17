@@ -20,6 +20,9 @@ export type SessionStatus =
   | 'FAILED_PAYMENT'
   | 'VOIDED';
 
+// Canonical 5-stage tracker (Payment → Prep → Ready → Deliver → Light)
+export type TrackerStage = 'Payment' | 'Prep' | 'Ready' | 'Deliver' | 'Light';
+
 export type SessionStage = 'BOH' | 'FOH' | 'CUSTOMER';
 
 export interface SessionTimer {
@@ -41,6 +44,8 @@ export interface FireSession {
   // High-level status/stage
   status: SessionStatus;
   currentStage: SessionStage;
+  stage?: TrackerStage; // Canonical NAN stage (Payment/Prep/Ready/Deliver/Light)
+  action?: string; // Optional substate/action label (e.g., HEAT_UP, READY_FOR_DELIVERY)
   // Pricing / refill metadata
   sessionType?: 'TIME_BASED' | 'FLAT';
   hadRefill?: boolean;
@@ -71,10 +76,10 @@ export interface FireSession {
 export const VALID_TRANSITIONS: Record<SessionStatus, SessionStatus[]> = {
   'NEW': ['PAID_CONFIRMED', 'FAILED_PAYMENT'],
   'PAID_CONFIRMED': ['PREP_IN_PROGRESS', 'REFUND_REQUESTED'],
-  'PREP_IN_PROGRESS': ['HEAT_UP', 'STAFF_HOLD', 'STOCK_BLOCKED', 'REMAKE'],
-  'HEAT_UP': ['READY_FOR_DELIVERY', 'STAFF_HOLD'],
-  'READY_FOR_DELIVERY': ['OUT_FOR_DELIVERY', 'STAFF_HOLD'],
-  'OUT_FOR_DELIVERY': ['DELIVERED', 'STAFF_HOLD'],
+  'PREP_IN_PROGRESS': ['HEAT_UP', 'READY_FOR_DELIVERY', 'START_ACTIVE', 'STAFF_HOLD', 'STOCK_BLOCKED', 'REMAKE'],
+  'HEAT_UP': ['READY_FOR_DELIVERY', 'START_ACTIVE', 'STAFF_HOLD'],
+  'READY_FOR_DELIVERY': ['OUT_FOR_DELIVERY', 'START_ACTIVE', 'STAFF_HOLD'],
+  'OUT_FOR_DELIVERY': ['DELIVERED', 'START_ACTIVE', 'STAFF_HOLD'],
   'DELIVERED': ['ACTIVE', 'STAFF_HOLD'],
   'ACTIVE': ['CLOSE_PENDING', 'STAFF_HOLD'],
   'CLOSE_PENDING': ['CLOSED', 'ACTIVE'],
@@ -107,6 +112,27 @@ export const STATUS_TO_STAGE: Record<SessionStatus, SessionStage> = {
   'REFUNDED': 'FOH',
   'FAILED_PAYMENT': 'CUSTOMER',
   'VOIDED': 'FOH'
+};
+
+// Map status to canonical 5-stage tracker
+export const STATUS_TO_TRACKER_STAGE: Record<SessionStatus, TrackerStage> = {
+  'NEW': 'Payment',
+  'PAID_CONFIRMED': 'Payment',
+  'PREP_IN_PROGRESS': 'Prep',
+  'HEAT_UP': 'Prep',
+  'READY_FOR_DELIVERY': 'Ready',
+  'OUT_FOR_DELIVERY': 'Deliver',
+  'DELIVERED': 'Deliver',
+  'ACTIVE': 'Light',
+  'CLOSE_PENDING': 'Deliver',
+  'CLOSED': 'Deliver',
+  'STAFF_HOLD': 'Prep',
+  'STOCK_BLOCKED': 'Prep',
+  'REMAKE': 'Prep',
+  'REFUND_REQUESTED': 'Deliver',
+  'REFUNDED': 'Deliver',
+  'FAILED_PAYMENT': 'Payment',
+  'VOIDED': 'Deliver',
 };
 
 // Action types for session commands

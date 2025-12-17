@@ -1,4 +1,4 @@
-import { FireSession, SessionStatus } from '../types/enhancedSession';
+import { FireSession, SessionStatus, STATUS_TO_TRACKER_STAGE, TrackerStage } from '../types/enhancedSession';
 import { SessionState } from '@prisma/client';
 
 // Helper function to map Prisma session state (enum) to FireSession status
@@ -52,16 +52,32 @@ function mapPrismaStateToFireSession(state: string | SessionState, paymentStatus
   return stateMap[stateStr] || 'NEW';
 }
 
-function mapStateToStage(state: string | SessionState): 'BOH' | 'FOH' | 'CUSTOMER' {
-  const stateStr = typeof state === 'string' ? state : String(state);
-  
-  if (['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(stateStr)) {
-    return 'BOH';
-  }
-  if (['OUT_FOR_DELIVERY', 'DELIVERED', 'CLOSE_PENDING'].includes(stateStr)) {
-    return 'FOH';
-  }
-  return 'CUSTOMER';
+function trackerStageToCurrentStage(stage: TrackerStage): 'BOH' | 'FOH' | 'CUSTOMER' {
+  if (stage === 'Ready' || stage === 'Deliver') return 'FOH';
+  if (stage === 'Light') return 'CUSTOMER';
+  // Payment/Prep default to BOH view
+  return 'BOH';
+}
+
+function inferWorkflowStatusFromNotes(session: any, baseStatus: SessionStatus): SessionStatus {
+  const notes = session.tableNotes || '';
+  const assignedBOHId = session.assignedBOHId || session.assigned_boh_id;
+  const isActiveState = (session.state || '').toString() === 'ACTIVE';
+
+  // If we have explicit status not derived from ACTIVE + BOH, keep it
+  if (!isActiveState) return baseStatus;
+
+  // Walk the workflow order from most advanced to earliest
+  if (notes.includes('Action START_ACTIVE')) return 'ACTIVE';
+  if (notes.includes('Action MARK_DELIVERED')) return 'DELIVERED';
+  if (notes.includes('Action DELIVER_NOW') || notes.includes('Action OUT_FOR_DELIVERY')) return 'OUT_FOR_DELIVERY';
+  if (notes.includes('Action READY_FOR_DELIVERY') || notes.includes('Ready for delivery') || notes.includes('Ready')) return 'READY_FOR_DELIVERY';
+  if (notes.includes('Action HEAT_UP') || notes.includes('Heat Up') || notes.includes('Coals heating')) return 'HEAT_UP';
+
+  // Default: if ACTIVE with BOH assigned and paid, stay in PREP_IN_PROGRESS
+  if (assignedBOHId) return 'PREP_IN_PROGRESS';
+
+  return baseStatus;
 }
 
 // Helper function to calculate remaining time from Prisma session
@@ -130,6 +146,13 @@ export function convertPrismaSessionToFireSession(session: any): FireSession {
   const isTimeBased = normalizedSessionType === 'TIME_BASED';
   const isRefillBillable = isTimeBased ? refillCount >= 1 : false;
 
+  // Derive status with workflow inference so READY moves out of BOH
+  const baseStatus = mapPrismaStateToFireSession(session.state, session.paymentStatus, session.externalRef, session.assignedBOHId);
+  const status = inferWorkflowStatusFromNotes(session, baseStatus);
+  const trackerStage: TrackerStage = (session.stage as TrackerStage) || STATUS_TO_TRACKER_STAGE[status] || 'Payment';
+  const trackerAction = session.action || null;
+  const currentStage = trackerStageToCurrentStage(trackerStage);
+
   return {
     id: session.id,
     tableId: session.tableId || session.externalRef || 'Unknown',
@@ -137,8 +160,10 @@ export function convertPrismaSessionToFireSession(session: any): FireSession {
     customerPhone: session.customerPhone || '',
     flavor: flavorMix,
     amount: session.priceCents || 0,
-    status: mapPrismaStateToFireSession(session.state, session.paymentStatus, session.externalRef, session.assignedBOHId),
-    currentStage: mapStateToStage(session.state),
+    status,
+    stage: trackerStage,
+    action: trackerAction || undefined,
+    currentStage,
     sessionType: normalizedSessionType,
     hadRefill,
     refillCount,

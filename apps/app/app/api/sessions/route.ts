@@ -12,6 +12,7 @@ import {
   SessionAction, 
   UserRole,
   STATUS_TO_STAGE,
+  STATUS_TO_TRACKER_STAGE,
   ACTION_TO_STATUS,
   VALID_TRANSITIONS
 } from '../../../types/enhancedSession';
@@ -1673,6 +1674,15 @@ export async function PATCH(req: NextRequest) {
         edgeCase: edgeCase !== undefined ? edgeCase : dbSession.edgeCase,
         edgeNote: edgeNote !== undefined ? edgeNote : dbSession.edgeNote,
       };
+
+      // Canonical NAN stage/action persistence
+      const trackerStage = STATUS_TO_TRACKER_STAGE[updatedSession.status as SessionStatus];
+      if (trackerStage) {
+        updateData.stage = trackerStage;
+      }
+      if (workflowActions.includes(action)) {
+        updateData.action = action;
+      }
       
       // Update trust signature if it was enhanced
       if (updatedTrustSignature !== dbSession.trustSignature) {
@@ -2018,6 +2028,20 @@ export async function PATCH(req: NextRequest) {
       const prioritizedActions = primaryNextAction 
         ? [primaryNextAction, ...secondaryActions]
         : allNextActions;
+
+      const responseStage = trackerStage || STATUS_TO_TRACKER_STAGE[updatedSession.status as SessionStatus];
+      // Telemetry: log canonical stage/action updates for observability
+      try {
+        console.log('[Sessions API] Stage update', {
+          sessionId: dbSession.id,
+          action,
+          status: updatedSession.status,
+          stage: responseStage,
+          primaryNextAction
+        });
+      } catch (e) {
+        // non-blocking
+      }
       
       return NextResponse.json({ 
         success: true, 
@@ -2104,16 +2128,16 @@ function getAvailableActions(session: FireSession): SessionAction[] {
       actions.push('CLAIM_PREP', 'PUT_ON_HOLD');
       break;
     case 'PREP_IN_PROGRESS':
-      actions.push('HEAT_UP', 'PUT_ON_HOLD', 'REQUEST_REMAKE');
+      actions.push('HEAT_UP', 'READY_FOR_DELIVERY', 'START_ACTIVE', 'PUT_ON_HOLD', 'REQUEST_REMAKE');
       break;
     case 'HEAT_UP':
-      actions.push('READY_FOR_DELIVERY', 'PUT_ON_HOLD');
+      actions.push('READY_FOR_DELIVERY', 'START_ACTIVE', 'PUT_ON_HOLD');
       break;
     case 'READY_FOR_DELIVERY':
-      actions.push('DELIVER_NOW', 'PUT_ON_HOLD');
+      actions.push('DELIVER_NOW', 'START_ACTIVE', 'PUT_ON_HOLD');
       break;
     case 'OUT_FOR_DELIVERY':
-      actions.push('MARK_DELIVERED', 'PUT_ON_HOLD');
+      actions.push('MARK_DELIVERED', 'START_ACTIVE', 'PUT_ON_HOLD');
       break;
     case 'DELIVERED':
       actions.push('START_ACTIVE', 'PUT_ON_HOLD');

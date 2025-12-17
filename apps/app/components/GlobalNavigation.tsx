@@ -27,6 +27,7 @@ import { ThemeToggle } from './ThemeToggle';
 import { SecureRoleSelector } from './SecureRoleSelector';
 import { clientClient } from '../lib/supabase-client';
 import FunctionalHelp from './FunctionalHelp';
+import { STATUS_TO_TRACKER_STAGE, TrackerStage } from '../types/enhancedSession';
 
 // AI Agent Collaboration Interface
 interface FlowState {
@@ -82,7 +83,6 @@ const GlobalNavigation: React.FC = () => {
   const [workflowProgress, setWorkflowProgress] = useState<{
     payment: number;
     prep: number;
-    heat: number;
     ready: number;
     deliver: number;
     light: number;
@@ -90,7 +90,6 @@ const GlobalNavigation: React.FC = () => {
   }>({
     payment: 0,
     prep: 0,
-    heat: 0,
     ready: 0,
     deliver: 0,
     light: 0,
@@ -98,6 +97,7 @@ const GlobalNavigation: React.FC = () => {
   });
   const [showHelp, setShowHelp] = useState(false);
   const [isAdminVerified, setIsAdminVerified] = useState(false);
+  const [activeRole, setActiveRole] = useState<string>('manager');
 
   // Close Quick Access dropdown when clicking outside
   useEffect(() => {
@@ -122,6 +122,15 @@ const GlobalNavigation: React.FC = () => {
     updateTime();
     const timeInterval = setInterval(updateTime, 1000);
     return () => clearInterval(timeInterval);
+  }, []);
+
+  // Load persisted active role (used by selectors across the app)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const storedRole = localStorage.getItem('active_role');
+    if (storedRole) {
+      setActiveRole(storedRole);
+    }
   }, []);
 
   // Check admin verification status
@@ -181,7 +190,6 @@ const GlobalNavigation: React.FC = () => {
             setWorkflowProgress({
               payment: 0,
               prep: 0,
-              heat: 0,
               ready: 0,
               deliver: 0,
               light: 0,
@@ -194,64 +202,35 @@ const GlobalNavigation: React.FC = () => {
             const sessions = sessionsData.sessions;
             setSessionCount(sessions.length);
             
-            // Calculate workflow progress across all sessions
+            // Calculate workflow progress across all sessions using canonical 5-stage model
             const workflowStages = {
               payment: 0,
               prep: 0,
-              heat: 0,
               ready: 0,
               deliver: 0,
               light: 0
             };
-            
-            let currentStage = 'Payment';
-            let maxProgress = 0;
+            const stageOrder: TrackerStage[] = ['Payment', 'Prep', 'Ready', 'Deliver', 'Light'];
+            let currentStage: TrackerStage = 'Payment';
+            let maxStageIndex = 0;
             
             sessions.forEach((session: any) => {
               const status = session.status || session.state || 'NEW';
+              const trackerStage: TrackerStage =
+                (session.stage as TrackerStage) ||
+                STATUS_TO_TRACKER_STAGE[status as keyof typeof STATUS_TO_TRACKER_STAGE] ||
+                'Payment';
               
-              // Count sessions at each stage
-              if (['PAID_CONFIRMED', 'PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(status)) {
-                workflowStages.payment++;
-              }
-              if (['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(status)) {
-                workflowStages.prep++;
-              }
-              if (['HEAT_UP', 'READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(status)) {
-                workflowStages.heat++;
-              }
-              if (['READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(status)) {
-                workflowStages.ready++;
-              }
-              if (['OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(status)) {
-                workflowStages.deliver++;
-              }
-              if (['DELIVERED', 'ACTIVE'].includes(status)) {
-                workflowStages.light++;
-              }
+              if (trackerStage === 'Payment') workflowStages.payment++;
+              if (trackerStage === 'Prep') workflowStages.prep++;
+              if (trackerStage === 'Ready') workflowStages.ready++;
+              if (trackerStage === 'Deliver') workflowStages.deliver++;
+              if (trackerStage === 'Light') workflowStages.light++;
               
-              // Determine current stage (most advanced)
-              if (status === 'ACTIVE' && workflowStages.light > maxProgress) {
-                currentStage = 'Light';
-                maxProgress = workflowStages.light;
-              } else if (status === 'DELIVERED' && workflowStages.light > maxProgress) {
-                currentStage = 'Light';
-                maxProgress = workflowStages.light;
-              } else if (status === 'OUT_FOR_DELIVERY' && workflowStages.deliver > maxProgress) {
-                currentStage = 'Deliver';
-                maxProgress = workflowStages.deliver;
-              } else if (status === 'READY_FOR_DELIVERY' && workflowStages.ready > maxProgress) {
-                currentStage = 'Ready';
-                maxProgress = workflowStages.ready;
-              } else if (status === 'HEAT_UP' && workflowStages.heat > maxProgress) {
-                currentStage = 'Heat';
-                maxProgress = workflowStages.heat;
-              } else if (status === 'PREP_IN_PROGRESS' && workflowStages.prep > maxProgress) {
-                currentStage = 'Prep';
-                maxProgress = workflowStages.prep;
-              } else if (status === 'PAID_CONFIRMED' && workflowStages.payment > maxProgress) {
-                currentStage = 'Payment';
-                maxProgress = workflowStages.payment;
+              const idx = stageOrder.indexOf(trackerStage);
+              if (idx > maxStageIndex) {
+                maxStageIndex = idx;
+                currentStage = trackerStage;
               }
             });
             
@@ -260,7 +239,6 @@ const GlobalNavigation: React.FC = () => {
             setWorkflowProgress({
               payment: Math.round((workflowStages.payment / total) * 100),
               prep: Math.round((workflowStages.prep / total) * 100),
-              heat: Math.round((workflowStages.heat / total) * 100),
               ready: Math.round((workflowStages.ready / total) * 100),
               deliver: Math.round((workflowStages.deliver / total) * 100),
               light: Math.round((workflowStages.light / total) * 100),
@@ -571,7 +549,6 @@ const GlobalNavigation: React.FC = () => {
                 <div className="flex items-center gap-0.5">
                   <div className={`w-1.5 h-1.5 rounded ${workflowProgress.payment > 0 ? 'bg-green-500' : 'bg-zinc-600'}`} title={`Payment: ${workflowProgress.payment}%`} />
                   <div className={`w-1.5 h-1.5 rounded ${workflowProgress.prep > 0 ? 'bg-green-500' : 'bg-zinc-600'}`} title={`Prep: ${workflowProgress.prep}%`} />
-                  <div className={`w-1.5 h-1.5 rounded ${workflowProgress.heat > 0 ? workflowProgress.currentStage === 'Heat' ? 'bg-teal-400 animate-pulse' : 'bg-green-500' : 'bg-zinc-600'}`} title={`Heat: ${workflowProgress.heat}%`} />
                   <div className={`w-1.5 h-1.5 rounded ${workflowProgress.ready > 0 ? workflowProgress.currentStage === 'Ready' ? 'bg-teal-400 animate-pulse' : 'bg-green-500' : 'bg-zinc-600'}`} title={`Ready: ${workflowProgress.ready}%`} />
                   <div className={`w-1.5 h-1.5 rounded ${workflowProgress.deliver > 0 ? workflowProgress.currentStage === 'Deliver' ? 'bg-teal-400 animate-pulse' : 'bg-green-500' : 'bg-zinc-600'}`} title={`Deliver: ${workflowProgress.deliver}%`} />
                   <div className={`w-1.5 h-1.5 rounded ${workflowProgress.light > 0 ? workflowProgress.currentStage === 'Light' ? 'bg-orange-400 animate-pulse' : 'bg-orange-500' : 'bg-zinc-600'}`} title={`Light: ${workflowProgress.light}%`} />
@@ -844,13 +821,15 @@ const GlobalNavigation: React.FC = () => {
                   <span className="text-sm">Support Docs</span>
                 </button>
 
-                {/* Role Dropdown with Security */}
+                {/* Role Dropdown with Security - single authoritative selector */}
                 <SecureRoleSelector
-                  currentRole="foh"
+                  currentRole={activeRole}
                   onRoleChange={(role) => {
-                    // Handle role change (could update state, localStorage, etc.)
-                    console.log('Role changed to:', role);
-                    // TODO: Update user's active role in session/localStorage
+                    setActiveRole(role);
+                    if (typeof window !== 'undefined') {
+                      localStorage.setItem('active_role', role);
+                      window.dispatchEvent(new CustomEvent('activeRoleChanged', { detail: { role } }));
+                    }
                   }}
                 />
 

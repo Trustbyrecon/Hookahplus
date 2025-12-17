@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { FireSession, SessionTimer } from '../types/enhancedSession';
+import { FireSession, SessionTimer, TrackerStage, STATUS_TO_TRACKER_STAGE } from '../types/enhancedSession';
 import { calculateRemainingTime, formatDuration } from '../lib/sessionStateMachine';
 
 // Environment-based demo mode configuration
@@ -273,6 +273,11 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
           // - PENDING + payment → PAID_CONFIRMED
           // So we should trust the API's status field
           let fireSessionStatus = session.status;
+          const trackerStageToCurrent = (stage: TrackerStage): 'BOH' | 'FOH' | 'CUSTOMER' => {
+            if (stage === 'Ready' || stage === 'Deliver') return 'FOH';
+            if (stage === 'Light') return 'CUSTOMER';
+            return 'BOH';
+          };
           
           // Fallback: if status is missing, use the same logic as the API
           if (!fireSessionStatus) {
@@ -291,6 +296,10 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
             }
           }
           
+          const trackerStage: TrackerStage =
+            (session.stage as TrackerStage) ||
+            STATUS_TO_TRACKER_STAGE[fireSessionStatus as keyof typeof STATUS_TO_TRACKER_STAGE] ||
+            'Payment';
           return {
             id: session.id,
             tableId: session.tableId || session.externalRef || 'Unknown',
@@ -299,7 +308,9 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
             flavor: flavorMix,
             amount: session.priceCents || session.amount || 0,
             status: fireSessionStatus,
-            currentStage: mapStateToStage(session.state || session.status),
+            stage: trackerStage,
+            action: session.action,
+            currentStage: trackerStageToCurrent(trackerStage),
             assignedStaff: {
               boh: session.assignedBOHId || session.assignedStaff?.boh || '',
               foh: session.assignedFOHId || session.assignedStaff?.foh || ''

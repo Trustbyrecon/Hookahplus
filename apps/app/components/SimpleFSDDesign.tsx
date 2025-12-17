@@ -36,9 +36,11 @@ import {
   SessionAction, 
   UserRole, 
   FireSession,
+  TrackerStage,
   STATUS_COLORS,
   ACTION_TO_STATUS,
-  STATUS_TO_STAGE
+  STATUS_TO_STAGE,
+  STATUS_TO_TRACKER_STAGE
 } from '../types/enhancedSession';
 import { 
   canPerformAction, 
@@ -560,6 +562,12 @@ export default function SimpleFSDDesign({
                       session.status === 'PAID_CONFIRMED' || // Demo mode: status indicates payment
                       (session.amount && session.amount > 0); // Has amount = paid
     const assignedBOHId = session.assignedBOHId || session.assigned_boh_id || session.assignedStaff?.boh;
+    const explicitStatus = session.status as SessionStatus | undefined;
+    
+    // Trust explicit status first so we don't get stuck on legacy table notes
+    if (explicitStatus && explicitStatus !== 'NEW') {
+      return explicitStatus;
+    }
     
     // Debug logging for troubleshooting (can be removed later)
     if (session.id && (state === 'ACTIVE' || session.status === 'PAID_CONFIRMED' || session.status === 'PREP_IN_PROGRESS')) {
@@ -686,14 +694,16 @@ export default function SimpleFSDDesign({
     return (session.status as SessionStatus) || 'NEW';
   };
 
-  const getSessionStage = (session: any): string => {
+  const TRACKER_STAGE_ORDER: TrackerStage[] = ['Payment', 'Prep', 'Ready', 'Deliver', 'Light'];
+
+  const getTrackerStage = (session: any): TrackerStage => {
     const status = getSessionStatus(session);
-    return STATUS_TO_STAGE[status];
+    const stage = (session.stage as TrackerStage) || STATUS_TO_TRACKER_STAGE[status] || 'Payment';
+    return stage;
   };
 
   const getAvailableActions = (session: any): SessionAction[] => {
     const status = getSessionStatus(session);
-    const stage = getSessionStage(session);
     
     // Get all possible actions for this status
     const allActions: SessionAction[] = [
@@ -720,7 +730,7 @@ export default function SimpleFSDDesign({
   // Reusable function to render a session card
   const renderSessionCard = (session: any) => {
     const sessionStatus = getSessionStatus(session);
-    const sessionStage = getSessionStage(session);
+    const sessionStage = getTrackerStage(session);
     const availableActions = getAvailableActions(session);
     const sessionId = session.id || session.session_id;
     const displayName = getSessionDisplayName(sessionStatus);
@@ -764,8 +774,37 @@ export default function SimpleFSDDesign({
             <span className={`px-2 py-1 rounded text-xs font-medium ${statusColor}`}>
               {displayName}
             </span>
-            <span className="text-xs text-zinc-500">
+            <span className="text-xs text-zinc-500 flex items-center gap-1">
               {sessionStage}
+              {(() => {
+                const substateLabel: Record<SessionStatus, string> = {
+                  'HEAT_UP': 'Heating Coals',
+                  'READY_FOR_DELIVERY': 'Ready for FOH',
+                  'OUT_FOR_DELIVERY': 'Out for Delivery',
+                  'DELIVERED': 'Delivered',
+                  'ACTIVE': 'Lighted',
+                  'PREP_IN_PROGRESS': '',
+                  'PAID_CONFIRMED': '',
+                  'NEW': '',
+                  'CLOSE_PENDING': '',
+                  'CLOSED': '',
+                  'STAFF_HOLD': '',
+                  'STOCK_BLOCKED': '',
+                  'REMAKE': '',
+                  'REFUND_REQUESTED': '',
+                  'REFUNDED': '',
+                  'FAILED_PAYMENT': '',
+                  'VOIDED': '',
+                };
+                const label = (typeof session.action === 'string' && session.action) 
+                  ? session.action.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())
+                  : substateLabel[sessionStatus];
+                return label ? (
+                  <span className="ml-1 px-2 py-0.5 rounded-full bg-zinc-800 text-[10px] text-zinc-200 border border-zinc-700">
+                    {label}
+                  </span>
+                ) : null;
+              })()}
             </span>
             {/* Payment Confirmed Indicator */}
             {sessionStatus === 'PAID_CONFIRMED' && (
@@ -806,52 +845,33 @@ export default function SimpleFSDDesign({
               <span className="text-xs font-medium text-zinc-400">Night After Night Flow</span>
               <span className="text-xs font-semibold text-teal-400">{sessionStage}</span>
             </div>
-            <div className="flex items-center gap-1">
-              {/* Payment */}
-              <div className={`flex-1 h-2 rounded transition-all ${
-                ['PAID_CONFIRMED', 'PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(sessionStatus)
-                  ? sessionStatus === 'PAID_CONFIRMED' ? 'bg-teal-400 animate-pulse' : 'bg-green-500'
-                  : 'bg-zinc-700'
-              }`} title="Payment Confirmed" />
-              {/* Prep */}
-              <div className={`flex-1 h-2 rounded transition-all ${
-                ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(sessionStatus)
-                  ? sessionStatus === 'PREP_IN_PROGRESS' ? 'bg-teal-400 animate-pulse' : 'bg-green-500'
-                  : 'bg-zinc-700'
-              }`} title="BOH Prep" />
-              {/* Heat */}
-              <div className={`flex-1 h-2 rounded transition-all ${
-                ['HEAT_UP', 'READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(sessionStatus)
-                  ? sessionStatus === 'HEAT_UP' ? 'bg-teal-400 animate-pulse' : 'bg-green-500'
-                  : 'bg-zinc-700'
-              }`} title="Heat Coals" />
-              {/* Ready */}
-              <div className={`flex-1 h-2 rounded transition-all ${
-                ['READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(sessionStatus)
-                  ? sessionStatus === 'READY_FOR_DELIVERY' ? 'bg-teal-400 animate-pulse' : 'bg-green-500'
-                  : 'bg-zinc-700'
-              }`} title="Ready" />
-              {/* Deliver */}
-              <div className={`flex-1 h-2 rounded transition-all ${
-                ['OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE'].includes(sessionStatus)
-                  ? sessionStatus === 'OUT_FOR_DELIVERY' ? 'bg-teal-400 animate-pulse' : 'bg-green-500'
-                  : 'bg-zinc-700'
-              }`} title="Deliver" />
-              {/* Light */}
-              <div className={`flex-1 h-2 rounded transition-all ${
-                ['DELIVERED', 'ACTIVE'].includes(sessionStatus)
-                  ? sessionStatus === 'DELIVERED' ? 'bg-orange-400 animate-pulse' : sessionStatus === 'ACTIVE' ? 'bg-red-500 animate-pulse' : 'bg-orange-500'
-                  : 'bg-zinc-700'
-              }`} title="Light Session" />
-            </div>
-            <div className="flex items-center justify-between mt-2 text-[10px]">
-              <span className={sessionStatus === 'PAID_CONFIRMED' ? 'text-teal-400 font-semibold' : 'text-zinc-500'}>Payment</span>
-              <span className={sessionStatus === 'PREP_IN_PROGRESS' ? 'text-teal-400 font-semibold' : 'text-zinc-500'}>Prep</span>
-              <span className={sessionStatus === 'HEAT_UP' ? 'text-teal-400 font-semibold' : 'text-zinc-500'}>Heat</span>
-              <span className={sessionStatus === 'READY_FOR_DELIVERY' ? 'text-teal-400 font-semibold' : 'text-zinc-500'}>Ready</span>
-              <span className={sessionStatus === 'OUT_FOR_DELIVERY' ? 'text-teal-400 font-semibold' : 'text-zinc-500'}>Deliver</span>
-              <span className={['DELIVERED', 'ACTIVE'].includes(sessionStatus) ? 'text-orange-400 font-semibold' : 'text-zinc-500'}>Light</span>
-            </div>
+            {(() => {
+              const stageIndex = TRACKER_STAGE_ORDER.indexOf(sessionStage);
+              const barClass = (idx: number) =>
+                stageIndex >= idx
+                  ? stageIndex === idx
+                    ? 'bg-teal-400 animate-pulse'
+                    : 'bg-green-500'
+                  : 'bg-zinc-700';
+              return (
+                <>
+                  <div className="flex items-center gap-1">
+                    <div className={`flex-1 h-2 rounded transition-all ${barClass(0)}`} title="Payment" />
+                    <div className={`flex-1 h-2 rounded transition-all ${barClass(1)}`} title="Prep" />
+                    <div className={`flex-1 h-2 rounded transition-all ${barClass(2)}`} title="Ready" />
+                    <div className={`flex-1 h-2 rounded transition-all ${barClass(3)}`} title="Deliver" />
+                    <div className={`flex-1 h-2 rounded transition-all ${barClass(4)}`} title="Light Session" />
+                  </div>
+                  <div className="flex items-center justify-between mt-2 text-[10px]">
+                    <span className={stageIndex === 0 ? 'text-teal-400 font-semibold' : 'text-zinc-500'}>Payment</span>
+                    <span className={stageIndex === 1 ? 'text-teal-400 font-semibold' : 'text-zinc-500'}>Prep</span>
+                    <span className={stageIndex === 2 ? 'text-teal-400 font-semibold' : 'text-zinc-500'}>Ready</span>
+                    <span className={stageIndex === 3 ? 'text-teal-400 font-semibold' : 'text-zinc-500'}>Deliver</span>
+                    <span className={stageIndex === 4 ? 'text-orange-400 font-semibold' : 'text-zinc-500'}>Light</span>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         )}
 

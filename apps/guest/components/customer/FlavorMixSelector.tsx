@@ -101,6 +101,21 @@ const MOODS = [
   { id: "bold", label: "Bold & Spiced", tags: ["double-apple", "cinnamon", "cardamom"], description: "Strong, complex flavors" },
 ];
 
+type MasterMeters = {
+  smoothness: number;
+  sweetness: number;
+  freshness: number;
+  strength: number;
+  balanceScore: number;
+};
+
+const MASTER_PROFILES: Record<string, { base: string; accents: string[] }> = {
+  chill: { base: "mint", accents: ["vanilla", "rose", "watermelon"] },
+  sweet: { base: "vanilla", accents: ["mango", "peach", "caramel"] },
+  fresh: { base: "lemon", accents: ["lime", "ice-mint", "watermelon"] },
+  bold: { base: "double-apple", accents: ["double-apple", "cinnamon", "cardamom"] },
+};
+
 // --- Props Interface ---
 export interface FlavorMixSelectorProps {
   flavors?: any[];
@@ -130,6 +145,110 @@ function findFlavorPrice(id: string) {
     if (f) return f.price;
   }
   return 0;
+}
+
+function findFlavorCategory(id: string) {
+  for (const c of FLAVOR_CATEGORIES) {
+    if (c.items.some((x) => x.id === id)) return c;
+  }
+  return null;
+}
+
+function computeMasterMeters(selected: string[]): MasterMeters {
+  if (!selected.length) {
+    return {
+      smoothness: 0,
+      sweetness: 0,
+      freshness: 0,
+      strength: 0,
+      balanceScore: 0,
+    };
+  }
+
+  let mintCount = 0;
+  let fruitCount = 0;
+  let citrusCount = 0;
+  let dessertCount = 0;
+  let spiceCount = 0;
+  let premiumCount = 0;
+  let hasRose = false;
+
+  for (const id of selected) {
+    const cat = findFlavorCategory(id);
+    if (!cat) continue;
+
+    switch (cat.id) {
+      case "mint":
+        mintCount++;
+        break;
+      case "fruit":
+        fruitCount++;
+        break;
+      case "citrus":
+        citrusCount++;
+        break;
+      case "dessert":
+        dessertCount++;
+        break;
+      case "spice":
+        spiceCount++;
+        break;
+      case "premium":
+        premiumCount++;
+        if (id === "rose") hasRose = true;
+        break;
+      default:
+        break;
+    }
+  }
+
+  const total =
+    mintCount + fruitCount + citrusCount + dessertCount + spiceCount + premiumCount || 1;
+
+  const smoothnessRaw = mintCount + dessertCount + (hasRose ? 1 : 0);
+  const sweetnessRaw = fruitCount + dessertCount;
+  const freshnessRaw = mintCount + citrusCount;
+  const strengthRaw = spiceCount + premiumCount;
+
+  const smoothness = Math.min(100, Math.round((smoothnessRaw / total) * 100));
+  const sweetness = Math.min(100, Math.round((sweetnessRaw / total) * 100));
+  const freshness = Math.min(100, Math.round((freshnessRaw / total) * 100));
+  const strength = Math.min(100, Math.round((strengthRaw / total) * 100));
+
+  const baseScore = Math.min(100, 30 + selected.length * 22);
+  const counts = [mintCount, fruitCount, citrusCount, dessertCount, spiceCount, premiumCount].filter(
+    (v) => v > 0
+  );
+  const maxCategoryCount = counts.length ? Math.max(...counts) : 0;
+  const imbalanceRatio = total ? maxCategoryCount / total : 0;
+  const imbalancePenalty = imbalanceRatio > 0.7 ? (imbalanceRatio - 0.7) * 40 : 0;
+  const diversityBonus = counts.length >= 3 ? 5 : 0;
+
+  const balanceScore = Math.round(
+    Math.max(30, Math.min(100, baseScore - imbalancePenalty + diversityBonus))
+  );
+
+  return {
+    smoothness,
+    sweetness,
+    freshness,
+    strength,
+    balanceScore,
+  };
+}
+
+function getSweetnessLabel(value: number) {
+  if (value >= 67) return "High";
+  if (value >= 34) return "Medium";
+  if (value > 0) return "Low";
+  return "Neutral";
+}
+
+function getStrengthLabel(value: number) {
+  if (value >= 67) return "Strong";
+  if (value >= 34) return "Medium";
+  if (value > 0) return "Light";
+  return "Gentle";
 }
 
 function toRad(deg: number) {
@@ -179,8 +298,10 @@ export default function FlavorMixSelector({
   // Recommended flavors based on mood or current selection
   const recommended = useMemo(() => {
     if (mood) {
-      const m = MOODS.find((m) => m.id === mood);
-      return m ? m.tags : [];
+      const profile = MASTER_PROFILES[mood];
+      if (profile) {
+        return profile.accents;
+      }
     }
     // Fallback: suggest complements
     const s = new Set(selected);
@@ -241,7 +362,9 @@ export default function FlavorMixSelector({
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl md:text-2xl font-semibold tracking-tight">Choose Your Flavor Mix</h2>
-            <p className="text-neutral-400">Select up to {maxSelections} flavors for your perfect hookah session</p>
+            <p className="text-neutral-400">
+              Choose up to {maxSelections} flavors. Explore with the Wheel or let a Shisha Master craft your mix.
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -257,10 +380,12 @@ export default function FlavorMixSelector({
               onClick={() => setMode("flow")}
               className={cx(
                 "px-3 py-2 rounded-xl border text-sm",
-                mode === "flow" ? "border-teal-500/50 bg-teal-500/10 text-teal-300" : "border-white/10 text-neutral-300"
+                mode === "flow"
+                  ? "border-amber-400/60 bg-amber-500/10 text-amber-300"
+                  : "border-white/10 text-neutral-300"
               )}
             >
-              Guided
+              Shisha Master
             </button>
           </div>
         </div>
@@ -462,82 +587,177 @@ function WheelMode({
 // --- Guided Mode Component ---
 function GuidedMode({ selected, onToggle, mood, setMood, recommended, maxSelections }: any) {
   return (
-    <div className="grid lg:grid-cols-3 gap-6">
-      {/* Step 1: Mood */}
-      <div className="rounded-xl bg-white/5 border border-white/10 p-5">
-        <div className="flex items-center gap-2 mb-3">
-          <Wand2 className="h-4 w-4 text-teal-400"/>
-          <h3 className="font-semibold">1. How do you want it to feel?</h3>
+    <div className="space-y-4">
+      {/* Master Header Strip */}
+      <div className="rounded-xl bg-gradient-to-r from-zinc-900/80 to-zinc-900/40 border border-amber-500/40 px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-full bg-amber-500/15 border border-amber-400/60 grid place-items-center">
+            <Sparkles className="h-4 w-4 text-amber-300" />
+          </div>
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-amber-300">
+              Shisha Master Guidance
+            </div>
+            <div className="text-xs text-neutral-300">
+              Pick a vibe, then I’ll recommend a base and complements for a balanced bowl.
+            </div>
+          </div>
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          {MOODS.map((m) => (
-            <button
-              key={m.id}
-              onClick={() => setMood(m.id)}
-              className={cx(
-                "rounded-xl p-3 border text-left transition",
-                mood === m.id ? "bg-teal-500/20 border-teal-500/30" : "bg-white/5 border-white/10 hover:bg-white/10"
-              )}
-            >
-              <div className="text-sm font-medium">{m.label}</div>
-              <div className="mt-1 text-[11px] text-neutral-400">{m.description}</div>
-            </button>
-          ))}
-        </div>
+        {(() => {
+          const meters = computeMasterMeters(selected);
+          const moodConfig = MOODS.find((m) => m.id === mood);
+          const hasSelection = selected.length > 0;
+          const profileLabel = moodConfig ? moodConfig.label : "Choose a vibe";
+          const balance = hasSelection ? meters.balanceScore : 0;
+          const sweetnessLabel = hasSelection ? getSweetnessLabel(meters.sweetness) : "—";
+          const strengthLabel = hasSelection ? getStrengthLabel(meters.strength) : "—";
+
+          return (
+            <div className="flex flex-wrap gap-2 text-xs">
+              <span className="px-2 py-1 rounded-full bg-black/40 border border-white/10 text-neutral-200">
+                Profile: {profileLabel}
+              </span>
+              <span className="px-2 py-1 rounded-full bg-black/40 border border-amber-400/50 text-amber-200">
+                Balance: {hasSelection ? balance : "—"}
+              </span>
+              <span className="px-2 py-1 rounded-full bg-black/40 border border-white/10 text-neutral-200">
+                Sweetness: {sweetnessLabel}
+              </span>
+              <span className="px-2 py-1 rounded-full bg-black/40 border border-white/10 text-neutral-200">
+                Strength: {strengthLabel}
+              </span>
+            </div>
+          );
+        })()}
       </div>
 
-      {/* Step 2: Palette Selection */}
-      <div className="rounded-xl bg-white/5 border border-white/10 p-5">
-        <div className="flex items-center gap-2 mb-3">
-          <ListFilter className="h-4 w-4 text-teal-400"/>
-          <h3 className="font-semibold">2. Pick 1–{maxSelections} notes</h3>
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Step 1: Mood */}
+        <div className="rounded-xl bg-white/5 border border-white/10 p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <Wand2 className="h-4 w-4 text-teal-400" />
+            <h3 className="font-semibold">1. Choose your vibe</h3>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {MOODS.map((m) => (
+              <button
+                key={m.id}
+                onClick={() => setMood(m.id)}
+                className={cx(
+                  "rounded-xl p-3 border text-left transition",
+                  mood === m.id
+                    ? "bg-teal-500/20 border-teal-500/30"
+                    : "bg-white/5 border-white/10 hover:bg-white/10"
+                )}
+              >
+                <div className="text-sm font-medium">{m.label}</div>
+                <div className="mt-1 text-[11px] text-neutral-400">{m.description}</div>
+              </button>
+            ))}
+          </div>
+          <div className="mt-3 text-[11px] text-amber-100/80 border border-amber-500/40 rounded-lg px-3 py-2 bg-amber-500/5">
+            <span className="font-semibold mr-1">Master tip:</span>
+            Smooth bowls pair best with one creamy base and one fruit accent.
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {(mood ? MOODS.find((m) => m.id === mood)?.tags || [] : recommended).map((id: string) => (
-            <button
-              key={id}
-              onClick={() => onToggle(id)}
-              disabled={!selected.includes(id) && selected.length >= maxSelections}
-              className={cx(
-                "text-xs px-2 py-1 rounded-full border transition",
-                selected.includes(id)
-                  ? "bg-teal-500/20 border-teal-500/30 text-teal-300"
-                  : "bg-white/5 border-white/10 text-neutral-300 hover:bg-white/10",
-                !selected.includes(id) && selected.length >= maxSelections && "opacity-50 cursor-not-allowed"
-              )}
-            >
-              {findFlavorLabel(id)}
-            </button>
-          ))}
-        </div>
-        <div className="text-[11px] text-neutral-500 mt-2">
-          Cognitive nudge: keep choices to {maxSelections} or fewer for a clearer taste signature.
-        </div>
-      </div>
 
-      {/* Step 3: Confirm */}
-      <div className="rounded-xl bg-white/5 border border-white/10 p-5 flex flex-col">
-        <div className="flex items-center gap-2 mb-3">
-          <ChevronRight className="h-4 w-4 text-teal-400"/>
-          <h3 className="font-semibold">3. Lock the mix</h3>
+        {/* Step 2: Palette Selection */}
+        <div className="rounded-xl bg-white/5 border border-white/10 p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <ListFilter className="h-4 w-4 text-teal-400" />
+            <h3 className="font-semibold">2. Choose your notes</h3>
+          </div>
+          {(() => {
+            const activeProfile = mood ? MASTER_PROFILES[mood] : null;
+            const baseIds = activeProfile ? [activeProfile.base] : [];
+            const accentSource = activeProfile ? activeProfile.accents : recommended;
+            const accentIds = accentSource.filter(
+              (id: string, idx: number, arr: string[]) =>
+                arr.indexOf(id) === idx && !baseIds.includes(id)
+            );
+
+            const renderChip = (id: string, variant: "base" | "accent") => (
+              <button
+                key={id}
+                onClick={() => onToggle(id)}
+                disabled={!selected.includes(id) && selected.length >= maxSelections}
+                className={cx(
+                  "text-xs px-2 py-1 rounded-full border transition",
+                  selected.includes(id)
+                    ? "bg-teal-500/20 border-teal-500/30 text-teal-300"
+                    : "bg-white/5 border-white/10 text-neutral-300 hover:bg-white/10",
+                  !selected.includes(id) &&
+                    selected.length >= maxSelections &&
+                    "opacity-50 cursor-not-allowed",
+                  variant === "base" && "border-amber-400/50 bg-amber-500/10 text-amber-200"
+                )}
+              >
+                {findFlavorLabel(id)}
+              </button>
+            );
+
+            return (
+              <div className="space-y-3">
+                <div>
+                  <div className="text-[11px] uppercase tracking-wide text-neutral-400 mb-1">
+                    Base note (pick 1)
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {baseIds.length ? (
+                      baseIds.map((id) => renderChip(id, "base"))
+                    ) : (
+                      <span className="text-[11px] text-neutral-500">
+                        Pick a vibe to see a master-recommended base.
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[11px] uppercase tracking-wide text-neutral-400 mb-1">
+                    Accents (pick up to {Math.max(1, maxSelections - 1)})
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {accentIds.length ? (
+                      accentIds.map((id) => renderChip(id, "accent"))
+                    ) : (
+                      <span className="text-[11px] text-neutral-500">
+                        Start with a base or use the Wheel to discover accents.
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+          <div className="text-[11px] text-neutral-500 mt-3">
+            Master note: Smooth bowls pair best with one creamy base and one fruit accent.
+          </div>
         </div>
-        <div className="text-sm text-neutral-400 mb-2">
-          Your flavor mix is ready! This will be added to your session.
+
+        {/* Step 3: Confirm */}
+        <div className="rounded-xl bg-white/5 border border-white/10 p-5 flex flex-col">
+          <div className="flex items-center gap-2 mb-3">
+            <ChevronRight className="h-4 w-4 text-teal-400" />
+            <h3 className="font-semibold">3. Seal the bowl</h3>
+          </div>
+          <div className="text-sm text-neutral-400 mb-2">
+            This saves your mix to your session for the lounge.
+          </div>
+          <div className="text-xs text-neutral-500 mb-4">
+            Selected: {selected.length} flavor{selected.length !== 1 ? "s" : ""}
+          </div>
+          <button
+            disabled={selected.length === 0}
+            className={cx(
+              "mt-auto rounded-xl px-4 py-3 border transition",
+              selected.length > 0
+                ? "border-amber-400/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-200"
+                : "border-white/10 bg-white/5 text-neutral-500 cursor-not-allowed"
+            )}
+          >
+            {selected.length > 0 ? "Seal Mix" : "Select Flavors First"}
+          </button>
         </div>
-        <div className="text-xs text-neutral-500 mb-4">
-          Selected: {selected.length} flavor{selected.length !== 1 ? 's' : ''}
-        </div>
-        <button 
-          disabled={selected.length === 0}
-          className={cx(
-            "mt-auto rounded-xl px-4 py-3 border transition",
-            selected.length > 0
-              ? "border-teal-400/30 bg-teal-400/10 hover:bg-teal-400/20 text-teal-300"
-              : "border-white/10 bg-white/5 text-neutral-500 cursor-not-allowed"
-          )}
-        >
-          {selected.length > 0 ? 'Mix Ready!' : 'Select Flavors First'}
-        </button>
       </div>
     </div>
   );
@@ -545,37 +765,65 @@ function GuidedMode({ selected, onToggle, mood, setMood, recommended, maxSelecti
 
 // --- Mix Preview Component ---
 function MixPreview({ selected, recommended, totalPrice }: any) {
-  const score = Math.min(100, 30 + selected.length * 22);
-  
+  const meters = computeMasterMeters(selected);
+
   return (
     <div className="rounded-xl bg-white/5 border border-white/10 p-5">
       <div className="flex items-center gap-2 mb-2">
-        <Sparkles className="h-4 w-4 text-teal-400"/>
-        <h3 className="font-semibold">Live Mix Preview</h3>
+        <Sparkles className="h-4 w-4 text-teal-400" />
+        <h3 className="font-semibold">Master Preview</h3>
       </div>
       <p className="text-sm text-neutral-400 mb-3">
-        A quick look at your flavor balance and suggested complements.
+        A quick look at your bowl profile and master-suggested complements.
       </p>
       <div className="grid md:grid-cols-3 gap-4">
         <div>
-          <div className="text-xs text-neutral-400 mb-1">Your mix</div>
-          <div className="flex flex-wrap gap-2">
-            {selected.length ? (
-              selected.map((id: string) => (
-                <span key={id} className="text-xs px-2 py-1 rounded-full bg-teal-500/20 border border-teal-500/30 text-teal-300">
-                  {findFlavorLabel(id)}
-                </span>
-              ))
-            ) : (
-              <span className="text-neutral-500 text-sm">Pick a base note to start</span>
-            )}
+          <div className="text-xs text-neutral-400 mb-1">Your bowl profile</div>
+          <div className="mb-3">
+            <div className="flex justify-between text-[11px] text-neutral-400 mb-1">
+              <span>Smoothness</span>
+              <span>{meters.smoothness}%</span>
+            </div>
+            <div className="h-1.5 rounded-full bg-neutral-900 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-teal-400"
+                style={{ width: `${meters.smoothness}%` }}
+              />
+            </div>
+          </div>
+          <div className="mb-3">
+            <div className="flex justify-between text-[11px] text-neutral-400 mb-1">
+              <span>Sweetness</span>
+              <span>{meters.sweetness}%</span>
+            </div>
+            <div className="h-1.5 rounded-full bg-neutral-900 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-amber-400"
+                style={{ width: `${meters.sweetness}%` }}
+              />
+            </div>
+          </div>
+          <div>
+            <div className="flex justify-between text-[11px] text-neutral-400 mb-1">
+              <span>Freshness</span>
+              <span>{meters.freshness}%</span>
+            </div>
+            <div className="h-1.5 rounded-full bg-neutral-900 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-cyan-400"
+                style={{ width: `${meters.freshness}%` }}
+              />
+            </div>
           </div>
         </div>
         <div>
-          <div className="text-xs text-neutral-400 mb-1">Complements</div>
+          <div className="text-xs text-neutral-400 mb-1">Master complements</div>
           <div className="flex flex-wrap gap-2">
             {recommended.map((id: string) => (
-              <span key={id} className="text-xs px-2 py-1 rounded-full bg-white/5 border border-white/10 text-neutral-300">
+              <span
+                key={id}
+                className="text-xs px-2 py-1 rounded-full bg-white/5 border border-white/10 text-neutral-300"
+              >
                 {findFlavorLabel(id)}
               </span>
             ))}
@@ -592,8 +840,10 @@ function MixPreview({ selected, recommended, totalPrice }: any) {
               className="relative w-32 h-32 rounded-full border border-teal-500/30 bg-gradient-to-br from-teal-500/10 to-teal-500/5 grid place-items-center"
             >
               <div className="text-center">
-                <div className="text-xs text-neutral-400">Mix Score</div>
-                <div className="text-2xl font-semibold text-teal-300">{score}</div>
+                <div className="text-xs text-neutral-400">Balance Score</div>
+                <div className="text-2xl font-semibold text-teal-300">
+                  {meters.balanceScore}
+                </div>
                 <div className="text-xs text-neutral-500">${totalPrice.toFixed(2)}</div>
               </div>
             </motion.div>

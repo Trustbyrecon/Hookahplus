@@ -58,6 +58,43 @@ function FireSessionDashboardContent() {
   const [metricsEnabled, setMetricsEnabled] = useState(false);
   const [sessionClaimTimes, setSessionClaimTimes] = useState<Map<string, number>>(new Map());
   const demoProgressionTimersRef = useRef<Map<string, NodeJS.Timeout[]>>(new Map());
+
+  const normalizeRole = (role: string | null): 'BOH' | 'FOH' | 'MANAGER' | 'ADMIN' => {
+    const upper = (role || '').toUpperCase();
+    if (upper === 'BOH' || upper === 'FOH' || upper === 'ADMIN' || upper === 'MANAGER') {
+      return upper as any;
+    }
+    return 'MANAGER';
+  };
+  
+  // Listen for global role changes (from GlobalNavigation) and sync locally
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const readRole = () => {
+      const stored = localStorage.getItem('active_role');
+      if (stored) {
+        setUserRole(normalizeRole(stored));
+      }
+    };
+    
+    const handleRoleChange = (event: Event) => {
+      const detailRole = (event as CustomEvent)?.detail?.role as string | undefined;
+      if (detailRole) {
+        setUserRole(normalizeRole(detailRole));
+      } else {
+        readRole();
+      }
+    };
+    
+    readRole();
+    window.addEventListener('activeRoleChanged', handleRoleChange);
+    window.addEventListener('storage', readRole);
+    return () => {
+      window.removeEventListener('activeRoleChanged', handleRoleChange);
+      window.removeEventListener('storage', readRole);
+    };
+  }, []);
   
   // Check for demo mode from URL params
   const isDemoMode = searchParams.get('mode') === 'demo';
@@ -494,16 +531,9 @@ function FireSessionDashboardContent() {
               </button>
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-zinc-400">Role:</span>
-                <select 
-                  value={userRole} 
-                  onChange={(e) => setUserRole(e.target.value as any)}
-                  className="bg-zinc-800 text-white text-sm font-medium px-3 py-2 rounded-lg border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                >
-                  <option value="MANAGER">MANAGER</option>
-                  <option value="BOH">BOH</option>
-                  <option value="FOH">FOH</option>
-                  <option value="ADMIN">ADMIN</option>
-                </select>
+                <span className="text-sm font-semibold text-white px-3 py-1 rounded-lg bg-zinc-800 border border-zinc-700">
+                  {userRole}
+                </span>
               </div>
               {!isDemoMode && (
                 <div className="flex items-center space-x-2">
