@@ -89,7 +89,6 @@ export async function GET(request: NextRequest) {
           source: 'QR',
           paymentStatus: 'succeeded',
           state: 'CLOSED',
-          createdAt: { not: null },
           startedAt: { not: null }
         },
         select: {

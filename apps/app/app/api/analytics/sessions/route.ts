@@ -55,12 +55,13 @@ export async function GET(request: NextRequest) {
       }),
 
       // Get active sessions
+      // NOTE: The underlying SessionState enum only includes high-level states (PENDING, ACTIVE, PAUSED, CLOSED, CANCELED).
+      // Workflow sub-states (PREP_IN_PROGRESS, READY_FOR_DELIVERY, DELIVERED) are all stored as ACTIVE in the database.
+      // For analytics, we therefore treat all ACTIVE sessions as \"active\".
       prisma.session.count({
         where: {
           ...whereClause,
-          state: {
-            in: ['ACTIVE', 'PREP_IN_PROGRESS', 'READY_FOR_DELIVERY', 'DELIVERED']
-          }
+          state: 'ACTIVE'
         }
       }),
 
@@ -131,12 +132,11 @@ export async function GET(request: NextRequest) {
         }
       }),
       
-      // Lightweight dataset for zone-level refill metrics
+      // Lightweight dataset for zone-level metrics (refill data not yet tracked per session)
       prisma.session.findMany({
         where: whereClause,
         select: {
           zone: true,
-          hadRefill: true
         }
       })
     ]);
@@ -155,11 +155,10 @@ export async function GET(request: NextRequest) {
     const timeBasedAvgDurationMinutes = 0;
 
     // Global refill rate & per-zone refill rates
-    const refillSessionCount = sessionsForZoneMetrics.filter(
-      (s: any) => s.hadRefill
-    ).length;
-    const globalRefillRate =
-      totalSessions > 0 ? refillSessionCount / totalSessions : 0;
+    // NOTE: Per-session refill flags are not yet tracked in the Session schema.
+    // For now, report zero-based refill metrics while still exposing per-zone session counts.
+    const refillSessionCount = 0;
+    const globalRefillRate = 0;
 
     const zoneStats: Record<string, { total: number; refills: number }> = {};
     sessionsForZoneMetrics.forEach((s: any) => {
@@ -168,9 +167,6 @@ export async function GET(request: NextRequest) {
         zoneStats[zoneKey] = { total: 0, refills: 0 };
       }
       zoneStats[zoneKey].total += 1;
-      if (s.hadRefill) {
-        zoneStats[zoneKey].refills += 1;
-      }
     });
 
     const refillByZone = Object.entries(zoneStats).map(

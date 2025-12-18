@@ -438,11 +438,11 @@ function FireSessionDashboardContent() {
       {/* Demo Mode Banner */}
       {isDemoMode && (
         <div className="bg-gradient-to-r from-teal-500/20 to-blue-500/20 border-b border-teal-500/30 px-4 py-3">
-          <div className="max-w-7xl mx-auto flex items-center gap-3">
+          <div className="max-w-7xl mx-auto flex items-center gap-3 flex-wrap">
             <Shield className="w-5 h-5 text-teal-400 flex-shrink-0" />
-            <div className="flex-1">
+            <div className="flex-1 min-w-[200px]">
               <p className="text-sm font-medium text-teal-200">
-                Demo Mode — Safe to tap everything, no real payments.
+                Demo Mode — safe to tap everything, no real payments.
               </p>
               {demoLounge && (
                 <p className="text-xs text-teal-300/70 mt-0.5">
@@ -450,25 +450,33 @@ function FireSessionDashboardContent() {
                 </p>
               )}
             </div>
-            <button
-              onClick={() => {
-                // Create a demo session and redirect to guest tracker
-                const demoSessionId = `demo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-                const guestTrackerUrl = process.env.NEXT_PUBLIC_GUEST_URL || 'https://guest.hookahplus.net';
-                const loungeId = demoLounge || 'default-lounge';
-                const tableId = 'T-001';
-                
-                // Use accelerated demo mode (2-3 minute trial)
-                const trackerUrl = `${guestTrackerUrl}/hookah-tracker?sessionId=${demoSessionId}&loungeId=${loungeId}&tableId=${tableId}&demo=true&mode=demo&accelerated=true`;
-                
-                console.log('[Demo Mode] 🎭 Launching accelerated guest experience:', trackerUrl);
-                window.open(trackerUrl, '_blank');
-              }}
-              className="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-            >
-              <CheckCircle className="w-4 h-4" />
-              Try Guest Experience (2-3 min)
-            </button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+              >
+                <Flame className="w-4 h-4" />
+                Start Demo Session
+              </button>
+              <button
+                onClick={() => {
+                  // Launch accelerated guest experience only (no staff actions required)
+                  const demoSessionId = `demo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                  const guestTrackerUrl = process.env.NEXT_PUBLIC_GUEST_URL || 'https://guest.hookahplus.net';
+                  const loungeId = demoLounge || 'default-lounge';
+                  const tableId = 'T-001';
+                  
+                  const trackerUrl = `${guestTrackerUrl}/hookah-tracker?sessionId=${demoSessionId}&loungeId=${loungeId}&tableId=${tableId}&demo=true&mode=demo&accelerated=true`;
+                  
+                  console.log('[Demo Mode] 🎭 Launching accelerated guest experience:', trackerUrl);
+                  window.open(trackerUrl, '_blank');
+                }}
+                className="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+              >
+                <CheckCircle className="w-4 h-4" />
+                Try Guest Experience (2-3 min)
+              </button>
+            </div>
           </div>
         </div>
       )}
