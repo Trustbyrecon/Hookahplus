@@ -174,10 +174,8 @@ export async function PATCH(
       where: { id: dbSession.id },
       data: {
         edgeCase: null,
-        edgeNote: `Refill completed by ${operatorId || userRole} at ${new Date().toISOString()}`,
-        updatedAt: new Date(),
-        hadRefill: true,
-        refillCount: currentRefillCount + 1
+        edgeNote: `Refill completed by ${operatorId || userRole} at ${new Date().toISOString()}. Refill count: ${currentRefillCount + 1}`,
+        updatedAt: new Date()
       }
     });
 
