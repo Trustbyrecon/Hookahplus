@@ -252,3 +252,4 @@ export function HistoricalTrends({ trends, className = '' }: HistoricalTrendsPro
   );
 }
 
+
