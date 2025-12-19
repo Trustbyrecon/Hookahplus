@@ -184,7 +184,8 @@ export default function StaffScheduling({
     const staff = staffMembers.find(s => s.id === newShift.staffId);
     if (!staff) return;
 
-    const shift: Omit<Shift, 'id'> = {
+    const shift: Shift = {
+      id: `shift-${Date.now()}`,
       staffId: newShift.staffId,
       staffName: staff.name,
       role: staff.role,
@@ -197,7 +198,13 @@ export default function StaffScheduling({
       breakDuration: newShift.breakDuration
     };
 
+    // Add to local state
+    setShifts([...shifts, shift]);
+    
+    // Notify parent
     onShiftCreate(shift);
+    
+    // Reset form
     setNewShift({
       staffId: '',
       startTime: '',
@@ -213,7 +220,8 @@ export default function StaffScheduling({
   const handleUpdateShift = () => {
     if (!editingShift) return;
 
-    onShiftUpdate(editingShift.id, {
+    const updatedShift: Shift = {
+      ...editingShift,
       staffId: newShift.staffId,
       staffName: staffMembers.find(s => s.id === newShift.staffId)?.name || editingShift.staffName,
       role: staffMembers.find(s => s.id === newShift.staffId)?.role || editingShift.role,
@@ -223,7 +231,13 @@ export default function StaffScheduling({
       location: newShift.location,
       notes: newShift.notes,
       breakDuration: newShift.breakDuration
-    });
+    };
+
+    // Update local state
+    setShifts(shifts.map(s => s.id === editingShift.id ? updatedShift : s));
+    
+    // Notify parent
+    onShiftUpdate(editingShift.id, updatedShift);
 
     setEditingShift(null);
     setNewShift({
@@ -254,6 +268,10 @@ export default function StaffScheduling({
 
   const handleDeleteShift = (shiftId: string) => {
     if (confirm('Are you sure you want to delete this shift?')) {
+      // Remove from local state
+      setShifts(shifts.filter(s => s.id !== shiftId));
+      
+      // Notify parent
       onShiftDelete(shiftId);
     }
   };

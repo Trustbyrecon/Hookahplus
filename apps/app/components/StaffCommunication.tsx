@@ -93,8 +93,118 @@ export default function StaffCommunication({
     subject: '',
     content: '',
     priority: 'medium' as Message['priority'],
-    type: 'question' as Message['type']
+    type: 'question' as Message['type'],
+    scheduleFor: '' // ISO date string for scheduled delivery
   });
+
+  // Request browser notification permission
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // Real-time notification polling
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const response = await fetch(`/api/staff/notifications?userId=${currentUserId}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.notifications && Array.isArray(data.notifications)) {
+            setNotifications(prev => {
+              const existingIds = new Set(prev.map(n => n.id));
+              const newNotifications = data.notifications.filter((n: Notification) => !existingIds.has(n.id));
+              
+              // Show browser notification for new urgent/high priority notifications
+              newNotifications.forEach((notif: Notification) => {
+                if ((notif.priority === 'urgent' || notif.priority === 'high') && !notif.isRead) {
+                  showBrowserNotification(notif);
+                }
+              });
+              
+              return [...data.notifications, ...prev.filter(n => !data.notifications.find((dn: Notification) => dn.id === n.id))];
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+      }
+    };
+
+    // Initial fetch
+    fetchNotifications();
+
+    // Poll every 10 seconds for real-time updates
+    const interval = setInterval(fetchNotifications, 10000);
+
+    return () => clearInterval(interval);
+  }, [currentUserId]);
+
+  // Check for scheduled notifications (night/next time)
+  useEffect(() => {
+    const checkScheduledNotifications = async () => {
+      try {
+        const response = await fetch(`/api/staff/notifications/scheduled?userId=${currentUserId}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.notifications && Array.isArray(data.notifications)) {
+            const now = new Date();
+            const scheduled = data.notifications.filter((n: any) => {
+              const scheduledTime = new Date(n.scheduledFor);
+              return scheduledTime <= now && !n.delivered;
+            });
+
+            if (scheduled.length > 0) {
+              scheduled.forEach((notif: any) => {
+                const notification: Notification = {
+                  id: notif.id,
+                  type: notif.type,
+                  title: notif.title,
+                  message: notif.message,
+                  timestamp: new Date(notif.scheduledFor),
+                  isRead: false,
+                  priority: notif.priority,
+                  actionUrl: notif.actionUrl
+                };
+                
+                setNotifications(prev => {
+                  if (prev.find(n => n.id === notification.id)) return prev;
+                  showBrowserNotification(notification);
+                  return [notification, ...prev];
+                });
+
+                // Mark as delivered
+                fetch(`/api/staff/notifications/${notif.id}/deliver`, { method: 'POST' });
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error checking scheduled notifications:', error);
+      }
+    };
+
+    // Check every minute for scheduled notifications
+    const interval = setInterval(checkScheduledNotifications, 60000);
+    checkScheduledNotifications(); // Initial check
+
+    return () => clearInterval(interval);
+  }, [currentUserId]);
+
+  // Show browser notification
+  const showBrowserNotification = (notification: Notification) => {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification(notification.title, {
+        body: notification.message,
+        icon: '/favicon.ico',
+        badge: '/favicon.ico',
+        tag: notification.id,
+        requireInteraction: notification.priority === 'urgent',
+        silent: notification.priority === 'low'
+      });
+    }
+  };
 
   // Generate demo data
   useEffect(() => {
@@ -150,41 +260,7 @@ export default function StaffCommunication({
       }
     ];
 
-    const demoNotifications: Notification[] = [
-      {
-        id: 'notif-1',
-        type: 'message',
-        title: 'New Message from Mike Rodriguez',
-        message: 'Question about Table 5 - flavor change request',
-        timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000),
-        isRead: false,
-        priority: 'medium',
-        actionUrl: '#'
-      },
-      {
-        id: 'notif-2',
-        type: 'task',
-        title: 'Task Assigned: Table Setup',
-        message: 'You have been assigned to setup Table 8 for the 7 PM reservation',
-        timestamp: new Date(Date.now() - 45 * 60 * 1000),
-        isRead: true,
-        priority: 'high',
-        actionUrl: '#'
-      },
-      {
-        id: 'notif-3',
-        type: 'shift',
-        title: 'Shift Reminder',
-        message: 'Your shift starts in 30 minutes',
-        timestamp: new Date(Date.now() - 15 * 60 * 1000),
-        isRead: false,
-        priority: 'urgent',
-        actionUrl: '#'
-      }
-    ];
-
     setMessages(demoMessages);
-    setNotifications(demoNotifications);
   }, []);
 
   const getPriorityColor = (priority: string) => {
@@ -237,9 +313,35 @@ export default function StaffCommunication({
   const unreadCount = notifications.filter(n => !n.isRead).length;
   const unreadMessages = messages.filter(m => m.status === 'delivered' || m.status === 'sent').length;
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!newMessage.subject.trim() || !newMessage.content.trim()) return;
 
+    // If scheduled, create scheduled notification
+    if (newMessage.scheduleFor) {
+      try {
+        const response = await fetch('/api/staff/notifications/schedule', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recipientId: newMessage.recipientId || undefined,
+            title: newMessage.subject,
+            message: newMessage.content,
+            priority: newMessage.priority,
+            type: newMessage.type === 'announcement' ? 'message' : newMessage.type,
+            scheduledFor: new Date(newMessage.scheduleFor).toISOString()
+          })
+        });
+
+        if (response.ok) {
+          alert('Message scheduled successfully!');
+        }
+      } catch (error) {
+        console.error('Error scheduling message:', error);
+        alert('Failed to schedule message. Sending immediately instead.');
+      }
+    }
+
+    // Send immediate message
     const message: Omit<Message, 'id' | 'timestamp' | 'status'> = {
       senderId: currentUserId,
       senderName: staffMembers.find(s => s.id === currentUserId)?.name || 'You',
@@ -259,7 +361,8 @@ export default function StaffCommunication({
       subject: '',
       content: '',
       priority: 'medium',
-      type: 'question'
+      type: 'question',
+      scheduleFor: ''
     });
     setShowComposeModal(false);
   };
@@ -494,7 +597,42 @@ export default function StaffCommunication({
       {/* Notifications Tab */}
       {activeTab === 'notifications' && (
         <div className="space-y-4">
-          {notifications.map((notification) => (
+          {/* Notification Delivery Info */}
+          <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+            <h3 className="text-sm font-semibold text-white mb-2 flex items-center space-x-2">
+              <Bell className="w-4 h-4" />
+              <span>How You Receive Notifications</span>
+            </h3>
+            <div className="text-sm text-zinc-300 space-y-2">
+              <div className="flex items-start space-x-2">
+                <CheckCircle className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <strong>Real-Time:</strong> Notifications are delivered instantly via browser notifications (if enabled) and appear in this tab. Polling every 10 seconds.
+                </div>
+              </div>
+              <div className="flex items-start space-x-2">
+                <Clock className="w-4 h-4 text-yellow-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <strong>Scheduled (Night/Next Time):</strong> Notifications can be scheduled for specific times. The system checks every minute and delivers them when the scheduled time arrives.
+                </div>
+              </div>
+              <div className="flex items-start space-x-2">
+                <Phone className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <strong>Delivery Methods:</strong> Browser notifications (urgent/high priority), in-app notifications (all), email (optional), SMS (urgent only).
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {notifications.length === 0 ? (
+            <div className="bg-zinc-800/50 rounded-lg border border-zinc-700 p-12 text-center">
+              <Bell className="w-16 h-16 text-zinc-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-white mb-2">No Notifications</h3>
+              <p className="text-zinc-400">You're all caught up! New notifications will appear here.</p>
+            </div>
+          ) : (
+            notifications.map((notification) => (
             <div
               key={notification.id}
               className={`p-4 rounded-lg border transition-colors ${
@@ -549,7 +687,7 @@ export default function StaffCommunication({
                 </div>
               </div>
             </div>
-          ))}
+          )))}
         </div>
       )}
 
@@ -631,6 +769,32 @@ export default function StaffCommunication({
                   className="w-full p-2 bg-zinc-800 border border-zinc-700 rounded-md text-white h-32 resize-none"
                   placeholder="Type your message here..."
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                  Schedule Delivery (Optional)
+                </label>
+                <div className="space-y-2">
+                  <input
+                    type="datetime-local"
+                    value={newMessage.scheduleFor}
+                    onChange={(e) => setNewMessage({ ...newMessage, scheduleFor: e.target.value })}
+                    className="w-full p-2 bg-zinc-800 border border-zinc-700 rounded-md text-white"
+                    min={new Date().toISOString().slice(0, 16)}
+                  />
+                  <p className="text-xs text-zinc-400">
+                    Leave empty for immediate delivery. Scheduled messages will be delivered at the specified time.
+                  </p>
+                  {newMessage.scheduleFor && (
+                    <div className="flex items-center space-x-2 text-sm text-yellow-400">
+                      <Clock className="w-4 h-4" />
+                      <span>
+                        Will be delivered on {new Date(newMessage.scheduleFor).toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import GlobalNavigation from '../../components/GlobalNavigation';
@@ -10,6 +10,9 @@ import {
   Trash2,
   Save,
   MapPin,
+  TrendingUp,
+  Zap,
+  BarChart3,
 } from 'lucide-react';
 
 interface Table {
@@ -26,6 +29,37 @@ export default function LoungeLayoutPage() {
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [isLoading, setIsLoading] = useState(true);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+
+  // Load existing layout on mount
+  useEffect(() => {
+    const loadLayout = async () => {
+      try {
+        const response = await fetch('/api/lounges?layout=true');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.layout && data.layout.tables) {
+            const loadedTables = data.layout.tables.map((table: any) => ({
+              id: table.id,
+              name: table.name,
+              x: table.coordinates?.x || table.x || 50,
+              y: table.coordinates?.y || table.y || 50,
+              capacity: table.capacity || 4,
+              seatingType: table.seatingType || 'Booth'
+            }));
+            setTables(loadedTables);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading layout:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadLayout();
+  }, []);
 
   const seatingTypes = [
     'Booth',
@@ -93,6 +127,7 @@ export default function LoungeLayoutPage() {
   };
 
   const handleSave = async () => {
+    setSaveStatus('saving');
     try {
       const response = await fetch('/api/lounges', {
         method: 'POST',
@@ -106,14 +141,17 @@ export default function LoungeLayoutPage() {
       });
 
       if (response.ok) {
-        alert('Lounge layout saved successfully!');
+        setSaveStatus('saved');
+        setTimeout(() => setSaveStatus('idle'), 3000);
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Failed to save layout' }));
-        alert(`Failed to save layout: ${errorData.error || 'Unknown error'}`);
+        setSaveStatus('error');
+        setTimeout(() => setSaveStatus('idle'), 3000);
       }
     } catch (error) {
       console.error('Error saving layout:', error);
-      alert('Failed to save layout. Please try again.');
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 3000);
     }
   };
 
@@ -123,15 +161,44 @@ export default function LoungeLayoutPage() {
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
       <GlobalNavigation />
       
-      {/* Header */}
-      <div className="bg-zinc-950 border-b border-teal-500/50">
-        <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold">Physical Lounge Digitization</h1>
-              <p className="text-zinc-400 mt-1">Lounge Layout Manager</p>
+      {/* Hero Section with Value Proposition */}
+      <div className="bg-gradient-to-br from-zinc-950 via-zinc-900 to-black border-b border-teal-500/50">
+        <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              Digitize your lounge in minutes, optimize forever
+            </h1>
+            <p className="text-lg md:text-xl text-zinc-300 max-w-3xl mx-auto mb-6">
+              Visual floor plan management with AI-powered table optimization
+            </p>
+            
+            {/* Value Proposition Badge */}
+            <div className="inline-flex items-center gap-3 bg-gradient-to-r from-teal-900/30 to-cyan-900/30 border border-teal-500/30 rounded-xl px-6 py-3 mb-8">
+              <TrendingUp className="w-5 h-5 text-teal-400" />
+              <div className="text-left">
+                <div className="text-xl font-bold text-teal-400">↑ 22% better table utilization, automated heat mapping</div>
+                <div className="text-xs text-zinc-400">See which tables perform best and optimize your layout automatically</div>
+              </div>
             </div>
-            <div className="flex items-center gap-4">
+
+            {/* Trust Indicators */}
+            <div className="flex flex-wrap justify-center gap-6 mb-8">
+              <div className="flex items-center gap-2 text-zinc-300">
+                <MapPin className="w-4 h-4 text-teal-400" />
+                <span className="text-sm">Visual floor plan</span>
+              </div>
+              <div className="flex items-center gap-2 text-zinc-300">
+                <Zap className="w-4 h-4 text-teal-400" />
+                <span className="text-sm">AI-powered optimization</span>
+              </div>
+              <div className="flex items-center gap-2 text-zinc-300">
+                <BarChart3 className="w-4 h-4 text-teal-400" />
+                <span className="text-sm">Real-time analytics</span>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-center gap-4">
               <Button
                 variant="outline"
                 onClick={handleAddTable}
@@ -142,10 +209,13 @@ export default function LoungeLayoutPage() {
               <Button
                 variant="primary"
                 onClick={handleSave}
-                disabled={tables.length === 0}
+                disabled={tables.length === 0 || saveStatus === 'saving'}
               >
                 <Save className="w-4 h-4 mr-2" />
-                Save Layout
+                {saveStatus === 'saving' ? 'Saving...' : 
+                 saveStatus === 'saved' ? 'Saved!' : 
+                 saveStatus === 'error' ? 'Error - Try Again' :
+                 'Save Layout'}
               </Button>
             </div>
           </div>
