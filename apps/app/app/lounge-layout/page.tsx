@@ -576,7 +576,7 @@ function LoungeLayoutPageContent() {
                       <button
                         onClick={() => setViewMode('analytics')}
                         className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
-                          viewMode === 'analytics'
+                          (viewMode as ViewMode) === 'analytics'
                             ? 'bg-teal-500 text-white'
                             : 'text-zinc-400 hover:text-white'
                         }`}
