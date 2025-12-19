@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient, SessionState } from '@prisma/client';
+import crypto from 'crypto';
 
 const prisma = new PrismaClient();
 
@@ -31,17 +32,27 @@ export async function POST(request: NextRequest) {
           }
         });
 
-        // Log the edge case
-        await prisma.sessionTransition.create({
-          data: {
-            sessionId,
-            fromState: updatedSession.state,
-            toState: updatedSession.state,
-            transition: 'edge_case_reported',
-            userId: reportedBy || 'system',
-            note: `Edge case reported: ${edgeCase} - ${description}`
-          }
-        });
+        // Log the edge case to SessionEvent
+        try {
+          await prisma.sessionEvent.create({
+            data: {
+              id: `edge_${sessionId}_${Date.now()}`,
+              sessionId,
+              type: 'EDGE_CASE_REPORTED',
+              payloadSeal: crypto.createHash('sha256').update(JSON.stringify({ edgeCase, description })).digest('hex'),
+              data: {
+                edgeCase,
+                description,
+                severity,
+                reportedBy: reportedBy || 'system',
+                tableId
+              }
+            }
+          });
+        } catch (eventError) {
+          // Non-critical - log but don't fail
+          console.warn('[Edge API] Failed to log to SessionEvent:', eventError);
+        }
 
         // Log to GhostLog for Reflex tracking
         console.log(`[GhostLog] 🚨 Edge Case: ${edgeCase} | Session: ${sessionId} | Table: ${tableId} | Severity: ${severity} | Reporter: ${reportedBy}`);
@@ -71,17 +82,24 @@ export async function POST(request: NextRequest) {
           }
         });
 
-        // Log the resolution
-        await prisma.sessionTransition.create({
-          data: {
-            sessionId: resolveSessionId,
-            fromState: resolvedSession.state,
-            toState: resolvedSession.state,
-            transition: 'edge_case_resolved',
-            userId: resolvedBy || 'system',
-            note: `Edge case resolved: ${resolution}`
-          }
-        });
+        // Log the resolution to SessionEvent
+        try {
+          await prisma.sessionEvent.create({
+            data: {
+              id: `edge_resolve_${resolveSessionId}_${Date.now()}`,
+              sessionId: resolveSessionId,
+              type: 'EDGE_CASE_RESOLVED',
+              payloadSeal: crypto.createHash('sha256').update(JSON.stringify({ resolution })).digest('hex'),
+              data: {
+                resolution,
+                resolvedBy: resolvedBy || 'system'
+              }
+            }
+          });
+        } catch (eventError) {
+          // Non-critical - log but don't fail
+          console.warn('[Edge API] Failed to log resolution to SessionEvent:', eventError);
+        }
 
         console.log(`[GhostLog] ✅ Edge Case Resolved | Session: ${resolveSessionId} | Resolution: ${resolution} | Resolved By: ${resolvedBy}`);
 
@@ -103,17 +121,25 @@ export async function POST(request: NextRequest) {
           priority 
         } = data;
 
-        // Log escalation
-        await prisma.sessionTransition.create({
-          data: {
-            sessionId: escalateSessionId,
-            fromState: 'ESCALATED',
-            toState: 'ESCALATED',
-            transition: 'edge_case_escalated',
-            userId: escalatedBy || 'system',
-            note: `Edge case escalated: ${escalationReason} | Priority: ${priority}`
-          }
-        });
+        // Log escalation to SessionEvent
+        try {
+          await prisma.sessionEvent.create({
+            data: {
+              id: `edge_escalate_${escalateSessionId}_${Date.now()}`,
+              sessionId: escalateSessionId,
+              type: 'EDGE_CASE_ESCALATED',
+              payloadSeal: crypto.createHash('sha256').update(JSON.stringify({ escalationReason, priority })).digest('hex'),
+              data: {
+                escalationReason,
+                priority,
+                escalatedBy: escalatedBy || 'system'
+              }
+            }
+          });
+        } catch (eventError) {
+          // Non-critical - log but don't fail
+          console.warn('[Edge API] Failed to log escalation to SessionEvent:', eventError);
+        }
 
         console.log(`[GhostLog] ⚠️ Edge Case Escalated | Session: ${escalateSessionId} | Reason: ${escalationReason} | Priority: ${priority} | Escalated By: ${escalatedBy}`);
 
