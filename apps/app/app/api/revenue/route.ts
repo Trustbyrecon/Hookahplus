@@ -181,11 +181,18 @@ export async function GET(request: NextRequest) {
     // Revenue breakdown by flavor mix
     const flavorBreakdown: Record<string, { revenue: number; count: number }> = {};
     sessions.forEach((session) => {
-      const flavorMix = session.flavorMix || 'Unknown';
+      // Convert Json type to string for indexing
+      const flavorMix = session.flavorMix 
+        ? (typeof session.flavorMix === 'string' 
+            ? session.flavorMix 
+            : Array.isArray(session.flavorMix)
+              ? session.flavorMix.join(', ')
+              : JSON.stringify(session.flavorMix))
+        : 'Unknown';
       if (!flavorBreakdown[flavorMix]) {
         flavorBreakdown[flavorMix] = { revenue: 0, count: 0 };
       }
-      flavorBreakdown[flavorMix].revenue += session.priceCents;
+      flavorBreakdown[flavorMix].revenue += session.priceCents || 0;
       flavorBreakdown[flavorMix].count += 1;
     });
 
