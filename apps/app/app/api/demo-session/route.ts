@@ -8,7 +8,7 @@ import {
   DemoSessionSource,
   DemoSessionMeta,
 } from '../../../types/demoSession';
-import { PrismaClient, SessionSource } from '@prisma/client';
+import { PrismaClient, SessionSource, Prisma } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -190,7 +190,7 @@ async function createSimulatedSession(
         customerRef: sessionData.customerName || 'Demo Customer',
         customerPhone: sessionData.customerPhone || null,
         flavor: null,
-        flavorMix: sessionData.flavorMix ? JSON.stringify(sessionData.flavorMix) : null,
+        flavorMix: sessionData.flavorMix ? JSON.stringify(sessionData.flavorMix) : Prisma.JsonNull,
         loungeId: payload.loungeId,
         priceCents: sessionData.amount ? Math.round(sessionData.amount * 100) : 3000,
         paymentStatus: null, // Will be confirmed via complete endpoint
