@@ -45,13 +45,23 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/sessions" className="text-zinc-400 hover:text-teal-400 transition-colors">
-                  Sessions
+                <Link href="/session-timer-pos" className="text-zinc-400 hover:text-teal-400 transition-colors">
+                  Session Timer POS
                 </Link>
               </li>
               <li>
-                <Link href="/fire-session-dashboard" className="text-zinc-400 hover:text-teal-400 transition-colors">
-                  Dashboard
+                <Link href="/flavor-mix-history" className="text-zinc-400 hover:text-teal-400 transition-colors">
+                  Flavor Mix History
+                </Link>
+              </li>
+              <li>
+                <Link href="/qr-preorder-billpay" className="text-zinc-400 hover:text-teal-400 transition-colors">
+                  QR Preorder + Bill Pay
+                </Link>
+              </li>
+              <li>
+                <Link href="/loyalty-sessionnotes" className="text-zinc-400 hover:text-teal-400 transition-colors">
+                  Loyalty + SessionNotes
                 </Link>
               </li>
               <li>
@@ -74,6 +84,21 @@ export default function Footer() {
               <li>
                 <Link href="/support" className="text-zinc-400 hover:text-teal-400 transition-colors">
                   Support
+                </Link>
+              </li>
+              <li>
+                <Link href="/integrations/square" className="text-zinc-400 hover:text-teal-400 transition-colors">
+                  Square Integration
+                </Link>
+              </li>
+              <li>
+                <Link href="/integrations/clover" className="text-zinc-400 hover:text-teal-400 transition-colors">
+                  Clover Integration
+                </Link>
+              </li>
+              <li>
+                <Link href="/integrations/toast" className="text-zinc-400 hover:text-teal-400 transition-colors">
+                  Toast Integration
                 </Link>
               </li>
               <li>

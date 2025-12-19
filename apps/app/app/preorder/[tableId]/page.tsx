@@ -43,15 +43,66 @@ function PreOrderPageContent() {
   const pendingOrders = tableSessions.filter(s => s.status === 'PAID_CONFIRMED' || s.status === 'NEW').length;
   const completedOrders = tableSessions.filter(s => s.status === 'CLOSED').length;
   
-  // Table configuration
-  const [tableData] = useState({
-    id: tableId,
-    name: 'VIP Booth 1',
-    type: 'booth',
-    capacity: 6,
-    zone: 'VIP',
-    status: 'active'
-  });
+  // Table configuration - load from layout
+  const [tableData, setTableData] = useState<{
+    id: string;
+    name: string;
+    type: string;
+    capacity: number;
+    zone: string;
+    status: string;
+  } | null>(null);
+  const [tableValidationError, setTableValidationError] = useState<string | null>(null);
+
+  // Validate table on mount
+  useEffect(() => {
+    const validateTable = async () => {
+      try {
+        const response = await fetch('/api/lounges/tables/validate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tableId: tableId,
+            checkAvailability: true
+          })
+        });
+
+        if (response.ok) {
+          const validation = await response.json();
+          if (validation.valid && validation.table) {
+            setTableData({
+              id: validation.table.id,
+              name: validation.table.name,
+              type: validation.table.seatingType || 'Booth',
+              capacity: validation.table.capacity || 4,
+              zone: validation.table.zone || 'Main',
+              status: validation.available ? 'active' : 'occupied'
+            });
+            setTableValidationError(null);
+          } else {
+            setTableValidationError(validation.error || 'Table not found');
+            setTableData(null);
+          }
+        } else {
+          setTableValidationError('Failed to validate table');
+          setTableData(null);
+        }
+      } catch (error) {
+        console.error('Table validation error:', error);
+        // Fallback to default table data
+        setTableData({
+          id: tableId,
+          name: `Table ${tableId}`,
+          type: 'booth',
+          capacity: 6,
+          zone: 'Main',
+          status: 'active'
+        });
+      }
+    };
+
+    validateTable();
+  }, [tableId]);
 
   // Generate QR Code for quick sharing
   const generateQRCode = async () => {
@@ -90,6 +141,43 @@ function PreOrderPageContent() {
   useEffect(() => {
     generateQRCode();
   }, [tableId]);
+
+  // Show error if table validation failed
+  if (tableValidationError && !tableData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
+        <GlobalNavigation />
+        <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+          <Card className="p-8 text-center">
+            <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-white mb-4">Table Not Found</h1>
+            <p className="text-zinc-400 mb-6">{tableValidationError}</p>
+            <Button
+              variant="primary"
+              onClick={() => router.push('/lounge-layout')}
+            >
+              <MapPin className="w-4 h-4 mr-2" />
+              Configure Tables
+            </Button>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (!tableData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
+        <GlobalNavigation />
+        <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+          <Card className="p-8 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-400 mx-auto mb-4"></div>
+            <p className="text-zinc-400">Loading table information...</p>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">

@@ -423,21 +423,21 @@ export default function POSWaitlistPage() {
                   <div className="w-8 h-8 bg-teal-500 rounded-full flex items-center justify-center text-sm font-bold">1</div>
                   <div>
                     <h4 className="font-semibold">Phase 1: Square Integration</h4>
-                    <p className="text-zinc-400 text-sm">Q1 2024 - Square POS integration</p>
+                    <p className="text-zinc-400 text-sm">Q1 2026 - Square POS integration</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-zinc-600 rounded-full flex items-center justify-center text-sm font-bold">2</div>
                   <div>
                     <h4 className="font-semibold">Phase 2: Clover Integration</h4>
-                    <p className="text-zinc-400 text-sm">Q2 2024 - Clover POS integration</p>
+                    <p className="text-zinc-400 text-sm">Q2 2026 - Clover POS integration</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-zinc-600 rounded-full flex items-center justify-center text-sm font-bold">3</div>
                   <div>
                     <h4 className="font-semibold">Phase 3: Full Launch</h4>
-                    <p className="text-zinc-400 text-sm">Q3 2024 - All POS systems supported</p>
+                    <p className="text-zinc-400 text-sm">Q3 2026 - All POS systems supported</p>
                   </div>
                 </div>
               </div>
@@ -451,7 +451,9 @@ export default function POSWaitlistPage() {
               </p>
               <div className="flex items-center gap-2 text-teal-400">
                 <Mail className="w-4 h-4" />
-                <span>pos-integration@hookahplus.net</span>
+                <a href="mailto:Hookahplusconnector@gmail.com" className="hover:text-teal-300">
+                  pos-integration@hookahplus.net
+                </a>
               </div>
             </div>
           </div>

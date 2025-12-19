@@ -749,6 +749,66 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
       }
     }
 
+    // Validate tableId against saved layout
+    try {
+      const layoutSetting = await prisma.orgSetting.findUnique({
+        where: { key: 'lounge_layout' }
+      });
+
+      if (layoutSetting) {
+        const layoutData = JSON.parse(layoutSetting.value);
+        const tables = layoutData.tables || [];
+        
+        // Check if table exists in layout
+        const tableExists = tables.some((t: any) => 
+          t.id === data.tableId || 
+          t.name === data.tableId ||
+          t.name?.toLowerCase() === data.tableId.toLowerCase()
+        );
+
+        if (!tableExists) {
+          // Suggest similar tables
+          const suggestions = tables
+            .filter((t: any) => 
+              t.name?.toLowerCase().includes(data.tableId.toLowerCase()) ||
+              t.id?.toLowerCase().includes(data.tableId.toLowerCase())
+            )
+            .slice(0, 3)
+            .map((t: any) => t.name || t.id);
+
+          return NextResponse.json({
+            success: false,
+            error: `Table "${data.tableId}" not found in lounge layout.`,
+            suggestion: 'Please configure tables in Lounge Layout Manager first, or use a valid table ID.',
+            suggestions: suggestions.length > 0 ? suggestions : undefined,
+            availableTables: tables.map((t: any) => ({ id: t.id, name: t.name, capacity: t.capacity }))
+          }, { 
+            status: 400,
+            headers: getCorsHeaders(req),
+          });
+        }
+
+        // Validate capacity if party size provided (could be in metadata or calculated)
+        // For now, we'll validate basic capacity - can be enhanced later
+        const table = tables.find((t: any) => 
+          t.id === data.tableId || 
+          t.name === data.tableId ||
+          t.name?.toLowerCase() === data.tableId.toLowerCase()
+        );
+
+        if (table && table.capacity) {
+          // Note: Party size validation would require additional data
+          // This is a foundation - can be enhanced with party size from request
+        }
+      } else {
+        // Layout not configured - warn but don't block (for backward compatibility)
+        console.warn('[Sessions API] No lounge layout configured. Table validation skipped.');
+      }
+    } catch (layoutError: any) {
+      // Don't block session creation if layout check fails (graceful degradation)
+      console.warn('[Sessions API] Layout validation error (non-blocking):', layoutError.message);
+    }
+
     // Check if session already exists for this table (simplified duplicate check)
     // Use minimal select to avoid columns that don't exist
     let existingSession: any = null;

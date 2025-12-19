@@ -199,10 +199,40 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
     });
   };
 
-  const validateForm = (): boolean => {
+  const validateForm = async (): Promise<boolean> => {
     const newErrors: Partial<Record<keyof SessionData, string>> = {};
     
-    if (!formData.tableId.trim()) newErrors.tableId = 'Table ID is required';
+    if (!formData.tableId.trim()) {
+      newErrors.tableId = 'Table ID is required';
+    } else if (selectedTable) {
+      // Validate table exists and is available
+      try {
+        const response = await fetch('/api/lounges/tables/validate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tableId: formData.tableId,
+            checkAvailability: true
+          })
+        });
+
+        if (response.ok) {
+          const validation = await response.json();
+          if (!validation.valid) {
+            newErrors.tableId = validation.error || 'Invalid table';
+            if (validation.suggestions) {
+              newErrors.tableId += ` (Suggestions: ${validation.suggestions.join(', ')})`;
+            }
+          } else if (!validation.available) {
+            newErrors.tableId = validation.error || 'Table is not available';
+          }
+        }
+      } catch (error) {
+        console.warn('Table validation error (non-blocking):', error);
+        // Don't block on validation errors - graceful degradation
+      }
+    }
+
     if (!formData.customerName.trim()) newErrors.customerName = 'Customer name is required';
     if (!formData.sessionType) newErrors.sessionType = 'Session type is required';
     if (formData.flavorMix.length === 0) newErrors.flavor = 'At least one flavor must be selected';
@@ -215,7 +245,8 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateForm()) {
+    const isValid = await validateForm();
+    if (isValid) {
       // Format data for the API endpoint
       const apiData = {
         session_id: `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -508,6 +539,8 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
                         showAvailability={true}
                         showCapacity={true}
                         showPricing={true}
+                        useLayoutData={true}
+                        partySize={formData.timerDuration ? undefined : undefined} // Can add party size field later
                         className="p-4 bg-zinc-800/50 rounded-lg border border-zinc-700"
                       />
                     </div>

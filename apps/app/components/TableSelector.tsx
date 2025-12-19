@@ -1,8 +1,19 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Search, Users, MapPin, Clock, Crown, Star } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Users, MapPin, Clock, Crown, Star, AlertCircle } from 'lucide-react';
 import { TableType, TABLE_TYPES, getTableAvailabilityStats, getTableTypeStats } from '../lib/tableTypes';
+import { useSessionContext } from '../contexts/SessionContext';
+
+// Helper hook that safely uses SessionContext
+function useSessionContextSafe() {
+  try {
+    return useSessionContext();
+  } catch (error) {
+    // SessionContext not available - return empty sessions
+    return { sessions: [] };
+  }
+}
 
 interface TableSelectorProps {
   selectedTableId?: string;
@@ -10,6 +21,8 @@ interface TableSelectorProps {
   showAvailability?: boolean;
   showCapacity?: boolean;
   showPricing?: boolean;
+  useLayoutData?: boolean; // New: Use layout data instead of hardcoded
+  partySize?: number; // New: Filter by capacity
   className?: string;
 }
 
@@ -19,16 +32,104 @@ export function TableSelector({
   showAvailability = true,
   showCapacity = true,
   showPricing = false,
+  useLayoutData = true, // Default to using layout data
+  partySize,
   className = ''
 }: TableSelectorProps) {
+  const { sessions } = useSessionContextSafe();
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState<TableType['type'] | 'all'>('all');
-  const [filterAvailability, setFilterAvailability] = useState<TableType['availability'] | 'all'>('all');
+  const [filterType, setFilterType] = useState<string>('all');
+  const [filterAvailability, setFilterAvailability] = useState<string>('all');
+  const [layoutTables, setLayoutTables] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const availabilityStats = getTableAvailabilityStats();
-  const typeStats = getTableTypeStats();
+  // Load tables from layout if enabled
+  useEffect(() => {
+    if (useLayoutData) {
+      const loadTables = async () => {
+        try {
+          const response = await fetch('/api/lounges?layout=true');
+          if (response.ok) {
+            const data = await response.json();
+            setLayoutTables(data.layout?.tables || []);
+          }
+        } catch (error) {
+          console.error('Error loading layout tables:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      loadTables();
+    } else {
+      setLoading(false);
+    }
+  }, [useLayoutData]);
 
-  const filteredTables = TABLE_TYPES.filter(table => {
+  // Convert layout tables to TableType format and merge with availability
+  const getAvailableTables = (): TableType[] => {
+    if (useLayoutData && layoutTables.length > 0) {
+      return layoutTables.map((table: any) => {
+        // Check if table has active session
+        const activeSession = sessions.find(s => {
+          const sessionTableId = s.tableId;
+          return sessionTableId === table.id ||
+                 sessionTableId === table.name ||
+                 sessionTableId?.toLowerCase() === table.name?.toLowerCase();
+        });
+
+        const isOccupied = activeSession && 
+          ['ACTIVE', 'PREP_IN_PROGRESS', 'READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'PAID_CONFIRMED'].includes(activeSession.status);
+
+        // Map seating type to table type
+        const mapSeatingTypeToType = (seatingType: string): TableType['type'] => {
+          const lower = seatingType.toLowerCase();
+          if (lower.includes('bar')) return 'bar';
+          if (lower.includes('booth')) return 'booth';
+          if (lower.includes('outdoor') || lower.includes('patio')) return 'patio';
+          if (lower.includes('vip')) return 'vip';
+          if (lower.includes('private') || lower.includes('room')) return 'vip';
+          if (lower.includes('couch') || lower.includes('sectional')) return 'sectional';
+          return 'table';
+        };
+
+        // Map zone to location
+        const zone = table.zone || 'Main Floor';
+        const location = zone === 'VIP' ? 'VIP Section' :
+                        zone === 'Outdoor' ? 'Outdoor Patio' :
+                        zone === 'Private' ? 'Private Rooms' :
+                        'Main Floor';
+
+        return {
+          id: table.id,
+          name: table.name,
+          type: mapSeatingTypeToType(table.seatingType || 'Booth'),
+          capacity: table.capacity || 4,
+          availability: isOccupied ? 'occupied' : 'available',
+          location: location,
+          description: `${table.seatingType || 'Booth'} seating`,
+          icon: table.seatingType === 'VIP' ? '👑' : table.seatingType === 'Outdoor' ? '🌿' : '🪑',
+          color: table.seatingType === 'VIP' ? 'bg-purple-500' : 
+                 table.seatingType === 'Outdoor' ? 'bg-emerald-500' : 
+                 'bg-blue-500',
+          priceMultiplier: table.seatingType === 'VIP' ? 1.5 : 
+                          table.seatingType === 'Outdoor' ? 1.2 : 
+                          table.seatingType === 'Private Room' ? 1.5 : 1.0
+        };
+      });
+    }
+    
+    // Fallback to hardcoded tables
+    return TABLE_TYPES;
+  };
+
+  const availableTables = getAvailableTables();
+
+  // Filter by party size if provided
+  const capacityFilteredTables = partySize 
+    ? availableTables.filter(t => t.capacity >= partySize)
+    : availableTables;
+
+  const filteredTables = capacityFilteredTables.filter(table => {
     const matchesSearch = table.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          table.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          table.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -38,6 +139,16 @@ export function TableSelector({
     
     return matchesSearch && matchesType && matchesAvailability;
   });
+
+  // Calculate stats from available tables
+  const availabilityStats = {
+    total: availableTables.length,
+    available: availableTables.filter(t => t.availability === 'available').length,
+    occupied: availableTables.filter(t => t.availability === 'occupied').length,
+    reserved: availableTables.filter(t => t.availability === 'reserved').length,
+    maintenance: availableTables.filter(t => t.availability === 'maintenance').length,
+    occupancyRate: ((availableTables.filter(t => t.availability === 'occupied' || t.availability === 'reserved').length) / availableTables.length * 100).toFixed(1)
+  };
 
   const getAvailabilityColor = (availability: TableType['availability']) => {
     switch (availability) {
@@ -92,7 +203,7 @@ export function TableSelector({
           {/* Type Filter */}
           <select
             value={filterType}
-            onChange={(e) => setFilterType(e.target.value as TableType['type'] | 'all')}
+            onChange={(e) => setFilterType(e.target.value)}
             className="px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
           >
             <option value="all">All Types</option>
@@ -107,7 +218,7 @@ export function TableSelector({
           {/* Availability Filter */}
           <select
             value={filterAvailability}
-            onChange={(e) => setFilterAvailability(e.target.value as TableType['availability'] | 'all')}
+            onChange={(e) => setFilterAvailability(e.target.value)}
             className="px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
           >
             <option value="all">All Availability</option>
@@ -119,8 +230,40 @@ export function TableSelector({
         </div>
       </div>
 
+      {/* Party Size Warning */}
+      {partySize && capacityFilteredTables.length < availableTables.length && (
+        <div className="flex items-center gap-2 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg text-yellow-400 text-sm">
+          <AlertCircle className="w-4 h-4" />
+          <span>
+            Showing {capacityFilteredTables.length} of {availableTables.length} tables that can accommodate {partySize} people
+          </span>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {loading && useLayoutData && (
+        <div className="text-center py-8 text-zinc-400">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-400 mx-auto mb-4"></div>
+          <p>Loading tables from layout...</p>
+        </div>
+      )}
+
+      {/* No Layout Warning */}
+      {!loading && useLayoutData && layoutTables.length === 0 && (
+        <div className="flex items-center gap-2 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg text-blue-400 text-sm mb-4">
+          <AlertCircle className="w-4 h-4" />
+          <div>
+            <p className="font-medium">No tables configured</p>
+            <p className="text-xs text-blue-300 mt-1">
+              Visit <a href="/lounge-layout" className="underline">Lounge Layout Manager</a> to set up your tables.
+              Falling back to default tables.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Stats */}
-      {showAvailability && (
+      {showAvailability && !loading && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-zinc-800/80 rounded-lg border border-zinc-700">
           <div className="text-center">
             <div className="text-2xl font-bold text-white">{availabilityStats.total}</div>

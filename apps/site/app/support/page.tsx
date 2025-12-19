@@ -1,8 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Script from 'next/script';
 import PageHero from '../../components/PageHero';
 import NewsletterSignup from '../../components/NewsletterSignup';
+import Button from '../../components/Button';
+import { FAQSchema } from '../../components/SchemaMarkup';
 import { 
   HelpCircle, 
   Mail, 
@@ -19,7 +22,9 @@ import {
   Video,
   FileText,
   Users,
-  Zap
+  Zap,
+  Calendar,
+  Instagram
 } from 'lucide-react';
 
 // Analytics tracking functions
@@ -134,8 +139,22 @@ const SupportPage = () => {
 
   const handleContactSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
-    console.log('Contact form submitted:', contactForm);
+    
+    // Format message for IG DM
+    const message = `Support Request from ${contactForm.name} (${contactForm.email})\n\nCategory: ${contactForm.category}\nPriority: ${contactForm.priority}\nSubject: ${contactForm.subject}\n\nMessage:\n${contactForm.message}`;
+    
+    // Encode message for Instagram DM
+    const encodedMessage = encodeURIComponent(message);
+    const instagramUrl = `https://ig.me/m/hookahplusnet?text=${encodedMessage}`;
+    
+    // Open Instagram DM with pre-filled message
+    window.open(instagramUrl, '_blank');
+    
+    // Also send email as backup
+    const emailSubject = encodeURIComponent(`[${contactForm.priority.toUpperCase()}] ${contactForm.subject}`);
+    const emailBody = encodeURIComponent(`Name: ${contactForm.name}\nEmail: ${contactForm.email}\nCategory: ${contactForm.category}\nPriority: ${contactForm.priority}\n\nMessage:\n${contactForm.message}`);
+    window.location.href = `mailto:hookahplusconnector@gmail.com?subject=${emailSubject}&body=${emailBody}`;
+    
     // Reset form
     setContactForm({
       name: '',
@@ -145,16 +164,21 @@ const SupportPage = () => {
       priority: 'medium',
       category: 'general'
     });
+    
+    // Show success message
+    alert('Opening Instagram DM and email client. Your message has been prepared!');
   };
 
   const supportChannels = [
     {
-      icon: <MessageCircle className="w-6 h-6" />,
-      title: 'Live Chat',
-      description: 'Coming Soon!',
-      status: 'Coming Soon',
-      responseTime: 'Soon',
-      color: 'text-yellow-400'
+      icon: <Instagram className="w-6 h-6" />,
+      title: 'Instagram DM',
+      description: 'Get instant help via DM',
+      status: 'Available',
+      responseTime: 'Instant',
+      color: 'text-pink-400',
+      action: () => window.open('https://ig.me/m/hookahplusnet', '_blank'),
+      isButton: true
     },
     {
       icon: <Mail className="w-6 h-6" />,
@@ -162,15 +186,19 @@ const SupportPage = () => {
       description: 'hookahplusconnector@gmail.com',
       status: 'Available',
       responseTime: '< 2 hours',
-      color: 'text-blue-400'
+      color: 'text-blue-400',
+      action: () => window.location.href = 'mailto:hookahplusconnector@gmail.com',
+      isButton: false
     },
     {
-      icon: <Phone className="w-6 h-6" />,
-      title: 'Phone Support',
-      description: 'Speak directly with our team',
-      status: 'Available',
-      responseTime: 'Immediate',
-      color: 'text-purple-400'
+      icon: <MessageCircle className="w-6 h-6" />,
+      title: 'Live Chat',
+      description: 'Coming Soon!',
+      status: 'Coming Soon',
+      responseTime: 'Soon',
+      color: 'text-yellow-400',
+      action: null,
+      isButton: false
     }
   ];
 
@@ -207,10 +235,18 @@ const SupportPage = () => {
     }
   ];
 
+  // Prepare FAQ schema data
+  const faqSchemaData = faqData.map(item => ({
+    question: item.question,
+    answer: item.answer
+  }));
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
-      {/* Hero Section */}
-      <PageHero
+    <>
+      <FAQSchema faqs={faqSchemaData} />
+      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
+        {/* Hero Section */}
+        <PageHero
         headline="Get answers fast, get back to running your lounge"
         subheadline="AI-powered support + human experts, <2 hour response"
         benefit={{
@@ -232,7 +268,7 @@ const SupportPage = () => {
             {supportChannels.map((channel, index) => (
               <div key={index} className="bg-zinc-800/50 backdrop-blur-sm border border-zinc-700 rounded-lg p-6 hover:border-zinc-600 transition-colors">
                 <div className="flex items-center mb-4">
-                  <div className="text-primary-400 mr-3">
+                  <div className={`mr-3 ${channel.color}`}>
                     {channel.icon}
                   </div>
                   <div>
@@ -240,7 +276,7 @@ const SupportPage = () => {
                     <p className="text-sm text-zinc-400">{channel.description}</p>
                   </div>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-4">
                   <span className={`text-sm font-medium ${channel.color}`}>
                     {channel.status}
                   </span>
@@ -248,12 +284,31 @@ const SupportPage = () => {
                     {channel.responseTime}
                   </span>
                 </div>
+                {channel.isButton && channel.action && (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={channel.action}
+                    className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white"
+                  >
+                    <Instagram className="w-4 h-4 mr-2" />
+                    Open Instagram DM
+                  </Button>
+                )}
+                {!channel.isButton && channel.action && (
+                  <button
+                    onClick={channel.action}
+                    className="w-full text-sm text-zinc-400 hover:text-teal-400 transition-colors text-left"
+                  >
+                    {channel.description}
+                  </button>
+                )}
               </div>
             ))}
           </div>
         </div>
 
-        {/* Quick Actions */}
+        {/* Quick Actions - AI-Friendly Structured Content */}
         <div className="mb-12">
           <h2 className="text-2xl font-bold text-white mb-6">Quick Actions</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -262,15 +317,18 @@ const SupportPage = () => {
                 key={index}
                 href={action.href}
                 className="bg-zinc-800/50 backdrop-blur-sm border border-zinc-700 rounded-lg p-4 hover:border-zinc-600 transition-colors group"
+                itemScope
+                itemType="https://schema.org/WebPage"
               >
                 <div className="flex items-center mb-3">
-                  <div className="text-primary-400 mr-3 group-hover:text-primary-300 transition-colors">
+                  <div className="text-primary-400 mr-3 group-hover:text-primary-300 transition-colors" itemProp="image">
                     {action.icon}
                   </div>
                   <ExternalLink className="w-4 h-4 text-zinc-400 ml-auto" />
                 </div>
-                <h3 className="text-sm font-semibold text-white mb-1">{action.title}</h3>
-                <p className="text-xs text-zinc-400">{action.description}</p>
+                <h3 className="text-sm font-semibold text-white mb-1" itemProp="name">{action.title}</h3>
+                <p className="text-xs text-zinc-400" itemProp="description">{action.description}</p>
+                <link itemProp="url" href={action.href} />
               </a>
             ))}
           </div>
@@ -425,8 +483,8 @@ const SupportPage = () => {
                   type="submit"
                   className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-8 py-3 rounded-lg font-medium transition-all duration-200 flex items-center"
                 >
-                  <Zap className="w-4 h-4 mr-2" />
-                  Send Message
+                  <Instagram className="w-4 h-4 mr-2" />
+                  Send via Instagram DM
                 </button>
               </div>
             </form>
@@ -471,6 +529,7 @@ const SupportPage = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 
