@@ -17,6 +17,7 @@ fi
 GUEST_TRIGGER_PATTERNS=(
   "apps/guest/"
   "apps/shared/"
+  "apps/app/types/"  # Guest imports from app/types/enhancedSession
   "packages/"
   "turbo.json"
   "package.json"
