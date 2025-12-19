@@ -133,7 +133,7 @@ function LoungeLayoutPageContent() {
       const isPaid = session.paymentStatus === 'succeeded' || 
                      (session.externalRef && (session.externalRef.startsWith('cs_') || session.externalRef.startsWith('test_cs_'))) ||
                      session.status === 'PAID_CONFIRMED' ||
-                     (session.status !== 'NEW' && session.status !== 'PENDING');
+                     session.status !== 'NEW';
       
       // Only include sessions that are paid/confirmed
       if (!isPaid) {

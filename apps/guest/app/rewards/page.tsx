@@ -12,6 +12,7 @@ import { Shield, ArrowLeft, Flame, Clock } from 'lucide-react';
 import { useGuestSessionContext } from '../../contexts/GuestSessionContext';
 import { STATUS_TO_TRACKER_STAGE } from '../../../app/types/enhancedSession';
 import Badge from '../../components/Badge';
+import Card from '../../components/Card';
 
 function RewardsContent() {
   const searchParams = useSearchParams();
