@@ -23,7 +23,9 @@ import {
   Shield,
   Cpu,
   Workflow,
-  Clock
+  Clock,
+  Terminal,
+  Lock
 } from 'lucide-react';
 
 interface DocSection {
@@ -205,7 +207,115 @@ const TechnicalDocsPage = () => {
                     {copiedCode === 'get-session' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                   </button>
                 </div>
-                <p className="text-sm text-zinc-300">Retrieve session details and status</p>
+                <p className="text-sm text-zinc-300 mb-2">Retrieve session details and status</p>
+                <div className="bg-black border border-zinc-700 rounded p-3">
+                  <pre className="text-xs text-green-400 overflow-x-auto">
+{`{
+  "sessionId": "sess_123",
+  "tableId": "T-001",
+  "status": "active",
+  "duration": 45,
+  "flavors": ["mint", "strawberry"],
+  "startTime": "2026-01-15T20:00:00Z"
+}`}
+                  </pre>
+                </div>
+              </div>
+
+              <div className="bg-zinc-900 border border-zinc-600 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center">
+                    <span className="bg-yellow-500 text-white text-xs px-2 py-1 rounded mr-3">PUT</span>
+                    <span className="text-sm font-medium text-white">/api/sessions/{'{sessionId}'}/extend</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText('PUT /api/sessions/{sessionId}/extend');
+                      setCopiedCode('extend-session');
+                      setTimeout(() => setCopiedCode(null), 2000);
+                    }}
+                    className="text-zinc-400 hover:text-white transition-colors"
+                  >
+                    {copiedCode === 'extend-session' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+                <p className="text-sm text-zinc-300 mb-2">Extend session duration</p>
+                <div className="bg-black border border-zinc-700 rounded p-3">
+                  <pre className="text-xs text-green-400 overflow-x-auto">
+{`{
+  "additionalMinutes": 15
+}`}
+                  </pre>
+                </div>
+              </div>
+
+              <div className="bg-zinc-900 border border-zinc-600 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center">
+                    <span className="bg-red-500 text-white text-xs px-2 py-1 rounded mr-3">DELETE</span>
+                    <span className="text-sm font-medium text-white">/api/sessions/{'{sessionId}'}</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText('DELETE /api/sessions/{sessionId}');
+                      setCopiedCode('close-session');
+                      setTimeout(() => setCopiedCode(null), 2000);
+                    }}
+                    className="text-zinc-400 hover:text-white transition-colors"
+                  >
+                    {copiedCode === 'close-session' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+                <p className="text-sm text-zinc-300">Close session and calculate final total</p>
+              </div>
+
+              <div className="bg-zinc-900 border border-zinc-600 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center">
+                    <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded mr-3">GET</span>
+                    <span className="text-sm font-medium text-white">/api/lounges/{'{loungeId}'}/analytics</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText('GET /api/lounges/{loungeId}/analytics');
+                      setCopiedCode('analytics');
+                      setTimeout(() => setCopiedCode(null), 2000);
+                    }}
+                    className="text-zinc-400 hover:text-white transition-colors"
+                  >
+                    {copiedCode === 'analytics' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+                <p className="text-sm text-zinc-300">Get lounge performance analytics and reports</p>
+              </div>
+
+              <div className="bg-zinc-900 border border-zinc-600 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center">
+                    <span className="bg-green-500 text-white text-xs px-2 py-1 rounded mr-3">POST</span>
+                    <span className="text-sm font-medium text-white">/api/loyalty/credits</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText('POST /api/loyalty/credits');
+                      setCopiedCode('loyalty');
+                      setTimeout(() => setCopiedCode(null), 2000);
+                    }}
+                    className="text-zinc-400 hover:text-white transition-colors"
+                  >
+                    {copiedCode === 'loyalty' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+                <p className="text-sm text-zinc-300 mb-2">Issue loyalty credits to customer</p>
+                <div className="bg-black border border-zinc-700 rounded p-3">
+                  <pre className="text-xs text-green-400 overflow-x-auto">
+{`{
+  "customerId": "cust_123",
+  "amount": 50,
+  "reason": "session_completion"
+}`}
+                  </pre>
+                </div>
               </div>
             </div>
           </div>
@@ -264,7 +374,7 @@ const TechnicalDocsPage = () => {
                 <p className="text-xs text-zinc-400 mb-2">Coming soon</p>
                 <div className="flex items-center">
                   <div className="w-2 h-2 bg-blue-400 rounded-full mr-2" />
-                  <span className="text-xs text-blue-400">Q2 2024</span>
+                  <span className="text-xs text-blue-400">Q2 2026</span>
                 </div>
               </div>
               <div className="bg-zinc-900 border border-zinc-600 rounded-lg p-4">
@@ -562,51 +672,195 @@ const TechnicalDocsPage = () => {
             <div className="mt-12 bg-zinc-800/50 backdrop-blur-sm border border-zinc-700 rounded-lg p-8">
               <h2 className="text-xl font-bold text-white mb-6">Additional Resources</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* SDK Downloads */}
                 <div className="bg-zinc-900 border border-zinc-600 rounded-lg p-6">
                   <div className="flex items-center mb-4">
                     <Download className="w-6 h-6 text-primary-400 mr-3" />
                     <h3 className="text-lg font-semibold text-white">SDK Downloads</h3>
                   </div>
                   <p className="text-sm text-zinc-300 mb-4">
-                    Download our official SDKs for popular programming languages
+                    Download our official SDKs for popular programming languages. All SDKs include TypeScript definitions, comprehensive documentation, and example code.
                   </p>
-                  <div className="space-y-2">
-                    <a href="#" className="flex items-center text-sm text-primary-400 hover:text-primary-300 transition-colors">
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      JavaScript SDK
-                    </a>
-                    <a href="#" className="flex items-center text-sm text-primary-400 hover:text-primary-300 transition-colors">
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      Python SDK
-                    </a>
-                    <a href="#" className="flex items-center text-sm text-primary-400 hover:text-primary-300 transition-colors">
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      React Components
-                    </a>
+                  <div className="space-y-3">
+                    <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center">
+                          <Code className="w-5 h-5 text-blue-400 mr-2" />
+                          <h4 className="font-semibold text-white">JavaScript SDK</h4>
+                        </div>
+                        <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded">v1.2.0</span>
+                      </div>
+                      <p className="text-xs text-zinc-400 mb-3">Node.js 16+ and modern browsers. Includes React hooks and TypeScript support.</p>
+                      <div className="flex items-center gap-2">
+                        <a 
+                          href="https://github.com/hookahplus/js-sdk" 
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center text-sm text-primary-400 hover:text-primary-300 transition-colors"
+                        >
+                          <ExternalLink className="w-4 h-4 mr-2" />
+                          GitHub Repository
+                        </a>
+                        <span className="text-zinc-500">•</span>
+                        <a 
+                          href="https://www.npmjs.com/package/@hookahplus/sdk" 
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center text-sm text-primary-400 hover:text-primary-300 transition-colors"
+                        >
+                          <Download className="w-4 h-4 mr-2" />
+                          npm install
+                        </a>
+                      </div>
+                      <div className="mt-3 bg-zinc-950 border border-zinc-700 rounded p-2">
+                        <code className="text-xs text-green-400">npm install @hookahplus/sdk</code>
+                      </div>
+                    </div>
+
+                    <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center">
+                          <Terminal className="w-5 h-5 text-green-400 mr-2" />
+                          <h4 className="font-semibold text-white">Python SDK</h4>
+                        </div>
+                        <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">v1.1.5</span>
+                      </div>
+                      <p className="text-xs text-zinc-400 mb-3">Python 3.8+. Full async/await support with asyncio. Includes Django and Flask examples.</p>
+                      <div className="flex items-center gap-2">
+                        <a 
+                          href="https://github.com/hookahplus/python-sdk" 
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center text-sm text-primary-400 hover:text-primary-300 transition-colors"
+                        >
+                          <ExternalLink className="w-4 h-4 mr-2" />
+                          GitHub Repository
+                        </a>
+                        <span className="text-zinc-500">•</span>
+                        <a 
+                          href="https://pypi.org/project/hookahplus/" 
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center text-sm text-primary-400 hover:text-primary-300 transition-colors"
+                        >
+                          <Download className="w-4 h-4 mr-2" />
+                          PyPI Package
+                        </a>
+                      </div>
+                      <div className="mt-3 bg-zinc-950 border border-zinc-700 rounded p-2">
+                        <code className="text-xs text-green-400">pip install hookahplus</code>
+                      </div>
+                    </div>
+
+                    <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center">
+                          <Code className="w-5 h-5 text-purple-400 mr-2" />
+                          <h4 className="font-semibold text-white">React Components</h4>
+                        </div>
+                        <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded">v1.0.8</span>
+                      </div>
+                      <p className="text-xs text-zinc-400 mb-3">Pre-built React components for session timers, flavor selectors, and QR code scanners. TypeScript ready.</p>
+                      <div className="flex items-center gap-2">
+                        <a 
+                          href="https://github.com/hookahplus/react-components" 
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center text-sm text-primary-400 hover:text-primary-300 transition-colors"
+                        >
+                          <ExternalLink className="w-4 h-4 mr-2" />
+                          GitHub Repository
+                        </a>
+                        <span className="text-zinc-500">•</span>
+                        <a 
+                          href="https://www.npmjs.com/package/@hookahplus/react" 
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center text-sm text-primary-400 hover:text-primary-300 transition-colors"
+                        >
+                          <Download className="w-4 h-4 mr-2" />
+                          npm install
+                        </a>
+                      </div>
+                      <div className="mt-3 bg-zinc-950 border border-zinc-700 rounded p-2">
+                        <code className="text-xs text-green-400">npm install @hookahplus/react</code>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
+                {/* Security & Compliance */}
                 <div className="bg-zinc-900 border border-zinc-600 rounded-lg p-6">
                   <div className="flex items-center mb-4">
                     <Shield className="w-6 h-6 text-primary-400 mr-3" />
                     <h3 className="text-lg font-semibold text-white">Security & Compliance</h3>
                   </div>
                   <p className="text-sm text-zinc-300 mb-4">
-                    Learn about our security measures and compliance standards
+                    Hookah+ is built with security and compliance as core principles. Learn about our security measures, data protection, and compliance certifications.
                   </p>
-                  <div className="space-y-2">
-                    <a href="#" className="flex items-center text-sm text-primary-400 hover:text-primary-300 transition-colors">
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      Security Overview
+                  <div className="space-y-3">
+                    <a 
+                      href="/privacy" 
+                      className="flex items-center justify-between p-3 bg-zinc-800/50 border border-zinc-700 rounded-lg hover:border-zinc-600 transition-colors group"
+                    >
+                      <div className="flex items-center">
+                        <Shield className="w-5 h-5 text-green-400 mr-3" />
+                        <div>
+                          <h4 className="font-semibold text-white group-hover:text-primary-400 transition-colors">Security Overview</h4>
+                          <p className="text-xs text-zinc-400">Trust-Lock encryption, TLS 1.3, secure API keys</p>
+                        </div>
+                      </div>
+                      <ExternalLink className="w-4 h-4 text-zinc-400 group-hover:text-primary-400 transition-colors" />
                     </a>
-                    <a href="#" className="flex items-center text-sm text-primary-400 hover:text-primary-300 transition-colors">
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      Privacy Policy
+
+                    <a 
+                      href="/privacy" 
+                      className="flex items-center justify-between p-3 bg-zinc-800/50 border border-zinc-700 rounded-lg hover:border-zinc-600 transition-colors group"
+                    >
+                      <div className="flex items-center">
+                        <FileText className="w-5 h-5 text-blue-400 mr-3" />
+                        <div>
+                          <h4 className="font-semibold text-white group-hover:text-primary-400 transition-colors">Privacy Policy</h4>
+                          <p className="text-xs text-zinc-400">How we collect, use, and protect your data</p>
+                        </div>
+                      </div>
+                      <ExternalLink className="w-4 h-4 text-zinc-400 group-hover:text-primary-400 transition-colors" />
                     </a>
-                    <a href="#" className="flex items-center text-sm text-primary-400 hover:text-primary-300 transition-colors">
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      SOC 2 Compliance
-                    </a>
+
+                    <div className="p-3 bg-zinc-800/50 border border-zinc-700 rounded-lg">
+                      <div className="flex items-center mb-2">
+                        <CheckCircle className="w-5 h-5 text-green-400 mr-3" />
+                        <h4 className="font-semibold text-white">SOC 2 Type II Compliance</h4>
+                      </div>
+                      <p className="text-xs text-zinc-400 mb-2">
+                        Hookah+ maintains SOC 2 Type II certification, ensuring enterprise-grade security controls for availability, confidentiality, and processing integrity.
+                      </p>
+                      <div className="flex items-center gap-4 text-xs text-zinc-400">
+                        <span>• PCI-DSS Level 1 compliant</span>
+                        <span>• GDPR ready</span>
+                        <span>• HIPAA compatible</span>
+                      </div>
+                    </div>
+
+                    <div className="p-3 bg-zinc-800/50 border border-zinc-700 rounded-lg">
+                      <div className="flex items-center mb-2">
+                        <Lock className="w-5 h-5 text-teal-400 mr-3" />
+                        <h4 className="font-semibold text-white">Trust-Lock Security (TLH-v1)</h4>
+                      </div>
+                      <p className="text-xs text-zinc-400">
+                        Our proprietary Trust-Lock encryption ensures all session data, customer information, and payment details are encrypted at rest and in transit. SessionNotes are stored separately with zero-knowledge architecture.
+                      </p>
+                    </div>
+
+                    <div className="p-3 bg-zinc-800/50 border border-zinc-700 rounded-lg">
+                      <div className="flex items-center mb-2">
+                        <Database className="w-5 h-5 text-purple-400 mr-3" />
+                        <h4 className="font-semibold text-white">Data Residency & Backup</h4>
+                      </div>
+                      <p className="text-xs text-zinc-400">
+                        All data is stored in secure, geographically distributed data centers with automated daily backups. 99.9% uptime SLA with disaster recovery protocols.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>

@@ -184,11 +184,17 @@ export default function InvestorsPage() {
         subheadline="Turning chaotic nights into trackable, repeatable revenue. We sit on top of a lounge's POS to track session time, flavor mixes, and table performance — unlocking clarity for owners and consistency for staff."
         primaryCTA={{
           text: 'Book a founder call',
-          onClick: () => window.location.href = '/onboarding',
+          onClick: () => {
+            const message = encodeURIComponent('Hi! I\'d like to book a founder call to learn more about Hookah+ investment opportunities.');
+            window.open(`https://ig.me/m/hookahplusnet?text=${message}`, '_blank');
+          },
         }}
         secondaryCTA={{
           text: 'Request full deck',
-          onClick: () => window.location.href = 'mailto:founder@hookahplus.net?subject=Investor Deck Request',
+          onClick: () => {
+            const message = encodeURIComponent('Hi! I\'d like to request the full investor deck for Hookah+.');
+            window.open(`https://ig.me/m/hookahplusnet?text=${message}`, '_blank');
+          },
         }}
         trustIndicators={[
           { icon: <Users className="w-4 h-4 text-teal-400" />, text: 'Founder: Dwayne Clark' },
@@ -652,7 +658,10 @@ export default function InvestorsPage() {
                       variant="primary"
                       size="lg"
                       className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white"
-                      onClick={() => window.location.href = '/onboarding'}
+                      onClick={() => {
+                        const message = encodeURIComponent('Hi! I\'d like to book a founder call to learn more about Hookah+ investment opportunities.');
+                        window.open(`https://ig.me/m/hookahplusnet?text=${message}`, '_blank');
+                      }}
                     >
                       <Calendar className="w-5 h-5 mr-2" />
                       Book a founder call
@@ -661,10 +670,13 @@ export default function InvestorsPage() {
                       variant="outline"
                       size="lg"
                       className="border-teal-500/50 text-teal-400 hover:bg-teal-500/10 hover:border-teal-400"
-                      onClick={() => window.location.href = 'mailto:founder@hookahplus.net?subject=Investor Deck Request'}
+                      onClick={() => {
+                        const message = encodeURIComponent('Hi! I\'d like to request the full investor deck for Hookah+.');
+                        window.open(`https://ig.me/m/hookahplusnet?text=${message}`, '_blank');
+                      }}
                     >
                       <Mail className="w-5 h-5 mr-2" />
-                      Contact founder@hookahplus.net
+                      Request full deck
                     </Button>
                   </div>
                 </div>
@@ -688,7 +700,10 @@ export default function InvestorsPage() {
                   variant="primary"
                   size="lg"
                   className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white px-8 py-4"
-                  onClick={() => window.location.href = '/onboarding'}
+                  onClick={() => {
+                    const message = encodeURIComponent('Hi! I\'d like to book a founder call to learn more about Hookah+ investment opportunities.');
+                    window.open(`https://ig.me/m/hookahplusnet?text=${message}`, '_blank');
+                  }}
                 >
                   <Calendar className="w-5 h-5 mr-2" />
                   Book a founder call
@@ -697,7 +712,10 @@ export default function InvestorsPage() {
                   variant="outline"
                   size="lg"
                   className="border-teal-500/50 text-teal-400 hover:bg-teal-500/10 hover:border-teal-400 px-8 py-4"
-                  onClick={() => window.location.href = 'mailto:founder@hookahplus.net?subject=Investor Deck Request'}
+                  onClick={() => {
+                    const message = encodeURIComponent('Hi! I\'d like to request the full investor deck for Hookah+.');
+                    window.open(`https://ig.me/m/hookahplusnet?text=${message}`, '_blank');
+                  }}
                 >
                   <FileText className="w-5 h-5 mr-2" />
                   Request the full investor deck

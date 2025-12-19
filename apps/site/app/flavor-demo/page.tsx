@@ -12,7 +12,7 @@ import HookahTrackerDemo from '../../components/HookahTrackerDemo';
  * Interactive demo showcasing the flavor wheel experience
  * Features:
  * - Wheel Mode (radial flavor wheel with category segments)
- * - Flow Mode (psychology-driven guided choices)
+ * - Shisha Master Mode (psychology-driven guided choices)
  * - Marketing-focused design with CTAs
  * - Mobile-responsive
  */
@@ -228,10 +228,12 @@ export default function FlavorWheelDemo() {
                 onClick={() => setMode("flow")}
                 className={cx(
                   "px-3 py-2 rounded-xl border text-sm",
-                  mode === "flow" ? "border-teal-500/50 bg-teal-500/10 text-teal-300" : "border-white/10 text-neutral-300"
+                  mode === "flow"
+                    ? "border-amber-400/60 bg-amber-500/10 text-amber-300"
+                    : "border-white/10 text-neutral-300"
                 )}
               >
-                Guided
+                Shisha Master
               </button>
             </div>
           </div>
@@ -317,7 +319,7 @@ export default function FlavorWheelDemo() {
               <Wand2 className="w-8 h-8 text-teal-400" />
             </div>
             <h3 className="text-xl font-semibold mb-2">Psychology-Driven</h3>
-            <p className="text-zinc-400">Guided choices based on mood and taste preferences for better customer satisfaction.</p>
+            <p className="text-zinc-400">Shisha Master guidance based on mood and taste preferences for better customer satisfaction.</p>
           </div>
           <div className="text-center">
             <div className="w-16 h-16 bg-purple-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">

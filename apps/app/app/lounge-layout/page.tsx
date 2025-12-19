@@ -21,7 +21,17 @@ import {
   AlertCircle,
   CheckCircle,
   Eye,
+  Activity,
+  Sparkles,
+  Play,
+  Pause,
+  Square,
+  RefreshCw,
+  Package,
+  Truck,
 } from 'lucide-react';
+import { LoungeHeatMap } from '../../components/LoungeHeatMap';
+import { TableAnalytics } from '../../components/TableAnalytics';
 
 interface Table {
   id: string;
@@ -48,7 +58,13 @@ function LoungeLayoutPageContent() {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const [viewMode, setViewMode] = useState<'layout' | 'live'>('live');
+  const [viewMode, setViewMode] = useState<'layout' | 'live' | 'analytics'>('live');
+  
+  // Analytics state
+  const [analyticsData, setAnalyticsData] = useState<any>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d' | '90d'>('7d');
+  const [heatMapMetric, setHeatMapMetric] = useState<'revenue' | 'utilization' | 'sessions'>('revenue');
 
   // Load existing layout on mount
   useEffect(() => {
@@ -87,10 +103,43 @@ function LoungeLayoutPageContent() {
     return () => clearInterval(interval);
   }, [refreshSessions]);
 
+  // Load analytics data
+  useEffect(() => {
+    if (viewMode === 'analytics') {
+      const loadAnalytics = async () => {
+        setAnalyticsLoading(true);
+        try {
+          const response = await fetch(`/api/lounges/analytics?timeRange=${timeRange}&metric=${heatMapMetric}`);
+          if (response.ok) {
+            const data = await response.json();
+            setAnalyticsData(data);
+          }
+        } catch (error) {
+          console.error('Error loading analytics:', error);
+        } finally {
+          setAnalyticsLoading(false);
+        }
+      };
+      loadAnalytics();
+    }
+  }, [viewMode, timeRange, heatMapMetric]);
+
   // Match sessions to tables
+  // Filter: Only show sessions with payment confirmed (exclude unconfirmed pre-orders)
   const tableSessions = useMemo(() => {
     const sessionMap = new Map<string, any>();
     sessions.forEach(session => {
+      // Filter out unconfirmed pre-orders - only show sessions with payment confirmed
+      const isPaid = session.paymentStatus === 'succeeded' || 
+                     (session.externalRef && (session.externalRef.startsWith('cs_') || session.externalRef.startsWith('test_cs_'))) ||
+                     session.status === 'PAID_CONFIRMED' ||
+                     (session.status !== 'NEW' && session.status !== 'PENDING');
+      
+      // Only include sessions that are paid/confirmed
+      if (!isPaid) {
+        return; // Skip unconfirmed sessions
+      }
+      
       if (session.tableId) {
         // Match by tableId (could be "T-001" or just table name)
         const matchingTable = tables.find(t => 
@@ -162,9 +211,51 @@ function LoungeLayoutPageContent() {
     setSelectedTable(newTable.id);
   };
 
+  /**
+   * Loads a demo layout for testing and calibration
+   * Includes:
+   * - 10 tables covering all 6 seating types (Booth, Couch, Bar Seating, Outdoor, VIP, Private Room)
+   * - Various capacities (2, 4, 6, 8, 10) for capacity testing
+   * - Strategic positioning in 3 zones (top/main, middle/mixed, bottom/premium)
+   * - Table IDs: table-001 through table-010
+   * - Table names: T-001 through T-010 (for session matching tests)
+   */
+  const handleLoadDemoLayout = () => {
+    if (tables.length > 0) {
+      const confirmed = window.confirm(
+        'This will replace your current layout with a demo layout. Continue?'
+      );
+      if (!confirmed) return;
+    }
+    
+    const demoLayout: Table[] = [
+      { id: 'table-001', name: 'T-001', x: 20, y: 20, capacity: 4, seatingType: 'Booth' },
+      { id: 'table-002', name: 'T-002', x: 40, y: 20, capacity: 4, seatingType: 'Booth' },
+      { id: 'table-003', name: 'T-003', x: 60, y: 20, capacity: 6, seatingType: 'Couch' },
+      { id: 'table-004', name: 'T-004', x: 80, y: 20, capacity: 2, seatingType: 'Bar Seating' },
+      { id: 'table-005', name: 'T-005', x: 20, y: 50, capacity: 6, seatingType: 'Couch' },
+      { id: 'table-006', name: 'T-006', x: 50, y: 50, capacity: 8, seatingType: 'Outdoor' },
+      { id: 'table-007', name: 'T-007', x: 80, y: 50, capacity: 4, seatingType: 'Booth' },
+      { id: 'table-008', name: 'T-008', x: 20, y: 80, capacity: 10, seatingType: 'VIP' },
+      { id: 'table-009', name: 'T-009', x: 50, y: 80, capacity: 6, seatingType: 'Couch' },
+      { id: 'table-010', name: 'T-010', x: 80, y: 80, capacity: 8, seatingType: 'Private Room' }
+    ];
+    setTables(demoLayout);
+    setSelectedTable(null);
+  };
+
   const handleDeleteTable = (id: string) => {
     setTables(tables.filter(table => table.id !== id));
     if (selectedTable === id) {
+      setSelectedTable(null);
+    }
+  };
+
+  const handleClearLayout = () => {
+    if (tables.length === 0) return;
+    const confirmed = window.confirm('Clear all tables from the layout?');
+    if (confirmed) {
+      setTables([]);
       setSelectedTable(null);
     }
   };
@@ -220,17 +311,31 @@ function LoungeLayoutPageContent() {
       });
 
       if (response.ok) {
+        const result = await response.json();
+        // If using localStorage fallback, save to localStorage
+        if (result.storageMethod === 'localStorage' && result.layoutData) {
+          try {
+            localStorage.setItem('lounge_layout', JSON.stringify(result.layoutData));
+            console.log('[Layout] Saved to localStorage as fallback');
+          } catch (storageError) {
+            console.error('[Layout] Failed to save to localStorage:', storageError);
+          }
+        }
         setSaveStatus('saved');
         setTimeout(() => setSaveStatus('idle'), 3000);
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Failed to save layout' }));
+        console.error('Save layout error:', errorData);
         setSaveStatus('error');
-        setTimeout(() => setSaveStatus('idle'), 3000);
+        // Show error alert with details
+        alert(`Failed to save layout: ${errorData.error || 'Unknown error'}\n\nDetails: ${errorData.details || 'Please check the console for more information.'}`);
+        setTimeout(() => setSaveStatus('idle'), 5000);
       }
     } catch (error) {
       console.error('Error saving layout:', error);
       setSaveStatus('error');
-      setTimeout(() => setSaveStatus('idle'), 3000);
+      alert(`Error saving layout: ${error instanceof Error ? error.message : 'Network or connection error. Please try again.'}`);
+      setTimeout(() => setSaveStatus('idle'), 5000);
     }
   };
 
@@ -292,7 +397,15 @@ function LoungeLayoutPageContent() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center justify-center gap-4">
+            <div className="flex items-center justify-center gap-4 flex-wrap">
+              <Button
+                variant="outline"
+                onClick={handleLoadDemoLayout}
+                className="bg-teal-900/20 border-teal-500/30 hover:bg-teal-900/30"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                Load Demo Layout
+              </Button>
               <Button
                 variant="outline"
                 onClick={handleAddTable}
@@ -300,6 +413,16 @@ function LoungeLayoutPageContent() {
                 <Plus className="w-4 h-4 mr-2" />
                 Add Table
               </Button>
+              {tables.length > 0 && (
+                <Button
+                  variant="outline"
+                  onClick={handleClearLayout}
+                  className="text-red-400 border-red-500/30 hover:bg-red-900/20"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Clear Layout
+                </Button>
+              )}
               <Button
                 variant="primary"
                 onClick={handleSave}
@@ -317,54 +440,153 @@ function LoungeLayoutPageContent() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Layout Canvas */}
-          <div className="lg:col-span-3">
-            <Card className="p-6">
-              <div className="mb-4 flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-semibold">Lounge Floor Plan</h2>
-                  {viewMode === 'live' && (
-                    <div className="flex items-center gap-4 mt-2 text-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                        <span className="text-zinc-400">{liveStats.activeSessions} Active</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <DollarSign className="w-4 h-4 text-teal-400" />
-                        <span className="text-zinc-400">${liveStats.totalRevenue.toFixed(2)}</span>
-                      </div>
-                    </div>
-                  )}
+        {/* Analytics View */}
+        {viewMode === 'analytics' ? (
+          <div className="space-y-6">
+            {/* Controls */}
+            <Card className="p-4">
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-zinc-400">Time Range:</span>
+                  <select
+                    value={timeRange}
+                    onChange={(e) => setTimeRange(e.target.value as any)}
+                    className="px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  >
+                    <option value="24h">Last 24 Hours</option>
+                    <option value="7d">Last 7 Days</option>
+                    <option value="30d">Last 30 Days</option>
+                    <option value="90d">Last 90 Days</option>
+                  </select>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="text-sm text-zinc-400">
-                    {tables.length} table{tables.length !== 1 ? 's' : ''} configured
-                  </div>
-                  <div className="flex bg-zinc-800 rounded-lg p-1">
-                    <button
-                      onClick={() => setViewMode('layout')}
-                      className={`px-3 py-1 rounded text-xs transition-colors ${
-                        viewMode === 'layout' 
-                          ? 'bg-teal-600 text-white' 
-                          : 'text-zinc-400 hover:text-white'
-                      }`}
-                    >
-                      Layout
-                    </button>
-                    <button
-                      onClick={() => setViewMode('live')}
-                      className={`px-3 py-1 rounded text-xs transition-colors ${
-                        viewMode === 'live' 
-                          ? 'bg-teal-600 text-white' 
-                          : 'text-zinc-400 hover:text-white'
-                      }`}
-                    >
-                      Live
-                    </button>
-                  </div>
+                  <span className="text-sm text-zinc-400">Metric:</span>
+                  <select
+                    value={heatMapMetric}
+                    onChange={(e) => setHeatMapMetric(e.target.value as any)}
+                    className="px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  >
+                    <option value="revenue">Revenue</option>
+                    <option value="utilization">Utilization</option>
+                    <option value="sessions">Sessions</option>
+                  </select>
                 </div>
               </div>
+            </Card>
+
+            {analyticsLoading ? (
+              <Card className="p-12 text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-400 mx-auto mb-4"></div>
+                <p className="text-zinc-400">Loading analytics...</p>
+              </Card>
+            ) : analyticsData ? (
+              <>
+                {/* Heat Map */}
+                <Card className="p-6">
+                  <LoungeHeatMap
+                    tables={tables.map(t => ({
+                      id: t.id,
+                      name: t.name,
+                      x: t.x,
+                      y: t.y,
+                      capacity: t.capacity
+                    }))}
+                    heatMapData={analyticsData.heatMap || []}
+                    metric={heatMapMetric}
+                    onTableClick={(tableId) => {
+                      setSelectedTable(tableId);
+                      setViewMode('live');
+                    }}
+                  />
+                </Card>
+
+                {/* Analytics Dashboard */}
+                <TableAnalytics
+                  tableMetrics={analyticsData.tables || []}
+                  zoneMetrics={analyticsData.zones || []}
+                  summary={analyticsData.summary || {
+                    totalTables: tables.length,
+                    totalRevenue: 0,
+                    totalSessions: 0,
+                    averageUtilization: 0,
+                    averageSessionValue: 0
+                  }}
+                  onTableSelect={(tableId) => {
+                    setSelectedTable(tableId);
+                    setViewMode('live');
+                  }}
+                />
+              </>
+            ) : (
+              <Card className="p-12 text-center">
+                <AlertCircle className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
+                <p className="text-zinc-400">No analytics data available</p>
+              </Card>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Layout Canvas */}
+            <div className="lg:col-span-3">
+              <Card className="p-6">
+                <div className="mb-4 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold">Lounge Floor Plan</h2>
+                    {viewMode === 'live' && (
+                      <div className="flex items-center gap-4 mt-2 text-sm">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                          <span className="text-zinc-400">{liveStats.activeSessions} Active</span>
+                        </div>
+                        <div className="flex items-center gap-2" title="Total revenue from all active sessions">
+                          <DollarSign className="w-4 h-4 text-teal-400" />
+                          <span className="text-zinc-400">${liveStats.totalRevenue.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {/* View Mode Switcher */}
+                    <div className="flex items-center gap-1 bg-zinc-800 rounded-lg p-1 border border-zinc-700">
+                      <button
+                        onClick={() => setViewMode('layout')}
+                        className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                          viewMode === 'layout'
+                            ? 'bg-teal-500 text-white'
+                            : 'text-zinc-400 hover:text-white'
+                        }`}
+                        title="Layout Mode - Edit and move tables"
+                      >
+                        Layout
+                      </button>
+                      <button
+                        onClick={() => setViewMode('live')}
+                        className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                          viewMode === 'live'
+                            ? 'bg-teal-500 text-white'
+                            : 'text-zinc-400 hover:text-white'
+                        }`}
+                        title="Live Mode - View active sessions"
+                      >
+                        Live
+                      </button>
+                      <button
+                        onClick={() => setViewMode('analytics')}
+                        className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                          viewMode === 'analytics'
+                            ? 'bg-teal-500 text-white'
+                            : 'text-zinc-400 hover:text-white'
+                        }`}
+                        title="Analytics Mode - View heat maps and metrics"
+                      >
+                        Analytics
+                      </button>
+                    </div>
+                    <div className="text-sm text-zinc-400">
+                      {tables.length} table{tables.length !== 1 ? 's' : ''} configured
+                    </div>
+                  </div>
+                </div>
               
               <div
                 className="relative w-full h-[600px] bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden"
@@ -614,7 +836,9 @@ function LoungeLayoutPageContent() {
                           </div>
                           <div className="flex items-center gap-2">
                             <DollarSign className="w-4 h-4 text-zinc-400" />
-                            <span className="text-zinc-300">${selectedTableSession.amount?.toFixed(2) || '0.00'}</span>
+                            <span className="text-zinc-300">
+                              ${((selectedTableSession.amount || selectedTableSession.priceCents || 0) / 100).toFixed(2)}
+                            </span>
                           </div>
                           <div className="flex items-center gap-2">
                             <Clock className="w-4 h-4 text-zinc-400" />
@@ -645,6 +869,269 @@ function LoungeLayoutPageContent() {
                           View Full Session Details
                         </Button>
                       </div>
+
+                      {/* Mini Session Control Panel - NAN Workflow */}
+                      <div className="mt-4 pt-4 border-t border-zinc-700">
+                        <h4 className="text-sm font-semibold text-zinc-300 mb-3">Session Control</h4>
+                        <div className="grid grid-cols-2 gap-2">
+                          {/* PAID_CONFIRMED or PENDING with payment confirmed */}
+                          {(selectedTableSession.status === 'PAID_CONFIRMED' || 
+                            (selectedTableSession.status === 'PENDING' && 
+                             (selectedTableSession.paymentStatus === 'succeeded' || 
+                              (selectedTableSession.externalRef && selectedTableSession.externalRef.startsWith('cs_'))))) ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs bg-blue-500/20 border-blue-500/30 hover:bg-blue-500/30"
+                              onClick={async () => {
+                                try {
+                                  const response = await fetch(`/api/sessions`, {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ 
+                                      sessionId: selectedTableSession.id,
+                                      action: 'CLAIM_PREP',
+                                      userRole: 'MANAGER',
+                                      operatorId: 'lounge-layout',
+                                      notes: 'Claim prep from lounge layout'
+                                    })
+                                  });
+                                  if (response.ok) {
+                                    refreshSessions();
+                                  } else {
+                                    const error = await response.json().catch(() => ({ error: 'Failed to claim prep' }));
+                                    const errorMsg = error.details || error.error || 'Failed to claim prep';
+                                    console.error('[Lounge Layout] Claim Prep error:', error);
+                                    alert(`Error: ${errorMsg}\n\nCurrent Status: ${error.currentStatus || 'unknown'}\nValid Actions: ${error.validTransitions?.join(', ') || 'none'}`);
+                                  }
+                                } catch (error) {
+                                  console.error('Error claiming prep:', error);
+                                  alert('Failed to claim prep. Please try again.');
+                                }
+                              }}
+                            >
+                              <Package className="w-3 h-3 mr-1" />
+                              Claim Prep
+                            </Button>
+                          ) : null}
+                          
+                          {(selectedTableSession.status === 'PREP_IN_PROGRESS' ||
+                            (selectedTableSession.status === 'ACTIVE' && selectedTableSession.assignedBOHId)) ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs bg-orange-500/20 border-orange-500/30 hover:bg-orange-500/30"
+                              onClick={async () => {
+                                try {
+                                  console.log('[Lounge Layout] Heat Up - Session data:', {
+                                    id: selectedTableSession.id,
+                                    status: selectedTableSession.status,
+                                    paymentStatus: selectedTableSession.paymentStatus,
+                                    externalRef: selectedTableSession.externalRef,
+                                    assignedBOHId: selectedTableSession.assignedBOHId
+                                  });
+                                  const response = await fetch(`/api/sessions`, {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ 
+                                      sessionId: selectedTableSession.id,
+                                      action: 'HEAT_UP',
+                                      userRole: 'MANAGER',
+                                      operatorId: 'lounge-layout',
+                                      notes: 'Heat up from lounge layout'
+                                    })
+                                  });
+                                  if (response.ok) {
+                                    refreshSessions();
+                                  } else {
+                                    const error = await response.json().catch(() => ({ error: 'Failed to heat up' }));
+                                    const errorMsg = error.details || error.error || 'Failed to heat up';
+                                    console.error('[Lounge Layout] Heat Up error:', error);
+                                    alert(`Error: ${errorMsg}\n\nCurrent Status: ${error.currentStatus || 'unknown'}\nValid Actions: ${error.validTransitions?.join(', ') || 'none'}`);
+                                  }
+                                } catch (error) {
+                                  console.error('Error heating up:', error);
+                                  alert('Failed to heat up. Please try again.');
+                                }
+                              }}
+                            >
+                              <Flame className="w-3 h-3 mr-1" />
+                              Heat Up
+                            </Button>
+                          ) : null}
+
+                          {(selectedTableSession.status === 'HEAT_UP' || 
+                            selectedTableSession.status === 'READY_FOR_DELIVERY') ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs bg-purple-500/20 border-purple-500/30 hover:bg-purple-500/30"
+                              onClick={async () => {
+                                try {
+                                  const response = await fetch(`/api/sessions`, {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ 
+                                      sessionId: selectedTableSession.id,
+                                      action: 'DELIVER_NOW',
+                                      userRole: 'MANAGER',
+                                      operatorId: 'lounge-layout',
+                                      notes: 'Deliver from lounge layout'
+                                    })
+                                  });
+                                  if (response.ok) {
+                                    refreshSessions();
+                                  } else {
+                                    const error = await response.json().catch(() => ({ error: 'Failed to deliver' }));
+                                    const errorMsg = error.details || error.error || 'Failed to deliver';
+                                    console.error('[Lounge Layout] Deliver error:', error);
+                                    alert(`Error: ${errorMsg}\n\nCurrent Status: ${error.currentStatus || 'unknown'}\nValid Actions: ${error.validTransitions?.join(', ') || 'none'}`);
+                                  }
+                                } catch (error) {
+                                  console.error('Error delivering:', error);
+                                  alert('Failed to deliver. Please try again.');
+                                }
+                              }}
+                            >
+                              <Truck className="w-3 h-3 mr-1" />
+                              Deliver
+                            </Button>
+                          ) : null}
+
+                          {selectedTableSession.status === 'OUT_FOR_DELIVERY' || selectedTableSession.status === 'DELIVERED' ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs bg-green-500/20 border-green-500/30"
+                              onClick={async () => {
+                                try {
+                                  const response = await fetch(`/api/sessions`, {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ 
+                                      sessionId: selectedTableSession.id,
+                                      action: 'START_ACTIVE',
+                                      userRole: 'MANAGER',
+                                      operatorId: 'lounge-layout',
+                                      notes: 'Start active from lounge layout'
+                                    })
+                                  });
+                                  if (response.ok) {
+                                    refreshSessions();
+                                  } else {
+                                    const error = await response.json().catch(() => ({ error: 'Failed to start active' }));
+                                    const errorMsg = error.details || error.error || 'Failed to start active';
+                                    console.error('[Lounge Layout] Start Active error:', error);
+                                    alert(`Error: ${errorMsg}\n\nCurrent Status: ${error.currentStatus || 'unknown'}\nValid Actions: ${error.validTransitions?.join(', ') || 'none'}`);
+                                  }
+                                } catch (error) {
+                                  console.error('Error starting session:', error);
+                                  alert('Failed to start active. Please try again.');
+                                }
+                              }}
+                            >
+                              <Play className="w-3 h-3 mr-1" />
+                              Start Active
+                            </Button>
+                          ) : null}
+
+                          {selectedTableSession.status === 'ACTIVE' ? (
+                            <>
+                              {selectedTableSession.coalStatus === 'needs_refill' && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-xs bg-yellow-500/20 border-yellow-500/30 hover:bg-yellow-500/30"
+                                  onClick={async () => {
+                                    try {
+                                      const response = await fetch(`/api/sessions`, {
+                                        method: 'PATCH',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ 
+                                          sessionId: selectedTableSession.id,
+                                          action: 'ADD_COAL_SWAP',
+                                          coalStatus: 'active',
+                                          userRole: 'MANAGER',
+                                          operatorId: 'lounge-layout',
+                                          notes: 'Refill coal from lounge layout'
+                                        })
+                                      });
+                                      if (response.ok) {
+                                        refreshSessions();
+                                      } else {
+                                        const error = await response.json().catch(() => ({ error: 'Failed to refill coal' }));
+                                        alert(`Error: ${error.error || error.details || 'Failed to refill coal'}`);
+                                      }
+                                    } catch (error) {
+                                      console.error('Error refilling coal:', error);
+                                      alert('Failed to refill coal. Please try again.');
+                                    }
+                                  }}
+                                >
+                                  <RefreshCw className="w-3 h-3 mr-1" />
+                                  Refill Coal
+                                </Button>
+                              )}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-xs bg-red-500/20 border-red-500/30 hover:bg-red-500/30"
+                                onClick={async () => {
+                                  try {
+                                    const response = await fetch(`/api/sessions`, {
+                                      method: 'PATCH',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ 
+                                        sessionId: selectedTableSession.id,
+                                        action: 'CLOSE_SESSION',
+                                        userRole: 'MANAGER',
+                                        operatorId: 'lounge-layout',
+                                        notes: 'Close session from lounge layout'
+                                      })
+                                    });
+                                    if (response.ok) {
+                                      refreshSessions();
+                                    } else {
+                                      const error = await response.json().catch(() => ({ error: 'Failed to close session' }));
+                                      const errorMsg = error.details || error.error || 'Failed to close session';
+                                      console.error('[Lounge Layout] Close Session error:', error);
+                                      alert(`Error: ${errorMsg}\n\nCurrent Status: ${error.currentStatus || 'unknown'}\nValid Actions: ${error.validTransitions?.join(', ') || 'none'}`);
+                                    }
+                                  } catch (error) {
+                                    console.error('Error closing session:', error);
+                                    alert('Failed to close session. Please try again.');
+                                  }
+                                }}
+                              >
+                                <Square className="w-3 h-3 mr-1" />
+                                Close
+                              </Button>
+                            </>
+                          ) : null}
+                        </div>
+                        {/* Show message if no actions available */}
+                        {(() => {
+                          const hasPaidConfirmed = selectedTableSession.status === 'PAID_CONFIRMED' || 
+                            (selectedTableSession.status === 'PENDING' && 
+                             (selectedTableSession.paymentStatus === 'succeeded' || 
+                              (selectedTableSession.externalRef && selectedTableSession.externalRef.startsWith('cs_'))));
+                          const hasPrepActions = selectedTableSession.status === 'PREP_IN_PROGRESS' ||
+                            (selectedTableSession.status === 'ACTIVE' && selectedTableSession.assignedBOHId);
+                          const hasDeliveryActions = selectedTableSession.status === 'HEAT_UP' ||
+                            selectedTableSession.status === 'READY_FOR_DELIVERY';
+                          const hasStartActive = selectedTableSession.status === 'OUT_FOR_DELIVERY' ||
+                            selectedTableSession.status === 'DELIVERED';
+                          const hasActiveActions = selectedTableSession.status === 'ACTIVE';
+                          
+                          const hasAnyActions = hasPaidConfirmed || hasPrepActions || hasDeliveryActions || hasStartActive || hasActiveActions;
+                          
+                          return !hasAnyActions && (
+                            <div className="mt-2 p-2 bg-zinc-800/50 rounded text-xs text-zinc-400 text-center">
+                              No actions available for current state: <span className="font-medium">{selectedTableSession.status}</span>
+                            </div>
+                          );
+                        })()}
+                      </div>
                       
                       <div className="pt-4 border-t border-zinc-700">
                         <div className="text-sm text-zinc-400 mb-2">Table Info</div>
@@ -655,6 +1142,17 @@ function LoungeLayoutPageContent() {
                     </>
                   ) : (
                     <>
+                      {viewMode === 'live' && (
+                        <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                          <div className="flex items-center gap-2 text-yellow-400 text-sm">
+                            <AlertCircle className="w-4 h-4" />
+                            <span className="font-medium">Live Mode Active</span>
+                          </div>
+                          <p className="text-xs text-yellow-300/80 mt-1">
+                            Switch to <strong>Layout Mode</strong> to edit table details and move tables.
+                          </p>
+                        </div>
+                      )}
                       {/* Table Configuration */}
                       <div>
                         <label className="block text-sm font-medium text-zinc-300 mb-2">
@@ -670,8 +1168,9 @@ function LoungeLayoutPageContent() {
                                 : t
                             ));
                           }}
-                          className="w-full px-3 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:border-teal-500 focus:outline-none"
+                          className="w-full px-3 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:border-teal-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                           disabled={viewMode === 'live'}
+                          placeholder={viewMode === 'live' ? 'Switch to Layout Mode to edit' : 'Enter table name'}
                         />
                       </div>
 
@@ -782,7 +1281,11 @@ function LoungeLayoutPageContent() {
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-teal-400">•</span>
-                      <span>Color indicates session status</span>
+                      <span>Color indicates session status (green=active, yellow=needs attention, red=urgent)</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-teal-400">•</span>
+                      <span>The dollar amount shows total revenue from all active sessions</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-teal-400">•</span>
@@ -790,7 +1293,7 @@ function LoungeLayoutPageContent() {
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-teal-400">•</span>
-                      <span>Switch to Layout mode to edit tables</span>
+                      <span>Switch to <strong>Layout mode</strong> to edit tables and move them around</span>
                     </li>
                   </>
                 ) : (
@@ -817,6 +1320,7 @@ function LoungeLayoutPageContent() {
             </Card>
           </div>
         </div>
+        )}
       </div>
     </div>
   );
