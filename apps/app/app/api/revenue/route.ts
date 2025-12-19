@@ -211,7 +211,7 @@ export async function GET(request: NextRequest) {
       if (!tableBreakdown[tableId]) {
         tableBreakdown[tableId] = { revenue: 0, count: 0 };
       }
-      tableBreakdown[tableId].revenue += session.priceCents;
+      tableBreakdown[tableId].revenue += session.priceCents || 0;
       tableBreakdown[tableId].count += 1;
     });
 
@@ -245,7 +245,7 @@ export async function GET(request: NextRequest) {
         period = 'Late Night (12am-6am)';
       }
       
-      timeBreakdown[period].revenue += session.priceCents;
+      timeBreakdown[period].revenue += session.priceCents || 0;
       timeBreakdown[period].count += 1;
     });
 
