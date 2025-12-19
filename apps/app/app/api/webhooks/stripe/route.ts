@@ -121,10 +121,20 @@ export async function POST(req: Request) {
       let flavorsArray: string[] = [];
       if (existingSession.flavorMix) {
         try {
-          const parsed = JSON.parse(existingSession.flavorMix);
+          // Convert Json type to string for JSON.parse
+          const flavorMixStr = typeof existingSession.flavorMix === 'string' 
+            ? existingSession.flavorMix 
+            : JSON.stringify(existingSession.flavorMix);
+          const parsed = JSON.parse(flavorMixStr);
           flavorsArray = Array.isArray(parsed) ? parsed : [parsed];
         } catch {
-          flavorsArray = [existingSession.flavorMix];
+          // If parsing fails, try to extract as string
+          const flavorMixStr = typeof existingSession.flavorMix === 'string'
+            ? existingSession.flavorMix
+            : Array.isArray(existingSession.flavorMix)
+              ? existingSession.flavorMix.join(', ')
+              : String(existingSession.flavorMix);
+          flavorsArray = [flavorMixStr];
         }
       } else if (existingSession.flavor) {
         flavorsArray = [existingSession.flavor];
