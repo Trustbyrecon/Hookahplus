@@ -194,7 +194,6 @@ async function createSimulatedSession(
         loungeId: payload.loungeId,
         priceCents: sessionData.amount ? Math.round(sessionData.amount * 100) : 3000,
         paymentStatus: null, // Will be confirmed via complete endpoint
-        sessionType: sessionData.pricingModel || 'flat',
         durationSecs: (sessionData.timerDuration || 60) * 60,
       },
     });
