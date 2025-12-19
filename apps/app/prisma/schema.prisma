@@ -398,6 +398,42 @@ model Station {
   @@map("stations")
 }
 
+model Category {
+  id           String   @id @default(cuid())
+  name         String   @map("name")
+  description  String?  @map("description")
+  displayOrder  Int      @default(0) @map("display_order")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  items        Item[]
+
+  @@index([isActive], map: "idx_category_is_active")
+  @@index([displayOrder], map: "idx_category_display_order")
+  @@map("categories")
+}
+
+model Item {
+  id           String   @id @default(cuid())
+  categoryId   String   @map("category_id")
+  name         String   @map("name")
+  description  String?  @map("description")
+  priceCents   Int      @map("price_cents")
+  displayOrder Int      @default(0) @map("display_order")
+  isPopular    Boolean  @default(false) @map("is_popular")
+  prepTime     Int      @default(0) @map("prep_time")
+  allergens    String   @default("") @map("allergens")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  category     Category @relation(fields: [categoryId], references: [id])
+
+  @@index([categoryId], map: "idx_item_category_id")
+  @@index([isActive], map: "idx_item_is_active")
+  @@index([displayOrder], map: "idx_item_display_order")
+  @@map("items")
+}
+
 model Flavor {
   id          String   @id @default(cuid())
   loungeId    String?  @map("lounge_id")
