@@ -452,6 +452,22 @@ model LoungeConfig {
   @@map("lounge_configs")
 }
 
+model OrgSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique @map("key")
+  value       String   @map("value")
+  description String?  @map("description")
+  category    String   @default("general") @map("category")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([key], map: "idx_org_setting_key")
+  @@index([category], map: "idx_org_setting_category")
+  @@index([isActive], map: "idx_org_setting_is_active")
+  @@map("org_settings")
+}
+
 model SyncBacklog {
   id          String    @id @default(cuid())
   deviceId    String    @map("device_id")
