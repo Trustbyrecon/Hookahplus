@@ -4,6 +4,7 @@ import React from 'react';
 import { TableMetrics, ZoneMetrics } from '../lib/services/TableAnalyticsService';
 import { TrendingUp, DollarSign, Clock, Users, BarChart3, MapPin } from 'lucide-react';
 import Card from './Card';
+import { HistoricalTrends } from './HistoricalTrends';
 
 interface TableAnalyticsProps {
   tableMetrics: TableMetrics[];
@@ -15,6 +16,34 @@ interface TableAnalyticsProps {
     averageUtilization: number;
     averageSessionValue: number;
   };
+  trends?: {
+    peakHours: Array<{
+      hour: number;
+      hourLabel: string;
+      sessionCount: number;
+      revenue: number;
+      utilization: number;
+    }>;
+    dayOfWeek: Array<{
+      day: string;
+      dayIndex: number;
+      averageRevenue: number;
+      averageSessions: number;
+      averageUtilization: number;
+    }>;
+    daily: Array<{
+      date: string;
+      revenue: number;
+      sessions: number;
+      utilization: number;
+      averageSessionValue: number;
+    }>;
+    weekOverWeek: {
+      revenue: { current: number; previous: number; change: number; changePercent: number };
+      sessions: { current: number; previous: number; change: number; changePercent: number };
+      utilization: { current: number; previous: number; change: number; changePercent: number };
+    } | null;
+  };
   onTableSelect?: (tableId: string) => void;
   className?: string;
 }
@@ -23,6 +52,7 @@ export function TableAnalytics({
   tableMetrics,
   zoneMetrics,
   summary,
+  trends,
   onTableSelect,
   className = ''
 }: TableAnalyticsProps) {

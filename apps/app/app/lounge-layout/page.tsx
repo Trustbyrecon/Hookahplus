@@ -511,6 +511,7 @@ function LoungeLayoutPageContent() {
                     averageUtilization: 0,
                     averageSessionValue: 0
                   }}
+                  trends={analyticsData.trends}
                   onTableSelect={(tableId) => {
                     setSelectedTable(tableId);
                     setViewMode('live');
