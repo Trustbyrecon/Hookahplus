@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
     const tables = layoutData.tables || [];
 
     // Load sessions in date range
-    const sessions = await prisma.session.findMany({
+    const allSessions = await prisma.session.findMany({
       where: {
         createdAt: {
           gte: start,
@@ -75,6 +75,21 @@ export async function GET(request: NextRequest) {
         createdAt: true
       }
     });
+
+    // Filter out sessions with null tableId and transform null values to undefined
+    // This matches the expected types for TableAnalyticsService methods
+    const sessions = allSessions
+      .filter((s): s is typeof s & { tableId: string } => s.tableId !== null)
+      .map(s => ({
+        id: s.id,
+        tableId: s.tableId,
+        priceCents: s.priceCents ?? undefined,
+        startedAt: s.startedAt ?? undefined,
+        endedAt: s.endedAt ?? undefined,
+        durationSecs: s.durationSecs ?? undefined,
+        state: s.state,
+        createdAt: s.createdAt
+      }));
 
     // Calculate table metrics
     const tableMetrics = tables.map((table: any) => {
@@ -170,13 +185,13 @@ export async function GET(request: NextRequest) {
       weekOverWeek = HistoricalTrendsService.calculateWeekOverWeek(
         sessions.map(s => ({
           createdAt: s.createdAt,
-          priceCents: s.priceCents,
-          durationSecs: s.durationSecs
+          priceCents: s.priceCents ?? undefined,
+          durationSecs: s.durationSecs ?? undefined
         })),
         previousSessions.map(s => ({
           createdAt: s.createdAt,
-          priceCents: s.priceCents,
-          durationSecs: s.durationSecs
+          priceCents: s.priceCents ?? undefined,
+          durationSecs: s.durationSecs ?? undefined
         })),
         tables.length * operatingHoursPerDay * Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
       );
@@ -195,13 +210,13 @@ export async function GET(request: NextRequest) {
       timeBasedHeatMap,
       summary: {
         totalTables: tables.length,
-        totalRevenue: tableMetrics.reduce((sum, m) => sum + m.totalRevenue, 0),
-        totalSessions: tableMetrics.reduce((sum, m) => sum + m.totalSessions, 0),
+        totalRevenue: tableMetrics.reduce((sum: number, m: any) => sum + m.totalRevenue, 0),
+        totalSessions: tableMetrics.reduce((sum: number, m: any) => sum + m.totalSessions, 0),
         averageUtilization: tableMetrics.length > 0
-          ? tableMetrics.reduce((sum, m) => sum + m.utilizationPercent, 0) / tableMetrics.length
+          ? tableMetrics.reduce((sum: number, m: any) => sum + m.utilizationPercent, 0) / tableMetrics.length
           : 0,
         averageSessionValue: tableMetrics.length > 0
-          ? tableMetrics.reduce((sum, m) => sum + m.averageSessionValue, 0) / tableMetrics.length
+          ? tableMetrics.reduce((sum: number, m: any) => sum + m.averageSessionValue, 0) / tableMetrics.length
           : 0
       },
       trends: {
