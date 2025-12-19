@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { 
   Flame, 
@@ -80,6 +80,7 @@ import SimpleFSDDesign from '../../components/SimpleFSDDesign';
 import SessionAnalyticsCard from '../../components/SessionAnalyticsCard';
 import { SessionProvider, useSessionContext } from '../../contexts/SessionContext';
 import SyncIndicator from '../../components/SyncIndicator';
+import { FireSession, STATUS_TO_TRACKER_STAGE, STATUS_TO_STAGE, ROLE_PERMISSIONS, TrackerStage } from '../../types/enhancedSession';
 
 export default function SessionsPage() {
   return (
@@ -93,8 +94,7 @@ function SessionsPageContent() {
   const [activeView, setActiveView] = useState('overview');
   const [managementView, setManagementView] = useState('queue');
   const [showAdvancedManagement, setShowAdvancedManagement] = useState(false);
-  const { sessions: contextSessions, loading: contextLoading, lastUpdated, refreshSessions } = useSessionContext();
-  const [sessions, setSessions] = useState<Session[]>([]);
+  const { sessions: contextSessions, metrics: contextMetrics, sessionTimers, loading: contextLoading, lastUpdated, refreshSessions } = useSessionContext();
   const [sessionNotes, setSessionNotes] = useState<SessionNotes[]>([]);
   const [sessionFlags, setSessionFlags] = useState<any[]>([]);
   const [userRole, setUserRole] = useState<'BOH' | 'FOH' | 'MANAGER' | 'ADMIN'>('MANAGER');
@@ -106,13 +106,80 @@ function SessionsPageContent() {
     setIsMounted(true);
   }, []);
 
-  // Sync with context sessions
-  useEffect(() => {
-    if (contextSessions.length > 0) {
-      // Convert FireSession to Session format if needed
-      setSessions(contextSessions as any);
+  // Use real sessions from context - no mock data
+  const sessions = contextSessions;
+  
+  // Derive staff members from sessions
+  const staffMembers = useMemo(() => {
+    const staffMap = new Map<string, { id: string; name: string; role: 'BOH' | 'FOH'; status: 'active' | 'busy' | 'offline' }>();
+    
+    sessions.forEach(session => {
+      // Extract BOH staff
+      if (session.assignedStaff?.boh) {
+        const staffId = session.assignedStaff.boh;
+        if (!staffMap.has(`boh_${staffId}`)) {
+          staffMap.set(`boh_${staffId}`, {
+            id: `boh_${staffId}`,
+            name: staffId, // In real implementation, this would come from a staff API
+            role: 'BOH',
+            status: 'active'
+          });
+        }
+      }
+      
+      // Extract FOH staff
+      if (session.assignedStaff?.foh) {
+        const staffId = session.assignedStaff.foh;
+        if (!staffMap.has(`foh_${staffId}`)) {
+          staffMap.set(`foh_${staffId}`, {
+            id: `foh_${staffId}`,
+            name: staffId, // In real implementation, this would come from a staff API
+            role: 'FOH',
+            status: 'active'
+          });
+        }
+      }
+    });
+    
+    return Array.from(staffMap.values());
+  }, [sessions]);
+  
+  // Filter sessions by role using STATUS_TO_STAGE
+  const roleFilteredSessions = useMemo(() => {
+    if (userRole === 'MANAGER' || userRole === 'ADMIN') {
+      return sessions; // Managers and admins see all sessions
     }
-  }, [contextSessions]);
+    
+    return sessions.filter(session => {
+      const stage = STATUS_TO_STAGE[session.status as keyof typeof STATUS_TO_STAGE];
+      if (userRole === 'BOH') {
+        return stage === 'BOH';
+      } else if (userRole === 'FOH') {
+        return stage === 'FOH';
+      }
+      return true;
+    });
+  }, [sessions, userRole]);
+  
+  // Group sessions by NAN tracker stage
+  const sessionsByStage = useMemo(() => {
+    const grouped: Record<TrackerStage, FireSession[]> = {
+      Payment: [],
+      Prep: [],
+      Ready: [],
+      Deliver: [],
+      Light: []
+    };
+    
+    sessions.forEach(session => {
+      const stage = STATUS_TO_TRACKER_STAGE[session.status as keyof typeof STATUS_TO_TRACKER_STAGE];
+      if (grouped[stage]) {
+        grouped[stage].push(session);
+      }
+    });
+    
+    return grouped;
+  }, [sessions]);
 
   const views = [
     { id: 'overview', label: 'Overview', icon: <BarChart3 className="w-4 h-4" /> },
@@ -124,69 +191,6 @@ function SessionsPageContent() {
     { id: 'all-timers', label: 'All Timer Sessions', icon: <Clock className="w-4 h-4" /> }
   ];
 
-  // Mock data
-  useEffect(() => {
-    const mockSessions: Session[] = [
-      {
-        id: 'session_1',
-        tableId: 'T-01',
-        customerRef: 'John Doe',
-        flavor: 'Double Apple',
-        priceCents: 2500,
-        state: 'ACTIVE',
-        assignedBOHId: 'boh_1',
-        assignedFOHId: 'foh_1',
-        startedAt: new Date(Date.now() - 30 * 60 * 1000),
-        durationSecs: 3600,
-        paymentIntent: 'pi_test_123',
-        paymentStatus: 'succeeded',
-        createdAt: new Date(Date.now() - 35 * 60 * 1000),
-        updatedAt: new Date(Date.now() - 5 * 60 * 1000),
-        timerDuration: 60,
-        timerStartedAt: new Date(Date.now() - 30 * 60 * 1000),
-        timerStatus: 'running'
-      },
-      {
-        id: 'session_2',
-        tableId: 'T-02',
-        customerRef: 'Jane Smith',
-        flavor: 'Mint',
-        priceCents: 2000,
-        state: 'PAUSED',
-        assignedBOHId: 'boh_2',
-        assignedFOHId: 'foh_2',
-        startedAt: new Date(Date.now() - 45 * 60 * 1000),
-        durationSecs: 3600,
-        paymentIntent: 'pi_test_456',
-        paymentStatus: 'succeeded',
-        createdAt: new Date(Date.now() - 50 * 60 * 1000),
-        updatedAt: new Date(Date.now() - 10 * 60 * 1000),
-        timerDuration: 45,
-        timerStartedAt: new Date(Date.now() - 45 * 60 * 1000),
-        timerPausedAt: new Date(Date.now() - 10 * 60 * 1000),
-        timerStatus: 'paused'
-      },
-      {
-        id: 'session_3',
-        tableId: 'T-03',
-        customerRef: 'Mike Johnson',
-        flavor: 'Grape',
-        priceCents: 3000,
-        state: 'NEW',
-        createdAt: new Date(Date.now() - 5 * 60 * 1000),
-        updatedAt: new Date(Date.now() - 2 * 60 * 1000),
-        timerDuration: 90
-      }
-    ];
-    setSessions(mockSessions);
-  }, []);
-
-  const staffMembers = [
-    { id: 'boh_1', name: 'Alex Chen', role: 'BOH', status: 'active' },
-    { id: 'boh_2', name: 'Sarah Wilson', role: 'BOH', status: 'active' },
-    { id: 'foh_1', name: 'David Rodriguez', role: 'FOH', status: 'active' },
-    { id: 'foh_2', name: 'Emma Thompson', role: 'FOH', status: 'active' }
-  ];
 
   const handleStateChange = (sessionId: string, newState: SessionStatus, note?: string) => {
     setSessions(prev => prev.map(session => 
@@ -355,14 +359,14 @@ function SessionsPageContent() {
 
   const renderOverview = () => (
     <div className="space-y-6">
-      {/* Key Metrics */}
+      {/* Key Metrics - Use real metrics from SessionContext */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-zinc-400">Active Sessions</p>
               <p className="text-2xl font-bold text-white">
-                {sessions.filter(s => s.state === 'ACTIVE').length}
+                {isMounted ? contextMetrics.activeSessions : '...'}
               </p>
             </div>
             <Flame className="w-8 h-8 text-orange-400" />
@@ -373,7 +377,7 @@ function SessionsPageContent() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-zinc-400">Total Sessions</p>
-              <p className="text-2xl font-bold text-white">{isMounted ? sessions.length : '...'}</p>
+              <p className="text-2xl font-bold text-white">{isMounted ? contextMetrics.totalSessions : '...'}</p>
             </div>
             <BarChart3 className="w-8 h-8 text-blue-400" />
           </div>
@@ -383,7 +387,7 @@ function SessionsPageContent() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-zinc-400">Staff On Duty</p>
-              <p className="text-2xl font-bold text-white">{staffMembers.length}</p>
+              <p className="text-2xl font-bold text-white">{isMounted ? staffMembers.length : '...'}</p>
             </div>
             <Users className="w-8 h-8 text-green-400" />
           </div>
@@ -394,8 +398,8 @@ function SessionsPageContent() {
             <div>
               <p className="text-sm text-zinc-400">Avg. Duration</p>
               <p className="text-2xl font-bold text-white">
-                {isMounted && sessions.length > 0 
-                  ? `${Math.round(sessions.reduce((sum, s) => sum + (s.durationSecs || 0), 0) / sessions.length / 60)}m`
+                {isMounted && contextMetrics.avgDuration > 0
+                  ? `${Math.round(contextMetrics.avgDuration)}m`
                   : '...'}
               </p>
             </div>
@@ -404,38 +408,49 @@ function SessionsPageContent() {
         </Card>
       </div>
 
-      {/* Recent Sessions */}
+      {/* Recent Sessions - Show NAN tracker stage */}
       <Card className="p-6">
         <h3 className="text-lg font-semibold text-white mb-4">Recent Sessions</h3>
         <div className="space-y-4">
-          {sessions.slice(0, 5).map(session => (
-            <div key={session.id} className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg">
-              <div className="flex items-center space-x-4">
-                <div className="w-10 h-10 bg-zinc-700 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-semibold">{session.tableId}</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-white">{session.customerRef}</h4>
-                  <p className="text-sm text-zinc-400">{session.flavor} • ${(session.priceCents / 100).toFixed(2)}</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Badge className={
-                  session.state === 'ACTIVE' ? 'bg-green-500/20 text-green-400' :
-                  session.state === 'PAUSED' ? 'bg-yellow-500/20 text-yellow-400' :
-                  session.state === 'NEW' ? 'bg-blue-500/20 text-blue-400' :
-                  'bg-gray-500/20 text-gray-400'
-                }>
-                  {session.state}
-                </Badge>
-                {session.timerStatus && (
-                  <Badge className="bg-teal-500/20 text-teal-400">
-                    Timer: {session.timerStatus}
-                  </Badge>
-                )}
-              </div>
+          {sessions.length === 0 ? (
+            <div className="text-center py-8 text-zinc-400">
+              <Flame className="w-12 h-12 mx-auto mb-4 text-zinc-600" />
+              <p>No sessions yet</p>
             </div>
-          ))}
+          ) : (
+            sessions.slice(0, 5).map(session => {
+              const trackerStage = STATUS_TO_TRACKER_STAGE[session.status as keyof typeof STATUS_TO_TRACKER_STAGE];
+              return (
+                <div key={session.id} className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-10 h-10 bg-zinc-700 rounded-lg flex items-center justify-center">
+                      <span className="text-white font-semibold">{session.tableId}</span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-white">{session.customerName}</h4>
+                      <p className="text-sm text-zinc-400">{session.flavor} • ${(session.amount / 100).toFixed(2)}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Badge className={
+                      trackerStage === 'Light' ? 'bg-green-500/20 text-green-400' :
+                      trackerStage === 'Deliver' ? 'bg-purple-500/20 text-purple-400' :
+                      trackerStage === 'Ready' ? 'bg-yellow-500/20 text-yellow-400' :
+                      trackerStage === 'Prep' ? 'bg-orange-500/20 text-orange-400' :
+                      'bg-blue-500/20 text-blue-400'
+                    }>
+                      {trackerStage}
+                    </Badge>
+                    {sessionTimers[session.id] && sessionTimers[session.id].isActive && (
+                      <Badge className="bg-teal-500/20 text-teal-400">
+                        Timer: {Math.floor(sessionTimers[session.id].remaining / 60)}m
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </Card>
     </div>
@@ -446,21 +461,46 @@ function SessionsPageContent() {
       case 'overview': return renderOverview();
       case 'queue': return (
         <SessionQueueManager
-          sessions={sessions}
+          sessions={roleFilteredSessions as any}
           userRole={userRole}
           onBulkAction={handleBulkAction}
         />
       );
       case 'monitor': return (
-        <SessionMonitor
-          sessions={sessions}
-          userRole={userRole}
-          onRefresh={() => console.log('Refreshing sessions')}
-        />
+        <div className="space-y-6">
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Live Monitor - NAN Workflow Stages</h3>
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              {(['Payment', 'Prep', 'Ready', 'Deliver', 'Light'] as TrackerStage[]).map(stage => (
+                <div key={stage} className="bg-zinc-800/50 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-semibold text-white">{stage}</h4>
+                    <Badge className="bg-zinc-700 text-white">
+                      {sessionsByStage[stage].length}
+                    </Badge>
+                  </div>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {sessionsByStage[stage].map(session => (
+                      <div key={session.id} className="text-sm p-2 bg-zinc-700/50 rounded">
+                        <div className="font-medium text-white">{session.tableId}</div>
+                        <div className="text-zinc-400">{session.customerName}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+          <SessionMonitor
+            sessions={roleFilteredSessions as any}
+            userRole={userRole}
+            onRefresh={refreshSessions}
+          />
+        </div>
       );
       case 'workflow': return (
         <StaffWorkflowAssistant
-          sessions={sessions}
+          sessions={roleFilteredSessions as any}
           userRole={userRole}
           staffMembers={staffMembers}
           onAssignStaff={handleAssignStaff}
@@ -471,12 +511,12 @@ function SessionsPageContent() {
         <div className="space-y-6">
           {userRole === 'FOH' && (
             <FOHTimerInterface
-              assignedSessions={sessions.filter(s => s.assignedFOHId)}
+              assignedSessions={sessions.filter(s => s.assignedStaff?.foh) as any}
               onTimerAction={(sessionId, action) => {
                 console.log(`Timer action ${action} for session ${sessionId}`);
               }}
               onSessionComplete={(sessionId) => {
-                handleStateChange(sessionId, 'COMPLETED', 'Timer completed');
+                handleBulkAction('complete', [sessionId]);
               }}
             />
           )}
@@ -489,13 +529,9 @@ function SessionsPageContent() {
               <SimpleFSDDesign
                 sessions={sessions}
                 userRole={userRole}
-                onSessionAction={(action, sessionId) => {
-                  console.log(`Session action: ${action} on ${sessionId}`);
-                  if (action === 'complete') {
-                    handleStateChange(sessionId, 'COMPLETED', 'Session completed');
-                  } else if (action === 'pause') {
-                    handleStateChange(sessionId, 'PAUSED', 'Session paused');
-                  }
+                onSessionAction={async (action, sessionId) => {
+                  await handleBulkAction(action.toLowerCase().replace('_', '_'), [sessionId]);
+                  await refreshSessions();
                 }}
                 className="w-full"
               />
@@ -504,10 +540,49 @@ function SessionsPageContent() {
         </div>
       );
       case 'performance': return (
-        <div className="text-center py-12 text-zinc-400">
-          <BarChart2 className="w-16 h-16 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold mb-2">Staff Performance Analytics</h3>
-          <p>Detailed performance metrics and analytics coming soon</p>
+        <div className="space-y-6">
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Staff Performance Analytics</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {staffMembers.map(staff => {
+                const staffSessions = sessions.filter(s => 
+                  (staff.role === 'BOH' && s.assignedStaff?.boh === staff.id.replace('boh_', '')) ||
+                  (staff.role === 'FOH' && s.assignedStaff?.foh === staff.id.replace('foh_', ''))
+                );
+                const completedSessions = staffSessions.filter(s => s.status === 'CLOSED' || s.status === 'ACTIVE');
+                const avgDuration = staffSessions.length > 0
+                  ? Math.round(staffSessions.reduce((sum, s) => sum + (s.sessionDuration || 0), 0) / staffSessions.length / 60)
+                  : 0;
+                
+                return (
+                  <div key={staff.id} className="p-4 bg-zinc-800/50 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-semibold text-white">{staff.name}</h4>
+                      <Badge className={staff.role === 'BOH' ? 'bg-orange-500/20 text-orange-400' : 'bg-blue-500/20 text-blue-400'}>
+                        {staff.role}
+                      </Badge>
+                    </div>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-zinc-400">Sessions:</span>
+                        <span className="text-white">{completedSessions.length}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-zinc-400">Avg Duration:</span>
+                        <span className="text-white">{avgDuration}m</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {staffMembers.length === 0 && (
+              <div className="text-center py-8 text-zinc-400">
+                <Users className="w-12 h-12 mx-auto mb-4 text-zinc-600" />
+                <p>No staff assignments found</p>
+              </div>
+            )}
+          </Card>
         </div>
       );
       case 'all-timers': return (
@@ -515,22 +590,35 @@ function SessionsPageContent() {
           <Card className="p-6">
             <h3 className="text-lg font-semibold text-white mb-4">All Timer Sessions</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {sessions.filter(s => s.timerDuration).map(session => (
-                <div key={session.id} className="p-4 bg-zinc-800/50 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-semibold text-white">Table {session.tableId}</h4>
-                    <Badge className={
-                      session.timerStatus === 'running' ? 'bg-green-500/20 text-green-400' :
-                      session.timerStatus === 'paused' ? 'bg-yellow-500/20 text-yellow-400' :
-                      'bg-gray-500/20 text-gray-400'
-                    }>
-                      {session.timerStatus || 'stopped'}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-zinc-400 mb-2">{session.customerRef}</p>
-                  <p className="text-sm text-zinc-300">Duration: {session.timerDuration} minutes</p>
+              {Object.keys(sessionTimers).length === 0 ? (
+                <div className="col-span-full text-center py-8 text-zinc-400">
+                  <Timer className="w-12 h-12 mx-auto mb-4 text-zinc-600" />
+                  <p>No active timers</p>
                 </div>
-              ))}
+              ) : (
+                Object.entries(sessionTimers).map(([sessionId, timer]) => {
+                  const session = sessions.find(s => s.id === sessionId);
+                  if (!session) return null;
+                  
+                  return (
+                    <div key={sessionId} className="p-4 bg-zinc-800/50 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold text-white">Table {session.tableId}</h4>
+                        <Badge className={
+                          timer.isActive ? 'bg-green-500/20 text-green-400' :
+                          'bg-gray-500/20 text-gray-400'
+                        }>
+                          {timer.isActive ? 'running' : 'stopped'}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-zinc-400 mb-2">{session.customerName}</p>
+                      <p className="text-sm text-zinc-300">
+                        Remaining: {Math.floor(timer.remaining / 60)}m {timer.remaining % 60}s
+                      </p>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </Card>
         </div>
@@ -550,7 +638,7 @@ function SessionsPageContent() {
           headline="Sessions Management"
           subheadline="Advanced session management, monitoring, and workflow optimization. View session history, manage queues, and optimize staff workflows."
           benefit={{
-            value: isMounted ? `${sessions.length} Active Sessions` : '... Active Sessions',
+            value: isMounted ? `${contextMetrics.activeSessions} Active Sessions` : '... Active Sessions',
             description: 'Monitor and manage all lounge sessions',
             icon: <Flame className="w-5 h-5 text-orange-400" />
           }}

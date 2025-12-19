@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Users, 
   Clock, 
@@ -19,6 +19,9 @@ import {
 } from 'lucide-react';
 import Button from '../../components/Button';
 import GlobalNavigation from '../../components/GlobalNavigation';
+import { Badge } from '../../components';
+import { SessionProvider, useSessionContext } from '../../contexts/SessionContext';
+import { STATUS_TO_TRACKER_STAGE, STATUS_TO_STAGE, ROLE_PERMISSIONS } from '../../types/enhancedSession';
 
 interface Task {
   id: string;
@@ -47,81 +50,127 @@ interface StaffMember {
 }
 
 export default function StaffOpsDashboard() {
-  const [activeTab, setActiveTab] = useState('tasks');
-  const [tasks, setTasks] = useState<Task[]>([
-    {
-      id: 'task_1',
-      title: 'Deliver Table 2',
-      description: 'Hookah ready for delivery to table',
-      priority: 'high',
-      status: 'pending',
-      assignedTo: 'Mike Rodriguez',
-      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-      dueAt: new Date(Date.now() + 30 * 60 * 1000), // 30 minutes from now
-      location: 'Table 2',
-      customerInfo: {
-        name: 'John Smith',
-        phone: '(555) 123-4567',
-        table: 'T-002'
-      }
-    },
-    {
-      id: 'task_2',
-      title: 'Refill Table 5',
-      description: 'Customer requested flavor change',
-      priority: 'medium',
-      status: 'in_progress',
-      assignedTo: 'Sarah Chen',
-      createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000), // 1 hour ago
-      location: 'Table 5',
-      customerInfo: {
-        name: 'Emily Johnson',
-        phone: '(555) 987-6543',
-        table: 'T-005'
-      }
-    },
-    {
-      id: 'task_3',
-      title: 'Setup Table 8',
-      description: 'New customer arrival - setup complete hookah',
-      priority: 'low',
-      status: 'pending',
-      assignedTo: 'Unassigned',
-      createdAt: new Date(Date.now() - 15 * 60 * 1000), // 15 minutes ago
-      location: 'Table 8',
-      customerInfo: {
-        name: 'David Wilson',
-        phone: '(555) 456-7890',
-        table: 'T-008'
-      }
-    }
-  ]);
+  return (
+    <SessionProvider>
+      <StaffOpsDashboardContent />
+    </SessionProvider>
+  );
+}
 
-  const [staff, setStaff] = useState<StaffMember[]>([
-    {
-      id: 'staff_1',
-      name: 'Sarah Chen',
-      role: 'BOH',
-      status: 'active',
-      currentTask: 'Refill Table 5',
-      lastActive: new Date(Date.now() - 5 * 60 * 1000) // 5 minutes ago
-    },
-    {
-      id: 'staff_2',
-      name: 'Mike Rodriguez',
-      role: 'FOH',
-      status: 'active',
-      currentTask: 'Deliver Table 2',
-      lastActive: new Date(Date.now() - 2 * 60 * 1000) // 2 minutes ago
-    },
-    {
-      id: 'staff_3',
-      name: 'Lisa Park',
-      role: 'FOH',
-      status: 'break',
-      lastActive: new Date(Date.now() - 30 * 60 * 1000) // 30 minutes ago
-    }
-  ]);
+function StaffOpsDashboardContent() {
+  const { sessions, refreshSessions } = useSessionContext();
+  const [activeTab, setActiveTab] = useState('tasks');
+  const [userRole, setUserRole] = useState<'BOH' | 'FOH' | 'MANAGER'>('MANAGER');
+  
+  // Derive tasks from sessions
+  const tasks = useMemo(() => {
+    const taskList: Task[] = [];
+    
+    sessions.forEach(session => {
+      const trackerStage = STATUS_TO_TRACKER_STAGE[session.status as keyof typeof STATUS_TO_TRACKER_STAGE];
+      
+      // Deliver tasks from sessions ready for delivery
+      if (session.status === 'READY_FOR_DELIVERY' || session.status === 'OUT_FOR_DELIVERY') {
+        taskList.push({
+          id: `deliver_${session.id}`,
+          title: `Deliver ${session.tableId}`,
+          description: `Hookah ready for delivery to ${session.tableId}`,
+          priority: 'high',
+          status: session.status === 'OUT_FOR_DELIVERY' ? 'in_progress' : 'pending',
+          assignedTo: session.assignedStaff?.foh || 'Unassigned',
+          createdAt: new Date(session.createdAt),
+          dueAt: new Date(session.createdAt + 30 * 60 * 1000), // 30 min from creation
+          location: session.tableId,
+          customerInfo: {
+            name: session.customerName,
+            phone: session.customerPhone || '(555) 000-0000',
+            table: session.tableId
+          }
+        });
+      }
+      
+      // Refill tasks from sessions with refill requested
+      if (session.refillStatus === 'requested') {
+        taskList.push({
+          id: `refill_${session.id}`,
+          title: `Refill ${session.tableId}`,
+          description: `Customer requested refill for ${session.tableId}`,
+          priority: 'medium',
+          status: 'pending',
+          assignedTo: session.assignedStaff?.boh || 'Unassigned',
+          createdAt: new Date(session.updatedAt),
+          location: session.tableId,
+          customerInfo: {
+            name: session.customerName,
+            phone: session.customerPhone || '(555) 000-0000',
+            table: session.tableId
+          }
+        });
+      }
+      
+      // Setup tasks from sessions in prep
+      if (session.status === 'PREP_IN_PROGRESS') {
+        taskList.push({
+          id: `setup_${session.id}`,
+          title: `Setup ${session.tableId}`,
+          description: `New session - setup complete hookah for ${session.tableId}`,
+          priority: 'low',
+          status: 'pending',
+          assignedTo: session.assignedStaff?.boh || 'Unassigned',
+          createdAt: new Date(session.createdAt),
+          location: session.tableId,
+          customerInfo: {
+            name: session.customerName,
+            phone: session.customerPhone || '(555) 000-0000',
+            table: session.tableId
+          }
+        });
+      }
+    });
+    
+    return taskList;
+  }, [sessions]);
+  
+  // Derive staff from sessions
+  const staff = useMemo(() => {
+    const staffMap = new Map<string, StaffMember>();
+    
+    sessions.forEach(session => {
+      // BOH staff
+      if (session.assignedStaff?.boh) {
+        const staffId = session.assignedStaff.boh;
+        if (!staffMap.has(`boh_${staffId}`)) {
+          const currentSessions = sessions.filter(s => s.assignedStaff?.boh === staffId && (s.status === 'PREP_IN_PROGRESS' || s.status === 'HEAT_UP' || s.status === 'READY_FOR_DELIVERY'));
+          staffMap.set(`boh_${staffId}`, {
+            id: `boh_${staffId}`,
+            name: staffId,
+            role: 'BOH',
+            status: currentSessions.length > 0 ? 'active' : 'break',
+            currentTask: currentSessions.length > 0 ? `Preparing ${currentSessions[0].tableId}` : undefined,
+            lastActive: new Date(session.updatedAt)
+          });
+        }
+      }
+      
+      // FOH staff
+      if (session.assignedStaff?.foh) {
+        const staffId = session.assignedStaff.foh;
+        if (!staffMap.has(`foh_${staffId}`)) {
+          const currentSessions = sessions.filter(s => s.assignedStaff?.foh === staffId && (s.status === 'OUT_FOR_DELIVERY' || s.status === 'DELIVERED' || s.status === 'ACTIVE'));
+          staffMap.set(`foh_${staffId}`, {
+            id: `foh_${staffId}`,
+            name: staffId,
+            role: 'FOH',
+            status: currentSessions.length > 0 ? 'active' : 'break',
+            currentTask: currentSessions.length > 0 ? `Delivering ${currentSessions[0].tableId}` : undefined,
+            lastActive: new Date(session.updatedAt)
+          });
+        }
+      }
+    });
+    
+    return Array.from(staffMap.values());
+  }, [sessions]);
 
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
   const [newTask, setNewTask] = useState({
@@ -135,38 +184,61 @@ export default function StaffOpsDashboard() {
     customerTable: ''
   });
 
-  const handleTaskStatusChange = (taskId: string, newStatus: Task['status']) => {
-    setTasks(prev => prev.map(task => 
-      task.id === taskId ? { ...task, status: newStatus } : task
-    ));
+  const handleTaskStatusChange = async (taskId: string, newStatus: Task['status']) => {
+    // Extract session ID from task ID
+    const sessionId = taskId.replace(/^(deliver_|refill_|setup_)/, '');
+    const task = tasks.find(t => t.id === taskId);
+    
+    if (!task || !sessionId) return;
+    
+    // Map task status changes to session actions
+    if (newStatus === 'in_progress' && task.title.startsWith('Deliver')) {
+      // Start delivery
+      try {
+        await fetch('/api/sessions', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId,
+            action: 'DELIVER_NOW',
+            userRole
+          })
+        });
+        await refreshSessions();
+      } catch (error) {
+        console.error('Failed to update session:', error);
+      }
+    } else if (newStatus === 'completed' && task.title.startsWith('Deliver')) {
+      // Mark delivered
+      try {
+        await fetch('/api/sessions', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId,
+            action: 'MARK_DELIVERED',
+            userRole
+          })
+        });
+        await refreshSessions();
+      } catch (error) {
+        console.error('Failed to update session:', error);
+      }
+    }
   };
 
-  const handleAssignTask = (taskId: string, staffMember: string) => {
-    setTasks(prev => prev.map(task => 
-      task.id === taskId ? { ...task, assignedTo: staffMember } : task
-    ));
+  const handleAssignTask = async (taskId: string, staffMember: string) => {
+    // In real implementation, this would update session assignment
+    // For now, just refresh to show updated assignments
+    await refreshSessions();
   };
 
-  const handleCreateTask = () => {
+  const handleCreateTask = async () => {
     if (!newTask.title.trim()) return;
 
-    const task: Task = {
-      id: `task_${Date.now()}`,
-      title: newTask.title,
-      description: newTask.description,
-      priority: newTask.priority,
-      status: 'pending',
-      assignedTo: newTask.assignedTo,
-      createdAt: new Date(),
-      location: newTask.location,
-      customerInfo: newTask.customerName ? {
-        name: newTask.customerName,
-        phone: newTask.customerPhone,
-        table: newTask.customerTable
-      } : undefined
-    };
-
-    setTasks(prev => [task, ...prev]);
+    // In real implementation, this would create a session or manual task
+    // For now, just show a message
+    alert('Manual task creation - will integrate with session creation flow');
     setNewTask({
       title: '',
       description: '',
@@ -326,22 +398,39 @@ export default function StaffOpsDashboard() {
               </div>
 
               <div className="space-y-3">
-                {tasks.map(task => (
-                  <div key={task.id} className="bg-zinc-700/50 rounded-lg p-4 border border-zinc-600">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-zinc-500 rounded-full"></div>
-                        <span className="font-medium">{task.title}</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(task.priority)}`}>
-                          {task.priority.toUpperCase()}
-                        </span>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(task.status)}`}>
-                          {task.status.replace('_', ' ').toUpperCase()}
-                        </span>
-                      </div>
-                    </div>
+                {tasks.length === 0 ? (
+                  <div className="text-center py-8 text-zinc-400">
+                    <Clock className="w-12 h-12 mx-auto mb-4 text-zinc-600" />
+                    <p>No tasks at this time</p>
+                    <p className="text-xs mt-2">Tasks will appear here from active sessions</p>
+                  </div>
+                ) : (
+                  tasks.map(task => {
+                    const sessionId = task.id.replace(/^(deliver_|refill_|setup_)/, '');
+                    const session = sessions.find(s => s.id === sessionId);
+                    const trackerStage = session ? STATUS_TO_TRACKER_STAGE[session.status as keyof typeof STATUS_TO_TRACKER_STAGE] : null;
+                    
+                    return (
+                      <div key={task.id} className="bg-zinc-700/50 rounded-lg p-4 border border-zinc-600">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center space-x-2">
+                            <div className="w-2 h-2 bg-zinc-500 rounded-full"></div>
+                            <span className="font-medium">{task.title}</span>
+                            {trackerStage && (
+                              <Badge className="bg-teal-500/20 text-teal-400 text-xs">
+                                {trackerStage}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(task.priority)}`}>
+                              {task.priority.toUpperCase()}
+                            </span>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(task.status)}`}>
+                              {task.status.replace('_', ' ').toUpperCase()}
+                            </span>
+                          </div>
+                        </div>
 
                     <p className="text-sm text-zinc-300 mb-3">{task.description}</p>
 
@@ -409,7 +498,9 @@ export default function StaffOpsDashboard() {
                       </div>
                     </div>
                   </div>
-                ))}
+                    );
+                  })
+                )}
               </div>
             </div>
           </div>
@@ -420,30 +511,38 @@ export default function StaffOpsDashboard() {
 
             <div className="bg-zinc-800/50 rounded-lg p-4 border border-zinc-700">
               <div className="space-y-3">
-                {staff.map(member => (
-                  <div key={member.id} className="flex items-center justify-between p-3 bg-zinc-700/50 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-zinc-600 rounded-full flex items-center justify-center">
-                        <Users className="w-5 h-5 text-zinc-400" />
-                      </div>
-                      <div>
-                        <div className="font-medium">{member.name}</div>
-                        <div className="text-sm text-zinc-400">{member.role}</div>
-                        {member.currentTask && (
-                          <div className="text-xs text-blue-400">{member.currentTask}</div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStaffStatusColor(member.status)}`}>
-                        {member.status.toUpperCase()}
-                      </span>
-                      <span className="text-xs text-zinc-500">
-                        {member.lastActive.toLocaleTimeString()}
-                      </span>
-                    </div>
+                {staff.length === 0 ? (
+                  <div className="text-center py-8 text-zinc-400">
+                    <Users className="w-12 h-12 mx-auto mb-4 text-zinc-600" />
+                    <p>No staff assignments found</p>
+                    <p className="text-xs mt-2">Staff will appear here when assigned to sessions</p>
                   </div>
-                ))}
+                ) : (
+                  staff.map(member => (
+                    <div key={member.id} className="flex items-center justify-between p-3 bg-zinc-700/50 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-zinc-600 rounded-full flex items-center justify-center">
+                          <Users className="w-5 h-5 text-zinc-400" />
+                        </div>
+                        <div>
+                          <div className="font-medium">{member.name}</div>
+                          <div className="text-sm text-zinc-400">{member.role}</div>
+                          {member.currentTask && (
+                            <div className="text-xs text-blue-400">{member.currentTask}</div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStaffStatusColor(member.status)}`}>
+                          {member.status.toUpperCase()}
+                        </span>
+                        <span className="text-xs text-zinc-500">
+                          {member.lastActive.toLocaleTimeString()}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 

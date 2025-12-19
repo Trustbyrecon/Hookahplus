@@ -12,7 +12,7 @@ function generateRichDemoData(): FireSession[] {
   const now = Date.now();
   const thirtyMinutesAgo = now - (30 * 60 * 1000);
 
-  // Single demo session showing night after night flow - starts at PAID_CONFIRMED
+    // Single demo session showing night after night flow - starts as ACTIVE (Lit)
   return [
     {
       id: 'demo-session-1',
@@ -20,9 +20,9 @@ function generateRichDemoData(): FireSession[] {
       customerName: 'Sarah & Friends',
       customerPhone: '+1 (555) 234-5678',
       flavor: 'Blue Mist + Mint Fresh',
-      amount: 3500,
-      status: 'PAID_CONFIRMED', // Starting point for night after night flow
-      state: 'PENDING', // Database state - PENDING with payment = PAID_CONFIRMED
+        amount: 3500,
+        status: 'ACTIVE', // Already lit for demo
+        state: 'ACTIVE',
       paymentStatus: 'succeeded', // Required for hasPayment check
       externalRef: 'test_cs_demo_session_1', // Required for hasPayment check
       currentStage: 'BOH',
@@ -131,28 +131,6 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
         });
         
         setSessions(mergedSessions);
-        
-        // Calculate metrics from merged data (reflects current state)
-        const mergedMetrics = {
-          activeSessions: mergedSessions.filter(s => ['ACTIVE', 'DELIVERED', 'OUT_FOR_DELIVERY'].includes(s.status)).length,
-          revenue: mergedSessions.reduce((sum, s) => sum + (s.amount / 100), 0),
-          avgDuration: 45,
-          alerts: mergedSessions.filter(s => s.edgeCase !== null).length,
-          staffAssigned: new Set([
-            ...mergedSessions.map(s => s.assignedStaff.boh).filter(Boolean),
-            ...mergedSessions.map(s => s.assignedStaff.foh).filter(Boolean)
-          ]).size,
-          totalSessions: mergedSessions.length,
-          changes: {
-            activeSessions: '+0%',
-            revenue: '+0%',
-            avgDuration: '0%',
-            alerts: '0%',
-            staffAssigned: '+0%',
-            totalSessions: '+0%'
-          }
-        };
-        setMetrics(mergedMetrics);
         setLoading(false);
         return;
       }

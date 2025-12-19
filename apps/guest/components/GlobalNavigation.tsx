@@ -3,7 +3,10 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Shield, HelpCircle, FileText, Home, Clock, Trophy, Menu, X } from 'lucide-react';
+import { Shield, HelpCircle, FileText, Home, Clock, Trophy, Menu, X, Flame } from 'lucide-react';
+import { useGuestSessionContext } from '../contexts/GuestSessionContext';
+import { STATUS_TO_TRACKER_STAGE } from '../../app/types/enhancedSession';
+import Badge from './Badge';
 
 interface GlobalNavigationProps {
   currentPage?: string;
@@ -16,6 +19,7 @@ export const GlobalNavigation: React.FC<GlobalNavigationProps> = ({
   trustScore = 0.87,
   flowStatus = 71
 }) => {
+  const { activeSession } = useGuestSessionContext();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   
@@ -77,8 +81,18 @@ export const GlobalNavigation: React.FC<GlobalNavigationProps> = ({
             })}
           </div>
 
-          {/* Right Side - Support and Docs */}
+          {/* Right Side - Session Status, Support and Docs */}
           <div className="flex items-center space-x-4">
+            {/* Active Session Indicator */}
+            {activeSession && (
+              <div className="flex items-center space-x-2 px-3 py-1.5 bg-teal-500/20 border border-teal-500/30 rounded-lg">
+                <Flame className="w-4 h-4 text-teal-400" />
+                <Badge className="bg-teal-500/20 text-teal-400 text-xs border-0">
+                  {STATUS_TO_TRACKER_STAGE[activeSession.status as keyof typeof STATUS_TO_TRACKER_STAGE]}
+                </Badge>
+                <span className="text-xs text-zinc-300">{activeSession.tableId}</span>
+              </div>
+            )}
             <div className="flex items-center space-x-3">
               <Link
                 href="/support"

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import GlobalNavigation from '../../components/GlobalNavigation';
 import { Card, Button, Badge } from '../../components';
 import StaffPerformanceAnalytics from '../../components/StaffPerformanceAnalytics';
@@ -8,6 +8,8 @@ import StaffScheduling from '../../components/StaffScheduling';
 import StaffCommunication from '../../components/StaffCommunication';
 import RoleBasedPermissions from '../../components/RoleBasedPermissions';
 import CoachingPanel from '../../components/CoachingPanel';
+import { SessionProvider, useSessionContext } from '../../contexts/SessionContext';
+import { STATUS_TO_STAGE } from '../../types/enhancedSession';
 import { 
   Users, 
   UserPlus, 
@@ -72,6 +74,15 @@ interface StaffMember {
 }
 
 export default function StaffPanelPage() {
+  return (
+    <SessionProvider>
+      <StaffPanelPageContent />
+    </SessionProvider>
+  );
+}
+
+function StaffPanelPageContent() {
+  const { sessions } = useSessionContext();
   const [activeTab, setActiveTab] = useState('overview');
   const [showAddStaffModal, setShowAddStaffModal] = useState(false);
   const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
@@ -85,7 +96,119 @@ export default function StaffPanelPage() {
     role: 'FOH' as 'BOH' | 'FOH' | 'MANAGER' | 'ADMIN'
   });
   
-  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([
+  // Derive staff members from sessions
+  const staffMembers = useMemo(() => {
+    const staffMap = new Map<string, StaffMember>();
+    
+    sessions.forEach(session => {
+      // Extract BOH staff
+      if (session.assignedStaff?.boh) {
+        const staffId = session.assignedStaff.boh;
+        const key = `boh_${staffId}`;
+        if (!staffMap.has(key)) {
+          const bohSessions = sessions.filter(s => s.assignedStaff?.boh === staffId);
+          const completedSessions = bohSessions.filter(s => s.status === 'CLOSED' || s.status === 'ACTIVE');
+          const avgDuration = bohSessions.length > 0
+            ? Math.round(bohSessions.reduce((sum, s) => sum + (s.sessionDuration || 0), 0) / bohSessions.length / 60)
+            : 0;
+          
+          staffMap.set(key, {
+            id: key,
+            name: staffId, // In real implementation, this would come from a staff API
+            role: 'BOH',
+            status: 'available', // TODO: Determine from active sessions
+            email: `${staffId}@hookahplus.com`,
+            phone: '+1 (555) 000-0000',
+            hireDate: new Date().toISOString().split('T')[0],
+            performance: 4.5, // TODO: Calculate from metrics
+            sessionsCompleted: completedSessions.length,
+            lastActive: 'Recently',
+            metrics: {
+              sessionsCompleted: completedSessions.length,
+              averageRating: 4.5,
+              onTimeDelivery: 90,
+              customerSatisfaction: 90,
+              efficiency: 85,
+              attendance: 95
+            },
+            trends: {
+              sessionsCompleted: 0,
+              averageRating: 0,
+              onTimeDelivery: 0
+            },
+            achievements: [],
+            availability: {
+              monday: [{ start: '09:00', end: '17:00', available: true }],
+              tuesday: [{ start: '09:00', end: '17:00', available: true }],
+              wednesday: [{ start: '09:00', end: '17:00', available: true }],
+              thursday: [{ start: '09:00', end: '17:00', available: true }],
+              friday: [{ start: '09:00', end: '17:00', available: true }],
+              saturday: [{ start: '10:00', end: '18:00', available: true }],
+              sunday: [{ start: '10:00', end: '18:00', available: true }]
+            },
+            maxHoursPerWeek: 40,
+            currentHoursThisWeek: 0
+          });
+        }
+      }
+      
+      // Extract FOH staff
+      if (session.assignedStaff?.foh) {
+        const staffId = session.assignedStaff.foh;
+        const key = `foh_${staffId}`;
+        if (!staffMap.has(key)) {
+          const fohSessions = sessions.filter(s => s.assignedStaff?.foh === staffId);
+          const completedSessions = fohSessions.filter(s => s.status === 'CLOSED' || s.status === 'ACTIVE');
+          const avgDuration = fohSessions.length > 0
+            ? Math.round(fohSessions.reduce((sum, s) => sum + (s.sessionDuration || 0), 0) / fohSessions.length / 60)
+            : 0;
+          
+          staffMap.set(key, {
+            id: key,
+            name: staffId, // In real implementation, this would come from a staff API
+            role: 'FOH',
+            status: 'available', // TODO: Determine from active sessions
+            email: `${staffId}@hookahplus.com`,
+            phone: '+1 (555) 000-0000',
+            hireDate: new Date().toISOString().split('T')[0],
+            performance: 4.5, // TODO: Calculate from metrics
+            sessionsCompleted: completedSessions.length,
+            lastActive: 'Recently',
+            metrics: {
+              sessionsCompleted: completedSessions.length,
+              averageRating: 4.5,
+              onTimeDelivery: 90,
+              customerSatisfaction: 90,
+              efficiency: 85,
+              attendance: 95
+            },
+            trends: {
+              sessionsCompleted: 0,
+              averageRating: 0,
+              onTimeDelivery: 0
+            },
+            achievements: [],
+            availability: {
+              monday: [{ start: '12:00', end: '20:00', available: true }],
+              tuesday: [{ start: '12:00', end: '20:00', available: true }],
+              wednesday: [{ start: '12:00', end: '20:00', available: true }],
+              thursday: [{ start: '12:00', end: '20:00', available: true }],
+              friday: [{ start: '12:00', end: '20:00', available: true }],
+              saturday: [{ start: '14:00', end: '22:00', available: true }],
+              sunday: [{ start: '14:00', end: '22:00', available: true }]
+            },
+            maxHoursPerWeek: 40,
+            currentHoursThisWeek: 0
+          });
+        }
+      }
+    });
+    
+    return Array.from(staffMap.values());
+  }, [sessions]);
+  
+  // Keep manual staff management for adding new staff (UI only for now)
+  const [manualStaff, setManualStaff] = useState<StaffMember[]>([
     {
       id: 'staff-001',
       name: 'Mike Rodriguez',
@@ -235,6 +358,18 @@ export default function StaffPanelPage() {
       currentHoursThisWeek: 24
     }
   ]);
+  
+  // Combine derived staff with manually added staff
+  const allStaffMembers = useMemo(() => {
+    const combined = [...staffMembers];
+    // Add manual staff that aren't already in the list
+    manualStaff.forEach(manual => {
+      if (!combined.find(s => s.id === manual.id)) {
+        combined.push(manual);
+      }
+    });
+    return combined;
+  }, [staffMembers, manualStaff]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -305,7 +440,7 @@ export default function StaffPanelPage() {
         currentHoursThisWeek: 0
       };
       
-      setStaffMembers([...staffMembers, staff]);
+      setManualStaff([...manualStaff, staff]);
       setNewStaff({ name: '', email: '', phone: '', role: 'FOH' });
       setShowAddStaffModal(false);
     }
@@ -324,7 +459,7 @@ export default function StaffPanelPage() {
 
   const handleUpdateStaff = () => {
     if (editingStaff && newStaff.name && newStaff.email && newStaff.phone) {
-      setStaffMembers(staffMembers.map(staff => 
+      setManualStaff(manualStaff.map(staff => 
         staff.id === editingStaff.id 
           ? { ...staff, name: newStaff.name, email: newStaff.email, phone: newStaff.phone, role: newStaff.role }
           : staff
@@ -337,20 +472,21 @@ export default function StaffPanelPage() {
 
   const handleDeleteStaff = (staffId: string) => {
     if (confirm('Are you sure you want to delete this staff member?')) {
-      setStaffMembers(staffMembers.filter(staff => staff.id !== staffId));
+      setManualStaff(manualStaff.filter(staff => staff.id !== staffId));
     }
   };
 
   const handleToggleStatus = (staffId: string) => {
-    setStaffMembers(staffMembers.map(staff => 
-      staff.id === staffId 
-        ? { 
-            ...staff, 
-            status: staff.status === 'available' ? 'busy' : 
-                   staff.status === 'busy' ? 'offline' : 'available'
-          }
-        : staff
-    ));
+      // Update status in manual staff if it exists there
+      setManualStaff(manualStaff.map(staff => 
+        staff.id === staffId 
+          ? { 
+              ...staff, 
+              status: staff.status === 'available' ? 'busy' : 
+                     staff.status === 'busy' ? 'offline' : 'available'
+            }
+          : staff
+      ));
   };
 
   return (
@@ -405,7 +541,7 @@ export default function StaffPanelPage() {
                   <h3 className="text-lg font-semibold text-white">Total Staff</h3>
                   <Users className="w-6 h-6 text-blue-400" />
                 </div>
-                <div className="text-3xl font-bold text-white mb-2">{staffMembers.length}</div>
+                <div className="text-3xl font-bold text-white mb-2">{allStaffMembers.length}</div>
                 <div className="text-sm text-zinc-400">Active team members</div>
               </Card>
 
@@ -415,7 +551,7 @@ export default function StaffPanelPage() {
                   <CheckCircle className="w-6 h-6 text-green-400" />
                 </div>
                 <div className="text-3xl font-bold text-white mb-2">
-                  {staffMembers.filter(s => s.status === 'available').length}
+                  {allStaffMembers.filter(s => s.status === 'available').length}
                 </div>
                 <div className="text-sm text-zinc-400">Ready to work</div>
               </Card>
@@ -426,7 +562,9 @@ export default function StaffPanelPage() {
                   <Star className="w-6 h-6 text-yellow-400" />
                 </div>
                 <div className="text-3xl font-bold text-white mb-2">
-                  {(staffMembers.reduce((sum, s) => sum + s.performance, 0) / staffMembers.length).toFixed(1)}
+                  {allStaffMembers.length > 0
+                    ? (allStaffMembers.reduce((sum, s) => sum + s.performance, 0) / allStaffMembers.length).toFixed(1)
+                    : '0.0'}
                 </div>
                 <div className="text-sm text-zinc-400">Out of 5.0</div>
               </Card>
@@ -482,7 +620,16 @@ export default function StaffPanelPage() {
             </div>
 
             <div className="grid grid-cols-1 gap-4">
-              {staffMembers.map((staff) => (
+              {allStaffMembers.length === 0 ? (
+                <Card className="card-tablet">
+                  <div className="text-center py-8 text-zinc-400">
+                    <Users className="w-12 h-12 mx-auto mb-4 text-zinc-600" />
+                    <p>No staff assignments found</p>
+                    <p className="text-xs mt-2">Staff will appear here when assigned to sessions</p>
+                  </div>
+                </Card>
+              ) : (
+                allStaffMembers.map((staff) => (
                 <Card key={staff.id} className="card-tablet">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
@@ -558,14 +705,15 @@ export default function StaffPanelPage() {
                     </div>
                   </div>
                 </Card>
-              ))}
+                ))
+              )}
             </div>
           </div>
         )}
 
         {activeTab === 'performance' && (
           <StaffPerformanceAnalytics
-            staffMembers={staffMembers}
+            staffMembers={allStaffMembers}
             timeRange={timeRange}
             onTimeRangeChange={setTimeRange}
           />
@@ -573,7 +721,7 @@ export default function StaffPanelPage() {
 
         {activeTab === 'schedule' && (
           <StaffScheduling
-            staffMembers={staffMembers}
+            staffMembers={allStaffMembers}
             onShiftCreate={(shift) => {
               // Handle shift creation
               console.log('Creating shift:', shift);
@@ -592,7 +740,7 @@ export default function StaffPanelPage() {
         {activeTab === 'communication' && (
           <StaffCommunication
             currentUserId="staff-003" // Current user (Alex Johnson - Manager)
-            staffMembers={staffMembers.map(staff => ({
+            staffMembers={allStaffMembers.map(staff => ({
               id: staff.id,
               name: staff.name,
               role: staff.role,

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import GlobalNavigation from '../../../components/GlobalNavigation';
 import PreorderEntry from '../../../components/PreorderEntry';
 import QRCode from 'qrcode';
@@ -13,23 +13,35 @@ import {
   ShoppingCart,
   QrCode,
   Copy,
-  CheckCircle
+  CheckCircle,
+  Flame,
+  AlertCircle,
+  ArrowRight
 } from 'lucide-react';
 import Button from '../../../components/Button';
+import { SessionProvider, useSessionContext } from '../../../contexts/SessionContext';
+import { STATUS_TO_TRACKER_STAGE, TrackerStage } from '../../../types/enhancedSession';
+import { Badge } from '../../../components';
 
 function PreOrderPageContent() {
   const params = useParams();
+  const router = useRouter();
   const tableId = params.tableId as string;
+  const { sessions, refreshSessions } = useSessionContext();
   
   // QR Code state (for quick share)
   const [qrCodeDataURL, setQrCodeDataURL] = useState<string>('');
   const [qrUrl, setQrUrl] = useState<string>('');
   const [copied, setCopied] = useState(false);
   
-  // Order management state
-  const [activeOrders, setActiveOrders] = useState(3);
-  const [pendingOrders, setPendingOrders] = useState(1);
-  const [completedOrders, setCompletedOrders] = useState(12);
+  // Find existing session for this table
+  const existingSession = sessions.find(s => s.tableId === tableId);
+  
+  // Calculate order stats from sessions for this table
+  const tableSessions = sessions.filter(s => s.tableId === tableId);
+  const activeOrders = tableSessions.filter(s => s.status === 'ACTIVE' || s.status === 'PREP_IN_PROGRESS' || s.status === 'READY_FOR_DELIVERY' || s.status === 'OUT_FOR_DELIVERY').length;
+  const pendingOrders = tableSessions.filter(s => s.status === 'PAID_CONFIRMED' || s.status === 'NEW').length;
+  const completedOrders = tableSessions.filter(s => s.status === 'CLOSED').length;
   
   // Table configuration
   const [tableData] = useState({
@@ -100,11 +112,61 @@ function PreOrderPageContent() {
           </div>
         </div>
 
+        {/* Session Status Alert */}
+        {existingSession && (
+          <Card className="mb-6 p-6 border-teal-500/30 bg-teal-500/10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Flame className="w-6 h-6 text-teal-400" />
+                <div>
+                  <h3 className="text-lg font-semibold text-white">Session in Progress</h3>
+                  <p className="text-sm text-zinc-400">
+                    Table {tableId} has an active session
+                  </p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge className="bg-teal-500/20 text-teal-400">
+                      {STATUS_TO_TRACKER_STAGE[existingSession.status as keyof typeof STATUS_TO_TRACKER_STAGE]}
+                    </Badge>
+                    <span className="text-sm text-zinc-400">
+                      {existingSession.customerName} • {existingSession.flavor}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <Button
+                onClick={() => router.push(`/fire-session-dashboard?sessionId=${existingSession.id}`)}
+                className="bg-teal-600 hover:bg-teal-700"
+              >
+                <ArrowRight className="w-4 h-4 mr-2" />
+                View Session
+              </Button>
+            </div>
+          </Card>
+        )}
+
         {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Preorder Form - Main Content */}
           <div className="lg:col-span-2">
-            <PreorderEntry tableId={tableId} loungeId="default-lounge" />
+            {existingSession && existingSession.status !== 'NEW' && existingSession.status !== 'PAID_CONFIRMED' ? (
+              <Card className="p-6">
+                <div className="text-center py-8">
+                  <AlertCircle className="w-16 h-16 mx-auto mb-4 text-yellow-400" />
+                  <h3 className="text-xl font-semibold text-white mb-2">Session Already in Progress</h3>
+                  <p className="text-zinc-400 mb-4">
+                    This table already has an active session. Please complete or close the current session before creating a new one.
+                  </p>
+                  <Button
+                    onClick={() => router.push(`/fire-session-dashboard?sessionId=${existingSession.id}`)}
+                    className="bg-teal-600 hover:bg-teal-700"
+                  >
+                    Go to Session Dashboard
+                  </Button>
+                </div>
+              </Card>
+            ) : (
+              <PreorderEntry tableId={tableId} loungeId="default-lounge" />
+            )}
           </div>
 
           {/* Order Summary Sidebar */}
@@ -200,5 +262,9 @@ function PreOrderPageContent() {
 }
 
 export default function PreOrderPage() {
-  return <PreOrderPageContent />;
+  return (
+    <SessionProvider>
+      <PreOrderPageContent />
+    </SessionProvider>
+  );
 }

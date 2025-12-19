@@ -279,6 +279,8 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+              // For staff-facing demo from FSD, always use simulated mode (no Stripe redirect)
+              mode: 'simulated',
               loungeId: (isDemoSlug ? 'demo-lounge' : 'default-lounge'),
               operatorId: undefined,
               source: demoSource,
@@ -305,12 +307,8 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
             console.log('[CreateSessionModal] Demo mode message:', data.message);
           }
           
-          if (data.mode === 'stripe_test' && data.checkoutUrl) {
-            // Stripe test mode - redirect to Stripe checkout
-            console.log('[CreateSessionModal] 🎭 Stripe Test Mode: Redirecting to Stripe checkout');
-            window.location.href = data.checkoutUrl;
-            return;
-          } else if (data.mode === 'simulated' && data.simulatedSessionId) {
+          // For staff-facing demo, always treat as simulated: never redirect to Stripe
+          if (data.simulatedSessionId) {
             // Simulated mode - complete payment immediately
             console.log('[CreateSessionModal] 🎭 Simulated Mode: Completing payment');
             
@@ -337,6 +335,12 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
             } else {
               throw new Error('Failed to complete simulated payment');
             }
+          } else {
+            // Fallback: no simulatedSessionId returned
+            console.warn('[CreateSessionModal] Demo session response missing simulatedSessionId. Skipping payment flow.');
+            onClose();
+            window.dispatchEvent(new Event('refreshSessions'));
+            return;
           }
         } catch (error) {
           console.error('[CreateSessionModal] Demo session error:', error);

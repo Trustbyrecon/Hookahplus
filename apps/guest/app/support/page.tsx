@@ -11,17 +11,20 @@ import {
   Clock,
   Shield,
   CreditCard,
-  Zap
+  Zap,
+  Instagram
 } from 'lucide-react';
 
 export default function SupportPage() {
   const supportOptions = [
     {
-      icon: MessageCircle,
-      title: 'Live Chat',
-      description: 'Get instant help from our support team',
+      icon: Instagram,
+      title: 'Instagram DM',
+      description: 'Message us on Instagram for quick help',
       status: 'Available',
-      action: 'Start Chat'
+      action: 'Open Instagram',
+      link: 'https://instagram.com/m/hookahplusnet',
+      external: true
     },
     {
       icon: Phone,
@@ -59,6 +62,10 @@ export default function SupportPage() {
     {
       question: 'Can I extend my session?',
       answer: 'Yes, you can extend your session in 20-minute increments. Use the "Extend Session" option in the navigation.'
+    },
+    {
+      question: 'What are the session stages?',
+      answer: 'Your session goes through 5 stages: Payment (payment confirmed), Prep (being prepared), Ready (ready for delivery), Deliver (out for delivery), and Light (session active). You can track your session progress in real-time.'
     }
   ];
 
@@ -84,7 +91,15 @@ export default function SupportPage() {
                   <div className="w-2 h-2 bg-green-400 rounded-full" />
                   <span className="text-sm text-green-400">{option.status}</span>
                 </div>
-                <Button variant="outline" className="w-full">
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => {
+                    if (option.link) {
+                      window.open(option.link, option.external ? '_blank' : '_self');
+                    }
+                  }}
+                >
                   {option.action}
                 </Button>
               </Card>
@@ -127,14 +142,6 @@ export default function SupportPage() {
               >
                 <Zap className="w-4 h-4" />
                 <span>Start New Session</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                className="flex items-center space-x-2"
-                onClick={() => window.open('https://hookahplus-app-prod.vercel.app/fire-session-dashboard', '_blank')}
-              >
-                <Shield className="w-4 h-4" />
-                <span>Staff Panel</span>
               </Button>
               <Button 
                 variant="outline" 

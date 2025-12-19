@@ -17,6 +17,9 @@ import { sessionManager, SessionData } from '../lib/sessionManager';
 import FlavorMixSelector from '../components/customer/FlavorMixSelector';
 import SuccessModal from '../components/SuccessModal';
 import { HookahTracker } from '../components/HookahTracker';
+import CustomerIdentificationModal from '../components/CustomerIdentificationModal';
+import { useGuestSessionContext } from '../contexts/GuestSessionContext';
+import { STATUS_TO_TRACKER_STAGE } from '../../app/types/enhancedSession';
 
 // Flavor categories for the FlavorMixSelector
 const FLAVOR_CATEGORIES = [
@@ -114,6 +117,7 @@ import {
 
 export default function GuestPortal() {
   const { add, remove, items, subtotal } = useCart();
+  const { activeSession, sessions, setTableId, customerPhone, setCustomerPhone, refreshSessions } = useGuestSessionContext();
   const [tableData, setTableData] = useState<any>(null);
   const [sessionMetadata, setSessionMetadata] = useState<any>(null);
   const [currentSession, setCurrentSession] = useState<SessionData | null>(null);
@@ -121,12 +125,32 @@ export default function GuestPortal() {
   const [showEnhancedStaffPanel, setShowEnhancedStaffPanel] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showHookahTracker, setShowHookahTracker] = useState(false);
+  const [showCustomerModal, setShowCustomerModal] = useState(false);
+  const [customerName, setCustomerName] = useState<string>('');
   const [pricingModel, setPricingModel] = useState<'flat' | 'time-based'>('flat');
   const [sessionDuration, setSessionDuration] = useState(60); // Default 60 minutes
   
   // FlavorMixSelector state
   const [selectedFlavors, setSelectedFlavors] = useState<string[]>([]);
   const [flavorMixPrice, setFlavorMixPrice] = useState(0);
+  
+  // Load customer info from localStorage on mount
+  useEffect(() => {
+    const storedPhone = localStorage.getItem('hookahplus_customer_phone');
+    const storedName = localStorage.getItem('hookahplus_customer_name');
+    if (storedPhone) {
+      setCustomerPhone(storedPhone);
+    }
+    if (storedName) {
+      setCustomerName(storedName);
+    }
+    // Show modal if no phone on first visit (only once)
+    if (!storedPhone && !customerPhone) {
+      // Delay to avoid showing immediately on page load
+      const timer = setTimeout(() => setShowCustomerModal(true), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [customerPhone, setCustomerPhone]);
   
   const addToCart = (item: { id: number; name: string; price: number }) => {
     add({ id: String(item.id), name: item.name, price: Math.round(item.price * 100), qty: 1 });
@@ -170,7 +194,20 @@ export default function GuestPortal() {
 
   const handleTableDetected = (tableData: any) => {
     setTableData(tableData);
+    if (tableData?.tableId) {
+      setTableId(tableData.tableId);
+    }
     console.log('Table detected:', tableData);
+  };
+  
+  const handlePhoneSubmit = (phone: string, name?: string) => {
+    setCustomerPhone(phone);
+    if (name) {
+      setCustomerName(name);
+      localStorage.setItem('hookahplus_customer_name', name);
+    }
+    localStorage.setItem('hookahplus_customer_phone', phone);
+    refreshSessions();
   };
 
   const handleLoungeDetected = (loungeData: any) => {
@@ -245,15 +282,32 @@ export default function GuestPortal() {
         .map(item => item.name.replace(' Add-on', '').replace(' Flavor', '').trim())
         .filter(flavor => flavor.length > 0);
       
+      // Check for existing active session
+      if (activeSession) {
+        alert(`You already have an active session at ${activeSession.tableId}. Please complete or extend your current session first.`);
+        setIsStartingSession(false);
+        return;
+      }
+      
+      // Use real customer data or prompt for phone
+      const phone = customerPhone || localStorage.getItem('hookahplus_customer_phone');
+      const name = customerName || localStorage.getItem('hookahplus_customer_name') || 'Guest Customer';
+      
+      if (!phone) {
+        setShowCustomerModal(true);
+        setIsStartingSession(false);
+        return;
+      }
+      
       const sessionData = {
         tableId: tableData?.tableId || 'T-001',
         loungeId: 'guest-lounge',
-        guestId: `guest_${Date.now()}`, // Changed from customerId to guestId
+        guestId: `guest_${Date.now()}`,
         sessionType: 'standard',
         items: items,
         totalAmount: subtotal / 100, // Convert cents to dollars
-        customerName: 'Guest Customer',
-        customerPhone: '+1234567890',
+        customerName: name,
+        customerPhone: phone,
         flavorMix: flavorMix.length > 0 ? flavorMix : ['Custom Mix']
       };
 
@@ -604,18 +658,47 @@ export default function GuestPortal() {
           </div>
         </div>
 
-        {/* Current Session Status - Compact */}
-        {currentSession && (
+        {/* Active Session Status - Show NAN Tracker */}
+        {activeSession && (
           <div className="mb-6">
-            <Card className="p-4">
-              <div className="flex items-center justify-between">
+            <Card className="p-4 border-teal-500/30 bg-teal-500/10">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-3">
                   <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse" />
                   <span className="font-semibold">Active Session</span>
+                  <Badge className="bg-teal-500/20 text-teal-400">
+                    {STATUS_TO_TRACKER_STAGE[activeSession.status as keyof typeof STATUS_TO_TRACKER_STAGE]}
+                  </Badge>
                 </div>
                 <div className="text-sm text-zinc-400">
-                  {currentSession.timeRemaining} min • ${(currentSession.totalAmount / 100).toFixed(2)}
+                  Table {activeSession.tableId}
                 </div>
+              </div>
+              <div className="text-sm text-zinc-300 mb-2">
+                {activeSession.customerName} • {activeSession.flavor}
+              </div>
+              <div className="flex items-center justify-between text-xs text-zinc-400">
+                <span>Stage: {activeSession.stage || STATUS_TO_TRACKER_STAGE[activeSession.status as keyof typeof STATUS_TO_TRACKER_STAGE]}</span>
+                <button
+                  onClick={() => setShowHookahTracker(true)}
+                  className="text-teal-400 hover:text-teal-300"
+                >
+                  View Tracker →
+                </button>
+              </div>
+            </Card>
+          </div>
+        )}
+        
+        {/* Welcome Back Message for Returning Customers */}
+        {customerPhone && !activeSession && customerName && (
+          <div className="mb-6">
+            <Card className="p-4 bg-zinc-800/50">
+              <div className="flex items-center space-x-2">
+                <CheckCircle className="w-5 h-5 text-teal-400" />
+                <span className="text-sm text-zinc-300">
+                  Welcome back, {customerName}! Ready to start a new session?
+                </span>
               </div>
             </Card>
           </div>
@@ -814,6 +897,15 @@ export default function GuestPortal() {
           setShowSuccessModal(false);
           window.open('https://hookahplus-iursz2jf6-dwaynes-projects-1c5c280a.vercel.app/fire-session-dashboard', '_blank');
         }}
+      />
+      
+      {/* Customer Identification Modal */}
+      <CustomerIdentificationModal
+        isOpen={showCustomerModal}
+        onClose={() => setShowCustomerModal(false)}
+        onPhoneSubmit={handlePhoneSubmit}
+        existingPhone={customerPhone || undefined}
+        existingName={customerName || undefined}
       />
     </div>
   );

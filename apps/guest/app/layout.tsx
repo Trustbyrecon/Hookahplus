@@ -5,6 +5,7 @@ import GlobalNavigation from '../components/GlobalNavigation'
 import { CartProvider } from '../components/cart/CartProvider'
 import AnalyticsScript from '../components/AnalyticsScript'
 import ScrollManager from '../components/ScrollManager'
+import { GuestSessionProvider } from '../contexts/GuestSessionContext'
 
 export const metadata = {
   title: 'HookahPlus Guest Portal',
@@ -30,10 +31,12 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-zinc-950 text-white mobile-content-container">
         <ScrollManager />
-        <CartProvider>
-          <GlobalNavigation />
-          {children}
-        </CartProvider>
+        <GuestSessionProvider>
+          <CartProvider>
+            <GlobalNavigation />
+            {children}
+          </CartProvider>
+        </GuestSessionProvider>
       </body>
     </html>
   );

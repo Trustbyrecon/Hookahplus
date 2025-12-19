@@ -234,6 +234,29 @@ export default function OwnersPage() {
               its role in harmony.
             </p>
           </div>
+          <div className="mt-8">
+            <Card className="p-6 bg-zinc-900/60 border-zinc-700">
+              <p className="text-zinc-200 italic text-base md:text-lg">
+                &quot;Most people think loyalty programs thrive because of math — points, rewards,
+                discounts, perks. But look closer and loyalty&apos;s enduring power comes from
+                something deeper: familiarity, psychological comfort, identity and the shorthand
+                that says, &apos;I know how this works. I&apos;ve been here before and they
+                remembered me.&apos;&quot;
+              </p>
+              <p className="text-xs text-zinc-500 mt-4">
+                From{' '}
+                <a
+                  href="https://martech.org/the-customer-funnel-is-gone-and-trust-is-the-new-moat/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline decoration-dotted hover:text-teal-400"
+                >
+                  MarTech: &quot;The customer funnel is gone and trust is the new moat&quot;
+                </a>{' '}
+                — the same trust-first shift Hookah+ is operationalizing for independent lounges.
+              </p>
+            </Card>
+          </div>
         </div>
       </section>
 

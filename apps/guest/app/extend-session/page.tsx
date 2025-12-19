@@ -1,15 +1,26 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
-import { Clock, CreditCard, AlertCircle, CheckCircle } from 'lucide-react';
+import { Clock, CreditCard, AlertCircle, CheckCircle, Flame } from 'lucide-react';
+import { useGuestSessionContext } from '../../contexts/GuestSessionContext';
+import { STATUS_TO_TRACKER_STAGE } from '../../../app/types/enhancedSession';
+import Badge from '../../components/Badge';
 
 export default function ExtendSessionPage() {
+  const { activeSession, refreshSessions, tableId, customerPhone, loading } = useGuestSessionContext();
   const [selectedExtension, setSelectedExtension] = useState('20min');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  
+  // Load active session on mount
+  useEffect(() => {
+    if (!activeSession && (tableId || customerPhone) && !loading) {
+      refreshSessions();
+    }
+  }, [activeSession, tableId, customerPhone, loading, refreshSessions]);
 
   const extensionOptions = [
     {
@@ -43,26 +54,105 @@ export default function ExtendSessionPage() {
   ];
 
   const handleExtendSession = async () => {
+    if (!activeSession) {
+      setError('No active session found. Please start a session first.');
+      return;
+    }
+    
     setIsProcessing(true);
     setError(null);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const selectedOption = extensionOptions.find(opt => opt.id === selectedExtension);
+      if (!selectedOption) {
+        throw new Error('Invalid extension option');
+      }
       
-      // Simulate success
-      setSuccess(true);
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 2000);
+      // Extract minutes from duration string (e.g., "20 Minutes" -> 20)
+      const minutes = parseInt(selectedOption.duration.split(' ')[0]);
+      
+      // Call extend API
+      const response = await fetch(`/api/sessions/${activeSession.id}/extend`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          extensionMinutes: minutes,
+          pricingModel: activeSession.sessionType === 'TIME_BASED' ? 'time-based' : 'flat',
+          paymentConfirmed: false, // Will create Stripe checkout if needed
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || errorData.details || 'Failed to extend session');
+      }
+      
+      const data = await response.json();
+      
+      // If Stripe checkout URL is returned, redirect to payment
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+        return;
+      }
+      
+      // If extension was successful without payment
+      if (data.success) {
+        setSuccess(true);
+        await refreshSessions();
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 2000);
+      } else {
+        throw new Error(data.error || 'Failed to extend session');
+      }
     } catch (err) {
-      setError('Failed to extend session. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to extend session. Please try again.');
     } finally {
       setIsProcessing(false);
     }
   };
 
   const selectedOption = extensionOptions.find(opt => opt.id === selectedExtension);
+  
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
+        <div className="max-w-2xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500 mx-auto mb-4"></div>
+            <p className="text-zinc-400">Loading session data...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  // Show error if no active session
+  if (!activeSession) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
+        <div className="max-w-2xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+          <Card className="p-8">
+            <div className="text-center">
+              <AlertCircle className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-white mb-2">No Active Session</h2>
+              <p className="text-zinc-400 mb-6">
+                You don't have an active session to extend. Please start a session first.
+              </p>
+              <Button
+                variant="primary"
+                onClick={() => window.location.href = '/'}
+                className="w-full"
+              >
+                Start New Session
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
@@ -72,6 +162,26 @@ export default function ExtendSessionPage() {
           <h1 className="text-3xl font-bold mb-4">Extend Your Session</h1>
           <p className="text-zinc-400">Add more time to your current hookah session</p>
         </div>
+        
+        {/* Active Session Info */}
+        {activeSession && (
+          <Card className="mb-6 p-6 border-teal-500/30 bg-teal-500/10">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center space-x-3">
+                <Flame className="w-5 h-5 text-teal-400" />
+                <span className="font-semibold">Current Session</span>
+                <Badge className="bg-teal-500/20 text-teal-400">
+                  {STATUS_TO_TRACKER_STAGE[activeSession.status as keyof typeof STATUS_TO_TRACKER_STAGE]}
+                </Badge>
+              </div>
+            </div>
+            <div className="text-sm text-zinc-300 space-y-1">
+              <div>Table: {activeSession.tableId}</div>
+              <div>Flavor: {activeSession.flavor}</div>
+              <div>Duration: {Math.round((activeSession.sessionDuration || 0) / 60)} minutes</div>
+            </div>
+          </Card>
+        )}
 
         <Card className="p-8">
           {success ? (
@@ -150,7 +260,7 @@ export default function ExtendSessionPage() {
                   <div className="space-y-2 text-sm text-zinc-400">
                     <div className="flex justify-between">
                       <span>Current Table:</span>
-                      <span className="text-white">T-001</span>
+                      <span className="text-white">{activeSession?.tableId || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Extension:</span>

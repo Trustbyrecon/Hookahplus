@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   QrCode, 
   Download, 
@@ -14,9 +14,13 @@ import {
   Search,
   Filter,
   Eye,
-  EyeOff
+  EyeOff,
+  BarChart3,
+  TrendingUp
 } from 'lucide-react';
 import GlobalNavigation from '../../components/GlobalNavigation';
+import { SessionProvider, useSessionContext } from '../../contexts/SessionContext';
+import { Badge } from '../../components';
 
 interface QRCodeData {
   id: string;
@@ -62,6 +66,15 @@ interface CampaignConfig {
 }
 
 export default function QRGeneratorApp() {
+  return (
+    <SessionProvider>
+      <QRGeneratorAppContent />
+    </SessionProvider>
+  );
+}
+
+function QRGeneratorAppContent() {
+  const { sessions } = useSessionContext();
   const [loungeId, setLoungeId] = useState('');
   const [tableId, setTableId] = useState('');
   const [campaignRef, setCampaignRef] = useState('');
@@ -79,6 +92,35 @@ export default function QRGeneratorApp() {
   const [isLoadingLounges, setIsLoadingLounges] = useState(true);
   const [bulkMode, setBulkMode] = useState(false);
   const [selectedTablesForBulk, setSelectedTablesForBulk] = useState<string[]>([]);
+  
+  // Calculate QR code performance from sessions
+  const qrPerformance = useMemo(() => {
+    const performanceMap = new Map<string, { scans: number; sessions: number; conversionRate: number }>();
+    
+    qrHistory.forEach(qr => {
+      // Find sessions created from this QR (by tableId or campaignRef)
+      const relatedSessions = sessions.filter(s => {
+        if (qr.tableId && s.tableId === qr.tableId) return true;
+        if (qr.campaignRef && s.source === qr.campaignRef) return true;
+        return false;
+      });
+      
+      performanceMap.set(qr.id, {
+        scans: qr.usageCount || 0,
+        sessions: relatedSessions.length,
+        conversionRate: (qr.usageCount || 0) > 0 
+          ? (relatedSessions.length / qr.usageCount) * 100 
+          : 0
+      });
+    });
+    
+    return performanceMap;
+  }, [qrHistory, sessions]);
+  
+  // Check if table has active session
+  const getTableSessionStatus = (tableId: string) => {
+    return sessions.find(s => s.tableId === tableId);
+  };
 
   // Load QR history and lounges on component mount
   useEffect(() => {
@@ -381,38 +423,72 @@ export default function QRGeneratorApp() {
                   <p>No QR codes generated yet</p>
                 </div>
               ) : (
-                qrHistory.map((qr) => (
-                  <div key={qr.id} className="bg-zinc-900/50 border border-zinc-600 rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <h4 className="font-medium text-white">
-                          {qr.loungeId} {qr.tableId && `- ${qr.tableId}`}
-                        </h4>
-                        <p className="text-sm text-zinc-400">
-                          {new Date(qr.createdAt).toLocaleString()}
-                        </p>
-                        <p className="text-xs text-zinc-500 truncate">
-                          {qr.url}
-                        </p>
+                qrHistory.map((qr) => {
+                  const performance = qrPerformance.get(qr.id);
+                  const tableSession = qr.tableId ? getTableSessionStatus(qr.tableId) : null;
+                  
+                  return (
+                    <div key={qr.id} className="bg-zinc-900/50 border border-zinc-600 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-white">
+                            {qr.loungeId} {qr.tableId && `- ${qr.tableId}`}
+                          </h4>
+                          <p className="text-sm text-zinc-400">
+                            {new Date(qr.createdAt).toLocaleString()}
+                          </p>
+                          <p className="text-xs text-zinc-500 truncate">
+                            {qr.url}
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            qr.status === 'active' 
+                              ? 'bg-green-500/20 text-green-400' 
+                              : 'bg-red-500/20 text-red-400'
+                          }`}>
+                            {qr.status}
+                          </span>
+                          <button
+                            onClick={() => downloadQR(qr)}
+                            className="p-1 hover:bg-zinc-700 rounded transition-colors"
+                          >
+                            <Download className="w-4 h-4 text-zinc-400" />
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          qr.status === 'active' 
-                            ? 'bg-green-500/20 text-green-400' 
-                            : 'bg-red-500/20 text-red-400'
-                        }`}>
-                          {qr.status}
-                        </span>
-                        <button
-                          onClick={() => downloadQR(qr)}
-                          className="p-1 hover:bg-zinc-700 rounded transition-colors"
-                        >
-                          <Download className="w-4 h-4 text-zinc-400" />
-                        </button>
-                      </div>
+                      
+                      {/* QR Performance Metrics */}
+                      {performance && (
+                        <div className="mt-3 pt-3 border-t border-zinc-700 grid grid-cols-3 gap-2 text-xs">
+                          <div>
+                            <div className="text-zinc-400">Scans</div>
+                            <div className="text-white font-semibold">{performance.scans}</div>
+                          </div>
+                          <div>
+                            <div className="text-zinc-400">Sessions</div>
+                            <div className="text-white font-semibold">{performance.sessions}</div>
+                          </div>
+                          <div>
+                            <div className="text-zinc-400">Conversion</div>
+                            <div className="text-teal-400 font-semibold">
+                              {performance.conversionRate.toFixed(1)}%
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Table Session Status */}
+                      {tableSession && (
+                        <div className="mt-2 pt-2 border-t border-zinc-700">
+                          <Badge className="bg-orange-500/20 text-orange-400 text-xs">
+                            Active Session: {tableSession.customerName}
+                          </Badge>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>
