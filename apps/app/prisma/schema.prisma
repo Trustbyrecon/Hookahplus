@@ -626,6 +626,61 @@ model PosTicket {
   @@map("pos_tickets")
 }
 
+model LoyaltyAccount {
+  id               String              @id @default(cuid())
+  customerId       String?             @map("customer_id")
+  customerPhone    String?             @map("customer_phone")
+  balanceCents     Int                 @default(0) @map("balance_cents")
+  totalEarnedCents Int                 @default(0) @map("total_earned_cents")
+  totalRedeemedCents Int               @default(0) @map("total_redeemed_cents")
+  isActive         Boolean             @default(true) @map("is_active")
+  createdAt        DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+  transactions     LoyaltyTransaction[]
+  wallet           LoyaltyWallet?
+
+  @@index([customerId], map: "idx_loyalty_account_customer_id")
+  @@index([customerPhone], map: "idx_loyalty_account_customer_phone")
+  @@index([isActive, updatedAt], map: "idx_loyalty_account_is_active_updated_at")
+  @@map("loyalty_accounts")
+}
+
+model LoyaltyTransaction {
+  id                String         @id @default(cuid())
+  accountId         String         @map("account_id")
+  type              String         @map("type")
+  amountCents       Int            @map("amount_cents")
+  balanceBeforeCents Int           @map("balance_before_cents")
+  balanceAfterCents Int           @map("balance_after_cents")
+  source            String         @map("source")
+  sessionId         String?        @map("session_id")
+  posTicketId       String?        @map("pos_ticket_id")
+  stripeChargeId    String?        @map("stripe_charge_id")
+  metadata          String?        @map("metadata")
+  version           Int            @default(1) @map("version")
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  account           LoyaltyAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, createdAt], map: "idx_loyalty_transaction_account_created")
+  @@index([sessionId], map: "idx_loyalty_transaction_session_id")
+  @@index([posTicketId], map: "idx_loyalty_transaction_pos_ticket_id")
+  @@index([type, createdAt], map: "idx_loyalty_transaction_type_created")
+  @@index([source, createdAt], map: "idx_loyalty_transaction_source_created")
+  @@map("loyalty_transactions")
+}
+
+model LoyaltyWallet {
+  id                String         @id @default(cuid())
+  accountId         String         @unique @map("account_id")
+  balanceCents      Int            @default(0) @map("balance_cents")
+  lastTransactionId String?        @map("last_transaction_id")
+  updatedAt         DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  account           LoyaltyAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId], map: "idx_loyalty_wallet_account_id")
+  @@map("loyalty_wallets")
+}
+
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model ghostlog {
   id         BigInt    @id @default(autoincrement())
