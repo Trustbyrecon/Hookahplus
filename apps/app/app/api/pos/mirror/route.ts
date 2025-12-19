@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient, SessionSource, SessionState } from '@prisma/client';
+import crypto from 'crypto';
 
 const prisma = new PrismaClient();
 
@@ -89,16 +90,25 @@ export async function POST(request: NextRequest) {
         });
 
         // Log the sync action
-        await prisma.sessionTransition.create({
-          data: {
-            sessionId,
-            fromState: 'SYNC',
-            toState: 'SYNCED',
-            transition: 'pos_sync',
-            userId: 'pos_system',
-            note: `Synced with POS: ${JSON.stringify(posData)}`
-          }
-        });
+        try {
+          await prisma.sessionEvent.create({
+            data: {
+              id: `pos_sync_${sessionId}_${Date.now()}`,
+              sessionId,
+              type: 'POS_SYNC',
+              payloadSeal: crypto.createHash('sha256').update(JSON.stringify({ posData, action: 'sync' })).digest('hex'),
+              data: JSON.stringify({
+                fromState: 'SYNC',
+                toState: 'SYNCED',
+                transition: 'pos_sync',
+                userId: 'pos_system',
+                note: `Synced with POS: ${JSON.stringify(posData)}`
+              })
+            }
+          });
+        } catch (eventError) {
+          console.warn('[POS Mirror] Failed to log to SessionEvent:', eventError);
+        }
 
         return NextResponse.json({ success: true, data: updatedSession });
 

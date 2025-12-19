@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import crypto from 'crypto';
 
 const prisma = new PrismaClient();
 
@@ -39,16 +40,25 @@ export async function POST(request: NextRequest) {
         };
 
         // Log print action
-        await prisma.sessionTransition.create({
-          data: {
-            sessionId,
-            fromState: session.state,
-            toState: session.state,
-            transition: 'receipt_printed',
-            userId: 'print_system',
-            note: `Receipt printed for table ${session.tableId}`
-          }
-        });
+        try {
+          await prisma.sessionEvent.create({
+            data: {
+              id: `print_${sessionId}_${Date.now()}`,
+              sessionId,
+              type: 'RECEIPT_PRINTED',
+              payloadSeal: crypto.createHash('sha256').update(JSON.stringify({ sessionId, tableId: session.tableId })).digest('hex'),
+              data: JSON.stringify({
+                fromState: session.state,
+                toState: session.state,
+                transition: 'receipt_printed',
+                userId: 'print_system',
+                note: `Receipt printed for table ${session.tableId}`
+              })
+            }
+          });
+        } catch (eventError) {
+          console.warn('[Print API] Failed to log to SessionEvent:', eventError);
+        }
 
         return NextResponse.json({ 
           success: true, 

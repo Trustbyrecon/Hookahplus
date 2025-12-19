@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import crypto from 'crypto';
 
 const prisma = new PrismaClient();
 
@@ -153,16 +154,25 @@ export class POSModeService {
     });
 
     // Log session creation
-    await prisma.sessionTransition.create({
-      data: {
-        sessionId: session.id,
-        fromState: 'NONE',
-        toState: 'NEW',
-        transition: 'session_created_shadow',
-        userId: 'hookahplus_system',
-        note: 'Session created in shadow mode'
-      }
-    });
+    try {
+      await prisma.sessionEvent.create({
+        data: {
+          id: `shadow_${session.id}_${Date.now()}`,
+          sessionId: session.id,
+          type: 'SESSION_CREATED_SHADOW',
+          payloadSeal: crypto.createHash('sha256').update(JSON.stringify({ sessionId: session.id, mode: 'shadow' })).digest('hex'),
+          data: JSON.stringify({
+            fromState: 'NONE',
+            toState: 'NEW',
+            transition: 'session_created_shadow',
+            userId: 'hookahplus_system',
+            note: 'Session created in shadow mode'
+          })
+        }
+      });
+    } catch (eventError) {
+      console.warn('[POSModeService] Failed to log to SessionEvent:', eventError);
+    }
 
     return {
       session,
@@ -192,16 +202,25 @@ export class POSModeService {
         }
       });
 
-      await prisma.sessionTransition.create({
-        data: {
-          sessionId: session.id,
-          fromState: existingSession.state,
-          toState: session.state,
-          transition: 'session_updated_mirror',
-          userId: 'pos_sync',
-          note: 'Session updated via POS mirror'
-        }
-      });
+      try {
+        await prisma.sessionEvent.create({
+          data: {
+            id: `mirror_update_${session.id}_${Date.now()}`,
+            sessionId: session.id,
+            type: 'SESSION_UPDATED_MIRROR',
+            payloadSeal: crypto.createHash('sha256').update(JSON.stringify({ sessionId: session.id, fromState: existingSession.state, toState: session.state })).digest('hex'),
+            data: JSON.stringify({
+              fromState: existingSession.state,
+              toState: session.state,
+              transition: 'session_updated_mirror',
+              userId: 'pos_sync',
+              note: 'Session updated via POS mirror'
+            })
+          }
+        });
+      } catch (eventError) {
+        console.warn('[POSModeService] Failed to log to SessionEvent:', eventError);
+      }
 
       return {
         session,
@@ -223,16 +242,25 @@ export class POSModeService {
       // Attempt to sync to POS
       const syncResult = await this.syncToPOS(session);
       
-      await prisma.sessionTransition.create({
-        data: {
-          sessionId: session.id,
-          fromState: 'NONE',
-          toState: 'NEW',
-          transition: 'session_created_mirror',
-          userId: 'hookahplus_system',
-          note: `Session created in mirror mode, POS sync: ${syncResult.success ? 'success' : 'failed'}`
-        }
-      });
+      try {
+        await prisma.sessionEvent.create({
+          data: {
+            id: `mirror_create_${session.id}_${Date.now()}`,
+            sessionId: session.id,
+            type: 'SESSION_CREATED_MIRROR',
+            payloadSeal: crypto.createHash('sha256').update(JSON.stringify({ sessionId: session.id, syncResult })).digest('hex'),
+            data: JSON.stringify({
+              fromState: 'NONE',
+              toState: 'NEW',
+              transition: 'session_created_mirror',
+              userId: 'hookahplus_system',
+              note: `Session created in mirror mode, POS sync: ${syncResult.success ? 'success' : 'failed'}`
+            })
+          }
+        });
+      } catch (eventError) {
+        console.warn('[POSModeService] Failed to log to SessionEvent:', eventError);
+      }
 
       return {
         session,
@@ -262,16 +290,25 @@ export class POSModeService {
     // Generate POS ticket
     const ticket = await this.generatePOSTicket(session);
 
-    await prisma.sessionTransition.create({
-      data: {
-        sessionId: session.id,
-        fromState: 'NONE',
-        toState: 'NEW',
-        transition: 'session_created_ticket',
-        userId: 'hookahplus_system',
-        note: `Session created in ticket mode, ticket: ${ticket.id}`
-      }
-    });
+    try {
+      await prisma.sessionEvent.create({
+        data: {
+          id: `ticket_${session.id}_${Date.now()}`,
+          sessionId: session.id,
+          type: 'SESSION_CREATED_TICKET',
+          payloadSeal: crypto.createHash('sha256').update(JSON.stringify({ sessionId: session.id, ticketId: ticket.id })).digest('hex'),
+          data: JSON.stringify({
+            fromState: 'NONE',
+            toState: 'NEW',
+            transition: 'session_created_ticket',
+            userId: 'hookahplus_system',
+            note: `Session created in ticket mode, ticket: ${ticket.id}`
+          })
+        }
+      });
+    } catch (eventError) {
+      console.warn('[POSModeService] Failed to log to SessionEvent:', eventError);
+    }
 
     return {
       session,
