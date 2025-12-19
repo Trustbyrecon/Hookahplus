@@ -355,6 +355,262 @@ export class TableAnalyticsService {
   }
 }
 
+export interface HistoricalTrend {
+  date: string; // ISO date string
+  revenue: number;
+  sessions: number;
+  utilization: number;
+  averageSessionValue: number;
+}
+
+export interface PeakHourAnalysis {
+  hour: number;
+  hourLabel: string; // "8:00 PM"
+  sessionCount: number;
+  revenue: number;
+  utilization: number;
+}
+
+export interface DayOfWeekTrend {
+  day: string; // "Monday", "Tuesday", etc.
+  dayIndex: number; // 0-6
+  averageRevenue: number;
+  averageSessions: number;
+  averageUtilization: number;
+}
+
+export class HistoricalTrendsService {
+  /**
+   * Calculate week-over-week trends
+   */
+  static calculateWeekOverWeek(
+    currentWeekSessions: Array<{ createdAt: string | Date; priceCents?: number; durationSecs?: number }>,
+    previousWeekSessions: Array<{ createdAt: string | Date; priceCents?: number; durationSecs?: number }>,
+    totalHoursAvailable: number
+  ): {
+    revenue: { current: number; previous: number; change: number; changePercent: number };
+    sessions: { current: number; previous: number; change: number; changePercent: number };
+    utilization: { current: number; previous: number; change: number; changePercent: number };
+  } {
+    // Current week metrics
+    const currentRevenue = currentWeekSessions.reduce((sum, s) => sum + ((s.priceCents || 0) / 100), 0);
+    const currentSessions = currentWeekSessions.length;
+    const currentHoursOccupied = currentWeekSessions.reduce((sum, s) => {
+      const duration = s.durationSecs ? s.durationSecs / 3600 : 1; // Default 1 hour
+      return sum + duration;
+    }, 0);
+    const currentUtilization = totalHoursAvailable > 0 ? (currentHoursOccupied / totalHoursAvailable) * 100 : 0;
+
+    // Previous week metrics
+    const previousRevenue = previousWeekSessions.reduce((sum, s) => sum + ((s.priceCents || 0) / 100), 0);
+    const previousSessions = previousWeekSessions.length;
+    const previousHoursOccupied = previousWeekSessions.reduce((sum, s) => {
+      const duration = s.durationSecs ? s.durationSecs / 3600 : 1;
+      return sum + duration;
+    }, 0);
+    const previousUtilization = totalHoursAvailable > 0 ? (previousHoursOccupied / totalHoursAvailable) * 100 : 0;
+
+    // Calculate changes
+    const revenueChange = currentRevenue - previousRevenue;
+    const revenueChangePercent = previousRevenue > 0 ? (revenueChange / previousRevenue) * 100 : 0;
+    
+    const sessionsChange = currentSessions - previousSessions;
+    const sessionsChangePercent = previousSessions > 0 ? (sessionsChange / previousSessions) * 100 : 0;
+    
+    const utilizationChange = currentUtilization - previousUtilization;
+    const utilizationChangePercent = previousUtilization > 0 ? (utilizationChange / previousUtilization) * 100 : 0;
+
+    return {
+      revenue: {
+        current: Math.round(currentRevenue * 100) / 100,
+        previous: Math.round(previousRevenue * 100) / 100,
+        change: Math.round(revenueChange * 100) / 100,
+        changePercent: Math.round(revenueChangePercent * 10) / 10
+      },
+      sessions: {
+        current: currentSessions,
+        previous: previousSessions,
+        change: sessionsChange,
+        changePercent: Math.round(sessionsChangePercent * 10) / 10
+      },
+      utilization: {
+        current: Math.round(currentUtilization * 10) / 10,
+        previous: Math.round(previousUtilization * 10) / 10,
+        change: Math.round(utilizationChange * 10) / 10,
+        changePercent: Math.round(utilizationChangePercent * 10) / 10
+      }
+    };
+  }
+
+  /**
+   * Identify peak hours
+   */
+  static identifyPeakHours(
+    sessions: Array<{ startedAt?: string | Date; priceCents?: number; durationSecs?: number }>,
+    totalTables: number
+  ): PeakHourAnalysis[] {
+    const hourStats: Record<number, { sessions: number; revenue: number; hoursOccupied: number }> = {};
+
+    // Initialize all hours
+    for (let hour = 0; hour < 24; hour++) {
+      hourStats[hour] = { sessions: 0, revenue: 0, hoursOccupied: 0 };
+    }
+
+    // Aggregate by hour
+    sessions.forEach(session => {
+      if (!session.startedAt) return;
+      
+      const start = new Date(session.startedAt);
+      const hour = start.getHours();
+      
+      hourStats[hour].sessions += 1;
+      hourStats[hour].revenue += (session.priceCents || 0) / 100;
+      
+      const duration = session.durationSecs ? session.durationSecs / 3600 : 1;
+      hourStats[hour].hoursOccupied += duration;
+    });
+
+    // Calculate utilization per hour (assuming 1 hour window)
+    const results: PeakHourAnalysis[] = Object.entries(hourStats)
+      .map(([hourStr, stats]) => {
+        const hour = parseInt(hourStr);
+        const utilization = totalTables > 0 ? (stats.hoursOccupied / totalTables) * 100 : 0;
+        
+        return {
+          hour,
+          hourLabel: this.formatHour(hour),
+          sessionCount: stats.sessions,
+          revenue: Math.round(stats.revenue * 100) / 100,
+          utilization: Math.round(utilization * 10) / 10
+        };
+      })
+      .sort((a, b) => b.sessionCount - a.sessionCount);
+
+    return results;
+  }
+
+  /**
+   * Calculate day-of-week trends
+   */
+  static calculateDayOfWeekTrends(
+    sessions: Array<{ createdAt: string | Date; priceCents?: number; durationSecs?: number }>,
+    totalHoursAvailablePerDay: number
+  ): DayOfWeekTrend[] {
+    const dayStats: Record<number, { revenue: number[]; sessions: number[]; hoursOccupied: number[] }> = {};
+
+    // Initialize all days
+    for (let day = 0; day < 7; day++) {
+      dayStats[day] = { revenue: [], sessions: [], hoursOccupied: [] };
+    }
+
+    // Aggregate by day of week
+    sessions.forEach(session => {
+      if (!session.createdAt) return;
+      
+      const date = new Date(session.createdAt);
+      const day = date.getDay(); // 0 = Sunday, 6 = Saturday
+      
+      dayStats[day].revenue.push((session.priceCents || 0) / 100);
+      dayStats[day].sessions.push(1);
+      
+      const duration = session.durationSecs ? session.durationSecs / 3600 : 1;
+      dayStats[day].hoursOccupied.push(duration);
+    });
+
+    // Calculate averages
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    
+    return Object.entries(dayStats).map(([dayStr, stats]) => {
+      const dayIndex = parseInt(dayStr);
+      const dayCount = stats.revenue.length;
+      
+      const averageRevenue = dayCount > 0 
+        ? stats.revenue.reduce((sum, r) => sum + r, 0) / dayCount 
+        : 0;
+      const averageSessions = dayCount > 0 
+        ? stats.sessions.reduce((sum, s) => sum + s, 0) / dayCount 
+        : 0;
+      const totalHoursOccupied = stats.hoursOccupied.reduce((sum, h) => sum + h, 0);
+      const averageUtilization = totalHoursAvailablePerDay > 0 && dayCount > 0
+        ? (totalHoursOccupied / (totalHoursAvailablePerDay * dayCount)) * 100
+        : 0;
+
+      return {
+        day: dayNames[dayIndex],
+        dayIndex,
+        averageRevenue: Math.round(averageRevenue * 100) / 100,
+        averageSessions: Math.round(averageSessions * 10) / 10,
+        averageUtilization: Math.round(averageUtilization * 10) / 10
+      };
+    });
+  }
+
+  /**
+   * Calculate daily trends for a date range
+   */
+  static calculateDailyTrends(
+    sessions: Array<{ createdAt: string | Date; priceCents?: number; durationSecs?: number }>,
+    startDate: Date,
+    endDate: Date,
+    totalHoursAvailablePerDay: number
+  ): HistoricalTrend[] {
+    const dailyStats: Record<string, { revenue: number; sessions: number; hoursOccupied: number }> = {};
+
+    // Initialize all days in range
+    const currentDate = new Date(startDate);
+    while (currentDate <= endDate) {
+      const dateKey = currentDate.toISOString().split('T')[0];
+      dailyStats[dateKey] = { revenue: 0, sessions: 0, hoursOccupied: 0 };
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    // Aggregate by date
+    sessions.forEach(session => {
+      if (!session.createdAt) return;
+      
+      const date = new Date(session.createdAt);
+      const dateKey = date.toISOString().split('T')[0];
+      
+      if (dailyStats[dateKey]) {
+        dailyStats[dateKey].revenue += (session.priceCents || 0) / 100;
+        dailyStats[dateKey].sessions += 1;
+        
+        const duration = session.durationSecs ? session.durationSecs / 3600 : 1;
+        dailyStats[dateKey].hoursOccupied += duration;
+      }
+    });
+
+    // Convert to array and calculate utilization
+    return Object.entries(dailyStats)
+      .map(([dateKey, stats]) => {
+        const utilization = totalHoursAvailablePerDay > 0
+          ? (stats.hoursOccupied / totalHoursAvailablePerDay) * 100
+          : 0;
+        const averageSessionValue = stats.sessions > 0
+          ? stats.revenue / stats.sessions
+          : 0;
+
+        return {
+          date: dateKey,
+          revenue: Math.round(stats.revenue * 100) / 100,
+          sessions: stats.sessions,
+          utilization: Math.round(utilization * 10) / 10,
+          averageSessionValue: Math.round(averageSessionValue * 100) / 100
+        };
+      })
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  /**
+   * Format hour for display
+   */
+  private static formatHour(hour: number): string {
+    const period = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    return `${displayHour}:00 ${period}`;
+  }
+}
+
 
 
 

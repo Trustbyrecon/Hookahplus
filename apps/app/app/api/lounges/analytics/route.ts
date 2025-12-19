@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { TableAnalyticsService } from '../../../../lib/services/TableAnalyticsService';
+import { HistoricalTrendsService } from '../../../../lib/services/TableAnalyticsService';
 
 const prisma = new PrismaClient();
 
@@ -124,6 +125,63 @@ export async function GET(request: NextRequest) {
       }))
     );
 
+    // Calculate historical trends
+    const operatingHoursPerDay = 12;
+    const totalHoursAvailablePerDay = tables.length * operatingHoursPerDay;
+    
+    // Peak hours analysis
+    const peakHours = HistoricalTrendsService.identifyPeakHours(sessions, tables.length);
+    
+    // Day of week trends
+    const dayOfWeekTrends = HistoricalTrendsService.calculateDayOfWeekTrends(
+      sessions,
+      totalHoursAvailablePerDay
+    );
+    
+    // Daily trends
+    const dailyTrends = HistoricalTrendsService.calculateDailyTrends(
+      sessions,
+      start,
+      end,
+      totalHoursAvailablePerDay
+    );
+
+    // Week-over-week comparison (if we have enough data)
+    let weekOverWeek = null;
+    if (timeRange === '7d' || timeRange === '30d') {
+      const previousStart = new Date(start);
+      previousStart.setDate(previousStart.getDate() - (timeRange === '7d' ? 7 : 30));
+      const previousEnd = new Date(start);
+
+      const previousSessions = await prisma.session.findMany({
+        where: {
+          createdAt: {
+            gte: previousStart,
+            lte: previousEnd
+          }
+        },
+        select: {
+          priceCents: true,
+          durationSecs: true,
+          createdAt: true
+        }
+      });
+
+      weekOverWeek = HistoricalTrendsService.calculateWeekOverWeek(
+        sessions.map(s => ({
+          createdAt: s.createdAt,
+          priceCents: s.priceCents,
+          durationSecs: s.durationSecs
+        })),
+        previousSessions.map(s => ({
+          createdAt: s.createdAt,
+          priceCents: s.priceCents,
+          durationSecs: s.durationSecs
+        })),
+        tables.length * operatingHoursPerDay * Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+      );
+    }
+
     return NextResponse.json({
       success: true,
       timeRange,
@@ -145,6 +203,12 @@ export async function GET(request: NextRequest) {
         averageSessionValue: tableMetrics.length > 0
           ? tableMetrics.reduce((sum, m) => sum + m.averageSessionValue, 0) / tableMetrics.length
           : 0
+      },
+      trends: {
+        peakHours: peakHours.slice(0, 10), // Top 10 peak hours
+        dayOfWeek: dayOfWeekTrends,
+        daily: dailyTrends,
+        weekOverWeek
       }
     });
 
