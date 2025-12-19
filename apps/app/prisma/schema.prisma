@@ -533,6 +533,47 @@ model SessionEvent {
   @@index([sessionId])
 }
 
+model SettlementReconciliation {
+  id             String    @id @default(cuid())
+  stripeChargeId String?   @map("stripe_charge_id")
+  posTicketId    String?   @map("pos_ticket_id")
+  sessionId      String?   @map("session_id")
+  amount         Int?      @map("amount")
+  currency       String?   @map("currency")
+  status         String    @default("pending") @map("status")
+  matchedAt      DateTime? @map("matched_at") @db.Timestamptz(6)
+  reconciledAt   DateTime? @map("reconciled_at") @db.Timestamptz(6)
+  repairRunId    String?   @map("repair_run_id")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([status], map: "idx_settlement_reconciliation_status")
+  @@index([stripeChargeId], map: "idx_settlement_reconciliation_stripe_charge_id")
+  @@index([posTicketId], map: "idx_settlement_reconciliation_pos_ticket_id")
+  @@index([sessionId], map: "idx_settlement_reconciliation_session_id")
+  @@map("settlement_reconciliation")
+}
+
+model PosTicket {
+  id             String   @id @default(cuid())
+  ticketId       String   @unique @map("ticket_id")
+  stripeChargeId String?  @map("stripe_charge_id")
+  sessionId      String?  @map("session_id")
+  amountCents    Int?     @map("amount_cents")
+  currency       String?  @map("currency")
+  status         String   @default("pending") @map("status")
+  posSystem      String?  @map("pos_system")
+  items          String?  @map("items")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([ticketId], map: "idx_pos_ticket_ticket_id")
+  @@index([stripeChargeId], map: "idx_pos_ticket_stripe_charge_id")
+  @@index([sessionId], map: "idx_pos_ticket_session_id")
+  @@index([status], map: "idx_pos_ticket_status")
+  @@map("pos_tickets")
+}
+
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model ghostlog {
   id         BigInt    @id @default(autoincrement())
