@@ -42,6 +42,8 @@ interface Table {
   seatingType: string;
 }
 
+type ViewMode = 'layout' | 'live' | 'analytics';
+
 export default function LoungeLayoutPage() {
   return (
     <SessionProvider>
@@ -58,7 +60,7 @@ function LoungeLayoutPageContent() {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const [viewMode, setViewMode] = useState<'layout' | 'live' | 'analytics'>('live');
+  const [viewMode, setViewMode] = useState<ViewMode>('live');
   
   // Analytics state
   const [analyticsData, setAnalyticsData] = useState<any>(null);
