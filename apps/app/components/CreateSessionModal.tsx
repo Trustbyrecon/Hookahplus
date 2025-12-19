@@ -205,31 +205,70 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
     if (!formData.tableId.trim()) {
       newErrors.tableId = 'Table ID is required';
     } else if (selectedTable) {
-      // Validate table exists and is available
+      // Enhanced validation with capacity and availability checking
       try {
-        const response = await fetch('/api/lounges/tables/validate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            tableId: formData.tableId,
-            checkAvailability: true
-          })
+        // First check capacity if we have party size (can be added later)
+        const partySize = 1; // Default, can be enhanced with party size field
+        
+        const response = await fetch(`/api/lounges/tables/availability?tableId=${encodeURIComponent(formData.tableId)}&partySize=${partySize}`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
         });
 
         if (response.ok) {
-          const validation = await response.json();
-          if (!validation.valid) {
-            newErrors.tableId = validation.error || 'Invalid table';
-            if (validation.suggestions) {
-              newErrors.tableId += ` (Suggestions: ${validation.suggestions.join(', ')})`;
+          const availability = await response.json();
+          if (!availability.available) {
+            newErrors.tableId = availability.error || 'Table is not available';
+            
+            // Add suggestions if available
+            if (availability.suggestions && availability.suggestions.length > 0) {
+              const suggestionNames = availability.suggestions
+                .slice(0, 3)
+                .map((s: any) => s.tableName)
+                .join(', ');
+              newErrors.tableId += ` (Alternatives: ${suggestionNames})`;
             }
-          } else if (!validation.available) {
-            newErrors.tableId = validation.error || 'Table is not available';
+          } else if (selectedTable.capacity < partySize) {
+            newErrors.tableId = `Table capacity (${selectedTable.capacity}) is less than party size (${partySize})`;
+            
+            // Get alternative tables
+            const altResponse = await fetch(`/api/lounges/tables/availability?partySize=${partySize}`);
+            if (altResponse.ok) {
+              const altData = await altResponse.json();
+              if (altData.availableTables && altData.availableTables.length > 0) {
+                const altNames = altData.availableTables
+                  .slice(0, 3)
+                  .map((t: any) => t.tableName)
+                  .join(', ');
+                newErrors.tableId += ` (Larger tables: ${altNames})`;
+              }
+            }
           }
         }
       } catch (error) {
-        console.warn('Table validation error (non-blocking):', error);
-        // Don't block on validation errors - graceful degradation
+        console.warn('Table availability check error (non-blocking):', error);
+        // Fallback to basic validation
+        try {
+          const response = await fetch('/api/lounges/tables/validate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              tableId: formData.tableId,
+              checkAvailability: true
+            })
+          });
+
+          if (response.ok) {
+            const validation = await response.json();
+            if (!validation.valid) {
+              newErrors.tableId = validation.error || 'Invalid table';
+            } else if (!validation.available) {
+              newErrors.tableId = validation.error || 'Table is not available';
+            }
+          }
+        } catch (fallbackError) {
+          console.warn('Fallback validation error:', fallbackError);
+        }
       }
     }
 

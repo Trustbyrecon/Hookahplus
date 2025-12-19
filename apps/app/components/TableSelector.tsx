@@ -314,8 +314,20 @@ export function TableSelector({
                   </div>
                 </div>
               </div>
-              <div className={`px-2 py-1 rounded-full text-xs font-medium border ${getAvailabilityColor(table.availability)}`}>
-                {getAvailabilityIcon(table.availability)}
+              <div className="flex items-center gap-2">
+                <div className={`px-2 py-1 rounded-full text-xs font-medium border ${getAvailabilityColor(table.availability)}`}>
+                  {getAvailabilityIcon(table.availability)}
+                </div>
+                {showCapacity && (
+                  <div className="text-xs text-zinc-400">
+                    {table.capacity}p
+                  </div>
+                )}
+                {partySize && table.capacity < partySize && (
+                  <div className="text-xs text-yellow-400" title="Table too small for party size">
+                    ⚠️
+                  </div>
+                )}
               </div>
             </div>
           </div>
