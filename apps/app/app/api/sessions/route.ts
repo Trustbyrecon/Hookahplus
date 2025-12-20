@@ -4,7 +4,7 @@ import { SessionSource, SessionState } from '@prisma/client';
 import { getCurrentUser, getCurrentTenant } from '../../../lib/auth';
 import crypto from 'crypto';
 import { withRequestContext, logWithRequestId, getRequestIdForLogging } from '../../../lib/api-helpers';
-import { getCached, setCached, generateCacheKey } from '../../../lib/cache';
+import { cache, CacheService } from '../../../lib/cache';
 import { invalidateSessionCaches } from '../../../lib/cache-invalidation';
 import { logger } from '../../../lib/logger';
 import { 
