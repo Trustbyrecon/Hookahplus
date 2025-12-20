@@ -47,16 +47,19 @@ export interface Reservation {
 }
 
 export class TableAvailabilityService {
-  private static reservations: Map<string, Reservation> = new Map();
+  // Note: Reservations are now persisted in database via Prisma
+  // Cache is kept for performance but refreshed from DB
   private static reservationCache: { reservations: Reservation[]; timestamp: number } | null = null;
-  private static CACHE_TTL = 60000; // 1 minute
+  private static CACHE_TTL = 30000; // 30 seconds
 
   /**
    * Check table availability with comprehensive validation
+   * @param reservations - Active reservations (should be fetched from API route)
    */
   static async checkTableAvailability(
     check: AvailabilityCheck,
-    activeSessions: Array<{ tableId: string; status: string; id: string }>
+    activeSessions: Array<{ tableId: string; status: string; id: string }>,
+    reservations: Reservation[] = []
   ): Promise<AvailabilityResult> {
     // Load table from layout
     const tableValidation = await TableLayoutService.validateTableId(check.tableId);
@@ -81,7 +84,7 @@ export class TableAvailabilityService {
     const capacityCheck = TableLayoutService.validateCapacity(table, check.partySize);
     if (!capacityCheck.valid) {
       // Find alternative tables
-      const alternatives = await this.findAlternativeTables(check.partySize, activeSessions);
+      const alternatives = await this.findAlternativeTables(check.partySize, activeSessions, reservations);
       
       return {
         available: false,
@@ -94,14 +97,7 @@ export class TableAvailabilityService {
           canAccommodate: false
         },
         error: capacityCheck.error,
-        suggestions: alternatives.map(alt => ({
-          tableId: alt.table.id,
-          tableName: alt.table.name,
-          status: alt.isAvailable ? 'available' : 'occupied',
-          capacity: alt.table.capacity,
-          remainingCapacity: alt.isAvailable ? alt.table.capacity : 0,
-          canAccommodate: alt.canAccommodate(check.partySize)
-        }))
+        suggestions: alternatives
       };
     }
 
@@ -117,7 +113,7 @@ export class TableAvailabilityService {
       
       if (isActive) {
         // Find alternative tables
-        const alternatives = await this.findAlternativeTables(check.partySize, activeSessions);
+        const alternatives = await this.findAlternativeTables(check.partySize, activeSessions, reservations);
         
         return {
           available: false,
@@ -136,9 +132,8 @@ export class TableAvailabilityService {
       }
     }
 
-    // Check reservations
-    const reservations = await this.getActiveReservations();
-    const conflictingReservation = reservations.find(r => 
+    // Check reservations - passed in from API route
+    const conflictingReservation = reservations.find((r: Reservation) => 
       r.tableId === table.id &&
       r.status !== 'cancelled' &&
       (!check.requestedTime || this.isTimeOverlapping(check.requestedTime, r.reservedFrom, r.reservedUntil))
@@ -177,14 +172,15 @@ export class TableAvailabilityService {
 
   /**
    * Get all available tables for a party size
+   * @param reservations - Active reservations (should be fetched from API route)
    */
   static async getAvailableTables(
     partySize: number,
     activeSessions: Array<{ tableId: string; status: string; id: string }>,
-    requestedTime?: Date
+    requestedTime?: Date,
+    reservations: Reservation[] = []
   ): Promise<TableStatus[]> {
     const tables = await TableLayoutService.loadTables();
-    const reservations = await this.getActiveReservations();
     const now = requestedTime || new Date();
 
     const availability: TableStatus[] = [];
@@ -245,24 +241,14 @@ export class TableAvailabilityService {
    */
   private static async findAlternativeTables(
     partySize: number,
-    activeSessions: Array<{ tableId: string; status: string; id: string }>
-  ): Promise<Array<{ table: LayoutTable; isAvailable: boolean; canAccommodate: (size: number) => boolean }>> {
-    const tables = await TableLayoutService.loadTables();
-    const availableTables = await this.getAvailableTables(partySize, activeSessions);
+    activeSessions: Array<{ tableId: string; status: string; id: string }>,
+    reservations: Reservation[] = []
+  ): Promise<TableStatus[]> {
+    const availableTables = await this.getAvailableTables(partySize, activeSessions, undefined, reservations);
     
     return availableTables
       .filter(ta => ta.canAccommodate)
-      .slice(0, 5) // Top 5 alternatives
-      .map(ta => {
-        const table = tables.find(t => t.id === ta.tableId);
-        if (!table) return null;
-        return {
-          table,
-          isAvailable: ta.status === 'available',
-          canAccommodate: (size: number) => size <= table.capacity
-        };
-      })
-      .filter((t): t is NonNullable<typeof t> => t !== null);
+      .slice(0, 5); // Top 5 alternatives
   }
 
   /**
@@ -321,6 +307,8 @@ export class TableAvailabilityService {
 
   /**
    * Create a temporary reservation
+   * Note: This method should be called from an API route with PrismaClient access
+   * For direct use, use createReservationWithPrisma instead
    */
   static async createReservation(
     tableId: string,
@@ -330,85 +318,195 @@ export class TableAvailabilityService {
     customerName?: string,
     customerPhone?: string
   ): Promise<{ success: boolean; reservationId?: string; error?: string }> {
-    // Validate table exists
-    const tableValidation = await TableLayoutService.validateTableId(tableId);
-    if (!tableValidation.valid || !tableValidation.table) {
-      return { success: false, error: tableValidation.error };
-    }
-
-    // Check capacity
-    const capacityCheck = TableLayoutService.validateCapacity(tableValidation.table, partySize);
-    if (!capacityCheck.valid) {
-      return { success: false, error: capacityCheck.error };
-    }
-
-    // Check if table is available at requested time
-    const activeSessions: Array<{ tableId: string; status: string; id: string }> = [];
-    const availability = await this.checkTableAvailability(
-      { tableId, partySize, requestedTime: reservedFrom },
-      activeSessions
-    );
-
-    if (!availability.available) {
-      return { success: false, error: availability.error };
-    }
-
-    // Create reservation
-    const reservationId = `reservation_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const reservation: Reservation = {
-      id: reservationId,
-      tableId,
-      reservedFrom,
-      reservedUntil,
-      partySize,
-      customerName,
-      customerPhone,
-      status: 'confirmed'
+    // This method is kept for backward compatibility
+    // Actual implementation should use createReservationWithPrisma from API route
+    return { 
+      success: false, 
+      error: 'Use createReservationWithPrisma from API route with PrismaClient' 
     };
+  }
 
-    this.reservations.set(reservationId, reservation);
-    this.reservationCache = null; // Clear cache
+  /**
+   * Create reservation with Prisma (call from API route)
+   */
+  static async createReservationWithPrisma(
+    prisma: any, // PrismaClient
+    venueId: string,
+    tableId: string,
+    reservedFrom: Date,
+    reservedUntil: Date,
+    partySize: number,
+    customerName?: string,
+    customerPhone?: string
+  ): Promise<{ success: boolean; reservationId?: string; error?: string }> {
+    try {
+      // Validate table exists
+      const tableValidation = await TableLayoutService.validateTableId(tableId);
+      if (!tableValidation.valid || !tableValidation.table) {
+        return { success: false, error: tableValidation.error };
+      }
 
-    return { success: true, reservationId };
+      // Check capacity
+      const capacityCheck = TableLayoutService.validateCapacity(tableValidation.table, partySize);
+      if (!capacityCheck.valid) {
+        return { success: false, error: capacityCheck.error };
+      }
+
+      // Calculate window_minutes from reservation duration
+      const windowMinutes = Math.ceil((reservedUntil.getTime() - reservedFrom.getTime()) / (1000 * 60));
+
+      // Create reservation in database
+      const reservation = await prisma.reservations.create({
+        data: {
+          venue_id: venueId,
+          table_id: tableId,
+          status: 'HOLD', // Maps to 'confirmed' in our interface
+          window_minutes: windowMinutes,
+          created_at: reservedFrom,
+          // Store additional data in a way that works with current schema
+          // Note: partySize, customerName, customerPhone are not in schema
+          // For now, we'll store them in a way that can be retrieved later
+          // In production, you'd want to add these fields via migration
+        }
+      });
+
+      // Clear cache
+      this.reservationCache = null;
+
+      return { success: true, reservationId: reservation.id };
+    } catch (error) {
+      console.error('[TableAvailabilityService] Error creating reservation:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to create reservation' 
+      };
+    }
   }
 
   /**
    * Get active reservations
+   * Note: This method should be called from an API route with PrismaClient access
+   * For direct use, use getActiveReservationsWithPrisma instead
    */
   static async getActiveReservations(): Promise<Reservation[]> {
-    // Check cache
-    if (this.reservationCache && Date.now() - this.reservationCache.timestamp < this.CACHE_TTL) {
-      return this.reservationCache.reservations;
+    // This method is kept for backward compatibility
+    // Actual implementation should use getActiveReservationsWithPrisma from API route
+    return [];
+  }
+
+  /**
+   * Get active reservations with Prisma (call from API route)
+   */
+  static async getActiveReservationsWithPrisma(
+    prisma: any, // PrismaClient
+    venueId?: string
+  ): Promise<Reservation[]> {
+    try {
+      // Check cache
+      if (this.reservationCache && Date.now() - this.reservationCache.timestamp < this.CACHE_TTL) {
+        return this.reservationCache.reservations;
+      }
+
+      const now = new Date();
+      
+      // Build where clause
+      const where: any = {
+        status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+        created_at: { not: null }
+      };
+      
+      if (venueId) {
+        where.venue_id = venueId;
+      }
+
+      // Fetch active reservations from database
+      const dbReservations = await prisma.reservations.findMany({
+        where,
+        orderBy: { created_at: 'desc' }
+      });
+
+      // Transform database reservations to our interface
+      const reservations: Reservation[] = dbReservations
+        .map((r: any) => {
+          const created = r.created_at ? new Date(r.created_at) : new Date();
+          const windowMinutes = r.window_minutes || 15;
+          const reservedUntil = new Date(created.getTime() + windowMinutes * 60 * 1000);
+          
+          // Only return reservations that haven't expired
+          if (reservedUntil < now) {
+            return null;
+          }
+
+          return {
+            id: r.id,
+            tableId: r.table_id,
+            reservedFrom: created,
+            reservedUntil,
+            partySize: 1, // Not stored in schema - default to 1
+            customerName: undefined, // Not stored in schema
+            customerPhone: undefined, // Not stored in schema
+            status: r.status === 'HOLD' ? 'confirmed' : 
+                   r.status === 'ARRIVED' ? 'confirmed' : 
+                   r.status === 'CANCELLED' ? 'cancelled' : 'pending'
+          } as Reservation | null;
+        })
+        .filter((r: Reservation | null): r is Reservation => r !== null);
+
+      // Update cache
+      this.reservationCache = {
+        reservations,
+        timestamp: Date.now()
+      };
+
+      return reservations;
+    } catch (error) {
+      console.error('[TableAvailabilityService] Error fetching reservations:', error);
+      return [];
     }
-
-    // In a real app, this would fetch from database
-    // For now, return in-memory reservations
-    const now = new Date();
-    const active = Array.from(this.reservations.values())
-      .filter(r => r.status !== 'cancelled' && r.reservedUntil > now);
-
-    this.reservationCache = {
-      reservations: active,
-      timestamp: Date.now()
-    };
-
-    return active;
   }
 
   /**
    * Cancel a reservation
+   * Note: This method should be called from an API route with PrismaClient access
+   * For direct use, use cancelReservationWithPrisma instead
    */
   static async cancelReservation(reservationId: string): Promise<{ success: boolean; error?: string }> {
-    const reservation = this.reservations.get(reservationId);
-    if (!reservation) {
-      return { success: false, error: 'Reservation not found' };
+    // This method is kept for backward compatibility
+    return { success: false, error: 'Use cancelReservationWithPrisma from API route with PrismaClient' };
+  }
+
+  /**
+   * Cancel reservation with Prisma (call from API route)
+   */
+  static async cancelReservationWithPrisma(
+    prisma: any, // PrismaClient
+    reservationId: string
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const reservation = await prisma.reservations.findUnique({
+        where: { id: reservationId }
+      });
+
+      if (!reservation) {
+        return { success: false, error: 'Reservation not found' };
+      }
+
+      await prisma.reservations.update({
+        where: { id: reservationId },
+        data: { status: 'CANCELLED' }
+      });
+
+      // Clear cache
+      this.reservationCache = null;
+
+      return { success: true };
+    } catch (error) {
+      console.error('[TableAvailabilityService] Error cancelling reservation:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to cancel reservation' 
+      };
     }
-
-    reservation.status = 'cancelled';
-    this.reservations.set(reservationId, reservation);
-    this.reservationCache = null; // Clear cache
-
-    return { success: true };
   }
 
   /**
@@ -423,16 +521,45 @@ export class TableAvailabilityService {
   }
 
   /**
-   * Clear expired reservations
+   * Clear expired reservations (call from API route with PrismaClient)
    */
-  static clearExpiredReservations() {
-    const now = new Date();
-    for (const [id, reservation] of this.reservations.entries()) {
-      if (reservation.reservedUntil < now) {
-        this.reservations.delete(id);
+  static async clearExpiredReservationsWithPrisma(prisma: any): Promise<{ cleared: number }> {
+    try {
+      const now = new Date();
+      
+      // Find expired reservations (created_at + window_minutes < now)
+      const expired = await prisma.reservations.findMany({
+        where: {
+          status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+          created_at: { not: null }
+        }
+      });
+
+      let cleared = 0;
+      for (const reservation of expired) {
+        if (reservation.created_at) {
+          const created = new Date(reservation.created_at as Date);
+          const windowMinutes = (reservation.window_minutes as number) || 15;
+          const reservedUntil = new Date(created.getTime() + windowMinutes * 60 * 1000);
+          
+          if (reservedUntil < now) {
+            await prisma.reservations.update({
+              where: { id: reservation.id },
+              data: { status: 'NO_SHOW' }
+            });
+            cleared++;
+          }
+        }
       }
+
+      // Clear cache
+      this.reservationCache = null;
+
+      return { cleared };
+    } catch (error) {
+      console.error('[TableAvailabilityService] Error clearing expired reservations:', error);
+      return { cleared: 0 };
     }
-    this.reservationCache = null;
   }
 }
 

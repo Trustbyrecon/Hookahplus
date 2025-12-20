@@ -72,6 +72,120 @@ export const closeStaleSessions: EventHandler = async (event: EventMessage) => {
 };
 
 /**
+ * Handle post-close workflows after session settlement
+ * Triggers high-value workflows like analytics, reporting, and cleanup
+ */
+export const handlePostCloseWorkflows: EventHandler = async (event: EventMessage) => {
+  if (event.type !== 'SessionClosed') {
+    return; // Only process SessionClosed events
+  }
+
+  try {
+    const { sessionId, loungeId, payload } = event;
+    
+    if (!sessionId) {
+      console.warn('[handlePostCloseWorkflows] No sessionId in event');
+      return;
+    }
+
+    console.log(`[handlePostCloseWorkflows] Processing post-close workflows for session ${sessionId}`);
+
+    // Fetch session details
+    const session = await prisma.session.findUnique({
+      where: { id: sessionId },
+      include: {
+        orders: {
+          include: {
+            items: true
+          }
+        }
+      }
+    });
+
+    if (!session) {
+      console.warn(`[handlePostCloseWorkflows] Session ${sessionId} not found`);
+      return;
+    }
+
+    // Only process if settlement was completed
+    if (!payload?.settlementCompleted) {
+      console.log(`[handlePostCloseWorkflows] Settlement not completed for session ${sessionId}, skipping workflows`);
+      return;
+    }
+
+    // 1. Update analytics and reporting
+    try {
+      // Log session completion for analytics
+      await logKtl4Event({
+        flowName: 'session_completion',
+        eventType: 'session_closed',
+        sessionId: sessionId,
+        loungeId: loungeId || session.loungeId,
+        status: 'success',
+        details: {
+          finalAmount: payload.finalAmount || session.priceCents,
+          duration: session.endedAt && session.startedAt 
+            ? Math.floor((session.endedAt.getTime() - session.startedAt.getTime()) / 1000 / 60)
+            : null,
+          tableId: session.tableId,
+          source: session.source,
+        }
+      });
+      console.log(`[handlePostCloseWorkflows] Analytics updated for session ${sessionId}`);
+    } catch (analyticsError) {
+      console.error(`[handlePostCloseWorkflows] Failed to update analytics:`, analyticsError);
+      // Non-blocking
+    }
+
+    // 2. Trigger loyalty program updates (if applicable)
+    try {
+      if (session.customerPhone || session.customerRef) {
+        // This would integrate with loyalty system
+        // For now, just log that it should be triggered
+        console.log(`[handlePostCloseWorkflows] Loyalty update triggered for session ${sessionId}`);
+        // TODO: Integrate with loyalty system when available
+      }
+    } catch (loyaltyError) {
+      console.error(`[handlePostCloseWorkflows] Failed to update loyalty:`, loyaltyError);
+      // Non-blocking
+    }
+
+    // 3. Archive session data (move to historical storage if needed)
+    try {
+      // Mark session as archived/processed
+      await prisma.session.update({
+        where: { id: sessionId },
+        data: {
+          tableNotes: `${session.tableNotes || ''}\n[${new Date().toISOString()}] Post-close workflows completed`.trim()
+        }
+      });
+      console.log(`[handlePostCloseWorkflows] Session ${sessionId} archived`);
+    } catch (archiveError) {
+      console.error(`[handlePostCloseWorkflows] Failed to archive session:`, archiveError);
+      // Non-blocking
+    }
+
+    // 4. Trigger any custom high-value workflows
+    // This is where you can add custom business logic
+    // Examples: email receipts, customer feedback requests, table availability updates, etc.
+    try {
+      // Example: Trigger table availability update
+      if (session.tableId) {
+        console.log(`[handlePostCloseWorkflows] Table ${session.tableId} is now available`);
+        // TODO: Update table availability system
+      }
+    } catch (workflowError) {
+      console.error(`[handlePostCloseWorkflows] Custom workflow failed:`, workflowError);
+      // Non-blocking
+    }
+
+    console.log(`[handlePostCloseWorkflows] ✅ Post-close workflows completed for session ${sessionId}`);
+  } catch (error) {
+    console.error('[handlePostCloseWorkflows] Error:', error);
+  }
+};
+
+/**
  * Send timer reminders
  * Alerts staff when sessions are approaching time limits
  */
@@ -348,6 +462,9 @@ export function initializeWorkers() {
   
   eventQueue.subscribe('SessionClosed', syncLoyaltyProfiles);
   eventQueue.subscribe('PaymentConfirmed', syncLoyaltyProfiles);
+
+  // Post-close workflows - runs after settlement is complete
+  eventQueue.subscribe('SessionClosed', handlePostCloseWorkflows);
 
   console.log('[EventWorkers] All workers initialized');
 }

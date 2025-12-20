@@ -35,6 +35,143 @@ import { trackUnknown } from '../../../lib/taxonomy/unknown-tracker';
 import { convertPrismaSessionToFireSession } from '../../../lib/session-utils-prisma';
 import { withQueryTimeout, QUERY_TIMEOUTS } from '../../../lib/db-helpers';
 
+/**
+ * Handle session settlement when closing
+ * Calculates final charges, reconciles payments, and triggers post-close workflows
+ */
+async function handleSessionSettlement(sessionId: string, session: any) {
+  console.log(`[Settlement] Processing settlement for session ${sessionId}`);
+  
+  try {
+    // Fetch full session with orders
+    const fullSession = await prisma.session.findUnique({
+      where: { id: sessionId },
+      include: {
+        orders: {
+          include: {
+            items: true
+          }
+        }
+      }
+    });
+
+    if (!fullSession) {
+      throw new Error('Session not found for settlement');
+    }
+
+    // Calculate base session price
+    let basePrice = fullSession.priceCents || 0;
+
+    // Calculate order items total
+    let ordersTotal = 0;
+    const orderItems: any[] = [];
+    for (const order of fullSession.orders || []) {
+      for (const item of order.items || []) {
+        const itemTotal = item.priceCents * item.quantity;
+        ordersTotal += itemTotal;
+        orderItems.push({
+          description: item.name,
+          quantity: item.quantity,
+          priceCents: item.priceCents,
+          subtotal: itemTotal,
+        });
+      }
+    }
+
+    // Calculate time-based charges if timer was running
+    let timeCharge = 0;
+    if (fullSession.timerStartedAt && fullSession.timerStatus === 'running') {
+      const now = new Date();
+      const startedAt = fullSession.timerStartedAt;
+      const elapsedMinutes = Math.floor((now.getTime() - startedAt.getTime()) / (1000 * 60));
+      const timerDuration = (fullSession.timerDuration || 45 * 60) / 60; // Convert to minutes
+      
+      // If over time, calculate overage
+      if (elapsedMinutes > timerDuration) {
+        const overageMinutes = elapsedMinutes - timerDuration;
+        // Simple overage calculation: $1 per minute over
+        timeCharge = overageMinutes * 100; // 100 cents = $1
+      }
+    }
+
+    // Calculate taxes (simplified - 8% sales tax)
+    const subtotal = basePrice + ordersTotal + timeCharge;
+    const taxes = Math.round(subtotal * 0.08);
+    const finalTotal = subtotal + taxes;
+
+    // Log settlement calculation
+    console.log(`[Settlement] Session ${sessionId} settlement:`, {
+      basePrice,
+      ordersTotal,
+      timeCharge,
+      taxes,
+      finalTotal,
+      orderItemsCount: orderItems.length
+    });
+
+    // Update session with final settlement amount if different from base price
+    if (finalTotal !== basePrice) {
+      await prisma.session.update({
+        where: { id: sessionId },
+        data: {
+          priceCents: finalTotal,
+          tableNotes: `${fullSession.tableNotes || ''}\n[${new Date().toISOString()}] Settlement completed: Base $${(basePrice/100).toFixed(2)} + Orders $${(ordersTotal/100).toFixed(2)} + Overtime $${(timeCharge/100).toFixed(2)} + Tax $${(taxes/100).toFixed(2)} = Total $${(finalTotal/100).toFixed(2)}`.trim()
+        }
+      });
+    }
+
+    // Trigger reconciliation if payment exists
+    if (fullSession.paymentIntent || fullSession.paymentStatus === 'succeeded') {
+      try {
+        const { reconcilePosSettlements } = await import('../../../jobs/settle');
+        await reconcilePosSettlements({
+          sessionIdMatch: true,
+          timeWindowMinutes: 60, // Match within 1 hour
+        });
+        console.log(`[Settlement] Reconciliation triggered for session ${sessionId}`);
+      } catch (reconcileError) {
+        console.error(`[Settlement] Reconciliation failed for session ${sessionId}:`, reconcileError);
+        // Non-blocking - reconciliation can be retried later
+      }
+    }
+
+    // Publish SessionClosed event for post-close workflows
+    try {
+      const { eventQueue } = await import('../../../lib/events/queue');
+      await eventQueue.publish({
+        id: `evt_${Date.now()}_${sessionId}`,
+        type: 'SessionClosed',
+        sessionId: sessionId,
+        loungeId: fullSession.loungeId,
+        payload: {
+          reason: 'manual_close',
+          autoClosed: false,
+          finalAmount: finalTotal,
+          settlementCompleted: true,
+        },
+        timestamp: new Date()
+      });
+      console.log(`[Settlement] SessionClosed event published for session ${sessionId}`);
+    } catch (eventError) {
+      console.error(`[Settlement] Failed to publish SessionClosed event:`, eventError);
+      // Non-blocking
+    }
+
+    return {
+      success: true,
+      basePrice,
+      ordersTotal,
+      timeCharge,
+      taxes,
+      finalTotal,
+      orderItems
+    };
+  } catch (error) {
+    console.error(`[Settlement] Error processing settlement for session ${sessionId}:`, error);
+    throw error;
+  }
+}
+
 // CORS headers helper - accepts request to get origin
 function getCorsHeaders(req?: NextRequest) {
   // Allow requests from site build, app build, or guest build
@@ -1762,7 +1899,8 @@ export async function PATCH(req: NextRequest) {
       // Update endedAt if transitioning to CLOSED/CANCELED
       // Use string comparison to avoid runtime enum issues
       const finalState = String(newState);
-      if ((finalState === 'CLOSED' || finalState === 'CANCELED') && !dbSession.endedAt) {
+      const isClosing = (finalState === 'CLOSED' || finalState === 'CANCELED') && !dbSession.endedAt;
+      if (isClosing) {
         updateData.endedAt = new Date();
       }
 
@@ -2051,6 +2189,27 @@ export async function PATCH(req: NextRequest) {
       }
 
       const fireSession = convertPrismaSessionToFireSession(updatedDbSession);
+
+      // Process settlement when session is closed
+      if (isClosing && action === 'CLOSE_SESSION') {
+        try {
+          await handleSessionSettlement(dbSession.id, updatedDbSession);
+        } catch (settlementError) {
+          // Log but don't fail the request if settlement fails
+          console.error('[Sessions API] Settlement error:', settlementError);
+          // Add note about settlement failure
+          try {
+            await prisma.session.update({
+              where: { id: dbSession.id },
+              data: {
+                tableNotes: `${updatedDbSession.tableNotes || ''}\n[${new Date().toISOString()}] Settlement processing failed: ${settlementError instanceof Error ? settlementError.message : 'Unknown error'}`.trim()
+              }
+            });
+          } catch (noteError) {
+            console.error('[Sessions API] Failed to add settlement error note:', noteError);
+          }
+        }
+      }
 
       // Process Reflex Chain layers based on action
       try {

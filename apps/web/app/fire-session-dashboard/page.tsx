@@ -70,13 +70,16 @@ export default function FireSessionDashboard() {
   useEffect(() => {
     const loadRealTimeData = async () => {
       try {
-        // Load active sessions from durable sessions API
+        // Load active sessions from durable sessions API (exclude CLOSED)
         const response = await fetch('/api/sessions?state=ACTIVE');
         const result = await response.json();
         
         if (result.success) {
           // Convert durable sessions to fire session format
-          const realSessions: FireSession[] = result.sessions.map((session: any) => ({
+          // Filter out CLOSED sessions - they should not appear in FSD after settlement
+          const realSessions: FireSession[] = result.sessions
+            .filter((session: any) => session.state !== 'CLOSED')
+            .map((session: any) => ({
             id: session.id,
             tableId: session.externalRef || 'T-001', // Use externalRef as tableId
             customerName: session.customerPhone ? `Customer ${session.customerPhone}` : 'Anonymous',
@@ -565,10 +568,14 @@ export default function FireSessionDashboard() {
     }));
   };
 
+  // Filter out CLOSED sessions - they should not appear in FSD after settlement
   const activeSessions = sessions.filter(s => s.status === 'ACTIVE');
-  const bohSessions = sessions.filter(s => s.currentStage === 'BOH');
-  const fohSessions = sessions.filter(s => s.currentStage === 'FOH');
-  const edgeCaseSessions = sessions.filter(s => s.edgeCase || s.status === 'STAFF_HOLD' || s.status === 'STOCK_BLOCKED');
+  const bohSessions = sessions.filter(s => s.currentStage === 'BOH' && s.status !== 'CLOSED');
+  const fohSessions = sessions.filter(s => s.currentStage === 'FOH' && s.status !== 'CLOSED');
+  const edgeCaseSessions = sessions.filter(s => 
+    (s.edgeCase || s.status === 'STAFF_HOLD' || s.status === 'STOCK_BLOCKED') && 
+    s.status !== 'CLOSED'
+  );
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">

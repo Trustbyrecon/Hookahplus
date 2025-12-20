@@ -4,6 +4,28 @@ import { TableAvailabilityService } from '../../../../../lib/services/TableAvail
 
 const prisma = new PrismaClient();
 
+// Helper to get or create default venue
+async function getDefaultVenueId(): Promise<string> {
+  // Try to find an existing venue
+  const existingVenue = await prisma.venues.findFirst({
+    orderBy: { created_at: 'desc' }
+  });
+  
+  if (existingVenue) {
+    return existingVenue.id;
+  }
+  
+  // Create a default venue if none exists
+  const newVenue = await prisma.venues.create({
+    data: {
+      name: 'Default Lounge',
+      metadata: { isDefault: true }
+    }
+  });
+  
+  return newVenue.id;
+}
+
 /**
  * GET /api/lounges/tables/availability
  * Get available tables for a party size
@@ -27,6 +49,10 @@ export async function GET(request: NextRequest) {
       }
     });
 
+    // Get active reservations
+    const venueId = await getDefaultVenueId();
+    const reservations = await TableAvailabilityService.getActiveReservationsWithPrisma(prisma, venueId);
+
     // If specific table requested, check that table
     if (tableId) {
       const check = await TableAvailabilityService.checkTableAvailability(
@@ -39,7 +65,8 @@ export async function GET(request: NextRequest) {
           tableId: s.tableId || '',
           status: s.state,
           id: s.id
-        }))
+        })),
+        reservations
       );
 
       return NextResponse.json({
@@ -56,7 +83,8 @@ export async function GET(request: NextRequest) {
         status: s.state,
         id: s.id
       })),
-      requestedTime ? new Date(requestedTime) : undefined
+      requestedTime ? new Date(requestedTime) : undefined,
+      reservations
     );
 
     // Find table combinations for large parties
@@ -109,7 +137,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await TableAvailabilityService.createReservation(
+    // Get or create default venue
+    const venueId = await getDefaultVenueId();
+    
+    const result = await TableAvailabilityService.createReservationWithPrisma(
+      prisma,
+      venueId,
       tableId,
       new Date(reservedFrom),
       new Date(reservedUntil),
