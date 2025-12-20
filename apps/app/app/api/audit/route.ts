@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { AuditLogService } from '../../../../lib/services/AuditLogService';
+import { AuditLogService } from '../../../lib/services/AuditLogService';
 
 const prisma = new PrismaClient();
 

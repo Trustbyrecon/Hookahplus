@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ScalabilityService } from '../../../../../lib/services/ScalabilityService';
+import { ScalabilityService } from '../../../../lib/services/ScalabilityService';
 
 /**
  * GET /api/scalability/health

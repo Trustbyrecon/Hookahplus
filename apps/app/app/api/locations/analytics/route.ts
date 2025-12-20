@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { MultiLocationService } from '../../../../../lib/services/MultiLocationService';
+import { MultiLocationService } from '../../../../lib/services/MultiLocationService';
 
 const prisma = new PrismaClient();
 

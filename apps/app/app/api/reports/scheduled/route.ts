@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { ScheduledReportService } from '../../../../../lib/services/ScheduledReportService';
+import { ScheduledReportService } from '../../../../lib/services/ScheduledReportService';
 
 const prisma = new PrismaClient();
 

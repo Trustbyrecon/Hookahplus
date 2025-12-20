@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { ExportService, ExportOptions } from '../../../../lib/services/ExportService';
+import { ExportService, ExportOptions } from '../../../lib/services/ExportService';
 
 const prisma = new PrismaClient();
 

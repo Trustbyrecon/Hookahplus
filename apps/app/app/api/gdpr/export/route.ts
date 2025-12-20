@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { GDPRService } from '../../../../../lib/services/GDPRService';
+import { GDPRService } from '../../../../lib/services/GDPRService';
 
 const prisma = new PrismaClient();
 
