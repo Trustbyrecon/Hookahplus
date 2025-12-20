@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   MapPin, 
   Plus, 
@@ -9,7 +9,12 @@ import {
   ArrowLeft,
   X,
   Info,
-  Table as TableIcon
+  Table as TableIcon,
+  Camera,
+  Upload,
+  FileText,
+  Sparkles,
+  Zap
 } from 'lucide-react';
 
 interface Table {
@@ -36,34 +41,128 @@ export function LoungeLayoutWizard({
   onComplete,
   existingTables = []
 }: LoungeLayoutWizardProps) {
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(0); // Start at Step 0 (Quick Setup)
   const [tables, setTables] = useState<Table[]>(existingTables);
   const [newTable, setNewTable] = useState({
     name: '',
     capacity: 4,
-    seatingType: 'Booth'
+    seatingType: 'Booth',
+    quantity: 1
   });
+  
+  // Photo + YAML upload state
+  const [useQuickSetup, setUseQuickSetup] = useState(false);
+  const [uploadedPhotos, setUploadedPhotos] = useState<File[]>([]);
+  const [yamlMetadata, setYamlMetadata] = useState<string>('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [aiGeneratedTables, setAiGeneratedTables] = useState<Table[]>([]);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const yamlInputRef = useRef<HTMLInputElement>(null);
 
-  const totalSteps = 3;
+  const totalSteps = 4; // 0 = Quick Setup, 1-3 = Manual steps
 
   const handleAddTable = () => {
     if (!newTable.name.trim()) return;
 
-    const table: Table = {
-      id: `table-${Date.now()}`,
-      name: newTable.name,
-      x: 50 + (tables.length % 5) * 20,
-      y: 50 + Math.floor(tables.length / 5) * 20,
-      capacity: newTable.capacity,
-      seatingType: newTable.seatingType
-    };
+    const newTables: Table[] = [];
+    const baseName = newTable.name.trim();
+    const quantity = Math.max(1, Math.min(50, newTable.quantity || 1));
+    
+    for (let i = 0; i < quantity; i++) {
+      // Generate table name: if quantity > 1, append number (e.g., "T-001", "T-002")
+      const tableName = quantity > 1 
+        ? `${baseName}-${String(i + 1).padStart(3, '0')}` 
+        : baseName;
+      
+      const table: Table = {
+        id: `table-${Date.now()}-${i}`,
+        name: tableName,
+        x: 50 + ((tables.length + i) % 5) * 20,
+        y: 50 + Math.floor((tables.length + i) / 5) * 20,
+        capacity: newTable.capacity,
+        seatingType: newTable.seatingType
+      };
+      newTables.push(table);
+    }
 
-    setTables([...tables, table]);
-    setNewTable({ name: '', capacity: 4, seatingType: 'Booth' });
+    setTables([...tables, ...newTables]);
+    setNewTable({ name: '', capacity: 4, seatingType: 'Booth', quantity: 1 });
   };
 
   const handleRemoveTable = (id: string) => {
     setTables(tables.filter(t => t.id !== id));
+  };
+
+  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    setUploadedPhotos(prev => [...prev, ...files].slice(0, 6)); // Max 6 photos
+  };
+
+  const handleYamlUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setYamlMetadata(e.target?.result as string);
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  const handleQuickSetup = async () => {
+    if (uploadedPhotos.length < 3) {
+      alert('Please upload at least 3 photos for AI analysis.');
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      // Call AI generation API
+      const response = await fetch('/api/visual-grounder/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          photos: uploadedPhotos.map(file => ({ name: file.name, size: file.size })),
+          loungeInfo: {
+            name: 'Lounge',
+            yamlMetadata: yamlMetadata || undefined
+          }
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate layout');
+      }
+
+      const data = await response.json();
+      
+      // Convert AI zones to tables
+      const generatedTables: Table[] = (data.layout?.zones || []).map((zone: any, index: number) => ({
+        id: `ai-table-${Date.now()}-${index}`,
+        name: zone.name || `T-${String(index + 1).padStart(3, '0')}`,
+        x: zone.coordinates?.x || 50 + (index % 5) * 20,
+        y: zone.coordinates?.y || 50 + Math.floor(index / 5) * 20,
+        capacity: zone.capacity || 4,
+        seatingType: zone.type || 'Booth'
+      }));
+
+      setAiGeneratedTables(generatedTables);
+      setTables([...tables, ...generatedTables]);
+      setCurrentStep(1); // Move to manual review/edit step
+    } catch (error) {
+      console.error('Error generating layout:', error);
+      alert('Failed to generate layout from photos. You can continue with manual setup.');
+      setCurrentStep(1);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleSkipQuickSetup = () => {
+    setUseQuickSetup(false);
+    setCurrentStep(1);
   };
 
   const handleComplete = () => {
@@ -87,7 +186,9 @@ export function LoungeLayoutWizard({
               <MapPin className="w-6 h-6 text-teal-400" />
               Lounge Layout Setup Wizard
             </h2>
-            <p className="text-zinc-400 mt-1">Step {currentStep} of {totalSteps}</p>
+            <p className="text-zinc-400 mt-1">
+              {currentStep === 0 ? 'Quick Setup (Optional)' : `Step ${currentStep} of ${totalSteps - 1}`}
+            </p>
           </div>
           <button
             onClick={onClose}
@@ -101,6 +202,15 @@ export function LoungeLayoutWizard({
         {/* Progress Bar */}
         <div className="px-6 py-4 bg-zinc-800/50">
           <div className="flex items-center gap-2">
+            {/* Step 0: Quick Setup (optional) */}
+            {currentStep === 0 && (
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center font-semibold bg-teal-500 text-white">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div className="h-1 w-16 bg-zinc-700" />
+              </div>
+            )}
             {[1, 2, 3].map((step) => (
               <React.Fragment key={step}>
                 <div className="flex items-center gap-2">
@@ -130,6 +240,137 @@ export function LoungeLayoutWizard({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
+          {currentStep === 0 && (
+            <div className="space-y-6">
+              <div className="bg-gradient-to-r from-teal-900/30 to-cyan-900/30 border border-teal-500/30 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <Sparkles className="w-5 h-5 text-teal-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-white mb-1">Quick Setup with AI (Optional)</h3>
+                    <p className="text-sm text-zinc-300">
+                      Upload photos of your lounge and optionally a YAML config file. Our AI will automatically
+                      detect tables and seating areas, saving you time. You can always edit the results.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Photo Upload */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                    <Camera className="w-5 h-5 text-teal-400" />
+                    Upload Photos
+                  </h3>
+                  <div className="border-2 border-dashed border-zinc-700 rounded-lg p-6 text-center hover:border-teal-500 transition-colors">
+                    <input
+                      ref={photoInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handlePhotoUpload}
+                      className="hidden"
+                    />
+                    <Upload className="w-8 h-8 text-zinc-400 mx-auto mb-2" />
+                    <p className="text-sm text-zinc-300 mb-2">
+                      Upload 3-6 photos of your lounge
+                    </p>
+                    <button
+                      onClick={() => photoInputRef.current?.click()}
+                      className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-medium transition-colors"
+                    >
+                      Choose Photos
+                    </button>
+                    {uploadedPhotos.length > 0 && (
+                      <div className="mt-4">
+                        <p className="text-xs text-zinc-400 mb-2">
+                          {uploadedPhotos.length} photo{uploadedPhotos.length !== 1 ? 's' : ''} uploaded
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {uploadedPhotos.map((file, idx) => (
+                            <div key={idx} className="text-xs bg-zinc-800 px-2 py-1 rounded">
+                              {file.name}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* YAML Upload */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-teal-400" />
+                    Upload YAML Config (Optional)
+                  </h3>
+                  <div className="border-2 border-dashed border-zinc-700 rounded-lg p-6 text-center hover:border-teal-500 transition-colors">
+                    <input
+                      ref={yamlInputRef}
+                      type="file"
+                      accept=".yaml,.yml"
+                      onChange={handleYamlUpload}
+                      className="hidden"
+                    />
+                    <FileText className="w-8 h-8 text-zinc-400 mx-auto mb-2" />
+                    <p className="text-sm text-zinc-300 mb-2">
+                      Upload YAML file with table metadata
+                    </p>
+                    <button
+                      onClick={() => yamlInputRef.current?.click()}
+                      className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg text-sm font-medium transition-colors"
+                    >
+                      Choose YAML File
+                    </button>
+                    {yamlMetadata && (
+                      <div className="mt-4">
+                        <p className="text-xs text-green-400">✓ YAML file loaded</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {isProcessing && (
+                <div className="bg-zinc-800 rounded-lg p-6 text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-400 mx-auto mb-4"></div>
+                  <p className="text-zinc-300">AI is analyzing your photos and generating layout...</p>
+                </div>
+              )}
+
+              {aiGeneratedTables.length > 0 && (
+                <div className="bg-green-900/20 border border-green-700/50 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-semibold text-white mb-1">AI Generated {aiGeneratedTables.length} Tables!</h3>
+                      <p className="text-sm text-zinc-300">
+                        Review and edit the generated tables in the next step, or continue to add more manually.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between pt-4 border-t border-zinc-800">
+                <button
+                  onClick={handleSkipQuickSetup}
+                  className="text-zinc-400 hover:text-white transition-colors text-sm"
+                >
+                  Skip Quick Setup →
+                </button>
+                <button
+                  onClick={handleQuickSetup}
+                  disabled={uploadedPhotos.length < 3 || isProcessing}
+                  className="px-6 py-2 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <Zap className="w-4 h-4" />
+                  Generate Layout with AI
+                </button>
+              </div>
+            </div>
+          )}
+
           {currentStep === 1 && (
             <div className="space-y-6">
               <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4">
@@ -147,7 +388,7 @@ export function LoungeLayoutWizard({
 
               <div>
                 <h3 className="text-lg font-semibold text-white mb-4">Add Tables</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                   <div>
                     <label className="block text-sm font-medium text-zinc-300 mb-2">
                       Table Name/Number
@@ -187,6 +428,20 @@ export function LoungeLayoutWizard({
                         <option key={type} value={type}>{type}</option>
                       ))}
                     </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">
+                      Quantity
+                      <span className="text-xs text-zinc-500 ml-1">(how many of this type?)</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={newTable.quantity}
+                      onChange={(e) => setNewTable({ ...newTable, quantity: Math.max(1, Math.min(50, parseInt(e.target.value) || 1)) })}
+                      min="1"
+                      max="50"
+                      className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
                   </div>
                 </div>
                 <button
@@ -317,15 +572,15 @@ export function LoungeLayoutWizard({
         {/* Footer */}
         <div className="flex items-center justify-between p-6 border-t border-zinc-800 bg-zinc-800/50">
           <button
-            onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
-            disabled={currentStep === 1}
+            onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
+            disabled={currentStep === 0}
             className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
             Previous
           </button>
           <div className="flex items-center gap-3">
-            {currentStep < totalSteps ? (
+            {currentStep < totalSteps - 1 ? (
               <button
                 onClick={() => setCurrentStep(Math.min(totalSteps, currentStep + 1))}
                 className="px-6 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"

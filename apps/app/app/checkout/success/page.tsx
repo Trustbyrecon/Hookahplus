@@ -4,6 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { CheckCircle } from 'lucide-react';
 import GlobalNavigation from '../../../components/GlobalNavigation';
+import { PostCheckoutEngagement } from '../../../components/PostCheckoutEngagement';
 
 function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
@@ -17,6 +18,9 @@ function CheckoutSuccessContent() {
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showEngagement, setShowEngagement] = useState(false);
+  const [pointsEarned, setPointsEarned] = useState(0);
+  const [totalPoints, setTotalPoints] = useState(0);
   
   // Extract search params at component level for use in return statement
   const lounge = searchParams.get('lounge'); // Demo slug from URL
@@ -170,34 +174,44 @@ function CheckoutSuccessContent() {
     fetchSessionDetails();
   }, [searchParams]);
 
-  // Redirect guests to hookah tracker after payment confirmation
-  // This must be called before any early returns to follow Rules of Hooks
+  // Fetch points/rewards data and show engagement hub
   useEffect(() => {
-    if (sessionId && sessionData) {
-      const guestTrackerUrl = process.env.NEXT_PUBLIC_GUEST_URL || 'https://guest.hookahplus.net';
-      const loungeId = sessionData.loungeId || 'default-lounge';
-      const tableId = sessionData.tableId || 'T-001';
+    if (sessionId && sessionData && !loading) {
+      // Calculate points earned (3% of total, matching guest checkout logic)
+      const earned = sessionData.amount ? Math.round(sessionData.amount * 0.03) : 0;
+      setPointsEarned(earned);
       
-      // Check if this is demo mode
-      const isDemo = isDemoMode || sessionId.startsWith('demo_');
-      const demoParam = isDemo ? '&demo=true&mode=demo' : '';
+      // Fetch guest profile for total points (if available)
+      // For now, use a mock or fetch from API if guest ID is available
+      setTotalPoints(earned); // Will be updated if we can fetch from API
       
-      // In demo mode, use accelerated trial (2-3 minutes) for better demo experience
-      const acceleratedParam = isDemo ? '&accelerated=true' : '';
-      
-      // Redirect to guest tracker for hookah tracking experience
-      const trackerUrl = `${guestTrackerUrl}/hookah-tracker?sessionId=${sessionId}&loungeId=${loungeId}&tableId=${tableId}${demoParam}${acceleratedParam}`;
-      
-      console.log('[Checkout Success] ✅ Payment confirmed, redirecting guest to hookah tracker:', trackerUrl);
-      
-      // Small delay to show confirmation message before redirect
-      const redirectTimer = setTimeout(() => {
-        window.location.href = trackerUrl;
-      }, 2000);
-      
-      return () => clearTimeout(redirectTimer);
+      // Show engagement hub instead of immediate redirect
+      setShowEngagement(true);
     }
-  }, [sessionId, sessionData, isDemoMode]);
+  }, [sessionId, sessionData, loading]);
+
+  const handleContinueToTracker = () => {
+    if (!sessionId || !sessionData) return;
+    
+    const guestTrackerUrl = process.env.NEXT_PUBLIC_GUEST_URL || 'https://guest.hookahplus.net';
+    const loungeId = sessionData.loungeId || 'default-lounge';
+    const tableId = sessionData.tableId || 'T-001';
+    
+    const isDemo = isDemoMode || sessionId.startsWith('demo_');
+    const demoParam = isDemo ? '&demo=true&mode=demo' : '';
+    const acceleratedParam = isDemo ? '&accelerated=true' : '';
+    
+    const trackerUrl = `${guestTrackerUrl}/hookah-tracker?sessionId=${sessionId}&loungeId=${loungeId}&tableId=${tableId}${demoParam}${acceleratedParam}`;
+    
+    console.log('[Checkout Success] ✅ Redirecting to hookah tracker:', trackerUrl);
+    window.location.href = trackerUrl;
+  };
+
+  const handleExtendSession = () => {
+    // TODO: Implement session extension flow
+    console.log('[PostCheckout] Extend session requested for:', sessionId);
+    alert('Session extension feature coming soon!');
+  };
 
   if (loading) {
     return (
@@ -236,50 +250,65 @@ function CheckoutSuccessContent() {
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
       <GlobalNavigation />
       
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto">
-          <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-8 text-center">
-            <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="w-8 h-8 text-white" />
-            </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Payment Confirmed!</h2>
-            <p className="text-zinc-400 mb-4">Your hookah session has been created successfully</p>
-            
-            {sessionData?.tableId && (
-              <p className="text-zinc-300 mb-6">
-                Table: <span className="font-semibold">{sessionData.tableId}</span>
-              </p>
-            )}
-            
-            <div className="space-y-4 mb-6">
-              <div className="flex items-center justify-between p-3 bg-zinc-900 rounded-lg">
-                <span className="text-zinc-300">Session ID:</span>
-                <span className="text-white font-mono text-sm">{sessionId}</span>
+      {showEngagement && sessionId ? (
+        <PostCheckoutEngagement
+          sessionId={sessionId}
+          pointsEarned={pointsEarned}
+          totalPoints={totalPoints}
+          loungeId={sessionData?.loungeId || 'default-lounge'}
+          loungeName={sessionData?.loungeId ? undefined : undefined} // TODO: Fetch lounge name
+          loungeInstagram={undefined} // TODO: Fetch from lounge config
+          operatorInstagram={undefined} // TODO: Fetch from operator config
+          onExtendSession={handleExtendSession}
+          onContinue={handleContinueToTracker}
+          onClose={handleContinueToTracker}
+        />
+      ) : (
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-2xl mx-auto">
+            <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-8 text-center">
+              <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-8 h-8 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-2">Payment Confirmed!</h2>
+              <p className="text-zinc-400 mb-4">Your hookah session has been created successfully</p>
+              
+              {sessionData?.tableId && (
+                <p className="text-zinc-300 mb-6">
+                  Table: <span className="font-semibold">{sessionData.tableId}</span>
+                </p>
+              )}
+              
+              <div className="space-y-4 mb-6">
+                <div className="flex items-center justify-between p-3 bg-zinc-900 rounded-lg">
+                  <span className="text-zinc-300">Session ID:</span>
+                  <span className="text-white font-mono text-sm">{sessionId}</span>
+                </div>
+                
+                {sessionData?.amount && (
+                  <div className="flex items-center justify-between p-3 bg-zinc-900 rounded-lg">
+                    <span className="text-zinc-300">Amount Paid:</span>
+                    <span className="text-green-400 font-semibold">${(sessionData.amount / 100).toFixed(2)}</span>
+                  </div>
+                )}
               </div>
               
-              {sessionData?.amount && (
-                <div className="flex items-center justify-between p-3 bg-zinc-900 rounded-lg">
-                  <span className="text-zinc-300">Amount Paid:</span>
-                  <span className="text-green-400 font-semibold">${(sessionData.amount / 100).toFixed(2)}</span>
-                </div>
-              )}
-            </div>
-            
-            <p className="text-teal-400 mb-4 animate-pulse">
-              Redirecting to hookah tracker...
-            </p>
+              <p className="text-teal-400 mb-4 animate-pulse">
+                Loading engagement hub...
+              </p>
 
-          <div className="mt-6 flex gap-4 justify-center">
-            <a
-                href={`${process.env.NEXT_PUBLIC_GUEST_URL || 'https://guest.hookahplus.net'}/hookah-tracker?sessionId=${sessionId}&loungeId=${sessionData?.loungeId || 'default-lounge'}&tableId=${sessionData?.tableId || 'T-001'}${isDemoMode ? '&demo=true&mode=demo&accelerated=true' : ''}`}
-              className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white px-6 py-3 rounded-lg transition-colors"
-            >
-                View Hookah Tracker
-            </a>
+              <div className="mt-6 flex gap-4 justify-center">
+                <button
+                  onClick={handleContinueToTracker}
+                  className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white px-6 py-3 rounded-lg transition-colors"
+                >
+                  Continue to Session
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -89,12 +89,27 @@ export async function GET(req: NextRequest) {
     }
 
     // Get guest profile from shared storage
-    const guestProfile = getGuestProfile(guestId);
+    let guestProfile = getGuestProfile(guestId);
+    
+    // If guest doesn't exist, create a default profile
     if (!guestProfile) {
-      return NextResponse.json({
-        ok: false,
-        error: 'Guest not found'
-      }, { status: 404 });
+      guestProfile = {
+        guestId,
+        anon: true,
+        lastLoungeId: loungeId || 'default',
+        badges: [],
+        sessions: [],
+        points: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        preferences: {
+          favoriteFlavors: [],
+          savedMixes: [],
+          notifications: false
+        }
+      };
+      // Store the new profile
+      setGuestProfile(guestId, guestProfile);
     }
 
     // Get feature flags

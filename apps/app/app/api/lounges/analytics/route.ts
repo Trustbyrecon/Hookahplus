@@ -292,7 +292,7 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-      return NextResponse.json({
+      const responseData = {
         success: true,
         timeRange,
         dateRange: {
@@ -320,7 +320,12 @@ export async function GET(request: NextRequest) {
           daily: dailyTrends,
           weekOverWeek
         }
-      });
+      };
+
+      // Cache the response
+      cache.set(cacheKey, responseData, ANALYTICS_CACHE_TTL);
+
+      return NextResponse.json(responseData);
     } catch (error) {
       console.error('[Analytics API] Error generating response:', error);
       return NextResponse.json({

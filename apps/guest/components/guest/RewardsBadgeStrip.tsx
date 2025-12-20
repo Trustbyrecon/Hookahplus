@@ -32,16 +32,24 @@ export default function RewardsBadgeStrip({ guestProfile, flags, onBadgeUpdate }
       }
 
       const data = await response.json();
-      setRewards(data);
+      // Extract rewards data (response includes ok: true)
+      const rewardsData: RewardsResponse = {
+        points: data.points || 0,
+        badges: data.badges || [],
+        nextBadge: data.nextBadge,
+        level: data.level || 'Bronze',
+        progress: data.progress || 0
+      };
+      setRewards(rewardsData);
       onBadgeUpdate();
 
       // Log rewards view event (client-side logging only - server-side logging happens in API)
       if (flags.ghostlog.lite) {
         const eventPayload = {
           guestId: guestProfile.guestId,
-          points: data.points,
-          badges: data.badges.map((b: BadgeDefinition) => b.badgeId),
-          level: data.level,
+          points: rewardsData.points,
+          badges: rewardsData.badges.map((b: BadgeDefinition) => b.badgeId),
+          level: rewardsData.level,
           timestamp: new Date().toISOString()
         };
 
