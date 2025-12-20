@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import GlobalNavigation from '../../components/GlobalNavigation';
 import { Card, Button, Badge } from '../../components';
 import StaffPerformanceAnalytics from '../../components/StaffPerformanceAnalytics';
