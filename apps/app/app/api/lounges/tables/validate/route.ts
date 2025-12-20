@@ -9,8 +9,17 @@ const prisma = new PrismaClient();
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { tableId, partySize, checkAvailability = true } = body;
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid JSON in request body' },
+        { status: 400 }
+      );
+    }
+    
+    const { tableId, partySize, checkAvailability = true } = body || {};
 
     if (!tableId) {
       return NextResponse.json(
