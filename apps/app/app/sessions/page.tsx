@@ -192,30 +192,40 @@ function SessionsPageContent() {
   ];
 
 
-  const handleStateChange = (sessionId: string, newState: SessionStatus, note?: string) => {
-    setSessions(prev => prev.map(session => 
-      session.id === sessionId 
-        ? { 
-            ...session, 
-            state: newState,
-            updatedAt: new Date(),
-            ...(newState === 'ACTIVE' && !session.startedAt && { startedAt: new Date() }),
-            ...(newState === 'COMPLETED' && { endedAt: new Date() })
-          }
-        : session
-    ));
+  const handleStateChange = async (sessionId: string, newState: SessionStatus, note?: string) => {
+    try {
+      // Make API call to update session state
+      const response = await fetch(`/api/sessions/${sessionId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ state: newState, note })
+      });
+      
+      if (response.ok) {
+        // Refresh sessions from context
+        await refreshSessions();
+      }
+    } catch (error) {
+      console.error('Failed to update session state:', error);
+    }
   };
 
-  const handleAssignStaff = (sessionId: string, staffId: string, role: 'BOH' | 'FOH') => {
-    setSessions(prev => prev.map(session => 
-      session.id === sessionId 
-        ? { 
-            ...session, 
-            [`assigned${role}Id`]: staffId,
-            updatedAt: new Date()
-          }
-        : session
-    ));
+  const handleAssignStaff = async (sessionId: string, staffId: string, role: 'BOH' | 'FOH') => {
+    try {
+      // Make API call to assign staff
+      const response = await fetch(`/api/sessions/${sessionId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [`assigned${role}Id`]: staffId })
+      });
+      
+      if (response.ok) {
+        // Refresh sessions from context
+        await refreshSessions();
+      }
+    } catch (error) {
+      console.error('Failed to assign staff:', error);
+    }
   };
 
   const [bulkActionProgress, setBulkActionProgress] = useState<{
