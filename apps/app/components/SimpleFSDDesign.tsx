@@ -797,7 +797,7 @@ export default function SimpleFSDDesign({
                   'VOIDED': '',
                 };
                 const label = (typeof session.action === 'string' && session.action) 
-                  ? session.action.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())
+                  ? session.action.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase())
                   : substateLabel[sessionStatus];
                 return label ? (
                   <span className="ml-1 px-2 py-0.5 rounded-full bg-zinc-800 text-[10px] text-zinc-200 border border-zinc-700">
