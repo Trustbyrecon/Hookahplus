@@ -1,11 +1,12 @@
 /**
  * Real-Time Updates Hook
  * 
- * Provides real-time data updates using polling or WebSocket
- * Falls back to polling if WebSocket is not available
+ * Provides real-time data updates using WebSocket with polling fallback
+ * Automatically tries WebSocket first, falls back to polling if unavailable
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { WebSocketService } from '../services/WebSocketService';
 
 interface UseRealtimeUpdatesOptions {
   endpoint: string;
@@ -113,86 +114,223 @@ export function useRealtimeUpdates<T = any>({
 }
 
 /**
- * WebSocket hook for real-time updates (future implementation)
+ * Enhanced WebSocket hook for real-time updates
+ * Uses WebSocketService for connection management
  */
 export function useWebSocketUpdates<T = any>({
-  url,
+  channel,
   enabled = true,
   onMessage,
   onError,
   onOpen,
   onClose,
+  fallbackToPolling = true,
+  pollingEndpoint,
+  pollingInterval = 5000,
 }: {
-  url: string;
+  channel: string;
   enabled?: boolean;
   onMessage?: (data: T) => void;
   onError?: (error: Error) => void;
   onOpen?: () => void;
   onClose?: () => void;
+  fallbackToPolling?: boolean;
+  pollingEndpoint?: string;
+  pollingInterval?: number;
 }) {
   const [data, setData] = useState<T | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const wsRef = useRef<WebSocket | null>(null);
+  const [usePolling, setUsePolling] = useState(false);
+  const wsServiceRef = useRef<WebSocketService | null>(null);
+  const subscriptionIdRef = useRef<string | null>(null);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Initialize WebSocket service
   useEffect(() => {
-    if (!enabled) {
-      if (wsRef.current) {
-        wsRef.current.close();
-        wsRef.current = null;
+    if (typeof window === 'undefined') return; // Server-side rendering
+
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.host;
+    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || `${protocol}//${host}/api/ws`;
+    
+    wsServiceRef.current = WebSocketService.getInstance(wsUrl);
+
+    return () => {
+      if (subscriptionIdRef.current && wsServiceRef.current) {
+        wsServiceRef.current.unsubscribe(subscriptionIdRef.current);
       }
-      return;
-    }
+    };
+  }, []);
 
-    try {
-      const ws = new WebSocket(url);
-      wsRef.current = ws;
+  // Set up WebSocket connection and subscription
+  useEffect(() => {
+    if (!enabled || !wsServiceRef.current || usePolling) return;
 
-      ws.onopen = () => {
-        setIsConnected(true);
-        onOpen?.();
-      };
+    const wsService = wsServiceRef.current;
 
-      ws.onmessage = (event) => {
-        try {
-          const result = JSON.parse(event.data);
+    // Subscribe to channel
+    subscriptionIdRef.current = wsService.subscribe(
+      channel,
+      (messageData: T) => {
+        setData(messageData);
+        onMessage?.(messageData);
+      },
+      (error: Error) => {
+        console.error('[useWebSocketUpdates] Error:', error);
+        if (fallbackToPolling && pollingEndpoint) {
+          console.log('[useWebSocketUpdates] Falling back to polling');
+          setUsePolling(true);
+        }
+        onError?.(error);
+      }
+    );
+
+    // Set up connection handlers
+    const handleOpen = () => {
+      setIsConnected(true);
+      setUsePolling(false);
+      onOpen?.();
+    };
+
+    const handleClose = () => {
+      setIsConnected(false);
+      if (fallbackToPolling && pollingEndpoint) {
+        setUsePolling(true);
+      }
+      onClose?.();
+    };
+
+    const handleError = (error: Error) => {
+      if (fallbackToPolling && pollingEndpoint) {
+        setUsePolling(true);
+      }
+      onError?.(error);
+    };
+
+    wsService.onOpen(handleOpen);
+    wsService.onClose(handleClose);
+    wsService.onError(handleError);
+
+    // Try to connect
+    wsService.connect().catch((error) => {
+      console.error('[useWebSocketUpdates] Failed to connect:', error);
+      if (fallbackToPolling && pollingEndpoint) {
+        setUsePolling(true);
+      }
+    });
+
+    return () => {
+      wsService.removeOnOpen(handleOpen);
+      wsService.removeOnClose(handleClose);
+      wsService.removeOnError(handleError);
+      
+      if (subscriptionIdRef.current) {
+        wsService.unsubscribe(subscriptionIdRef.current);
+        subscriptionIdRef.current = null;
+      }
+    };
+  }, [channel, enabled, usePolling, fallbackToPolling, pollingEndpoint, onMessage, onError, onOpen, onClose]);
+
+  // Fallback to polling if WebSocket fails
+  useEffect(() => {
+    if (!enabled || !usePolling || !pollingEndpoint) return;
+
+    const fetchData = async () => {
+      try {
+        const response = await fetch(pollingEndpoint);
+        if (response.ok) {
+          const result = await response.json();
           setData(result);
           onMessage?.(result);
-        } catch (err) {
-          console.error('Failed to parse WebSocket message:', err);
         }
-      };
+      } catch (error) {
+        console.error('[useWebSocketUpdates] Polling error:', error);
+        onError?.(error instanceof Error ? error : new Error('Polling failed'));
+      }
+    };
 
-      ws.onerror = (error) => {
-        const err = new Error('WebSocket error');
-        onError?.(err);
-      };
+    fetchData();
+    pollingIntervalRef.current = setInterval(fetchData, pollingInterval);
 
-      ws.onclose = () => {
-        setIsConnected(false);
-        onClose?.();
-      };
-
-      return () => {
-        if (ws) {
-          ws.close();
-        }
-      };
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to create WebSocket');
-      onError?.(error);
-    }
-  }, [url, enabled, onMessage, onError, onOpen, onClose]);
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    };
+  }, [enabled, usePolling, pollingEndpoint, pollingInterval, onMessage, onError]);
 
   const send = useCallback((message: any) => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify(message));
+    if (wsServiceRef.current?.isConnected) {
+      wsServiceRef.current.send(message);
+    } else {
+      console.warn('[useWebSocketUpdates] Cannot send: not connected');
     }
   }, []);
 
   return {
     data,
-    isConnected,
+    isConnected: usePolling ? false : isConnected,
     send,
+    usePolling,
+  };
+}
+
+/**
+ * Unified real-time hook that tries WebSocket first, falls back to polling
+ */
+export function useUnifiedRealtimeUpdates<T = any>({
+  endpoint,
+  channel,
+  interval = 5000,
+  enabled = true,
+  onUpdate,
+  onError,
+  preferWebSocket = true,
+}: {
+  endpoint: string;
+  channel?: string;
+  interval?: number;
+  enabled?: boolean;
+  onUpdate?: (data: T) => void;
+  onError?: (error: Error) => void;
+  preferWebSocket?: boolean;
+}) {
+  const [useWebSocket, setUseWebSocket] = useState(preferWebSocket);
+  
+  // Try WebSocket first if enabled and channel provided
+  const wsResult = useWebSocketUpdates<T>({
+    channel: channel || endpoint.replace(/^\//, '').replace(/\//g, '-'),
+    enabled: enabled && useWebSocket && !!channel,
+    onMessage: (data) => {
+      onUpdate?.(data);
+    },
+    onError: (error) => {
+      console.warn('[useUnifiedRealtimeUpdates] WebSocket failed, falling back to polling:', error);
+      setUseWebSocket(false);
+      onError?.(error);
+    },
+    fallbackToPolling: true,
+    pollingEndpoint: endpoint,
+    pollingInterval: interval,
+  });
+
+  // Fallback to polling
+  const pollingResult = useRealtimeUpdates<T>({
+    endpoint,
+    interval,
+    enabled: enabled && !useWebSocket,
+    onUpdate,
+    onError,
+  });
+
+  return useWebSocket && wsResult.isConnected ? {
+    ...wsResult,
+    loading: false,
+    refresh: () => wsResult.send({ type: 'refresh', channel: channel || endpoint }),
+  } : {
+    ...pollingResult,
+    usePolling: true,
   };
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -26,11 +26,14 @@ import {
   AlertCircle,
   CheckCircle,
   PieChart,
-  LineChart
+  LineChart,
+  Wifi,
+  WifiOff
 } from 'lucide-react';
 import GlobalNavigation from '../../components/GlobalNavigation';
 import { Card, Button, Badge } from '../../components';
 import { UnifiedDashboard } from '../../components/UnifiedDashboard';
+import { useUnifiedRealtimeUpdates } from '../../lib/hooks/useRealtimeUpdates';
 
 interface MetricData {
   label: string;
@@ -81,76 +84,178 @@ export default function AnalyticsPage() {
     }
   };
 
-  // Fetch analytics data
-  useEffect(() => {
-    const fetchAnalytics = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  // Process analytics data from API response
+  const processAnalyticsData = useCallback((sessionsData: any, conversionData: any, retentionData: any) => {
+    const windowDays = getWindowDays(timeRange);
+    
+    return {
+      revenue: {
+        total: sessionsData.metrics?.revenue || 0,
+        change: 0, // TODO: Calculate change from previous period
+        daily: sessionsData.metrics?.revenue || 0,
+        hourly: (sessionsData.metrics?.revenue || 0) / (windowDays * 24)
+      },
+      sessions: {
+        total: sessionsData.metrics?.totalSessions || 0,
+        active: sessionsData.metrics?.activeSessions || 0,
+        completed: sessionsData.metrics?.completedSessions || 0,
+        cancelled: 0, // TODO: Add cancelled count
+        avgDuration: sessionsData.metrics?.avgDurationMinutes || 0
+      },
+      customers: {
+        total: retentionData.metrics?.totalCustomers || 0,
+        new: (retentionData.metrics?.totalCustomers || 0) - (retentionData.metrics?.repeatCustomers || 0),
+        returning: retentionData.metrics?.repeatCustomers || 0,
+        vip: retentionData.vipCustomers?.length || 0,
+        avgSpend: retentionData.metrics?.avgCLV || 0
+      },
+      performance: {
+        avgWaitTime: 0, // TODO: Calculate from session data
+        tableTurnover: 0, // TODO: Calculate from session data
+        staffEfficiency: 0, // TODO: Calculate from session data
+        customerSatisfaction: 0 // TODO: Calculate from feedback data
+      },
+      conversion: conversionData,
+      retention: retentionData
+    };
+  }, [timeRange]);
 
+  // Fetch analytics data manually (for initial load and manual refresh)
+  const fetchAnalytics = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const windowDays = getWindowDays(timeRange);
+      
+      const [sessionsRes, conversionRes, retentionRes] = await Promise.all([
+        fetch(`/api/analytics/sessions?windowDays=${windowDays}`),
+        fetch(`/api/analytics/conversion?windowDays=${windowDays}`),
+        fetch(`/api/analytics/retention?windowDays=${windowDays}`)
+      ]);
+
+      if (!sessionsRes.ok || !conversionRes.ok || !retentionRes.ok) {
+        throw new Error('Failed to fetch analytics data');
+      }
+
+      const [sessionsData, conversionData, retentionData] = await Promise.all([
+        sessionsRes.json(),
+        conversionRes.json(),
+        retentionRes.json()
+      ]);
+
+      if (!sessionsData.success || !conversionData.success || !retentionData.success) {
+        throw new Error('Analytics API returned error');
+      }
+
+      const processedData = processAnalyticsData(sessionsData, conversionData, retentionData);
+      setAnalytics(processedData);
+    } catch (err) {
+      console.error('Error fetching analytics:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load analytics');
+    } finally {
+      setLoading(false);
+    }
+  }, [timeRange, processAnalyticsData]);
+
+  // Real-time updates for analytics (WebSocket with polling fallback)
+  const { 
+    isConnected: analyticsConnected, 
+    usePolling: analyticsUsePolling,
+    refresh: refreshAnalytics 
+  } = useUnifiedRealtimeUpdates({
+    endpoint: `/api/analytics/sessions?windowDays=${getWindowDays(timeRange)}`,
+    channel: `analytics-${timeRange}`,
+    interval: 30000, // 30 seconds polling fallback
+    enabled: true,
+    preferWebSocket: true,
+    onUpdate: async (data) => {
+      // When real-time update arrives, fetch all analytics data
+      try {
         const windowDays = getWindowDays(timeRange);
-        
         const [sessionsRes, conversionRes, retentionRes] = await Promise.all([
           fetch(`/api/analytics/sessions?windowDays=${windowDays}`),
           fetch(`/api/analytics/conversion?windowDays=${windowDays}`),
           fetch(`/api/analytics/retention?windowDays=${windowDays}`)
         ]);
 
-        if (!sessionsRes.ok || !conversionRes.ok || !retentionRes.ok) {
-          throw new Error('Failed to fetch analytics data');
+        if (sessionsRes.ok && conversionRes.ok && retentionRes.ok) {
+          const [sessionsData, conversionData, retentionData] = await Promise.all([
+            sessionsRes.json(),
+            conversionRes.json(),
+            retentionRes.json()
+          ]);
+
+          if (sessionsData.success && conversionData.success && retentionData.success) {
+            const processedData = processAnalyticsData(sessionsData, conversionData, retentionData);
+            setAnalytics(processedData);
+          }
         }
-
-        const [sessionsData, conversionData, retentionData] = await Promise.all([
-          sessionsRes.json(),
-          conversionRes.json(),
-          retentionRes.json()
-        ]);
-
-        if (!sessionsData.success || !conversionData.success || !retentionData.success) {
-          throw new Error('Analytics API returned error');
-        }
-
-        // Combine data into analytics object
-        setAnalytics({
-          revenue: {
-            total: sessionsData.metrics?.revenue || 0,
-            change: 0, // TODO: Calculate change from previous period
-            daily: sessionsData.metrics?.revenue || 0,
-            hourly: (sessionsData.metrics?.revenue || 0) / (windowDays * 24)
-          },
-          sessions: {
-            total: sessionsData.metrics?.totalSessions || 0,
-            active: sessionsData.metrics?.activeSessions || 0,
-            completed: sessionsData.metrics?.completedSessions || 0,
-            cancelled: 0, // TODO: Add cancelled count
-            avgDuration: sessionsData.metrics?.avgDurationMinutes || 0
-          },
-          customers: {
-            total: retentionData.metrics?.totalCustomers || 0,
-            new: (retentionData.metrics?.totalCustomers || 0) - (retentionData.metrics?.repeatCustomers || 0),
-            returning: retentionData.metrics?.repeatCustomers || 0,
-            vip: retentionData.vipCustomers?.length || 0,
-            avgSpend: retentionData.metrics?.avgCLV || 0
-          },
-          performance: {
-            avgWaitTime: 0, // TODO: Calculate from session data
-            tableTurnover: 0, // TODO: Calculate from session data
-            staffEfficiency: 0, // TODO: Calculate from session data
-            customerSatisfaction: 0 // TODO: Calculate from feedback data
-          },
-          conversion: conversionData,
-          retention: retentionData
-        });
       } catch (err) {
-        console.error('Error fetching analytics:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load analytics');
-      } finally {
-        setLoading(false);
+        console.error('Error updating analytics from real-time:', err);
       }
-    };
+    },
+    onError: (error) => {
+      console.warn('[Analytics] Real-time update error:', error);
+    },
+  });
 
+  // Fetch unified analytics data
+  const fetchUnifiedAnalytics = useCallback(async () => {
+    if (viewMode !== 'unified') return;
+    
+    try {
+      setUnifiedLoading(true);
+      const response = await fetch('/api/analytics/unified');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setUnifiedData(data.data);
+        } else {
+          setUnifiedData(null);
+        }
+      } else {
+        setUnifiedData(null);
+      }
+    } catch (err) {
+      console.error('Error fetching unified analytics:', err);
+      setUnifiedData(null);
+    } finally {
+      setUnifiedLoading(false);
+    }
+  }, [viewMode]);
+
+  // Real-time updates for unified analytics
+  const { 
+    isConnected: unifiedConnected, 
+    usePolling: unifiedUsePolling 
+  } = useUnifiedRealtimeUpdates({
+    endpoint: '/api/analytics/unified',
+    channel: 'unified-analytics',
+    interval: 30000, // 30 seconds polling fallback
+    enabled: viewMode === 'unified',
+    preferWebSocket: true,
+    onUpdate: (data) => {
+      if (data && data.success) {
+        setUnifiedData(data.data);
+      }
+    },
+    onError: (error) => {
+      console.warn('[Unified Analytics] Real-time update error:', error);
+    },
+  });
+
+  // Initial fetch
+  useEffect(() => {
     fetchAnalytics();
-  }, [timeRange]);
+  }, [timeRange, fetchAnalytics]);
+
+  // Fetch unified data when switching to unified view
+  useEffect(() => {
+    if (viewMode === 'unified' && !unifiedData) {
+      fetchUnifiedAnalytics();
+    }
+  }, [viewMode, unifiedData, fetchUnifiedAnalytics]);
 
   const keyMetrics: MetricData[] = analytics ? [
     {
@@ -807,55 +912,70 @@ export default function AnalyticsPage() {
           </div>
 
           <div className="flex items-center space-x-2">
+            {/* Connection Status Indicator */}
+            <div className="flex items-center gap-2 px-3 py-2 bg-zinc-800 rounded-lg border border-zinc-700">
+              {viewMode === 'unified' ? (
+                unifiedConnected ? (
+                  <div className="flex items-center gap-1 text-green-400 text-sm">
+                    <Wifi className="w-4 h-4" />
+                    <span>Live</span>
+                  </div>
+                ) : unifiedUsePolling ? (
+                  <div className="flex items-center gap-1 text-yellow-400 text-sm">
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Polling</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1 text-zinc-400 text-sm">
+                    <WifiOff className="w-4 h-4" />
+                    <span>Offline</span>
+                  </div>
+                )
+              ) : (
+                analyticsConnected ? (
+                  <div className="flex items-center gap-1 text-green-400 text-sm">
+                    <Wifi className="w-4 h-4" />
+                    <span>Live</span>
+                  </div>
+                ) : analyticsUsePolling ? (
+                  <div className="flex items-center gap-1 text-yellow-400 text-sm">
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Polling</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1 text-zinc-400 text-sm">
+                    <WifiOff className="w-4 h-4" />
+                    <span>Offline</span>
+                  </div>
+                )
+              )}
+            </div>
+
             <Button 
               variant="outline" 
               onClick={() => {
-                setLoading(true);
-                const windowDays = getWindowDays(timeRange);
-                Promise.all([
-                  fetch(`/api/analytics/sessions?windowDays=${windowDays}`).then(r => r.json()),
-                  fetch(`/api/analytics/conversion?windowDays=${windowDays}`).then(r => r.json()),
-                  fetch(`/api/analytics/retention?windowDays=${windowDays}`).then(r => r.json())
-                ]).then(([sessionsData, conversionData, retentionData]) => {
-                  setAnalytics({
-                    revenue: {
-                      total: sessionsData.metrics?.revenue || 0,
-                      change: 0,
-                      daily: sessionsData.metrics?.revenue || 0,
-                      hourly: (sessionsData.metrics?.revenue || 0) / (windowDays * 24)
-                    },
-                    sessions: {
-                      total: sessionsData.metrics?.totalSessions || 0,
-                      active: sessionsData.metrics?.activeSessions || 0,
-                      completed: sessionsData.metrics?.completedSessions || 0,
-                      cancelled: 0,
-                      avgDuration: sessionsData.metrics?.avgDurationMinutes || 0
-                    },
-                    customers: {
-                      total: retentionData.metrics?.totalCustomers || 0,
-                      new: (retentionData.metrics?.totalCustomers || 0) - (retentionData.metrics?.repeatCustomers || 0),
-                      returning: retentionData.metrics?.repeatCustomers || 0,
-                      vip: retentionData.vipCustomers?.length || 0,
-                      avgSpend: retentionData.metrics?.avgCLV || 0
-                    },
-                    performance: {
-                      avgWaitTime: 0,
-                      tableTurnover: 0,
-                      staffEfficiency: 0,
-                      customerSatisfaction: 0
-                    },
-                    conversion: conversionData,
-                    retention: retentionData
+                if (viewMode === 'unified') {
+                  fetchUnifiedAnalytics();
+                } else {
+                  setLoading(true);
+                  const windowDays = getWindowDays(timeRange);
+                  Promise.all([
+                    fetch(`/api/analytics/sessions?windowDays=${windowDays}`).then(r => r.json()),
+                    fetch(`/api/analytics/conversion?windowDays=${windowDays}`).then(r => r.json()),
+                    fetch(`/api/analytics/retention?windowDays=${windowDays}`).then(r => r.json())
+                  ]).then(([sessionsData, conversionData, retentionData]) => {
+                    const processedData = processAnalyticsData(sessionsData, conversionData, retentionData);
+                    setAnalytics(processedData);
+                    setLoading(false);
+                  }).catch(err => {
+                    setError(err.message);
+                    setLoading(false);
                   });
-                  setLoading(false);
-                }).catch(err => {
-                  setError(err.message);
-                  setLoading(false);
-                });
+                }
               }}
-              disabled={loading}
+              disabled={loading || unifiedLoading}
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 ${(loading || unifiedLoading) ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
             <Button variant="outline">

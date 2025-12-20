@@ -34,7 +34,7 @@ import { LoungeHeatMap } from '../../components/LoungeHeatMap';
 import { TableAnalytics } from '../../components/TableAnalytics';
 import { LoungeLayoutWizard } from '../../components/onboarding/LoungeLayoutWizard';
 import { Tooltip, HelpIcon } from '../../components/ui/Tooltip';
-import { useRealtimeUpdates } from '../../lib/hooks/useRealtimeUpdates';
+import { useUnifiedRealtimeUpdates } from '../../lib/hooks/useRealtimeUpdates';
 import { useTouchDrag } from '../../lib/hooks/useTouchDrag';
 import { useKeyboardNavigation, LAYOUT_KEYBOARD_SHORTCUTS } from '../../lib/hooks/useKeyboardNavigation';
 import { getTableAriaLabel, announceToScreenReader, isMobileDevice } from '../../lib/utils/accessibility';
@@ -113,13 +113,18 @@ function LoungeLayoutPageContent() {
     loadLayout();
   }, []);
 
-  // Real-time updates for sessions
-  const { isConnected: sessionsConnected } = useRealtimeUpdates({
-    endpoint: '/api/sessions',
-    interval: 15000, // 15 seconds
+  // Real-time updates for sessions (WebSocket with polling fallback)
+  const { isConnected: sessionsConnected, usePolling } = useUnifiedRealtimeUpdates({
+    endpoint: '/api/sessions?status=active',
+    channel: 'sessions',
+    interval: 15000, // 15 seconds polling fallback
     enabled: viewMode === 'live',
+    preferWebSocket: true,
     onUpdate: () => {
       refreshSessions();
+    },
+    onError: (error) => {
+      console.warn('[LoungeLayout] Real-time update error:', error);
     },
   });
 
