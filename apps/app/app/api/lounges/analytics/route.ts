@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { TableAnalyticsService } from '../../../../lib/services/TableAnalyticsService';
 import { HistoricalTrendsService } from '../../../../lib/services/TableAnalyticsService';
+import { cache, CacheService } from '../../../../lib/cache';
 
 const prisma = new PrismaClient();
+
+// Cache TTLs
+const ANALYTICS_CACHE_TTL = 45; // 45 seconds - analytics can be slightly stale
 
 /**
  * GET /api/lounges/analytics
@@ -14,6 +18,18 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const timeRange = searchParams.get('timeRange') || '7d';
     const metric = searchParams.get('metric') || 'revenue'; // revenue | utilization | sessions
+
+    // Generate cache key
+    const cacheKey = CacheService.generateKey('lounge-analytics', {
+      timeRange,
+      metric
+    });
+
+    // Check cache
+    const cached = cache.get<any>(cacheKey);
+    if (cached) {
+      return NextResponse.json(cached);
+    }
 
     // Calculate date range
     const end = new Date();

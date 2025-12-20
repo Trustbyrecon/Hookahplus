@@ -5,6 +5,7 @@ import { getCurrentUser, getCurrentTenant } from '../../../lib/auth';
 import crypto from 'crypto';
 import { withRequestContext, logWithRequestId, getRequestIdForLogging } from '../../../lib/api-helpers';
 import { getCached, setCached, generateCacheKey } from '../../../lib/cache';
+import { invalidateSessionCaches } from '../../../lib/cache-invalidation';
 import { logger } from '../../../lib/logger';
 import { 
   FireSession, 
@@ -1212,6 +1213,13 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
         }
       }
       
+      // Invalidate cache since new session affects availability and analytics
+      try {
+        invalidateSessionCaches();
+      } catch (cacheError) {
+        console.error('[Sessions API] Cache invalidation error (non-fatal):', cacheError);
+      }
+
       // In demo mode, log that this is a demo session
       if (isDemoMode) {
         console.log('[Sessions API] ✅ Demo session created (payment auto-confirmed):', newSession.id);
@@ -2256,6 +2264,17 @@ export async function PATCH(req: NextRequest) {
       }
 
       const fireSession = convertPrismaSessionToFireSession(updatedDbSession);
+
+      // Invalidate cache when session state changes significantly
+      // Only invalidate for state changes that affect availability/analytics
+      const stateChangingActions = ['CLOSE_SESSION', 'CANCEL_SESSION', 'START_ACTIVE', 'MARK_DELIVERED'];
+      if (stateChangingActions.includes(action)) {
+        try {
+          invalidateSessionCaches();
+        } catch (cacheError) {
+          console.error('[Sessions API] Cache invalidation error (non-fatal):', cacheError);
+        }
+      }
 
       // Process settlement when session is closed
       if (isClosing && action === 'CLOSE_SESSION') {

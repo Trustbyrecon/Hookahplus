@@ -11,7 +11,7 @@ interface CacheEntry<T> {
   createdAt: number;
 }
 
-class CacheService {
+export class CacheService {
   private cache: Map<string, CacheEntry<any>> = new Map();
   private maxSize: number = 1000; // Maximum number of cache entries
   private cleanupInterval: NodeJS.Timeout | null = null;
@@ -168,6 +168,34 @@ class CacheService {
       .map(key => `${key}=${JSON.stringify(params[key])}`)
       .join('&');
     return `${prefix}:${sortedParams}`;
+  }
+
+  /**
+   * Invalidate cache entries by prefix (e.g., all 'table-availability' entries)
+   */
+  invalidateByPrefix(prefix: string): number {
+    let count = 0;
+    const keysToDelete: string[] = [];
+    
+    this.cache.forEach((_, key) => {
+      if (key.startsWith(`${prefix}:`)) {
+        keysToDelete.push(key);
+      }
+    });
+    
+    keysToDelete.forEach(key => {
+      this.cache.delete(key);
+      count++;
+    });
+    
+    return count;
+  }
+
+  /**
+   * Invalidate all cache entries
+   */
+  invalidateAll(): void {
+    this.cache.clear();
   }
 }
 

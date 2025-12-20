@@ -290,16 +290,38 @@ async function runLoadTests() {
 
   // Check if server is accessible
   try {
-    const healthCheck = await fetch(`${BASE_URL}/api/health`).catch(() => {
-      throw new Error('Server not accessible');
-    });
-    if (!healthCheck.ok) {
-      throw new Error('Server health check failed');
+    // Try health endpoint first, then root path as fallback
+    let healthCheck;
+    try {
+      healthCheck = await fetch(`${BASE_URL}/api/health`, { 
+        method: 'GET',
+        signal: AbortSignal.timeout(5000) // 5 second timeout
+      });
+    } catch {
+      // If health endpoint fails, try root path
+      healthCheck = await fetch(`${BASE_URL}/`, { 
+        method: 'GET',
+        signal: AbortSignal.timeout(5000)
+      });
     }
+    
+    // Any response (even 404) means server is running
+    if (healthCheck.status >= 500) {
+      throw new Error(`Server returned error: ${healthCheck.status}`);
+    }
+    console.log(`✅ Server is accessible at ${BASE_URL}\n`);
   } catch (error) {
-    console.error(`\n❌ Error: Could not reach ${BASE_URL}`);
-    console.error('   Make sure the dev server is running: npm run dev');
-    process.exit(1);
+    // Check if it's a network error or timeout
+    if (error instanceof Error && (error.message.includes('fetch') || error.message.includes('ECONNREFUSED') || error.message.includes('timeout'))) {
+      console.error(`\n❌ Error: Could not reach ${BASE_URL}`);
+      console.error('   Make sure the dev server is running: npm run dev');
+      console.error(`   Network error: ${error.message}`);
+      process.exit(1);
+    } else {
+      // Other errors, but server might still be accessible
+      console.warn(`\n⚠️  Health check warning: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.warn('   Continuing with tests anyway...\n');
+    }
   }
 
   // Test configurations with different load levels

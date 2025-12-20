@@ -3,8 +3,12 @@ import { PrismaClient } from '@prisma/client';
 import { UnifiedAnalyticsService } from '../../../../lib/services/UnifiedAnalyticsService';
 import { TableLayoutService } from '../../../../lib/services/TableLayoutService';
 import { ZoneRoutingService } from '../../../../lib/services/ZoneRoutingService';
+import { cache, CacheService } from '../../../../lib/cache';
 
 const prisma = new PrismaClient();
+
+// Cache TTL
+const UNIFIED_ANALYTICS_CACHE_TTL = 60; // 60 seconds
 
 /**
  * GET /api/analytics/unified
@@ -14,6 +18,17 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const timeRange = searchParams.get('timeRange') || '7d';
+
+    // Generate cache key
+    const cacheKey = CacheService.generateKey('unified-analytics', {
+      timeRange
+    });
+
+    // Check cache
+    const cached = cache.get<any>(cacheKey);
+    if (cached) {
+      return NextResponse.json(cached);
+    }
     
     // Calculate date range
     const end = new Date();

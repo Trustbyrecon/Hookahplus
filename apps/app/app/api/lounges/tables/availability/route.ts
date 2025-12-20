@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { TableAvailabilityService } from '../../../../../lib/services/TableAvailabilityService';
-import { cache } from '../../../../../lib/cache';
+import { cache, CacheService } from '../../../../../lib/cache';
+import { invalidateReservationCache } from '../../../../../lib/cache-invalidation';
 
 const prisma = new PrismaClient();
 
@@ -42,21 +43,51 @@ export async function GET(request: NextRequest) {
     const tableId = searchParams.get('tableId');
     const requestedTime = searchParams.get('requestedTime');
 
-    // Get active sessions
-    const activeSessions = await prisma.session.findMany({
-      where: {
-        state: { notIn: ['CLOSED', 'CANCELED'] as any }
-      },
-      select: {
-        id: true,
-        tableId: true,
-        state: true
-      }
+    // Generate cache key
+    const cacheKey = CacheService.generateKey('table-availability', {
+      partySize,
+      tableId: tableId || 'all',
+      requestedTime: requestedTime || 'now'
     });
 
-    // Get active reservations
+    // Check cache
+    const cached = cache.get<any>(cacheKey);
+    if (cached) {
+      return NextResponse.json(cached);
+    }
+
+    // Get active sessions (with caching)
+    const sessionsCacheKey = 'active-sessions';
+    let activeSessions = cache.get<Array<{ id: string; tableId: string | null; state: string }>>(sessionsCacheKey);
+    
+    if (!activeSessions) {
+      // Optimized query - only get what we need, exclude null tableIds
+      activeSessions = await prisma.session.findMany({
+        where: {
+          state: { notIn: ['CLOSED', 'CANCELED'] as any },
+          tableId: { not: null } // Exclude sessions without tables
+        },
+        select: {
+          id: true,
+          tableId: true,
+          state: true
+        },
+        take: 1000 // Limit to prevent huge queries
+      });
+      
+      // Cache active sessions
+      cache.set(sessionsCacheKey, activeSessions, SESSIONS_CACHE_TTL);
+    }
+
+    // Get active reservations (with caching)
     const venueId = await getDefaultVenueId();
-    const reservations = await TableAvailabilityService.getActiveReservationsWithPrisma(prisma, venueId);
+    const reservationsCacheKey = `reservations:${venueId}`;
+    let reservations = cache.get<any[]>(reservationsCacheKey);
+    
+    if (!reservations) {
+      reservations = await TableAvailabilityService.getActiveReservationsWithPrisma(prisma, venueId);
+      cache.set(reservationsCacheKey, reservations, AVAILABILITY_CACHE_TTL);
+    }
 
     // If specific table requested, check that table
     if (tableId) {
@@ -74,10 +105,15 @@ export async function GET(request: NextRequest) {
         reservations
       );
 
-      return NextResponse.json({
+      const response = {
         success: true,
         ...check
-      });
+      };
+
+      // Cache the response
+      cache.set(cacheKey, response, AVAILABILITY_CACHE_TTL);
+      
+      return NextResponse.json(response);
     }
 
     // Get all available tables
@@ -105,14 +141,20 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({
+    const response = {
       success: true,
       partySize,
       availableTables: availableTables.filter(t => t.canAccommodate),
       occupiedTables: availableTables.filter(t => t.status === 'occupied'),
       reservedTables: availableTables.filter(t => t.status === 'reserved'),
-      combinations
-    });
+      combinations: combinations.length > 0 ? combinations : undefined,
+      timestamp: new Date().toISOString()
+    };
+
+    // Cache the response
+    cache.set(cacheKey, response, AVAILABILITY_CACHE_TTL);
+
+    return NextResponse.json(response);
 
   } catch (error) {
     console.error('[Table Availability API] Error:', error);
@@ -156,17 +198,24 @@ export async function POST(request: NextRequest) {
       customerPhone
     );
 
-    if (!result.success) {
-      return NextResponse.json(
-        { error: result.error },
-        { status: 400 }
-      );
-    }
+        if (!result.success) {
+          return NextResponse.json(
+            { error: result.error },
+            { status: 400 }
+          );
+        }
 
-    return NextResponse.json({
-      success: true,
-      reservationId: result.reservationId
-    });
+        // Invalidate cache since new reservation affects availability
+        try {
+          invalidateReservationCache(venueId);
+        } catch (cacheError) {
+          console.error('[Table Availability API] Cache invalidation error (non-fatal):', cacheError);
+        }
+
+        return NextResponse.json({
+          success: true,
+          reservationId: result.reservationId
+        });
 
   } catch (error) {
     console.error('[Table Reservation API] Error:', error);
