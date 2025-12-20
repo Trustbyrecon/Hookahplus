@@ -857,8 +857,8 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
     if (!data.assignedFoh && data.tableId) {
       try {
         // Use internal API call for zone routing
-        const { ZoneRoutingService } = await import('../../lib/services/ZoneRoutingService');
-        const { TableLayoutService } = await import('../../lib/services/TableLayoutService');
+        const { ZoneRoutingService } = await import('../../../lib/services/ZoneRoutingService');
+        const { TableLayoutService } = await import('../../../lib/services/TableLayoutService');
         
         // Get table zone
         const tableZone = await ZoneRoutingService.getTableZone(data.tableId) || 'Main';

@@ -23,12 +23,14 @@ import {
   Zap,
   Star,
   AlertTriangle,
+  AlertCircle,
   CheckCircle,
   PieChart,
   LineChart
 } from 'lucide-react';
 import GlobalNavigation from '../../components/GlobalNavigation';
 import { Card, Button, Badge } from '../../components';
+import { UnifiedDashboard } from '../../components/UnifiedDashboard';
 
 interface MetricData {
   label: string;
@@ -45,7 +47,9 @@ export default function AnalyticsPage() {
   const [viewMode, setViewMode] = useState('overview');
   const [showDetails, setShowDetails] = useState(false);
   const [analytics, setAnalytics] = useState<any>(null);
+  const [unifiedData, setUnifiedData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [unifiedLoading, setUnifiedLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const timeRanges = [
@@ -58,6 +62,7 @@ export default function AnalyticsPage() {
 
   const viewModes = [
     { value: 'overview', label: 'Overview', icon: <BarChart3 className="w-4 h-4" /> },
+    { value: 'unified', label: 'Unified Dashboard', icon: <Target className="w-4 h-4" /> },
     { value: 'revenue', label: 'Revenue', icon: <DollarSign className="w-4 h-4" /> },
     { value: 'sessions', label: 'Sessions', icon: <Flame className="w-4 h-4" /> },
     { value: 'customers', label: 'Customers', icon: <Users className="w-4 h-4" /> },
@@ -463,6 +468,24 @@ export default function AnalyticsPage() {
   const renderContent = () => {
     switch (viewMode) {
       case 'overview': return renderOverview();
+      case 'unified': 
+        if (unifiedLoading) {
+          return (
+            <Card className="p-12 text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-400 mx-auto mb-4"></div>
+              <p className="text-zinc-400">Loading unified analytics...</p>
+            </Card>
+          );
+        }
+        if (unifiedData) {
+          return <UnifiedDashboard data={unifiedData} />;
+        }
+        return (
+          <Card className="p-12 text-center">
+            <AlertCircle className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
+            <p className="text-zinc-400">No unified analytics data available</p>
+          </Card>
+        );
       case 'revenue': return renderRevenue();
       case 'sessions': return renderSessions();
       case 'customers': return renderCustomers();
