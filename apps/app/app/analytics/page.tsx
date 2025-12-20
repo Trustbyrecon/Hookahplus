@@ -54,13 +54,16 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [unifiedLoading, setUnifiedLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [customDateRange, setCustomDateRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
+  const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
 
   const timeRanges = [
     { value: '24h', label: '24 Hours' },
     { value: '7d', label: '7 Days' },
     { value: '30d', label: '30 Days' },
     { value: '90d', label: '90 Days' },
-    { value: '1y', label: '1 Year' }
+    { value: '1y', label: '1 Year' },
+    { value: 'custom', label: 'Custom Range' }
   ];
 
   const viewModes = [
@@ -897,13 +900,52 @@ export default function AnalyticsPage() {
           <div className="flex items-center space-x-4">
             <select
               value={timeRange}
-              onChange={(e) => setTimeRange(e.target.value)}
+              onChange={(e) => {
+                setTimeRange(e.target.value);
+                if (e.target.value === 'custom') {
+                  setShowCustomDatePicker(true);
+                } else {
+                  setShowCustomDatePicker(false);
+                  setCustomDateRange({ start: null, end: null });
+                }
+              }}
               className="px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
             >
               {timeRanges.map(range => (
                 <option key={range.value} value={range.value}>{range.label}</option>
               ))}
             </select>
+
+            {showCustomDatePicker && (
+              <div className="flex items-center space-x-2">
+                <input
+                  type="date"
+                  value={customDateRange.start ? customDateRange.start.toISOString().split('T')[0] : ''}
+                  onChange={(e) => setCustomDateRange({ ...customDateRange, start: e.target.value ? new Date(e.target.value) : null })}
+                  className="px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+                <span className="text-zinc-400">to</span>
+                <input
+                  type="date"
+                  value={customDateRange.end ? customDateRange.end.toISOString().split('T')[0] : ''}
+                  onChange={(e) => setCustomDateRange({ ...customDateRange, end: e.target.value ? new Date(e.target.value) : null })}
+                  className="px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+                {customDateRange.start && customDateRange.end && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      // Recalculate window days from custom range
+                      const days = Math.ceil((customDateRange.end!.getTime() - customDateRange.start!.getTime()) / (1000 * 60 * 60 * 24));
+                      fetchAnalytics();
+                    }}
+                  >
+                    Apply
+                  </Button>
+                )}
+              </div>
+            )}
 
             <Button variant="outline" onClick={() => setShowDetails(!showDetails)}>
               {showDetails ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -978,7 +1020,67 @@ export default function AnalyticsPage() {
               <RefreshCw className={`w-4 h-4 ${(loading || unifiedLoading) ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
-            <Button variant="outline">
+            <Button 
+              variant="outline"
+              onClick={async () => {
+                try {
+                  // Show export options modal
+                  const format = window.prompt('Select export format:\n1. CSV\n2. JSON\n3. PDF', '1');
+                  if (!format) return;
+
+                  const formatMap: Record<string, string> = {
+                    '1': 'csv',
+                    '2': 'json',
+                    '3': 'pdf',
+                  };
+
+                  const selectedFormat = formatMap[format] || 'csv';
+                  
+                  // Get current time range
+                  const windowDays = getWindowDays(timeRange);
+                  const endDate = new Date();
+                  const startDate = new Date();
+                  startDate.setDate(startDate.getDate() - windowDays);
+
+                  // Export analytics data
+                  const response = await fetch('/api/export', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      type: 'analytics',
+                      format: selectedFormat,
+                      dateRange: {
+                        start: startDate.toISOString(),
+                        end: endDate.toISOString(),
+                      },
+                      filters: {
+                        // Add any filters from current view
+                      },
+                    }),
+                  });
+
+                  if (!response.ok) {
+                    throw new Error('Export failed');
+                  }
+
+                  // Download the file
+                  const blob = await response.blob();
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `analytics-export-${new Date().toISOString().split('T')[0]}.${selectedFormat}`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  window.URL.revokeObjectURL(url);
+                } catch (error) {
+                  console.error('Export error:', error);
+                  alert('Failed to export data. Please try again.');
+                }
+              }}
+            >
               <Download className="w-4 h-4" />
               Export
             </Button>

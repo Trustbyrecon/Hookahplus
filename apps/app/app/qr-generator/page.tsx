@@ -218,6 +218,9 @@ function QRGeneratorAppContent() {
 
     setIsGenerating(true);
     try {
+      // Check if bulk mode
+      const isBulk = bulkMode && selectedTablesForBulk.length > 0;
+      
       const response = await fetch('/api/qr-generator', {
         method: 'POST',
         headers: {
@@ -225,21 +228,31 @@ function QRGeneratorAppContent() {
         },
         body: JSON.stringify({
           loungeId,
-          tableId: tableId || undefined,
+          tableId: !isBulk ? (tableId || undefined) : undefined,
           campaignRef: campaignRef || undefined,
+          bulkTables: isBulk ? selectedTablesForBulk : undefined,
         }),
       });
 
       const data = await response.json();
       if (data.success) {
-        setGeneratedQR(data.qrCode);
-        setShowPreview(true);
+        if (isBulk && data.qrCodes) {
+          // Bulk generation - show success message
+          alert(`Successfully generated ${data.qrCodes.length} QR code(s)!`);
+          setGeneratedQR(data.qrCodes[0]); // Show first one as preview
+          setShowPreview(true);
+        } else {
+          setGeneratedQR(data.qrCode);
+          setShowPreview(true);
+        }
         loadQRHistory(); // Refresh history
       } else {
         console.error('Failed to generate QR code:', data.error);
+        alert(`Failed to generate QR code: ${data.error}`);
       }
     } catch (error) {
       console.error('Error generating QR code:', error);
+      alert('Error generating QR code. Please try again.');
     } finally {
       setIsGenerating(false);
     }
@@ -307,30 +320,82 @@ function QRGeneratorAppContent() {
                 )}
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-2">
-                  Table (Optional)
+              {/* Bulk Mode Toggle */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="bulkMode"
+                  checked={bulkMode}
+                  onChange={(e) => {
+                    setBulkMode(e.target.checked);
+                    if (e.target.checked) {
+                      setTableId('');
+                    } else {
+                      setSelectedTablesForBulk([]);
+                    }
+                  }}
+                  className="w-4 h-4 text-purple-600 bg-zinc-700 border-zinc-600 rounded focus:ring-purple-500"
+                />
+                <label htmlFor="bulkMode" className="text-sm text-zinc-300">
+                  Generate QR codes for multiple tables
                 </label>
-                <select
-                  value={tableId}
-                  onChange={(e) => setTableId(e.target.value)}
-                  className="w-full px-4 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:border-purple-500"
-                  disabled={!loungeId || availableTables.length === 0}
-                >
-                  <option value="">
-                    {!loungeId ? 'Select a lounge first' : 
-                     availableTables.length === 0 ? 'No tables available' : 
-                     'Select a table (optional)'}
-                  </option>
-                  {availableTables
-                    .filter(table => table.qr_enabled && table.status === 'active')
-                    .map((table) => (
-                      <option key={table.id} value={table.id}>
-                        {table.name} ({table.type}, {table.capacity} seats) - {table.zone}
-                      </option>
-                    ))}
-                </select>
               </div>
+
+              {!bulkMode ? (
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">
+                    Table (Optional)
+                  </label>
+                  <select
+                    value={tableId}
+                    onChange={(e) => setTableId(e.target.value)}
+                    className="w-full px-4 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:border-purple-500"
+                    disabled={!loungeId || availableTables.length === 0}
+                  >
+                    <option value="">
+                      {!loungeId ? 'Select a lounge first' : 
+                       availableTables.length === 0 ? 'No tables available' : 
+                       'Select a table (optional)'}
+                    </option>
+                    {availableTables
+                      .filter(table => table.qr_enabled && table.status === 'active')
+                      .map((table) => (
+                        <option key={table.id} value={table.id}>
+                          {table.name} ({table.type}, {table.capacity} seats) - {table.zone}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">
+                    Select Tables ({selectedTablesForBulk.length} selected)
+                  </label>
+                  <div className="max-h-48 overflow-y-auto border border-zinc-600 rounded-lg p-2 bg-zinc-700">
+                    {availableTables
+                      .filter(table => table.qr_enabled && table.status === 'active')
+                      .map((table) => (
+                        <label
+                          key={table.id}
+                          className="flex items-center gap-2 p-2 hover:bg-zinc-600 rounded cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedTablesForBulk.includes(table.id)}
+                            onChange={() => handleBulkTableToggle(table.id)}
+                            className="w-4 h-4 text-purple-600 bg-zinc-800 border-zinc-600 rounded focus:ring-purple-500"
+                          />
+                          <span className="text-sm text-white">
+                            {table.name} ({table.type}, {table.capacity} seats) - {table.zone}
+                          </span>
+                        </label>
+                      ))}
+                    {availableTables.filter(table => table.qr_enabled && table.status === 'active').length === 0 && (
+                      <p className="text-sm text-zinc-400 p-2">No tables available</p>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-zinc-300 mb-2">
@@ -359,7 +424,7 @@ function QRGeneratorAppContent() {
 
               <button
                 onClick={generateQRCode}
-                disabled={isGenerating || !loungeId.trim()}
+                disabled={isGenerating || !loungeId.trim() || (bulkMode && selectedTablesForBulk.length === 0)}
                 className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-zinc-600 disabled:cursor-not-allowed text-white py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
               >
                 {isGenerating ? (
@@ -370,7 +435,11 @@ function QRGeneratorAppContent() {
                 ) : (
                   <>
                     <QrCode className="w-4 h-4" />
-                    <span>Generate QR Code</span>
+                    <span>
+                      {bulkMode 
+                        ? `Generate ${selectedTablesForBulk.length} QR Code(s)`
+                        : 'Generate QR Code'}
+                    </span>
                   </>
                 )}
               </button>
@@ -409,12 +478,24 @@ function QRGeneratorAppContent() {
             )}
           </div>
 
-          {/* QR History */}
+          {/* QR History & Analytics */}
           <div className="bg-zinc-800/50 border border-zinc-700 rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-6 flex items-center space-x-2">
-              <Clock className="w-5 h-5 text-purple-400" />
-              <span>Recent QR Codes</span>
-            </h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold flex items-center space-x-2">
+                <Clock className="w-5 h-5 text-purple-400" />
+                <span>Recent QR Codes</span>
+              </h2>
+              <button
+                onClick={() => {
+                  // TODO: Show analytics dashboard
+                  alert('Analytics dashboard coming soon!');
+                }}
+                className="px-3 py-1 bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 rounded-lg text-sm transition-colors flex items-center gap-1"
+              >
+                <BarChart3 className="w-4 h-4" />
+                Analytics
+              </button>
+            </div>
 
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {qrHistory.length === 0 ? (
