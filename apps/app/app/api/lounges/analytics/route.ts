@@ -172,6 +172,13 @@ export async function GET(request: NextRequest) {
     );
 
     // Generate heat map data
+    let heatMapData: any[] = [];
+    let timeBasedHeatMap: any[] = [];
+    let peakHours: any[] = [];
+    let dayOfWeekTrends: any[] = [];
+    let dailyTrends: any[] = [];
+    let weekOverWeek: any = null;
+
     try {
       heatMapData = TableAnalyticsService.generateHeatMapData(
         tables.map((t: any) => ({

@@ -1,190 +1,207 @@
 /**
- * API Response Caching Utility
- * Provides caching layer for API responses with TTL support
- * Uses Next.js cache for server-side caching, with optional Redis support
+ * Simple In-Memory Cache Service
+ * 
+ * Provides caching functionality for API responses and computed data.
+ * For production, consider using Redis or a distributed cache.
  */
-
-interface CacheOptions {
-  ttl?: number; // Time to live in seconds
-  tags?: string[]; // Cache tags for invalidation
-  revalidate?: number; // Next.js revalidation time
-}
 
 interface CacheEntry<T> {
   data: T;
-  timestamp: number;
-  ttl: number;
+  expiresAt: number;
+  createdAt: number;
 }
 
-// In-memory cache for development (fallback if Redis not available)
-const memoryCache = new Map<string, CacheEntry<any>>();
+class CacheService {
+  private cache: Map<string, CacheEntry<any>> = new Map();
+  private maxSize: number = 1000; // Maximum number of cache entries
+  private cleanupInterval: NodeJS.Timeout | null = null;
 
-// Cache cleanup interval (every 5 minutes)
-if (typeof setInterval !== 'undefined') {
-  setInterval(() => {
+  constructor() {
+    // Start cleanup interval (runs every 5 minutes)
+    this.startCleanup();
+  }
+
+  /**
+   * Get value from cache
+   */
+  get<T>(key: string): T | null {
+    const entry = this.cache.get(key);
+    
+    if (!entry) {
+      return null;
+    }
+
+    // Check if expired
+    if (Date.now() > entry.expiresAt) {
+      this.cache.delete(key);
+      return null;
+    }
+
+    return entry.data as T;
+  }
+
+  /**
+   * Set value in cache with TTL (time to live) in seconds
+   */
+  set<T>(key: string, value: T, ttlSeconds: number = 60): void {
+    // Evict oldest entries if cache is full
+    if (this.cache.size >= this.maxSize) {
+      this.evictOldest();
+    }
+
+    const expiresAt = Date.now() + (ttlSeconds * 1000);
+    this.cache.set(key, {
+      data: value,
+      expiresAt,
+      createdAt: Date.now()
+    });
+  }
+
+  /**
+   * Delete a specific key from cache
+   */
+  delete(key: string): void {
+    this.cache.delete(key);
+  }
+
+  /**
+   * Clear all cache entries
+   */
+  clear(): void {
+    this.cache.clear();
+  }
+
+  /**
+   * Check if a key exists and is not expired
+   */
+  has(key: string): boolean {
+    const entry = this.cache.get(key);
+    if (!entry) {
+      return false;
+    }
+    if (Date.now() > entry.expiresAt) {
+      this.cache.delete(key);
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Get cache statistics
+   */
+  getStats() {
     const now = Date.now();
-    for (const [key, entry] of memoryCache.entries()) {
-      if (now - entry.timestamp > entry.ttl * 1000) {
-        memoryCache.delete(key);
+    let expired = 0;
+    let active = 0;
+    let totalSize = 0;
+
+    this.cache.forEach(entry => {
+      if (now > entry.expiresAt) {
+        expired++;
+      } else {
+        active++;
       }
-    }
-  }, 5 * 60 * 1000);
-}
+      totalSize += JSON.stringify(entry.data).length;
+    });
 
-/**
- * Generate cache key from request parameters
- */
-export function generateCacheKey(
-  prefix: string,
-  params: Record<string, any> = {}
-): string {
-  const sortedParams = Object.keys(params)
-    .sort()
-    .map(key => `${key}=${JSON.stringify(params[key])}`)
-    .join('&');
-  
-  return sortedParams 
-    ? `${prefix}:${sortedParams}`
-    : prefix;
-}
-
-/**
- * Get cached value
- */
-export async function getCached<T>(
-  key: string
-): Promise<T | null> {
-  // Try memory cache first
-  const entry = memoryCache.get(key);
-  if (entry) {
-    const now = Date.now();
-    if (now - entry.timestamp < entry.ttl * 1000) {
-      return entry.data as T;
-    }
-    // Expired, remove it
-    memoryCache.delete(key);
+    return {
+      totalEntries: this.cache.size,
+      activeEntries: active,
+      expiredEntries: expired,
+      estimatedSize: `${(totalSize / 1024).toFixed(2)} KB`,
+      maxSize: this.maxSize
+    };
   }
 
-  // Try KV store if available (Vercel KV or Redis)
-  const { kvGet } = await import('./kv-client');
-  const cached = await kvGet<CacheEntry<T>>(key);
-  if (cached) {
-    const now = Date.now();
-    if (now - cached.timestamp < cached.ttl * 1000) {
-      return cached.data as T;
-    }
-    // Expired, remove it
-    const { kvDelete } = await import('./kv-client');
-    await kvDelete(key);
-  }
-
-  return null;
-}
-
-/**
- * Set cached value
- */
-export async function setCached<T>(
-  key: string,
-  data: T,
-  options: CacheOptions = {}
-): Promise<void> {
-  const ttl = options.ttl || 60; // Default 60 seconds
-  const entry: CacheEntry<T> = {
-    data,
-    timestamp: Date.now(),
-    ttl,
-  };
-
-  // Store in memory cache
-  memoryCache.set(key, entry);
-
-  // Store in KV store if available (Vercel KV or Redis)
-  const { kvSet } = await import('./kv-client');
-  await kvSet(key, entry, ttl);
-}
-
-/**
- * Invalidate cache by key or tag
- */
-export async function invalidateCache(
-  keyOrTag: string
-): Promise<void> {
-  // Remove from memory cache
-  if (memoryCache.has(keyOrTag)) {
-    memoryCache.delete(keyOrTag);
-  }
-
-  // Remove from KV store if available
-  const { kvDelete } = await import('./kv-client');
-  await kvDelete(keyOrTag);
-}
-
-/**
- * Clear all cache entries with a given prefix
- */
-export async function clearCacheByPrefix(prefix: string): Promise<void> {
-  // Clear from memory cache
-  for (const key of memoryCache.keys()) {
-    if (key.startsWith(prefix)) {
-      memoryCache.delete(key);
+  /**
+   * Evict oldest entries (FIFO)
+   */
+  private evictOldest(): void {
+    const entries = Array.from(this.cache.entries())
+      .sort((a, b) => a[1].createdAt - b[1].createdAt);
+    
+    // Remove oldest 10% of entries
+    const toRemove = Math.max(1, Math.floor(entries.length * 0.1));
+    for (let i = 0; i < toRemove; i++) {
+      this.cache.delete(entries[i][0]);
     }
   }
 
-  // Clear from KV store if available (pattern matching only works with Redis, not Vercel KV)
-  const { kvKeys, kvDelete } = await import('./kv-client');
-  const keys = await kvKeys(`${prefix}*`);
-  if (keys.length > 0) {
-    await Promise.all(keys.map(k => kvDelete(k)));
+  /**
+   * Start automatic cleanup of expired entries
+   */
+  private startCleanup(): void {
+    if (this.cleanupInterval) {
+      return;
+    }
+
+    this.cleanupInterval = setInterval(() => {
+      const now = Date.now();
+      const keysToDelete: string[] = [];
+
+      this.cache.forEach((entry, key) => {
+        if (now > entry.expiresAt) {
+          keysToDelete.push(key);
+        }
+      });
+
+      keysToDelete.forEach(key => this.cache.delete(key));
+    }, 5 * 60 * 1000); // Run every 5 minutes
+  }
+
+  /**
+   * Stop cleanup interval
+   */
+  stopCleanup(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
+  }
+
+  /**
+   * Generate cache key from parameters
+   */
+  static generateKey(prefix: string, params: Record<string, any>): string {
+    const sortedParams = Object.keys(params)
+      .sort()
+      .map(key => `${key}=${JSON.stringify(params[key])}`)
+      .join('&');
+    return `${prefix}:${sortedParams}`;
   }
 }
 
+// Singleton instance
+export const cache = new CacheService();
+
 /**
- * Cache wrapper for API route handlers
- * Automatically caches responses based on request parameters
+ * Cache decorator for async functions
  */
-export function withCache<T>(
-  handler: () => Promise<T>,
+export function cached<T extends (...args: any[]) => Promise<any>>(
+  fn: T,
   options: {
-    key: string;
-    ttl?: number;
-    tags?: string[];
-    skipCache?: boolean;
+    keyPrefix: string;
+    ttlSeconds?: number;
+    keyGenerator?: (...args: Parameters<T>) => string;
   }
-): Promise<T> {
-  return async (): Promise<T> => {
-    // Skip cache if requested or in development with cache disabled
-    if (options.skipCache || (process.env.NODE_ENV === 'development' && process.env.DISABLE_CACHE === 'true')) {
-      return handler();
-    }
+): T {
+  return (async (...args: Parameters<T>): Promise<ReturnType<T>> => {
+    const key = options.keyGenerator
+      ? options.keyGenerator(...args)
+      : CacheService.generateKey(options.keyPrefix, { args });
 
-    // Try to get from cache
-    const cached = await getCached<T>(options.key);
+    // Check cache
+    const cached = cache.get<ReturnType<T>>(key);
     if (cached !== null) {
       return cached;
     }
 
-    // Execute handler and cache result
-    const result = await handler();
-    await setCached(options.key, result, {
-      ttl: options.ttl,
-      tags: options.tags,
-    });
+    // Execute function
+    const result = await fn(...args);
+
+    // Store in cache
+    cache.set(key, result, options.ttlSeconds || 60);
 
     return result;
-  };
+  }) as T;
 }
-
-/**
- * Next.js revalidate cache helper
- * Use with Next.js fetch cache options
- */
-export function getNextCacheOptions(options: CacheOptions = {}) {
-  return {
-    next: {
-      revalidate: options.revalidate || options.ttl || 60,
-      tags: options.tags || [],
-    },
-  };
-}
-

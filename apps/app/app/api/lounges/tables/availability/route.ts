@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { TableAvailabilityService } from '../../../../../lib/services/TableAvailabilityService';
+import { cache } from '../../../../../lib/cache';
 
 const prisma = new PrismaClient();
+
+// Cache TTLs
+const AVAILABILITY_CACHE_TTL = 8; // 8 seconds - short TTL for real-time accuracy
+const SESSIONS_CACHE_TTL = 5; // 5 seconds - very short for active sessions
 
 // Helper to get or create default venue
 async function getDefaultVenueId(): Promise<string> {
