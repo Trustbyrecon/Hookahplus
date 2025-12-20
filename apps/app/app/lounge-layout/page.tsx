@@ -285,8 +285,8 @@ function LoungeLayoutPageContent() {
     }
   };
 
-  const handleTableClick = (table: Table, e: React.MouseEvent | React.TouchEvent) => {
-    e.stopPropagation();
+  const handleTableClick = (table: Table, e?: React.MouseEvent | React.TouchEvent | React.KeyboardEvent) => {
+    e?.stopPropagation();
     setSelectedTable(table.id);
     announceToScreenReader(`Selected ${getTableAriaLabel(table)}`);
   };
