@@ -92,6 +92,12 @@ export async function middleware(request: NextRequest) {
           '/api/admin',
           '/api/admin/operator-onboarding',
           '/api/analytics', // Allow analytics APIs without auth in development
+          '/api/analytics/unified', // Unified analytics in development
+          '/api/lounges/analytics', // Lounge analytics in development
+          '/api/lounges/tables', // Table APIs in development
+          '/api/lounges/tables/validate', // Table validation in development
+          '/api/lounges/tables/availability', // Table availability in development
+          '/api/staff/zones', // Zone routing in development
         ]
       : []),
   ];

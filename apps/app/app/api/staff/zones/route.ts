@@ -161,6 +161,7 @@ export async function GET(request: NextRequest) {
 /**
  * POST /api/staff/zones/route
  * Get routing recommendation for a new session
+ * Note: This endpoint is at /api/staff/zones/route (not /api/staff/zones/route.ts)
  */
 export async function POST(request: NextRequest) {
   try {

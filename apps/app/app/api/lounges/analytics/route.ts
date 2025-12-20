@@ -40,21 +40,76 @@ export async function GET(request: NextRequest) {
     end.setHours(23, 59, 59, 999);
 
     // Load layout
-    const layoutSetting = await prisma.orgSetting.findUnique({
-      where: { key: 'lounge_layout' }
-    });
-
-    if (!layoutSetting) {
+    let layoutSetting;
+    try {
+      layoutSetting = await prisma.orgSetting.findUnique({
+        where: { key: 'lounge_layout' }
+      });
+    } catch (error) {
+      console.error('[Analytics API] Error loading layout:', error);
+      // Return 200 with empty data for missing layout (not a server error)
       return NextResponse.json({
+        success: true,
         tables: [],
         zones: [],
         heatMap: [],
+        timeBasedHeatMap: [],
+        summary: {
+          totalTables: 0,
+          totalRevenue: 0,
+          totalSessions: 0,
+          averageUtilization: 0,
+          averageSessionValue: 0
+        },
+        trends: {
+          peakHours: [],
+          dayOfWeek: [],
+          daily: [],
+          weekOverWeek: null
+        },
         error: 'No lounge layout configured'
       });
     }
 
-    const layoutData = JSON.parse(layoutSetting.value);
-    const tables = layoutData.tables || [];
+    if (!layoutSetting) {
+      return NextResponse.json({
+        success: true,
+        tables: [],
+        zones: [],
+        heatMap: [],
+        timeBasedHeatMap: [],
+        summary: {
+          totalTables: 0,
+          totalRevenue: 0,
+          totalSessions: 0,
+          averageUtilization: 0,
+          averageSessionValue: 0
+        },
+        trends: {
+          peakHours: [],
+          dayOfWeek: [],
+          daily: [],
+          weekOverWeek: null
+        }
+      });
+    }
+
+    let layoutData;
+    let tables: any[] = [];
+    
+    try {
+      layoutData = JSON.parse(layoutSetting.value);
+      tables = layoutData.tables || [];
+    } catch (error) {
+      console.error('[Analytics API] Error parsing layout data:', error);
+      return NextResponse.json({
+        success: false,
+        tables: [],
+        zones: [],
+        heatMap: [],
+        error: 'Invalid lounge layout data'
+      }, { status: 500 });
+    }
 
     // Load sessions in date range
     const allSessions = await prisma.session.findMany({
@@ -117,115 +172,140 @@ export async function GET(request: NextRequest) {
     );
 
     // Generate heat map data
-    const heatMapData = TableAnalyticsService.generateHeatMapData(
-      tables.map((t: any) => ({
-        id: t.id,
-        name: t.name,
-        x: t.coordinates?.x || t.x || 50,
-        y: t.coordinates?.y || t.y || 50,
-        zone: t.zone || 'Main'
-      })),
-      tableMetrics,
-      metric as 'revenue' | 'utilization' | 'sessions'
-    );
-
-    // Get time-based heat map (peak hours)
-    const timeBasedHeatMap = TableAnalyticsService.getTimeBasedHeatMap(
-      sessions,
-      tables.map((t: any) => ({
-        id: t.id,
-        name: t.name,
-        x: t.coordinates?.x || t.x || 50,
-        y: t.coordinates?.y || t.y || 50
-      }))
-    );
-
-    // Calculate historical trends
-    const operatingHoursPerDay = 12;
-    const totalHoursAvailablePerDay = tables.length * operatingHoursPerDay;
-    
-    // Peak hours analysis
-    const peakHours = HistoricalTrendsService.identifyPeakHours(sessions, tables.length);
-    
-    // Day of week trends
-    const dayOfWeekTrends = HistoricalTrendsService.calculateDayOfWeekTrends(
-      sessions,
-      totalHoursAvailablePerDay
-    );
-    
-    // Daily trends
-    const dailyTrends = HistoricalTrendsService.calculateDailyTrends(
-      sessions,
-      start,
-      end,
-      totalHoursAvailablePerDay
-    );
-
-    // Week-over-week comparison (if we have enough data)
-    let weekOverWeek = null;
-    if (timeRange === '7d' || timeRange === '30d') {
-      const previousStart = new Date(start);
-      previousStart.setDate(previousStart.getDate() - (timeRange === '7d' ? 7 : 30));
-      const previousEnd = new Date(start);
-
-      const previousSessions = await prisma.session.findMany({
-        where: {
-          createdAt: {
-            gte: previousStart,
-            lte: previousEnd
-          }
-        },
-        select: {
-          priceCents: true,
-          durationSecs: true,
-          createdAt: true
-        }
-      });
-
-      weekOverWeek = HistoricalTrendsService.calculateWeekOverWeek(
-        sessions.map(s => ({
-          createdAt: s.createdAt,
-          priceCents: s.priceCents ?? undefined,
-          durationSecs: s.durationSecs ?? undefined
+    try {
+      heatMapData = TableAnalyticsService.generateHeatMapData(
+        tables.map((t: any) => ({
+          id: t.id,
+          name: t.name,
+          x: t.coordinates?.x || t.x || 50,
+          y: t.coordinates?.y || t.y || 50,
+          zone: t.zone || 'Main'
         })),
-        previousSessions.map(s => ({
-          createdAt: s.createdAt,
-          priceCents: s.priceCents ?? undefined,
-          durationSecs: s.durationSecs ?? undefined
-        })),
-        tables.length * operatingHoursPerDay * Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+        tableMetrics,
+        metric as 'revenue' | 'utilization' | 'sessions'
       );
+
+      // Get time-based heat map (peak hours)
+      timeBasedHeatMap = TableAnalyticsService.getTimeBasedHeatMap(
+        sessions,
+        tables.map((t: any) => ({
+          id: t.id,
+          name: t.name,
+          x: t.coordinates?.x || t.x || 50,
+          y: t.coordinates?.y || t.y || 50
+        }))
+      );
+
+      // Calculate historical trends
+      const operatingHoursPerDay = 12;
+      const totalHoursAvailablePerDay = tables.length * operatingHoursPerDay;
+      
+      // Peak hours analysis
+      peakHours = HistoricalTrendsService.identifyPeakHours(sessions, tables.length);
+      
+      // Day of week trends
+      dayOfWeekTrends = HistoricalTrendsService.calculateDayOfWeekTrends(
+        sessions,
+        totalHoursAvailablePerDay
+      );
+      
+      // Daily trends
+      dailyTrends = HistoricalTrendsService.calculateDailyTrends(
+        sessions,
+        start,
+        end,
+        totalHoursAvailablePerDay
+      );
+
+      // Week-over-week comparison (if we have enough data)
+      if (timeRange === '7d' || timeRange === '30d') {
+        try {
+          const previousStart = new Date(start);
+          previousStart.setDate(previousStart.getDate() - (timeRange === '7d' ? 7 : 30));
+          const previousEnd = new Date(start);
+
+          const previousSessions = await prisma.session.findMany({
+            where: {
+              createdAt: {
+                gte: previousStart,
+                lte: previousEnd
+              }
+            },
+            select: {
+              priceCents: true,
+              durationSecs: true,
+              createdAt: true
+            }
+          });
+
+          weekOverWeek = HistoricalTrendsService.calculateWeekOverWeek(
+            sessions.map(s => ({
+              createdAt: s.createdAt,
+              priceCents: s.priceCents ?? undefined,
+              durationSecs: s.durationSecs ?? undefined
+            })),
+            previousSessions.map(s => ({
+              createdAt: s.createdAt,
+              priceCents: s.priceCents ?? undefined,
+              durationSecs: s.durationSecs ?? undefined
+            })),
+            tables.length * operatingHoursPerDay * Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+          );
+        } catch (error) {
+          console.error('[Analytics API] Error calculating week-over-week:', error);
+          // Continue without week-over-week data
+          weekOverWeek = null;
+        }
+      }
+    } catch (error) {
+      console.error('[Analytics API] Error generating heat map or trends:', error);
+      // Set defaults
+      heatMapData = [];
+      timeBasedHeatMap = [];
+      peakHours = [];
+      dayOfWeekTrends = [];
+      dailyTrends = [];
+      weekOverWeek = null;
     }
 
-    return NextResponse.json({
-      success: true,
-      timeRange,
-      dateRange: {
-        start: start.toISOString(),
-        end: end.toISOString()
-      },
-      tables: tableMetrics,
-      zones: zoneMetrics,
-      heatMap: heatMapData,
-      timeBasedHeatMap,
-      summary: {
-        totalTables: tables.length,
-        totalRevenue: tableMetrics.reduce((sum: number, m: any) => sum + m.totalRevenue, 0),
-        totalSessions: tableMetrics.reduce((sum: number, m: any) => sum + m.totalSessions, 0),
-        averageUtilization: tableMetrics.length > 0
-          ? tableMetrics.reduce((sum: number, m: any) => sum + m.utilizationPercent, 0) / tableMetrics.length
-          : 0,
-        averageSessionValue: tableMetrics.length > 0
-          ? tableMetrics.reduce((sum: number, m: any) => sum + m.averageSessionValue, 0) / tableMetrics.length
-          : 0
-      },
-      trends: {
-        peakHours: peakHours.slice(0, 10), // Top 10 peak hours
-        dayOfWeek: dayOfWeekTrends,
-        daily: dailyTrends,
-        weekOverWeek
-      }
-    });
+    try {
+      return NextResponse.json({
+        success: true,
+        timeRange,
+        dateRange: {
+          start: start.toISOString(),
+          end: end.toISOString()
+        },
+        tables: tableMetrics,
+        zones: zoneMetrics,
+        heatMap: heatMapData,
+        timeBasedHeatMap,
+        summary: {
+          totalTables: tables.length,
+          totalRevenue: tableMetrics.reduce((sum: number, m: any) => sum + m.totalRevenue, 0),
+          totalSessions: tableMetrics.reduce((sum: number, m: any) => sum + m.totalSessions, 0),
+          averageUtilization: tableMetrics.length > 0
+            ? tableMetrics.reduce((sum: number, m: any) => sum + m.utilizationPercent, 0) / tableMetrics.length
+            : 0,
+          averageSessionValue: tableMetrics.length > 0
+            ? tableMetrics.reduce((sum: number, m: any) => sum + m.averageSessionValue, 0) / tableMetrics.length
+            : 0
+        },
+        trends: {
+          peakHours: peakHours.slice(0, 10), // Top 10 peak hours
+          dayOfWeek: dayOfWeekTrends,
+          daily: dailyTrends,
+          weekOverWeek
+        }
+      });
+    } catch (error) {
+      console.error('[Analytics API] Error generating response:', error);
+      return NextResponse.json({
+        success: false,
+        error: 'Failed to generate analytics data',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }, { status: 500 });
+    }
 
   } catch (error) {
     console.error('[Lounge Analytics API] Error:', error);

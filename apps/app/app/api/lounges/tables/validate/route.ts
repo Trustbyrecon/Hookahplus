@@ -29,9 +29,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Load layout
-    const layoutSetting = await prisma.orgSetting.findUnique({
-      where: { key: 'lounge_layout' }
-    });
+    let layoutSetting;
+    try {
+      layoutSetting = await prisma.orgSetting.findUnique({
+        where: { key: 'lounge_layout' }
+      });
+    } catch (error) {
+      console.error('[Table Validation API] Error loading layout:', error);
+      // Return 200 with valid=false for missing layout (not a server error)
+      return NextResponse.json({
+        valid: false,
+        error: 'No lounge layout configured. Please set up tables in Lounge Layout Manager first.',
+        suggestion: 'Visit /lounge-layout to configure your tables'
+      });
+    }
 
     if (!layoutSetting) {
       return NextResponse.json({
@@ -41,8 +52,20 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const layoutData = JSON.parse(layoutSetting.value);
-    const tables = layoutData.tables || [];
+    let layoutData;
+    let tables: any[] = [];
+    
+    try {
+      layoutData = JSON.parse(layoutSetting.value);
+      tables = layoutData.tables || [];
+    } catch (error) {
+      console.error('[Table Validation API] Error parsing layout data:', error);
+      return NextResponse.json({
+        valid: false,
+        error: 'Invalid lounge layout data',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }, { status: 500 });
+    }
 
     // Find table
     let table = tables.find((t: any) => 
@@ -102,27 +125,34 @@ export async function POST(request: NextRequest) {
 
     // Check availability if requested
     if (checkAvailability) {
-      const activeSession = await prisma.session.findFirst({
-        where: {
-          tableId: table.id,
-          state: { notIn: ['CLOSED', 'CANCELED'] as any }
-        },
-        select: {
-          id: true,
-          tableId: true,
-          state: true,
-          customerRef: true
-        }
-      });
+      try {
+        const activeSession = await prisma.session.findFirst({
+          where: {
+            tableId: table.id,
+            state: { notIn: ['CLOSED', 'CANCELED'] as any }
+          },
+          select: {
+            id: true,
+            tableId: true,
+            state: true,
+            customerRef: true
+          }
+        });
 
-      if (activeSession) {
-        result.available = false;
-        result.hasActiveSession = true;
-        result.activeSessionId = activeSession.id;
-        result.error = `Table "${table.name}" is currently occupied by an active session.`;
-      } else {
-        result.available = true;
-        result.hasActiveSession = false;
+        if (activeSession) {
+          result.available = false;
+          result.hasActiveSession = true;
+          result.activeSessionId = activeSession.id;
+          result.error = `Table "${table.name}" is currently occupied by an active session.`;
+        } else {
+          result.available = true;
+          result.hasActiveSession = false;
+        }
+      } catch (error) {
+        console.error('[Table Validation API] Error checking availability:', error);
+        // Don't fail validation if availability check fails
+        result.available = undefined;
+        result.availabilityCheckError = 'Could not check availability';
       }
     }
 
