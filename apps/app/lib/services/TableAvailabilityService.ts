@@ -1,4 +1,4 @@
-/**
+    /**
  * TableAvailabilityService
  * 
  * Comprehensive service for managing table availability, capacity validation,

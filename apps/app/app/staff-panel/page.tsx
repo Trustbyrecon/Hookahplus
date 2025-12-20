@@ -8,6 +8,7 @@ import StaffScheduling from '../../components/StaffScheduling';
 import StaffCommunication from '../../components/StaffCommunication';
 import RoleBasedPermissions from '../../components/RoleBasedPermissions';
 import CoachingPanel from '../../components/CoachingPanel';
+import { ZoneAnalytics } from '../../components/ZoneAnalytics';
 import { SessionProvider, useSessionContext } from '../../contexts/SessionContext';
 import { STATUS_TO_STAGE } from '../../types/enhancedSession';
 import { 
@@ -89,12 +90,33 @@ function StaffPanelPageContent() {
   const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month' | 'quarter'>('week');
   const [showCoaching, setShowCoaching] = useState(false);
   const [selectedStaffForCoaching, setSelectedStaffForCoaching] = useState<string | null>(null);
+  const [zoneData, setZoneData] = useState<{ workloads: any[]; metrics: any[] } | null>(null);
+  const [zoneLoading, setZoneLoading] = useState(false);
   const [newStaff, setNewStaff] = useState({
     name: '',
     email: '',
     phone: '',
     role: 'FOH' as 'BOH' | 'FOH' | 'MANAGER' | 'ADMIN'
   });
+  
+  // Fetch zone data when zone tab is active
+  useEffect(() => {
+    if (activeTab === 'zones') {
+      setZoneLoading(true);
+      fetch('/api/staff/zones')
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            setZoneData({ workloads: data.zones || [], metrics: data.metrics || [] });
+          }
+          setZoneLoading(false);
+        })
+        .catch(err => {
+          console.error('Failed to fetch zone data:', err);
+          setZoneLoading(false);
+        });
+    }
+  }, [activeTab]);
   
   // Derive staff members from sessions
   const staffMembers = useMemo(() => {
@@ -512,6 +534,7 @@ function StaffPanelPageContent() {
           {[
             { id: 'overview', label: 'Overview', icon: <TrendingUp className="w-4 h-4" /> },
             { id: 'staff', label: 'Staff Management', icon: <Users className="w-4 h-4" /> },
+            { id: 'zones', label: 'Zones', icon: <MapPin className="w-4 h-4" /> },
             { id: 'performance', label: 'Performance', icon: <BarChart3 className="w-4 h-4" /> },
             { id: 'schedule', label: 'Schedule', icon: <Calendar className="w-4 h-4" /> },
             { id: 'communication', label: 'Communication', icon: <MessageSquare className="w-4 h-4" /> },

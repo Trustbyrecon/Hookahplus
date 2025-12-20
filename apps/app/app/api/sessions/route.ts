@@ -853,6 +853,73 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
     const finalExternalRef = data.externalRef || `${data.source.toLowerCase()}-${Date.now()}`;
     const finalLoungeId = data.loungeId;
     
+    // Auto-assign staff based on zone routing (if not already assigned)
+    if (!data.assignedFoh && data.tableId) {
+      try {
+        // Use internal API call for zone routing
+        const { ZoneRoutingService } = await import('../../lib/services/ZoneRoutingService');
+        const { TableLayoutService } = await import('../../lib/services/TableLayoutService');
+        
+        // Get table zone
+        const tableZone = await ZoneRoutingService.getTableZone(data.tableId) || 'Main';
+        
+        // Get active sessions to calculate staff load
+        const activeSessionsForRouting = await prisma.session.findMany({
+          where: {
+            state: { notIn: ['CLOSED', 'CANCELED'] as any }
+          },
+          select: {
+            id: true,
+            tableId: true,
+            assignedBOHId: true,
+            assignedFOHId: true
+          }
+        });
+        
+        // Build staff map
+        const staffMap = new Map<string, { id: string; name: string; role: string; currentLoad: number }>();
+        activeSessionsForRouting.forEach(session => {
+          if (session.assignedFOHId) {
+            const existing = staffMap.get(session.assignedFOHId);
+            if (existing) {
+              existing.currentLoad++;
+            } else {
+              staffMap.set(session.assignedFOHId, {
+                id: session.assignedFOHId,
+                name: session.assignedFOHId,
+                role: 'FOH',
+                currentLoad: 1
+              });
+            }
+          }
+        });
+        
+        const availableStaff = Array.from(staffMap.values());
+        
+        // Get routing decision
+        const routing = ZoneRoutingService.routeSessionToStaff(
+          data.tableId,
+          tableZone,
+          availableStaff,
+          activeSessionsForRouting.map(s => ({
+            tableId: s.tableId || '',
+            assignedStaff: {
+              foh: s.assignedFOHId || undefined,
+              boh: s.assignedBOHId || undefined
+            }
+          }))
+        );
+        
+        if (routing.recommendedStaffId) {
+          data.assignedFoh = routing.recommendedStaffId;
+          console.log('[Sessions API] Auto-assigned FOH staff:', routing.recommendedStaffName, 'for zone:', tableZone);
+        }
+      } catch (error) {
+        console.warn('[Sessions API] Zone routing failed (non-blocking):', error);
+        // Continue without auto-assignment
+      }
+    }
+    
     // Get tenant_id for multi-tenant support
     // For public QR code access, try to get tenant_id from:
     // 1. Request body (if provided)
