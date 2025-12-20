@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { ZoneRoutingService } from '../../../../lib/services/ZoneRoutingService';
+import { ZoneRoutingService, ZoneStaffAssignment } from '../../../../lib/services/ZoneRoutingService';
 import { TableLayoutService } from '../../../../lib/services/TableLayoutService';
 
 const prisma = new PrismaClient();
@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get zone workloads
-    const zoneMap = new Map<string, ZoneRoutingService.ZoneStaffAssignment[]>();
+    const zoneMap = new Map<string, ZoneStaffAssignment[]>();
     
     // Group staff by zone
     for (const table of tables) {
