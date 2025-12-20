@@ -1,21 +1,22 @@
 import { NextResponse } from 'next/server';
 
 /**
- * Liveness Health Check Endpoint
+ * Liveness Check Endpoint
  * 
- * Simple check to verify the server is running.
- * Used by Kubernetes/Vercel to determine if the container should be restarted.
+ * Used by Kubernetes, Docker, and orchestration tools to determine
+ * if the application process is running.
  * 
- * This endpoint:
- * - Returns 200 immediately if server responds
- * - Has no external dependencies
- * - Should be fast (< 100ms)
+ * This should be fast and not depend on external services.
+ * Returns 200 if the server is running, regardless of database/other services.
  */
 export async function GET() {
-  return NextResponse.json({
-    status: 'alive',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-  });
+  return NextResponse.json(
+    {
+      status: 'alive',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      service: 'hookahplus-app',
+    },
+    { status: 200 }
+  );
 }
-

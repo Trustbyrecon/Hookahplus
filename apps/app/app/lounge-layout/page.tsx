@@ -32,6 +32,12 @@ import {
 } from 'lucide-react';
 import { LoungeHeatMap } from '../../components/LoungeHeatMap';
 import { TableAnalytics } from '../../components/TableAnalytics';
+import { LoungeLayoutWizard } from '../../components/onboarding/LoungeLayoutWizard';
+import { Tooltip, HelpIcon } from '../../components/ui/Tooltip';
+import { useRealtimeUpdates } from '../../lib/hooks/useRealtimeUpdates';
+import { useTouchDrag } from '../../lib/hooks/useTouchDrag';
+import { useKeyboardNavigation, LAYOUT_KEYBOARD_SHORTCUTS } from '../../lib/hooks/useKeyboardNavigation';
+import { getTableAriaLabel, announceToScreenReader, isMobileDevice } from '../../lib/utils/accessibility';
 
 interface Table {
   id: string;
@@ -61,12 +67,22 @@ function LoungeLayoutPageContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [viewMode, setViewMode] = useState<ViewMode>('live');
+  const [showWizard, setShowWizard] = useState(false);
   
   // Analytics state
   const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d' | '90d'>('7d');
   const [heatMapMetric, setHeatMapMetric] = useState<'revenue' | 'utilization' | 'sessions'>('revenue');
+  const [isMobile, setIsMobile] = useState(false);
+  
+  // Check if mobile on mount
+  useEffect(() => {
+    setIsMobile(isMobileDevice());
+    const handleResize = () => setIsMobile(isMobileDevice());
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Load existing layout on mount
   useEffect(() => {
@@ -97,13 +113,15 @@ function LoungeLayoutPageContent() {
     loadLayout();
   }, []);
 
-  // Auto-refresh sessions every 15 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
+  // Real-time updates for sessions
+  const { isConnected: sessionsConnected } = useRealtimeUpdates({
+    endpoint: '/api/sessions',
+    interval: 15000, // 15 seconds
+    enabled: viewMode === 'live',
+    onUpdate: () => {
       refreshSessions();
-    }, 15000);
-    return () => clearInterval(interval);
-  }, [refreshSessions]);
+    },
+  });
 
   // Load analytics data
   useEffect(() => {
@@ -262,30 +280,37 @@ function LoungeLayoutPageContent() {
     }
   };
 
-  const handleTableClick = (table: Table, e: React.MouseEvent) => {
+  const handleTableClick = (table: Table, e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation();
     setSelectedTable(table.id);
+    announceToScreenReader(`Selected ${getTableAriaLabel(table)}`);
   };
 
-  const handleTableDragStart = (table: Table, e: React.MouseEvent) => {
+  const handleTableDragStart = (table: Table, e: React.MouseEvent | React.TouchEvent) => {
+    if (viewMode !== 'layout') return;
     e.stopPropagation();
     setIsDragging(true);
     setSelectedTable(table.id);
+    
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     setDragOffset({
-      x: e.clientX - rect.left - rect.width / 2,
-      y: e.clientY - rect.top - rect.height / 2
+      x: clientX - rect.left - rect.width / 2,
+      y: clientY - rect.top - rect.height / 2
     });
   };
 
-  const handleTableDrag = (tableId: string, e: React.MouseEvent) => {
-    if (!isDragging) return;
+  const handleTableDrag = (tableId: string, e: React.MouseEvent | React.TouchEvent) => {
+    if (!isDragging || viewMode !== 'layout') return;
     e.preventDefault();
     
     const container = e.currentTarget as HTMLElement;
     const rect = container.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    const x = ((clientX - rect.left) / rect.width) * 100;
+    const y = ((clientY - rect.top) / rect.height) * 100;
 
     setTables(tables.map(t => 
       t.id === tableId 
@@ -295,8 +320,99 @@ function LoungeLayoutPageContent() {
   };
 
   const handleMouseUp = () => {
+    if (isDragging) {
+      announceToScreenReader('Table position updated');
+    }
     setIsDragging(false);
   };
+
+  // Touch drag handlers
+  const touchDrag = useTouchDrag({
+    onDragStart: () => {
+      if (selectedTable && viewMode === 'layout') {
+        setIsDragging(true);
+      }
+    },
+    onDrag: (e, deltaX, deltaY) => {
+      if (selectedTable && isDragging && viewMode === 'layout') {
+        const table = tables.find(t => t.id === selectedTable);
+        if (table) {
+          const container = document.querySelector('[data-layout-container]') as HTMLElement;
+          if (container) {
+            const rect = container.getBoundingClientRect();
+            const deltaXPercent = (deltaX / rect.width) * 100;
+            const deltaYPercent = (deltaY / rect.height) * 100;
+            setTables(tables.map(t => 
+              t.id === selectedTable
+                ? { ...t, x: Math.max(0, Math.min(100, t.x + deltaXPercent)), y: Math.max(0, Math.min(100, t.y + deltaYPercent)) }
+                : t
+            ));
+          }
+        }
+      }
+    },
+    onDragEnd: () => {
+      setIsDragging(false);
+      announceToScreenReader('Table position updated');
+    },
+  });
+
+  // Keyboard shortcuts
+  useKeyboardNavigation([
+    {
+      ...LAYOUT_KEYBOARD_SHORTCUTS.SAVE,
+      action: () => {
+        if (tables.length > 0) {
+          handleSave();
+          announceToScreenReader('Layout saved');
+        }
+      },
+    },
+    {
+      ...LAYOUT_KEYBOARD_SHORTCUTS.ADD_TABLE,
+      action: () => {
+        handleAddTable();
+        announceToScreenReader('Table added');
+      },
+    },
+    {
+      ...LAYOUT_KEYBOARD_SHORTCUTS.DELETE_TABLE,
+      action: () => {
+        if (selectedTable) {
+          handleDeleteTable(selectedTable);
+          announceToScreenReader('Table deleted');
+        }
+      },
+    },
+    {
+      ...LAYOUT_KEYBOARD_SHORTCUTS.ESCAPE,
+      action: () => {
+        setSelectedTable(null);
+        announceToScreenReader('Selection cleared');
+      },
+    },
+    {
+      ...LAYOUT_KEYBOARD_SHORTCUTS.LAYOUT_MODE,
+      action: () => {
+        setViewMode('layout');
+        announceToScreenReader('Switched to layout mode');
+      },
+    },
+    {
+      ...LAYOUT_KEYBOARD_SHORTCUTS.LIVE_MODE,
+      action: () => {
+        setViewMode('live');
+        announceToScreenReader('Switched to live mode');
+      },
+    },
+    {
+      ...LAYOUT_KEYBOARD_SHORTCUTS.ANALYTICS_MODE,
+      action: () => {
+        setViewMode('analytics');
+        announceToScreenReader('Switched to analytics mode');
+      },
+    },
+  ]);
 
   const handleSave = async () => {
     setSaveStatus('saving');
@@ -374,13 +490,24 @@ function LoungeLayoutPageContent() {
             </p>
             
             {/* Value Proposition Badge */}
-            <div className="inline-flex items-center gap-3 bg-gradient-to-r from-teal-900/30 to-cyan-900/30 border border-teal-500/30 rounded-xl px-6 py-3 mb-8">
-              <TrendingUp className="w-5 h-5 text-teal-400" />
-              <div className="text-left">
-                <div className="text-xl font-bold text-teal-400">↑ 22% better table utilization, automated heat mapping</div>
-                <div className="text-xs text-zinc-400">See which tables perform best and optimize your layout automatically</div>
+            <Tooltip 
+              content="Our analytics show an average 22% improvement in table utilization when using our heat mapping and optimization features. Track revenue, utilization, and session patterns to make data-driven decisions."
+              position="bottom"
+              variant="info"
+            >
+              <div className="inline-flex items-center gap-3 bg-gradient-to-r from-teal-900/30 to-cyan-900/30 border border-teal-500/30 rounded-xl px-6 py-3 mb-8 cursor-help">
+                <TrendingUp className="w-5 h-5 text-teal-400" />
+                <div className="text-left">
+                  <div className="text-xl font-bold text-teal-400">↑ 22% better table utilization, automated heat mapping</div>
+                  <div className="text-xs text-zinc-400">See which tables perform best and optimize your layout automatically</div>
+                </div>
+                <HelpIcon 
+                  content="Hover for more details"
+                  position="right"
+                  variant="info"
+                />
               </div>
-            </div>
+            </Tooltip>
 
             {/* Trust Indicators */}
             <div className="flex flex-wrap justify-center gap-6 mb-8">
@@ -400,21 +527,77 @@ function LoungeLayoutPageContent() {
 
             {/* Action Buttons */}
             <div className="flex items-center justify-center gap-4 flex-wrap">
-              <Button
-                variant="outline"
-                onClick={handleLoadDemoLayout}
-                className="bg-teal-900/20 border-teal-500/30 hover:bg-teal-900/30"
-              >
-                <Sparkles className="w-4 h-4 mr-2" />
-                Load Demo Layout
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleAddTable}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Table
-              </Button>
+              {/* Keyboard Shortcuts Help - Mobile Hidden */}
+              {!isMobile && (
+                <div className="w-full text-center mb-4">
+                  <Tooltip 
+                    content={
+                      <div className="space-y-1 text-sm">
+                        <div><kbd className="px-1 py-0.5 bg-zinc-700 rounded">Ctrl+S</kbd> Save</div>
+                        <div><kbd className="px-1 py-0.5 bg-zinc-700 rounded">Ctrl+A</kbd> Add Table</div>
+                        <div><kbd className="px-1 py-0.5 bg-zinc-700 rounded">Delete</kbd> Delete Selected</div>
+                        <div><kbd className="px-1 py-0.5 bg-zinc-700 rounded">1/2/3</kbd> Switch Modes</div>
+                        <div><kbd className="px-1 py-0.5 bg-zinc-700 rounded">?</kbd> Help</div>
+                      </div>
+                    }
+                    position="bottom"
+                    variant="info"
+                  >
+                    <button
+                      className="text-xs text-zinc-400 hover:text-zinc-300 underline"
+                      aria-label="Show keyboard shortcuts"
+                    >
+                      Keyboard Shortcuts
+                    </button>
+                  </Tooltip>
+                </div>
+              )}
+              {tables.length === 0 && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="primary"
+                    onClick={() => setShowWizard(true)}
+                    className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700"
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Setup Wizard
+                  </Button>
+                  <HelpIcon 
+                    content="Use our step-by-step wizard to quickly set up your lounge layout with all your tables and seating areas."
+                    position="bottom"
+                    variant="info"
+                  />
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handleLoadDemoLayout}
+                  className="bg-teal-900/20 border-teal-500/30 hover:bg-teal-900/30"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Load Demo Layout
+                </Button>
+                <HelpIcon 
+                  content="Load a sample layout with 10 tables for testing and demonstration purposes."
+                  position="bottom"
+                  variant="info"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handleAddTable}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Table
+                </Button>
+                <HelpIcon 
+                  content="Add a new table to your layout. You can drag it to position it after adding."
+                  position="bottom"
+                  variant="info"
+                />
+              </div>
               {tables.length > 0 && (
                 <Button
                   variant="outline"
@@ -425,21 +608,47 @@ function LoungeLayoutPageContent() {
                   Clear Layout
                 </Button>
               )}
-              <Button
-                variant="primary"
-                onClick={handleSave}
-                disabled={tables.length === 0 || saveStatus === 'saving'}
-              >
-                <Save className="w-4 h-4 mr-2" />
-                {saveStatus === 'saving' ? 'Saving...' : 
-                 saveStatus === 'saved' ? 'Saved!' : 
-                 saveStatus === 'error' ? 'Error - Try Again' :
-                 'Save Layout'}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="primary"
+                  onClick={handleSave}
+                  disabled={tables.length === 0 || saveStatus === 'saving'}
+                  aria-label="Save layout"
+                  className={isMobile ? 'min-h-[44px] min-w-[44px]' : ''}
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {saveStatus === 'saving' ? 'Saving...' : 
+                   saveStatus === 'saved' ? 'Saved!' : 
+                   saveStatus === 'error' ? 'Error - Try Again' :
+                   'Save Layout'}
+                </Button>
+                {!isMobile && (
+                  <HelpIcon 
+                    content="Save your current layout. Your table positions and configurations will be stored and used for session management."
+                    position="bottom"
+                    variant="info"
+                  />
+                )}
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Setup Wizard */}
+      <LoungeLayoutWizard
+        isOpen={showWizard}
+        onClose={() => setShowWizard(false)}
+        onComplete={(wizardTables) => {
+          setTables(wizardTables);
+          setShowWizard(false);
+          // Auto-save after wizard completion
+          setTimeout(() => {
+            handleSave();
+          }, 500);
+        }}
+        existingTables={tables}
+      />
 
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {/* Analytics View */}
@@ -538,52 +747,67 @@ function LoungeLayoutPageContent() {
                     {viewMode === 'live' && (
                       <div className="flex items-center gap-4 mt-2 text-sm">
                         <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                          <Tooltip 
+                            content={sessionsConnected ? "Real-time updates active" : "Connecting to live data..."}
+                            position="bottom"
+                            variant={sessionsConnected ? "success" : "warning"}
+                          >
+                            <div className={`w-2 h-2 rounded-full ${sessionsConnected ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'}`}></div>
+                          </Tooltip>
                           <span className="text-zinc-400">{liveStats.activeSessions} Active</span>
                         </div>
-                        <div className="flex items-center gap-2" title="Total revenue from all active sessions">
-                          <DollarSign className="w-4 h-4 text-teal-400" />
-                          <span className="text-zinc-400">${liveStats.totalRevenue.toFixed(2)}</span>
-                        </div>
+                        <Tooltip 
+                          content="Total revenue from all active sessions on the floor"
+                          position="bottom"
+                          variant="info"
+                        >
+                          <div className="flex items-center gap-2 cursor-help">
+                            <DollarSign className="w-4 h-4 text-teal-400" />
+                            <span className="text-zinc-400">${liveStats.totalRevenue.toFixed(2)}</span>
+                          </div>
+                        </Tooltip>
                       </div>
                     )}
                   </div>
                   <div className="flex items-center gap-3">
                     {/* View Mode Switcher */}
                     <div className="flex items-center gap-1 bg-zinc-800 rounded-lg p-1 border border-zinc-700">
-                      <button
-                        onClick={() => setViewMode('layout')}
-                        className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
-                          viewMode === 'layout'
-                            ? 'bg-teal-500 text-white'
-                            : 'text-zinc-400 hover:text-white'
-                        }`}
-                        title="Layout Mode - Edit and move tables"
-                      >
-                        Layout
-                      </button>
-                      <button
-                        onClick={() => setViewMode('live')}
-                        className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
-                          viewMode === 'live'
-                            ? 'bg-teal-500 text-white'
-                            : 'text-zinc-400 hover:text-white'
-                        }`}
-                        title="Live Mode - View active sessions"
-                      >
-                        Live
-                      </button>
-                      <button
-                        onClick={() => setViewMode('analytics')}
-                        className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
-                          (viewMode as ViewMode) === 'analytics'
-                            ? 'bg-teal-500 text-white'
-                            : 'text-zinc-400 hover:text-white'
-                        }`}
-                        title="Analytics Mode - View heat maps and metrics"
-                      >
-                        Analytics
-                      </button>
+                      <Tooltip content="Edit and move tables on your floor plan" position="bottom" variant="info">
+                        <button
+                          onClick={() => setViewMode('layout')}
+                          className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                            viewMode === 'layout'
+                              ? 'bg-teal-500 text-white'
+                              : 'text-zinc-400 hover:text-white'
+                          }`}
+                        >
+                          Layout
+                        </button>
+                      </Tooltip>
+                      <Tooltip content="View live session data and real-time table status" position="bottom" variant="info">
+                        <button
+                          onClick={() => setViewMode('live')}
+                          className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                            viewMode === 'live'
+                              ? 'bg-teal-500 text-white'
+                              : 'text-zinc-400 hover:text-white'
+                          }`}
+                        >
+                          Live
+                        </button>
+                      </Tooltip>
+                      <Tooltip content="View heat maps, analytics, and performance metrics" position="bottom" variant="info">
+                        <button
+                          onClick={() => setViewMode('analytics')}
+                          className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                            (viewMode as ViewMode) === 'analytics'
+                              ? 'bg-teal-500 text-white'
+                              : 'text-zinc-400 hover:text-white'
+                          }`}
+                        >
+                          Analytics
+                        </button>
+                      </Tooltip>
                     </div>
                     <div className="text-sm text-zinc-400">
                       {tables.length} table{tables.length !== 1 ? 's' : ''} configured
@@ -594,12 +818,15 @@ function LoungeLayoutPageContent() {
               <div
                 className="relative w-full h-[600px] bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg overflow-hidden"
                 onMouseMove={(e) => {
-                  if (isDragging && selectedTable) {
+                  if (isDragging && selectedTable && viewMode === 'layout') {
                     handleTableDrag(selectedTable, e);
                   }
                 }}
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
+                data-layout-container
+                role="application"
+                aria-label="Lounge floor plan layout editor"
                 onClick={() => setSelectedTable(null)}
               >
                 {tables.map((table) => {
@@ -621,6 +848,25 @@ function LoungeLayoutPageContent() {
                     onMouseDown={(e) => {
                       if (viewMode === 'layout') {
                         handleTableDragStart(table, e);
+                      }
+                    }}
+                    {...touchDrag.handlers}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={getTableAriaLabel({
+                      name: table.name,
+                      capacity: table.capacity,
+                      seatingType: table.seatingType,
+                      status: viewMode === 'live' && session ? 'active' : 'available'
+                    })}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleTableClick(table, e);
+                      }
+                      if (e.key === 'Delete' && viewMode === 'layout') {
+                        e.preventDefault();
+                        handleDeleteTable(table.id);
                       }
                     }}
                   >

@@ -98,6 +98,8 @@ export async function middleware(request: NextRequest) {
           '/api/lounges/tables/validate', // Table validation in development
           '/api/lounges/tables/availability', // Table availability in development
           '/api/staff/zones', // Zone routing in development
+          '/api/monitoring/performance', // Performance monitoring in development
+          '/api/cache/stats', // Cache stats in development
         ]
       : []),
   ];

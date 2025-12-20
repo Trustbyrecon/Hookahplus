@@ -15,6 +15,9 @@ export class CacheService {
   private cache: Map<string, CacheEntry<any>> = new Map();
   private maxSize: number = 1000; // Maximum number of cache entries
   private cleanupInterval: NodeJS.Timeout | null = null;
+  private hits: number = 0;
+  private misses: number = 0;
+  private evictions: number = 0;
 
   constructor() {
     // Start cleanup interval (runs every 5 minutes)
@@ -28,15 +31,18 @@ export class CacheService {
     const entry = this.cache.get(key);
     
     if (!entry) {
+      this.misses++;
       return null;
     }
 
     // Check if expired
     if (Date.now() > entry.expiresAt) {
       this.cache.delete(key);
+      this.misses++;
       return null;
     }
 
+    this.hits++;
     return entry.data as T;
   }
 
@@ -69,6 +75,10 @@ export class CacheService {
    */
   clear(): void {
     this.cache.clear();
+    // Reset stats when clearing
+    this.hits = 0;
+    this.misses = 0;
+    this.evictions = 0;
   }
 
   /**
@@ -104,12 +114,22 @@ export class CacheService {
       totalSize += JSON.stringify(entry.data).length;
     });
 
+    const totalRequests = this.hits + this.misses;
+    const hitRate = totalRequests > 0 ? this.hits / totalRequests : 0;
+
     return {
+      // Legacy properties (for backward compatibility)
       totalEntries: this.cache.size,
       activeEntries: active,
       expiredEntries: expired,
       estimatedSize: `${(totalSize / 1024).toFixed(2)} KB`,
-      maxSize: this.maxSize
+      maxSize: this.maxSize,
+      // New properties (for metrics)
+      size: this.cache.size,
+      hits: this.hits,
+      misses: this.misses,
+      hitRate: hitRate,
+      evictions: this.evictions,
     };
   }
 
@@ -124,6 +144,7 @@ export class CacheService {
     const toRemove = Math.max(1, Math.floor(entries.length * 0.1));
     for (let i = 0; i < toRemove; i++) {
       this.cache.delete(entries[i][0]);
+      this.evictions++;
     }
   }
 

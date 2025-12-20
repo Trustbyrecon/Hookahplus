@@ -1,170 +1,85 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '../../../../lib/db';
-import Stripe from 'stripe';
+import { PrismaClient } from '@prisma/client';
+import { logger } from '../../../../lib/logger';
+import { cache } from '../../../../lib/cache';
+
+const prisma = new PrismaClient();
 
 /**
- * Readiness Health Check Endpoint
+ * Readiness Check Endpoint
  * 
- * Checks if the application can serve traffic by verifying:
- * - Database connection
- * - Stripe connectivity (lightweight check)
- * - Critical environment variables
+ * Used by Kubernetes, Docker, and orchestration tools to determine
+ * if the application is ready to serve traffic.
  * 
- * Used by Kubernetes/Vercel to determine if traffic should be routed to this instance.
+ * Checks:
+ * - Database connectivity
+ * - Cache service availability
+ * - Critical dependencies
+ * 
  * Returns 200 if ready, 503 if not ready.
  */
-
-interface HealthCheck {
-  name: string;
-  status: 'ok' | 'error';
-  message?: string;
-  duration?: number;
-}
-
-async function checkDatabase(): Promise<HealthCheck> {
-  const startTime = Date.now();
-  try {
-    // Simple connection test
-    await prisma.$queryRaw`SELECT 1`;
-    return {
-      name: 'database',
-      status: 'ok',
-      duration: Date.now() - startTime,
-    };
-  } catch (error) {
-    return {
-      name: 'database',
-      status: 'error',
-      message: error instanceof Error ? error.message : 'Database connection failed',
-      duration: Date.now() - startTime,
-    };
-  }
-}
-
-async function checkStripe(): Promise<HealthCheck> {
-  const startTime = Date.now();
-  try {
-    if (!process.env.STRIPE_SECRET_KEY) {
-      return {
-        name: 'stripe',
-        status: 'error',
-        message: 'STRIPE_SECRET_KEY not configured',
-        duration: Date.now() - startTime,
-      };
-    }
-
-    // Lightweight check: just verify we can create a Stripe instance
-    // Don't make an actual API call to avoid rate limits
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: '2025-08-27.basil' as any,
-    });
-    
-    // Verify key format (test or live)
-    const keyPrefix = process.env.STRIPE_SECRET_KEY.substring(0, 7);
-    const isValidKey = keyPrefix === 'sk_test' || keyPrefix === 'sk_live';
-    
-    return {
-      name: 'stripe',
-      status: isValidKey ? 'ok' : 'error',
-      message: isValidKey ? 'Stripe key configured' : 'Invalid Stripe key format',
-      duration: Date.now() - startTime,
-    };
-  } catch (error) {
-    return {
-      name: 'stripe',
-      status: 'error',
-      message: error instanceof Error ? error.message : 'Stripe check failed',
-      duration: Date.now() - startTime,
-    };
-  }
-}
-
-function checkEnvironmentVariables(): HealthCheck {
-  const startTime = Date.now();
-  const required = ['DATABASE_URL'];
-  const optional = ['STRIPE_SECRET_KEY', 'NEXT_PUBLIC_APP_URL'];
-  
-  const missing = required.filter(key => !process.env[key]);
-  
-  if (missing.length > 0) {
-    return {
-      name: 'environment',
-      status: 'error',
-      message: `Missing required environment variables: ${missing.join(', ')}`,
-      duration: Date.now() - startTime,
-    };
-  }
-  
-  const missingOptional = optional.filter(key => !process.env[key]);
-  const hasWarnings = missingOptional.length > 0;
-  
-  return {
-    name: 'environment',
-    status: hasWarnings ? 'ok' : 'ok',
-    message: hasWarnings 
-      ? `Optional variables missing: ${missingOptional.join(', ')}`
-      : 'All environment variables configured',
-    duration: Date.now() - startTime,
-  };
-}
-
 export async function GET() {
-  const startTime = Date.now();
-  
-  // Run all checks in parallel
-  const checks = await Promise.allSettled([
-    checkDatabase(),
-    checkStripe(),
-    Promise.resolve(checkEnvironmentVariables()),
-  ]);
-  
-  // Extract results
-  const results: HealthCheck[] = checks.map((check, index) => {
-    if (check.status === 'fulfilled') {
-      return check.value;
-    } else {
-      const names = ['database', 'stripe', 'environment'];
-      return {
-        name: names[index],
-        status: 'error' as const,
-        message: check.reason?.message || 'Check failed',
-      };
+  const checks: Record<string, { status: 'ok' | 'degraded' | 'down'; message?: string }> = {};
+  let overallStatus: 'ok' | 'degraded' | 'down' = 'ok';
+
+  // Check database
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    checks.database = { status: 'ok' };
+    logger.debug('Readiness check: Database OK', { component: 'health' });
+  } catch (error) {
+    checks.database = {
+      status: 'down',
+      message: error instanceof Error ? error.message : 'Database connection failed',
+    };
+    overallStatus = 'down';
+    logger.error('Readiness check: Database failed', { component: 'health' }, error instanceof Error ? error : new Error(String(error)));
+  }
+
+  // Check cache service
+  try {
+    const stats = cache.getStats();
+    // Cache service is OK if it's working, even if empty (empty is normal on startup)
+    checks.cache = {
+      status: 'ok',
+      message: stats.size === 0 && stats.hits === 0 ? 'Cache service initialized (empty cache is normal)' : undefined,
+    };
+  } catch (error) {
+    checks.cache = {
+      status: 'down',
+      message: error instanceof Error ? error.message : 'Cache service unavailable',
+    };
+    overallStatus = 'down';
+  }
+
+  // Check environment variables
+  const requiredEnvVars = ['DATABASE_URL'];
+  const missingEnvVars: string[] = [];
+  requiredEnvVars.forEach((varName) => {
+    if (!process.env[varName]) {
+      missingEnvVars.push(varName);
     }
   });
-  
-  // Determine overall readiness
-  const allOk = results.every(check => check.status === 'ok');
-  const criticalChecks = results.filter(check => 
-    check.name === 'database' || check.name === 'environment'
-  );
-  const criticalOk = criticalChecks.every(check => check.status === 'ok');
-  
-  // Ready if all checks pass, or if critical checks pass (Stripe can be optional)
-  const ready = allOk || criticalOk;
-  
-  const statusCode = ready ? 200 : 503;
-  const overallStatus = ready ? 'ready' : 'not_ready';
-  
-  return NextResponse.json(
-    {
-      status: overallStatus,
-      timestamp: new Date().toISOString(),
-      checks: results.reduce((acc, check) => {
-        acc[check.name] = {
-          status: check.status,
-          ...(check.message && { message: check.message }),
-          ...(check.duration && { duration: `${check.duration}ms` }),
-        };
-        return acc;
-      }, {} as Record<string, any>),
-      summary: {
-        total: results.length,
-        ok: results.filter(c => c.status === 'ok').length,
-        errors: results.filter(c => c.status === 'error').length,
-      },
-      duration: `${Date.now() - startTime}ms`,
-    },
-    { status: statusCode }
-  );
-}
 
+  if (missingEnvVars.length > 0) {
+    checks.environment = {
+      status: 'down',
+      message: `Missing required environment variables: ${missingEnvVars.join(', ')}`,
+    };
+    overallStatus = 'down';
+  } else {
+    checks.environment = { status: 'ok' };
+  }
+
+  const response = {
+    status: overallStatus,
+    timestamp: new Date().toISOString(),
+    checks,
+    service: 'hookahplus-app',
+    version: process.env.APP_VERSION || '1.0.5',
+    environment: process.env.NODE_ENV || 'development',
+  };
+
+  const statusCode = overallStatus === 'down' ? 503 : overallStatus === 'degraded' ? 200 : 200;
+  return NextResponse.json(response, { status: statusCode });
+}
