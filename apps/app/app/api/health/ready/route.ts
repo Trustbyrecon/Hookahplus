@@ -80,6 +80,6 @@ export async function GET() {
     environment: process.env.NODE_ENV || 'development',
   };
 
-  const statusCode = overallStatus === 'down' ? 503 : overallStatus === 'degraded' ? 200 : 200;
+  const statusCode = overallStatus === 'down' ? 503 : 200;
   return NextResponse.json(response, { status: statusCode });
 }
