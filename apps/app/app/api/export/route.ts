@@ -60,7 +60,14 @@ export async function POST(req: NextRequest) {
     }
 
     // Return the export data
-    return new NextResponse(result.data, {
+    // Convert Buffer to string if needed, or use string directly
+    const body = typeof result.data === 'string' 
+      ? result.data 
+      : result.data instanceof Buffer 
+        ? result.data.toString('utf-8')
+        : String(result.data || '');
+    
+    return new NextResponse(body, {
       status: 200,
       headers: {
         'Content-Type': result.mimeType || 'application/octet-stream',
