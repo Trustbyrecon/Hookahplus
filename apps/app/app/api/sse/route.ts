@@ -6,9 +6,7 @@
  */
 
 import { NextRequest } from 'next/server';
-
-// Store active connections
-const connections = new Map<string, ReadableStreamDefaultController>();
+import { registerConnection, unregisterConnection } from '../../../lib/services/SSEService';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -18,7 +16,7 @@ export async function GET(request: NextRequest) {
   const stream = new ReadableStream({
     start(controller) {
       const connectionId = `${channel}-${Date.now()}-${Math.random()}`;
-      connections.set(connectionId, controller);
+      registerConnection(connectionId, controller);
 
       // Send initial connection message
       const encoder = new TextEncoder();
@@ -28,7 +26,7 @@ export async function GET(request: NextRequest) {
 
       // Clean up on close
       request.signal.addEventListener('abort', () => {
-        connections.delete(connectionId);
+        unregisterConnection(connectionId);
         controller.close();
       });
     },
@@ -41,26 +39,6 @@ export async function GET(request: NextRequest) {
       'Connection': 'keep-alive',
       'X-Accel-Buffering': 'no', // Disable buffering for nginx
     },
-  });
-}
-
-/**
- * Broadcast message to all connections on a channel
- */
-export function broadcast(channel: string, data: any) {
-  const message = `data: ${JSON.stringify({ type: 'data', channel, data })}\n\n`;
-  const encoder = new TextEncoder();
-  const encoded = encoder.encode(message);
-
-  connections.forEach((controller, connectionId) => {
-    if (connectionId.startsWith(channel)) {
-      try {
-        controller.enqueue(encoded);
-      } catch (error) {
-        console.error('[SSE] Error broadcasting:', error);
-        connections.delete(connectionId);
-      }
-    }
   });
 }
 

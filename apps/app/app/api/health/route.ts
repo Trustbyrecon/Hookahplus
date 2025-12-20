@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { getCached, setCached, generateCacheKey } from '../../../lib/cache';
+import { cache, CacheService } from '../../../lib/cache';
 import { logger } from '../../../lib/logger';
 
 const prisma = new PrismaClient();
@@ -16,10 +16,10 @@ const prisma = new PrismaClient();
  * This endpoint now uses readiness logic.
  */
 export async function GET() {
-  const cacheKey = generateCacheKey('health', {});
+  const cacheKey = CacheService.generateKey('health', {});
   
   // Try to get from cache (short TTL for health checks)
-  const cached = await getCached<any>(cacheKey);
+  const cached = cache.get<{ data: any; status: number }>(cacheKey);
   if (cached) {
     return NextResponse.json(cached.data, { status: cached.status });
   }
@@ -81,7 +81,7 @@ export async function GET() {
   const statusCode = status === 'down' ? 503 : 200;
   
   // Cache for 10 seconds (health checks should be fresh but not too frequent)
-  await setCached(cacheKey, { data: healthData, status: statusCode }, { ttl: 10 });
+  cache.set(cacheKey, { data: healthData, status: statusCode }, 10);
   
   return NextResponse.json(healthData, { status: statusCode });
 }
