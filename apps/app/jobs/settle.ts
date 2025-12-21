@@ -164,6 +164,7 @@ export async function reconcilePosSettlements(
 
     for (const ticket of unmatchedTickets) {
       if (usedTicketIds.has(ticket.ticketId)) continue;
+      if (ticket.amountCents === null) continue;
 
       const amountDiff = Math.abs(charge.amount - ticket.amountCents);
       const timeDiff = Math.abs(
