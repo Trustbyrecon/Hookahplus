@@ -195,7 +195,7 @@ export async function reconcilePosSettlements(
       if (
         !bestMatch ||
         (confidence === 'high' && bestMatch.confidence !== 'high') ||
-        (amountDiff < Math.abs(charge.amount - bestMatch.ticket.amountCents))
+        (bestMatch.ticket.amountCents !== null && amountDiff < Math.abs(charge.amount - bestMatch.ticket.amountCents))
       ) {
         bestMatch = { ticket, confidence };
       }
