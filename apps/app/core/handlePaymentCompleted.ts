@@ -1,4 +1,4 @@
-import { PrismaClient, SessionState, SessionSource } from '@prisma/client';
+import { PrismaClient, SessionState, SessionSource, Prisma } from '@prisma/client';
 import crypto from 'crypto';
 
 const prisma = new PrismaClient();
@@ -71,7 +71,7 @@ export async function handlePaymentCompleted(payload: PaymentCompletedPayload) {
           tableId: tableId || 'table-001',
           customerPhone: customerPhone || null,
           flavor: null,
-          flavorMix: flavorMix || null,
+          flavorMix: flavorMix ? flavorMix : Prisma.JsonNull,
           loungeId,
           priceCents: amountCents || 3000,
           paymentStatus: isDemo ? 'succeeded' : null,
