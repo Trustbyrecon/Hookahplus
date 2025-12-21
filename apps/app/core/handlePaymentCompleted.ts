@@ -75,7 +75,6 @@ export async function handlePaymentCompleted(payload: PaymentCompletedPayload) {
           loungeId,
           priceCents: amountCents || 3000,
           paymentStatus: isDemo ? 'succeeded' : null,
-          sessionType: 'flat',
           durationSecs: 45 * 60,
         },
       });
