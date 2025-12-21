@@ -57,7 +57,6 @@ export async function exportLoungeData(
       include: {
         orders: true,
         payments: true,
-        adjustments: true,
         ...(includeStaffNotes ? { notes: true } : {}),
       },
     }),
