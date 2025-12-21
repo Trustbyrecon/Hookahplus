@@ -320,7 +320,6 @@ export async function reconcilePosSettlements(
           sessionId: ticket.sessionId || null,
           amount: ticket.amountCents,
           status: 'orphaned',
-          mismatchReason: 'No matching Stripe charge found',
         },
       });
     }
