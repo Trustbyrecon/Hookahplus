@@ -299,7 +299,6 @@ export async function reconcilePosSettlements(
           sessionId: charge.metadata?.sessionId || null,
           amount: charge.amount,
           status: 'orphaned',
-          mismatchReason: 'No matching POS ticket found',
         },
       });
 
