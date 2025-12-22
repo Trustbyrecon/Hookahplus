@@ -51,7 +51,9 @@ export async function exportLoungeData(
   }
 
   // Fetch all data
-  const [sessions, orders, payments, adjustments, notes] = await Promise.all([
+  // Note: sessionAdjustment model doesn't exist in Prisma schema yet
+  // Returning empty array for adjustments until model is added
+  const [sessions, orders, payments, notes] = await Promise.all([
     prisma.session.findMany({
       where: whereClause,
       include: {
@@ -89,19 +91,6 @@ export async function exportLoungeData(
         },
       },
     }),
-    prisma.sessionAdjustment.findMany({
-      where: {
-        session: {
-          loungeId,
-          ...(startDate || endDate ? {
-            createdAt: {
-              ...(startDate ? { gte: startDate } : {}),
-              ...(endDate ? { lte: endDate } : {}),
-            },
-          } : {}),
-        },
-      },
-    }),
     includeStaffNotes
       ? prisma.sessionNote.findMany({
           where: {
@@ -118,6 +107,9 @@ export async function exportLoungeData(
         })
       : Promise.resolve([]),
   ]);
+
+  // Adjustments not available - model doesn't exist in Prisma schema
+  const adjustments: any[] = [];
 
   return {
     sessions: sessions.map(s => {
@@ -166,7 +158,8 @@ export async function deleteLoungeData(
   }
 
   // Delete in order (respecting foreign key constraints)
-  const [sessionsDeleted, ordersDeleted, paymentsDeleted, adjustmentsDeleted, notesDeleted] = await Promise.all([
+  // Note: sessionAdjustment model doesn't exist in Prisma schema yet
+  const [sessionsDeleted, ordersDeleted, paymentsDeleted, notesDeleted] = await Promise.all([
     prisma.session.deleteMany({ where: whereClause }),
     prisma.order.deleteMany({
       where: {
@@ -174,11 +167,6 @@ export async function deleteLoungeData(
       },
     }),
     prisma.payment.deleteMany({
-      where: {
-        session: whereClause,
-      },
-    }),
-    prisma.sessionAdjustment.deleteMany({
       where: {
         session: whereClause,
       },
@@ -214,6 +202,9 @@ export async function deleteLoungeData(
 
     auditLogsRetained = auditLogs.length;
   }
+
+  // Adjustments deletion skipped - model doesn't exist in Prisma schema
+  const adjustmentsDeleted = { count: 0 };
 
   logger.info('Lounge data deleted', {
     component: 'data-retention',
