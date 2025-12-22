@@ -92,6 +92,7 @@ model Tenant {
   menu_files  MenuFile[]
   payments    Payment[]
   events      ReflexEvent[]
+  campaigns   Campaign[]
 
   @@index([createdAt], map: "idx_tenants_created_at")
   @@index([name], map: "idx_tenants_name")
@@ -474,6 +475,56 @@ model PricingRule {
 
   @@index([loungeId, isActive, effectiveAt])
   @@map("pricing_rules")
+}
+
+model Campaign {
+  id              String    @id @default(cuid())
+  loungeId        String    @map("lounge_id")
+  tenantId        String?   @map("tenant_id") @db.Uuid
+  name            String
+  type            String    // 'loyalty' | 'promotional' | 'email' | 'sms' | 'social' | 'percentage_off' | 'first_x_customers' | 'buy_x_get_y' | 'time_limited'
+  status          String    @default("draft") // 'draft' | 'active' | 'paused' | 'completed' | 'scheduled'
+  description     String?
+  targetAudience   String?   @map("target_audience")
+  startDate       DateTime  @map("start_date") @db.Timestamptz(6)
+  endDate         DateTime? @map("end_date") @db.Timestamptz(6)
+  budgetCents     Int       @default(0) @map("budget_cents")
+  spentCents      Int       @default(0) @map("spent_cents")
+  reach           Int       @default(0)
+  engagement      Float     @default(0) // percentage
+  conversions     Int       @default(0)
+  roi             Float     @default(0) // return on investment multiplier
+  channels        String?   // JSON array of channels
+  campaignConfig  Json?     @map("campaign_config") // Type-specific configuration (percentage, buyXGetY, etc.)
+  qrPrefix        String?   @map("qr_prefix") // For QR code tracking
+  isActive        Boolean   @default(true) @map("is_active")
+  createdBy       String?   @map("created_by")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  tenant          Tenant?   @relation(fields: [tenantId], references: [id], onUpdate: NoAction)
+  campaignUsages  CampaignUsage[]
+
+  @@index([loungeId, status, startDate])
+  @@index([loungeId, isActive])
+  @@index([tenantId])
+  @@index([status, startDate, endDate])
+  @@map("campaigns")
+}
+
+model CampaignUsage {
+  id          String    @id @default(cuid())
+  campaignId  String    @map("campaign_id")
+  sessionId   String?   @map("session_id")
+  customerRef String?   @map("customer_ref")
+  discountCents Int?    @map("discount_cents")
+  appliedAt   DateTime  @default(now()) @map("applied_at") @db.Timestamptz(6)
+  metadata    Json?
+  campaign    Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId, appliedAt])
+  @@index([sessionId])
+  @@index([customerRef])
+  @@map("campaign_usages")
 }
 
 model LoungeConfig {

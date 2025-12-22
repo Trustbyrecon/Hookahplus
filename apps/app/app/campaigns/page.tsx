@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Target, 
   Plus, 
@@ -57,64 +57,61 @@ export default function CampaignsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [loungeId, setLoungeId] = useState<string>('HOPE_GLOBAL_FORUM'); // Default lounge ID
 
-  const [campaigns, setCampaigns] = useState<Campaign[]>([
-    {
-      id: 'camp_1',
-      name: 'Summer Hookah Special',
-      type: 'promotional',
-      status: 'active',
-      startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-      endDate: new Date(Date.now() + 23 * 24 * 60 * 60 * 1000),
-      targetAudience: 'All Customers',
-      budget: 5000,
-      spent: 1250,
-      reach: 2500,
-      engagement: 15.2,
-      conversions: 180,
-      roi: 2.4,
-      description: '20% off all hookah sessions during summer months',
-      channels: ['Email', 'SMS', 'Social Media'],
-      createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
-      createdBy: 'Marketing Team'
-    },
-    {
-      id: 'camp_2',
-      name: 'VIP Loyalty Program',
-      type: 'loyalty',
-      status: 'active',
-      startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-      targetAudience: 'Frequent Customers',
-      budget: 10000,
-      spent: 3200,
-      reach: 800,
-      engagement: 45.8,
-      conversions: 120,
-      roi: 3.8,
-      description: 'Exclusive rewards for VIP members',
-      channels: ['Email', 'In-App'],
-      createdAt: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000),
-      createdBy: 'Loyalty Team'
-    },
-    {
-      id: 'camp_3',
-      name: 'New Customer Welcome',
-      type: 'email',
-      status: 'scheduled',
-      startDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
-      targetAudience: 'New Customers',
-      budget: 1000,
-      spent: 0,
-      reach: 0,
-      engagement: 0,
-      conversions: 0,
-      roi: 0,
-      description: 'Welcome email series for new customers',
-      channels: ['Email'],
-      createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-      createdBy: 'Email Team'
+  // Load campaigns from API
+  useEffect(() => {
+    loadCampaigns();
+  }, [statusFilter, typeFilter, loungeId]);
+
+  const loadCampaigns = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const params = new URLSearchParams();
+      if (loungeId) params.append('loungeId', loungeId);
+      if (statusFilter !== 'all') params.append('status', statusFilter);
+      if (typeFilter !== 'all') params.append('type', typeFilter);
+
+      const response = await fetch(`/api/campaigns?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('Failed to load campaigns');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        // Convert API response to Campaign format
+        const formattedCampaigns: Campaign[] = data.campaigns.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          type: c.type as Campaign['type'],
+          status: c.status as Campaign['status'],
+          startDate: new Date(c.startDate),
+          endDate: c.endDate ? new Date(c.endDate) : undefined,
+          targetAudience: c.targetAudience || '',
+          budget: c.budget,
+          spent: c.spent,
+          reach: c.reach,
+          engagement: c.engagement,
+          conversions: c.conversions,
+          roi: c.roi,
+          description: c.description || '',
+          channels: c.channels || [],
+          createdAt: new Date(c.createdAt),
+          createdBy: c.createdBy || 'System'
+        }));
+        setCampaigns(formattedCampaigns);
+      }
+    } catch (err) {
+      console.error('Error loading campaigns:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load campaigns');
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
 
   const [newCampaign, setNewCampaign] = useState({
     name: '',
@@ -168,53 +165,104 @@ export default function CampaignsPage() {
     return matchesSearch && matchesStatus && matchesType;
   });
 
-  const handleCreateCampaign = () => {
-    if (!newCampaign.name.trim()) return;
+  const handleCreateCampaign = async () => {
+    if (!newCampaign.name.trim()) {
+      alert('Please enter a campaign name');
+      return;
+    }
 
-    const campaign: Campaign = {
-      id: `camp_${Date.now()}`,
-      name: newCampaign.name,
-      type: newCampaign.type,
-      status: 'draft',
-      startDate: newCampaign.startDate ? new Date(newCampaign.startDate) : new Date(),
-      endDate: newCampaign.endDate ? new Date(newCampaign.endDate) : undefined,
-      targetAudience: newCampaign.targetAudience,
-      budget: newCampaign.budget,
-      spent: 0,
-      reach: 0,
-      engagement: 0,
-      conversions: 0,
-      roi: 0,
-      description: newCampaign.description,
-      channels: newCampaign.channels,
-      createdAt: new Date(),
-      createdBy: 'Current User'
-    };
+    try {
+      // Build campaign config based on type
+      let campaignConfig: any = {};
+      if (newCampaign.type === 'percentage_off') {
+        campaignConfig = {
+          percentageOff: newCampaign.percentageOff,
+          minimumSpend: newCampaign.minimumSpend
+        };
+      } else if (newCampaign.type === 'first_x_customers') {
+        campaignConfig = {
+          firstXCustomers: newCampaign.firstXCustomers,
+          discountAmount: newCampaign.discountAmount
+        };
+      } else if (newCampaign.type === 'buy_x_get_y') {
+        campaignConfig = {
+          buyXGetY: newCampaign.buyXGetY
+        };
+      } else if (newCampaign.type === 'time_limited') {
+        campaignConfig = {
+          timeLimit: newCampaign.timeLimit,
+          discountAmount: newCampaign.discountAmount
+        };
+      }
 
-    setCampaigns(prev => [campaign, ...prev]);
-    setNewCampaign({
-      name: '',
-      type: 'promotional' as Campaign['type'],
-      description: '',
-      targetAudience: '',
-      budget: 0,
-      startDate: '',
-      endDate: '',
-      channels: [],
-      percentageOff: 10,
-      firstXCustomers: 50,
-      buyXGetY: { buy: 2, get: 1 },
-      timeLimit: 24,
-      discountAmount: 0,
-      minimumSpend: 0
-    });
-    setShowCreateModal(false);
+      const response = await fetch('/api/campaigns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newCampaign.name,
+          type: newCampaign.type,
+          description: newCampaign.description,
+          targetAudience: newCampaign.targetAudience,
+          startDate: newCampaign.startDate || new Date().toISOString(),
+          endDate: newCampaign.endDate || null,
+          budget: newCampaign.budget,
+          channels: newCampaign.channels,
+          campaignConfig,
+          loungeId
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to create campaign');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        // Reload campaigns
+        await loadCampaigns();
+        setNewCampaign({
+          name: '',
+          type: 'promotional' as Campaign['type'],
+          description: '',
+          targetAudience: '',
+          budget: 0,
+          startDate: '',
+          endDate: '',
+          channels: [],
+          percentageOff: 10,
+          firstXCustomers: 50,
+          buyXGetY: { buy: 2, get: 1 },
+          timeLimit: 24,
+          discountAmount: 0,
+          minimumSpend: 0
+        });
+        setShowCreateModal(false);
+      }
+    } catch (err) {
+      console.error('Error creating campaign:', err);
+      alert(err instanceof Error ? err.message : 'Failed to create campaign');
+    }
   };
 
-  const handleStatusChange = (campaignId: string, newStatus: Campaign['status']) => {
-    setCampaigns(prev => prev.map(campaign => 
-      campaign.id === campaignId ? { ...campaign, status: newStatus } : campaign
-    ));
+  const handleStatusChange = async (campaignId: string, newStatus: Campaign['status']) => {
+    try {
+      const response = await fetch(`/api/campaigns/${campaignId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update campaign status');
+      }
+
+      // Reload campaigns to get updated data
+      await loadCampaigns();
+    } catch (err) {
+      console.error('Error updating campaign status:', err);
+      alert(err instanceof Error ? err.message : 'Failed to update campaign status');
+    }
   };
 
   const renderOverview = () => (
@@ -642,8 +690,28 @@ export default function CampaignsPage() {
           ))}
         </div>
 
+        {/* Loading State */}
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-zinc-400">Loading campaigns...</div>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && !loading && (
+          <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 mb-6">
+            <p className="text-red-400">Error: {error}</p>
+            <button
+              onClick={loadCampaigns}
+              className="mt-2 text-sm text-red-300 hover:text-red-200 underline"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
         {/* Content */}
-        {renderContent()}
+        {!loading && !error && renderContent()}
 
         {/* Create Campaign Modal */}
         {showCreateModal && (
