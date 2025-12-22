@@ -39,6 +39,7 @@ export default function GuestLoungePage() {
   const [flavorMixPrice, setFlavorMixPrice] = useState<number>(0);
   const [sessionStarted, setSessionStarted] = useState<boolean>(false); // Track if session started after payment
   const [showIntelligenceDashboard, setShowIntelligenceDashboard] = useState(false);
+  const [campaignId, setCampaignId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     initializeGuest();
@@ -86,6 +87,22 @@ export default function GuestLoungePage() {
       };
 
       setQrData(qrData);
+
+      // Look up campaign by ref if provided
+      if (ref) {
+        try {
+          const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
+          const campaignResponse = await fetch(`${appUrl}/api/campaigns/lookup?ref=${encodeURIComponent(ref)}&loungeId=${encodeURIComponent(loungeId)}`);
+          if (campaignResponse.ok) {
+            const campaignData = await campaignResponse.json();
+            if (campaignData.success && campaignData.campaign) {
+              setCampaignId(campaignData.campaign.id);
+            }
+          }
+        } catch (err) {
+          console.warn('Campaign lookup failed (non-blocking):', err);
+        }
+      }
 
       // Get feature flags
       const loungeFlags = featureFlags.getLoungeFlags(loungeId);
@@ -320,6 +337,7 @@ export default function GuestLoungePage() {
                 selectedFlavors={selectedFlavors}
                 specialInstructions={specialInstructions}
                 loungeId={loungeId}
+                campaignId={campaignId}
                 tableId={qrData?.tableId}
                 zone={qrData?.zone}
                 sessionType={sessionType}

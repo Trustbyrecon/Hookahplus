@@ -12,7 +12,21 @@ export async function GET(req: NextRequest) {
     const loungeId = searchParams.get('loungeId');
     const status = searchParams.get('status');
     const type = searchParams.get('type');
-    const tenantId = await getCurrentTenant(req);
+    
+    // In development, allow access without auth if loungeId is provided
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    let tenantId: string | null = null;
+    
+    if (!isDevelopment) {
+      tenantId = await getCurrentTenant(req);
+    } else {
+      // Try to get tenant, but don't fail if not available
+      try {
+        tenantId = await getCurrentTenant(req);
+      } catch (err) {
+        console.log('[Campaigns API] DEV mode - tenant lookup failed, continuing without auth');
+      }
+    }
 
     if (!loungeId && !tenantId) {
       return NextResponse.json(
@@ -107,8 +121,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const user = await getCurrentUser(req);
-    const tenantId = await getCurrentTenant(req);
+    // In development, allow access without auth if loungeId is provided
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    let user = null;
+    let tenantId: string | null = null;
+    
+    if (!isDevelopment) {
+      user = await getCurrentUser(req);
+      tenantId = await getCurrentTenant(req);
+    } else {
+      // Try to get user/tenant, but don't fail if not available
+      try {
+        user = await getCurrentUser(req);
+        tenantId = await getCurrentTenant(req);
+      } catch (err) {
+        console.log('[Campaigns API] DEV mode - auth lookup failed, continuing without auth');
+      }
+    }
 
     // Validate campaign type
     const validTypes = [

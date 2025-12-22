@@ -169,6 +169,7 @@ export type MixSaveResponse = {
 export type PriceQuoteRequest = {
   sessionId: string;
   promoCode?: string;
+  campaignId?: string;
 }
 
 export type PriceQuoteResponse = {
@@ -181,9 +182,15 @@ export type PriceQuoteResponse = {
     discount: number;
     type: 'percentage' | 'fixed';
   };
+  campaign?: {
+    id: string;
+    discount: number;
+    discountAmount: number;
+  };
   breakdown: {
     item: string;
     price: number;
+    note?: string;
   }[];
 }
 

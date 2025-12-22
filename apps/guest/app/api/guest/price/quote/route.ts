@@ -33,7 +33,7 @@ const PROMO_CODES = {
 export async function POST(req: NextRequest) {
   try {
     const body: PriceQuoteRequest = await req.json();
-    const { sessionId, promoCode } = body;
+    const { sessionId, promoCode, campaignId } = body;
 
     // Validate required fields
     if (!sessionId) {
@@ -89,17 +89,50 @@ export async function POST(req: NextRequest) {
     // Calculate subtotal
     const subtotal = finalBasePrice + addons;
 
-    // Apply promo code if provided and enabled
+    // Apply campaign discount if provided
+    let campaignDiscount = 0;
+    let campaignInfo: any = undefined;
+    if (campaignId) {
+      try {
+        const campaignResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/api/campaigns/${campaignId}/apply`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId,
+            customerRef: session.guestId,
+            subtotalCents: subtotal
+          })
+        });
+
+        if (campaignResponse.ok) {
+          const campaignData = await campaignResponse.json();
+          if (campaignData.success) {
+            campaignDiscount = campaignData.discountCents || 0;
+            campaignInfo = {
+              id: campaignId,
+              discount: campaignDiscount,
+              discountAmount: campaignData.discountAmount || 0
+            };
+          }
+        }
+      } catch (campaignError) {
+        console.warn('Campaign application error (non-blocking):', campaignError);
+        // Continue without campaign discount if application fails
+      }
+    }
+
+    // Apply promo code if provided and enabled (campaigns take precedence)
     let promo: any = undefined;
-    if (promoCode && isPromosEnabled()) {
+    if (promoCode && isPromosEnabled() && !campaignInfo) {
       promo = applyPromoCode(promoCode, subtotal);
     }
 
-    // Calculate final total
-    const total = promo ? subtotal - promo.discount : subtotal;
+    // Calculate final total (apply campaign discount first, then promo if no campaign)
+    const discount = campaignDiscount || (promo ? promo.discount : 0);
+    const total = subtotal - discount;
 
     // Create price breakdown
-    const breakdown = createPriceBreakdown(flavors, finalBasePrice, addons, promo, session.sessionType);
+    const breakdown = createPriceBreakdown(flavors, finalBasePrice, addons, promo, campaignInfo, session.sessionType);
 
     // Update session with pricing
     session.price = {
@@ -107,7 +140,8 @@ export async function POST(req: NextRequest) {
       addons,
       total: Math.max(0, total), // Ensure non-negative
       currency: 'USD',
-      promo
+      promo,
+      campaign: campaignInfo
     };
 
     // Log price quote event
@@ -120,6 +154,8 @@ export async function POST(req: NextRequest) {
         subtotal,
         total,
         promoCode,
+        campaignId: campaignId || null,
+        campaignDiscount: campaignDiscount || 0,
         timestamp: new Date().toISOString()
       };
 
@@ -136,6 +172,7 @@ export async function POST(req: NextRequest) {
       total: Math.max(0, total),
       currency: 'USD',
       promo,
+      campaign: campaignInfo,
       breakdown
     };
 
@@ -237,7 +274,7 @@ function applyPromoCode(code: string, subtotal: number): any {
 /**
  * Create detailed price breakdown
  */
-function createPriceBreakdown(flavors: string[], basePrice: number, addons: number, promo: any, sessionType?: string): any[] {
+function createPriceBreakdown(flavors: string[], basePrice: number, addons: number, promo: any, campaign: any, sessionType?: string): any[] {
   const breakdown: any[] = [];
   
   if (sessionType === 'time-based') {
@@ -286,8 +323,15 @@ function createPriceBreakdown(flavors: string[], basePrice: number, addons: numb
     });
   }
   
-  // Add promo discount
-  if (promo) {
+  // Add campaign discount (takes precedence over promo)
+  if (campaign) {
+    breakdown.push({
+      item: `Campaign Discount`,
+      price: -campaign.discount,
+      note: `Campaign applied`
+    });
+  } else if (promo) {
+    // Add promo discount only if no campaign
     breakdown.push({
       item: `Discount (${promo.code})`,
       price: -promo.discount

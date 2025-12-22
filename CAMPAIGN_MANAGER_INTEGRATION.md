@@ -70,6 +70,38 @@
 
 ---
 
+## ✅ Completed Integrations
+
+### 1. Checkout Integration ✅
+- **Price Quote Endpoint** (`apps/guest/app/api/guest/price/quote/route.ts`):
+  - Accepts `campaignId` parameter
+  - Applies campaign discounts via `/api/campaigns/[id]/apply`
+  - Campaigns take precedence over promo codes
+  - Returns campaign discount in price breakdown
+  - Tracks campaign usage for analytics
+
+- **Price Breakdown Component** (`apps/guest/components/guest/PriceBreakdown.tsx`):
+  - Accepts `campaignId` prop
+  - Displays campaign discount in UI
+  - Shows campaign discount separately from promo codes
+  - Passes campaignId to price quote API
+
+- **TypeScript Types** (`apps/guest/types/guest.ts`):
+  - Updated `PriceQuoteRequest` to include `campaignId`
+  - Updated `PriceQuoteResponse` to include `campaign` object
+
+### 2. QR Code Integration ✅
+- **Campaign Lookup API** (`apps/app/app/api/campaigns/lookup/route.ts`):
+  - Looks up active campaigns by QR code `ref` parameter
+  - Returns campaign ID for use in checkout
+  - Validates campaign is active and within date range
+
+- **Guest Page** (`apps/guest/app/guest/[loungeId]/page.tsx`):
+  - Extracts `ref` parameter from URL (QR code)
+  - Looks up campaign using ref
+  - Passes `campaignId` to PriceBreakdown component
+  - Campaigns automatically applied when scanning QR codes with campaign ref
+
 ## 🔄 Next Steps (Pending)
 
 ### 1. Database Migration
@@ -80,18 +112,10 @@ npx prisma migrate dev --name add_campaigns
 npx prisma generate
 ```
 
-### 2. Checkout Integration
-Integrate campaigns into checkout flow:
-- Update `apps/guest/app/api/guest/price/quote/route.ts` to:
-  - Accept `campaignId` parameter
-  - Check for active campaigns matching session criteria
-  - Apply campaign discounts via `/api/campaigns/[id]/apply`
-  - Return campaign discount in price breakdown
-
-### 3. QR Code Integration
-- Update QR code generation to include `campaignRef`
-- Link QR codes to campaigns for tracking
-- Update session creation to capture campaign source
+### 2. Analytics Dashboard
+- Add campaign performance metrics to analytics page
+- Show campaign ROI and conversion rates
+- Display campaign usage trends
 
 ### 4. Analytics Dashboard
 - Add campaign performance metrics to analytics page
@@ -160,11 +184,11 @@ Response:
 
 ## 🔗 Integration Points
 
-1. **Checkout Flow** - Apply campaigns during price calculation
-2. **QR Codes** - Track campaign source via `campaignRef`
-3. **Analytics** - Report on campaign performance
-4. **Loyalty** - Link campaigns to loyalty program
-5. **Post-Checkout** - Show active campaigns in engagement hub
+1. **Checkout Flow** ✅ - Campaigns applied during price calculation
+2. **QR Codes** ✅ - Campaign lookup via `ref` parameter, automatic application
+3. **Analytics** - Report on campaign performance (pending)
+4. **Loyalty** - Link campaigns to loyalty program (future)
+5. **Post-Checkout** - Show active campaigns in engagement hub (future)
 
 ---
 
@@ -178,5 +202,23 @@ Response:
 
 ---
 
-**Ready for:** Database migration and checkout integration! 🚀
+## 🎯 How It Works
+
+### Flow Example:
+1. **QR Code Generated** with `ref=summer2025` (campaign QR prefix)
+2. **Customer Scans QR** → Guest page loads with `?ref=summer2025`
+3. **Campaign Lookup** → System finds active campaign with `qrPrefix=summer2025`
+4. **Price Calculation** → Campaign discount automatically applied
+5. **Checkout** → Customer sees discounted price
+6. **Usage Tracked** → Campaign metrics updated (conversions, spent, ROI)
+
+### Campaign Application Priority:
+1. **Campaign Discount** (if campaignId provided) - Takes precedence
+2. **Promo Code** (if no campaign) - Fallback option
+3. **Base Price** - If no discounts available
+
+---
+
+**Status:** ✅ **Checkout Integration Complete!**  
+**Ready for:** Database migration and analytics dashboard! 🚀
 

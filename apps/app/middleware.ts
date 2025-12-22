@@ -100,6 +100,7 @@ export async function middleware(request: NextRequest) {
           '/api/staff/zones', // Zone routing in development
           '/api/monitoring/performance', // Performance monitoring in development
           '/api/cache/stats', // Cache stats in development
+          '/api/campaigns', // Campaign APIs in development
         ]
       : []),
   ];

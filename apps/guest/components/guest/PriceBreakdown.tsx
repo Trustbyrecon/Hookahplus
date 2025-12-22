@@ -16,6 +16,7 @@ interface PriceBreakdownProps {
   zone?: string;
   sessionType?: 'flat' | 'time-based';
   onCheckoutSuccess?: (sessionId: string) => void;
+  campaignId?: string; // Campaign ID from QR code or URL parameter
 }
 
 export default function PriceBreakdown({ 
@@ -28,7 +29,8 @@ export default function PriceBreakdown({
   tableId,
   zone,
   sessionType = 'flat',
-  onCheckoutSuccess
+  onCheckoutSuccess,
+  campaignId
 }: PriceBreakdownProps) {
   const [priceData, setPriceData] = useState<PriceQuoteResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -125,7 +127,8 @@ export default function PriceBreakdown({
         },
         body: JSON.stringify({
           sessionId: currentSessionId,
-          promoCode: promoCode || undefined
+          promoCode: promoCode || undefined,
+          campaignId: campaignId || undefined
         })
       });
 
@@ -368,8 +371,21 @@ export default function PriceBreakdown({
             </div>
           )}
 
-          {/* Promo Discount */}
-          {priceData.promo && (
+          {/* Campaign Discount */}
+          {priceData.campaign && (
+            <div className="flex justify-between items-center py-2 border-b border-zinc-700">
+              <div className="flex items-center space-x-2">
+                <Tag className="w-4 h-4 text-teal-400" />
+                <span className="text-sm text-teal-400">Campaign Discount</span>
+              </div>
+              <span className="text-sm text-teal-400 font-medium">
+                -{formatPrice(priceData.campaign.discount)}
+              </span>
+            </div>
+          )}
+
+          {/* Promo Discount (only if no campaign) */}
+          {priceData.promo && !priceData.campaign && (
             <div className="flex justify-between items-center py-2 border-b border-zinc-700">
               <div className="flex items-center space-x-2">
                 <Tag className="w-4 h-4 text-green-400" />

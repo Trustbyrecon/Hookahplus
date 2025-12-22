@@ -61,11 +61,20 @@ export default function CampaignsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loungeId, setLoungeId] = useState<string>('HOPE_GLOBAL_FORUM'); // Default lounge ID
+  const [analyticsData, setAnalyticsData] = useState<any>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
 
   // Load campaigns from API
   useEffect(() => {
     loadCampaigns();
   }, [statusFilter, typeFilter, loungeId]);
+
+  // Load analytics when on analytics tab
+  useEffect(() => {
+    if (activeTab === 'analytics') {
+      loadAnalytics();
+    }
+  }, [activeTab, loungeId]);
 
   const loadCampaigns = async () => {
     try {
@@ -259,9 +268,34 @@ export default function CampaignsPage() {
 
       // Reload campaigns to get updated data
       await loadCampaigns();
+      if (activeTab === 'analytics') {
+        await loadAnalytics();
+      }
     } catch (err) {
       console.error('Error updating campaign status:', err);
       alert(err instanceof Error ? err.message : 'Failed to update campaign status');
+    }
+  };
+
+  const loadAnalytics = async () => {
+    try {
+      setAnalyticsLoading(true);
+      const params = new URLSearchParams();
+      if (loungeId) params.append('loungeId', loungeId);
+
+      const response = await fetch(`/api/campaigns/analytics?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('Failed to load analytics');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setAnalyticsData(data);
+      }
+    } catch (err) {
+      console.error('Error loading analytics:', err);
+    } finally {
+      setAnalyticsLoading(false);
     }
   };
 
@@ -559,90 +593,242 @@ export default function CampaignsPage() {
     </div>
   );
 
-  const renderAnalytics = () => (
-    <div className="space-y-6">
-      {/* Campaign Performance */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-zinc-400">Total Reach</p>
-              <p className="text-2xl font-bold text-white">12,450</p>
-            </div>
-            <Users className="w-8 h-8 text-blue-400" />
-          </div>
-        </Card>
+  const renderAnalytics = () => {
+    if (analyticsLoading) {
+      return (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-zinc-400">Loading analytics...</div>
+        </div>
+      );
+    }
 
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-zinc-400">Engagement Rate</p>
-              <p className="text-2xl font-bold text-white">18.5%</p>
-            </div>
-            <TrendingUp className="w-8 h-8 text-green-400" />
-          </div>
-        </Card>
+    if (!analyticsData) {
+      return (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-zinc-400">No analytics data available</div>
+        </div>
+      );
+    }
 
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-zinc-400">Conversions</p>
-              <p className="text-2xl font-bold text-white">2,340</p>
-            </div>
-            <CheckCircle className="w-8 h-8 text-purple-400" />
-          </div>
-        </Card>
+    const { aggregateMetrics, analytics } = analyticsData;
 
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-zinc-400">Avg. ROI</p>
-              <p className="text-2xl font-bold text-white">3.2x</p>
+    return (
+      <div className="space-y-6">
+        {/* Aggregate Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Card className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-zinc-400">Total Reach</p>
+                <p className="text-2xl font-bold text-white">
+                  {aggregateMetrics.totalReach.toLocaleString()}
+                </p>
+              </div>
+              <Users className="w-8 h-8 text-blue-400" />
             </div>
-            <DollarSign className="w-8 h-8 text-yellow-400" />
-          </div>
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-zinc-400">Avg. Conversion Rate</p>
+                <p className="text-2xl font-bold text-white">
+                  {aggregateMetrics.avgConversionRate}%
+                </p>
+              </div>
+              <TrendingUp className="w-8 h-8 text-green-400" />
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-zinc-400">Total Conversions</p>
+                <p className="text-2xl font-bold text-white">
+                  {aggregateMetrics.totalConversions.toLocaleString()}
+                </p>
+              </div>
+              <CheckCircle className="w-8 h-8 text-purple-400" />
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-zinc-400">Avg. ROI</p>
+                <p className="text-2xl font-bold text-white">
+                  {parseFloat(aggregateMetrics.avgROI) > 0 ? '+' : ''}{aggregateMetrics.avgROI}%
+                </p>
+              </div>
+              <DollarSign className="w-8 h-8 text-yellow-400" />
+            </div>
+          </Card>
+        </div>
+
+        {/* Budget Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-zinc-400">Total Budget</p>
+                <p className="text-2xl font-bold text-white">
+                  ${aggregateMetrics.totalBudget.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+              </div>
+              <DollarSign className="w-8 h-8 text-blue-400" />
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-zinc-400">Total Spent</p>
+                <p className="text-2xl font-bold text-white">
+                  ${aggregateMetrics.totalSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+              </div>
+              <DollarSign className="w-8 h-8 text-orange-400" />
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-zinc-400">Active Campaigns</p>
+                <p className="text-2xl font-bold text-white">
+                  {aggregateMetrics.activeCampaigns} / {aggregateMetrics.totalCampaigns}
+                </p>
+              </div>
+              <Target className="w-8 h-8 text-teal-400" />
+            </div>
+          </Card>
+        </div>
+
+        {/* Individual Campaign Performance */}
+        <Card className="p-6">
+          <h3 className="text-lg font-semibold text-white mb-4">Campaign Performance Details</h3>
+          {analytics.length === 0 ? (
+            <div className="text-center py-8 text-zinc-400">
+              <BarChart3 className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p>No campaign data available</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {analytics.map((campaign: any) => (
+                <div key={campaign.campaignId} className="p-4 bg-zinc-800/50 rounded-lg border border-zinc-700">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <h4 className="font-semibold text-white">{campaign.campaignName}</h4>
+                        <Badge className={statusColors[campaign.status as keyof typeof statusColors]}>
+                          {campaign.status}
+                        </Badge>
+                        <span className="text-xs text-zinc-500">{campaign.campaignType}</span>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                        <div>
+                          <p className="text-xs text-zinc-400">Reach</p>
+                          <p className="text-sm font-semibold text-white">{campaign.metrics.reach.toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-zinc-400">Conversions</p>
+                          <p className="text-sm font-semibold text-white">{campaign.metrics.conversions.toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-zinc-400">Conversion Rate</p>
+                          <p className="text-sm font-semibold text-green-400">{campaign.metrics.conversionRate}%</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-zinc-400">ROI</p>
+                          <p className={`text-sm font-semibold ${parseFloat(campaign.metrics.roi) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            {parseFloat(campaign.metrics.roi) >= 0 ? '+' : ''}{campaign.metrics.roi}%
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ROI and Performance Metrics */}
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 pt-4 border-t border-zinc-700">
+                    <div>
+                      <p className="text-xs text-zinc-400">Total Spent</p>
+                      <p className="text-sm font-semibold text-white">
+                        ${parseFloat(campaign.metrics.totalSpent).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-zinc-400">Budget</p>
+                      <p className="text-sm font-semibold text-white">
+                        ${parseFloat(campaign.metrics.budget).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-zinc-400">Budget Used</p>
+                      <p className="text-sm font-semibold text-white">{campaign.metrics.budgetUtilization}%</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-zinc-400">Cost/Conversion</p>
+                      <p className="text-sm font-semibold text-white">
+                        ${parseFloat(campaign.metrics.costPerConversion).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-zinc-400">Avg Discount</p>
+                      <p className="text-sm font-semibold text-white">
+                        ${parseFloat(campaign.metrics.avgDiscountPerUsage).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* ROI Visualization */}
+                  <div className="mt-4 pt-4 border-t border-zinc-700">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs text-zinc-400">ROI Performance</span>
+                      <span className={`text-sm font-semibold ${parseFloat(campaign.metrics.roi) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        {parseFloat(campaign.metrics.roi) >= 0 ? '+' : ''}{campaign.metrics.roi}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-zinc-700 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full ${
+                          parseFloat(campaign.metrics.roi) >= 0 ? 'bg-green-500' : 'bg-red-500'
+                        }`}
+                        style={{
+                          width: `${Math.min(100, Math.abs(parseFloat(campaign.metrics.roi)))}%`
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Conversion Rate Visualization */}
+                  <div className="mt-4 pt-4 border-t border-zinc-700">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs text-zinc-400">Conversion Rate</span>
+                      <span className="text-sm font-semibold text-green-400">
+                        {campaign.metrics.conversionRate}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-zinc-700 rounded-full h-2">
+                      <div
+                        className="h-2 rounded-full bg-teal-500"
+                        style={{
+                          width: `${Math.min(100, parseFloat(campaign.metrics.conversionRate))}%`
+                        }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between mt-1 text-xs text-zinc-500">
+                      <span>{campaign.metrics.conversions} conversions</span>
+                      <span>{campaign.metrics.reach} reach</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </Card>
       </div>
-
-      {/* Campaign Performance Chart */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">Campaign Performance</h3>
-        <div className="h-64 flex items-center justify-center bg-zinc-800/50 rounded-lg">
-          <div className="text-center text-zinc-400">
-            <BarChart3 className="w-12 h-12 mx-auto mb-2" />
-            <p>Campaign performance chart visualization</p>
-          </div>
-        </div>
-      </Card>
-
-      {/* Top Performing Campaigns */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">Top Performing Campaigns</h3>
-        <div className="space-y-4">
-          {[
-            { name: 'Summer Hookah Special', reach: 2500, engagement: 22.3, conversions: 456, roi: 4.2 },
-            { name: 'VIP Loyalty Program', reach: 800, engagement: 45.8, conversions: 120, roi: 3.8 },
-            { name: 'New Customer Welcome', reach: 1200, engagement: 15.2, conversions: 180, roi: 2.1 }
-          ].map((campaign, index) => (
-            <div key={index} className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg">
-              <div className="flex-1">
-                <h4 className="font-semibold text-white">{campaign.name}</h4>
-                <div className="flex items-center space-x-4 mt-2 text-sm text-zinc-400">
-                  <span>Reach: {campaign.reach.toLocaleString()}</span>
-                  <span>Engagement: {campaign.engagement}%</span>
-                  <span>Conversions: {campaign.conversions}</span>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-green-400 font-semibold">{campaign.roi}x ROI</p>
-                <p className="text-sm text-zinc-400">Performance</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
-    </div>
-  );
+    );
+  };
 
   const renderContent = () => {
     switch (activeTab) {
