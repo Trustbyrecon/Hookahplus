@@ -56,6 +56,13 @@ export default function AnalyticsPage() {
   const [error, setError] = useState<string | null>(null);
   const [customDateRange, setCustomDateRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
   const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
+  
+  // Predictive analytics state
+  const [staffingRecs, setStaffingRecs] = useState<any[]>([]);
+  const [inventoryForecasts, setInventoryForecasts] = useState<any[]>([]);
+  const [customerPredictions, setCustomerPredictions] = useState<any[]>([]);
+  const [predictiveLoading, setPredictiveLoading] = useState(false);
+  const [loungeId] = useState('HOPE_GLOBAL_FORUM'); // Default lounge ID
 
   const timeRanges = [
     { value: '24h', label: '24 Hours' },
@@ -72,7 +79,8 @@ export default function AnalyticsPage() {
     { value: 'revenue', label: 'Revenue', icon: <DollarSign className="w-4 h-4" /> },
     { value: 'sessions', label: 'Sessions', icon: <Flame className="w-4 h-4" /> },
     { value: 'customers', label: 'Customers', icon: <Users className="w-4 h-4" /> },
-    { value: 'performance', label: 'Performance', icon: <Activity className="w-4 h-4" /> }
+    { value: 'performance', label: 'Performance', icon: <Activity className="w-4 h-4" /> },
+    { value: 'predictive', label: 'Predictive Insights', icon: <Zap className="w-4 h-4" /> }
   ];
 
   // Convert time range to window days
@@ -122,6 +130,44 @@ export default function AnalyticsPage() {
       retention: retentionData
     };
   }, [timeRange]);
+
+  // Load predictive analytics data when predictive view is active
+  useEffect(() => {
+    const loadPredictiveData = async () => {
+      if (viewMode !== 'predictive') return;
+      
+      try {
+        setPredictiveLoading(true);
+        const params = new URLSearchParams();
+        if (loungeId) params.append('loungeId', loungeId);
+
+        const [staffingRes, inventoryRes, customersRes] = await Promise.all([
+          fetch(`/api/analytics/predictive/staffing?${params.toString()}`),
+          fetch(`/api/analytics/predictive/inventory?${params.toString()}`),
+          fetch(`/api/analytics/predictive/customers?${params.toString()}`)
+        ]);
+
+        if (staffingRes.ok) {
+          const data = await staffingRes.json();
+          if (data.success) setStaffingRecs(data.recommendations || []);
+        }
+        if (inventoryRes.ok) {
+          const data = await inventoryRes.json();
+          if (data.success) setInventoryForecasts(data.forecasts || []);
+        }
+        if (customersRes.ok) {
+          const data = await customersRes.json();
+          if (data.success) setCustomerPredictions(data.predictions || []);
+        }
+      } catch (err) {
+        console.error('Error loading predictive data:', err);
+      } finally {
+        setPredictiveLoading(false);
+      }
+    };
+
+    loadPredictiveData();
+  }, [viewMode, loungeId]);
 
   // Fetch analytics data manually (for initial load and manual refresh)
   const fetchAnalytics = useCallback(async () => {
@@ -598,6 +644,7 @@ export default function AnalyticsPage() {
       case 'sessions': return renderSessions();
       case 'customers': return renderCustomers();
       case 'performance': return renderPerformance();
+      case 'predictive': return renderPredictive();
       default: return renderOverview();
     }
   };
@@ -873,6 +920,189 @@ export default function AnalyticsPage() {
             </div>
           </Card>
         </div>
+      </div>
+    );
+  };
+
+  const renderPredictive = () => {
+
+    if (predictiveLoading) {
+      return (
+        <div className="flex items-center justify-center py-12">
+          <RefreshCw className="w-12 h-12 text-teal-400 animate-spin mx-auto mb-4" />
+          <p className="text-zinc-400">Loading predictive insights...</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        {/* Staffing Recommendations */}
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <Users className="w-5 h-5 text-blue-400" />
+              Staffing Recommendations
+            </h3>
+          </div>
+          {staffingRecs.length === 0 ? (
+            <div className="text-center py-8 text-zinc-400">
+              <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p>No staffing recommendations available</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {staffingRecs.map((rec, idx) => (
+                <div key={idx} className="p-4 bg-zinc-800/50 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-white capitalize">{rec.timeframe.replace('_', ' ')}</span>
+                    <Badge className={rec.confidence >= 70 ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}>
+                      {rec.confidence}% confidence
+                    </Badge>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-zinc-400">Recommended:</span>
+                      <span className="text-white font-bold">{rec.recommendedStaff} staff</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-zinc-400">Current:</span>
+                      <span className="text-zinc-300">{rec.currentStaff || 'Unknown'}</span>
+                    </div>
+                    <p className="text-xs text-zinc-500 mt-2">{rec.reasoning}</p>
+                    <div className="mt-2 pt-2 border-t border-zinc-700">
+                      <p className="text-xs text-zinc-400">Factors:</p>
+                      <ul className="text-xs text-zinc-500 mt-1 space-y-1">
+                        {rec.factors.map((factor: string, i: number) => (
+                          <li key={i}>• {factor}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
+        {/* Inventory Forecasts */}
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <Target className="w-5 h-5 text-purple-400" />
+              Inventory Demand Forecast
+            </h3>
+          </div>
+          {inventoryForecasts.length === 0 ? (
+            <div className="text-center py-8 text-zinc-400">
+              <Target className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p>No inventory forecasts available</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {inventoryForecasts.slice(0, 10).map((forecast, idx) => (
+                <div key={idx} className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3">
+                      <h4 className="font-semibold text-white">{forecast.flavorName}</h4>
+                      <Badge className={
+                        forecast.recommendation === 'restock' ? 'bg-red-500/20 text-red-400' :
+                        forecast.recommendation === 'reduce' ? 'bg-yellow-500/20 text-yellow-400' :
+                        'bg-green-500/20 text-green-400'
+                      }>
+                        {forecast.recommendation}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-4 mt-2 text-sm">
+                      <span className="text-zinc-400">
+                        Predicted demand: <span className="text-white font-semibold">{forecast.predictedDemand}</span> (next 7 days)
+                      </span>
+                      {forecast.daysUntilOutOfStock && (
+                        <span className="text-zinc-400">
+                          Days until out: <span className="text-white font-semibold">{forecast.daysUntilOutOfStock}</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <Badge className="bg-blue-500/20 text-blue-400">
+                      {forecast.confidence}% confidence
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
+        {/* Customer Behavior Predictions */}
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <Zap className="w-5 h-5 text-yellow-400" />
+              Customer Behavior Predictions
+            </h3>
+          </div>
+          {customerPredictions.length === 0 ? (
+            <div className="text-center py-8 text-zinc-400">
+              <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p>No customer predictions available</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {customerPredictions.slice(0, 20).map((prediction, idx) => (
+                <div key={idx} className="p-4 bg-zinc-800/50 rounded-lg">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-semibold text-white">
+                          {prediction.customerPhone ? prediction.customerPhone.substring(0, 3) + '***' : prediction.customerId}
+                        </span>
+                        <Badge className={
+                          prediction.churnRisk === 'high' ? 'bg-red-500/20 text-red-400' :
+                          prediction.churnRisk === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                          'bg-green-500/20 text-green-400'
+                        }>
+                          {prediction.churnRisk} risk
+                        </Badge>
+                      </div>
+                      {prediction.predictedNextVisit && (
+                        <p className="text-sm text-zinc-400">
+                          Predicted next visit: {new Date(prediction.predictedNextVisit).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm">
+                        <span className="text-zinc-400">Visit probability: </span>
+                        <span className="text-white font-semibold">{prediction.visitProbability}%</span>
+                      </div>
+                      <div className="text-sm mt-1">
+                        <span className="text-zinc-400">Predicted spend: </span>
+                        <span className="text-green-400 font-semibold">${prediction.predictedSpend.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+                  {prediction.recommendedCampaign && (
+                    <div className="mt-2 pt-2 border-t border-zinc-700">
+                      <Badge className="bg-teal-500/20 text-teal-400">
+                        Recommended: {prediction.recommendedCampaign} campaign
+                      </Badge>
+                    </div>
+                  )}
+                  <div className="mt-2 pt-2 border-t border-zinc-700">
+                    <p className="text-xs text-zinc-400 mb-1">Factors:</p>
+                    <ul className="text-xs text-zinc-500 space-y-1">
+                      {prediction.factors.map((factor: string, i: number) => (
+                        <li key={i}>• {factor}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
       </div>
     );
   };
