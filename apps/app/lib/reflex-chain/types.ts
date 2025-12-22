@@ -295,3 +295,55 @@ export interface SessionReplayReflex {
   syncTimestamp: number;
 }
 
+// ============================================================================
+// Context Compression Types
+// ============================================================================
+
+/**
+ * Compressed version of ReflexChainFlow for efficient context sharing
+ * Removes detailed layer data, keeps only summaries and critical data
+ */
+export interface CompressedReflexFlow {
+  sessionId: string;
+  timestamp: number;
+  currentLayer: 'boh' | 'foh' | 'delivery' | 'customer' | 'completed';
+  
+  // Summary data instead of full layer details
+  summary: {
+    status: string;
+    progress: number; // 0-100
+    keyEvents: Array<{
+      layer: string;
+      event: string;
+      timestamp: number;
+    }>;
+  };
+  
+  // Critical data only
+  criticalData: {
+    trustScore: number;
+    totalFlowTime: number;
+    transactionAmount: number;
+    paymentStatus: string;
+    loyaltyIssued: boolean;
+  };
+  
+  // Compression metadata
+  compression: {
+    compressedAt: number;
+    originalSize: number; // bytes
+    compressedSize: number; // bytes
+    compressionRatio: number; // 0-1
+  };
+}
+
+/**
+ * Context compression options
+ */
+export interface CompressionOptions {
+  maxHistorySize?: number; // Max number of actions to keep
+  compressAfterLayers?: number; // Compress after N layers complete
+  preserveCriticalData?: boolean; // Always preserve critical data
+  archiveAfterHours?: number; // Archive flows older than N hours
+}
+

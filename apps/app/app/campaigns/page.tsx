@@ -178,6 +178,7 @@ export default function CampaignsPage() {
     { id: 'overview', label: 'Overview', icon: <BarChart3 className="w-4 h-4" /> },
     { id: 'campaigns', label: 'Campaigns', icon: <Target className="w-4 h-4" /> },
     { id: 'loyalty', label: 'Loyalty', icon: <Star className="w-4 h-4" /> },
+    { id: 'pricing', label: 'Pricing', icon: <DollarSign className="w-4 h-4" /> },
     { id: 'analytics', label: 'Analytics', icon: <TrendingUp className="w-4 h-4" /> }
   ];
 
@@ -1023,6 +1024,7 @@ export default function CampaignsPage() {
       case 'overview': return renderOverview();
       case 'campaigns': return renderCampaigns();
       case 'loyalty': return renderLoyalty();
+      case 'pricing': return renderPricing();
       case 'analytics': return renderAnalytics();
       default: return renderOverview();
     }

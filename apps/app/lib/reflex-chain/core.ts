@@ -15,6 +15,8 @@ import {
   DeliveryReflexOutput,
   CustomerReflexInput,
   CustomerReflexOutput,
+  CompressedReflexFlow,
+  CompressionOptions,
 } from './types';
 
 export class ReflexChainEngine {
@@ -249,6 +251,160 @@ export class ReflexChainEngine {
     }
 
     return cleaned;
+  }
+
+  /**
+   * Compress a Reflex Chain flow to reduce context size
+   * Removes detailed layer data, keeps only summaries and critical data
+   */
+  compressFlow(sessionId: string, options: CompressionOptions = {}): CompressedReflexFlow | null {
+    const flow = this.flows.get(sessionId);
+    if (!flow) {
+      return null;
+    }
+
+    const {
+      compressAfterLayers = 2,
+      preserveCriticalData = true,
+    } = options;
+
+    // Determine current layer
+    let currentLayer: 'boh' | 'foh' | 'delivery' | 'customer' | 'completed' = 'boh';
+    if (flow.customer.completedAt) {
+      currentLayer = 'completed';
+    } else if (flow.delivery.completedAt) {
+      currentLayer = 'customer';
+    } else if (flow.foh.completedAt) {
+      currentLayer = 'delivery';
+    } else if (flow.boh.completedAt) {
+      currentLayer = 'foh';
+    }
+
+    // Extract key events
+    const keyEvents: Array<{ layer: string; event: string; timestamp: number }> = [];
+    if (flow.boh.completedAt) {
+      keyEvents.push({
+        layer: 'boh',
+        event: 'prep_completed',
+        timestamp: flow.boh.completedAt,
+      });
+    }
+    if (flow.foh.completedAt) {
+      keyEvents.push({
+        layer: 'foh',
+        event: 'session_activated',
+        timestamp: flow.foh.completedAt,
+      });
+    }
+    if (flow.delivery.completedAt) {
+      keyEvents.push({
+        layer: 'delivery',
+        event: 'delivery_completed',
+        timestamp: flow.delivery.completedAt,
+      });
+    }
+    if (flow.customer.completedAt) {
+      keyEvents.push({
+        layer: 'customer',
+        event: 'session_completed',
+        timestamp: flow.customer.completedAt,
+      });
+    }
+
+    // Calculate progress
+    const progress = currentLayer === 'completed' ? 100 :
+      currentLayer === 'customer' ? 75 :
+      currentLayer === 'delivery' ? 50 :
+      currentLayer === 'foh' ? 25 : 0;
+
+    // Generate summary
+    const status = currentLayer === 'completed' ? 'completed' :
+      currentLayer === 'customer' ? 'in_customer_phase' :
+      currentLayer === 'delivery' ? 'in_delivery' :
+      currentLayer === 'foh' ? 'in_foh' : 'in_boh';
+
+    // Estimate original size (rough approximation)
+    const originalSize = JSON.stringify(flow).length;
+    
+    // Create compressed flow
+    const compressed: CompressedReflexFlow = {
+      sessionId: flow.sessionId,
+      timestamp: flow.timestamp,
+      currentLayer,
+      summary: {
+        status,
+        progress,
+        keyEvents: keyEvents.slice(-10), // Keep last 10 events
+      },
+      criticalData: {
+        trustScore: flow.sync.trust,
+        totalFlowTime: flow.sync.timing.totalFlowTime,
+        transactionAmount: flow.sync.transaction.amount,
+        paymentStatus: flow.sync.transaction.paymentStatus,
+        loyaltyIssued: flow.sync.transaction.loyaltyIssued,
+      },
+      compression: {
+        compressedAt: Date.now(),
+        originalSize,
+        compressedSize: 0, // Will be set after JSON stringify
+        compressionRatio: 0, // Will be calculated
+      },
+    };
+
+    // Calculate actual compressed size and ratio
+    const compressedJson = JSON.stringify(compressed);
+    compressed.compression.compressedSize = compressedJson.length;
+    compressed.compression.compressionRatio = compressed.compression.compressedSize / originalSize;
+
+    return compressed;
+  }
+
+  /**
+   * Get compressed flow for context sharing
+   * Automatically compresses if flow meets compression criteria
+   */
+  getCompressedFlow(sessionId: string, options: CompressionOptions = {}): CompressedReflexFlow | null {
+    const flow = this.flows.get(sessionId);
+    if (!flow) {
+      return null;
+    }
+
+    const {
+      compressAfterLayers = 2,
+    } = options;
+
+    // Check if flow should be compressed
+    const layersCompleted = [
+      flow.boh.completedAt,
+      flow.foh.completedAt,
+      flow.delivery.completedAt,
+      flow.customer.completedAt,
+    ].filter(Boolean).length;
+
+    // Compress if enough layers completed or flow is completed
+    if (layersCompleted >= compressAfterLayers || flow.customer.completedAt) {
+      return this.compressFlow(sessionId, options);
+    }
+
+    // Return null if not ready for compression
+    return null;
+  }
+
+  /**
+   * Generate summary of flow for logging/archiving
+   */
+  generateFlowSummary(sessionId: string): string {
+    const flow = this.flows.get(sessionId);
+    if (!flow) {
+      return `Flow ${sessionId}: Not found`;
+    }
+
+    const compressed = this.compressFlow(sessionId);
+    if (!compressed) {
+      return `Flow ${sessionId}: Compression failed`;
+    }
+
+    return `Flow ${sessionId}: ${compressed.summary.status} (${compressed.summary.progress}% complete) | Trust: ${compressed.criticalData.trustScore} | Time: ${compressed.criticalData.totalFlowTime}s | Amount: $${(compressed.criticalData.transactionAmount / 100).toFixed(2)}`;
   }
 }
 

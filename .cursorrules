@@ -1,0 +1,201 @@
+# HookahPlus Context Engineering Rules
+*Based on Agent Skills for Context Engineering principles*
+
+## 🎯 Core Principles
+
+### 1. Progressive Disclosure
+- Load only essential context at startup
+- Activate full skill content only when needed
+- Use skill names and descriptions for initial routing
+- Mount context seeds from `reflex_memory/` only when relevant
+
+### 2. Context Compression
+- Compress long session histories (>10 interactions)
+- Summarize reflex chain outputs after processing
+- Archive old GhostLog entries (>30 days) to summaries
+- Compress completed Reflex Chain flows to summaries
+
+### 3. Context Degradation Prevention
+- Monitor for "lost-in-the-middle" patterns
+- Place critical information at start and end of context
+- Use structured formats (YAML, JSON) for key data
+- Avoid placing critical data in middle of long contexts
+
+### 4. Multi-Agent Context Sharing
+- Share compressed summaries between agents
+- Use TrustGraph for context-aware routing
+- Avoid duplicating full context across agents
+- Use agent-specific context limits
+
+### 5. Tool Design Standards
+- Tools must have clear input/output schemas
+- Include examples in tool descriptions
+- Design for composability and reuse
+- Keep tool descriptions concise (<200 tokens)
+
+### 6. Memory System Optimization
+- Use `reflex_memory/` for persistent context seeds
+- Clean GhostLog regularly (keep last 50 entries in full detail)
+- Compress entries 51-200 to summaries
+- Archive entries >200 to monthly summaries
+- Mount context seeds only when skill is activated
+
+## 🔄 Reflex Chain Context Rules
+
+### Layer Context Limits
+- **BoH Layer**: Max 5KB context per session
+- **FoH Layer**: Max 3KB context per session  
+- **Delivery Layer**: Max 2KB context per session
+- **Customer Layer**: Max 4KB context per session
+
+### Context Compression Triggers
+- Compress when session history > 20 actions
+- Compress when reflex chain flow > 50 steps
+- Archive when GhostLog > 1000 entries
+- Compress completed flows immediately after processing
+
+### Compression Strategy
+- Keep only critical data: sessionId, currentLayer, summary, trust score
+- Remove full history, keep only summaries
+- Preserve sync data (timing, transaction, trust)
+- Archive detailed layer data after completion
+
+## 🤖 Agent-Specific Context Rules
+
+### Noor (session_agent)
+- Load only active session context
+- Compress completed sessions to summaries
+- Use session IDs for context retrieval
+- Max context: 10KB per active session
+
+### Aliethia (reflex_agent)
+- Load TrustGraph summaries, not full graph
+- Compress reflex chain outputs after processing
+- Cache adapter sync results
+- Max context: 8KB per reflex operation
+
+### EchoPrime (growth_agent)
+- Use aggregated analytics, not raw events
+- Compress historical data to trends
+- Cache dashboard queries
+- Max context: 6KB per analytics operation
+
+### Lumi (pricing_agent)
+- Load pricing rules, not full history
+- Compress historical pricing data
+- Cache pricing calculations
+- Max context: 4KB per pricing operation
+
+### Jules (loyalty_agent)
+- Load tier rules, not full customer history
+- Compress visit history to summaries
+- Cache loyalty calculations
+- Max context: 5KB per loyalty operation
+
+### database_agent
+- Use query summaries, not full results
+- Compress migration history
+- Cache schema information
+- Max context: 7KB per database operation
+
+### deployment_agent
+- Load deployment configs, not full logs
+- Compress build history
+- Cache environment configurations
+- Max context: 6KB per deployment operation
+
+## 📊 Context Evaluation Rules
+
+### Context Quality Metrics
+- **Relevance**: Only include context directly relevant to current task
+- **Recency**: Prioritize recent context over old context
+- **Completeness**: Include all necessary context, but nothing more
+- **Structure**: Use structured formats for better parsing
+
+### Context Degradation Detection
+- Monitor for missing critical information
+- Check for attention degradation in long contexts
+- Validate that key data is accessible
+- Flag contexts exceeding recommended limits
+
+### Context Optimization
+- Remove redundant information
+- Merge similar context entries
+- Use references instead of duplicating
+- Cache frequently accessed context
+
+## 🔧 Implementation Guidelines
+
+### When Loading Context
+1. Check if compressed version exists
+2. Load metadata first (size, relevance, recency)
+3. Load full content only if needed
+4. Cache compressed versions for reuse
+
+### When Sharing Context Between Agents
+1. Compress to summary format
+2. Include only critical data
+3. Add metadata (source, timestamp, relevance)
+4. Use structured format (JSON/YAML)
+
+### When Archiving Context
+1. Generate summary of archived content
+2. Preserve critical data points
+3. Store archive with timestamp
+4. Update index for retrieval
+
+### When Compressing Context
+1. Extract key information
+2. Generate concise summary
+3. Preserve structure for parsing
+4. Maintain traceability to original
+
+## 🚨 Context Management Warnings
+
+### Avoid These Patterns
+- ❌ Loading full GhostLog for every operation
+- ❌ Passing complete Reflex Chain flows between agents
+- ❌ Including entire session histories in context
+- ❌ Duplicating context across multiple agents
+- ❌ Keeping unlimited context growth
+
+### Prefer These Patterns
+- ✅ Load only relevant GhostLog entries
+- ✅ Pass compressed Reflex Chain summaries
+- ✅ Include only active session context
+- ✅ Share context via references
+- ✅ Implement automatic archiving
+
+## 📈 Context Monitoring
+
+### Metrics to Track
+- Context size per operation
+- Context compression ratio
+- Context retrieval time
+- Context hit rate (cached vs fresh)
+- Context degradation incidents
+
+### Thresholds
+- **Warning**: Context size > 10KB
+- **Critical**: Context size > 20KB
+- **Archive**: GhostLog entries > 1000
+- **Compress**: Session history > 20 actions
+
+## 🔄 Continuous Improvement
+
+### Regular Reviews
+- Weekly context size analysis
+- Monthly compression effectiveness review
+- Quarterly archiving strategy update
+- Annual context engineering principles review
+
+### Learning Integration
+- Capture successful compression patterns
+- Document effective context sharing strategies
+- Update rules based on performance data
+- Refine thresholds based on usage patterns
+
+---
+
+*These rules ensure efficient context management across all HookahPlus agents, reducing costs and improving performance while maintaining system effectiveness.*
+

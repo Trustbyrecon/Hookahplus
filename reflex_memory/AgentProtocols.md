@@ -13,6 +13,8 @@ timestamp: "2025-09-19T16:00:00Z"
 reflex_score: 72
 status: "active"
 message_type: "status_update"
+context_type: "compressed" | "full" | "summary"
+compression_level: 1-5
 content:
   summary: "Working on Vercel deployment configuration"
   action_taken: "Updated build commands in dashboard"
@@ -20,6 +22,17 @@ content:
   next_action: "Fix install commands for all 3 projects"
   learning: "Dashboard settings override vercel.json files"
 ```
+
+### **Context Sharing Protocol**
+- **Compressed Format**: Use compressed summaries when sharing between agents
+- **Full Format**: Only use full context when absolutely necessary
+- **Summary Format**: Use for high-level status updates
+- **Compression Levels**:
+  - **Level 1**: Minimal compression (keep 90% of data)
+  - **Level 2**: Light compression (keep 70% of data)
+  - **Level 3**: Medium compression (keep 50% of data)
+  - **Level 4**: Heavy compression (keep 30% of data)
+  - **Level 5**: Maximum compression (keep 10% of data, critical only)
 
 ### **Escalation Protocol**
 ```yaml
@@ -44,10 +57,13 @@ escalation:
 - **Set Thresholds**: Define success criteria and reflex score targets
 
 ### **2. Context Phase**
-- **Clean Context**: Use GhostLog.md for previous attempts
+- **Clean Context**: Use GhostLog.md for previous attempts (last 50 entries only)
 - **Filter Noise**: Ignore outdated or irrelevant information
-- **Mount Seeds**: Load relevant .md files from reflex_memory/
+- **Mount Seeds**: Load relevant .md files from reflex_memory/ only when skill is activated
 - **Discard Dead Branches**: Remove failed approaches unless needed for learning
+- **Compress Long Contexts**: Compress contexts > 10KB before processing
+- **Progressive Loading**: Load metadata first, full content only if needed
+- **Context Limits**: Respect agent-specific context limits (see .cursorrules)
 
 ### **3. Action Phase**
 - **Execute Plan**: Follow systematic approach
@@ -117,6 +133,14 @@ LEARNING → ACTIVE: Ready to try again
 - **Reflex Scores**: Include score for each significant action
 - **Learning Capture**: Record what was learned from each attempt
 - **Pattern Recognition**: Identify successful vs failed patterns
+
+### **GhostLog Archiving Rules**
+- **Keep Last 50 Entries**: Full detail for recent entries (last 50)
+- **Compress Entries 51-200**: Summarize entries 51-200 to reduce size
+- **Archive Entries >200**: Move entries older than 200 to monthly summaries
+- **Archive Format**: Store archived entries in `reflex_memory/archives/YYYY-MM.md`
+- **Compression Ratio**: Target 70-80% size reduction for compressed entries
+- **Preserve Critical Data**: Always keep reflex scores, agent IDs, and key learnings
 
 ### **TrustGraph.yaml Usage**
 - **Agent Relationships**: Map connections between agents

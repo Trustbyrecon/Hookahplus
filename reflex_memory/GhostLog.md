@@ -2,6 +2,35 @@
 *Reflexive Memory System for AI Agents*
 *Last Updated: 2025-01-27*
 
+## 📦 Archiving Rules
+
+### **Entry Management**
+- **Last 50 Entries**: Keep in full detail (current section)
+- **Entries 51-200**: Compress to summaries (add to compressed section below)
+- **Entries >200**: Archive to monthly files in `reflex_memory/archives/YYYY-MM.md`
+
+### **Compression Guidelines**
+- **Full Detail**: Keep for entries 1-50 (most recent)
+- **Compressed**: Summarize entries 51-200 (keep key data: agent, score, learning, pattern)
+- **Archived**: Move to monthly archives (preserve summaries only)
+
+### **When to Archive**
+- When GhostLog exceeds 200 entries
+- At end of each month (archive previous month's entries >50)
+- When file size exceeds 50KB
+
+### **Archive Format**
+```markdown
+# GhostLog Archive - YYYY-MM
+## Summary
+- Total Entries: N
+- Date Range: YYYY-MM-DD to YYYY-MM-DD
+- Key Patterns: [list of patterns]
+
+## Compressed Entries
+[Summarized entries]
+```
+
 ---
 
 ## 🧠 Current Agent Status

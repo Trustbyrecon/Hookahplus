@@ -83,7 +83,34 @@ export async function POST(req: NextRequest) {
     const flags = featureFlags.getLoungeFlags(session.loungeId);
     let finalBasePrice = basePrice;
     if (isDynamicPricingEnabled()) {
-      finalBasePrice = applyDynamicPricing(basePrice, session);
+      try {
+        // Call dynamic pricing engine from app build
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
+        const pricingResponse = await fetch(`${appUrl}/api/pricing/dynamic`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            loungeId: session.loungeId,
+            customerId: session.guestId,
+            sessionTime: new Date().toISOString(),
+            basePrice: basePrice,
+            flavorPrices: Object.fromEntries(
+              (session.mix?.flavors || []).map((f: string) => [f, FLAVOR_PRICES[f] || 0])
+            )
+          })
+        });
+
+        if (pricingResponse.ok) {
+          const pricingData = await pricingResponse.json();
+          if (pricingData.success) {
+            finalBasePrice = pricingData.adjustedBasePrice;
+          }
+        }
+      } catch (pricingError) {
+        console.warn('Dynamic pricing error (non-blocking):', pricingError);
+        // Fallback to basic dynamic pricing
+        finalBasePrice = await applyDynamicPricing(basePrice, session);
+      }
     }
 
     // Calculate subtotal
@@ -225,7 +252,7 @@ function calculateAddons(session: any): number {
 /**
  * Apply dynamic pricing based on demand, time, etc.
  */
-function applyDynamicPricing(basePrice: number, session: any): number {
+async function applyDynamicPricing(basePrice: number, session: any): Promise<number> {
   const now = new Date();
   const hour = now.getHours();
   
