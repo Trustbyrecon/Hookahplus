@@ -63,6 +63,39 @@ export default function CampaignsPage() {
   const [loungeId, setLoungeId] = useState<string>('HOPE_GLOBAL_FORUM'); // Default lounge ID
   const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  
+  // Loyalty Program state
+  const [loyaltyTiers, setLoyaltyTiers] = useState<any[]>([]);
+  const [loyaltyRewards, setLoyaltyRewards] = useState<any[]>([]);
+  const [loyaltyLoading, setLoyaltyLoading] = useState(false);
+  const [showTierModal, setShowTierModal] = useState(false);
+  const [showRewardModal, setShowRewardModal] = useState(false);
+  const [editingTier, setEditingTier] = useState<any>(null);
+  const [editingReward, setEditingReward] = useState<any>(null);
+  const [newTier, setNewTier] = useState({
+    tierName: 'bronze',
+    minPoints: 0,
+    maxPoints: '',
+    discountPercent: 0,
+    pointsPerDollar: 1,
+    benefits: '',
+    displayOrder: 0
+  });
+  const [newReward, setNewReward] = useState({
+    name: '',
+    description: '',
+    tierId: '',
+    pointsCost: 0,
+    discountPercent: '',
+    discountAmountCents: '',
+    rewardType: 'discount',
+    maxRedemptions: '',
+    validFrom: '',
+    validUntil: '',
+    displayOrder: 0
+  });
 
   // Load campaigns from API
   useEffect(() => {
@@ -131,6 +164,7 @@ export default function CampaignsPage() {
     startDate: '',
     endDate: '',
     channels: [] as string[],
+    qrPrefix: '', // QR prefix for tracking
     // Campaign-specific fields
     percentageOff: 10,
     firstXCustomers: 50,
@@ -217,6 +251,7 @@ export default function CampaignsPage() {
           budget: newCampaign.budget,
           channels: newCampaign.channels,
           campaignConfig,
+          qrPrefix: newCampaign.qrPrefix || null,
           loungeId
         })
       });
@@ -239,6 +274,7 @@ export default function CampaignsPage() {
           startDate: '',
           endDate: '',
           channels: [],
+          qrPrefix: '',
           percentageOff: 10,
           firstXCustomers: 50,
           buyXGetY: { buy: 2, get: 1 },
@@ -296,6 +332,114 @@ export default function CampaignsPage() {
       console.error('Error loading analytics:', err);
     } finally {
       setAnalyticsLoading(false);
+    }
+  };
+
+  const handleEditCampaign = (campaign: Campaign) => {
+    setEditingCampaign(campaign);
+    // Populate edit form with campaign data
+    setNewCampaign({
+      name: campaign.name,
+      type: campaign.type,
+      description: campaign.description || '',
+      targetAudience: campaign.targetAudience || '',
+      budget: campaign.budget,
+      startDate: campaign.startDate.toISOString().split('T')[0],
+      endDate: campaign.endDate ? campaign.endDate.toISOString().split('T')[0] : '',
+      channels: campaign.channels || [],
+      qrPrefix: '', // QR prefix is read-only for edits
+      percentageOff: (campaign.campaignConfig as any)?.percentageOff || 10,
+      firstXCustomers: (campaign.campaignConfig as any)?.firstXCustomers || 50,
+      buyXGetY: (campaign.campaignConfig as any)?.buyXGetY || { buy: 2, get: 1 },
+      timeLimit: (campaign.campaignConfig as any)?.timeLimit || 24,
+      discountAmount: (campaign.campaignConfig as any)?.discountAmount || 0,
+      minimumSpend: (campaign.campaignConfig as any)?.minimumSpend || 0
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdateCampaign = async () => {
+    if (!editingCampaign || !newCampaign.name.trim()) {
+      alert('Please enter a campaign name');
+      return;
+    }
+
+    try {
+      // Build campaign config based on type
+      let campaignConfig: any = {};
+      if (newCampaign.type === 'percentage_off') {
+        campaignConfig = {
+          percentageOff: newCampaign.percentageOff,
+          minimumSpend: newCampaign.minimumSpend
+        };
+      } else if (newCampaign.type === 'first_x_customers') {
+        campaignConfig = {
+          firstXCustomers: newCampaign.firstXCustomers,
+          discountAmount: newCampaign.discountAmount
+        };
+      } else if (newCampaign.type === 'buy_x_get_y') {
+        campaignConfig = {
+          buyXGetY: newCampaign.buyXGetY
+        };
+      } else if (newCampaign.type === 'time_limited') {
+        campaignConfig = {
+          timeLimit: newCampaign.timeLimit,
+          discountAmount: newCampaign.discountAmount
+        };
+      }
+
+      const response = await fetch(`/api/campaigns/${editingCampaign.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newCampaign.name,
+          type: newCampaign.type,
+          description: newCampaign.description,
+          targetAudience: newCampaign.targetAudience,
+          startDate: newCampaign.startDate || new Date().toISOString(),
+          endDate: newCampaign.endDate || null,
+          budget: newCampaign.budget,
+          channels: newCampaign.channels,
+          campaignConfig
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to update campaign');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        // Reload campaigns
+        await loadCampaigns();
+        if (activeTab === 'analytics') {
+          await loadAnalytics();
+        }
+        setShowEditModal(false);
+        setEditingCampaign(null);
+        // Reset form
+        setNewCampaign({
+          name: '',
+          type: 'promotional' as Campaign['type'],
+          description: '',
+          targetAudience: '',
+          budget: 0,
+          startDate: '',
+          endDate: '',
+          channels: [],
+          qrPrefix: '',
+          percentageOff: 10,
+          firstXCustomers: 50,
+          buyXGetY: { buy: 2, get: 1 },
+          timeLimit: 24,
+          discountAmount: 0,
+          minimumSpend: 0
+        });
+      }
+    } catch (err) {
+      console.error('Error updating campaign:', err);
+      alert(err instanceof Error ? err.message : 'Failed to update campaign');
     }
   };
 
@@ -491,7 +635,7 @@ export default function CampaignsPage() {
                     <Pause className="w-4 h-4" />
                   </Button>
                 )}
-                <Button size="sm" variant="outline">
+                <Button size="sm" variant="outline" onClick={() => handleEditCampaign(campaign)}>
                   <Edit className="w-4 h-4" />
                 </Button>
               </div>
@@ -505,93 +649,137 @@ export default function CampaignsPage() {
     </div>
   );
 
-  const renderLoyalty = () => (
-    <div className="space-y-6">
-      {/* Loyalty Program Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-zinc-400">Active Members</p>
-              <p className="text-2xl font-bold text-white">1,247</p>
-            </div>
-            <Users className="w-8 h-8 text-blue-400" />
+  const renderLoyalty = () => {
+    if (loyaltyLoading) {
+      return (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-zinc-400">Loading loyalty program...</div>
+        </div>
+      );
+    }
+
+    const tierColors: Record<string, string> = {
+      bronze: 'bg-orange-500',
+      silver: 'bg-gray-400',
+      gold: 'bg-yellow-500',
+      platinum: 'bg-purple-500'
+    };
+
+    return (
+      <div className="space-y-6">
+        {/* Actions */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-white">Loyalty Program</h2>
+          <div className="flex space-x-3">
+            <Button onClick={() => setShowTierModal(true)} variant="outline">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Tier
+            </Button>
+            <Button onClick={() => setShowRewardModal(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Reward
+            </Button>
           </div>
+        </div>
+
+        {/* Loyalty Tiers */}
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white">Loyalty Tiers</h3>
+          </div>
+          {loyaltyTiers.length === 0 ? (
+            <div className="text-center py-8 text-zinc-400">
+              <Star className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p>No tiers configured. Create your first tier to get started.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {loyaltyTiers.map((tier) => (
+                <div key={tier.id} className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg">
+                  <div className="flex items-center space-x-4">
+                    <div className={`w-4 h-4 rounded-full ${tierColors[tier.tierName] || 'bg-zinc-500'}`} />
+                    <div>
+                      <h4 className="font-semibold text-white capitalize">{tier.tierName}</h4>
+                      <p className="text-sm text-zinc-400">
+                        {tier.minPoints} - {tier.maxPoints || '∞'} points
+                        {tier.discountPercent > 0 && ` • ${tier.discountPercent}% discount`}
+                        {tier.pointsPerDollar !== 1 && ` • ${tier.pointsPerDollar}x points per dollar`}
+                      </p>
+                      {tier.benefits && Array.isArray(tier.benefits) && tier.benefits.length > 0 && (
+                        <p className="text-xs text-zinc-500 mt-1">
+                          Benefits: {tier.benefits.join(', ')}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <Badge className={tier.isActive ? 'bg-green-500/20 text-green-400' : 'bg-zinc-500/20 text-zinc-400'}>
+                      {tier.isActive ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </Card>
 
+        {/* Rewards Catalog */}
         <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-zinc-400">Points Redeemed</p>
-              <p className="text-2xl font-bold text-white">15,420</p>
-            </div>
-            <Star className="w-8 h-8 text-yellow-400" />
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white">Rewards Catalog</h3>
           </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-zinc-400">Avg. Points per Visit</p>
-              <p className="text-2xl font-bold text-white">125</p>
+          {loyaltyRewards.length === 0 ? (
+            <div className="text-center py-8 text-zinc-400">
+              <Gift className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p>No rewards available. Create rewards for customers to redeem.</p>
             </div>
-            <TrendingUp className="w-8 h-8 text-green-400" />
-          </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {loyaltyRewards.map((reward) => (
+                <div key={reward.id} className="p-4 bg-zinc-800/50 rounded-lg">
+                  <div className="flex items-start justify-between mb-2">
+                    <h4 className="font-semibold text-white">{reward.name}</h4>
+                    {reward.tier && (
+                      <Badge className="bg-blue-500/20 text-blue-400 text-xs">
+                        {reward.tier.tierName}
+                      </Badge>
+                    )}
+                  </div>
+                  {reward.description && (
+                    <p className="text-sm text-zinc-400 mb-3">{reward.description}</p>
+                  )}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-zinc-400">Cost:</span>
+                      <span className="text-yellow-400 font-semibold">{reward.pointsCost} points</span>
+                    </div>
+                    {reward.discountPercent && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-zinc-400">Discount:</span>
+                        <span className="text-green-400">{reward.discountPercent}%</span>
+                      </div>
+                    )}
+                    {reward.discountAmountCents && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-zinc-400">Discount:</span>
+                        <span className="text-green-400">${(reward.discountAmountCents / 100).toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between text-xs text-zinc-500 mt-2">
+                      <span>Type: {reward.rewardType}</span>
+                      {reward.maxRedemptions && (
+                        <span>{reward.redemptionCount} / {reward.maxRedemptions} redeemed</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </Card>
       </div>
-
-      {/* Loyalty Tiers */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">Loyalty Tiers</h3>
-        <div className="space-y-4">
-          {[
-            { name: 'Bronze', points: '0-499', benefits: '5% off all orders', members: 456, color: 'bg-orange-500' },
-            { name: 'Silver', points: '500-999', benefits: '10% off + free refills', members: 623, color: 'bg-gray-400' },
-            { name: 'Gold', points: '1000-1999', benefits: '15% off + priority seating', members: 168, color: 'bg-yellow-500' },
-            { name: 'Platinum', points: '2000+', benefits: '20% off + exclusive flavors', members: 12, color: 'bg-purple-500' }
-          ].map((tier, index) => (
-            <div key={index} className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg">
-              <div className="flex items-center space-x-4">
-                <div className={`w-4 h-4 rounded-full ${tier.color}`} />
-                <div>
-                  <h4 className="font-semibold text-white">{tier.name}</h4>
-                  <p className="text-sm text-zinc-400">{tier.points} points • {tier.benefits}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-white font-semibold">{tier.members} members</p>
-                <p className="text-sm text-zinc-400">Active</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Recent Redemptions */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">Recent Redemptions</h3>
-        <div className="space-y-3">
-          {[
-            { customer: 'John Doe', item: 'Free Hookah Session', points: 500, date: '2 hours ago' },
-            { customer: 'Sarah Chen', item: '10% Discount', points: 200, date: '4 hours ago' },
-            { customer: 'Mike Wilson', item: 'Priority Seating', points: 100, date: '6 hours ago' },
-            { customer: 'Emma Davis', item: 'Free Refill', points: 150, date: '8 hours ago' }
-          ].map((redemption, index) => (
-            <div key={index} className="flex items-center justify-between p-3 bg-zinc-800/30 rounded-lg">
-              <div>
-                <p className="text-white font-medium">{redemption.customer}</p>
-                <p className="text-sm text-zinc-400">{redemption.item}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-yellow-400 font-semibold">-{redemption.points} pts</p>
-                <p className="text-sm text-zinc-500">{redemption.date}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
-    </div>
-  );
+    );
+  };
 
   const renderAnalytics = () => {
     if (analyticsLoading) {
@@ -899,11 +1087,13 @@ export default function CampaignsPage() {
         {/* Content */}
         {!loading && !error && renderContent()}
 
-        {/* Create Campaign Modal */}
-        {showCreateModal && (
+        {/* Create/Edit Campaign Modal */}
+        {(showCreateModal || showEditModal) && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-zinc-800 rounded-xl p-6 w-full max-w-md">
-              <h3 className="text-xl font-semibold text-white mb-4">Create New Campaign</h3>
+            <div className="bg-zinc-800 rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+              <h3 className="text-xl font-semibold text-white mb-4">
+                {editingCampaign ? 'Edit Campaign' : 'Create New Campaign'}
+              </h3>
               
               <div className="space-y-4">
                 <div>
@@ -1066,13 +1256,674 @@ export default function CampaignsPage() {
                     placeholder="0"
                   />
                 </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Start Date</label>
+                    <input
+                      type="date"
+                      value={newCampaign.startDate}
+                      onChange={(e) => setNewCampaign(prev => ({ ...prev, startDate: e.target.value }))}
+                      className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">End Date (Optional)</label>
+                    <input
+                      type="date"
+                      value={newCampaign.endDate}
+                      onChange={(e) => setNewCampaign(prev => ({ ...prev, endDate: e.target.value }))}
+                      className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                </div>
+
+                {!editingCampaign && (
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">QR Prefix (for tracking)</label>
+                    <input
+                      type="text"
+                      value={newCampaign.qrPrefix}
+                      onChange={(e) => setNewCampaign(prev => ({ ...prev, qrPrefix: e.target.value }))}
+                      className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      placeholder="e.g., weekend25"
+                    />
+                    <p className="text-xs text-zinc-400 mt-1">Used in QR codes for campaign tracking</p>
+                  </div>
+                )}
               </div>
 
               <div className="flex space-x-3 mt-6">
-                <Button onClick={handleCreateCampaign} className="flex-1">
-                  Create Campaign
+                <Button 
+                  onClick={editingCampaign ? handleUpdateCampaign : handleCreateCampaign} 
+                  className="flex-1"
+                >
+                  {editingCampaign ? 'Update Campaign' : 'Create Campaign'}
                 </Button>
-                <Button variant="outline" onClick={() => setShowCreateModal(false)} className="flex-1">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    setShowEditModal(false);
+                    setEditingCampaign(null);
+                    // Reset form
+                    setNewCampaign({
+                      name: '',
+                      type: 'promotional' as Campaign['type'],
+                      description: '',
+                      targetAudience: '',
+                      budget: 0,
+                      startDate: '',
+                      endDate: '',
+                      channels: [],
+                      percentageOff: 10,
+                      firstXCustomers: 50,
+                      buyXGetY: { buy: 2, get: 1 },
+                      timeLimit: 24,
+                      discountAmount: 0,
+                      minimumSpend: 0
+                    });
+                  }} 
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tier Management Modal */}
+        {showTierModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-zinc-800 rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+              <h3 className="text-xl font-semibold text-white mb-4">
+                {editingTier ? 'Edit Tier' : 'Create New Tier'}
+              </h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">Tier Name</label>
+                  <select
+                    value={newTier.tierName}
+                    onChange={(e) => setNewTier(prev => ({ ...prev, tierName: e.target.value }))}
+                    className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  >
+                    <option value="bronze">Bronze</option>
+                    <option value="silver">Silver</option>
+                    <option value="gold">Gold</option>
+                    <option value="platinum">Platinum</option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Min Points</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={newTier.minPoints}
+                      onChange={(e) => setNewTier(prev => ({ ...prev, minPoints: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Max Points (optional)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={newTier.maxPoints}
+                      onChange={(e) => setNewTier(prev => ({ ...prev, maxPoints: e.target.value }))}
+                      className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      placeholder="Leave empty for unlimited"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Discount %</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      value={newTier.discountPercent}
+                      onChange={(e) => setNewTier(prev => ({ ...prev, discountPercent: parseFloat(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Points per Dollar</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={newTier.pointsPerDollar}
+                      onChange={(e) => setNewTier(prev => ({ ...prev, pointsPerDollar: parseFloat(e.target.value) || 1 }))}
+                      className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">Benefits (comma-separated)</label>
+                  <input
+                    type="text"
+                    value={newTier.benefits}
+                    onChange={(e) => setNewTier(prev => ({ ...prev, benefits: e.target.value }))}
+                    className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    placeholder="e.g., Priority seating, Free refills, Exclusive flavors"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">Display Order</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={newTier.displayOrder}
+                    onChange={(e) => setNewTier(prev => ({ ...prev, displayOrder: parseInt(e.target.value) || 0 }))}
+                    className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex space-x-3 mt-6">
+                <Button onClick={handleCreateTier} className="flex-1">
+                  {editingTier ? 'Update Tier' : 'Create Tier'}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowTierModal(false);
+                    setEditingTier(null);
+                    setNewTier({
+                      tierName: 'bronze',
+                      minPoints: 0,
+                      maxPoints: '',
+                      discountPercent: 0,
+                      pointsPerDollar: 1,
+                      benefits: '',
+                      displayOrder: 0
+                    });
+                  }} 
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Reward Management Modal */}
+        {showRewardModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-zinc-800 rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+              <h3 className="text-xl font-semibold text-white mb-4">
+                {editingReward ? 'Edit Reward' : 'Create New Reward'}
+              </h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">Reward Name</label>
+                  <input
+                    type="text"
+                    value={newReward.name}
+                    onChange={(e) => setNewReward(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    placeholder="e.g., 10% Off Next Visit"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">Description</label>
+                  <textarea
+                    value={newReward.description}
+                    onChange={(e) => setNewReward(prev => ({ ...prev, description: e.target.value }))}
+                    className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    rows={2}
+                    placeholder="Describe the reward"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">Tier (optional)</label>
+                  <select
+                    value={newReward.tierId}
+                    onChange={(e) => setNewReward(prev => ({ ...prev, tierId: e.target.value }))}
+                    className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  >
+                    <option value="">All Tiers</option>
+                    {loyaltyTiers.map(tier => (
+                      <option key={tier.id} value={tier.id}>{tier.tierName}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">Points Cost</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={newReward.pointsCost}
+                    onChange={(e) => setNewReward(prev => ({ ...prev, pointsCost: parseInt(e.target.value) || 0 }))}
+                    className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">Reward Type</label>
+                  <select
+                    value={newReward.rewardType}
+                    onChange={(e) => setNewReward(prev => ({ ...prev, rewardType: e.target.value }))}
+                    className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  >
+                    <option value="discount">Discount</option>
+                    <option value="free_item">Free Item</option>
+                    <option value="upgrade">Upgrade</option>
+                    <option value="perk">Perk</option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Discount % (optional)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      value={newReward.discountPercent}
+                      onChange={(e) => setNewReward(prev => ({ ...prev, discountPercent: e.target.value }))}
+                      className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Discount Amount $ (optional)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={newReward.discountAmountCents}
+                      onChange={(e) => setNewReward(prev => ({ ...prev, discountAmountCents: e.target.value }))}
+                      className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">Max Redemptions (optional)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={newReward.maxRedemptions}
+                    onChange={(e) => setNewReward(prev => ({ ...prev, maxRedemptions: e.target.value }))}
+                    className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    placeholder="Leave empty for unlimited"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Valid From (optional)</label>
+                    <input
+                      type="date"
+                      value={newReward.validFrom}
+                      onChange={(e) => setNewReward(prev => ({ ...prev, validFrom: e.target.value }))}
+                      className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Valid Until (optional)</label>
+                    <input
+                      type="date"
+                      value={newReward.validUntil}
+                      onChange={(e) => setNewReward(prev => ({ ...prev, validUntil: e.target.value }))}
+                      className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">Display Order</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={newReward.displayOrder}
+                    onChange={(e) => setNewReward(prev => ({ ...prev, displayOrder: parseInt(e.target.value) || 0 }))}
+                    className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex space-x-3 mt-6">
+                <Button onClick={handleCreateReward} className="flex-1">
+                  {editingReward ? 'Update Reward' : 'Create Reward'}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowRewardModal(false);
+                    setEditingReward(null);
+                    setNewReward({
+                      name: '',
+                      description: '',
+                      tierId: '',
+                      pointsCost: 0,
+                      discountPercent: '',
+                      discountAmountCents: '',
+                      rewardType: 'discount',
+                      maxRedemptions: '',
+                      validFrom: '',
+                      validUntil: '',
+                      displayOrder: 0
+                    });
+                  }} 
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tier Management Modal */}
+        {showTierModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-zinc-800 rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+              <h3 className="text-xl font-semibold text-white mb-4">
+                {editingTier ? 'Edit Tier' : 'Create New Tier'}
+              </h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">Tier Name</label>
+                  <select
+                    value={newTier.tierName}
+                    onChange={(e) => setNewTier(prev => ({ ...prev, tierName: e.target.value }))}
+                    className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  >
+                    <option value="bronze">Bronze</option>
+                    <option value="silver">Silver</option>
+                    <option value="gold">Gold</option>
+                    <option value="platinum">Platinum</option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Min Points</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={newTier.minPoints}
+                      onChange={(e) => setNewTier(prev => ({ ...prev, minPoints: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Max Points (optional)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={newTier.maxPoints}
+                      onChange={(e) => setNewTier(prev => ({ ...prev, maxPoints: e.target.value }))}
+                      className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      placeholder="Leave empty for unlimited"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Discount %</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      value={newTier.discountPercent}
+                      onChange={(e) => setNewTier(prev => ({ ...prev, discountPercent: parseFloat(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Points per Dollar</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={newTier.pointsPerDollar}
+                      onChange={(e) => setNewTier(prev => ({ ...prev, pointsPerDollar: parseFloat(e.target.value) || 1 }))}
+                      className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">Benefits (comma-separated)</label>
+                  <input
+                    type="text"
+                    value={newTier.benefits}
+                    onChange={(e) => setNewTier(prev => ({ ...prev, benefits: e.target.value }))}
+                    className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    placeholder="e.g., Priority seating, Free refills, Exclusive flavors"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">Display Order</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={newTier.displayOrder}
+                    onChange={(e) => setNewTier(prev => ({ ...prev, displayOrder: parseInt(e.target.value) || 0 }))}
+                    className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex space-x-3 mt-6">
+                <Button onClick={handleCreateTier} className="flex-1">
+                  {editingTier ? 'Update Tier' : 'Create Tier'}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowTierModal(false);
+                    setEditingTier(null);
+                    setNewTier({
+                      tierName: 'bronze',
+                      minPoints: 0,
+                      maxPoints: '',
+                      discountPercent: 0,
+                      pointsPerDollar: 1,
+                      benefits: '',
+                      displayOrder: 0
+                    });
+                  }} 
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Reward Management Modal */}
+        {showRewardModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-zinc-800 rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+              <h3 className="text-xl font-semibold text-white mb-4">
+                {editingReward ? 'Edit Reward' : 'Create New Reward'}
+              </h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">Reward Name</label>
+                  <input
+                    type="text"
+                    value={newReward.name}
+                    onChange={(e) => setNewReward(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    placeholder="e.g., 10% Off Next Visit"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">Description</label>
+                  <textarea
+                    value={newReward.description}
+                    onChange={(e) => setNewReward(prev => ({ ...prev, description: e.target.value }))}
+                    className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    rows={2}
+                    placeholder="Describe the reward"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">Tier (optional)</label>
+                  <select
+                    value={newReward.tierId}
+                    onChange={(e) => setNewReward(prev => ({ ...prev, tierId: e.target.value }))}
+                    className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  >
+                    <option value="">All Tiers</option>
+                    {loyaltyTiers.map(tier => (
+                      <option key={tier.id} value={tier.id}>{tier.tierName}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">Points Cost</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={newReward.pointsCost}
+                    onChange={(e) => setNewReward(prev => ({ ...prev, pointsCost: parseInt(e.target.value) || 0 }))}
+                    className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">Reward Type</label>
+                  <select
+                    value={newReward.rewardType}
+                    onChange={(e) => setNewReward(prev => ({ ...prev, rewardType: e.target.value }))}
+                    className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  >
+                    <option value="discount">Discount</option>
+                    <option value="free_item">Free Item</option>
+                    <option value="upgrade">Upgrade</option>
+                    <option value="perk">Perk</option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Discount % (optional)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      value={newReward.discountPercent}
+                      onChange={(e) => setNewReward(prev => ({ ...prev, discountPercent: e.target.value }))}
+                      className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Discount Amount $ (optional)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={newReward.discountAmountCents}
+                      onChange={(e) => setNewReward(prev => ({ ...prev, discountAmountCents: e.target.value }))}
+                      className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">Max Redemptions (optional)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={newReward.maxRedemptions}
+                    onChange={(e) => setNewReward(prev => ({ ...prev, maxRedemptions: e.target.value }))}
+                    className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    placeholder="Leave empty for unlimited"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Valid From (optional)</label>
+                    <input
+                      type="date"
+                      value={newReward.validFrom}
+                      onChange={(e) => setNewReward(prev => ({ ...prev, validFrom: e.target.value }))}
+                      className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Valid Until (optional)</label>
+                    <input
+                      type="date"
+                      value={newReward.validUntil}
+                      onChange={(e) => setNewReward(prev => ({ ...prev, validUntil: e.target.value }))}
+                      className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">Display Order</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={newReward.displayOrder}
+                    onChange={(e) => setNewReward(prev => ({ ...prev, displayOrder: parseInt(e.target.value) || 0 }))}
+                    className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex space-x-3 mt-6">
+                <Button onClick={handleCreateReward} className="flex-1">
+                  {editingReward ? 'Update Reward' : 'Create Reward'}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowRewardModal(false);
+                    setEditingReward(null);
+                    setNewReward({
+                      name: '',
+                      description: '',
+                      tierId: '',
+                      pointsCost: 0,
+                      discountPercent: '',
+                      discountAmountCents: '',
+                      rewardType: 'discount',
+                      maxRedemptions: '',
+                      validFrom: '',
+                      validUntil: '',
+                      displayOrder: 0
+                    });
+                  }} 
+                  className="flex-1"
+                >
                   Cancel
                 </Button>
               </div>

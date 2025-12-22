@@ -68,13 +68,39 @@ export default function FlavorComposer({ guestProfile, flags, onMixUpdate }: Fla
     }
 
     try {
+      // Try AI recommendations first
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
+      const loungeId = guestProfile?.lastLoungeId || 'default-lounge';
+      const guestId = guestProfile?.guestId;
+      
+      const recommendationResponse = await fetch(
+        `${appUrl}/api/recommendations/flavors?loungeId=${loungeId}&selection=${flavors.join(',')}${guestId ? `&customerId=${guestId}` : ''}`
+      );
+
+      if (recommendationResponse.ok) {
+        const recommendationData = await recommendationResponse.json();
+        if (recommendationData.success && recommendationData.recommendations) {
+          // Get top 5 AI recommendations
+          const aiSuggestions = recommendationData.recommendations
+            .slice(0, 5)
+            .map((rec: any) => rec.flavorId || rec.flavorName);
+          setSuggestions(aiSuggestions);
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('Failed to get AI recommendations:', error);
+    }
+
+    // Fallback to basic suggestions
+    try {
       const response = await fetch('/api/guest/mix/save', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          sessionId: 'temp_session', // In production, get from session context
+          sessionId: 'temp_session',
           flavors,
           notes
         })

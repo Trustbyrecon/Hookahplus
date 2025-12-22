@@ -66,8 +66,32 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Generate suggestions based on flavors
-    const suggestions = generateMixSuggestions(flavors);
+    // Generate AI-powered suggestions
+    let suggestions: string[] = [];
+    try {
+      // Try to get AI recommendations from app build
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
+      const recommendationResponse = await fetch(
+        `${appUrl}/api/recommendations/flavors?loungeId=${session.loungeId}&selection=${flavors.join(',')}${session.guestId ? `&customerId=${session.guestId}` : ''}`
+      );
+      
+      if (recommendationResponse.ok) {
+        const recommendationData = await recommendationResponse.json();
+        if (recommendationData.success && recommendationData.recommendations) {
+          // Get top 3 recommendations
+          suggestions = recommendationData.recommendations
+            .slice(0, 3)
+            .map((rec: any) => rec.flavorId || rec.flavorName);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to get AI recommendations, falling back to basic suggestions:', error);
+    }
+
+    // Fallback to basic suggestions if AI recommendations failed
+    if (suggestions.length === 0) {
+      suggestions = generateMixSuggestions(flavors);
+    }
 
     // Log mix selection event
     const flags = featureFlags.getLoungeFlags(session.loungeId);

@@ -93,6 +93,9 @@ model Tenant {
   payments    Payment[]
   events      ReflexEvent[]
   campaigns   Campaign[]
+  loyaltyAccounts LoyaltyAccount[]
+  loyaltyTiers   LoyaltyTier[]
+  loyaltyRewards LoyaltyReward[]
 
   @@index([createdAt], map: "idx_tenants_created_at")
   @@index([name], map: "idx_tenants_name")
@@ -679,19 +682,31 @@ model PosTicket {
 
 model LoyaltyAccount {
   id               String              @id @default(cuid())
+  loungeId         String?             @map("lounge_id")
+  tenantId         String?             @map("tenant_id") @db.Uuid
   customerId       String?             @map("customer_id")
   customerPhone    String?             @map("customer_phone")
   balanceCents     Int                 @default(0) @map("balance_cents")
   totalEarnedCents Int                 @default(0) @map("total_earned_cents")
   totalRedeemedCents Int               @default(0) @map("total_redeemed_cents")
+  pointsBalance    Int                 @default(0) @map("points_balance")
+  totalPointsEarned Int               @default(0) @map("total_points_earned")
+  totalPointsRedeemed Int             @default(0) @map("total_points_redeemed")
+  currentTier      String              @default("bronze") @map("current_tier") // bronze | silver | gold | platinum
+  visitCount       Int                 @default(0) @map("visit_count")
+  lastVisitAt      DateTime?           @map("last_visit_at") @db.Timestamptz(6)
   isActive         Boolean             @default(true) @map("is_active")
   createdAt        DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
   transactions     LoyaltyTransaction[]
   wallet           LoyaltyWallet?
+  redemptions      LoyaltyRedemption[]
+  tenant           Tenant?             @relation(fields: [tenantId], references: [id], onUpdate: NoAction)
 
   @@index([customerId], map: "idx_loyalty_account_customer_id")
   @@index([customerPhone], map: "idx_loyalty_account_customer_phone")
+  @@index([loungeId, isActive], map: "idx_loyalty_account_lounge_active")
+  @@index([tenantId], map: "idx_loyalty_account_tenant_id")
   @@index([isActive, updatedAt], map: "idx_loyalty_account_is_active_updated_at")
   @@map("loyalty_accounts")
 }
@@ -730,6 +745,83 @@ model LoyaltyWallet {
 
   @@index([accountId], map: "idx_loyalty_wallet_account_id")
   @@map("loyalty_wallets")
+}
+
+model LoyaltyTier {
+  id                String    @id @default(cuid())
+  loungeId          String?   @map("lounge_id")
+  tenantId          String?   @map("tenant_id") @db.Uuid
+  tierName          String    @map("tier_name") // bronze | silver | gold | platinum
+  minPoints         Int       @default(0) @map("min_points")
+  maxPoints         Int?      @map("max_points")
+  discountPercent   Float     @default(0) @map("discount_percent")
+  benefits          Json?     // Array of benefit strings
+  pointsPerDollar   Float     @default(1) @map("points_per_dollar") // Points earned per dollar spent
+  isActive          Boolean   @default(true) @map("is_active")
+  displayOrder      Int       @default(0) @map("display_order")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  tenant            Tenant?   @relation(fields: [tenantId], references: [id], onUpdate: NoAction)
+  rewards           LoyaltyReward[]
+
+  @@unique([loungeId, tierName])
+  @@index([loungeId, isActive])
+  @@index([tenantId])
+  @@index([minPoints, maxPoints])
+  @@map("loyalty_tiers")
+}
+
+model LoyaltyReward {
+  id                String       @id @default(cuid())
+  loungeId          String?      @map("lounge_id")
+  tenantId          String?      @map("tenant_id") @db.Uuid
+  tierId            String?      @map("tier_id")
+  name              String
+  description       String?
+  pointsCost        Int          @map("points_cost")
+  discountPercent   Float?       @map("discount_percent")
+  discountAmountCents Int?       @map("discount_amount_cents")
+  rewardType        String       @map("reward_type") // discount | free_item | upgrade | perk
+  isActive          Boolean      @default(true) @map("is_active")
+  maxRedemptions    Int?         @map("max_redemptions")
+  redemptionCount   Int          @default(0) @map("redemption_count")
+  validFrom         DateTime?    @map("valid_from") @db.Timestamptz(6)
+  validUntil        DateTime?    @map("valid_until") @db.Timestamptz(6)
+  displayOrder      Int          @default(0) @map("display_order")
+  createdAt         DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+  tier              LoyaltyTier? @relation(fields: [tierId], references: [id], onDelete: SetNull)
+  tenant            Tenant?      @relation(fields: [tenantId], references: [id], onUpdate: NoAction)
+  redemptions       LoyaltyRedemption[]
+
+  @@index([loungeId, isActive])
+  @@index([tierId])
+  @@index([tenantId])
+  @@index([pointsCost])
+  @@map("loyalty_rewards")
+}
+
+model LoyaltyRedemption {
+  id                String         @id @default(cuid())
+  accountId         String         @map("account_id")
+  rewardId          String         @map("reward_id")
+  sessionId         String?        @map("session_id")
+  pointsSpent       Int            @map("points_spent")
+  discountCents     Int?           @map("discount_cents")
+  status            String         @default("pending") // pending | applied | expired | cancelled
+  appliedAt         DateTime?      @map("applied_at") @db.Timestamptz(6)
+  expiresAt         DateTime?      @map("expires_at") @db.Timestamptz(6)
+  metadata          Json?
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  account           LoyaltyAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  reward            LoyaltyReward  @relation(fields: [rewardId], references: [id], onDelete: Restrict)
+
+  @@index([accountId, createdAt])
+  @@index([rewardId])
+  @@index([sessionId])
+  @@index([status, expiresAt])
+  @@map("loyalty_redemptions")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.

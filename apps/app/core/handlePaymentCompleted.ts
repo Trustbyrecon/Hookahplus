@@ -152,7 +152,22 @@ export async function handlePaymentCompleted(payload: PaymentCompletedPayload) {
       // Don't fail if Reflex Chain initialization fails
     }
 
-    // 6) Emit Trust/Reflex log entry for analytics
+    // 6) Award loyalty points if customer phone is available
+    if (customerPhone) {
+      try {
+        await awardLoyaltyPoints({
+          customerPhone,
+          loungeId,
+          sessionId,
+          amountCents: amountCents || existingSession.priceCents || 3000,
+          tenantId: existingSession.tenantId || null
+        });
+      } catch (loyaltyError) {
+        console.error('[Payment Handler] Failed to award loyalty points (non-blocking):', loyaltyError);
+      }
+    }
+
+    // 7) Emit Trust/Reflex log entry for analytics
     try {
       await prisma.reflexEvent.create({
         data: {
@@ -190,6 +205,119 @@ export async function handlePaymentCompleted(payload: PaymentCompletedPayload) {
     return { success: true, sessionId };
   } catch (error: any) {
     console.error('[Payment Handler] Error processing payment completion:', error);
+    throw error;
+  }
+}
+
+/**
+ * Award loyalty points to customer after payment
+ * Exported for use in settlement flow
+ */
+export async function awardLoyaltyPoints(params: {
+  customerPhone: string;
+  loungeId: string;
+  sessionId: string;
+  amountCents: number;
+  tenantId: string | null;
+}) {
+  const { customerPhone, loungeId, sessionId, amountCents, tenantId } = params;
+  
+  try {
+    // Find or create loyalty account
+    const where: any = { customerPhone, loungeId };
+    if (tenantId) where.tenantId = tenantId;
+
+    let account = await prisma.loyaltyAccount.findFirst({ where });
+
+    if (!account) {
+      account = await prisma.loyaltyAccount.create({
+        data: {
+          loungeId,
+          tenantId: tenantId || null,
+          customerPhone,
+          currentTier: 'bronze'
+        }
+      });
+    }
+
+    if (!account.isActive) {
+      console.log('[Loyalty] Account is inactive, skipping points award');
+      return;
+    }
+
+    // Get customer's current tier to determine points per dollar
+    const tier = await prisma.loyaltyTier.findFirst({
+      where: {
+        tierName: account.currentTier,
+        isActive: true,
+        ...(loungeId ? { loungeId } : {}),
+        ...(tenantId ? { tenantId } : {})
+      }
+    });
+
+    // Calculate points: amount in dollars * points per dollar (default 1 if no tier)
+    const amountDollars = amountCents / 100;
+    const pointsPerDollar = tier?.pointsPerDollar || 1;
+    const pointsEarned = Math.round(amountDollars * pointsPerDollar);
+
+    if (pointsEarned <= 0) {
+      console.log('[Loyalty] No points to award (amount too small)');
+      return;
+    }
+
+    // Update account with new points
+    const updatedAccount = await prisma.loyaltyAccount.update({
+      where: { id: account.id },
+      data: {
+        pointsBalance: { increment: pointsEarned },
+        totalPointsEarned: { increment: pointsEarned },
+        visitCount: { increment: 1 },
+        lastVisitAt: new Date()
+      }
+    });
+
+    // Create transaction record
+    await prisma.loyaltyTransaction.create({
+      data: {
+        accountId: account.id,
+        type: 'EARN',
+        amountCents: 0, // Points are separate from cents
+        balanceBeforeCents: account.pointsBalance,
+        balanceAfterCents: updatedAccount.pointsBalance,
+        source: 'purchase',
+        sessionId
+      }
+    });
+
+    // Check and update tier if points threshold reached
+    const tiers = await prisma.loyaltyTier.findMany({
+      where: {
+        isActive: true,
+        ...(loungeId ? { loungeId } : {}),
+        ...(tenantId ? { tenantId } : {})
+      },
+      orderBy: { minPoints: 'desc' }
+    });
+
+    let newTier = 'bronze';
+    for (const t of tiers) {
+      if (updatedAccount.pointsBalance >= t.minPoints) {
+        newTier = t.tierName;
+        break;
+      }
+    }
+
+    if (updatedAccount.currentTier !== newTier) {
+      await prisma.loyaltyAccount.update({
+        where: { id: account.id },
+        data: { currentTier: newTier }
+      });
+      console.log(`[Loyalty] Customer ${customerPhone} upgraded to ${newTier} tier`);
+    }
+
+    console.log(`[Loyalty] Awarded ${pointsEarned} points to customer ${customerPhone} for session ${sessionId}`);
+  } catch (error) {
+    console.error('[Loyalty] Error awarding points:', error);
     throw error;
   }
 }

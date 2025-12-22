@@ -136,6 +136,51 @@ async function handleSessionSettlement(sessionId: string, session: any) {
       }
     }
 
+    // Award loyalty points if customer phone exists and payment was successful
+    // Only award if payment was already completed (to avoid double-awarding)
+    if (fullSession.customerPhone && fullSession.paymentStatus === 'succeeded') {
+      try {
+        // Check if points were already awarded (by checking for existing transaction)
+        const existingTransaction = await prisma.loyaltyTransaction.findFirst({
+          where: {
+            sessionId: sessionId,
+            type: 'EARN',
+            source: 'purchase'
+          }
+        });
+
+        // Only award additional points if final amount is higher than what was paid initially
+        // and no transaction exists yet (points not awarded on payment)
+        if (!existingTransaction) {
+          const { awardLoyaltyPoints } = await import('../../../core/handlePaymentCompleted');
+          await awardLoyaltyPoints({
+            customerPhone: fullSession.customerPhone,
+            loungeId: fullSession.loungeId,
+            sessionId: sessionId,
+            amountCents: finalTotal,
+            tenantId: fullSession.tenantId || null
+          });
+          console.log(`[Settlement] Loyalty points awarded for session ${sessionId}`);
+        } else if (finalTotal > (fullSession.priceCents || 0)) {
+          // Award additional points for the difference
+          const differenceCents = finalTotal - (fullSession.priceCents || 0);
+          if (differenceCents > 0) {
+            const { awardLoyaltyPoints: awardAdditionalPoints } = await import('../../../core/handlePaymentCompleted');
+            await awardAdditionalPoints({
+              customerPhone: fullSession.customerPhone,
+              loungeId: fullSession.loungeId,
+              sessionId: sessionId,
+              amountCents: differenceCents,
+              tenantId: fullSession.tenantId || null
+            });
+            console.log(`[Settlement] Additional loyalty points awarded for settlement difference: ${differenceCents} cents`);
+          }
+        }
+      } catch (loyaltyError) {
+        console.error(`[Settlement] Failed to award loyalty points (non-blocking):`, loyaltyError);
+      }
+    }
+
     // Publish SessionClosed event for post-close workflows
     try {
       const { eventQueue } = await import('../../../lib/events/queue');
