@@ -65,7 +65,7 @@ export async function withQueryRetry<T>(
       // Check if error is retryable
       const isRetryable = retryableErrors.some(code => 
         lastError?.message.includes(code) || 
-        lastError?.code === code ||
+        (lastError as any)?.code === code ||
         (error as any)?.code === code
       );
 
