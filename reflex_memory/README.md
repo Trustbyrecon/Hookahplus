@@ -4,12 +4,14 @@
 ## 📁 Directory Structure
 ```
 reflex_memory/
-├── README.md              # This file
-├── GhostLog.md            # Real-time agent memory
-├── TrustGraph.yaml        # Agent relationship mapping
-├── SmokeTestAgent.md      # Active supervisor agent
-├── DeploymentAgent.md     # Escalated specialist agent
-└── AgentProtocols.md      # Standard operating procedures
+├── README.md                      # This file
+├── GhostLog.md                    # Real-time agent memory
+├── TrustGraph.yaml                # Agent relationship mapping
+├── MOATAwareness.yaml             # MOAT-level operations config
+├── SmokeTestAgent.md              # Active supervisor agent
+├── DeploymentAgent.md             # Escalated specialist agent
+├── AgentProtocols.md              # Standard operating procedures
+└── POS_TAKEOVER_MOAT_STRATEGY.md  # Network-wide customer identity & POS moat strategy
 ```
 
 ## 🚀 Quick Start
@@ -33,6 +35,7 @@ reflex_memory/
 2. Check `GhostLog.md` for current status and context
 3. Review `TrustGraph.yaml` for agent relationships
 4. Follow `AgentProtocols.md` for standard procedures
+5. Reference `POS_TAKEOVER_MOAT_STRATEGY.md` when working on POS, profiles, or network features
 
 ### **For Human Operators**
 1. Monitor `GhostLog.md` for real-time updates

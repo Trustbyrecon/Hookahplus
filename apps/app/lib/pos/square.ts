@@ -1,26 +1,113 @@
 import type { PosAdapter, HpItem, HpOrder, ExternalTender, AttachResult, ReconciliationMatch, ReconciliationReport } from "./types";
 import Stripe from 'stripe';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../db';
+import { decrypt, encrypt } from '../utils/encryption';
+import { SquareOAuth } from '../square/oauth';
 
-const prisma = new PrismaClient();
 const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2025-08-27.basil' as any })
   : null;
 
-/** ENV:
- * SQUARE_ACCESS_TOKEN=<secret>
- * SQUARE_LOCATION_ID=<location>
+/**
+ * Square POS Adapter
+ * Supports both OAuth (App Marketplace) and static token (legacy) modes
  */
 export class SquareAdapter implements PosAdapter {
-  private locationId = process.env.SQUARE_LOCATION_ID!;
-  private accessToken = process.env.SQUARE_ACCESS_TOKEN!;
+  private locationId: string | null = null;
+  private accessToken: string | null = null;
+  private merchantId: string | null = null;
+  private initialized = false;
   
   constructor(private cfg: { venueId: string }) {
-    if (!this.locationId) {
-      throw new Error("SQUARE_LOCATION_ID environment variable is required");
+    // Initialization is now async - use initialize() method
+  }
+
+  /**
+   * Initialize adapter by loading merchant credentials
+   * Must be called before using adapter methods
+   */
+  async initialize(): Promise<void> {
+    if (this.initialized) return;
+
+    try {
+      // Try to load from database (OAuth mode)
+      const merchant = await prisma.squareMerchant.findUnique({
+        where: { loungeId: this.cfg.venueId }
+      });
+
+      if (merchant) {
+        // Check if token needs refresh
+        if (merchant.expiresAt && merchant.expiresAt < new Date()) {
+          await this.refreshAccessToken(merchant);
+          // Reload after refresh
+          const refreshed = await prisma.squareMerchant.findUnique({
+            where: { loungeId: this.cfg.venueId }
+          });
+          if (refreshed) {
+            this.accessToken = decrypt(refreshed.accessToken);
+            this.locationId = refreshed.locationIds[0] || null;
+            this.merchantId = refreshed.merchantId;
+          }
+        } else {
+          this.accessToken = decrypt(merchant.accessToken);
+          this.locationId = merchant.locationIds[0] || null;
+          this.merchantId = merchant.merchantId;
+        }
+      } else {
+        // Fallback to environment variables (legacy mode)
+        this.locationId = process.env.SQUARE_LOCATION_ID || null;
+        this.accessToken = process.env.SQUARE_ACCESS_TOKEN || null;
+      }
+
+      if (!this.accessToken) {
+        throw new Error("Square not connected. Please connect your Square account in settings.");
+      }
+
+      if (!this.locationId) {
+        throw new Error("No Square location configured. Please connect your Square account.");
+      }
+
+      this.initialized = true;
+    } catch (error) {
+      throw new Error(`Failed to initialize Square adapter: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-    if (!this.accessToken) {
-      throw new Error("SQUARE_ACCESS_TOKEN environment variable is required");
+  }
+
+  /**
+   * Refresh expired access token
+   */
+  private async refreshAccessToken(merchant: any): Promise<void> {
+    if (!merchant.refreshToken) {
+      throw new Error('No refresh token available. Please reconnect your Square account.');
+    }
+
+    try {
+      const tokens = await SquareOAuth.refreshToken(decrypt(merchant.refreshToken));
+      const expiresAt = new Date(Date.now() + tokens.expiresIn * 1000);
+
+      await prisma.squareMerchant.update({
+        where: { id: merchant.id },
+        data: {
+          accessToken: encrypt(tokens.accessToken),
+          refreshToken: encrypt(tokens.refreshToken),
+          expiresAt
+        }
+      });
+    } catch (error) {
+      console.error('[Square] Token refresh failed:', error);
+      throw new Error('Failed to refresh Square access token. Please reconnect your account.');
+    }
+  }
+
+  /**
+   * Ensure adapter is initialized before use
+   */
+  private async ensureInitialized(): Promise<void> {
+    if (!this.initialized) {
+      await this.initialize();
+    }
+    if (!this.accessToken || !this.locationId) {
+      throw new Error('Square adapter not properly initialized');
     }
   }
 
@@ -29,6 +116,8 @@ export class SquareAdapter implements PosAdapter {
   }
 
   async attachOrder(hpOrder: HpOrder): Promise<AttachResult> {
+    await this.ensureInitialized();
+    
     try {
       // Check if order already exists (idempotency)
       const existingOrder = await this.findOrderByHpId(hpOrder.hp_order_id);
@@ -41,7 +130,7 @@ export class SquareAdapter implements PosAdapter {
       const body = {
         idempotency_key: hpOrder.hp_order_id,
         order: {
-          location_id: this.locationId,
+          location_id: this.locationId!,
           reference_id: hpOrder.hp_order_id,
           customer_id: undefined, // optional
           line_items: [], // we will add via upsertItems()
@@ -54,7 +143,7 @@ export class SquareAdapter implements PosAdapter {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Square-Version": "2024-01-17",
+          "Square-Version": "2024-01-18",
           Authorization: `Bearer ${this.accessToken}`,
         },
         body: JSON.stringify(body),
@@ -74,6 +163,8 @@ export class SquareAdapter implements PosAdapter {
   }
 
   async upsertItems(pos_order_id: string, items: HpItem[]): Promise<void> {
+    await this.ensureInitialized();
+    
     try {
       // Get current order to preserve existing data
       const currentOrder = await this.getOrder(pos_order_id);
@@ -92,7 +183,7 @@ export class SquareAdapter implements PosAdapter {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "Square-Version": "2024-01-17",
+          "Square-Version": "2024-01-18",
           Authorization: `Bearer ${this.accessToken}`,
         },
         body: JSON.stringify({ 
@@ -115,6 +206,8 @@ export class SquareAdapter implements PosAdapter {
   }
 
   async closeOrder(pos_order_id: string, tender?: ExternalTender): Promise<void> {
+    await this.ensureInitialized();
+    
     try {
       if (tender) {
         // Pattern B: add "External Paid: Hookah+ $X" adjustment or note
@@ -124,7 +217,7 @@ export class SquareAdapter implements PosAdapter {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            "Square-Version": "2024-01-17",
+            "Square-Version": "2024-01-18",
             Authorization: `Bearer ${this.accessToken}`,
           },
           body: JSON.stringify({
@@ -141,7 +234,7 @@ export class SquareAdapter implements PosAdapter {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            "Square-Version": "2024-01-17",
+            "Square-Version": "2024-01-18",
             Authorization: `Bearer ${this.accessToken}`,
           },
           body: JSON.stringify({ order: { state: "COMPLETED" } }),
@@ -154,16 +247,18 @@ export class SquareAdapter implements PosAdapter {
   }
 
   private async findOrderByHpId(hpOrderId: string): Promise<{ id: string } | null> {
+    await this.ensureInitialized();
+    
     try {
       const response = await fetch("https://connect.squareup.com/v2/orders/search", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Square-Version": "2024-01-17",
+          "Square-Version": "2024-01-18",
           Authorization: `Bearer ${this.accessToken}`,
         },
         body: JSON.stringify({
-          location_ids: [this.locationId],
+          location_ids: [this.locationId!],
           query: {
             filter: {
               reference_id: {
@@ -187,11 +282,13 @@ export class SquareAdapter implements PosAdapter {
   }
 
   private async getOrder(orderId: string) {
+    await this.ensureInitialized();
+    
     const res = await fetch(`https://connect.squareup.com/v2/orders/${orderId}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "Square-Version": "2024-01-17",
+        "Square-Version": "2024-01-18",
         Authorization: `Bearer ${this.accessToken}`,
       },
     });
@@ -208,6 +305,8 @@ export class SquareAdapter implements PosAdapter {
    * Agent: Noor - Objective O1.3
    */
   async reconcileTicket(posTicketId: string, stripeChargeId?: string): Promise<ReconciliationMatch | null> {
+    await this.ensureInitialized();
+    
     if (!stripe) {
       throw new Error('Stripe not configured for reconciliation');
     }
@@ -278,6 +377,8 @@ export class SquareAdapter implements PosAdapter {
    * Get reconciliation report for date range
    */
   async getReconciliationReport(startDate: Date, endDate: Date): Promise<ReconciliationReport> {
+    await this.ensureInitialized();
+    
     if (!stripe) {
       throw new Error('Stripe not configured for reconciliation');
     }
