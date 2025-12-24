@@ -10,9 +10,9 @@ This error occurs when Square doesn't recognize your Application ID or the redir
 2. Make sure you're in **Sandbox** mode (toggle at top)
 3. Select your app
 4. Go to **Credentials** tab
-5. Verify the **Sandbox Application ID** matches:
+5. Verify the **Sandbox Application ID** format (should start with `sandbox-sq0idb-`):
    ```
-   sandbox-sq0idb-HwTEDJNDDoBxCMCoI7i6xg
+   sandbox-sq0idb-XXXXXXXXXXXXXXXXXXXX
    ```
 
 ### ✅ **Step 2: Register Redirect URI in Square**
@@ -36,11 +36,15 @@ This error occurs when Square doesn't recognize your Application ID or the redir
 Check your `.env.local` file in `apps/app/`:
 
 ```bash
-SQUARE_APPLICATION_ID=sandbox-sq0idb-HwTEDJNDDoBxCMCoI7i6xg
-SQUARE_APPLICATION_SECRET=sandbox-sq0csb-9OTwRguXASQ_2-jHlBFip_N1GWkBvMAP-CMs2q-9dXU
-ENCRYPTION_KEY=b7a7b68d375178a6c7bf2172bc9376fe09066f740388a2a028b5c0ea0c269386
+SQUARE_APPLICATION_ID=sandbox-sq0idb-XXXXXXXXXXXXXXXXXXXX
+SQUARE_APPLICATION_SECRET=sandbox-sq0csb-XXXXXXXXXXXXXXXXXXXX
+ENCRYPTION_KEY=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 NEXT_PUBLIC_APP_URL=http://localhost:3002
 ```
+
+**⚠️ IMPORTANT:** Replace the `X` placeholders with your actual values:
+- Application ID and Secret: From Square Developer Console
+- Encryption Key: Generate with `openssl rand -hex 32`
 
 **Restart your dev server** after updating `.env.local`:
 ```bash

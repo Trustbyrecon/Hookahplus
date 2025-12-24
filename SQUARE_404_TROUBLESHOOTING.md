@@ -52,10 +52,12 @@ http://localhost:3002/api/square/oauth/callback
 Check your `apps/app/.env.local` file:
 
 ```bash
-SQUARE_APPLICATION_ID=sandbox-sq0idb-HwTEDJNDDoBxCMCoI7i6xg
-SQUARE_APPLICATION_SECRET=sandbox-sq0csb-9OTwRguXASQ_2-jHlBFip_N1GWkBvMAP-CMs2q-9dXU
+SQUARE_APPLICATION_ID=sandbox-sq0idb-XXXXXXXXXXXXXXXXXXXX
+SQUARE_APPLICATION_SECRET=sandbox-sq0csb-XXXXXXXXXXXXXXXXXXXX
 NEXT_PUBLIC_APP_URL=http://localhost:3002
 ```
+
+**⚠️ IMPORTANT:** Replace the `X` placeholders with your actual values from Square Developer Console.
 
 **After updating `.env.local`, restart your dev server:**
 ```bash
@@ -65,9 +67,9 @@ npm run dev
 
 ## ✅ **Step 6: Test Application ID**
 
-Try accessing this URL directly in your browser (replace with your actual Application ID):
+Try accessing this URL directly in your browser (replace `YOUR_APP_ID` with your actual Application ID):
 ```
-https://connect.squareup.com/oauth2/authorize?client_id=sandbox-sq0idb-HwTEDJNDDoBxCMCoI7i6xg&scope=ORDERS_READ&redirect_uri=http://localhost:3002/api/square/oauth/callback
+https://connect.squareup.com/oauth2/authorize?client_id=YOUR_APP_ID&scope=ORDERS_READ&redirect_uri=http://localhost:3002/api/square/oauth/callback
 ```
 
 If you get a 404, the Application ID is not recognized by Square.
