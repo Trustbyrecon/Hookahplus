@@ -4,9 +4,9 @@
 
 All Square environment variables have been set in Vercel for all environments (Production, Preview, Development):
 
-- ✅ `SQUARE_APPLICATION_ID` = `sandbox-sq0idb-HwTEDJNDDoBxCMCoI7i6xg`
-- ✅ `SQUARE_APPLICATION_SECRET` = `sandbox-sq0csb-9OTwRguXASQ_2-jHlBFip_N1GWkBvMAP-CMs2q-9dXU`
-- ✅ `ENCRYPTION_KEY` = `b7a7b68d375178a6c7bf2172bc9376fe09066f740388a2a028b5c0ea0c269386`
+- ✅ `SQUARE_APPLICATION_ID` = `sandbox-sq0idb-XXXXXXXXXXXXXXXXXXXX` (set in Vercel)
+- ✅ `SQUARE_APPLICATION_SECRET` = `sandbox-sq0csb-XXXXXXXXXXXXXXXXXXXX` (set in Vercel)
+- ✅ `ENCRYPTION_KEY` = `XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX` (set in Vercel)
 
 ---
 
@@ -115,11 +115,15 @@ The following environment variables are now set in Vercel:
 For local development, create a `.env.local` file:
 
 ```bash
-SQUARE_APPLICATION_ID=sandbox-sq0idb-HwTEDJNDDoBxCMCoI7i6xg
-SQUARE_APPLICATION_SECRET=sandbox-sq0csb-9OTwRguXASQ_2-jHlBFip_N1GWkBvMAP-CMs2q-9dXU
-ENCRYPTION_KEY=b7a7b68d375178a6c7bf2172bc9376fe09066f740388a2a028b5c0ea0c269386
+SQUARE_APPLICATION_ID=sandbox-sq0idb-XXXXXXXXXXXXXXXXXXXX
+SQUARE_APPLICATION_SECRET=sandbox-sq0csb-XXXXXXXXXXXXXXXXXXXX
+ENCRYPTION_KEY=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 NEXT_PUBLIC_APP_URL=http://localhost:3002
 ```
+
+**⚠️ IMPORTANT:** Replace the `X` placeholders with your actual values from:
+- Square Developer Console (for Application ID and Secret)
+- A securely generated 64-character hex string (for Encryption Key)
 
 ---
 

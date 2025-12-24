@@ -6,13 +6,15 @@ The error shows Square is receiving a different `client_id` than expected.
 
 ### **What Square Received (from error URL):**
 ```
-sandbox-sq0idb-HwTEDJNDD0BxCMCol7i6xg
+sandbox-sq0idb-XXXXXXXXXXXXXXXXXXXX
 ```
 
 ### **What We Have in .env.local:**
 ```
-sandbox-sq0idb-HwTEDJNDDoBxCMCoI7i6xg
+sandbox-sq0idb-XXXXXXXXXXXXXXXXXXXX
 ```
+
+**Note:** Replace `X` placeholders with your actual Application ID from Square Developer Console.
 
 ### **Differences:**
 - `D0B` (zero) vs `DoB` (letter O)
