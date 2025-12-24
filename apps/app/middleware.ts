@@ -76,6 +76,7 @@ export async function middleware(request: NextRequest) {
     '/api/qr-generator', // Allow QR generator API access
     '/api/preorder/calculate-price', // Pre-order price calculation (public for QR access)
     '/api/test-session', // Test endpoints for development
+    '/api/square/oauth', // Square OAuth flow (authorize, callback, status, disconnect)
     '/login',
     '/signup',
     '/admin/login', // Admin login page is public

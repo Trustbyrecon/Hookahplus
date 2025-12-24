@@ -29,6 +29,11 @@ export class SquareOAuth {
       throw new Error('SQUARE_APPLICATION_ID environment variable is required');
     }
 
+    // Validate Application ID format
+    if (!clientId.startsWith('sandbox-sq0idb-') && !clientId.startsWith('sq0idb-')) {
+      console.warn('[Square OAuth] Application ID format may be incorrect. Expected format: sandbox-sq0idb-... or sq0idb-...');
+    }
+
     const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/api/square/oauth/callback`;
     const scopes = [
       'ORDERS_WRITE',
@@ -45,7 +50,19 @@ export class SquareOAuth {
       state: state
     });
 
-    return `${this.BASE_URL}/oauth2/authorize?${params.toString()}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+    const authUrl = `${this.BASE_URL}/oauth2/authorize?${params.toString()}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+    
+    // Log for debugging in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Square OAuth] Generated auth URL:', {
+        baseUrl: this.BASE_URL,
+        clientId: clientId.substring(0, 20) + '...',
+        redirectUri,
+        hasState: !!state
+      });
+    }
+
+    return authUrl;
   }
 
   /**

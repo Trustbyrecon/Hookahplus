@@ -25,7 +25,17 @@ export default function SquareConnectPage() {
 
   useEffect(() => {
     if (errorParam) {
-      setError(decodeURIComponent(errorParam));
+      const decodedError = decodeURIComponent(errorParam);
+      setError(decodedError);
+      
+      // Provide helpful messages for common errors
+      if (decodedError === 'missing_params') {
+        setError('OAuth callback missing required parameters. Please try connecting again. Make sure the redirect URL in Square matches exactly: http://localhost:3002/api/square/oauth/callback');
+      } else if (decodedError === 'invalid_state') {
+        setError('Security validation failed. Please try connecting again.');
+      } else if (decodedError === 'missing_lounge') {
+        setError('Lounge ID not found. Please try connecting again.');
+      }
     }
   }, [errorParam]);
 

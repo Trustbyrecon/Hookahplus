@@ -15,19 +15,46 @@ export async function GET(request: NextRequest) {
     const code = searchParams.get('code');
     const state = searchParams.get('state');
     const error = searchParams.get('error');
+    const errorDescription = searchParams.get('error_description');
     const isDevelopment = process.env.NODE_ENV === 'development';
 
-    // Check for OAuth errors
+    // Log all incoming parameters for debugging
+    console.log('[Square OAuth] Callback received:', {
+      hasCode: !!code,
+      hasState: !!state,
+      hasError: !!error,
+      error,
+      errorDescription,
+      allParams: Object.fromEntries(searchParams.entries())
+    });
+
+    // Check for OAuth errors from Square
     if (error) {
-      console.error('[Square OAuth] Error from Square:', error);
+      console.error('[Square OAuth] Error from Square:', { error, errorDescription });
+      const errorMsg = errorDescription || error;
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/square/connect?error=${encodeURIComponent(error)}`
+        `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/square/connect?error=${encodeURIComponent(errorMsg)}`
       );
     }
 
+    // If no code or state, this might be a direct access or incomplete OAuth flow
     if (!code || !state) {
+      console.error('[Square OAuth] Missing parameters:', { 
+        hasCode: !!code, 
+        hasState: !!state,
+        url: request.url,
+        searchParams: Object.fromEntries(searchParams.entries())
+      });
+      
+      // If this is a direct access (no params at all), redirect to connect page
+      if (!code && !state && !error) {
+        return NextResponse.redirect(
+          `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/square/connect?error=${encodeURIComponent('Please start the OAuth flow from the Connect page')}`
+        );
+      }
+      
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/square/connect?error=missing_params`
+        `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/square/connect?error=missing_params&details=${encodeURIComponent('OAuth callback missing code or state parameter. Make sure the redirect URL in Square matches exactly: http://localhost:3002/api/square/oauth/callback')}`
       );
     }
 

@@ -42,12 +42,22 @@ export async function GET(request: NextRequest) {
 
     // Generate authorization URL
     const authUrl = SquareOAuth.getAuthorizationUrl(state);
+    
+    // Log the authorization URL for debugging (don't log full URL in production)
+    if (isDevelopment) {
+      console.log('[Square OAuth] Redirecting to:', authUrl);
+    }
 
     return NextResponse.redirect(authUrl);
   } catch (error) {
     console.error('[Square OAuth] Authorization error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Failed to initiate OAuth flow' },
+      { 
+        error: 'Failed to initiate OAuth flow',
+        details: errorMessage,
+        hint: 'Check that SQUARE_APPLICATION_ID is set correctly in .env.local'
+      },
       { status: 500 }
     );
   }
