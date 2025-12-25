@@ -41,23 +41,26 @@ export default function PricingPage() {
       description: 'Perfect for mobile hookah operators and small lounges',
       icon: <Zap className="w-6 h-6" />,
       color: 'teal',
-      autoUpgradeTrigger: '> 150 active sessions per month OR > 1 lounge/pop-up location activated',
+      autoUpgradeTrigger: '> 150 active sessions per month OR > 1 lounge/pop-up location activated OR > 2 operator logins',
       nextTier: 'Pro ($249)',
       upgradeNote: 'Keeps operations seamless; user notified with 3-day grace period',
       features: [
         'Up to 150 sessions/month',
         '1 lounge or pop-up location',
-        'Perfect for mobile operators',
-        'Basic session management',
+        'Basic session management (start, pause, close)',
         'QR code generation',
-        'Email support',
+        'Basic daily summary',
+        'Email support (standard)',
         'Mobile dashboard access',
-        'Basic analytics'
+        'Up to 2 operator logins'
       ],
       limitations: [
-        'No advanced AI features',
-        'Limited customization',
-        'No priority support'
+        'No SessionNotes (staff memory)',
+        'No real-time notifications',
+        'No staff roles or shift handoff',
+        'No loyalty scoring',
+        'No custom branding',
+        'No advanced AI features'
       ],
       popular: false
     },
@@ -67,28 +70,29 @@ export default function PricingPage() {
         monthly: 249,
         annual: 2490
       },
-      description: 'For growing lounges that need advanced features',
+      description: 'The busy lounge default — everything you need for real lounge operations',
       icon: <BarChart3 className="w-6 h-6" />,
       color: 'blue',
       autoUpgradeTrigger: '> 3 lounges or > 600 sessions per month',
       nextTier: 'Trust+ ($499)',
-      upgradeNote: 'Adds loyalty scoring + staff memory',
+      upgradeNote: 'Multi-location management + advanced API access',
       features: [
         'Up to 600 sessions/month',
         'Up to 3 lounges',
         'Advanced session management',
-        'AI-powered flavor recommendations',
+        'Staff memory & tracking (SessionNotes)',
+        'Real-time notifications',
+        'Staff management tools + roles',
+        'Shift handoff checklist',
         'Loyalty scoring system',
-        'Staff memory & tracking',
-        'Priority email support',
-        'Custom branding',
+        'AI-powered flavor recommendations',
         'Advanced analytics & reporting',
-        'Staff management tools',
-        'Real-time notifications'
+        'Custom branding',
+        'Priority email support'
       ],
       limitations: [
-        'No white-label option',
-        'Standard API access'
+        'Standard API access',
+        'Up to 3 lounges'
       ],
       popular: true
     },
@@ -98,23 +102,22 @@ export default function PricingPage() {
         monthly: 499,
         annual: 4990
       },
-      description: 'For large operations requiring custom solutions',
+      description: 'Multi-location scale + reliability + control',
       icon: <Crown className="w-6 h-6" />,
       color: 'purple',
-      autoUpgradeTrigger: '> 7 lounges or > 1,200 sessions per month',
+      autoUpgradeTrigger: '> 7 lounges or unlimited sessions needed',
       nextTier: 'Enterprise+ (Custom)',
-      upgradeNote: 'Switches to multi-location cloud scaling + custom support',
+      upgradeNote: 'Custom integrations and enterprise features',
       features: [
         'Unlimited sessions',
         'Up to 7 lounges',
         'Everything in Pro',
-        'Multi-location cloud scaling',
-        'Custom support channels',
+        'Multi-location management (org-level)',
         'Advanced API access',
-        'Multi-location management',
         'Custom reporting & dashboards',
         'Dedicated account manager',
-        'SLA guarantee'
+        'SLA guarantee',
+        'Custom support channels'
       ],
       limitations: [],
       popular: false
@@ -138,7 +141,9 @@ export default function PricingPage() {
         'Smart flavor pairings',
         'Personalized recommendations',
         'Trend analysis'
-      ]
+      ],
+      availableFor: 'starter', // Starter-only add-on
+      includedIn: 'pro' // Included in Pro
     },
     {
       key: 'advanced_analytics',
@@ -156,7 +161,9 @@ export default function PricingPage() {
         'Customer behavior analysis',
         'Peak hour optimization',
         'Custom reports'
-      ]
+      ],
+      availableFor: 'starter', // Starter-only add-on
+      includedIn: 'pro' // Included in Pro
     },
     {
       key: 'staff_performance',
@@ -174,7 +181,9 @@ export default function PricingPage() {
         'Task assignment & tracking',
         'Schedule optimization',
         'Staff analytics'
-      ]
+      ],
+      availableFor: 'starter', // Starter-only add-on
+      includedIn: 'pro' // Included in Pro
     },
     {
       key: 'custom_integrations',
@@ -192,25 +201,9 @@ export default function PricingPage() {
         'Accounting software sync',
         'Custom API development',
         'Dedicated integration support'
-      ]
-    },
-    {
-      key: 'priority_support',
-      name: 'Priority Support',
-      price: {
-        monthly: 79,
-        annual: 790
-      },
-      description: 'Fast-track support with guaranteed response times',
-      icon: <Shield className="w-5 h-5" />,
-      highValueFeature: '2-hour response guarantee',
-      hoverText: 'Get urgent issues resolved within 2 hours with dedicated phone support and priority bug fixes. Minimize downtime and keep operations running smoothly.',
-      features: [
-        '2-hour response guarantee',
-        'Phone support access',
-        'Dedicated support channel',
-        'Priority bug fixes'
-      ]
+      ],
+      availableFor: 'pro', // Available for Pro and Trust+
+      includedIn: null
     }
   ];
 
@@ -431,20 +424,36 @@ export default function PricingPage() {
           </div>
         </div>
 
-        {/* Simplified Add-ons - collapsed by default to reduce cognitive load */}
+        {/* Simplified Add-ons - Starter boosters only, collapsed by default */}
         <div className="mb-16">
           <details className="max-w-4xl mx-auto">
             <summary className="text-2xl font-bold text-center mb-8 cursor-pointer hover:text-teal-400 transition-colors">
-              Optional Add-ons
+              Starter Add-ons (Boosters)
             </summary>
+            <div className="mb-4 p-4 bg-blue-500/10 rounded-lg border border-blue-500/30 text-center">
+              <p className="text-sm text-zinc-300">
+                <span className="font-semibold text-blue-400">Note:</span> Flavor Intelligence, Advanced Analytics, and Staff Performance Suite are <span className="font-semibold text-teal-400">included in Pro</span>. These add-ons are available for Starter tier only.
+              </p>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-            {addOns.map((addon, index) => (
+            {addOns.map((addon, index) => {
+              const isIncludedInPro = addon.includedIn === 'pro';
+              const isStarterOnly = addon.availableFor === 'starter';
+              
+              return (
               <Card 
                 key={index} 
-                className="border border-zinc-700 hover:border-teal-500/50 transition-colors relative"
+                className={`border ${isIncludedInPro ? 'border-blue-500/50' : 'border-zinc-700'} hover:border-teal-500/50 transition-colors relative`}
                 onMouseEnter={() => setHoveredAddon(index)}
                 onMouseLeave={() => setHoveredAddon(null)}
               >
+                {isIncludedInPro && (
+                  <div className="absolute -top-3 right-4">
+                    <span className="bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                      Included in Pro
+                    </span>
+                  </div>
+                )}
                 <div className="p-6">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-10 h-10 bg-teal-500/20 rounded-lg flex items-center justify-center text-teal-400">
@@ -452,14 +461,28 @@ export default function PricingPage() {
                     </div>
                     <div>
                       <h3 className="font-semibold text-lg">{addon.name}</h3>
-                      <div className="text-sm">
-                        <span className="font-bold">${getPrice(addon.price)}</span>
-                        <span className="text-zinc-400">/{billingCycle === 'monthly' ? 'mo' : 'yr'}</span>
-                      </div>
+                      {isIncludedInPro ? (
+                        <div className="text-sm text-blue-400 font-medium">
+                          Included in Pro
+                        </div>
+                      ) : (
+                        <div className="text-sm">
+                          <span className="font-bold">${getPrice(addon.price)}</span>
+                          <span className="text-zinc-400">/{billingCycle === 'monthly' ? 'mo' : 'yr'}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                   
                   <p className="text-sm text-zinc-400 mb-4">{addon.description}</p>
+                  
+                  {isStarterOnly && (
+                    <div className="mb-4 p-2 bg-teal-500/10 rounded-lg border border-teal-500/30">
+                      <p className="text-xs text-teal-400 font-medium text-center">
+                        Starter-only add-on
+                      </p>
+                    </div>
+                  )}
                   
                   {/* High Value Feature Highlight */}
                   {hoveredAddon === index && (
@@ -489,23 +512,31 @@ export default function PricingPage() {
                     ))}
                   </div>
                   
-                  <Button
-                    variant={selectedAddons.includes(index) ? "primary" : "outline"}
-                    size="sm"
-                    className="w-full"
-                    onClick={() => {
-                      if (selectedAddons.includes(index)) {
-                        setSelectedAddons(selectedAddons.filter(i => i !== index));
-                      } else {
-                        setSelectedAddons([...selectedAddons, index]);
-                      }
-                    }}
-                  >
-                    {selectedAddons.includes(index) ? 'Remove from Cart' : 'Add to Plan'}
-                  </Button>
+                  {isIncludedInPro ? (
+                    <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/30 text-center">
+                      <p className="text-xs text-blue-400 font-medium">
+                        Upgrade to Pro to get this included
+                      </p>
+                    </div>
+                  ) : (
+                    <Button
+                      variant={selectedAddons.includes(index) ? "primary" : "outline"}
+                      size="sm"
+                      className="w-full"
+                      onClick={() => {
+                        if (selectedAddons.includes(index)) {
+                          setSelectedAddons(selectedAddons.filter(i => i !== index));
+                        } else {
+                          setSelectedAddons([...selectedAddons, index]);
+                        }
+                      }}
+                    >
+                      {selectedAddons.includes(index) ? 'Remove from Cart' : 'Add to Plan'}
+                    </Button>
+                  )}
                 </div>
               </Card>
-            ))}
+            )})}
             </div>
           </details>
         </div>

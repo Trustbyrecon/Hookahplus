@@ -27,10 +27,10 @@ const tiers = [
   {
     name: 'Trust+',
     price: '$499/mo',
-    blurb: '≤7 venues • Reflex scoring • SessionNotes',
+    blurb: '≤7 venues • Multi-location • Advanced API',
     icon: <Crown className="w-6 h-6" />,
     color: 'purple',
-    features: ['Up to 1,200 sessions/month', 'Reflex scoring', 'Advanced analytics']
+    features: ['Unlimited sessions', 'Multi-location management', 'Advanced API access']
   },
   {
     name: 'Enterprise+',

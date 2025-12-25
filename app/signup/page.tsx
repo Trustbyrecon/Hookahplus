@@ -7,16 +7,17 @@ const tiers = [
   {
     id: 'starter',
     name: 'Hookah+ Starter',
-    price: '$99',
+    price: '$79',
     period: '/month',
-    description: '1 lounge | Timer, QR payments, basic flavor mix log, text receipts. QR Bill Pay included.',
+    description: 'Perfect for mobile operators and small lounges. Up to 2 operator logins.',
     features: [
-      '1 lounge location',
-      'Session timer & management',
-      'QR code payments',
-      'Basic flavor mix logging',
-      'Text message receipts',
-      'QR Bill Pay included'
+      'Up to 150 sessions/month',
+      '1 lounge or pop-up location',
+      'Basic session management',
+      'QR code generation',
+      'Basic daily summary',
+      'Email support (standard)',
+      'Up to 2 operator logins'
     ],
     popular: false
   },
@@ -25,15 +26,19 @@ const tiers = [
     name: 'Hookah+ Pro',
     price: '$249',
     period: '/month',
-    description: 'Up to 3 lounges | Loyalty pricing, analytics dashboard, premium flavor detection, YAML config. Includes Flavor AI Recommender.',
+    description: 'The busy lounge default — everything you need for real lounge operations.',
     features: [
-      'Up to 3 lounge locations',
-      'Loyalty pricing system',
-      'Analytics dashboard',
-      'Premium flavor detection',
-      'YAML configuration',
-      'Flavor AI Recommender',
-      'QR Bill Pay included'
+      'Up to 600 sessions/month',
+      'Up to 3 lounges',
+      'Staff memory & tracking (SessionNotes)',
+      'Real-time notifications',
+      'Staff management + roles',
+      'Shift handoff checklist',
+      'Loyalty scoring system',
+      'AI-powered flavor recommendations',
+      'Advanced analytics & reporting',
+      'Custom branding',
+      'Priority email support'
     ],
     popular: true
   },
@@ -42,16 +47,17 @@ const tiers = [
     name: 'Hookah+ Trust+',
     price: '$499',
     period: '/month',
-    description: 'Up to 7 lounges | Reflex scoring, SessionNotes memory, dynamic margin logic, priority support. Includes Flavor AI + Session Replay Heatmap.',
+    description: 'Multi-location scale + reliability + control. Everything in Pro plus advanced features.',
     features: [
-      'Up to 7 lounge locations',
-      'Reflex scoring system',
-      'SessionNotes memory',
-      'Dynamic margin logic',
-      'Priority support',
-      'Flavor AI Recommender',
-      'Session Replay Heatmap',
-      'QR Bill Pay included'
+      'Unlimited sessions',
+      'Up to 7 lounges',
+      'Everything in Pro',
+      'Multi-location management (org-level)',
+      'Advanced API access',
+      'Custom reporting & dashboards',
+      'Dedicated account manager',
+      'SLA guarantee',
+      'Custom support channels'
     ],
     popular: false
   }

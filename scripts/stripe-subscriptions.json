@@ -18,18 +18,26 @@
       "features": [
         "Up to 150 sessions/month",
         "1 lounge or pop-up location",
-        "Perfect for mobile operators",
-        "Basic session management",
+        "Basic session management (start, pause, close)",
         "QR code generation",
-        "Email support",
+        "Basic daily summary",
+        "Email support (standard)",
         "Mobile dashboard access",
-        "Basic analytics"
+        "Up to 2 operator logins"
+      ],
+      "limitations": [
+        "No SessionNotes (staff memory)",
+        "No real-time notifications",
+        "No staff roles or shift handoff",
+        "No loyalty scoring",
+        "No custom branding",
+        "No advanced AI features"
       ]
     },
     {
       "name": "Hookah+ Pro",
       "tierKey": "pro",
-      "description": "For growing lounges that need advanced features",
+      "description": "The busy lounge default — everything you need for real lounge operations",
       "monthly": {
         "amount": 24900,
         "lookupKey": "tier_pro_monthly",
@@ -44,20 +52,21 @@
         "Up to 600 sessions/month",
         "Up to 3 lounges",
         "Advanced session management",
-        "AI-powered flavor recommendations",
+        "Staff memory & tracking (SessionNotes)",
+        "Real-time notifications",
+        "Staff management tools + roles",
+        "Shift handoff checklist",
         "Loyalty scoring system",
-        "Staff memory & tracking",
-        "Priority email support",
-        "Custom branding",
+        "AI-powered flavor recommendations",
         "Advanced analytics & reporting",
-        "Staff management tools",
-        "Real-time notifications"
+        "Custom branding",
+        "Priority email support"
       ]
     },
     {
       "name": "Hookah+ Trust+",
       "tierKey": "trust_plus",
-      "description": "For large operations requiring custom solutions",
+      "description": "Multi-location scale + reliability + control",
       "monthly": {
         "amount": 49900,
         "lookupKey": "tier_trust_plus_monthly",
@@ -72,11 +81,12 @@
         "Unlimited sessions",
         "Up to 7 lounges",
         "Everything in Pro",
-        "Multi-location cloud scaling",
-        "Custom support channels",
+        "Multi-location management (org-level)",
         "Advanced API access",
-        "White-label options",
-        "Dedicated account manager"
+        "Custom reporting & dashboards",
+        "Dedicated account manager",
+        "SLA guarantee",
+        "Custom support channels"
       ]
     }
   ],
