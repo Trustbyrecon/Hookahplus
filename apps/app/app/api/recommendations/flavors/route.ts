@@ -85,16 +85,20 @@ export async function GET(request: NextRequest) {
       preferences.favoriteFlavors = favoriteFlavors;
     }
 
-    // Build recommendation context
+    // Build recommendation context with time awareness
+    // Use current time for time-based recommendations (late-night vs afternoon preferences)
+    const sessionTime = new Date();
+    
     const context = {
       customerPhone: customerPhone || undefined,
       customerId: customerId || undefined,
       loungeId,
       currentSelection: currentSelection.length > 0 ? currentSelection : undefined,
+      sessionTime, // Include time for cyclical encoding and time-based recommendations
       preferences
     };
 
-    // Get recommendations
+    // Get recommendations (now time-aware with cyclical encoding)
     const recommendations = await recommendationEngine.getFlavorRecommendations(context);
 
     return NextResponse.json({

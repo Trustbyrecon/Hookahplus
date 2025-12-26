@@ -3,7 +3,11 @@
  * 
  * Service for calculating table-level analytics including utilization,
  * revenue, turnover, and zone performance metrics.
+ * 
+ * Enhanced with cyclical time encoding for better time continuity analysis.
  */
+
+import { encodeCyclicalTime, type CyclicalTimeFeatures } from '../utils/cyclical-time';
 
 export interface TableMetrics {
   tableId: string;
@@ -369,6 +373,8 @@ export interface PeakHourAnalysis {
   sessionCount: number;
   revenue: number;
   utilization: number;
+  // Cyclical time features for ML/time-aware analysis
+  timeFeatures?: CyclicalTimeFeatures;
 }
 
 export interface DayOfWeekTrend {
@@ -471,17 +477,28 @@ export class HistoricalTrendsService {
     });
 
     // Calculate utilization per hour (assuming 1 hour window)
+    // Enhanced with cyclical time features for better time continuity
     const results: PeakHourAnalysis[] = Object.entries(hourStats)
       .map(([hourStr, stats]) => {
         const hour = parseInt(hourStr);
         const utilization = totalTables > 0 ? (stats.hoursOccupied / totalTables) * 100 : 0;
+        
+        // Create a representative date for this hour to encode cyclical features
+        // Using a typical weekday (Wednesday = 3) as baseline
+        const representativeDate = new Date();
+        representativeDate.setHours(hour, 0, 0, 0);
+        // Set to Wednesday (day 3) - calculate days from a known Wednesday
+        const daysFromWednesday = (3 - representativeDate.getDay() + 7) % 7;
+        representativeDate.setDate(representativeDate.getDate() + daysFromWednesday);
+        const timeFeatures = encodeCyclicalTime(representativeDate);
         
         return {
           hour,
           hourLabel: this.formatHour(hour),
           sessionCount: stats.sessions,
           revenue: Math.round(stats.revenue * 100) / 100,
-          utilization: Math.round(utilization * 10) / 10
+          utilization: Math.round(utilization * 10) / 10,
+          timeFeatures // Include cyclical features for ML/time-aware analysis
         };
       })
       .sort((a, b) => b.sessionCount - a.sessionCount);

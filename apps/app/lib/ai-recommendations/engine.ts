@@ -1,4 +1,5 @@
 import { prisma } from '../../db';
+import { encodeCyclicalTime, calculateTimeSimilarity, getTimePeriodLabels, type CyclicalTimeFeatures } from '../utils/cyclical-time';
 
 export interface FlavorRecommendation {
   flavorId: string;
@@ -21,6 +22,7 @@ export interface RecommendationContext {
   loungeId: string;
   currentSelection?: string[];
   sessionHistory?: string[];
+  sessionTime?: Date; // NEW: Time of session for time-based recommendations
   preferences?: {
     favoriteFlavors?: string[];
     savedMixes?: Array<{ flavors: string[] }>;
@@ -38,7 +40,7 @@ export class AIRecommendationEngine {
   async getFlavorRecommendations(context: RecommendationContext): Promise<FlavorRecommendation[]> {
     const recommendations: FlavorRecommendation[] = [];
 
-    // 1. Based on customer's past orders (content-based)
+    // 1. Based on customer's past orders (content-based) - now time-aware
     if (context.customerPhone || context.customerId) {
       const pastRecommendations = await this.getRecommendationsFromHistory(context);
       recommendations.push(...pastRecommendations);
@@ -48,7 +50,7 @@ export class AIRecommendationEngine {
     const collaborativeRecommendations = await this.getCollaborativeRecommendations(context);
     recommendations.push(...collaborativeRecommendations);
 
-    // 3. Based on popular combinations
+    // 3. Based on popular combinations - now time-aware
     const popularRecommendations = await this.getPopularRecommendations(context);
     recommendations.push(...popularRecommendations);
 
@@ -59,6 +61,12 @@ export class AIRecommendationEngine {
         context.loungeId
       );
       recommendations.push(...compatibilityRecommendations);
+    }
+
+    // 5. NEW: Time-based recommendations (late-night vs afternoon preferences)
+    if (context.sessionTime) {
+      const timeBasedRecommendations = await this.getTimeBasedRecommendations(context);
+      recommendations.push(...timeBasedRecommendations);
     }
 
     // Merge and deduplicate recommendations
@@ -72,6 +80,7 @@ export class AIRecommendationEngine {
 
   /**
    * Get recommendations based on customer's order history
+   * Now time-aware: weights recommendations by time similarity
    */
   private async getRecommendationsFromHistory(
     context: RecommendationContext
@@ -94,28 +103,54 @@ export class AIRecommendationEngine {
         take: 20
       });
 
-      // Extract flavors from past orders
-      const flavorFrequency = new Map<string, number>();
+      // Get current time features if sessionTime is provided
+      const currentTimeFeatures = context.sessionTime 
+        ? encodeCyclicalTime(context.sessionTime)
+        : null;
+
+      // Extract flavors from past orders with time weighting
+      const flavorScores = new Map<string, { count: number; timeWeight: number }>();
       for (const session of pastSessions) {
         if (session.flavorMix && typeof session.flavorMix === 'object') {
           const mix = session.flavorMix as any;
           const flavors = Array.isArray(mix.flavors) ? mix.flavors : [];
+          
+          // Calculate time similarity if we have current time
+          let timeWeight = 1.0;
+          if (currentTimeFeatures && session.createdAt) {
+            const sessionTimeFeatures = encodeCyclicalTime(new Date(session.createdAt));
+            timeWeight = calculateTimeSimilarity(currentTimeFeatures, sessionTimeFeatures);
+            // Boost confidence for similar times (late-night orders at late-night, etc.)
+            timeWeight = 0.5 + (timeWeight * 0.5); // Scale to 0.5-1.0 range
+          }
+          
           for (const flavor of flavors) {
-            flavorFrequency.set(flavor, (flavorFrequency.get(flavor) || 0) + 1);
+            const existing = flavorScores.get(flavor);
+            if (existing) {
+              existing.count++;
+              existing.timeWeight = Math.max(existing.timeWeight, timeWeight);
+            } else {
+              flavorScores.set(flavor, { count: 1, timeWeight });
+            }
           }
         }
       }
 
-      // Convert to recommendations
+      // Convert to recommendations with time-weighted confidence
       const totalSessions = pastSessions.length;
-      for (const [flavorId, count] of flavorFrequency.entries()) {
-        const confidence = Math.min(0.9, count / totalSessions);
-        if (confidence > 0.1) {
+      for (const [flavorId, { count, timeWeight }] of flavorScores.entries()) {
+        const baseConfidence = Math.min(0.9, count / totalSessions);
+        const timeAdjustedConfidence = baseConfidence * timeWeight;
+        
+        if (timeAdjustedConfidence > 0.1) {
+          const timeContext = currentTimeFeatures 
+            ? ` (preferred at similar times)`
+            : '';
           recommendations.push({
             flavorId,
             flavorName: flavorId, // Will be resolved later
-            confidence,
-            reason: `You've ordered this ${count} time${count > 1 ? 's' : ''} before`,
+            confidence: timeAdjustedConfidence,
+            reason: `You've ordered this ${count} time${count > 1 ? 's' : ''} before${timeContext}`,
             category: 'history'
           });
         }
@@ -198,6 +233,7 @@ export class AIRecommendationEngine {
 
   /**
    * Get recommendations based on popular flavors
+   * Now time-aware: weights by time similarity to current session
    */
   private async getPopularRecommendations(
     context: RecommendationContext
@@ -218,27 +254,49 @@ export class AIRecommendationEngine {
         take: 200
       });
 
-      const flavorFrequency = new Map<string, number>();
+      // Get current time features if sessionTime is provided
+      const currentTimeFeatures = context.sessionTime 
+        ? encodeCyclicalTime(context.sessionTime)
+        : null;
+
+      const flavorScores = new Map<string, { frequency: number; timeWeight: number }>();
       for (const session of recentSessions) {
         if (session.flavorMix && typeof session.flavorMix === 'object') {
           const mix = session.flavorMix as any;
           const flavors = Array.isArray(mix.flavors) ? mix.flavors : [];
+          
+          // Calculate time similarity if we have current time
+          let timeWeight = 1.0;
+          if (currentTimeFeatures && session.createdAt) {
+            const sessionTimeFeatures = encodeCyclicalTime(new Date(session.createdAt));
+            timeWeight = calculateTimeSimilarity(currentTimeFeatures, sessionTimeFeatures);
+            timeWeight = 0.6 + (timeWeight * 0.4); // Scale to 0.6-1.0 range
+          }
+          
           for (const flavor of flavors) {
-            flavorFrequency.set(flavor, (flavorFrequency.get(flavor) || 0) + 1);
+            const existing = flavorScores.get(flavor);
+            if (existing) {
+              existing.frequency++;
+              existing.timeWeight = Math.max(existing.timeWeight, timeWeight);
+            } else {
+              flavorScores.set(flavor, { frequency: 1, timeWeight });
+            }
           }
         }
       }
 
-      // Convert to recommendations
-      const maxFrequency = Math.max(...Array.from(flavorFrequency.values()), 1);
-      for (const [flavorId, frequency] of flavorFrequency.entries()) {
-        const confidence = Math.min(0.7, frequency / maxFrequency);
-        if (confidence > 0.15) {
+      // Convert to recommendations with time-weighted confidence
+      const maxFrequency = Math.max(...Array.from(flavorScores.values()).map(s => s.frequency), 1);
+      for (const [flavorId, { frequency, timeWeight }] of flavorScores.entries()) {
+        const baseConfidence = Math.min(0.7, frequency / maxFrequency);
+        const timeAdjustedConfidence = baseConfidence * timeWeight;
+        
+        if (timeAdjustedConfidence > 0.15) {
           recommendations.push({
             flavorId,
             flavorName: flavorId,
-            confidence,
-            reason: `Trending - ordered ${frequency} times recently`,
+            confidence: timeAdjustedConfidence,
+            reason: `Trending - ordered ${frequency} times recently${currentTimeFeatures ? ' at similar times' : ''}`,
             category: 'popular'
           });
         }
@@ -395,6 +453,85 @@ export class AIRecommendationEngine {
       }
     } catch (error) {
       console.error('[AI Recommendations] Error getting popular mixes:', error);
+    }
+
+    return recommendations;
+  }
+
+  /**
+   * Get time-based recommendations
+   * Captures "late-night" vs "afternoon" preference shifts
+   */
+  private async getTimeBasedRecommendations(
+    context: RecommendationContext
+  ): Promise<FlavorRecommendation[]> {
+    const recommendations: FlavorRecommendation[] = [];
+
+    if (!context.sessionTime) return recommendations;
+
+    try {
+      const timeFeatures = encodeCyclicalTime(context.sessionTime);
+      const { timeOfDay, dayType } = getTimePeriodLabels(timeFeatures);
+
+      // Get flavors popular at similar times
+      const similarTimeSessions = await prisma.session.findMany({
+        where: {
+          loungeId: context.loungeId,
+          flavorMix: { not: null },
+          paymentStatus: 'succeeded',
+          createdAt: {
+            gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) // Last 90 days
+          }
+        },
+        take: 500
+      });
+
+      // Score flavors by time similarity
+      const flavorTimeScores = new Map<string, { score: number; count: number }>();
+      for (const session of similarTimeSessions) {
+        if (session.flavorMix && session.createdAt) {
+          const sessionTimeFeatures = encodeCyclicalTime(new Date(session.createdAt));
+          const similarity = calculateTimeSimilarity(timeFeatures, sessionTimeFeatures);
+          
+          if (session.flavorMix && typeof session.flavorMix === 'object') {
+            const mix = session.flavorMix as any;
+            const flavors = Array.isArray(mix.flavors) ? mix.flavors : [];
+            
+            for (const flavor of flavors) {
+              const existing = flavorTimeScores.get(flavor);
+              if (existing) {
+                existing.score += similarity;
+                existing.count++;
+              } else {
+                flavorTimeScores.set(flavor, { score: similarity, count: 1 });
+              }
+            }
+          }
+        }
+      }
+
+      // Convert to recommendations
+      const maxScore = Math.max(...Array.from(flavorTimeScores.values()).map(s => s.score / s.count), 1);
+      for (const [flavorId, { score, count }] of flavorTimeScores.entries()) {
+        const avgSimilarity = score / count;
+        const confidence = Math.min(0.65, avgSimilarity * 0.8);
+        
+        if (confidence > 0.2) {
+          const timeLabel = timeOfDay === 'late_night' ? 'late-night' 
+            : timeOfDay === 'afternoon' ? 'afternoon'
+            : timeOfDay;
+          
+          recommendations.push({
+            flavorId,
+            flavorName: flavorId,
+            confidence,
+            reason: `Popular during ${timeLabel} ${dayType === 'weekend' ? 'weekends' : 'sessions'}`,
+            category: 'time_based'
+          });
+        }
+      }
+    } catch (error) {
+      console.error('[AI Recommendations] Error getting time-based recommendations:', error);
     }
 
     return recommendations;

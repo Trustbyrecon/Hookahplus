@@ -1,4 +1,5 @@
 import { prisma } from '../db';
+import { encodeCyclicalTime, getTimePeriodLabels, type CyclicalTimeFeatures } from '../utils/cyclical-time';
 
 export interface DynamicPricingRule {
   id: string;
@@ -221,6 +222,7 @@ export class DynamicPricingEngine {
 
   /**
    * Check if a rule applies to the current context
+   * Now uses cyclical time encoding for better time continuity
    */
   private ruleApplies(
     rule: DynamicPricingRule,
@@ -230,15 +232,18 @@ export class DynamicPricingEngine {
   ): boolean {
     const { conditions } = rule;
     const sessionTime = context.sessionTime || new Date();
+    
+    // Use cyclical encoding for time checks
+    const timeFeatures = encodeCyclicalTime(sessionTime);
     const dayOfWeek = sessionTime.getDay();
     const hourOfDay = sessionTime.getHours();
 
-    // Check day of week
+    // Check day of week (can use cyclical features for fuzzy matching in future)
     if (conditions.dayOfWeek && !conditions.dayOfWeek.includes(dayOfWeek)) {
       return false;
     }
 
-    // Check hour of day
+    // Check hour of day (can use cyclical features for fuzzy matching in future)
     if (conditions.hourOfDay && !conditions.hourOfDay.includes(hourOfDay)) {
       return false;
     }
@@ -357,6 +362,7 @@ export class DynamicPricingEngine {
 
   /**
    * Get human-readable adjustment reason
+   * Enhanced with cyclical time awareness for better context
    */
   private getAdjustmentReason(
     rule: DynamicPricingRule,
@@ -369,20 +375,26 @@ export class DynamicPricingEngine {
     }
     if (rule.type === 'time_based') {
       const sessionTime = context.sessionTime || new Date();
+      const timeFeatures = encodeCyclicalTime(sessionTime);
+      const { timeOfDay, dayType } = getTimePeriodLabels(timeFeatures);
+      
       const hour = sessionTime.getHours();
       if (hour >= 19 && hour <= 23) {
-        return 'Peak hours pricing';
+        return `Peak hours pricing (${timeOfDay} ${dayType})`;
       }
       if (hour >= 10 && hour <= 16) {
-        return 'Off-peak discount';
+        return `Off-peak discount (${timeOfDay} ${dayType})`;
       }
-      return 'Time-based pricing';
+      return `Time-based pricing (${timeOfDay} ${dayType})`;
     }
     if (rule.type === 'demand_based') {
       return `High demand surge (${demandLevel} demand)`;
     }
     if (rule.type === 'weekend') {
-      return 'Weekend surge pricing';
+      const sessionTime = context.sessionTime || new Date();
+      const timeFeatures = encodeCyclicalTime(sessionTime);
+      const { timeOfDay } = getTimePeriodLabels(timeFeatures);
+      return `Weekend surge pricing (${timeOfDay})`;
     }
     return rule.name;
   }

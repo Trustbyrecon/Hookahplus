@@ -1,4 +1,5 @@
 import { prisma } from '../db';
+import { encodeCyclicalTime, calculateTimeSimilarity, type CyclicalTimeFeatures } from '../utils/cyclical-time';
 
 export interface StaffingRecommendation {
   timeframe: string; // 'next_hour' | 'next_shift' | 'next_day'
@@ -57,14 +58,16 @@ export class PredictiveAnalyticsEngine {
         orderBy: { createdAt: 'desc' }
       });
 
-      // Analyze patterns by hour
+      // Analyze patterns by hour (now using cyclical encoding)
       const hourlyDemand = this.calculateHourlyDemand(sessions);
-      const currentHour = new Date().getHours();
-      const currentDay = new Date().getDay();
+      const now = new Date();
+      const currentTimeFeatures = encodeCyclicalTime(now);
+      const currentHour = now.getHours();
+      const currentDay = now.getDay();
 
-      // Predict next hour demand
+      // Predict next hour demand (using cyclical encoding for continuity)
       const nextHour = (currentHour + 1) % 24;
-      const predictedNextHour = this.predictHourlyDemand(hourlyDemand, nextHour, currentDay);
+      const predictedNextHour = this.predictHourlyDemand(hourlyDemand, nextHour, currentDay, currentTimeFeatures);
       
       recommendations.push({
         timeframe: 'next_hour',
@@ -79,8 +82,8 @@ export class PredictiveAnalyticsEngine {
         reasoning: `Based on historical data, we expect ${predictedNextHour} sessions in the next hour. Recommended ${Math.ceil(predictedNextHour / 3)} staff members.`
       });
 
-      // Predict next shift (4 hours)
-      const nextShiftDemand = this.predictShiftDemand(hourlyDemand, currentHour, currentDay);
+      // Predict next shift (4 hours) - using cyclical encoding
+      const nextShiftDemand = this.predictShiftDemand(hourlyDemand, currentHour, currentDay, currentTimeFeatures);
       recommendations.push({
         timeframe: 'next_shift',
         recommendedStaff: Math.ceil(nextShiftDemand / 2.5),
@@ -308,19 +311,23 @@ export class PredictiveAnalyticsEngine {
 
   /**
    * Calculate hourly demand patterns
+   * Enhanced with cyclical time features for better continuity
    */
-  private calculateHourlyDemand(sessions: any[]): Map<number, number[]> {
-    const hourlyDemand = new Map<number, number[]>();
+  private calculateHourlyDemand(sessions: any[]): Map<number, { days: number[]; timeFeatures: CyclicalTimeFeatures[] }> {
+    const hourlyDemand = new Map<number, { days: number[]; timeFeatures: CyclicalTimeFeatures[] }>();
 
     for (const session of sessions) {
       const createdAt = new Date(session.createdAt);
       const hour = createdAt.getHours();
       const day = createdAt.getDay();
+      const timeFeatures = encodeCyclicalTime(createdAt);
 
       if (!hourlyDemand.has(hour)) {
-        hourlyDemand.set(hour, []);
+        hourlyDemand.set(hour, { days: [], timeFeatures: [] });
       }
-      hourlyDemand.get(hour)!.push(day);
+      const hourData = hourlyDemand.get(hour)!;
+      hourData.days.push(day);
+      hourData.timeFeatures.push(timeFeatures);
     }
 
     return hourlyDemand;
@@ -328,35 +335,57 @@ export class PredictiveAnalyticsEngine {
 
   /**
    * Predict demand for a specific hour
+   * Enhanced with cyclical time features for better continuity across day boundaries
    */
   private predictHourlyDemand(
-    hourlyDemand: Map<number, number[]>,
+    hourlyDemand: Map<number, { days: number[]; timeFeatures: CyclicalTimeFeatures[] }>,
     hour: number,
-    dayOfWeek: number
+    dayOfWeek: number,
+    currentTimeFeatures?: CyclicalTimeFeatures
   ): number {
-    const hourData = hourlyDemand.get(hour) || [];
-    const sameDayData = hourData.filter(d => d === dayOfWeek);
+    const hourData = hourlyDemand.get(hour);
+    if (!hourData) return 0;
+    
+    const sameDayData = hourData.days.filter(d => d === dayOfWeek);
     
     // Average of same day of week for this hour
-    const avgForHour = hourData.length > 0 ? hourData.length / 7 : 0;
+    const avgForHour = hourData.days.length > 0 ? hourData.days.length / 7 : 0;
     const avgForDay = sameDayData.length > 0 ? sameDayData.length : 0;
 
-    // Weighted average (favor same day of week)
-    return Math.ceil((avgForDay * 0.7 + avgForHour * 0.3));
+    // If we have current time features, use cyclical similarity for adjacent hours
+    let cyclicalBoost = 0;
+    if (currentTimeFeatures && hourData.timeFeatures.length > 0) {
+      // Calculate average similarity to current time
+      const similarities = hourData.timeFeatures.map(tf => 
+        calculateTimeSimilarity(currentTimeFeatures, tf)
+      );
+      const avgSimilarity = similarities.reduce((a, b) => a + b, 0) / similarities.length;
+      cyclicalBoost = avgSimilarity * 0.2; // 20% boost for time similarity
+    }
+
+    // Weighted average (favor same day of week, with cyclical boost)
+    return Math.ceil((avgForDay * 0.7 + avgForHour * 0.3) * (1 + cyclicalBoost));
   }
 
   /**
    * Predict demand for next shift (4 hours)
+   * Enhanced with cyclical encoding for smooth transitions across day boundaries
    */
   private predictShiftDemand(
-    hourlyDemand: Map<number, number[]>,
+    hourlyDemand: Map<number, { days: number[]; timeFeatures: CyclicalTimeFeatures[] }>,
     currentHour: number,
-    dayOfWeek: number
+    dayOfWeek: number,
+    currentTimeFeatures?: CyclicalTimeFeatures
   ): number {
     let total = 0;
     for (let i = 1; i <= 4; i++) {
       const hour = (currentHour + i) % 24;
-      total += this.predictHourlyDemand(hourlyDemand, hour, dayOfWeek);
+      // Create time features for the future hour to maintain cyclical continuity
+      const futureDate = new Date();
+      futureDate.setHours(hour, 0, 0, 0);
+      const futureTimeFeatures = encodeCyclicalTime(futureDate);
+      
+      total += this.predictHourlyDemand(hourlyDemand, hour, dayOfWeek, futureTimeFeatures);
     }
     return total;
   }
