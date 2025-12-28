@@ -21,8 +21,7 @@ export async function POST(request: NextRequest) {
 
     let tenantId: string | undefined;
     if (!isDevelopment) {
-      const tenant = await getCurrentTenant();
-      tenantId = tenant?.id;
+      tenantId = (await getCurrentTenant()) || undefined;
     }
 
     // Check for retention triggers
@@ -68,8 +67,7 @@ export async function GET(request: NextRequest) {
 
     let tenantId: string | undefined;
     if (!isDevelopment) {
-      const tenant = await getCurrentTenant();
-      tenantId = tenant?.id;
+      tenantId = (await getCurrentTenant()) || undefined;
     }
 
     // Check for retention triggers (without processing)

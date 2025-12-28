@@ -28,8 +28,7 @@ export async function POST(request: NextRequest) {
 
     let tenantId: string | undefined;
     if (!isDevelopment) {
-      const tenant = await getCurrentTenant();
-      tenantId = tenant?.id;
+      tenantId = (await getCurrentTenant()) || undefined;
     }
 
     const result = await posSyncService.syncSessions({
@@ -73,8 +72,7 @@ export async function GET(request: NextRequest) {
 
     let tenantId: string | undefined;
     if (!isDevelopment) {
-      const tenant = await getCurrentTenant();
-      tenantId = tenant?.id;
+      tenantId = (await getCurrentTenant()) || undefined;
     }
 
     const stats = await posSyncService.getReconciliationStats(loungeId, tenantId);

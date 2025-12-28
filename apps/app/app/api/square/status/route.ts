@@ -22,8 +22,7 @@ export async function GET(request: NextRequest) {
     let tenantId: string | undefined;
     if (!isDevelopment) {
       try {
-        const tenant = await getCurrentTenant();
-        tenantId = tenant?.id;
+        tenantId = (await getCurrentTenant()) || undefined;
       } catch (e) {
         // Non-blocking
       }

@@ -28,8 +28,7 @@ export async function POST(request: NextRequest) {
 
     let tenantId: string | undefined;
     if (!isDevelopment) {
-      const tenant = await getCurrentTenant();
-      tenantId = tenant?.id;
+      tenantId = (await getCurrentTenant()) || undefined;
     }
 
     const context = {
@@ -80,8 +79,7 @@ export async function GET(request: NextRequest) {
 
     let tenantId: string | undefined;
     if (!isDevelopment) {
-      const tenant = await getCurrentTenant();
-      tenantId = tenant?.id;
+      tenantId = (await getCurrentTenant()) || undefined;
     }
 
     // Get pricing rules (for now, return default rules)

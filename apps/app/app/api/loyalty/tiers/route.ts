@@ -10,8 +10,7 @@ export async function GET(request: NextRequest) {
 
     let tenantId: string | undefined;
     if (!isDevelopment || !loungeId) {
-      const tenant = await getCurrentTenant();
-      tenantId = tenant?.id;
+      tenantId = (await getCurrentTenant()) || undefined;
     }
 
     const where: any = { isActive: true };
@@ -50,8 +49,7 @@ export async function POST(request: NextRequest) {
 
     let tenantId: string | undefined;
     if (!isDevelopment || !loungeId) {
-      const tenant = await getCurrentTenant();
-      tenantId = tenant?.id;
+      tenantId = (await getCurrentTenant()) || undefined;
     }
 
     if (!tierName || minPoints === undefined) {
