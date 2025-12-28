@@ -223,7 +223,7 @@ export class MultiLocationService {
       let totalSessions = 0;
       const allCustomers = new Set<string>();
 
-      for (const [locationId, data] of locationMap.entries()) {
+      Array.from(locationMap.entries()).forEach(([locationId, data]) => {
         locations.push({
           locationId,
           locationName: locationId, // TODO: Get actual name
@@ -236,7 +236,7 @@ export class MultiLocationService {
         totalRevenue += data.revenue;
         totalSessions += data.sessions;
         data.customers.forEach(c => allCustomers.add(c));
-      }
+      });
 
       const analytics: CrossLocationAnalytics = {
         totalRevenue,
