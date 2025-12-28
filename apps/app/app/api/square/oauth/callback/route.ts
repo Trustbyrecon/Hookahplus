@@ -5,6 +5,9 @@ import { encrypt } from '../../../../../lib/utils/encryption';
 import { cookies } from 'next/headers';
 import { getCurrentTenant } from '../../../../../lib/auth';
 
+// Mark route as dynamic to prevent static generation
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/square/oauth/callback
  * Handle Square OAuth callback

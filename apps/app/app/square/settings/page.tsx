@@ -281,3 +281,18 @@ export default function SquareSettingsPage() {
   );
 }
 
+export default function SquareSettingsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
+        <GlobalNavigation />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="w-8 h-8 text-teal-400 animate-spin" />
+        </div>
+      </div>
+    }>
+      <SquareSettingsContent />
+    </Suspense>
+  );
+}
+

@@ -188,6 +188,9 @@ The Next.js application builds successfully in Vercel without TypeScript compila
 - ✅ All TypeScript errors in `lib/services/WebSocketService.ts` resolved
 - ✅ All TypeScript errors in `lib/session-adjustments.ts` resolved
 - ✅ All TypeScript errors in `lib/taxonomy/unknown-tracker.ts` resolved
+- ✅ All build errors in `app/api/square/oauth/callback/route.ts` resolved (marked as dynamic)
+- ✅ All build errors in `app/square/connect/page.tsx` resolved (Suspense boundary)
+- ✅ All build errors in `app/square/settings/page.tsx` resolved (Suspense boundary)
 - ✅ No linter errors in any of the fixed files
 - ⚠️ Other files still have TypeScript errors (not part of this task scope)
 
@@ -337,6 +340,16 @@ The Next.js application builds successfully in Vercel without TypeScript compila
 
 **Fixes Applied**:
 1. Fixed compound unique key reference (line 194): Changed `enumType_rawLabel` to `enum_type_raw_label` to match Prisma's snake_case naming for compound unique constraints. Also updated field names from camelCase (`enumType`, `rawLabel`, `suggestedMapping`) to snake_case (`enum_type`, `raw_label`, `suggested_mapping`) to match the Prisma schema field names.
+
+### Additional Fix: Square OAuth and Settings Pages
+**New Error Found**: Vercel build failed during static page generation:
+- `/api/square/oauth/callback` - Route couldn't be rendered statically because it used `request.url` (malformed URL in redirect)
+- `/square/connect` and `/square/settings` - `useSearchParams()` should be wrapped in a suspense boundary
+
+**Fixes Applied**:
+1. Fixed OAuth callback route (route.ts): Added `export const dynamic = 'force-dynamic'` to mark the route as dynamic and prevent static generation, since it uses `request.url` and `cookies()`.
+2. Fixed Square connect page (page.tsx): Wrapped `useSearchParams()` usage in a `Suspense` boundary by extracting the content into `SquareConnectContent` component and wrapping it in the default export with Suspense.
+3. Fixed Square settings page (page.tsx): Wrapped `useSearchParams()` usage in a `Suspense` boundary by extracting the content into `SquareSettingsContent` component and wrapping it in the default export with Suspense.
 
 ### Next Steps
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { 
   CheckCircle, 
@@ -14,7 +14,7 @@ import {
 import GlobalNavigation from '../../../components/GlobalNavigation';
 import { Card, Button, Badge } from '../../../components';
 
-export default function SquareConnectPage() {
+function SquareConnectContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [loungeId, setLoungeId] = useState('HOPE_GLOBAL_FORUM'); // Default lounge ID
@@ -177,6 +177,23 @@ export default function SquareConnectPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function SquareConnectPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
+        <GlobalNavigation />
+        <div className="max-w-2xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
+          <Card className="p-8 text-center">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto text-teal-400" />
+          </Card>
+        </div>
+      </div>
+    }>
+      <SquareConnectContent />
+    </Suspense>
   );
 }
 
