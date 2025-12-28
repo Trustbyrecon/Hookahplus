@@ -180,6 +180,7 @@ The Next.js application builds successfully in Vercel without TypeScript compila
 - ✅ All TypeScript errors in `lib/pos/toast.ts` resolved
 - ✅ All TypeScript errors in `lib/pos/webhook-framework.ts` resolved
 - ✅ All TypeScript errors in `lib/pricing-snapshots.ts` resolved
+- ✅ All TypeScript errors in `lib/pricing/dynamic.ts` resolved
 - ✅ No linter errors in any of the fixed files
 - ⚠️ Other files still have TypeScript errors (not part of this task scope)
 
@@ -277,6 +278,13 @@ The Next.js application builds successfully in Vercel without TypeScript compila
 2. Commented out database query (line 117): `pricingSnapshot.findUnique()` - model doesn't exist
 3. Updated `getPricingSnapshot`: Returns `null` until model is added (maintains function signature)
 4. Added TODO comments: Note that PricingSnapshot model needs to be added to Prisma schema for persistent storage
+
+### Additional Fix: pricing/dynamic.ts
+**New Error Found**: Vercel build failed on `lib/pricing/dynamic.ts:52` - Expression is always truthy, and line 345 - invalid SessionState value.
+
+**Fixes Applied**:
+1. Fixed truthy expression (line 52): Changed `{ ...context.flavorPrices } || {}` → `context.flavorPrices ? { ...context.flavorPrices } : {}` (spread always creates object, so || was redundant)
+2. Fixed invalid SessionState (line 345): Removed `'PAID_CONFIRMED'` from array (not a valid SessionState enum value, only PENDING, ACTIVE, PAUSED, CLOSED, CANCELED exist)
 
 ### Next Steps
 

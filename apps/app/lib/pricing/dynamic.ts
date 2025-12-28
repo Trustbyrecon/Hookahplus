@@ -49,7 +49,7 @@ export class DynamicPricingEngine {
   }> {
     const adjustments: Array<{ rule: string; adjustment: number; reason: string }> = [];
     let adjustedBasePrice = context.basePrice;
-    let adjustedFlavorPrices = { ...context.flavorPrices } || {};
+    let adjustedFlavorPrices = context.flavorPrices ? { ...context.flavorPrices } : {};
 
     try {
       // Get active pricing rules for this lounge
@@ -342,7 +342,7 @@ export class DynamicPricingEngine {
           loungeId: context.loungeId,
           ...(context.tenantId ? { tenantId: context.tenantId } : {}),
           state: {
-            in: ['PENDING', 'ACTIVE', 'PAID_CONFIRMED']
+            in: ['PENDING', 'ACTIVE']
           },
           createdAt: {
             gte: new Date(Date.now() - 2 * 60 * 60 * 1000) // Last 2 hours
