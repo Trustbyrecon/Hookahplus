@@ -177,6 +177,7 @@ The Next.js application builds successfully in Vercel without TypeScript compila
 - ✅ All TypeScript errors in `lib/pos/clover.ts` resolved
 - ✅ All TypeScript errors in `lib/pos/square.ts` resolved
 - ✅ All TypeScript errors in `lib/pos/sync-service.ts` resolved
+- ✅ All TypeScript errors in `lib/pos/toast.ts` resolved
 - ✅ No linter errors in any of the fixed files
 - ⚠️ Other files still have TypeScript errors (not part of this task scope)
 
@@ -245,6 +246,13 @@ The Next.js application builds successfully in Vercel without TypeScript compila
 3. Fixed result property access: Changed `posResult.ticketId` → `posResult.pos_order_id` (correct AttachResult property)
 4. Fixed adapter constructors: Added `venueId` parameter to all adapter constructors (SquareAdapter, ToastAdapter, CloverAdapter)
 5. Fixed error handling: Removed reference to non-existent `posResult.error` property
+
+### Additional Fix: pos/toast.ts
+**New Error Found**: Vercel build failed on `lib/pos/toast.ts:302` - `posTicket.amountCents` is possibly null.
+
+**Fixes Applied**:
+1. Fixed null check (line 302): Changed `posTicket.amountCents` → `(posTicket.amountCents || 0)` to handle null values
+2. Fixed null check (line 332): Changed `posTicket.amountCents` → `(posTicket.amountCents || 0)` to handle null values
 
 ### Next Steps
 
