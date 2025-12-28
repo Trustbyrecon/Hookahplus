@@ -40,10 +40,7 @@ export async function POST(request: NextRequest) {
       autoReconcile
     });
 
-    return NextResponse.json({
-      success: result.success,
-      ...result
-    });
+    return NextResponse.json(result);
   } catch (error) {
     console.error('Error syncing POS:', error);
     return NextResponse.json(

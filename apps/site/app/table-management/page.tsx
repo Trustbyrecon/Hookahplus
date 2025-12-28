@@ -6,7 +6,7 @@ import Card from '../../components/Card';
 import Button from '../../components/Button';
 import Link from 'next/link';
 import { 
-  Grid3x3, 
+  LayoutGrid, 
   CheckCircle, 
   ArrowRight,
   MapPin,
