@@ -170,7 +170,8 @@ The Next.js application builds successfully in Vercel without TypeScript compila
 
 - ✅ All TypeScript errors in `lib/ai-recommendations/engine.ts` resolved
 - ✅ All TypeScript errors in `lib/analytics/predictive.ts` resolved
-- ✅ No linter errors in either file
+- ✅ All TypeScript errors in `lib/events/workers.ts` resolved
+- ✅ No linter errors in any of the fixed files
 - ⚠️ Other files still have TypeScript errors (not part of this task scope)
 
 ### Additional Fix: predictive.ts
@@ -182,6 +183,14 @@ The Next.js application builds successfully in Vercel without TypeScript compila
 3. Fixed Map iterator (line 159): `for...of` → `Array.from().forEach()`
 4. Fixed Map iterator (line 225): `for...of` → `Array.from().forEach()`
 5. Fixed implicit any types (lines 228, 229, 259, 260): Added explicit type annotations
+
+### Additional Fix: events/workers.ts
+**New Error Found**: Vercel build failed on `lib/events/workers.ts:119` - missing `logKtl4Event` function.
+
+**Fixes Applied**:
+1. Added missing import: `import { logKtl4Event } from '../ktl4-ghostlog'`
+2. Fixed flowName (line 121): Changed `'session_completion'` → `'session_lifecycle'` (valid flow name)
+3. Fixed property error (line 124): Moved `loungeId` from top-level to `details` object (not a valid Ktl4Event property)
 
 ### Next Steps
 

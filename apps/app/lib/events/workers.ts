@@ -118,12 +118,12 @@ export const handlePostCloseWorkflows: EventHandler = async (event: EventMessage
     try {
       // Log session completion for analytics
       await logKtl4Event({
-        flowName: 'session_completion',
+        flowName: 'session_lifecycle',
         eventType: 'session_closed',
         sessionId: sessionId,
-        loungeId: loungeId || session.loungeId,
         status: 'success',
         details: {
+          loungeId: loungeId || session.loungeId,
           finalAmount: payload.finalAmount || session.priceCents,
           duration: session.endedAt && session.startedAt 
             ? Math.floor((session.endedAt.getTime() - session.startedAt.getTime()) / 1000 / 60)
