@@ -102,11 +102,11 @@ async function incrementCount(
   // Clean up expired entries periodically
   if (memoryStore.size > 10000) {
     const now = Date.now();
-    for (const [k, v] of memoryStore.entries()) {
+    Array.from(memoryStore.entries()).forEach(([k, v]) => {
       if (v.resetTime < now) {
         memoryStore.delete(k);
       }
-    }
+    });
   }
 
   return entry;

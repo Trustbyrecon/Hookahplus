@@ -181,6 +181,7 @@ The Next.js application builds successfully in Vercel without TypeScript compila
 - ✅ All TypeScript errors in `lib/pos/webhook-framework.ts` resolved
 - ✅ All TypeScript errors in `lib/pricing-snapshots.ts` resolved
 - ✅ All TypeScript errors in `lib/pricing/dynamic.ts` resolved
+- ✅ All TypeScript errors in `lib/rate-limit-redis.ts` resolved
 - ✅ No linter errors in any of the fixed files
 - ⚠️ Other files still have TypeScript errors (not part of this task scope)
 
@@ -285,6 +286,12 @@ The Next.js application builds successfully in Vercel without TypeScript compila
 **Fixes Applied**:
 1. Fixed truthy expression (line 52): Changed `{ ...context.flavorPrices } || {}` → `context.flavorPrices ? { ...context.flavorPrices } : {}` (spread always creates object, so || was redundant)
 2. Fixed invalid SessionState (line 345): Removed `'PAID_CONFIRMED'` from array (not a valid SessionState enum value, only PENDING, ACTIVE, PAUSED, CLOSED, CANCELED exist)
+
+### Additional Fix: rate-limit-redis.ts
+**New Error Found**: Vercel build failed on `lib/rate-limit-redis.ts:105` - Map iteration requires downlevelIteration or es2015+ target.
+
+**Fixes Applied**:
+1. Fixed Map iteration (line 105): Changed `for...of` loop to `Array.from(memoryStore.entries()).forEach()` for es5 compatibility
 
 ### Next Steps
 
