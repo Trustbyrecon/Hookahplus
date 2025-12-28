@@ -25,8 +25,7 @@ export async function GET(request: NextRequest) {
 
     let tenantId: string | undefined;
     if (!isDevelopment) {
-      const tenant = await getCurrentTenant();
-      tenantId = tenant?.id;
+      tenantId = (await getCurrentTenant()) || undefined;
     }
 
     // Get customer preferences if available

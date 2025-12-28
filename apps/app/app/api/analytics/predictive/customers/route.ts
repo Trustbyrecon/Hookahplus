@@ -22,8 +22,7 @@ export async function GET(request: NextRequest) {
 
     let tenantId: string | undefined;
     if (!isDevelopment) {
-      const tenant = await getCurrentTenant();
-      tenantId = tenant?.id;
+      tenantId = (await getCurrentTenant()) || undefined;
     }
 
     const predictions = await predictiveEngine.getCustomerBehaviorPredictions(loungeId, tenantId);
