@@ -4,6 +4,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import type { Components } from 'react-markdown';
 import { 
   ArrowLeft, 
   Calendar, 
@@ -52,65 +53,66 @@ const blogPosts: Record<string, {
 };
 
 // Custom components for react-markdown
-const markdownComponents = {
-  h1: ({ children }: { children: React.ReactNode }) => (
+const markdownComponents: Partial<Components> = {
+  h1: ({ children }) => (
     <h1 className="text-3xl font-bold mt-8 mb-4 text-white">{children}</h1>
   ),
-  h2: ({ children }: { children: React.ReactNode }) => (
+  h2: ({ children }) => (
     <h2 className="text-2xl font-bold mt-6 mb-3 text-white">{children}</h2>
   ),
-  h3: ({ children }: { children: React.ReactNode }) => (
+  h3: ({ children }) => (
     <h3 className="text-xl font-bold mt-4 mb-2 text-white">{children}</h3>
   ),
-  p: ({ children }: { children: React.ReactNode }) => (
+  p: ({ children }) => (
     <p className="mb-4 text-zinc-300 leading-relaxed">{children}</p>
   ),
-  ul: ({ children }: { children: React.ReactNode }) => (
+  ul: ({ children }) => (
     <ul className="list-disc list-inside mb-4 space-y-2 text-zinc-300">{children}</ul>
   ),
-  ol: ({ children }: { children: React.ReactNode }) => (
+  ol: ({ children }) => (
     <ol className="list-decimal list-inside mb-4 space-y-2 text-zinc-300">{children}</ol>
   ),
-  li: ({ children }: { children: React.ReactNode }) => (
+  li: ({ children }) => (
     <li className="ml-4">{children}</li>
   ),
-  blockquote: ({ children }: { children: React.ReactNode }) => (
+  blockquote: ({ children }) => (
     <blockquote className="border-l-4 border-teal-500 pl-4 my-4 italic text-zinc-300">{children}</blockquote>
   ),
   hr: () => (
     <hr className="my-8 border-zinc-700" />
   ),
-  strong: ({ children }: { children: React.ReactNode }) => (
+  strong: ({ children }) => (
     <strong className="text-white font-semibold">{children}</strong>
   ),
-  em: ({ children }: { children: React.ReactNode }) => (
+  em: ({ children }) => (
     <em className="italic">{children}</em>
   ),
-  a: ({ href, children }: { href?: string; children: React.ReactNode }) => (
+  a: ({ href, children, ...props }) => (
     <Link 
       href={href || '#'} 
       className="text-teal-400 hover:text-teal-300 underline"
+      {...props}
     >
       {children}
     </Link>
   ),
-  code: ({ children, className }: { children: React.ReactNode; className?: string }) => {
+  code: ({ children, className, ...props }) => {
     const isInline = !className;
     if (isInline) {
       return (
-        <code className="bg-zinc-800 text-teal-400 px-1.5 py-0.5 rounded text-sm font-mono">
+        <code className="bg-zinc-800 text-teal-400 px-1.5 py-0.5 rounded text-sm font-mono" {...props}>
           {children}
         </code>
       );
     }
     return (
-      <code className="block bg-zinc-800 text-zinc-300 p-4 rounded-lg overflow-x-auto text-sm font-mono mb-4">
+      <code className="block bg-zinc-800 text-zinc-300 p-4 rounded-lg overflow-x-auto text-sm font-mono mb-4" {...props}>
         {children}
       </code>
     );
   },
-  pre: ({ children }: { children: React.ReactNode }) => (
-    <pre className="mb-4">{children}</pre>
+  pre: ({ children, ...props }) => (
+    <pre className="mb-4" {...props}>{children}</pre>
   ),
 };
 
