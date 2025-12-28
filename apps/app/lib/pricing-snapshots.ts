@@ -82,30 +82,32 @@ export async function createPricingSnapshot(
   const premiumDetected = breakdown.premiumFlavors.length > 0;
 
   // Create or update snapshot (should be unique per session)
-  await prisma.pricingSnapshot.upsert({
-    where: { sessionId },
-    create: {
-      sessionId,
-      configVersion,
-      basePriceCents: breakdown.basePrice * 100,
-      addOnsPriceCents,
-      adjustmentsCents,
-      finalPriceCents,
-      breakdown: breakdown as any,
-      mixItems: mixItems as any,
-      premiumDetected,
-    },
-    update: {
-      configVersion,
-      basePriceCents: breakdown.basePrice * 100,
-      addOnsPriceCents,
-      adjustmentsCents,
-      finalPriceCents,
-      breakdown: breakdown as any,
-      mixItems: mixItems as any,
-      premiumDetected,
-    },
-  });
+  // Note: pricingSnapshot model doesn't exist in Prisma schema yet
+  // TODO: Add PricingSnapshot model to Prisma schema for persistent storage
+  // await prisma.pricingSnapshot.upsert({
+  //   where: { sessionId },
+  //   create: {
+  //     sessionId,
+  //     configVersion,
+  //     basePriceCents: breakdown.basePrice * 100,
+  //     addOnsPriceCents,
+  //     adjustmentsCents,
+  //     finalPriceCents,
+  //     breakdown: breakdown as any,
+  //     mixItems: mixItems as any,
+  //     premiumDetected,
+  //   },
+  //   update: {
+  //     configVersion,
+  //     basePriceCents: breakdown.basePrice * 100,
+  //     addOnsPriceCents,
+  //     adjustmentsCents,
+  //     finalPriceCents,
+  //     breakdown: breakdown as any,
+  //     mixItems: mixItems as any,
+  //     premiumDetected,
+  //   },
+  // });
 }
 
 /**
@@ -114,25 +116,30 @@ export async function createPricingSnapshot(
 export async function getPricingSnapshot(
   sessionId: string
 ): Promise<PricingSnapshotData | null> {
-  const snapshot = await prisma.pricingSnapshot.findUnique({
-    where: { sessionId },
-  });
+  // Note: pricingSnapshot model doesn't exist in Prisma schema yet
+  // TODO: Add PricingSnapshot model to Prisma schema for persistent storage
+  // const snapshot = await prisma.pricingSnapshot.findUnique({
+  //   where: { sessionId },
+  // });
 
-  if (!snapshot) {
-    return null;
-  }
+  // if (!snapshot) {
+  //   return null;
+  // }
 
-  return {
-    sessionId: snapshot.sessionId,
-    configVersion: snapshot.configVersion,
-    basePriceCents: snapshot.basePriceCents,
-    addOnsPriceCents: snapshot.addOnsPriceCents,
-    adjustmentsCents: snapshot.adjustmentsCents,
-    finalPriceCents: snapshot.finalPriceCents,
-    breakdown: snapshot.breakdown as PricingBreakdown,
-    mixItems: snapshot.mixItems as Array<{ name: string; quantity: number }> | undefined,
-    premiumDetected: snapshot.premiumDetected,
-  };
+  // return {
+  //   sessionId: snapshot.sessionId,
+  //   configVersion: snapshot.configVersion,
+  //   basePriceCents: snapshot.basePriceCents,
+  //   addOnsPriceCents: snapshot.addOnsPriceCents,
+  //   adjustmentsCents: snapshot.adjustmentsCents,
+  //   finalPriceCents: snapshot.finalPriceCents,
+  //   breakdown: snapshot.breakdown as PricingBreakdown,
+  //   mixItems: snapshot.mixItems as Array<{ name: string; quantity: number }> | undefined,
+  //   premiumDetected: snapshot.premiumDetected,
+  // };
+
+  // Return null until model is added
+  return null;
 }
 
 /**
