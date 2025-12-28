@@ -174,7 +174,7 @@ function deriveInterests(pages: string[]): string[] {
   }
   
   // Remove duplicates
-  return [...new Set(interests)];
+  return Array.from(new Set(interests));
 }
 
 /**

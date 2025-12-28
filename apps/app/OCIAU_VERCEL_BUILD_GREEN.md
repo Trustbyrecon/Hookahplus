@@ -173,6 +173,7 @@ The Next.js application builds successfully in Vercel without TypeScript compila
 - ✅ All TypeScript errors in `lib/events/workers.ts` resolved
 - ✅ All TypeScript errors in `lib/hid/resolver.ts` resolved
 - ✅ All TypeScript errors in `lib/ktl4-health-checker.ts` resolved
+- ✅ All TypeScript errors in `lib/newsletterPersonalization.ts` resolved
 - ✅ No linter errors in any of the fixed files
 - ⚠️ Other files still have TypeScript errors (not part of this task scope)
 
@@ -211,6 +212,12 @@ The Next.js application builds successfully in Vercel without TypeScript compila
 1. Commented out database storage (line 166): `ktl4HealthCheck` model doesn't exist - health checks are logged via GhostLog system
 2. Commented out sessionHeartbeat query (line 284): `sessionHeartbeat` model doesn't exist - replaced with placeholder logic
 3. Added TODO comments for future implementation when models are added to schema
+
+### Additional Fix: newsletterPersonalization.ts
+**New Error Found**: Vercel build failed on `lib/newsletterPersonalization.ts:177` - Set iteration requires downlevelIteration or es2015+ target.
+
+**Fixes Applied**:
+1. Fixed Set iteration (line 177): Changed `[...new Set(interests)]` → `Array.from(new Set(interests))` for es5 compatibility
 
 ### Next Steps
 
