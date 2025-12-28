@@ -29,7 +29,6 @@ export async function GET(req: NextRequest) {
       },
       select: {
         id: true,
-        email: true,
         metadata: true,
         createdAt: true,
       },
@@ -44,7 +43,6 @@ export async function GET(req: NextRequest) {
       },
       select: {
         id: true,
-        email: true,
         metadata: true,
         createdAt: true,
       },
@@ -66,15 +64,26 @@ export async function GET(req: NextRequest) {
     });
 
     // Calculate conversions
+    // Extract emails from metadata
     const newsletterEmails = new Set(
       newsletterSignups
-        .map(s => s.email)
+        .map(s => {
+          const metadata = typeof s.metadata === 'string'
+            ? JSON.parse(s.metadata)
+            : s.metadata || {};
+          return metadata.email;
+        })
         .filter(Boolean) as string[]
     );
 
     const onboardingEmails = new Set(
       onboardingSignups
-        .map(s => s.email)
+        .map(s => {
+          const metadata = typeof s.metadata === 'string'
+            ? JSON.parse(s.metadata)
+            : s.metadata || {};
+          return metadata.email;
+        })
         .filter(Boolean) as string[]
     );
 
