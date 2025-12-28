@@ -784,6 +784,39 @@ export default function CampaignsPage() {
     );
   };
 
+  const renderPricing = () => (
+    <div className="space-y-6">
+      <Card className="p-6">
+        <h2 className="text-2xl font-bold mb-4">Campaign Pricing</h2>
+        <p className="text-zinc-400 mb-6">
+          Manage pricing for your campaigns and promotional offers.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="p-6 bg-zinc-800/50">
+            <h3 className="text-lg font-semibold mb-2">Budget Management</h3>
+            <p className="text-zinc-400 text-sm mb-4">
+              Total budget allocated: ${campaigns.reduce((sum, c) => sum + c.budget, 0).toLocaleString()}
+            </p>
+            <p className="text-zinc-400 text-sm">
+              Total spent: ${campaigns.reduce((sum, c) => sum + c.spent, 0).toLocaleString()}
+            </p>
+          </Card>
+          <Card className="p-6 bg-zinc-800/50">
+            <h3 className="text-lg font-semibold mb-2">ROI Overview</h3>
+            <p className="text-zinc-400 text-sm mb-4">
+              Average ROI: {campaigns.length > 0 
+                ? (campaigns.reduce((sum, c) => sum + c.roi, 0) / campaigns.length).toFixed(2)
+                : '0.00'}x
+            </p>
+            <p className="text-zinc-400 text-sm">
+              Total conversions: {campaigns.reduce((sum, c) => sum + c.conversions, 0).toLocaleString()}
+            </p>
+          </Card>
+        </div>
+      </Card>
+    </div>
+  );
+
   const renderAnalytics = () => {
     if (analyticsLoading) {
       return (
