@@ -247,7 +247,7 @@ export class WebSocketService {
    * Get connection status
    */
   get isConnected(): boolean {
-    return this.ws?.readyState === WebSocket.OPEN ?? false;
+    return this.ws?.readyState === WebSocket.OPEN;
   }
 
   /**

@@ -185,6 +185,7 @@ The Next.js application builds successfully in Vercel without TypeScript compila
 - ✅ All TypeScript errors in `lib/retention/automation.ts` resolved
 - ✅ All TypeScript errors in `lib/services/MultiLocationService.ts` resolved
 - ✅ All TypeScript errors in `lib/services/QRCodeService.ts` resolved
+- ✅ All TypeScript errors in `lib/services/WebSocketService.ts` resolved
 - ✅ No linter errors in any of the fixed files
 - ⚠️ Other files still have TypeScript errors (not part of this task scope)
 
@@ -314,6 +315,12 @@ The Next.js application builds successfully in Vercel without TypeScript compila
 
 **Fixes Applied**:
 1. Fixed type assertion (lines 67, 70): Added `as unknown as Promise<string>` type assertion to QRCode.toDataURL() calls to handle TypeScript's incorrect inference of the callback signature instead of the promise signature
+
+### Additional Fix: services/WebSocketService.ts
+**New Error Found**: Vercel build failed on `lib/services/WebSocketService.ts:250` - Right operand of ?? is unreachable because the left operand is never nullish.
+
+**Fixes Applied**:
+1. Fixed nullish coalescing operator (line 250): Removed `?? false` from `this.ws?.readyState === WebSocket.OPEN ?? false` because the comparison already returns a boolean, and booleans are never nullish. The expression `this.ws?.readyState === WebSocket.OPEN` already returns `false` when `this.ws` is null/undefined.
 
 ### Next Steps
 
