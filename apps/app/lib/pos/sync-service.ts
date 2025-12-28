@@ -38,7 +38,7 @@ export class PosSyncService {
 
     try {
       // Get adapter for POS system
-      const adapter = this.getAdapter(posSystem);
+      const adapter = this.getAdapter(posSystem, loungeId);
       if (!adapter) {
         return {
           success: false,
@@ -82,24 +82,35 @@ export class PosSyncService {
             continue; // Already synced
           }
 
-          // Create POS order/ticket
-          const posResult = await adapter.createOrder({
-            sessionId: session.id,
-            amountCents: session.priceCents || 0,
-            items: this.extractSessionItems(session),
-            customerRef: session.customerRef || undefined,
-            customerPhone: session.customerPhone || undefined,
-            metadata: {
-              loungeId: session.loungeId,
-              tableId: session.tableId || undefined
-            }
-          });
+          // Create POS order/ticket using attachOrder
+          const sessionItems = this.extractSessionItems(session);
+          // Convert to HpItem format
+          const items: Array<{ sku: string; name: string; qty: number; unit_amount: number }> = sessionItems.map(item => ({
+            sku: `hp_${item.name.toLowerCase().replace(/\s+/g, '_')}`,
+            name: item.name,
+            qty: item.quantity,
+            unit_amount: item.priceCents
+          }));
+          
+          const hpOrder = {
+            hp_order_id: `hp_ord_${session.id}`,
+            venue_id: session.loungeId,
+            table: session.tableId || undefined,
+            items,
+            totals: {
+              subtotal: session.priceCents || 0,
+              grand_total: session.priceCents || 0
+            },
+            trust_lock: { sig: `sig_${session.id}_${Date.now()}` }
+          };
+          
+          const posResult = await adapter.attachOrder(hpOrder);
 
-          if (posResult.success && posResult.ticketId) {
+          if (posResult.pos_order_id) {
             // Create POS ticket record
             await prisma.posTicket.create({
               data: {
-                ticketId: posResult.ticketId,
+                ticketId: posResult.pos_order_id,
                 sessionId: session.id,
                 amountCents: session.priceCents || 0,
                 status: 'pending',
@@ -124,7 +135,7 @@ export class PosSyncService {
                     session.loungeId,
                     this.extractSessionItems(session),
                     session.priceCents || undefined,
-                    posResult.ticketId
+                    posResult.pos_order_id
                   );
                 }
               } catch (error) {
@@ -135,11 +146,11 @@ export class PosSyncService {
 
             // Auto-reconcile if enabled
             if (autoReconcile && session.paymentIntent) {
-              await this.reconcileSession(session.id, posResult.ticketId, posSystem);
+              await this.reconcileSession(session.id, posResult.pos_order_id, posSystem);
             }
           } else {
             failedCount++;
-            errors.push(`Failed to sync session ${session.id}: ${posResult.error || 'Unknown error'}`);
+            errors.push(`Failed to sync session ${session.id}: Failed to create POS order`);
           }
         } catch (error) {
           failedCount++;
@@ -304,14 +315,14 @@ export class PosSyncService {
   /**
    * Get POS adapter instance
    */
-  private getAdapter(posSystem: string) {
+  private getAdapter(posSystem: string, venueId: string) {
     switch (posSystem) {
       case 'square':
-        return new SquareAdapter();
+        return new SquareAdapter({ venueId });
       case 'toast':
-        return new ToastAdapter();
+        return new ToastAdapter({ venueId });
       case 'clover':
-        return new CloverAdapter();
+        return new CloverAdapter({ venueId });
       default:
         return null;
     }

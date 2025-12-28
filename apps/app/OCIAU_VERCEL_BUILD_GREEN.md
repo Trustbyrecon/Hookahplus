@@ -176,6 +176,7 @@ The Next.js application builds successfully in Vercel without TypeScript compila
 - ✅ All TypeScript errors in `lib/newsletterPersonalization.ts` resolved
 - ✅ All TypeScript errors in `lib/pos/clover.ts` resolved
 - ✅ All TypeScript errors in `lib/pos/square.ts` resolved
+- ✅ All TypeScript errors in `lib/pos/sync-service.ts` resolved
 - ✅ No linter errors in any of the fixed files
 - ⚠️ Other files still have TypeScript errors (not part of this task scope)
 
@@ -234,6 +235,16 @@ The Next.js application builds successfully in Vercel without TypeScript compila
 **Fixes Applied**:
 1. Fixed null check (line 327): Changed `posTicket.amountCents` → `(posTicket.amountCents || 0)` to handle null values
 2. Fixed null check (line 357): Changed `posTicket.amountCents` → `(posTicket.amountCents || 0)` to handle null values
+
+### Additional Fix: pos/sync-service.ts
+**New Error Found**: Vercel build failed on `lib/pos/sync-service.ts:86` - `createOrder` method doesn't exist on PosAdapter interface.
+
+**Fixes Applied**:
+1. Changed method call (line 86): Replaced `adapter.createOrder()` with `adapter.attachOrder()` (correct PosAdapter interface method)
+2. Converted parameters to HpOrder format: Created proper `HpOrder` object with `hp_order_id`, `venue_id`, `items` (converted to HpItem format), `totals`, and `trust_lock`
+3. Fixed result property access: Changed `posResult.ticketId` → `posResult.pos_order_id` (correct AttachResult property)
+4. Fixed adapter constructors: Added `venueId` parameter to all adapter constructors (SquareAdapter, ToastAdapter, CloverAdapter)
+5. Fixed error handling: Removed reference to non-existent `posResult.error` property
 
 ### Next Steps
 
