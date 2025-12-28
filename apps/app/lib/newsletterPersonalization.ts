@@ -1,4 +1,4 @@
-/** @deprecated - use new db */
+/** 
  * Newsletter Personalization Service
  * 
  * Uses newsletter engagement data to personalize onboarding experience
