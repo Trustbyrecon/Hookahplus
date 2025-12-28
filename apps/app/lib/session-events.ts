@@ -4,6 +4,8 @@
  */
 
 import { prisma } from './db';
+import { randomUUID } from 'crypto';
+import crypto from 'crypto';
 
 export type SessionEventType =
   | 'started'
@@ -43,24 +45,45 @@ export interface SessionEventRecord {
 export async function logSessionEvent(
   event: SessionEventData
 ): Promise<SessionEventRecord> {
+  // Generate unique ID for the event
+  const eventId = `evt_${event.sessionId}_${Date.now()}_${randomUUID().substring(0, 8)}`;
+  
+  // Prepare event data with actor information
+  const eventData = {
+    ...(event.eventData || {}),
+    ...(event.actorId && { actorId: event.actorId }),
+    ...(event.actorRole && { actorRole: event.actorRole }),
+  };
+  
+  // Generate payload seal (SHA256 hash of event data for integrity)
+  const payloadSeal = crypto
+    .createHash('sha256')
+    .update(JSON.stringify({
+      sessionId: event.sessionId,
+      type: event.eventType,
+      data: eventData,
+      timestamp: new Date().toISOString(),
+    }))
+    .digest('hex');
+
   const sessionEvent = await prisma.sessionEvent.create({
     data: {
+      id: eventId,
       sessionId: event.sessionId,
-      eventType: event.eventType,
-      eventData: event.eventData || {},
-      actorId: event.actorId || null,
-      actorRole: event.actorRole || null,
+      type: event.eventType, // Schema uses 'type' not 'eventType'
+      payloadSeal: payloadSeal,
+      data: eventData, // Store actor info in data JSON field
     },
   });
 
   return {
     id: sessionEvent.id,
     sessionId: sessionEvent.sessionId,
-    eventType: sessionEvent.eventType as SessionEventType,
-    eventData: sessionEvent.eventData as Record<string, any> | null,
-    actorId: sessionEvent.actorId,
-    actorRole: sessionEvent.actorRole,
-    timestamp: sessionEvent.timestamp,
+    eventType: sessionEvent.type as SessionEventType, // Map 'type' back to 'eventType' for interface
+    eventData: sessionEvent.data as Record<string, any> | null,
+    actorId: (sessionEvent.data as any)?.actorId || null,
+    actorRole: (sessionEvent.data as any)?.actorRole || null,
+    timestamp: sessionEvent.createdAt, // Schema uses 'createdAt' not 'timestamp'
   };
 }
 
@@ -74,18 +97,18 @@ export async function getSessionEventHistory(
 ): Promise<SessionEventRecord[]> {
   const events = await prisma.sessionEvent.findMany({
     where: { sessionId },
-    orderBy: { timestamp: 'asc' },
+    orderBy: { createdAt: 'asc' }, // Schema uses 'createdAt' not 'timestamp'
     take: limit,
   });
 
   return events.map(event => ({
     id: event.id,
     sessionId: event.sessionId,
-    eventType: event.eventType as SessionEventType,
-    eventData: event.eventData as Record<string, any> | null,
-    actorId: event.actorId,
-    actorRole: event.actorRole,
-    timestamp: event.timestamp,
+    eventType: event.type as SessionEventType, // Map 'type' to 'eventType'
+    eventData: event.data as Record<string, any> | null, // Map 'data' to 'eventData'
+    actorId: (event.data as any)?.actorId || null, // Extract from data JSON
+    actorRole: (event.data as any)?.actorRole || null, // Extract from data JSON
+    timestamp: event.createdAt, // Map 'createdAt' to 'timestamp'
   }));
 }
 
@@ -181,33 +204,33 @@ export async function getEventsByType(
   limit: number = 100
 ): Promise<SessionEventRecord[]> {
   const where: any = {
-    eventType,
+    type: eventType, // Schema uses 'type' not 'eventType'
   };
 
   if (startDate || endDate) {
-    where.timestamp = {};
+    where.createdAt = {}; // Schema uses 'createdAt' not 'timestamp'
     if (startDate) {
-      where.timestamp.gte = startDate;
+      where.createdAt.gte = startDate;
     }
     if (endDate) {
-      where.timestamp.lte = endDate;
+      where.createdAt.lte = endDate;
     }
   }
 
   const events = await prisma.sessionEvent.findMany({
     where,
-    orderBy: { timestamp: 'desc' },
+    orderBy: { createdAt: 'desc' }, // Schema uses 'createdAt' not 'timestamp'
     take: limit,
   });
 
   return events.map(event => ({
     id: event.id,
     sessionId: event.sessionId,
-    eventType: event.eventType as SessionEventType,
-    eventData: event.eventData as Record<string, any> | null,
-    actorId: event.actorId,
-    actorRole: event.actorRole,
-    timestamp: event.timestamp,
+    eventType: event.type as SessionEventType, // Map 'type' to 'eventType'
+    eventData: event.data as Record<string, any> | null, // Map 'data' to 'eventData'
+    actorId: (event.data as any)?.actorId || null, // Extract from data JSON
+    actorRole: (event.data as any)?.actorRole || null, // Extract from data JSON
+    timestamp: event.createdAt, // Map 'createdAt' to 'timestamp'
   }));
 }
 
