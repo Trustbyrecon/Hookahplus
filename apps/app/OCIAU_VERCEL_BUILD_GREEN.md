@@ -175,6 +175,7 @@ The Next.js application builds successfully in Vercel without TypeScript compila
 - ✅ All TypeScript errors in `lib/ktl4-health-checker.ts` resolved
 - ✅ All TypeScript errors in `lib/newsletterPersonalization.ts` resolved
 - ✅ All TypeScript errors in `lib/pos/clover.ts` resolved
+- ✅ All TypeScript errors in `lib/pos/square.ts` resolved
 - ✅ No linter errors in any of the fixed files
 - ⚠️ Other files still have TypeScript errors (not part of this task scope)
 
@@ -226,6 +227,13 @@ The Next.js application builds successfully in Vercel without TypeScript compila
 **Fixes Applied**:
 1. Fixed null check (line 139): Changed `posTicket.amountCents` → `(posTicket.amountCents || 0)` to handle null values
 2. Fixed null check (line 165): Changed `posTicket.amountCents` → `(posTicket.amountCents || 0)` to handle null values
+
+### Additional Fix: pos/square.ts
+**New Error Found**: Vercel build failed on `lib/pos/square.ts:327` - `posTicket.amountCents` is possibly null.
+
+**Fixes Applied**:
+1. Fixed null check (line 327): Changed `posTicket.amountCents` → `(posTicket.amountCents || 0)` to handle null values
+2. Fixed null check (line 357): Changed `posTicket.amountCents` → `(posTicket.amountCents || 0)` to handle null values
 
 ### Next Steps
 
