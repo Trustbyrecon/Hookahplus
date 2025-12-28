@@ -64,10 +64,10 @@ export class QRCodeService {
       let qrCodeData: string;
       if (config.branding?.logoUrl) {
         // Generate QR with logo (requires additional processing)
-        qrCodeData = await QRCode.toDataURL(targetUrl, qrOptions);
+        qrCodeData = await (QRCode.toDataURL(targetUrl, qrOptions) as unknown as Promise<string>);
         // TODO: Add logo overlay processing
       } else {
-        qrCodeData = await QRCode.toDataURL(targetUrl, qrOptions);
+        qrCodeData = await (QRCode.toDataURL(targetUrl, qrOptions) as unknown as Promise<string>);
       }
 
       const qrId = config.id || `qr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;

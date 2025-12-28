@@ -184,6 +184,7 @@ The Next.js application builds successfully in Vercel without TypeScript compila
 - ✅ All TypeScript errors in `lib/rate-limit-redis.ts` resolved
 - ✅ All TypeScript errors in `lib/retention/automation.ts` resolved
 - ✅ All TypeScript errors in `lib/services/MultiLocationService.ts` resolved
+- ✅ All TypeScript errors in `lib/services/QRCodeService.ts` resolved
 - ✅ No linter errors in any of the fixed files
 - ⚠️ Other files still have TypeScript errors (not part of this task scope)
 
@@ -307,6 +308,12 @@ The Next.js application builds successfully in Vercel without TypeScript compila
 
 **Fixes Applied**:
 1. Fixed Map iteration (line 226): Changed `for...of` loop to `Array.from(locationMap.entries()).forEach()` for es5 compatibility
+
+### Additional Fix: services/QRCodeService.ts
+**New Error Found**: Vercel build failed on `lib/services/QRCodeService.ts:67` and `70` - Type 'void' is not assignable to type 'string' for QRCode.toDataURL().
+
+**Fixes Applied**:
+1. Fixed type assertion (lines 67, 70): Added `as unknown as Promise<string>` type assertion to QRCode.toDataURL() calls to handle TypeScript's incorrect inference of the callback signature instead of the promise signature
 
 ### Next Steps
 
