@@ -49,6 +49,7 @@ interface Campaign {
   channels: string[];
   createdAt: Date;
   createdBy: string;
+  campaignConfig?: any; // JSON field from Prisma
 }
 
 export default function CampaignsPage() {
@@ -143,7 +144,8 @@ export default function CampaignsPage() {
           description: c.description || '',
           channels: c.channels || [],
           createdAt: new Date(c.createdAt),
-          createdBy: c.createdBy || 'System'
+          createdBy: c.createdBy || 'System',
+          campaignConfig: c.campaignConfig || null
         }));
         setCampaigns(formattedCampaigns);
       }
