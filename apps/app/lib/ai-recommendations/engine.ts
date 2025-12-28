@@ -1,4 +1,4 @@
-import { prisma } from '../../db';
+import { prisma } from '../db';
 import { encodeCyclicalTime, calculateTimeSimilarity, getTimePeriodLabels, type CyclicalTimeFeatures } from '../utils/cyclical-time';
 
 export interface FlavorRecommendation {

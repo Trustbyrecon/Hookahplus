@@ -1,5 +1,5 @@
-import { prisma } from '../db';
-import { sendEmail } from './email-retention';
+import { prisma } from '../prisma';
+import { sendEmail } from '../email-retention';
 
 export interface RetentionTrigger {
   type: 'churn_risk' | 'win_back' | 're_engagement' | 'loyalty_milestone' | 'abandoned_cart';
