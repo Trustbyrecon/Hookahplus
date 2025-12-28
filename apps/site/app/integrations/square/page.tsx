@@ -224,6 +224,33 @@ export default function SquareIntegrationPage() {
           </div>
         </section>
 
+        {/* Related Resources */}
+        <section className="py-12 px-4 sm:px-6 lg:px-8 bg-zinc-900/50">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-2xl font-bold mb-6">Learn More</h2>
+            <div className="grid md:grid-cols-2 gap-4">
+              <Card className="p-6 bg-zinc-800/50 border-zinc-700 hover:border-teal-500/50 transition-colors">
+                <h3 className="font-semibold text-white mb-2">Works With Square</h3>
+                <p className="text-zinc-300 text-sm mb-4">
+                  Learn how Hookah+ completes your Square setup with session management, customer memory, and loyalty.
+                </p>
+                <a href="/works-with-square" className="text-teal-400 hover:text-teal-300 text-sm font-medium inline-flex items-center gap-1">
+                  Read more <ArrowRight className="w-3 h-3" />
+                </a>
+              </Card>
+              <Card className="p-6 bg-zinc-800/50 border-zinc-700 hover:border-teal-500/50 transition-colors">
+                <h3 className="font-semibold text-white mb-2">Blog: Square & Operations</h3>
+                <p className="text-zinc-300 text-sm mb-4">
+                  Why hookah lounges still struggle after checkout, even with Square handling payments perfectly.
+                </p>
+                <a href="/blog/square-great-payments-hookah-lounges-struggle" className="text-teal-400 hover:text-teal-300 text-sm font-medium inline-flex items-center gap-1">
+                  Read article <ArrowRight className="w-3 h-3" />
+                </a>
+              </Card>
+            </div>
+          </div>
+        </section>
+
         {/* CTA */}
         <section className="py-16 px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">

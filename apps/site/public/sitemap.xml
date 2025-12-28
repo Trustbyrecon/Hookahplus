@@ -102,4 +102,34 @@
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
+  <url>
+    <loc>https://hookahplus.net/blog</loc>
+    <lastmod>2025-01-25T00:00:00.000Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://hookahplus.net/blog/square-great-payments-hookah-lounges-struggle</loc>
+    <lastmod>2025-01-25T00:00:00.000Z</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://hookahplus.net/blog/session-timing-runs-hookah-lounge</loc>
+    <lastmod>2025-01-25T00:00:00.000Z</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://hookahplus.net/blog/loyalty-remembering-people-not-points</loc>
+    <lastmod>2025-01-25T00:00:00.000Z</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://hookahplus.net/works-with-square</loc>
+    <lastmod>2025-01-25T00:00:00.000Z</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
 </urlset>

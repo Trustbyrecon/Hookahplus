@@ -87,6 +87,16 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/blog" className="text-zinc-400 hover:text-teal-400 transition-colors">
+                  Blog
+                </Link>
+              </li>
+              <li>
+                <Link href="/works-with-square" className="text-zinc-400 hover:text-teal-400 transition-colors">
+                  Works With Square
+                </Link>
+              </li>
+              <li>
                 <Link href="/integrations/square" className="text-zinc-400 hover:text-teal-400 transition-colors">
                   Square Integration
                 </Link>

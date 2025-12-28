@@ -54,6 +54,15 @@ const resultsDropdown: Dropdown = {
   ],
 };
 
+const resourcesDropdown: Dropdown = {
+  label: 'Resources',
+  items: [
+    { label: 'Blog', href: '/blog', icon: <FileText className="w-4 h-4" /> },
+    { label: 'Square Integration', href: '/works-with-square', icon: <LinkIcon className="w-4 h-4" /> },
+    { label: 'Integrations', href: '/docs#integrations', icon: <LinkIcon className="w-4 h-4" /> },
+  ],
+};
+
 const GlobalNavigation: React.FC = () => {
   const pathname = usePathname();
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
@@ -139,6 +148,43 @@ const GlobalNavigation: React.FC = () => {
               {activeDropdown === 'Results' && (
                 <div className="absolute top-full left-0 mt-2 w-56 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl py-2 z-50">
                   {resultsDropdown.items.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setActiveDropdown(null)}
+                      className={cn(
+                        'flex items-center space-x-2 px-4 py-2 text-sm transition-colors',
+                        isActive(item.href)
+                          ? 'bg-teal-500/20 text-teal-400'
+                          : 'text-zinc-300 hover:bg-zinc-800 hover:text-white'
+                      )}
+                    >
+                      {item.icon}
+                      <span>{item.label}</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Resources Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => handleDropdownToggle('Resources')}
+                className={cn(
+                  'flex items-center space-x-1 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200',
+                  'text-zinc-300 hover:text-white hover:bg-zinc-800'
+                )}
+              >
+                <span>Resources</span>
+                <ChevronDown className={cn(
+                  'w-4 h-4 transition-transform',
+                  activeDropdown === 'Resources' && 'rotate-180'
+                )} />
+              </button>
+              {activeDropdown === 'Resources' && (
+                <div className="absolute top-full left-0 mt-2 w-56 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl py-2 z-50">
+                  {resourcesDropdown.items.map((item) => (
                     <Link
                       key={item.href}
                       href={item.href}
@@ -261,6 +307,31 @@ const GlobalNavigation: React.FC = () => {
               </div>
               <div className="space-y-1">
                 {resultsDropdown.items.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={cn(
+                      'flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
+                      isActive(item.href)
+                        ? 'bg-teal-500/20 text-teal-400'
+                        : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
+                    )}
+                  >
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Resources Section */}
+            <div>
+              <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
+                Resources
+              </div>
+              <div className="space-y-1">
+                {resourcesDropdown.items.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
