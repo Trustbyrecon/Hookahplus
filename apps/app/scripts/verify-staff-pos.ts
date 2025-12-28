@@ -116,16 +116,17 @@ async function testStaffCRUD(): Promise<VerificationResult[]> {
 
   // 1c: Verify staff data structure in database
   try {
-    // Check if User model has staff-related fields
+    // Check if Membership model exists (staff/users are managed through memberships)
     // This is a structural check
-    const userCount = await prisma.user.count();
+    const membershipCount = await prisma.membership.count();
     
     testResults.push({
       category: 'Staff CRUD',
       test: 'Staff/user data accessible in database',
       passed: true, // If we can query, the structure exists
       details: {
-        userCount,
+        membershipCount,
+        note: 'Staff/users managed through Membership model',
       },
     });
   } catch (error) {
@@ -149,13 +150,14 @@ async function testRoleAssignment(): Promise<VerificationResult[]> {
   // This would typically be in the codebase, but we can verify the structure exists
 
   try {
-    // Check if we can query users with roles
-    const usersWithRoles = await prisma.user.findMany({
+    // Check if we can query memberships with roles
+    // Staff/users are managed through Membership model which has userId and role
+    const membershipsWithRoles = await prisma.membership.findMany({
       take: 5,
       select: {
-        id: true,
-        email: true,
-        // role field might be in a different model or structure
+        userId: true,
+        tenantId: true,
+        role: true,
       },
     });
 
@@ -164,7 +166,9 @@ async function testRoleAssignment(): Promise<VerificationResult[]> {
       test: 'User/role data structure exists',
       passed: true,
       details: {
-        sampleUsers: usersWithRoles.length,
+        sampleMemberships: membershipsWithRoles.length,
+        note: 'Roles stored in Membership model',
+        roles: membershipsWithRoles.map(m => m.role),
       },
     });
   } catch (error) {
