@@ -191,13 +191,13 @@ export async function promoteUnknown(
   try {
     await prisma.taxonomyUnknown.update({
       where: {
-        enumType_rawLabel: {
-          enumType,
-          rawLabel
+        enum_type_raw_label: {
+          enum_type: enumType,
+          raw_label: rawLabel
         }
       },
       data: {
-        suggestedMapping
+        suggested_mapping: suggestedMapping
       }
     });
   } catch (error) {

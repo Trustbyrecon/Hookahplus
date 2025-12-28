@@ -187,6 +187,7 @@ The Next.js application builds successfully in Vercel without TypeScript compila
 - ✅ All TypeScript errors in `lib/services/QRCodeService.ts` resolved
 - ✅ All TypeScript errors in `lib/services/WebSocketService.ts` resolved
 - ✅ All TypeScript errors in `lib/session-adjustments.ts` resolved
+- ✅ All TypeScript errors in `lib/taxonomy/unknown-tracker.ts` resolved
 - ✅ No linter errors in any of the fixed files
 - ⚠️ Other files still have TypeScript errors (not part of this task scope)
 
@@ -330,6 +331,12 @@ The Next.js application builds successfully in Vercel without TypeScript compila
 1. Fixed missing SessionAdjustment model (lines 57, 107, 120, 162): Replaced all `prisma.sessionAdjustment` operations with in-memory implementations, as the model does not exist in `prisma/schema.prisma`. Added TODO comments for future persistent storage.
 2. Fixed missing PricingSnapshot model (line 190): Commented out `prisma.pricingSnapshot.findUnique` call and set `pricingSnapshot` to `null`, as this model also doesn't exist (consistent with previous fix in `pricing-snapshots.ts`).
 3. Fixed implicit any type (line 167): Added explicit type annotation `(adj: any)` to the map callback.
+
+### Additional Fix: taxonomy/unknown-tracker.ts
+**New Error Found**: Vercel build failed on `lib/taxonomy/unknown-tracker.ts:194` - Object literal may only specify known properties, but 'enumType_rawLabel' does not exist. Did you mean to write 'enum_type_raw_label'?
+
+**Fixes Applied**:
+1. Fixed compound unique key reference (line 194): Changed `enumType_rawLabel` to `enum_type_raw_label` to match Prisma's snake_case naming for compound unique constraints. Also updated field names from camelCase (`enumType`, `rawLabel`, `suggestedMapping`) to snake_case (`enum_type`, `raw_label`, `suggested_mapping`) to match the Prisma schema field names.
 
 ### Next Steps
 
