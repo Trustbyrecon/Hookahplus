@@ -13,6 +13,7 @@ import {
   Clock as ClockIcon,
   Users
 } from 'lucide-react';
+import ContentEngagementTracker from '../../../components/ContentEngagementTracker';
 
 const blogPosts: Record<string, {
   title: string;
@@ -180,6 +181,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
+      <ContentEngagementTracker />
       {/* Header */}
       <div className="border-b border-zinc-800 sticky top-16 z-40 bg-zinc-950/80 backdrop-blur">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">

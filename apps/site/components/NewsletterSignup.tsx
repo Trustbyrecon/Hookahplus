@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Button from './Button';
 import { Mail, CheckCircle, ArrowRight } from 'lucide-react';
 import { trackCTA } from '../lib/ctaTracking';
+import { getContentEngagementForSignup, clearContentEngagement } from '../lib/contentEngagement';
 
 interface NewsletterSignupProps {
   variant?: 'default' | 'inline' | 'compact';
@@ -42,7 +43,10 @@ export default function NewsletterSignup({
     setIsSubmitting(true);
 
     try {
-      // Submit to newsletter API (handles tracking and email sending)
+      // Get content engagement data before clearing
+      const contentEngagement = getContentEngagementForSignup();
+
+      // Submit to newsletter API (handles tracking, HID creation, and email sending)
       const response = await fetch('/api/newsletter/subscribe', {
         method: 'POST',
         headers: {
@@ -50,9 +54,15 @@ export default function NewsletterSignup({
         },
         body: JSON.stringify({
           email,
-          name: showName && name ? name : undefined
+          name: showName && name ? name : undefined,
+          contentEngagement: contentEngagement.pages.length > 0 ? contentEngagement : undefined
         }),
       });
+
+      // Clear engagement data after successful signup
+      if (response.ok) {
+        clearContentEngagement();
+      }
 
       if (!response.ok) {
         throw new Error('Failed to subscribe');
