@@ -54,10 +54,12 @@ model Session {
   zoneId              String?        @map("zone_id")
   stage               String?        @map("nan_stage")
   action              String?        @map("nan_action")
+  hid                 String?        // Hookah+ Network ID (portable customer identifier)
   preorder            PreOrder?      @relation(fields: [preorderId], references: [id])
   seat                Seat?          @relation(fields: [seatId], references: [id])
   tenant              Tenant?        @relation(fields: [tenantId], references: [id], onUpdate: NoAction)
   zoneRelation        Zone?          @relation("SessionZone", fields: [zoneId], references: [id])
+  networkProfile      NetworkProfile? @relation(fields: [hid], references: [hid])
   SessionEvent        SessionEvent[]
   deliveries          Delivery[]
   orders              Order[]
@@ -96,6 +98,7 @@ model Tenant {
   loyaltyAccounts LoyaltyAccount[]
   loyaltyTiers   LoyaltyTier[]
   loyaltyRewards LoyaltyReward[]
+  squareMerchants SquareMerchant[]
 
   @@index([createdAt], map: "idx_tenants_created_at")
   @@index([name], map: "idx_tenants_name")
@@ -315,12 +318,14 @@ model SessionNote {
   loyaltyImpact   Int?                 @map("loyalty_impact")
   behavioralTags  String?              @map("behavioral_tags")
   createdBy       String               @map("created_by")
+  shareScope      String?              @default("lounge") @map("share_scope") // lounge | network
   createdAt       DateTime             @default(now()) @map("created_at")
   loyaltyBindings LoyaltyNoteBinding[]
   session         Session              @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId])
   @@index([noteType, createdAt])
+  @@index([shareScope], map: "idx_session_note_share_scope")
   @@map("session_notes")
 }
 
@@ -975,4 +980,114 @@ enum session_status {
   COMPLETE
   STAFF_HOLD
   STOCK_BLOCKED
+}
+
+// Network-wide customer profiles (Hookah+ Network Identity Layer)
+model NetworkProfile {
+  id            String   @id @default(cuid())
+  hid           String   @unique // Hookah+ ID (portable identifier)
+  phoneHash     String?  @map("phone_hash") // SHA256 hash of phone
+  emailHash     String?  @map("email_hash") // SHA256 hash of email
+  consentLevel  String   @default("shadow") @map("consent_level") // shadow | claimed | network_shared
+  tier          String?  // Current loyalty tier
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  
+  preferences   NetworkPreference?
+  badges        NetworkBadge[]
+  sessions      NetworkSession[]
+  notes         NetworkSessionNote[]
+  piiLinks      NetworkPIILink[]
+  sessionsRef   Session[] // Sessions linked to this profile
+  
+  @@index([hid], map: "idx_network_profile_hid")
+  @@index([phoneHash], map: "idx_network_profile_phone_hash")
+  @@index([emailHash], map: "idx_network_profile_email_hash")
+  @@index([consentLevel], map: "idx_network_profile_consent")
+  @@map("network_profiles")
+}
+
+model NetworkPreference {
+  id            String        @id @default(cuid())
+  hid           String        @unique
+  topFlavors    Json?         @map("top_flavors") // Array of favorite flavors
+  flavorVector  String?       @map("flavor_vector") // ML embedding (JSON string)
+  devicePrefs   Json?         @map("device_prefs") // Device preferences
+  updatedAt     DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+  
+  profile       NetworkProfile @relation(fields: [hid], references: [hid], onDelete: Cascade)
+  
+  @@index([hid], map: "idx_network_preference_hid")
+  @@map("network_preferences")
+}
+
+model NetworkBadge {
+  id         String        @id @default(cuid())
+  hid        String
+  badgeCode  String        @map("badge_code")
+  awardedAt  DateTime      @default(now()) @map("awarded_at") @db.Timestamptz(6)
+  meta      Json?         // Additional metadata
+  
+  profile    NetworkProfile @relation(fields: [hid], references: [hid], onDelete: Cascade)
+  
+  @@unique([hid, badgeCode], map: "idx_network_badge_unique")
+  @@index([hid], map: "idx_network_badge_hid")
+  @@index([badgeCode], map: "idx_network_badge_code")
+  @@map("network_badges")
+}
+
+model NetworkSession {
+  id         String        @id // Use sessionId-based ID (NS-{sessionId})
+  hid        String
+  sessionId  String        @unique @map("session_id") // Link to Session.id (unique)
+  loungeId  String        @map("lounge_id")
+  startTs    DateTime?    @map("start_ts") @db.Timestamptz(6)
+  endTs      DateTime?    @map("end_ts") @db.Timestamptz(6)
+  items      Json?         // Order items
+  spendCents Int?          @map("spend_cents")
+  posRef     String?       @map("pos_ref")
+  rating     Int?          // Customer rating (1-5)
+  
+  profile    NetworkProfile @relation(fields: [hid], references: [hid], onDelete: Cascade)
+  
+  @@index([hid], map: "idx_network_session_hid")
+  @@index([sessionId], map: "idx_network_session_session_id")
+  @@index([loungeId], map: "idx_network_session_lounge_id")
+  @@map("network_sessions")
+}
+
+model NetworkSessionNote {
+  id         String        @id @default(cuid())
+  hid        String
+  noteId     String        @unique @map("note_id") // Link to SessionNote.id
+  loungeId   String        @map("lounge_id")
+  staffId    String?       @map("staff_id")
+  noteText   String        @map("note_text")
+  shareScope String        @default("lounge") @map("share_scope") // lounge | network
+  tags       Json?         // Behavioral tags
+  createdAt  DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  
+  profile    NetworkProfile @relation(fields: [hid], references: [hid], onDelete: Cascade)
+  
+  @@index([hid], map: "idx_network_session_note_hid")
+  @@index([loungeId], map: "idx_network_session_note_lounge_id")
+  @@index([shareScope], map: "idx_network_session_note_scope")
+  @@map("network_session_notes")
+}
+
+model NetworkPIILink {
+  id        String        @id @default(cuid())
+  hid       String
+  piiType   String        @map("pii_type") // phone | email | qr_token
+  piiHash   String        @map("pii_hash") // Hashed identifier
+  verified  Boolean       @default(false)
+  verifiedAt DateTime?    @map("verified_at") @db.Timestamptz(6)
+  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  
+  profile   NetworkProfile @relation(fields: [hid], references: [hid], onDelete: Cascade)
+  
+  @@unique([piiType, piiHash], map: "idx_network_pii_unique")
+  @@index([hid], map: "idx_network_pii_hid")
+  @@index([piiHash], map: "idx_network_pii_hash")
+  @@map("network_pii_links")
 }

@@ -1,20 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createGhostLogEntry } from '../../../../lib/ghost-log';
-
-// In-memory storage for session notes (in production, this would be a database)
-let sessionNotes: Array<{
-  id: string;
-  session_id: string;
-  note: string;
-  visibility: 'private' | 'public';
-  created_at: string;
-  created_by?: string;
-}> = [];
+import { prisma } from '../../../../lib/prisma';
+import { resolveHID } from '../../../../lib/hid/resolver';
+import { syncNoteToNetwork } from '../../../../lib/profiles/network';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { session_id, note, visibility = 'private', created_by } = body;
+    const { 
+      session_id, 
+      note, 
+      visibility = 'private',
+      share_scope = 'lounge', // NEW: lounge | network
+      created_by,
+      customer_phone, // NEW: for HID resolution
+      customer_email  // NEW: for HID resolution
+    } = body;
 
     // Validate required fields
     if (!session_id) {
@@ -25,17 +26,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Note is required' }, { status: 400 });
     }
 
-    // Create session note
-    const sessionNote = {
-      id: `note_${Date.now()}`,
-      session_id,
-      note,
-      visibility,
-      created_at: new Date().toISOString(),
-      created_by
-    };
+    // Validate share_scope
+    if (share_scope !== 'lounge' && share_scope !== 'network') {
+      return NextResponse.json({ error: 'share_scope must be "lounge" or "network"' }, { status: 400 });
+    }
 
-    sessionNotes.push(sessionNote);
+    // Create session note in database
+    const sessionNote = await prisma.sessionNote.create({
+      data: {
+        sessionId: session_id,
+        noteType: 'STAFF_OBSERVATION',
+        text: note,
+        createdBy: created_by || 'system',
+        shareScope: share_scope,
+      },
+    });
 
     // Log session note creation
     await createGhostLogEntry({
@@ -44,13 +49,53 @@ export async function POST(req: NextRequest) {
       session_id,
       note,
       visibility,
+      share_scope,
       created_by,
-      timestamp: sessionNote.created_at
+      timestamp: sessionNote.createdAt.toISOString()
     });
+
+    // NEW: Sync to network if network-scoped and customer identified
+    if (share_scope === 'network' && (customer_phone || customer_email)) {
+      try {
+        const hidResult = await resolveHID({
+          phone: customer_phone,
+          email: customer_email,
+        });
+
+        if (hidResult.hid) {
+          // Get session to find loungeId
+          const session = await prisma.session.findUnique({
+            where: { id: session_id },
+            select: { loungeId: true },
+          });
+
+          if (session) {
+            await syncNoteToNetwork(
+              sessionNote.id,
+              hidResult.hid,
+              session.loungeId,
+              created_by || 'system',
+              note,
+              share_scope
+            );
+          }
+        }
+      } catch (error) {
+        console.error('[Session Notes] Failed to sync to network:', error);
+        // Don't fail the request, just log
+      }
+    }
 
     return NextResponse.json({ 
       success: true, 
-      note: sessionNote,
+      note: {
+        id: sessionNote.id,
+        session_id: sessionNote.sessionId,
+        note: sessionNote.text,
+        share_scope: sessionNote.shareScope,
+        created_by: sessionNote.createdBy,
+        created_at: sessionNote.createdAt.toISOString(),
+      },
       message: 'Session note created successfully'
     });
 
@@ -64,15 +109,31 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const session_id = searchParams.get('session_id');
+    const scope = searchParams.get('scope') as 'lounge' | 'network' | null;
 
     if (!session_id) {
       return NextResponse.json({ error: 'Session ID is required' }, { status: 400 });
     }
 
-    const notes = sessionNotes.filter(note => note.session_id === session_id);
+    // Get notes from database
+    const notes = await prisma.sessionNote.findMany({
+      where: {
+        sessionId: session_id,
+        ...(scope === 'network' ? { shareScope: 'network' } : {}),
+      },
+      orderBy: { createdAt: 'desc' },
+    });
 
-    return NextResponse.json({ notes });
-
+    return NextResponse.json({ 
+      notes: notes.map(note => ({
+        id: note.id,
+        session_id: note.sessionId,
+        note: note.text,
+        share_scope: note.shareScope,
+        created_by: note.createdBy,
+        created_at: note.createdAt.toISOString(),
+      }))
+    });
   } catch (error) {
     console.error('Error retrieving session notes:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

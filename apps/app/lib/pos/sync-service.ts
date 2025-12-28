@@ -2,6 +2,8 @@ import { prisma } from '../db';
 import { SquareAdapter } from './square';
 import { ToastAdapter } from './toast';
 import { CloverAdapter } from './clover';
+import { resolveHID } from '../hid/resolver';
+import { syncSessionToNetwork } from '../profiles/network';
 
 export interface PosSyncResult {
   success: boolean;
@@ -106,6 +108,30 @@ export class PosSyncService {
             });
 
             syncedCount++;
+
+            // NEW: Resolve HID and sync to network if customer identified
+            if (session.customerPhone || session.customerRef) {
+              try {
+                const hidResult = await resolveHID({
+                  phone: session.customerPhone || undefined,
+                  email: session.customerRef?.includes('@') ? session.customerRef : undefined,
+                });
+
+                if (hidResult.hid) {
+                  await syncSessionToNetwork(
+                    session.id,
+                    hidResult.hid,
+                    session.loungeId,
+                    this.extractSessionItems(session),
+                    session.priceCents || undefined,
+                    posResult.ticketId
+                  );
+                }
+              } catch (error) {
+                console.error(`[POS Sync] Failed to sync session ${session.id} to network:`, error);
+                // Don't fail the sync, just log
+              }
+            }
 
             // Auto-reconcile if enabled
             if (autoReconcile && session.paymentIntent) {

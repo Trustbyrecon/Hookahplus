@@ -66,3 +66,7 @@ export const getAppUrl = (): string => {
 export const getGuestUrl = (): string => {
   return getEnvVar('NEXT_PUBLIC_GUEST_URL', 'https://placeholder-guest.vercel.app');
 };
+
+export const getHIDSalt = (): string => {
+  return getEnvVar('HID_SALT', 'hookahplus-network-salt-2025');
+};
