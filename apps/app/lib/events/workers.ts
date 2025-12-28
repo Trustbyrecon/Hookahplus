@@ -8,6 +8,7 @@
 import { PrismaClient } from '@prisma/client';
 import { EventMessage, EventHandler } from './types';
 import { eventQueue } from './queue';
+import { logKtl4Event } from '../ktl4-ghostlog';
 
 const prisma = new PrismaClient();
 
