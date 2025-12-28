@@ -157,6 +157,36 @@ export default function CampaignsPage() {
     }
   };
 
+  const loadLoyaltyData = async () => {
+    try {
+      setLoyaltyLoading(true);
+      const params = new URLSearchParams();
+      if (loungeId) params.append('loungeId', loungeId);
+
+      // Load tiers
+      const tiersResponse = await fetch(`/api/loyalty/tiers?${params.toString()}`);
+      if (tiersResponse.ok) {
+        const tiersData = await tiersResponse.json();
+        if (tiersData.success) {
+          setLoyaltyTiers(tiersData.tiers || []);
+        }
+      }
+
+      // Load rewards
+      const rewardsResponse = await fetch(`/api/loyalty/rewards?${params.toString()}`);
+      if (rewardsResponse.ok) {
+        const rewardsData = await rewardsResponse.json();
+        if (rewardsData.success) {
+          setLoyaltyRewards(rewardsData.rewards || []);
+        }
+      }
+    } catch (err) {
+      console.error('Error loading loyalty data:', err);
+    } finally {
+      setLoyaltyLoading(false);
+    }
+  };
+
   const [newCampaign, setNewCampaign] = useState({
     name: '',
     type: 'promotional' as Campaign['type'],
@@ -443,6 +473,117 @@ export default function CampaignsPage() {
     } catch (err) {
       console.error('Error updating campaign:', err);
       alert(err instanceof Error ? err.message : 'Failed to update campaign');
+    }
+  };
+
+  const handleCreateTier = async () => {
+    if (!newTier.tierName.trim()) {
+      alert('Please enter a tier name');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/loyalty/tiers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          loungeId,
+          tierName: newTier.tierName,
+          minPoints: newTier.minPoints,
+          maxPoints: newTier.maxPoints || null,
+          discountPercent: newTier.discountPercent,
+          benefits: newTier.benefits ? newTier.benefits.split(',').map(b => b.trim()) : [],
+          pointsPerDollar: newTier.pointsPerDollar,
+          displayOrder: newTier.displayOrder
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to create tier');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        // Reload tiers
+        await loadLoyaltyData();
+        setNewTier({
+          tierName: 'bronze',
+          minPoints: 0,
+          maxPoints: '',
+          discountPercent: 0,
+          pointsPerDollar: 1,
+          benefits: '',
+          displayOrder: 0
+        });
+        setShowTierModal(false);
+        setEditingTier(null);
+      }
+    } catch (err) {
+      console.error('Error creating tier:', err);
+      alert(err instanceof Error ? err.message : 'Failed to create tier');
+    }
+  };
+
+  const handleCreateReward = async () => {
+    if (!newReward.name.trim()) {
+      alert('Please enter a reward name');
+      return;
+    }
+
+    if (!newReward.pointsCost) {
+      alert('Please enter points cost');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/loyalty/rewards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          loungeId,
+          tierId: newReward.tierId || null,
+          name: newReward.name,
+          description: newReward.description || null,
+          pointsCost: newReward.pointsCost,
+          discountPercent: newReward.discountPercent || null,
+          discountAmountCents: newReward.discountAmountCents || null,
+          rewardType: newReward.rewardType,
+          maxRedemptions: newReward.maxRedemptions || null,
+          validFrom: newReward.validFrom || null,
+          validUntil: newReward.validUntil || null,
+          displayOrder: newReward.displayOrder
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to create reward');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        // Reload rewards
+        await loadLoyaltyData();
+        setNewReward({
+          name: '',
+          description: '',
+          tierId: '',
+          pointsCost: 0,
+          discountPercent: '',
+          discountAmountCents: '',
+          rewardType: 'discount',
+          maxRedemptions: '',
+          validFrom: '',
+          validUntil: '',
+          displayOrder: 0
+        });
+        setShowRewardModal(false);
+        setEditingReward(null);
+      }
+    } catch (err) {
+      console.error('Error creating reward:', err);
+      alert(err instanceof Error ? err.message : 'Failed to create reward');
     }
   };
 
@@ -1353,6 +1494,7 @@ export default function CampaignsPage() {
                       startDate: '',
                       endDate: '',
                       channels: [],
+                      qrPrefix: '', // QR prefix for tracking
                       percentageOff: 10,
                       firstXCustomers: 50,
                       buyXGetY: { buy: 2, get: 1 },

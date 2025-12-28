@@ -1,4 +1,5 @@
 import { prisma } from '../db';
+import { Prisma } from '@prisma/client';
 import { encodeCyclicalTime, calculateTimeSimilarity, getTimePeriodLabels, type CyclicalTimeFeatures } from '../utils/cyclical-time';
 
 export interface FlavorRecommendation {
@@ -138,7 +139,7 @@ export class AIRecommendationEngine {
 
       // Convert to recommendations with time-weighted confidence
       const totalSessions = pastSessions.length;
-      for (const [flavorId, { count, timeWeight }] of flavorScores.entries()) {
+      Array.from(flavorScores.entries()).forEach(([flavorId, { count, timeWeight }]) => {
         const baseConfidence = Math.min(0.9, count / totalSessions);
         const timeAdjustedConfidence = baseConfidence * timeWeight;
         
@@ -154,7 +155,7 @@ export class AIRecommendationEngine {
             category: 'history'
           });
         }
-      }
+      });
     } catch (error) {
       console.error('[AI Recommendations] Error getting history recommendations:', error);
     }
@@ -179,9 +180,9 @@ export class AIRecommendationEngine {
       const similarCustomers = await prisma.session.findMany({
         where: {
           loungeId: context.loungeId,
-          flavorMix: { not: null },
+          flavorMix: { not: Prisma.JsonNull },
           paymentStatus: 'succeeded',
-          customerPhone: { not: context.customerPhone || null }
+          customerPhone: context.customerPhone ? { not: context.customerPhone } : undefined
         },
         orderBy: { createdAt: 'desc' },
         take: 100
@@ -212,7 +213,7 @@ export class AIRecommendationEngine {
 
       // Convert to recommendations
       const maxScore = Math.max(...Array.from(flavorScores.values()), 1);
-      for (const [flavorId, score] of flavorScores.entries()) {
+      Array.from(flavorScores.entries()).forEach(([flavorId, score]) => {
         const confidence = Math.min(0.8, score / maxScore);
         if (confidence > 0.2) {
           recommendations.push({
@@ -223,7 +224,7 @@ export class AIRecommendationEngine {
             category: 'collaborative'
           });
         }
-      }
+      });
     } catch (error) {
       console.error('[AI Recommendations] Error getting collaborative recommendations:', error);
     }
@@ -245,7 +246,7 @@ export class AIRecommendationEngine {
       const recentSessions = await prisma.session.findMany({
         where: {
           loungeId: context.loungeId,
-          flavorMix: { not: null },
+          flavorMix: { not: Prisma.JsonNull },
           paymentStatus: 'succeeded',
           createdAt: {
             gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
@@ -287,7 +288,7 @@ export class AIRecommendationEngine {
 
       // Convert to recommendations with time-weighted confidence
       const maxFrequency = Math.max(...Array.from(flavorScores.values()).map(s => s.frequency), 1);
-      for (const [flavorId, { frequency, timeWeight }] of flavorScores.entries()) {
+      Array.from(flavorScores.entries()).forEach(([flavorId, { frequency, timeWeight }]) => {
         const baseConfidence = Math.min(0.7, frequency / maxFrequency);
         const timeAdjustedConfidence = baseConfidence * timeWeight;
         
@@ -300,7 +301,7 @@ export class AIRecommendationEngine {
             category: 'popular'
           });
         }
-      }
+      });
     } catch (error) {
       console.error('[AI Recommendations] Error getting popular recommendations:', error);
     }
@@ -322,7 +323,7 @@ export class AIRecommendationEngine {
       const sessions = await prisma.session.findMany({
         where: {
           loungeId,
-          flavorMix: { not: null },
+          flavorMix: { not: Prisma.JsonNull },
           paymentStatus: 'succeeded'
         },
         take: 500
@@ -351,7 +352,7 @@ export class AIRecommendationEngine {
 
       // Convert to recommendations
       const maxScore = Math.max(...Array.from(pairingScores.values()), 1);
-      for (const [flavorId, score] of pairingScores.entries()) {
+      Array.from(pairingScores.entries()).forEach(([flavorId, score]) => {
         const confidence = Math.min(0.75, score / maxScore);
         if (confidence > 0.2) {
           recommendations.push({
@@ -362,7 +363,7 @@ export class AIRecommendationEngine {
             category: 'compatibility'
           });
         }
-      }
+      });
     } catch (error) {
       console.error('[AI Recommendations] Error getting compatibility recommendations:', error);
     }
@@ -382,7 +383,7 @@ export class AIRecommendationEngine {
         for (const savedMix of context.preferences.savedMixes) {
           recommendations.push({
             flavors: savedMix.flavors,
-            name: savedMix.name || 'Your Saved Mix',
+            name: (savedMix as any).name || 'Your Saved Mix',
             confidence: 0.9,
             reason: 'Your saved mix'
           });
@@ -413,7 +414,7 @@ export class AIRecommendationEngine {
       const sessions = await prisma.session.findMany({
         where: {
           loungeId: context.loungeId,
-          flavorMix: { not: null },
+          flavorMix: { not: Prisma.JsonNull },
           paymentStatus: 'succeeded'
         },
         orderBy: { createdAt: 'desc' },
@@ -440,7 +441,7 @@ export class AIRecommendationEngine {
 
       // Convert to recommendations
       const maxCount = Math.max(...Array.from(mixFrequency.values()).map(m => m.count), 1);
-      for (const [mixKey, mixData] of mixFrequency.entries()) {
+      Array.from(mixFrequency.entries()).forEach(([mixKey, mixData]) => {
         if (mixData.count >= 3) { // Only recommend if ordered at least 3 times
           const confidence = Math.min(0.7, mixData.count / maxCount);
           recommendations.push({
@@ -450,7 +451,7 @@ export class AIRecommendationEngine {
             reason: `Ordered ${mixData.count} times by other customers`
           });
         }
-      }
+      });
     } catch (error) {
       console.error('[AI Recommendations] Error getting popular mixes:', error);
     }
@@ -477,7 +478,7 @@ export class AIRecommendationEngine {
       const similarTimeSessions = await prisma.session.findMany({
         where: {
           loungeId: context.loungeId,
-          flavorMix: { not: null },
+          flavorMix: { not: Prisma.JsonNull },
           paymentStatus: 'succeeded',
           createdAt: {
             gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) // Last 90 days
@@ -512,7 +513,7 @@ export class AIRecommendationEngine {
 
       // Convert to recommendations
       const maxScore = Math.max(...Array.from(flavorTimeScores.values()).map(s => s.score / s.count), 1);
-      for (const [flavorId, { score, count }] of flavorTimeScores.entries()) {
+      Array.from(flavorTimeScores.entries()).forEach(([flavorId, { score, count }]) => {
         const avgSimilarity = score / count;
         const confidence = Math.min(0.65, avgSimilarity * 0.8);
         
@@ -529,7 +530,7 @@ export class AIRecommendationEngine {
             category: 'time_based'
           });
         }
-      }
+      });
     } catch (error) {
       console.error('[AI Recommendations] Error getting time-based recommendations:', error);
     }
