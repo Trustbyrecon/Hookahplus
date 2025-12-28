@@ -1,4 +1,5 @@
 import { prisma } from '../db';
+import { Prisma } from '@prisma/client';
 import { encodeCyclicalTime, calculateTimeSimilarity, type CyclicalTimeFeatures } from '../utils/cyclical-time';
 
 export interface StaffingRecommendation {
@@ -136,7 +137,7 @@ export class PredictiveAnalyticsEngine {
           loungeId,
           ...(tenantId ? { tenantId } : {}),
           paymentStatus: 'succeeded',
-          flavorMix: { not: null },
+          flavorMix: { not: Prisma.JsonNull },
           createdAt: { gte: thirtyDaysAgo }
         },
         take: 500
@@ -156,7 +157,7 @@ export class PredictiveAnalyticsEngine {
 
       // Calculate average daily usage
       const daysOfData = 30;
-      for (const [flavorId, totalUsage] of flavorUsage.entries()) {
+      Array.from(flavorUsage.entries()).forEach(([flavorId, totalUsage]) => {
         const avgDailyUsage = totalUsage / daysOfData;
         const predictedDemand = Math.ceil(avgDailyUsage * 7); // Next 7 days
 
@@ -176,7 +177,7 @@ export class PredictiveAnalyticsEngine {
           confidence: 70,
           daysUntilOutOfStock: undefined // Would need current stock data
         });
-      }
+      });
 
       // Sort by predicted demand (highest first)
       forecasts.sort((a, b) => b.predictedDemand - a.predictedDemand);
@@ -222,10 +223,10 @@ export class PredictiveAnalyticsEngine {
       }
 
       // Predict for each customer
-      for (const [phone, customerSessionsList] of customerSessions.entries()) {
-        if (customerSessionsList.length < 2) continue; // Need at least 2 visits for prediction
+      Array.from(customerSessions.entries()).forEach(([phone, customerSessionsList]) => {
+        if (customerSessionsList.length < 2) return; // Need at least 2 visits for prediction
 
-        const sortedSessions = customerSessionsList.sort((a, b) => 
+        const sortedSessions = customerSessionsList.sort((a: any, b: any) => 
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
         const lastVisit = sortedSessions[0];
@@ -256,8 +257,8 @@ export class PredictiveAnalyticsEngine {
         }
 
         // Calculate predicted spend (average of last 3 visits)
-        const recentSpends = sortedSessions.slice(0, 3).map(s => s.priceCents || 0);
-        const predictedSpend = recentSpends.reduce((a, b) => a + b, 0) / recentSpends.length;
+        const recentSpends = sortedSessions.slice(0, 3).map((s: any) => s.priceCents || 0);
+        const predictedSpend = recentSpends.reduce((a: number, b: number) => a + b, 0) / recentSpends.length;
 
         // Determine churn risk
         let churnRisk: 'low' | 'medium' | 'high' = 'low';
@@ -291,7 +292,7 @@ export class PredictiveAnalyticsEngine {
             `Visit frequency: ${customerSessionsList.length} visits in 90 days`
           ]
         });
-      }
+      });
 
       // Sort by churn risk (high first) or visit probability
       predictions.sort((a, b) => {

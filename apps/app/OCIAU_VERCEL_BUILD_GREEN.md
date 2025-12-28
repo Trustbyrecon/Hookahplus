@@ -169,8 +169,19 @@ The Next.js application builds successfully in Vercel without TypeScript compila
 ### Verification
 
 - ✅ All TypeScript errors in `lib/ai-recommendations/engine.ts` resolved
-- ✅ No linter errors in engine.ts
+- ✅ All TypeScript errors in `lib/analytics/predictive.ts` resolved
+- ✅ No linter errors in either file
 - ⚠️ Other files still have TypeScript errors (not part of this task scope)
+
+### Additional Fix: predictive.ts
+**New Error Found**: Vercel build failed on `lib/analytics/predictive.ts:139` with same Prisma null handling issue.
+
+**Fixes Applied**:
+1. Added `import { Prisma } from '@prisma/client'`
+2. Fixed Prisma null handling (line 139): `{ not: null }` → `{ not: Prisma.JsonNull }`
+3. Fixed Map iterator (line 159): `for...of` → `Array.from().forEach()`
+4. Fixed Map iterator (line 225): `for...of` → `Array.from().forEach()`
+5. Fixed implicit any types (lines 228, 229, 259, 260): Added explicit type annotations
 
 ### Next Steps
 
