@@ -187,8 +187,8 @@
 > "No disruption. No replacement. Just completion."
 
 **Internal Links:**
-- Link to integration guide: `/integration/square-setup`
-- Link to API docs: `/docs/integration`
+- Link to integration guide: `/integrations/square`
+- Link to API docs: `/docs`
 
 ---
 
@@ -212,8 +212,8 @@
 > "Square solved payments. Hookah+ solves operations."
 
 **Internal Links:**
-- Link to case studies: `/case-studies`
-- Link to ROI calculator: `/roi-calculator`
+- Link to case studies: `/results/case-study`
+- Link to ROI calculator: `/resources/roi-template`
 
 ---
 
@@ -321,7 +321,7 @@ A: Yes. [Link to free trial] Start a free trial. No credit card required.
    - Link from: "Shift Continuity" section
    - Anchor text: "Discover shift handoff"
 
-9. **Square Integration Guide:** `/integration/square-setup`
+9. **Square Integration Guide:** `/integrations/square`
    - Link from: "Integration Details" section
    - Anchor text: "Set up Square integration"
 
@@ -329,10 +329,10 @@ A: Yes. [Link to free trial] Start a free trial. No credit card required.
 
 10. **Pricing:** `/pricing`
 11. **Demo:** `/demo`
-12. **Case Studies:** `/case-studies`
+12. **Case Studies:** `/results/case-study`
 13. **FAQ:** `/faq`
 14. **Contact:** `/contact`
-15. **ROI Calculator:** `/roi-calculator`
+15. **ROI Calculator:** `/resources/roi-template`
 
 ---
 

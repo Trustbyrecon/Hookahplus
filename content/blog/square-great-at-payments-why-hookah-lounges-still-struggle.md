@@ -187,7 +187,7 @@ If you're using Square (or planning to), you've solved the payment problem. Now 
 
 **Hookah+ works with Square** — it doesn't replace it. It completes it.
 
-[Learn how Hookah+ integrates with Square →](/square-integration)
+[Learn how Hookah+ integrates with Square →](/works-with-square)
 
 [See how session management works →](/session-management)
 
