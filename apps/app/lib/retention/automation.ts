@@ -172,7 +172,7 @@ export class RetentionAutomationEngine {
       }
 
       // Check each customer
-      for (const [phone, customerSessionsList] of customerSessions.entries()) {
+      Array.from(customerSessions.entries()).forEach(([phone, customerSessionsList]) => {
         const sortedSessions = customerSessionsList.sort((a, b) => 
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
@@ -195,7 +195,7 @@ export class RetentionAutomationEngine {
             }
           });
         }
-      }
+      });
     } catch (error) {
       console.error('[Retention Automation] Error identifying churn risk:', error);
     }
@@ -287,7 +287,7 @@ export class RetentionAutomationEngine {
         }
       }
 
-      for (const [phone, visitCount] of customerVisitCount.entries()) {
+      Array.from(customerVisitCount.entries()).forEach(([phone, visitCount]) => {
         if (visitCount <= 2) {
           triggers.push({
             type: 're_engagement',
@@ -300,7 +300,7 @@ export class RetentionAutomationEngine {
             }
           });
         }
-      }
+      });
     } catch (error) {
       console.error('[Retention Automation] Error identifying re-engagement:', error);
     }

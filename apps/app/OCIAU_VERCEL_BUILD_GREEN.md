@@ -182,6 +182,7 @@ The Next.js application builds successfully in Vercel without TypeScript compila
 - ✅ All TypeScript errors in `lib/pricing-snapshots.ts` resolved
 - ✅ All TypeScript errors in `lib/pricing/dynamic.ts` resolved
 - ✅ All TypeScript errors in `lib/rate-limit-redis.ts` resolved
+- ✅ All TypeScript errors in `lib/retention/automation.ts` resolved
 - ✅ No linter errors in any of the fixed files
 - ⚠️ Other files still have TypeScript errors (not part of this task scope)
 
@@ -292,6 +293,13 @@ The Next.js application builds successfully in Vercel without TypeScript compila
 
 **Fixes Applied**:
 1. Fixed Map iteration (line 105): Changed `for...of` loop to `Array.from(memoryStore.entries()).forEach()` for es5 compatibility
+
+### Additional Fix: retention/automation.ts
+**New Error Found**: Vercel build failed on `lib/retention/automation.ts:175` and `290` - Map iteration requires downlevelIteration or es2015+ target.
+
+**Fixes Applied**:
+1. Fixed Map iteration (line 175): Changed `for...of` loop to `Array.from(customerSessions.entries()).forEach()` for es5 compatibility
+2. Fixed Map iteration (line 290): Changed `for...of` loop to `Array.from(customerVisitCount.entries()).forEach()` for es5 compatibility
 
 ### Next Steps
 
