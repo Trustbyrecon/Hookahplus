@@ -174,6 +174,7 @@ The Next.js application builds successfully in Vercel without TypeScript compila
 - ✅ All TypeScript errors in `lib/hid/resolver.ts` resolved
 - ✅ All TypeScript errors in `lib/ktl4-health-checker.ts` resolved
 - ✅ All TypeScript errors in `lib/newsletterPersonalization.ts` resolved
+- ✅ All TypeScript errors in `lib/pos/clover.ts` resolved
 - ✅ No linter errors in any of the fixed files
 - ⚠️ Other files still have TypeScript errors (not part of this task scope)
 
@@ -218,6 +219,13 @@ The Next.js application builds successfully in Vercel without TypeScript compila
 
 **Fixes Applied**:
 1. Fixed Set iteration (line 177): Changed `[...new Set(interests)]` → `Array.from(new Set(interests))` for es5 compatibility
+
+### Additional Fix: pos/clover.ts
+**New Error Found**: Vercel build failed on `lib/pos/clover.ts:139` - `posTicket.amountCents` is possibly null.
+
+**Fixes Applied**:
+1. Fixed null check (line 139): Changed `posTicket.amountCents` → `(posTicket.amountCents || 0)` to handle null values
+2. Fixed null check (line 165): Changed `posTicket.amountCents` → `(posTicket.amountCents || 0)` to handle null values
 
 ### Next Steps
 

@@ -136,7 +136,7 @@ export class CloverAdapter implements PosAdapter {
 
       if (stripeChargeId) {
         const charge = await stripe.charges.retrieve(stripeChargeId);
-        const amountDiff = Math.abs(charge.amount - posTicket.amountCents);
+        const amountDiff = Math.abs(charge.amount - (posTicket.amountCents || 0));
 
         if (amountDiff <= 10) {
           return {
@@ -162,7 +162,7 @@ export class CloverAdapter implements PosAdapter {
       for (const charge of charges.data) {
         if (!charge.paid) continue;
 
-        const amountDiff = Math.abs(charge.amount - posTicket.amountCents);
+        const amountDiff = Math.abs(charge.amount - (posTicket.amountCents || 0));
         if (amountDiff <= 10) {
           return {
             posTicketId,
