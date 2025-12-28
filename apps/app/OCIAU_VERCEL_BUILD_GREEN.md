@@ -345,11 +345,15 @@ The Next.js application builds successfully in Vercel without TypeScript compila
 **New Error Found**: Vercel build failed during static page generation:
 - `/api/square/oauth/callback` - Route couldn't be rendered statically because it used `request.url` (malformed URL in redirect)
 - `/square/connect` and `/square/settings` - `useSearchParams()` should be wrapped in a suspense boundary
+- `/square/settings` - Duplicate export default function `SquareSettingsPage` (function defined twice)
 
 **Fixes Applied**:
 1. Fixed OAuth callback route (route.ts): Added `export const dynamic = 'force-dynamic'` to mark the route as dynamic and prevent static generation, since it uses `request.url` and `cookies()`.
 2. Fixed Square connect page (page.tsx): Wrapped `useSearchParams()` usage in a `Suspense` boundary by extracting the content into `SquareConnectContent` component and wrapping it in the default export with Suspense.
-3. Fixed Square settings page (page.tsx): Wrapped `useSearchParams()` usage in a `Suspense` boundary by extracting the content into `SquareSettingsContent` component and wrapping it in the default export with Suspense.
+3. Fixed Square settings page (page.tsx): 
+   - Renamed first function from `export default function SquareSettingsPage()` to `function SquareSettingsContent()` to avoid duplicate export
+   - Added `Suspense` import
+   - Wrapped `useSearchParams()` usage in a `Suspense` boundary by extracting the content into `SquareSettingsContent` component and wrapping it in the default export with Suspense.
 
 ### Next Steps
 

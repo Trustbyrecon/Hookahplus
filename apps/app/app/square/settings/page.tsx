@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { 
   CheckCircle, 
@@ -28,7 +28,7 @@ interface SquareStatus {
   createdAt?: string;
 }
 
-export default function SquareSettingsPage() {
+function SquareSettingsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [loungeId] = useState('HOPE_GLOBAL_FORUM'); // Default lounge ID
