@@ -1,4 +1,5 @@
 import { prisma } from '../prisma';
+import { Prisma } from '@prisma/client';
 import { createHash, randomBytes } from 'crypto';
 
 // Salt for hashing (store in env in production)
@@ -288,7 +289,7 @@ export async function mergeProfiles(
             hid: primaryHID,
             badgeCode: badge.badgeCode,
             awardedAt: badge.awardedAt,
-            meta: badge.meta,
+            meta: badge.meta === null ? Prisma.JsonNull : badge.meta,
           },
         });
       }
@@ -304,14 +305,14 @@ export async function mergeProfiles(
         where: { hid: primaryHID },
         create: {
           hid: primaryHID,
-          topFlavors: secondaryPrefs.topFlavors,
-          flavorVector: secondaryPrefs.flavorVector,
-          devicePrefs: secondaryPrefs.devicePrefs,
+          topFlavors: secondaryPrefs.topFlavors === null ? Prisma.JsonNull : secondaryPrefs.topFlavors,
+          flavorVector: secondaryPrefs.flavorVector, // String field, can be null
+          devicePrefs: secondaryPrefs.devicePrefs === null ? Prisma.JsonNull : secondaryPrefs.devicePrefs,
         },
         update: {
-          topFlavors: secondaryPrefs.topFlavors,
-          flavorVector: secondaryPrefs.flavorVector,
-          devicePrefs: secondaryPrefs.devicePrefs,
+          topFlavors: secondaryPrefs.topFlavors === null ? Prisma.JsonNull : secondaryPrefs.topFlavors,
+          flavorVector: secondaryPrefs.flavorVector, // String field, can be null
+          devicePrefs: secondaryPrefs.devicePrefs === null ? Prisma.JsonNull : secondaryPrefs.devicePrefs,
         },
       });
     }

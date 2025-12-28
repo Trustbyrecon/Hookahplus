@@ -171,6 +171,7 @@ The Next.js application builds successfully in Vercel without TypeScript compila
 - ✅ All TypeScript errors in `lib/ai-recommendations/engine.ts` resolved
 - ✅ All TypeScript errors in `lib/analytics/predictive.ts` resolved
 - ✅ All TypeScript errors in `lib/events/workers.ts` resolved
+- ✅ All TypeScript errors in `lib/hid/resolver.ts` resolved
 - ✅ No linter errors in any of the fixed files
 - ⚠️ Other files still have TypeScript errors (not part of this task scope)
 
@@ -191,6 +192,16 @@ The Next.js application builds successfully in Vercel without TypeScript compila
 1. Added missing import: `import { logKtl4Event } from '../ktl4-ghostlog'`
 2. Fixed flowName (line 121): Changed `'session_completion'` → `'session_lifecycle'` (valid flow name)
 3. Fixed property error (line 124): Moved `loungeId` from top-level to `details` object (not a valid Ktl4Event property)
+
+### Additional Fix: hid/resolver.ts
+**New Error Found**: Vercel build failed on `lib/hid/resolver.ts:291` - JsonValue type not assignable to Prisma input types.
+
+**Fixes Applied**:
+1. Added Prisma import: `import { Prisma } from '@prisma/client'`
+2. Fixed meta field (line 291): Handle null with `badge.meta === null ? Prisma.JsonNull : badge.meta`
+3. Fixed topFlavors field (lines 308, 313): Handle null with `Prisma.JsonNull` for JSON fields
+4. Fixed flavorVector field (lines 309, 314): Keep as-is (String field, not JSON)
+5. Fixed devicePrefs field (lines 310, 315): Handle null with `Prisma.JsonNull` for JSON fields
 
 ### Next Steps
 
