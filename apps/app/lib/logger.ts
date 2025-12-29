@@ -11,5 +11,6 @@
  */
 
 // Re-export from Pino logger for backward compatibility
-export { LogLevel, LogContext, Logger, logger, log } from './logger-pino';
+export type { LogContext } from './logger-pino';
+export { LogLevel, Logger, logger, log } from './logger-pino';
 
