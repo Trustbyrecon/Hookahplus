@@ -22,6 +22,10 @@ Sentry.init({
       // Track HTTP requests
       tracing: true,
     }),
+    // Console logging integration - automatically capture console.warn and console.error
+    Sentry.consoleIntegration({
+      levels: ['warn', 'error'], // Server-side: only warnings and errors
+    }),
   ],
   
   // Filter out noise and health checks

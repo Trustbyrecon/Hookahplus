@@ -1,5 +1,6 @@
 import { reflexScoreAudit, scoreActions } from './reflexScoreAudit';
 import { getRequestId } from './requestContext';
+import { instrumentUIAction, instrumentAPICall, instrumentDatabaseOperation } from './sentry-instrumentation';
 
 // Conditionally import Sentry only if DSN is configured
 let Sentry: typeof import('@sentry/nextjs') | null = null;
@@ -116,6 +117,60 @@ export class TelemetryService {
   }
 
   /**
+   * Track user actions with custom span instrumentation
+   * Use this for UI actions that need detailed tracing (button clicks, form submissions, etc.)
+   * 
+   * @param component - Component name
+   * @param action - Action name
+   * @param callback - Function to execute within the span
+   * @param metadata - Optional metadata
+   * @returns Result of the callback function
+   */
+  trackUserActionWithSpan<T>(
+    component: string,
+    action: string,
+    callback: (span: any) => T | Promise<T>,
+    metadata: Partial<TelemetryEvent['metadata']> = {}
+  ): T | Promise<T> {
+    return instrumentUIAction(
+      component,
+      action,
+      (span) => {
+        // Add metadata as span attributes
+        if (metadata.sessionId) span?.setAttribute('sessionId', metadata.sessionId);
+        if (metadata.userId) span?.setAttribute('userId', metadata.userId);
+        if (metadata.requestId) span?.setAttribute('requestId', metadata.requestId);
+        if (metadata.tableId) span?.setAttribute('tableId', metadata.tableId);
+        if (metadata.userRole) span?.setAttribute('userRole', metadata.userRole);
+
+        // Execute callback and track result
+        const result = callback(span);
+        
+        // Track the action
+        if (result instanceof Promise) {
+          return result.then((value) => {
+            this.trackUserAction(component, action, { success: true }, metadata);
+            return value;
+          }).catch((error) => {
+            this.trackError(component, action, error, {}, metadata);
+            throw error;
+          });
+        } else {
+          this.trackUserAction(component, action, { success: true }, metadata);
+          return result;
+        }
+      },
+      {
+        sessionId: metadata.sessionId,
+        userId: metadata.userId,
+        requestId: metadata.requestId,
+        tableId: metadata.tableId,
+        userRole: metadata.userRole,
+      }
+    );
+  }
+
+  /**
    * Track errors
    */
   trackError(
@@ -194,6 +249,125 @@ export class TelemetryService {
     // Calculate and record Reflex score for API calls
     const scores = this.calculateApiScore(endpoint, method, responseTime, statusCode, success);
     reflexScoreAudit.recordScore('api', `${method} ${endpoint}`, scores.overall, 100, scores, metadata);
+  }
+
+  /**
+   * Track API calls with custom span instrumentation
+   * Use this for fetch calls that need detailed tracing
+   * 
+   * @param endpoint - API endpoint
+   * @param method - HTTP method
+   * @param fetchFn - Function that returns a fetch Promise
+   * @param metadata - Optional metadata
+   * @returns Response from the fetch call
+   */
+  async trackApiCallWithSpan(
+    endpoint: string,
+    method: string,
+    fetchFn: () => Promise<Response>,
+    metadata: Partial<TelemetryEvent['metadata']> = {}
+  ): Promise<Response> {
+    return instrumentAPICall(
+      endpoint,
+      method,
+      async () => {
+        const startTime = Date.now();
+        try {
+          const response = await fetchFn();
+          const responseTime = Date.now() - startTime;
+          
+          // Track the API call
+          this.trackApiCall(
+            endpoint,
+            method,
+            responseTime,
+            response.status,
+            response.ok,
+            {},
+            metadata
+          );
+          
+          return response;
+        } catch (error) {
+          const responseTime = Date.now() - startTime;
+          
+          // Track error
+          this.trackError(
+            'api',
+            `${method} ${endpoint}`,
+            error instanceof Error ? error : new Error(String(error)),
+            { responseTime },
+            metadata
+          );
+          
+          throw error;
+        }
+      },
+      {
+        sessionId: metadata.sessionId,
+        userId: metadata.userId,
+        requestId: metadata.requestId,
+        tableId: metadata.tableId,
+        userRole: metadata.userRole,
+      }
+    );
+  }
+
+  /**
+   * Track database operations with custom span instrumentation
+   * Use this for database queries, transactions, etc.
+   * 
+   * @param operation - Database operation name (e.g., 'query', 'transaction')
+   * @param query - Query name or description
+   * @param callback - Function to execute within the span
+   * @param metadata - Optional metadata
+   * @returns Result of the callback function
+   */
+  async trackDatabaseOperationWithSpan<T>(
+    operation: string,
+    query: string,
+    callback: (span: any) => T | Promise<T>,
+    metadata: Partial<TelemetryEvent['metadata']> = {}
+  ): Promise<T> {
+    return instrumentDatabaseOperation(
+      operation,
+      query,
+      async (span) => {
+        // Add metadata as span attributes
+        if (metadata.sessionId) span?.setAttribute('sessionId', metadata.sessionId);
+        if (metadata.userId) span?.setAttribute('userId', metadata.userId);
+        if (metadata.requestId) span?.setAttribute('requestId', metadata.requestId);
+
+        const startTime = Date.now();
+        try {
+          const result = await callback(span);
+          const responseTime = Date.now() - startTime;
+          
+          // Track performance
+          this.trackPerformance('database', `${operation}.${query}`, responseTime, true, {}, metadata);
+          
+          return result;
+        } catch (error) {
+          const responseTime = Date.now() - startTime;
+          
+          // Track error
+          this.trackError(
+            'database',
+            `${operation}.${query}`,
+            error instanceof Error ? error : new Error(String(error)),
+            { responseTime },
+            metadata
+          );
+          
+          throw error;
+        }
+      },
+      {
+        sessionId: metadata.sessionId,
+        userId: metadata.userId,
+        requestId: metadata.requestId,
+      }
+    );
   }
 
   /**
