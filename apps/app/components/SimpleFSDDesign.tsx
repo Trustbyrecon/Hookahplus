@@ -53,6 +53,7 @@ import {
 } from '../lib/sessionStateMachine';
 import { getSessionHealth } from '../lib/session-utils';
 import { calculateSingleSessionTrustScore, getTrustScoreColor } from '../lib/trustScoring';
+import { getFeatureFlags } from '../lib/feature-flags';
 import SessionDetailModal from './SessionDetailModal';
 import GuestIntelligenceModal from './GuestIntelligenceModal';
 import ResolveEdgeCaseModal from './ResolveEdgeCaseModal';
@@ -134,6 +135,12 @@ export default function SimpleFSDDesign({
   className = '',
   isDemoMode = false
 }: SimpleFSDDesignProps) {
+  // Get feature flags for conditional rendering
+  const featureFlags = typeof window !== 'undefined' ? getFeatureFlags() : {
+    showTestSessionButton: false,
+    isDevelopment: false
+  };
+  
   const [activeTab, setActiveTab] = useState('overview');
   const [hoveredAction, setHoveredAction] = useState<string | null>(null);
   const [selectedSession, setSelectedSession] = useState<FireSession | null>(null);
@@ -1292,8 +1299,8 @@ export default function SimpleFSDDesign({
           <Plus className="w-4 h-4" />
           <span>New Session</span>
         </button>
-        {/* Test Session Button - Show in non-demo mode for testing */}
-        {!isDemoMode && (
+        {/* Test Session Button - Show only in development mode based on feature flags */}
+        {!isDemoMode && featureFlags.showTestSessionButton && (
           <button
             onClick={async () => {
               try {
@@ -1359,13 +1366,14 @@ export default function SimpleFSDDesign({
       {/* Tab Content */}
       {activeTab === 'overview' && (
         <div className="space-y-4">
-          {/* Quick Actions Bar - Workflow Actions */}
+          {/* Quick Actions Bar - Context-Aware Workflow Actions */}
           <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4 mb-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-zinc-300">Quick Actions - Night After Night Flow</h3>
               <span className="text-xs text-zinc-500">{sessions.length} session(s)</span>
             </div>
             <div className="flex flex-wrap gap-2">
+              {/* New Session - Always available */}
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent('openCreateSessionModal'))}
                 className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm"
@@ -1373,257 +1381,226 @@ export default function SimpleFSDDesign({
                 <Plus className="w-4 h-4" />
                 <span>New Session</span>
               </button>
-              <button
-                onClick={async () => {
-                  // Find sessions that need payment confirmation (NEW status only - PAID_CONFIRMED means already paid)
-                  // Note: 'PENDING' is not a SessionStatus - it gets mapped to 'NEW' or 'PAID_CONFIRMED' by getSessionStatus
-                  const unpaidSessions = sessions.filter(s => {
-                    const status = getSessionStatus(s);
-                    return status === 'NEW';
-                  });
+
+              {/* Context-Aware Actions - Only show when sessions are available */}
+              {(() => {
+                // Find first unpaid session
+                const unpaidSession = sessions.find(s => {
+                  const status = getSessionStatus(s);
+                  return status === 'NEW';
+                });
+
+                // Find first session ready for BOH prep
+                const prepSession = sessions.find(s => {
+                  const status = getSessionStatus(s);
+                  return status === 'NEW' || status === 'PAID_CONFIRMED';
+                });
+
+                // Find first session ready for FOH delivery
+                const deliverySession = sessions.find(s => {
+                  const status = getSessionStatus(s);
+                  return status === 'READY_FOR_DELIVERY';
+                });
+
+                // Find first session ready to light
+                const lightSession = sessions.find(s => {
+                  const status = getSessionStatus(s);
+                  return status === 'DELIVERED';
+                });
+
+                return (
+                  <>
+                    {/* Confirm Payment - Show if unpaid session exists */}
+                    {unpaidSession && (
+                      <button
+                        onClick={async () => {
+                          const amount = unpaidSession.amount || 3000;
                   
-                  if (unpaidSessions.length === 0) {
-                    alert('No sessions awaiting payment confirmation.\n\nAll sessions are either paid or already in progress.');
-                    return;
-                  }
-                  
-                  // For now, process first unpaid session (or "Sarah & Friends" in demo)
-                  let session = unpaidSessions[0];
-                  
-                  // In demo mode, prefer "Sarah & Friends" session if it exists
-                  if (isDemoMode) {
-                    const sarahSession = unpaidSessions.find(s => 
-                      s.customerName?.includes('Sarah') || s.customerName === 'Sarah & Friends'
-                    );
-                    if (sarahSession) {
-                      session = sarahSession;
-                    }
-                  }
-                  
-                  const amount = session.amount || 3000;
-                  
-                  // Demo mode: Mock payment confirmation and trigger NAN workflow
-                  if (isDemoMode) {
-                    try {
-                      const sessionId = session.id;
-                      if (!sessionId) {
-                        throw new Error('Session ID not found');
-                      }
-                      
-                      console.log('[Demo Mode] 🎭 Mocking payment confirmation for session:', sessionId);
-                      
-                      // Call demo-session complete API to trigger NAN workflow
-                      const response = await fetch('/api/demo-session/complete', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          sessionId: sessionId,
-                          amount: amount,
-                          flavorMix: session.flavor || session.flavorMix || 'Custom Mix',
-                          tableId: session.tableId,
-                          customerPhone: session.customerPhone,
-                        })
-                      });
-                      
-                      const data = await response.json();
-                      
-                      if (data.success) {
-                        alert(`✅ Payment confirmed (Demo Mode)!\n\nSession "${session.customerName || session.tableId}" is now ready for BOH prep → FOH delivery → Light!`);
-                        
-                        // Refresh sessions to show updated state
-                        if (refreshSessions) {
-                          await refreshSessions();
-                        }
-                      } else {
-                        throw new Error(data.error || 'Failed to confirm payment');
-                      }
-                    } catch (error) {
-                      console.error('[Demo Mode] Payment confirmation error:', error);
-                      alert(`❌ Demo payment error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-                    }
-                    return;
-                  }
-                  
-                  // Production mode: Check if payment already exists or create Stripe checkout
-                  try {
-                    // SECURITY: Use existing session ID (session already exists)
-                    const sessionId = session.id;
-                    if (!sessionId) {
-                      throw new Error('Session ID not found');
-                    }
-                    
-                    // Check if session already has a payment (externalRef might be Stripe checkout session ID)
-                    if (session.externalRef && session.externalRef.startsWith('cs_')) {
-                      // Session already has a Stripe checkout session - check if it's paid
-                      try {
-                        const checkoutResponse = await fetch(`/api/checkout-session/${session.externalRef}`);
-                        if (checkoutResponse.ok) {
-                          const checkoutData = await checkoutResponse.json();
-                          if (checkoutData.session?.payment_status === 'paid') {
-                            alert(`✅ Payment already confirmed for ${session.tableId || session.table_id}.\n\nSession is ready for BOH prep → FOH delivery → Light!`);
-                            // Refresh to show updated status
-                            if (refreshSessions) await refreshSessions();
-                            return;
-                          } else {
-                            // Payment not completed - open existing checkout
-                            const checkoutUrl = checkoutData.session?.url;
-                            if (checkoutUrl) {
-                              window.open(checkoutUrl, '_blank');
-                              alert(`✅ Opening existing payment checkout for ${session.tableId || session.table_id}.\n\nComplete payment to proceed.`);
-                              return;
+                          // Demo mode: Mock payment confirmation and trigger NAN workflow
+                          if (isDemoMode) {
+                            try {
+                              const sessionId = unpaidSession.id;
+                              if (!sessionId) {
+                                throw new Error('Session ID not found');
+                              }
+                              
+                              console.log('[Demo Mode] 🎭 Mocking payment confirmation for session:', sessionId);
+                              
+                              // Call demo-session complete API to trigger NAN workflow
+                              const response = await fetch('/api/demo-session/complete', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                  sessionId: sessionId,
+                                  amount: amount,
+                                  flavorMix: unpaidSession.flavor || unpaidSession.flavorMix || 'Custom Mix',
+                                  tableId: unpaidSession.tableId,
+                                  customerPhone: unpaidSession.customerPhone,
+                                })
+                              });
+                              
+                              const data = await response.json();
+                              
+                              if (data.success) {
+                                alert(`✅ Payment confirmed (Demo Mode)!\n\nSession "${unpaidSession.customerName || unpaidSession.tableId}" is now ready for BOH prep → FOH delivery → Light!`);
+                                
+                                // Refresh sessions to show updated state
+                                if (refreshSessions) {
+                                  await refreshSessions();
+                                }
+                              } else {
+                                throw new Error(data.error || 'Failed to confirm payment');
+                              }
+                            } catch (error) {
+                              console.error('[Demo Mode] Payment confirmation error:', error);
+                              alert(`❌ Demo payment error: ${error instanceof Error ? error.message : 'Unknown error'}`);
                             }
+                            return;
                           }
+                          
+                          // Production mode: Check if payment already exists or create Stripe checkout
+                          try {
+                            // SECURITY: Use existing session ID (session already exists)
+                            const sessionId = unpaidSession.id;
+                            if (!sessionId) {
+                              throw new Error('Session ID not found');
+                            }
+                            
+                            // Check if session already has a payment (externalRef might be Stripe checkout session ID)
+                            if (unpaidSession.externalRef && unpaidSession.externalRef.startsWith('cs_')) {
+                              // Session already has a Stripe checkout session - check if it's paid
+                              try {
+                                const checkoutResponse = await fetch(`/api/checkout-session/${unpaidSession.externalRef}`);
+                                if (checkoutResponse.ok) {
+                                  const checkoutData = await checkoutResponse.json();
+                                  if (checkoutData.session?.payment_status === 'paid') {
+                                    alert(`✅ Payment already confirmed for ${unpaidSession.tableId || unpaidSession.table_id}.\n\nSession is ready for BOH prep → FOH delivery → Light!`);
+                                    // Refresh to show updated status
+                                    if (refreshSessions) await refreshSessions();
+                                    return;
+                                  } else {
+                                    // Payment not completed - open existing checkout
+                                    const checkoutUrl = checkoutData.session?.url;
+                                    if (checkoutUrl) {
+                                      window.open(checkoutUrl, '_blank');
+                                      alert(`✅ Opening existing payment checkout for ${unpaidSession.tableId || unpaidSession.table_id}.\n\nComplete payment to proceed.`);
+                                      return;
+                                    }
+                                  }
+                                }
+                              } catch (checkoutError) {
+                                console.warn('[Payment] Could not check existing checkout, creating new one:', checkoutError);
+                              }
+                            }
+                            
+                            // No existing checkout - create new Stripe checkout session
+                            const response = await fetch('/api/checkout-session', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                sessionId: sessionId, // SECURITY: Only send opaque session ID to Stripe
+                                flavors: unpaidSession.flavor ? [unpaidSession.flavor] : ['Custom Mix'],
+                                tableId: unpaidSession.tableId || unpaidSession.table_id,
+                                amount: amount, // Already in cents
+                                total: amount / 100, // For display
+                                sessionDuration: unpaidSession.durationSecs || unpaidSession.sessionDuration || 2700,
+                                dollarTestMode: true // Use $1 test mode for sandbox
+                              })
+                            });
+                            
+                            const data = await response.json();
+                            if (data.success && data.sessionUrl) {
+                              // Open Stripe checkout in new window
+                              window.open(data.sessionUrl, '_blank');
+                              alert(`✅ Payment checkout opened for ${unpaidSession.tableId || unpaidSession.table_id}.\n\nAfter payment confirmation, session will be ready for BOH prep → FOH delivery → Light!`);
+                            } else if (data.error && data.error.includes('Stripe not configured')) {
+                              alert(
+                                `❌ Stripe not configured.\n\n` +
+                                `To enable payment:\n` +
+                                `1. Get test key: https://dashboard.stripe.com/apikeys\n` +
+                                `2. Add to .env.local: STRIPE_SECRET_KEY=sk_test_...\n` +
+                                `3. Restart dev server`
+                              );
+                            } else {
+                              throw new Error(data.error || data.details || 'Failed to create checkout');
+                            }
+                          } catch (error) {
+                            alert(`❌ Payment error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                          }
+                        }}
+                        className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm"
+                        title={`Confirm payment for ${unpaidSession.tableId}${unpaidSession.customerName ? ` (${unpaidSession.customerName})` : ''}`}
+                      >
+                        <DollarSign className="w-4 h-4" />
+                        <span>Confirm Payment → {unpaidSession.tableId}</span>
+                      </button>
+                    )}
+
+                    {/* BOH: Claim Prep - Show if prep session exists */}
+                    {prepSession && (
+                      <button
+                        onClick={async () => {
+                          await handleSessionAction('claim_prep', prepSession.id);
+                        }}
+                        className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm"
+                        title={`Claim prep for ${prepSession.tableId}${prepSession.customerName ? ` (${prepSession.customerName})` : ''}`}
+                      >
+                        <ChefHat className="w-4 h-4" />
+                        <span>BOH: Claim Prep → {prepSession.tableId}</span>
+                      </button>
+                    )}
+
+                    {/* FOH: Deliver - Show if delivery session exists */}
+                    {deliverySession && (
+                      <button
+                        onClick={async () => {
+                          await handleSessionAction('deliver_now', deliverySession.id);
+                        }}
+                        className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm"
+                        title={`Deliver to ${deliverySession.tableId}${deliverySession.customerName ? ` (${deliverySession.customerName})` : ''}`}
+                      >
+                        <Truck className="w-4 h-4" />
+                        <span>FOH: Deliver → {deliverySession.tableId}</span>
+                      </button>
+                    )}
+
+                    {/* Light Session - Show if light session exists */}
+                    {lightSession && (
+                      <button
+                        onClick={async () => {
+                          await handleSessionAction('start_active', lightSession.id);
+                          alert(`🔥 Session ${lightSession.tableId} is now LIT! Timer started.`);
+                        }}
+                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm"
+                        title={`Light session for ${lightSession.tableId}${lightSession.customerName ? ` (${lightSession.customerName})` : ''}`}
+                      >
+                        <Flame className="w-4 h-4" />
+                        <span>Light Session → {lightSession.tableId}</span>
+                      </button>
+                    )}
+
+                    {/* Refresh - Always available */}
+                    <button
+                      onClick={async () => {
+                        if (refreshSessions) {
+                          try {
+                            await refreshSessions();
+                          } catch (error) {
+                            console.error('Failed to refresh sessions:', error);
+                            window.location.reload();
+                          }
+                        } else {
+                          window.location.reload();
                         }
-                      } catch (checkoutError) {
-                        console.warn('[Payment] Could not check existing checkout, creating new one:', checkoutError);
-                      }
-                    }
-                    
-                    // No existing checkout - create new Stripe checkout session
-                    const response = await fetch('/api/checkout-session', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        sessionId: sessionId, // SECURITY: Only send opaque session ID to Stripe
-                        flavors: session.flavor ? [session.flavor] : ['Custom Mix'],
-                        tableId: session.tableId || session.table_id,
-                        amount: amount, // Already in cents
-                        total: amount / 100, // For display
-                        sessionDuration: session.durationSecs || session.sessionDuration || 2700,
-                        dollarTestMode: true // Use $1 test mode for sandbox
-                      })
-                    });
-                    
-                    const data = await response.json();
-                    if (data.success && data.sessionUrl) {
-                      // Open Stripe checkout in new window
-                      window.open(data.sessionUrl, '_blank');
-                      alert(`✅ Payment checkout opened for ${session.tableId || session.table_id}.\n\nAfter payment confirmation, session will be ready for BOH prep → FOH delivery → Light!`);
-                    } else if (data.error && data.error.includes('Stripe not configured')) {
-                      alert(
-                        `❌ Stripe not configured.\n\n` +
-                        `To enable payment:\n` +
-                        `1. Get test key: https://dashboard.stripe.com/apikeys\n` +
-                        `2. Add to .env.local: STRIPE_SECRET_KEY=sk_test_...\n` +
-                        `3. Restart dev server`
-                      );
-                    } else {
-                      throw new Error(data.error || data.details || 'Failed to create checkout');
-                    }
-                  } catch (error) {
-                    alert(`❌ Payment error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-                  }
-                }}
-                className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm"
-              >
-                <DollarSign className="w-4 h-4" />
-                <span>Confirm Payment{isDemoMode ? ' (Demo)' : ''}</span>
-              </button>
-              <button
-                onClick={async () => {
-                  // Find sessions ready for BOH to claim prep
-                  const readySessions = sessions.filter(s => {
-                    const status = getSessionStatus(s);
-                    return status === 'NEW' || status === 'PAID_CONFIRMED';
-                  });
-                  
-                  if (readySessions.length === 0) {
-                    alert('No sessions ready for prep');
-                    return;
-                  }
-                  
-                  // Process first ready session
-                  await handleSessionAction('claim_prep', readySessions[0].id);
-                }}
-                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm"
-              >
-                <ChefHat className="w-4 h-4" />
-                <span>BOH: Claim Prep</span>
-              </button>
-              <button
-                onClick={async () => {
-                  // Find sessions ready for delivery
-                  const readySessions = sessions.filter(s => {
-                    const status = getSessionStatus(s);
-                    return status === 'READY_FOR_DELIVERY';
-                  });
-                  
-                  if (readySessions.length === 0) {
-                    alert('No sessions ready for delivery');
-                    return;
-                  }
-                  
-                  await handleSessionAction('deliver_now', readySessions[0].id);
-                }}
-                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm"
-              >
-                <Truck className="w-4 h-4" />
-                <span>FOH: Deliver</span>
-              </button>
-              <button
-                onClick={async () => {
-                  // Find delivered sessions ready to "light" (start active)
-                  // A session can only be lit if: Payment confirmed → BOH prep → BOH ready → FOH delivered
-                  const deliveredSessions = sessions.filter(s => {
-                    const status = getSessionStatus(s);
-                    return status === 'DELIVERED';
-                  });
-                  
-                  if (deliveredSessions.length === 0) {
-                    // Provide helpful feedback about why no sessions are ready
-                    const allSessions = sessions.map(s => {
-                      const status = getSessionStatus(s);
-                      return { tableId: s.tableId, status };
-                    });
-                    
-                    const statusCounts = allSessions.reduce((acc, s) => {
-                      acc[s.status] = (acc[s.status] || 0) + 1;
-                      return acc;
-                    }, {} as Record<string, number>);
-                    
-                    const statusList = Object.entries(statusCounts)
-                      .map(([status, count]) => `${status}: ${count}`)
-                      .join(', ');
-                    
-                    alert(
-                      `No sessions ready to light.\n\n` +
-                      `A session must complete this flow to be lit:\n` +
-                      `1. Payment Confirmed\n` +
-                      `2. BOH Claims Prep\n` +
-                      `3. BOH Marks Ready\n` +
-                      `4. FOH Delivers\n` +
-                      `5. Light Session 🔥\n\n` +
-                      `Current session states: ${statusList || 'No sessions'}`
-                    );
-                    return;
-                  }
-                  
-                  await handleSessionAction('start_active', deliveredSessions[0].id);
-                  alert('🔥 Session is now LIT! Timer started.');
-                }}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm"
-              >
-                <Flame className="w-4 h-4" />
-                <span>Light Session</span>
-              </button>
-              <button
-                onClick={async () => {
-                  if (refreshSessions) {
-                    try {
-                      await refreshSessions();
-                    } catch (error) {
-                      console.error('Failed to refresh sessions:', error);
-                      window.location.reload();
-                    }
-                  } else {
-                    window.location.reload();
-                  }
-                }}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm"
-              >
-                <RefreshCw className="w-4 h-4" />
-                <span>Refresh</span>
-              </button>
+                      }}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      <span>Refresh</span>
+                    </button>
+                  </>
+                );
+              })()}
             </div>
           </div>
 

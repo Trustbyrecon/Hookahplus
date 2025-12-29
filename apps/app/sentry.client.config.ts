@@ -3,42 +3,72 @@ import * as Sentry from '@sentry/nextjs';
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
   
-  // Adjust this value in production, or use tracesSampler for greater control
+  // Performance monitoring
+  // Sample 10% of transactions in production, 100% in development
   tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
   
-  // Setting this option to true will print useful information to the console while you're setting up Sentry.
+  // Session Replay - capture all error sessions, sample 10% of normal sessions
+  replaysOnErrorSampleRate: 1.0,
+  replaysSessionSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+  
+  // Debug mode only in development
   debug: process.env.NODE_ENV === 'development',
   
-  replaysOnErrorSampleRate: 1.0,
+  // Environment tracking
+  environment: process.env.NODE_ENV || 'development',
   
-  // This sets the sample rate to be 10%. You may want this to be 100% while
-  // in development and sample at a lower rate in production
-  replaysSessionSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 0.1,
+  // Release tracking for better error grouping
+  release: process.env.NEXT_PUBLIC_APP_VERSION || process.env.VERCEL_GIT_COMMIT_SHA || undefined,
   
-  // You can remove this option if you're not planning to use the Sentry Session Replay feature:
+  // Integrations
   integrations: [
     Sentry.replayIntegration({
-      // Additional Replay configuration goes in here, for example:
+      // Privacy: mask all text and block media
       maskAllText: true,
       blockAllMedia: true,
     }),
+    Sentry.browserTracingIntegration(),
   ],
   
-  environment: process.env.NODE_ENV || 'development',
-  
-  // Filter out health check endpoints and other noise
+  // Filter out noise and health checks
   beforeSend(event, hint) {
     // Don't send events if DSN is not configured
     if (!process.env.NEXT_PUBLIC_SENTRY_DSN) {
       return null;
     }
     
-    // Filter out health check errors
+    // Filter out health check endpoints
     if (event.request?.url?.includes('/api/health')) {
       return null;
     }
     
+    // Filter out known non-critical errors
+    const error = hint.originalException;
+    if (error instanceof Error) {
+      // Ignore network errors that are likely transient
+      if (error.message.includes('fetch') && error.message.includes('Failed to fetch')) {
+        return null;
+      }
+    }
+    
     return event;
   },
+  
+  // Ignore specific errors
+  ignoreErrors: [
+    // Browser extensions
+    'top.GLOBALS',
+    'originalCreateNotification',
+    'canvas.contentDocument',
+    'MyApp_RemoveAllHighlights',
+    'atomicFindClose',
+    // Network errors
+    'NetworkError',
+    'Network request failed',
+    // Third-party scripts
+    'fb_xd_fragment',
+    'bmi_SafeAddOnload',
+    'EBCallBackMessageReceived',
+  ],
 });
 

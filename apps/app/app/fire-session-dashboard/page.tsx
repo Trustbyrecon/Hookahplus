@@ -24,6 +24,7 @@ import PulseCard from '../../components/PulseCard';
 import FirstLightBanner from '../../components/FirstLightBanner';
 import FirstLightHealthCard from '../../components/FirstLightHealthCard';
 import FirstLightChecklist from '../../components/FirstLightChecklist';
+import { getFeatureFlags, markFirstLightCompleted, enableMetrics, activateAlphaStability } from '../../lib/feature-flags';
 
 export default function FireSessionDashboard() {
   return (
@@ -56,6 +57,7 @@ function FireSessionDashboardContent() {
   const [previousSessionCount, setPreviousSessionCount] = useState(0);
   const [alphaStabilityMode, setAlphaStabilityMode] = useState(false);
   const [metricsEnabled, setMetricsEnabled] = useState(false);
+  const [featureFlags, setFeatureFlags] = useState(getFeatureFlags());
   const [sessionClaimTimes, setSessionClaimTimes] = useState<Map<string, number>>(new Map());
   const demoProgressionTimersRef = useRef<Map<string, NodeJS.Timeout[]>>(new Map());
 
@@ -98,6 +100,22 @@ function FireSessionDashboardContent() {
   
   // Check for demo mode from URL params
   const isDemoMode = searchParams.get('mode') === 'demo';
+  
+  // Update feature flags when localStorage changes
+  useEffect(() => {
+    const updateFlags = () => {
+      setFeatureFlags(getFeatureFlags());
+      // Sync state with flags
+      setFirstLightFocus(featureFlags.firstLightFocus);
+      setAlphaStabilityMode(featureFlags.alphaStabilityActive);
+      setMetricsEnabled(featureFlags.metricsEnabled);
+    };
+    
+    updateFlags();
+    // Listen for storage changes (from other tabs)
+    window.addEventListener('storage', updateFlags);
+    return () => window.removeEventListener('storage', updateFlags);
+  }, []);
   const paymentConfirmed = searchParams.get('payment') === 'confirmed';
   const sessionIdFromUrl = searchParams.get('session');
   const demoLounge = searchParams.get('lounge') || null;
@@ -426,8 +444,8 @@ function FireSessionDashboardContent() {
         <GlobalNavigation />
       </Suspense>
       
-      {/* First Light Banner - Show when not in demo mode */}
-      {!isDemoMode && (
+      {/* First Light Banner - Show based on feature flags */}
+      {featureFlags.showFirstLightBanner && (
         <FirstLightBanner 
           onRunTest={() => {
             setShowCreateModal(true);
@@ -543,13 +561,18 @@ function FireSessionDashboardContent() {
                   {userRole}
                 </span>
               </div>
-              {!isDemoMode && (
+              {featureFlags.showFirstLightFocusToggle && (
                 <div className="flex items-center space-x-2">
                   <label className="flex items-center gap-2 text-sm text-zinc-400 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={firstLightFocus}
-                      onChange={(e) => setFirstLightFocus(e.target.checked)}
+                      onChange={(e) => {
+                        setFirstLightFocus(e.target.checked);
+                        if (typeof window !== 'undefined') {
+                          localStorage.setItem('firstLightFocus', String(e.target.checked));
+                        }
+                      }}
                       className="w-4 h-4 rounded border-zinc-600 bg-zinc-800 text-teal-500 focus:ring-teal-500"
                     />
                     <span>First Light Focus</span>
@@ -560,8 +583,8 @@ function FireSessionDashboardContent() {
           </div>
         )}
 
-        {/* First Light Achievement Celebration */}
-        {!isDemoMode && firstLightAchieved && (
+        {/* First Light Achievement Celebration - Show once, then hide after completion */}
+        {!isDemoMode && firstLightAchieved && !featureFlags.firstLightCompleted && (
           <div className="mb-6 animate-in fade-in slide-in-from-top duration-500">
             <div className="bg-gradient-to-r from-teal-500/20 via-emerald-500/20 to-green-500/20 border-2 border-teal-500/50 rounded-lg p-6 shadow-lg shadow-teal-500/20">
               <div className="flex items-center justify-between">
@@ -582,7 +605,11 @@ function FireSessionDashboardContent() {
                   </div>
                 </div>
                 <button
-                  onClick={() => setFirstLightAchieved(false)}
+                  onClick={() => {
+                    setFirstLightAchieved(false);
+                    markFirstLightCompleted();
+                    setFeatureFlags(getFeatureFlags());
+                  }}
                   className="text-zinc-400 hover:text-white transition-colors px-3 py-1"
                 >
                   ✕
@@ -592,19 +619,21 @@ function FireSessionDashboardContent() {
           </div>
         )}
 
-        {/* First Light Health Card and Checklist - Show when First Light Focus is ON */}
-        {!isDemoMode && firstLightFocus && (
+        {/* First Light Health Card and Checklist - Show based on feature flags */}
+        {(featureFlags.showFirstLightHealthCard || featureFlags.showFirstLightChecklist) && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <FirstLightHealthCard />
-            <FirstLightChecklist 
-              sessionsCount={sessions.length}
-              databaseConnected={databaseConnected}
-            />
+            {featureFlags.showFirstLightHealthCard && <FirstLightHealthCard />}
+            {featureFlags.showFirstLightChecklist && (
+              <FirstLightChecklist 
+                sessionsCount={sessions.length}
+                databaseConnected={databaseConnected}
+              />
+            )}
           </div>
         )}
 
         {/* Clear Old Sessions Button - First Light Mode Only */}
-        {!isDemoMode && firstLightFocus && (
+        {featureFlags.showClearOldSessions && (
           <div className="mb-4 flex justify-end">
             <button
               onClick={async () => {
@@ -721,8 +750,8 @@ function FireSessionDashboardContent() {
           </div>
         )}
 
-        {/* First Light Achievement Celebration */}
-        {!isDemoMode && firstLightAchieved && !alphaStabilityMode && (
+        {/* First Light Achievement Celebration - Consolidated */}
+        {featureFlags.showAlphaStabilityBanners && firstLightAchieved && !alphaStabilityMode && (
           <div className="bg-gradient-to-r from-green-900/30 to-teal-900/30 border border-green-700/50 rounded-lg p-6 mb-6">
             <div className="flex items-start gap-4">
               <div className="flex-shrink-0">
@@ -742,12 +771,12 @@ function FireSessionDashboardContent() {
                   <button
                     onClick={async () => {
                       // Enable metrics API
+                      enableMetrics();
                       setMetricsEnabled(true);
                       setFirstLightFocus(false);
-                      // Store in localStorage to persist across refreshes
-                      localStorage.setItem('metricsEnabled', 'true');
                       // Refresh metrics to load real data
                       await refreshSessions();
+                      setFeatureFlags(getFeatureFlags());
                       console.log('[Dashboard] ✅ Metrics enabled - Alpha Stability mode activated');
                     }}
                     className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
@@ -757,16 +786,15 @@ function FireSessionDashboardContent() {
                   <button
                     onClick={async () => {
                       // Transition to Alpha Stability
+                      activateAlphaStability();
                       setAlphaStabilityMode(true);
                       setMetricsEnabled(true);
                       setFirstLightFocus(false);
-                      // Store in localStorage
-                      localStorage.setItem('alphaStabilityMode', 'true');
-                      localStorage.setItem('metricsEnabled', 'true');
                       // Refresh sessions to ensure we have the latest data
                       await refreshSessions();
                       // Hide the celebration banner
                       setFirstLightAchieved(false);
+                      setFeatureFlags(getFeatureFlags());
                       // Scroll to sessions
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                       console.log('[Dashboard] ✅ Alpha Stability mode activated - Metrics enabled');
@@ -781,8 +809,8 @@ function FireSessionDashboardContent() {
           </div>
         )}
         
-        {/* Persistent Alpha Stability Controls - Show even after banner is dismissed */}
-        {!isDemoMode && !alphaStabilityMode && !metricsEnabled && (
+        {/* Persistent Alpha Stability Controls - Show based on feature flags */}
+        {featureFlags.showAlphaStabilityBanners && !alphaStabilityMode && !metricsEnabled && (
           <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4 mb-6">
             <div className="flex items-center justify-between">
               <div>
@@ -792,9 +820,10 @@ function FireSessionDashboardContent() {
               <div className="flex gap-2">
                 <button
                   onClick={async () => {
+                    enableMetrics();
                     setMetricsEnabled(true);
-                    localStorage.setItem('metricsEnabled', 'true');
                     await refreshSessions();
+                    setFeatureFlags(getFeatureFlags());
                   }}
                   className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-sm font-medium transition-colors"
                 >
@@ -802,11 +831,11 @@ function FireSessionDashboardContent() {
                 </button>
                 <button
                   onClick={async () => {
+                    activateAlphaStability();
                     setAlphaStabilityMode(true);
                     setMetricsEnabled(true);
-                    localStorage.setItem('alphaStabilityMode', 'true');
-                    localStorage.setItem('metricsEnabled', 'true');
                     await refreshSessions();
+                    setFeatureFlags(getFeatureFlags());
                   }}
                   className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium transition-colors"
                 >
@@ -817,8 +846,8 @@ function FireSessionDashboardContent() {
           </div>
         )}
         
-        {/* Flywheel Status - Show when we have paid sessions ready for workflow */}
-        {!isDemoMode && sessions.some(s => {
+        {/* Flywheel Status - Show based on feature flags */}
+        {featureFlags.showFlywheelBanner && sessions.some(s => {
           const status = s.status || (s.state === 'PENDING' && (s.paymentStatus === 'succeeded' || s.externalRef?.startsWith('cs_')) ? 'PAID_CONFIRMED' : 'NEW');
           return status === 'PAID_CONFIRMED';
         }) && (

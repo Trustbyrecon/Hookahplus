@@ -4,8 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { 
   X, Clock, MapPin, Sparkles, Users, Calendar, DollarSign, Shield, AlertCircle,
   Flame, Package, CheckCircle, Truck, Play, Pause, Coffee, RefreshCw, Home,
-  Zap, RotateCcw, CreditCard, Ban
+  Zap, RotateCcw, CreditCard, Ban, Flag
 } from 'lucide-react';
+import ReportEdgeCaseModal from './ReportEdgeCaseModal';
 import Card from './Card';
 import { FireSession, SessionAction, SessionStatus, UserRole } from '../types/enhancedSession';
 import { calculateSingleSessionTrustScore, getTrustScoreColor } from '../lib/trustScoring';
@@ -31,6 +32,7 @@ const SessionDetailModal: React.FC<SessionDetailModalProps> = ({
   const [editedNotes, setEditedNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isExecutingAction, setIsExecutingAction] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   useEffect(() => {
     if (session) {
@@ -227,6 +229,37 @@ const SessionDetailModal: React.FC<SessionDetailModalProps> = ({
       alert(`❌ Error: ${errorMessage}`);
     } finally {
       setIsExecutingAction(false);
+    }
+  };
+
+  const handleReportEdgeCase = async (edgeCaseData: {
+    sessionId: string;
+    edgeCase: string;
+    description: string;
+    severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+    reportedBy: string;
+    tableId?: string;
+  }) => {
+    try {
+      const response = await fetch('/api/edge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'report',
+          data: edgeCaseData
+        })
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        alert(`✅ Issue reported successfully!\n\nA manager will review this issue and take appropriate action.`);
+        if (refreshSessions) await refreshSessions();
+      } else {
+        throw new Error(result.error || 'Failed to report issue');
+      }
+    } catch (error) {
+      console.error('Error reporting edge case:', error);
+      throw error;
     }
   };
 
@@ -519,6 +552,17 @@ const SessionDetailModal: React.FC<SessionDetailModalProps> = ({
             {getAvailableActions().length === 0 && (
               <p className="text-zinc-400 text-sm">No actions available for this session state.</p>
             )}
+            {/* Report Issue Button - Available for all staff roles */}
+            {(userRole === 'BOH' || userRole === 'FOH' || userRole === 'MANAGER' || userRole === 'ADMIN') && (
+              <button
+                onClick={() => setShowReportModal(true)}
+                className="flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-red-600 hover:bg-red-700 text-white"
+                title="Report an issue that requires manager attention"
+              >
+                <Flag className="w-4 h-4" />
+                <span>Report Issue</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -532,6 +576,16 @@ const SessionDetailModal: React.FC<SessionDetailModalProps> = ({
           </button>
         </div>
       </Card>
+
+      {/* Report Edge Case Modal */}
+      <ReportEdgeCaseModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        sessionId={session.id}
+        tableId={session.tableId}
+        onReport={handleReportEdgeCase}
+        userRole={userRole}
+      />
     </div>
   );
 };
