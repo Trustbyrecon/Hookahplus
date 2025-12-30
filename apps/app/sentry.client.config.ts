@@ -28,10 +28,6 @@ Sentry.init({
       blockAllMedia: true,
     }),
     Sentry.browserTracingIntegration(),
-    // Console logging integration - automatically capture console.log, console.warn, console.error
-    Sentry.consoleIntegration({
-      levels: ['log', 'warn', 'error'],
-    }),
   ],
   
   // Filter out noise and health checks
