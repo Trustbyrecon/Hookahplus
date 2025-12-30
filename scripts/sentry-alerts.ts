@@ -15,8 +15,7 @@ import { join } from 'path';
 
 const SENTRY_ORG = 'hookahplusnet';
 const SENTRY_BASE_URL = 'https://sentry.io/api/0';
-const SENTRY_AUTH_TOKEN = process.env.SENTRY_AUTH_TOKEN || 
-  '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';
+const SENTRY_AUTH_TOKEN = process.env.SENTRY_AUTH_TOKEN;
 
 const DRY_RUN = process.argv.includes('--dry-run');
 
@@ -302,6 +301,11 @@ async function main() {
 
   if (!SENTRY_AUTH_TOKEN) {
     console.error('❌ SENTRY_AUTH_TOKEN environment variable is required');
+    console.error('');
+    console.error('Get your token from: https://sentry.io/settings/account/api/auth-tokens/');
+    console.error('');
+    console.error('Set it with: export SENTRY_AUTH_TOKEN="your-token-here"');
+    console.error('Or add to .env file and load with: source .env');
     process.exit(1);
   }
 
