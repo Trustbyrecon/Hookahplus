@@ -28,6 +28,7 @@ Sentry.init({
       blockAllMedia: true,
     }),
     Sentry.browserTracingIntegration(),
+    Sentry.consoleIntegration({ levels: ['log', 'warn', 'error'] }),
   ],
   
   // Filter out noise and health checks

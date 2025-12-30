@@ -19,6 +19,7 @@ Sentry.init({
   // Server-side integrations
   integrations: [
     Sentry.httpIntegration(),
+    Sentry.consoleIntegration({ levels: ['warn', 'error'] }),
   ],
   
   // Filter out noise and health checks
