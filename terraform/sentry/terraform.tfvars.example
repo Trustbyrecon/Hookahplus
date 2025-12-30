@@ -1,0 +1,14 @@
+# Copy this file to terraform.tfvars and fill in your values
+# terraform.tfvars is git-ignored for security
+
+sentry_auth_token = "your-sentry-auth-token-here"
+sentry_org        = "hookahplusnet"
+
+# Optional: Slack integration
+# To get workspace ID: Sentry Dashboard → Settings → Integrations → Slack
+# slack_workspace_id = "your-slack-workspace-id"
+# slack_channel      = "#hookahplus-alerts"
+
+# Optional: Custom email recipients (if you want alerts sent to specific emails)
+# alert_email_recipients = ["admin@hookahplus.com"]
+

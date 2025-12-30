@@ -1,0 +1,140 @@
+{
+  "organization": "hookahplusnet",
+  "projects": {
+    "hookahplus-app": {
+      "name": "HookahPlus App"
+    },
+    "hookahplus-guests": {
+      "name": "HookahPlus Guests"
+    }
+  },
+  "alerts": [
+    {
+      "name": "Critical Production Errors",
+      "projects": ["hookahplus-app", "hookahplus-guests"],
+      "priority": "P0",
+      "actionMatch": "all",
+      "frequency": 0,
+      "conditions": [
+        {
+          "id": "sentry.rules.conditions.environment.EnvironmentCondition",
+          "value": "production"
+        },
+        {
+          "id": "sentry.rules.conditions.level.LevelCondition",
+          "match": "gte",
+          "level": "error"
+        }
+      ],
+      "actions": [
+        {
+          "id": "sentry.rules.actions.notify_event_service.NotifyEventServiceAction",
+          "service": "email"
+        }
+      ]
+    },
+    {
+      "name": "New Issue Detected",
+      "projects": ["hookahplus-app", "hookahplus-guests"],
+      "priority": "P2",
+      "actionMatch": "all",
+      "frequency": 60,
+      "conditions": [
+        {
+          "id": "sentry.rules.conditions.first_seen_event.FirstSeenEventCondition"
+        },
+        {
+          "id": "sentry.rules.conditions.environment.EnvironmentCondition",
+          "value": "production"
+        }
+      ],
+      "actions": [
+        {
+          "id": "sentry.rules.actions.notify_event_service.NotifyEventServiceAction",
+          "service": "email"
+        }
+      ]
+    },
+    {
+      "name": "Payment-Related Errors",
+      "projects": ["hookahplus-app"],
+      "priority": "P0",
+      "actionMatch": "all",
+      "frequency": 0,
+      "conditions": [
+        {
+          "id": "sentry.rules.conditions.environment.EnvironmentCondition",
+          "value": "production"
+        },
+        {
+          "id": "sentry.rules.conditions.level.LevelCondition",
+          "match": "gte",
+          "level": "error"
+        },
+        {
+          "id": "sentry.rules.conditions.tagged_event.TaggedEventCondition",
+          "key": "component",
+          "match": "eq",
+          "value": "payment"
+        }
+      ],
+      "actions": [
+        {
+          "id": "sentry.rules.actions.notify_event_service.NotifyEventServiceAction",
+          "service": "email"
+        }
+      ]
+    },
+    {
+      "name": "Database Connection Errors",
+      "projects": ["hookahplus-app"],
+      "priority": "P1",
+      "actionMatch": "all",
+      "frequency": 5,
+      "conditions": [
+        {
+          "id": "sentry.rules.conditions.environment.EnvironmentCondition",
+          "value": "production"
+        },
+        {
+          "id": "sentry.rules.conditions.event_attribute.EventAttributeCondition",
+          "attribute": "message",
+          "match": "contains",
+          "value": "database"
+        }
+      ],
+      "actions": [
+        {
+          "id": "sentry.rules.actions.notify_event_service.NotifyEventServiceAction",
+          "service": "email"
+        }
+      ]
+    },
+    {
+      "name": "Authentication Failures",
+      "projects": ["hookahplus-app"],
+      "priority": "P2",
+      "actionMatch": "all",
+      "frequency": 60,
+      "conditions": [
+        {
+          "id": "sentry.rules.conditions.environment.EnvironmentCondition",
+          "value": "production"
+        },
+        {
+          "id": "sentry.rules.conditions.event_attribute.EventAttributeCondition",
+          "attribute": "message",
+          "match": "contains",
+          "value": "authentication"
+        }
+      ],
+      "actions": [
+        {
+          "id": "sentry.rules.actions.notify_event_service.NotifyEventServiceAction",
+          "service": "email"
+        }
+      ]
+    }
+  ]
+}
+
