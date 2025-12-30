@@ -9,6 +9,11 @@ const { withSentryConfig } = require('@sentry/nextjs');
 const nextConfig = {
   // Removed webpack alias that was blocking @supabase/supabase-js imports
   // The Supabase client is now needed for client-side auth in login/signup pages
+  
+  // Enable instrumentation hook for server-side Sentry initialization
+  experimental: {
+    instrumentationHook: true,
+  },
 };
 
 // Wrap with Sentry config if DSN is provided
