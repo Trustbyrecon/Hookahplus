@@ -3,6 +3,7 @@ import { prisma } from '../../../../../../../lib/db';
 import { generateStaffPlaybook } from '../../../../../../../lib/launchpad/staff-playbook-generator';
 import { generateLoungeOpsConfig } from '../../../../../../../lib/launchpad/config-generator';
 import { loadSetupSession } from '../../../../../../../lib/launchpad/session-manager';
+import { generatePDFFromHTML } from '../../../../../../../lib/launchpad/pdf-generator';
 
 /**
  * GET /api/launchpad/download/playbook/[loungeId]
@@ -46,14 +47,27 @@ export async function GET(
     const playbook = generateStaffPlaybook(config, dashboardUrl);
 
     if (format === 'pdf') {
-      // TODO: Convert HTML to PDF using a library like puppeteer or @react-pdf/renderer
-      // For now, return HTML with PDF headers
-      return new NextResponse(playbook.html, {
-        headers: {
-          'Content-Type': 'text/html',
-          'Content-Disposition': `attachment; filename="${lounge?.name || 'lounge'}_staff_playbook.html"`,
-        },
-      });
+      // Generate PDF from HTML
+      const pdfBuffer = await generatePDFFromHTML(playbook.html);
+      
+      if (pdfBuffer) {
+        return new NextResponse(pdfBuffer as unknown as BodyInit, {
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `attachment; filename="${lounge?.name || 'lounge'}_staff_playbook.pdf"`,
+            'Cache-Control': 'public, max-age=3600',
+          },
+        });
+      } else {
+        // Fallback to HTML if PDF generation fails
+        return new NextResponse(playbook.html, {
+          headers: {
+            'Content-Type': 'text/html',
+            'Content-Disposition': `attachment; filename="${lounge?.name || 'lounge'}_staff_playbook.html"`,
+            'X-PDF-Generation': 'unavailable',
+          },
+        });
+      }
     }
 
     // Return HTML

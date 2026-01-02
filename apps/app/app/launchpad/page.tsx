@@ -98,6 +98,15 @@ function LaunchPadPageContent() {
               `Please run this command in your terminal:\n` +
               `cd apps/app && npx prisma migrate dev --name add_setup_session`
             );
+          } else if (result.error?.includes('Can\'t reach database') || result.error?.includes('connection')) {
+            setError(
+              `Database connection failed.\n\n` +
+              `Please check:\n` +
+              `1. DATABASE_URL is set in .env.local\n` +
+              `2. DATABASE_URL uses port 6543 (pooler) for app queries\n` +
+              `3. Database server is accessible\n\n` +
+              `See LAUNCHPAD_DATABASE_FIX.md for details.`
+            );
           } else {
             setError(result.error || 'Failed to initialize session');
           }
@@ -121,7 +130,7 @@ function LaunchPadPageContent() {
       const updatedProgress: LaunchPadProgress = {
         ...progress,
         currentStep: step + 1,
-        completedSteps: [...new Set([...progress.completedSteps, step])],
+        completedSteps: Array.from(new Set([...progress.completedSteps, step])),
         data: {
           ...progress.data,
           [`step${step}`]: data,
@@ -163,8 +172,35 @@ function LaunchPadPageContent() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <div className="text-red-400 text-lg">Error: {error}</div>
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
+        <div className="max-w-2xl w-full bg-zinc-900/60 border border-red-600/50 rounded-lg p-8">
+          <div className="flex items-start gap-4 mb-6">
+            <div className="bg-red-900/40 p-3 rounded-lg">
+              <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h2 className="text-xl font-semibold text-red-400 mb-2">Setup Required</h2>
+              <div className="text-red-200 whitespace-pre-line leading-relaxed">
+                {error}
+              </div>
+            </div>
+          </div>
+          
+          {error.includes('migrate dev') && (
+            <div className="mt-6 p-4 bg-zinc-800/60 rounded-lg border border-zinc-700">
+              <p className="text-sm text-zinc-300 mb-2 font-medium">Quick Fix:</p>
+              <code className="block text-teal-400 bg-zinc-900 p-3 rounded text-sm font-mono">
+                cd apps/app && npx prisma migrate dev --name add_setup_session
+              </code>
+            </div>
+          )}
+          
+          <div className="mt-6 text-xs text-zinc-500">
+            Need help? Check <code className="text-zinc-400">LAUNCHPAD_DATABASE_FIX.md</code> for detailed troubleshooting.
+          </div>
+        </div>
       </div>
     );
   }

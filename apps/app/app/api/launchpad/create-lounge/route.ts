@@ -4,6 +4,7 @@ import { loadSetupSession, linkSetupSessionToLounge } from '../../../../lib/laun
 import { generateLoungeOpsConfig } from '../../../../lib/launchpad/config-generator';
 import { generateQRCodePack } from '../../../../lib/launchpad/qr-generator';
 import { generateStaffPlaybook } from '../../../../lib/launchpad/staff-playbook-generator';
+import { storeQRCodes } from '../../../../lib/launchpad/qr-storage';
 import { LaunchPadProgress } from '../../../../types/launchpad';
 import { randomBytes } from 'crypto';
 
@@ -96,6 +97,23 @@ export async function POST(req: NextRequest) {
     // Generate QR codes
     const qrCodePack = await generateQRCodePack(config, lounge.id, baseUrl);
     
+    // Store QR codes in database
+    const qrCodesToStore = [
+      ...qrCodePack.tableQRCodes.map(qr => ({
+        tableId: qr.tableId,
+        type: 'table' as const,
+        url: qr.url,
+        qrCodeDataUrl: qr.qrCodeDataUrl,
+      })),
+      {
+        tableId: null,
+        type: 'kiosk' as const,
+        url: qrCodePack.kioskQRCode.url,
+        qrCodeDataUrl: qrCodePack.kioskQRCode.qrCodeDataUrl,
+      },
+    ];
+    await storeQRCodes(lounge.id, qrCodesToStore);
+    
     // Generate Staff Playbook
     const staffPlaybook = generateStaffPlaybook(config, dashboardUrl);
     
@@ -104,9 +122,6 @@ export async function POST(req: NextRequest) {
 
     // TODO: Create staff users
     // This would create User records for each staff member in step4
-
-    // TODO: Store QR codes in database (if QR codes table exists)
-    // For now, we return them in the response
 
     return NextResponse.json({
       success: true,

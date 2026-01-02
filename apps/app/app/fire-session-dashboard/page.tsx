@@ -24,6 +24,8 @@ import PulseCard from '../../components/PulseCard';
 import FirstLightBanner from '../../components/FirstLightBanner';
 import FirstLightHealthCard from '../../components/FirstLightHealthCard';
 import FirstLightChecklist from '../../components/FirstLightChecklist';
+import { WeekOneWinsCard } from '../../components/launchpad/WeekOneWinsCard';
+import { PreviewModeBanner } from '../../components/launchpad/PreviewModeBanner';
 import { getFeatureFlags, markFirstLightCompleted, enableMetrics, activateAlphaStability } from '../../lib/feature-flags';
 
 export default function FireSessionDashboard() {
@@ -119,6 +121,7 @@ function FireSessionDashboardContent() {
   const paymentConfirmed = searchParams.get('payment') === 'confirmed';
   const sessionIdFromUrl = searchParams.get('session');
   const demoLounge = searchParams.get('lounge') || null;
+  const showWelcome = searchParams.get('welcome') === 'true';
   const demoSource = searchParams.get('source') as 'onboarding' | 'marketing' | null;
   const isDemoSlug = isDemoMode && demoLounge !== null; // True when accessed via /demo/[slug]
   const demoFlavorsParam = searchParams.get('flavors');
@@ -500,7 +503,9 @@ function FireSessionDashboardContent() {
       )}
       
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <Breadcrumbs className="mb-6" />
+        <Suspense fallback={null}>
+          <Breadcrumbs className="mb-6" />
+        </Suspense>
         
         <PageHero
           headline="Fire Session Dashboard"
@@ -619,6 +624,41 @@ function FireSessionDashboardContent() {
           </div>
         )}
 
+        {/* Welcome Banner - Show after LaunchPad completion */}
+        {showWelcome && (
+          <div className="mb-6 animate-in fade-in slide-in-from-top duration-500">
+            <div className="bg-gradient-to-r from-teal-500/20 via-emerald-500/20 to-green-500/20 border-2 border-teal-500/50 rounded-lg p-6 shadow-lg shadow-teal-500/20">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-teal-400 to-emerald-500 rounded-full flex items-center justify-center animate-pulse">
+                    <CheckCircle className="w-8 h-8 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-white mb-1">
+                      🎉 Welcome to H+! 🎉
+                    </h3>
+                    <p className="text-teal-200">
+                      Your lounge is live! Start creating sessions and track your Week-1 Wins.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    // Remove welcome param from URL
+                    const newUrl = new URL(window.location.href);
+                    newUrl.searchParams.delete('welcome');
+                    window.history.replaceState({}, '', newUrl);
+                    window.location.reload();
+                  }}
+                  className="text-zinc-400 hover:text-white transition-colors px-3 py-1"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* First Light Health Card and Checklist - Show based on feature flags */}
         {(featureFlags.showFirstLightHealthCard || featureFlags.showFirstLightChecklist) && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -629,6 +669,26 @@ function FireSessionDashboardContent() {
                 databaseConnected={databaseConnected}
               />
             )}
+          </div>
+        )}
+
+        {/* Preview Mode Banner - Show if lounge is in preview mode */}
+        {!isDemoMode && demoLounge && (
+          <div className="mb-6">
+            <PreviewModeBanner
+              loungeId={demoLounge}
+              onActivate={() => {
+                // Refresh sessions after activation
+                refreshSessions();
+              }}
+            />
+          </div>
+        )}
+
+        {/* Week-1 Wins Card - Show for lounges in first 7 days */}
+        {!isDemoMode && demoLounge && (
+          <div className="mb-6">
+            <WeekOneWinsCard loungeId={demoLounge} />
           </div>
         )}
 

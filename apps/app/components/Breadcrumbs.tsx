@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronRight, Home } from 'lucide-react';
@@ -45,9 +45,17 @@ const routeLabels: Record<string, string> = {
 
 export default function Breadcrumbs({ items, className = '' }: BreadcrumbsProps) {
   const pathname = usePathname();
+  const [isMounted, setIsMounted] = useState(false);
+  
+  // Fix hydration: only render after mount
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   
   // Auto-generate breadcrumbs from pathname if items not provided
   const breadcrumbItems: BreadcrumbItem[] = items || (() => {
+    if (!pathname) return [{ label: 'Home', href: '/' }];
+    
     const segments = pathname.split('/').filter(Boolean);
     const generated: BreadcrumbItem[] = [
       { label: 'Home', href: '/' }
@@ -69,6 +77,11 @@ export default function Breadcrumbs({ items, className = '' }: BreadcrumbsProps)
     
     return generated;
   })();
+
+  // Don't render until mounted (prevents hydration mismatch)
+  if (!isMounted) {
+    return null;
+  }
 
   // Don't show breadcrumbs on home page
   if (pathname === '/' || breadcrumbItems.length <= 1) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSetupSession } from '../../../../lib/launchpad/session-manager';
 import { generateLoungeOpsConfig } from '../../../../lib/launchpad/config-generator';
+import { formatManyChatAPIResponse, formatManyChatErrorResponse } from '../../../../lib/launchpad/manychat-response-formatter';
 
 /**
  * POST /api/launchpad/manychat-setup
@@ -70,20 +71,38 @@ export async function POST(req: NextRequest) {
       checklist: `${baseUrl}/api/launchpad/preview/checklist?token=${session.token}`,
     };
 
+    // Format response for ManyChat
+    const formattedResponse = formatManyChatAPIResponse(
+      session.token,
+      completionLink,
+      previewAssets,
+      prefillData.lounge_name
+    );
+
     return NextResponse.json({
       success: true,
       setupSessionToken: session.token,
       completionLink,
       previewAssets,
       preliminaryConfig,
-      message: 'Setup session created. User can complete LaunchPad via web app.',
+      message: formattedResponse.message, // Formatted for ManyChat DM
+      // Also include raw data for ManyChat to parse if needed
+      raw: {
+        token: session.token,
+        completionLink,
+        previewAssets,
+      },
     });
   } catch (error: any) {
     console.error('[ManyChat Setup] Error:', error);
+    const errorMessage = formatManyChatErrorResponse(
+      'Failed to create setup session. Please try again.'
+    );
     return NextResponse.json(
       {
         success: false,
         error: 'Failed to create setup session',
+        message: errorMessage, // Formatted for ManyChat DM
         details: error.message,
       },
       { status: 500 }
