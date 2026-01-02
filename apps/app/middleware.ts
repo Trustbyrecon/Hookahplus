@@ -64,6 +64,8 @@ export async function middleware(request: NextRequest) {
   
   // Public routes that don't require authentication
   const publicRoutes = [
+    '/launchpad', // LaunchPad onboarding is public
+    '/api/launchpad', // LaunchPad API routes (session, progress, create-lounge)
     '/api/health',
     '/api/health/live',
     '/api/health/ready',

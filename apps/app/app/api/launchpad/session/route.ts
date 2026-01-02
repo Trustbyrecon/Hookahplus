@@ -19,6 +19,26 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: any) {
     console.error('[LaunchPad Session] Error creating session:', error);
+    
+    // Check if it's a database migration issue
+    const errorMessage = error.message || '';
+    if (errorMessage.includes('migration required') || 
+        errorMessage.includes('does not exist') ||
+        errorMessage.includes('relation') ||
+        errorMessage.includes('table') ||
+        error.code === 'P2001' ||
+        error.code === 'P2025') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Database migration required',
+          details: 'Please run: npx prisma migrate dev --name add_setup_session',
+          migrationRequired: true,
+        },
+        { status: 500 }
+      );
+    }
+    
     return NextResponse.json(
       {
         success: false,

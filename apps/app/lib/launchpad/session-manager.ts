@@ -67,23 +67,37 @@ export async function createSetupSession(
     }
   }
 
-  const setupSession = await prisma.setupSession.create({
-    data: {
-      token,
-      progress: initialProgress as any,
-      expiresAt,
-      source,
-      prefillData: prefillData ? (prefillData as any) : null,
-      manychatUserId: prefillData?.subscriber_id || null,
-      instagramHandle: prefillData?.instagram_username || null,
-    },
-  });
+  try {
+    const setupSession = await prisma.setupSession.create({
+      data: {
+        token,
+        progress: initialProgress as any,
+        expiresAt,
+        source,
+        prefillData: prefillData ? (prefillData as any) : null,
+        manychatUserId: prefillData?.subscriber_id || null,
+        instagramHandle: prefillData?.instagram_username || null,
+      },
+    });
 
-  return {
-    token: setupSession.token,
-    expiresAt: setupSession.expiresAt.toISOString(),
-    progress: setupSession.progress as LaunchPadProgress,
-  };
+    return {
+      token: setupSession.token,
+      expiresAt: setupSession.expiresAt.toISOString(),
+      progress: setupSession.progress as LaunchPadProgress,
+    };
+  } catch (error: any) {
+    // Check if it's a Prisma schema error (table doesn't exist)
+    if (error.code === 'P2001' || 
+        error.code === 'P2025' ||
+        error.message?.includes('does not exist') || 
+        error.message?.includes('relation') || 
+        error.message?.includes('table') ||
+        error.message?.includes('Unknown model')) {
+      throw new Error('Database migration required. Please run: npx prisma migrate dev --name add_setup_session');
+    }
+    throw error;
+  }
+
 }
 
 /**

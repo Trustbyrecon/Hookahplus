@@ -14,12 +14,13 @@ Sentry.init({
   environment: process.env.NODE_ENV || 'development',
   
   // Release tracking for better error grouping
-  release: process.env.NEXT_PUBLIC_APP_VERSION || process.env.VERCEL_GIT_COMMIT_SHA || undefined,
+  release: process.env.NEXT_PUBLIC_APP_VERSION || process.env.VERCEL_GIT_COMMIT_SHA || `launchpad-${Date.now()}`,
   
   // Server-side integrations
   integrations: [
     Sentry.httpIntegration(),
-    Sentry.consoleIntegration({ levels: ['warn', 'error'] }),
+    // consoleIntegration removed - not available in @sentry/nextjs
+    // Console logs are captured automatically via breadcrumbs
   ],
   
   // Filter out noise and health checks

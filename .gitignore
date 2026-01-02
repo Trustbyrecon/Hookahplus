@@ -198,6 +198,7 @@ temp/
 *.sln
 *.sw?
 .env*.local
+.env.vercel
 
 # Terraform state and sensitive files
 terraform/**/.terraform/

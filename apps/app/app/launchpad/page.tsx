@@ -1,15 +1,20 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { VenueSnapshotStep } from '../../components/launchpad/VenueSnapshotStep';
+import { FlavorsMixesStep } from '../../components/launchpad/FlavorsMixesStep';
+import { SessionRulesStep } from '../../components/launchpad/SessionRulesStep';
+import { StaffRolesStep } from '../../components/launchpad/StaffRolesStep';
+import { POSBridgeStep } from '../../components/launchpad/POSBridgeStep';
+import { GoLiveStep } from '../../components/launchpad/GoLiveStep';
 import { ProgressIndicator } from '../../components/launchpad/ProgressIndicator';
 import { saveProgressLocal, loadProgressLocal, syncProgressToServer } from '../../lib/launchpad/progress-persistence';
 import { LaunchPadProgress } from '../../types/launchpad';
 
 const TOTAL_STEPS = 6;
 
-export default function LaunchPadPage() {
+function LaunchPadPageContent() {
   const searchParams = useSearchParams();
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
@@ -86,7 +91,16 @@ export default function LaunchPadPage() {
           setProgress(result.progress);
           saveProgressLocal(result.progress);
         } else {
-          setError(result.error || 'Failed to initialize session');
+          // Show migration message if needed
+          if (result.migrationRequired) {
+            setError(
+              `Database setup required: ${result.details}\n\n` +
+              `Please run this command in your terminal:\n` +
+              `cd apps/app && npx prisma migrate dev --name add_setup_session`
+            );
+          } else {
+            setError(result.error || 'Failed to initialize session');
+          }
         }
       } catch (err: any) {
         console.error('[LaunchPad] Initialization error:', err);
@@ -189,16 +203,61 @@ export default function LaunchPadPage() {
               onBack={currentStep > 1 ? handleBack : undefined}
             />
           )}
-          {currentStep > 1 && currentStep <= TOTAL_STEPS && (
-            <div className="bg-zinc-900/60 border border-zinc-800 rounded-lg p-8">
-              <p className="text-zinc-400">
-                Step {currentStep} coming soon...
-              </p>
-            </div>
+          {currentStep === 2 && (
+            <FlavorsMixesStep
+              initialData={progress.data.step2}
+              onComplete={(data) => handleStepComplete(2, data)}
+              onBack={handleBack}
+            />
+          )}
+          {currentStep === 3 && (
+            <SessionRulesStep
+              initialData={progress.data.step3}
+              onComplete={(data) => handleStepComplete(3, data)}
+              onBack={handleBack}
+            />
+          )}
+          {currentStep === 4 && (
+            <StaffRolesStep
+              initialData={progress.data.step4}
+              onComplete={(data) => handleStepComplete(4, data)}
+              onBack={handleBack}
+            />
+          )}
+          {currentStep === 5 && (
+            <POSBridgeStep
+              initialData={progress.data.step5}
+              onComplete={(data) => handleStepComplete(5, data)}
+              onBack={handleBack}
+            />
+          )}
+          {currentStep === 6 && sessionToken && (
+            <GoLiveStep
+              sessionToken={sessionToken}
+              onBack={handleBack}
+            />
           )}
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LaunchPadPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <h2 className="text-lg font-semibold mb-2">Loading LaunchPad...</h2>
+            <p className="text-zinc-400 text-sm">Initializing setup</p>
+          </div>
+        </div>
+      }
+    >
+      <LaunchPadPageContent />
+    </Suspense>
   );
 }
 
