@@ -1,0 +1,299 @@
+'use client';
+
+import React, { useState } from 'react';
+import { ArrowRight, ArrowLeft } from 'lucide-react';
+import { VenueSnapshotData } from '../../types/launchpad';
+
+interface VenueSnapshotStepProps {
+  initialData?: VenueSnapshotData;
+  onComplete: (data: VenueSnapshotData) => void;
+  onBack?: () => void;
+}
+
+const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+export function VenueSnapshotStep({ initialData, onComplete, onBack }: VenueSnapshotStepProps) {
+  const [formData, setFormData] = useState<VenueSnapshotData>({
+    loungeName: initialData?.loungeName || '',
+    operatingHours: initialData?.operatingHours || {},
+    tablesCount: initialData?.tablesCount || 0,
+    sectionsCount: initialData?.sectionsCount || 0,
+    baseSessionPrice: initialData?.baseSessionPrice || 0,
+    primaryGoal: initialData?.primaryGoal || 'all_above',
+  });
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Validation
+    const newErrors: Record<string, string> = {};
+    if (!formData.loungeName.trim()) {
+      newErrors.loungeName = 'Lounge name is required';
+    }
+    if (formData.tablesCount <= 0) {
+      newErrors.tablesCount = 'Please enter a valid number of tables';
+    }
+    if (formData.baseSessionPrice <= 0) {
+      newErrors.baseSessionPrice = 'Please enter a valid base session price';
+    }
+
+    // Check at least one day has hours
+    const hasHours = Object.values(formData.operatingHours).some(
+      (hours) => hours !== null
+    );
+    if (!hasHours) {
+      newErrors.operatingHours = 'Please set operating hours for at least one day';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    onComplete(formData);
+  };
+
+  const updateHours = (day: string, field: 'open' | 'close', value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      operatingHours: {
+        ...prev.operatingHours,
+        [day]: {
+          ...(prev.operatingHours[day] || { open: '', close: '' }),
+          [field]: value,
+        },
+      },
+    }));
+  };
+
+  const toggleDayClosed = (day: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      operatingHours: {
+        ...prev.operatingHours,
+        [day]: prev.operatingHours[day] === null ? { open: '17:00', close: '02:00' } : null,
+      },
+    }));
+  };
+
+  return (
+    <div className="bg-zinc-900/60 border border-zinc-800 rounded-lg p-8">
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold mb-2">Venue Snapshot</h2>
+        <p className="text-zinc-400 text-sm">
+          Set the rules once. We'll run them every night.
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Lounge Name */}
+        <div>
+          <label className="block text-sm font-medium text-zinc-300 mb-2">
+            Lounge name *
+          </label>
+          <input
+            type="text"
+            value={formData.loungeName}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, loungeName: e.target.value }))
+            }
+            className="w-full px-4 py-3 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:border-teal-500 focus:outline-none"
+            placeholder="Your Hookah Lounge Name"
+            required
+          />
+          {errors.loungeName && (
+            <p className="mt-1 text-sm text-red-400">{errors.loungeName}</p>
+          )}
+        </div>
+
+        {/* Operating Hours */}
+        <div>
+          <label className="block text-sm font-medium text-zinc-300 mb-3">
+            Operating hours * (Used for shift handoff and session timing)
+          </label>
+          <div className="space-y-2">
+            {DAYS.map((day) => {
+              const hours = formData.operatingHours[day];
+              const isClosed = hours === null;
+
+              return (
+                <div key={day} className="flex items-center gap-3">
+                  <div className="w-24 text-sm text-zinc-400 capitalize">{day}</div>
+                  {isClosed ? (
+                    <button
+                      type="button"
+                      onClick={() => toggleDayClosed(day)}
+                      className="px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-zinc-400 hover:border-teal-500 transition-colors"
+                    >
+                      Closed
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-2 flex-1">
+                      <input
+                        type="time"
+                        value={hours?.open || ''}
+                        onChange={(e) => updateHours(day, 'open', e.target.value)}
+                        className="px-3 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:border-teal-500 focus:outline-none"
+                      />
+                      <span className="text-zinc-400">to</span>
+                      <input
+                        type="time"
+                        value={hours?.close || ''}
+                        onChange={(e) => updateHours(day, 'close', e.target.value)}
+                        className="px-3 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:border-teal-500 focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => toggleDayClosed(day)}
+                        className="px-3 py-2 text-sm text-zinc-400 hover:text-white transition-colors"
+                      >
+                        Close
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {errors.operatingHours && (
+            <p className="mt-2 text-sm text-red-400">{errors.operatingHours}</p>
+          )}
+        </div>
+
+        {/* Tables & Sections */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-zinc-300 mb-2">
+              Tables / sections * (Rough count is fine. You can adjust later.)
+            </label>
+            <input
+              type="number"
+              min="1"
+              value={formData.tablesCount || ''}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  tablesCount: parseInt(e.target.value, 10) || 0,
+                }))
+              }
+              className="w-full px-4 py-3 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:border-teal-500 focus:outline-none"
+              placeholder="12"
+              required
+            />
+            {errors.tablesCount && (
+              <p className="mt-1 text-sm text-red-400">{errors.tablesCount}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-zinc-300 mb-2">
+              Sections (optional)
+            </label>
+            <input
+              type="number"
+              min="0"
+              value={formData.sectionsCount || ''}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  sectionsCount: parseInt(e.target.value, 10) || 0,
+                }))
+              }
+              className="w-full px-4 py-3 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:border-teal-500 focus:outline-none"
+              placeholder="3"
+            />
+          </div>
+        </div>
+
+        {/* Base Session Price */}
+        <div>
+          <label className="block text-sm font-medium text-zinc-300 mb-2">
+            Base session price * (Default price. Add-ons come next.)
+          </label>
+          <div className="relative">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400">$</span>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={(formData.baseSessionPrice / 100).toFixed(2)}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  baseSessionPrice: Math.round(parseFloat(e.target.value) * 100) || 0,
+                }))
+              }
+              className="w-full pl-8 pr-4 py-3 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:border-teal-500 focus:outline-none"
+              placeholder="30.00"
+              required
+            />
+          </div>
+          {errors.baseSessionPrice && (
+            <p className="mt-1 text-sm text-red-400">{errors.baseSessionPrice}</p>
+          )}
+        </div>
+
+        {/* Primary Goal */}
+        <div>
+          <label className="block text-sm font-medium text-zinc-300 mb-3">
+            Primary goal (choose one) *
+          </label>
+          <div className="space-y-2">
+            {[
+              { value: 'reduce_comped', label: 'Reduce comped sessions' },
+              { value: 'speed_checkout', label: 'Speed up checkout' },
+              { value: 'capture_preferences', label: 'Capture repeat guest preferences' },
+              { value: 'all_above', label: 'All of the above' },
+            ].map((option) => (
+              <label
+                key={option.value}
+                className="flex items-center gap-3 p-4 bg-zinc-800 border border-zinc-600 rounded-lg cursor-pointer hover:border-teal-500 transition-colors"
+              >
+                <input
+                  type="radio"
+                  name="primaryGoal"
+                  value={option.value}
+                  checked={formData.primaryGoal === option.value}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      primaryGoal: e.target.value as VenueSnapshotData['primaryGoal'],
+                    }))
+                  }
+                  className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                />
+                <span className="text-sm text-zinc-300">{option.label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <div className="flex justify-between pt-6 border-t border-zinc-700">
+          {onBack ? (
+            <button
+              type="button"
+              onClick={onBack}
+              className="flex items-center gap-2 px-6 py-3 bg-zinc-800 border border-zinc-600 rounded-lg text-white hover:border-teal-500 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </button>
+          ) : (
+            <div />
+          )}
+          <button
+            type="submit"
+            className="flex items-center gap-2 px-6 py-3 bg-teal-600 hover:bg-teal-700 rounded-lg text-white font-semibold transition-colors"
+          >
+            Continue
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+

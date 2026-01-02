@@ -1091,3 +1091,25 @@ model NetworkPIILink {
   @@index([piiHash], map: "idx_network_pii_hash")
   @@map("network_pii_links")
 }
+
+// LaunchPad SetupSession - Anonymous onboarding sessions
+model SetupSession {
+  id            String    @id @default(cuid())
+  token         String    @unique
+  progress      Json      // LaunchPadProgress type
+  loungeId      String?   @unique @map("lounge_id")
+  source        String?   // "manychat" | "web" | "direct"
+  manychatUserId String?  @map("manychat_user_id")
+  instagramHandle String? @map("instagram_handle")
+  prefillData   Json?     @map("prefill_data") // ManyChat collected data
+  userId        String?   @map("user_id") // Set at Go Live
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt     DateTime  @map("expires_at") @db.Timestamptz(6)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([token], map: "idx_setup_session_token")
+  @@index([expiresAt], map: "idx_setup_session_expires")
+  @@index([loungeId], map: "idx_setup_session_lounge_id")
+  @@index([source], map: "idx_setup_session_source")
+  @@map("setup_sessions")
+}
