@@ -11,6 +11,8 @@
  */
 
 import pino from 'pino';
+import { sendPinoLogToSentry } from './logger-pino-sentry';
+import { createTransportStreams } from './logger-pino-transports';
 
 export enum LogLevel {
   DEBUG = 'debug',
@@ -48,6 +50,20 @@ const createPinoLogger = () => {
     },
   };
 
+  // Use multistream if transports are configured
+  const transportStreams = createTransportStreams();
+  
+  // If multiple transports configured, use multistream
+  if (transportStreams.length > 1) {
+    return pino(baseConfig, pino.multistream(transportStreams));
+  }
+
+  // Single transport (console/stdout)
+  if (transportStreams.length === 1) {
+    return pino(baseConfig, transportStreams[0].stream);
+  }
+
+  // Fallback: default console output
   // In development, use pretty printing
   if (isDevelopment && process.env.STRUCTURED_LOGGING !== 'true') {
     return pino(
@@ -120,6 +136,9 @@ export class Logger {
       };
     }
     this.pinoLogger.warn(enriched, message);
+    
+    // Send to Sentry (as breadcrumb, less noisy)
+    sendPinoLogToSentry('warn', message, context, error);
   }
 
   error(message: string, context?: LogContext, error?: Error): void {
@@ -132,6 +151,9 @@ export class Logger {
       };
     }
     this.pinoLogger.error(enriched, message);
+    
+    // Send to Sentry (as error event)
+    sendPinoLogToSentry('error', message, context, error);
   }
 
   /**
