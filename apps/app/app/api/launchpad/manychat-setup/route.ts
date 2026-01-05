@@ -32,6 +32,14 @@ export async function POST(req: NextRequest) {
     }
 
     // Prepare prefill data from ManyChat
+    // Normalize session_type values to match expected format
+    let normalizedSessionType = custom_fields.session_type;
+    if (custom_fields.session_type?.includes('Flat fee')) {
+      normalizedSessionType = 'Flat fee';
+    } else if (custom_fields.session_type?.includes('Timed')) {
+      normalizedSessionType = 'Timed';
+    }
+
     const prefillData = {
       subscriber_id,
       instagram_username,
@@ -39,7 +47,7 @@ export async function POST(req: NextRequest) {
       city: custom_fields.city,
       seats_tables: custom_fields.seats_tables || custom_fields.tables_count,
       pos_used: custom_fields.pos_used || custom_fields.pos_type,
-      session_type: custom_fields.session_type,
+      session_type: normalizedSessionType,
       price_range: custom_fields.price_range,
       top_5_flavors: custom_fields.top_5_flavors,
     };
@@ -65,11 +73,18 @@ export async function POST(req: NextRequest) {
     const completionLink = `${baseUrl}/launchpad?token=${session.token}&source=manychat`;
 
     // Build preview asset links (will be generated at Go Live)
+    // IMPORTANT: All values must be STRINGS (URLs) for ManyChat JSONPath parsing
     const previewAssets = {
-      qrCodes: `${baseUrl}/api/launchpad/preview/qr?token=${session.token}`,
-      posGuide: `${baseUrl}/api/launchpad/preview/pos-guide?token=${session.token}`,
-      checklist: `${baseUrl}/api/launchpad/preview/checklist?token=${session.token}`,
+      qrCodes: `${baseUrl}/api/launchpad/preview/qr?token=${session.token}`, // String URL
+      posGuide: `${baseUrl}/api/launchpad/preview/pos-guide?token=${session.token}`, // String URL
+      checklist: `${baseUrl}/api/launchpad/preview/checklist?token=${session.token}`, // String URL
     };
+
+    // Ensure all values are strings (sanity check)
+    const completionLinkStr = String(completionLink);
+    const qrCodesStr = String(previewAssets.qrCodes);
+    const posGuideStr = String(previewAssets.posGuide);
+    const checklistStr = String(previewAssets.checklist);
 
     // Format response for ManyChat
     const formattedResponse = formatManyChatAPIResponse(
@@ -82,15 +97,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       setupSessionToken: session.token,
-      completionLink,
-      previewAssets,
+      // Primary fields for ManyChat JSONPath: $.completionLink, $.previewAssets.*
+      completionLink: completionLinkStr, // String URL - required for $.completionLink
+      previewAssets: {
+        qrCodes: qrCodesStr, // String URL - required for $.previewAssets.qrCodes
+        posGuide: posGuideStr, // String URL - required for $.previewAssets.posGuide
+        checklist: checklistStr, // String URL - required for $.previewAssets.checklist
+      },
+      // Top-level aliases for easier ManyChat JSONPath parsing (alternative mapping)
+      launchpad_completion_link: completionLinkStr,
+      launchpad_qr_codes: qrCodesStr,
+      launchpad_pos_guide: posGuideStr,
+      launchpad_checklist: checklistStr,
       preliminaryConfig,
       message: formattedResponse.message, // Formatted for ManyChat DM
       // Also include raw data for ManyChat to parse if needed
       raw: {
         token: session.token,
-        completionLink,
-        previewAssets,
+        completionLink: completionLinkStr,
+        previewAssets: {
+          qrCodes: qrCodesStr,
+          posGuide: posGuideStr,
+          checklist: checklistStr,
+        },
       },
     });
   } catch (error: any) {
@@ -103,6 +132,7 @@ export async function POST(req: NextRequest) {
         success: false,
         error: 'Failed to create setup session',
         message: errorMessage, // Formatted for ManyChat DM
+        fallbackMessage: "Quick update: I couldn't generate your kit automatically. Reply 'LAUNCHPAD' again in 2 minutes, or type 'HELP' to get support.",
         details: error.message,
       },
       { status: 500 }
