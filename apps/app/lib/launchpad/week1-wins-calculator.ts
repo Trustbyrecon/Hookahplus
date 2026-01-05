@@ -9,6 +9,7 @@
  */
 
 import { prisma } from '../db';
+import { Prisma } from '@prisma/client';
 
 export interface WeekOneWinsMetrics {
   daysActive: number;
@@ -169,7 +170,7 @@ async function calculateAddOnsCaptured(
       },
       // Sessions with flavor mix (indicates add-ons)
       flavorMix: {
-        not: null,
+        not: Prisma.JsonNull,
       },
     },
   });
