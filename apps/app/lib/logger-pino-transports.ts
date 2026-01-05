@@ -28,7 +28,7 @@ export interface TransportConfig {
  */
 export interface PinoStream {
   level: string;
-  stream: NodeJS.WritableStream | pino.TransportMultiStreamOptions;
+  stream: NodeJS.WritableStream | pino.TransportMultiOptions;
 }
 
 /**
