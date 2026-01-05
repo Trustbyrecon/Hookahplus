@@ -16,7 +16,6 @@
  */
 
 import pino from 'pino';
-import type { Stream } from 'pino';
 
 export interface TransportConfig {
   enabled: boolean;
@@ -25,10 +24,18 @@ export interface TransportConfig {
 }
 
 /**
+ * Pino stream type definition
+ */
+export interface PinoStream {
+  level: string;
+  stream: NodeJS.WritableStream | pino.TransportMultiStreamOptions;
+}
+
+/**
  * Create transport streams based on environment configuration
  */
-export function createTransportStreams(): Stream[] {
-  const streams: Stream[] = [];
+export function createTransportStreams(): PinoStream[] {
+  const streams: PinoStream[] = [];
   const isDevelopment = process.env.NODE_ENV === 'development';
 
   // 1. Console/Stdout (always enabled)
@@ -132,7 +139,7 @@ function createHttpStream(config: {
   url: string;
   method?: string;
   headers?: Record<string, string>;
-}): Stream {
+}): PinoStream {
   const { Writable } = require('stream');
 
   return {
