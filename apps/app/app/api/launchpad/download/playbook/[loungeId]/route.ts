@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../../../../lib/db';
-import { generateStaffPlaybook } from '../../../../../../../lib/launchpad/staff-playbook-generator';
-import { generateLoungeOpsConfig } from '../../../../../../../lib/launchpad/config-generator';
-import { loadSetupSession } from '../../../../../../../lib/launchpad/session-manager';
-import { generatePDFFromHTML } from '../../../../../../../lib/launchpad/pdf-generator';
+import { prisma } from '@/lib/db';
+import { generateStaffPlaybook } from '@/lib/launchpad/staff-playbook-generator';
+import { generateLoungeOpsConfig } from '@/lib/launchpad/config-generator';
+import { loadSetupSession } from '@/lib/launchpad/session-manager';
+import { generatePDFFromHTML } from '@/lib/launchpad/pdf-generator';
 
 /**
  * GET /api/launchpad/download/playbook/[loungeId]

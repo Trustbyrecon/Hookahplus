@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../../../../lib/db';
-import { generateQRCodePNG } from '../../../../../../../lib/launchpad/qr-generator';
+import { prisma } from '@/lib/db';
+import { generateQRCodePNG } from '@/lib/launchpad/qr-generator';
 
 /**
  * GET /api/launchpad/download/qr/[loungeId]/[tableId]

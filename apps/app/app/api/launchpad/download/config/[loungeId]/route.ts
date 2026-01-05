@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../../../../lib/db';
-import { exportConfigAsYAML, exportConfigAsJSON } from '../../../../../../../lib/launchpad/config-generator';
+import { prisma } from '@/lib/db';
+import { exportConfigAsYAML, exportConfigAsJSON } from '@/lib/launchpad/config-generator';
 
 /**
  * GET /api/launchpad/download/config/[loungeId]
