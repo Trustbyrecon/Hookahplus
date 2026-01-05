@@ -83,7 +83,7 @@ export async function createSetupSession(
     return {
       token: setupSession.token,
       expiresAt: setupSession.expiresAt.toISOString(),
-      progress: setupSession.progress as LaunchPadProgress,
+      progress: setupSession.progress as unknown as LaunchPadProgress,
     };
   } catch (error: any) {
     // Check if it's a Prisma schema error (table doesn't exist)
@@ -119,7 +119,7 @@ export async function loadSetupSession(
     return null;
   }
 
-  return setupSession.progress as LaunchPadProgress;
+  return setupSession.progress as unknown as LaunchPadProgress;
 }
 
 /**
@@ -142,7 +142,7 @@ export async function saveProgress(
     throw new Error('Setup session has expired');
   }
 
-  const currentProgress = existing.progress as LaunchPadProgress;
+  const currentProgress = existing.progress as unknown as LaunchPadProgress;
   const updatedProgress: LaunchPadProgress = {
     ...currentProgress,
     currentStep: step + 1, // Move to next step
@@ -198,6 +198,6 @@ export async function getSetupSessionByLoungeId(
     return null;
   }
 
-  return setupSession.progress as LaunchPadProgress;
+  return setupSession.progress as unknown as LaunchPadProgress;
 }
 
