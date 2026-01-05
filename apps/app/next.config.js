@@ -14,6 +14,20 @@ const nextConfig = {
   experimental: {
     instrumentationHook: true,
   },
+  
+  // Webpack configuration to handle optional dependencies
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      // Ignore puppeteer at build time (it's optional and loaded dynamically)
+      const webpack = require('webpack');
+      config.plugins.push(
+        new webpack.IgnorePlugin({
+          resourceRegExp: /^puppeteer$/,
+        })
+      );
+    }
+    return config;
+  },
 };
 
 // Wrap with Sentry config if DSN is provided
