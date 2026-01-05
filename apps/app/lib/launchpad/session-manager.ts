@@ -146,7 +146,7 @@ export async function saveProgress(
   const updatedProgress: LaunchPadProgress = {
     ...currentProgress,
     currentStep: step + 1, // Move to next step
-    completedSteps: [...new Set([...currentProgress.completedSteps, step])],
+    completedSteps: Array.from(new Set([...currentProgress.completedSteps, step])),
     data: {
       ...currentProgress.data,
       ...data,
