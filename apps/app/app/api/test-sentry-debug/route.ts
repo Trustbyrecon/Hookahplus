@@ -5,26 +5,12 @@ export async function GET() {
   const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
   const dsnConfigured = !!dsn;
   
-  // Check if Sentry is initialized
-  const isInitialized = typeof Sentry !== 'undefined' && Sentry.getCurrentHub !== undefined;
+  // Check if Sentry is available (simplified check for v10+)
+  const isAvailable = typeof Sentry !== 'undefined' && typeof Sentry.captureException === 'function';
   
-  // Get Sentry client info
-  let clientInfo = null;
-  try {
-    const hub = Sentry.getCurrentHub();
-    const client = hub.getClient();
-    clientInfo = {
-      dsn: client?.getDsn()?.toString() || 'not set',
-      environment: client?.getOptions()?.environment || 'not set',
-      enabled: client?.getOptions()?.enabled !== false,
-    };
-  } catch (e) {
-    clientInfo = { error: String(e) };
-  }
-  
-  // Try to capture a test event with more explicit configuration
+  // Try to capture a test event
   let captureResult = null;
-  if (dsnConfigured && isInitialized) {
+  if (dsnConfigured && isAvailable) {
     try {
       const eventId = Sentry.captureException(
         new Error('Sentry debug test - explicit capture'),
@@ -65,8 +51,7 @@ export async function GET() {
     diagnostic: 'Sentry Debug Information',
     dsn_configured: dsnConfigured,
     dsn_preview: dsn ? `${dsn.substring(0, 30)}...` : 'not set',
-    sentry_initialized: isInitialized,
-    client_info: clientInfo,
+    sentry_available: isAvailable,
     capture_result: captureResult,
     environment: process.env.NODE_ENV || 'development',
     node_version: process.version,
