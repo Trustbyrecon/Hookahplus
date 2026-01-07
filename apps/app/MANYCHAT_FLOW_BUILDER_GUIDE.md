@@ -65,9 +65,33 @@ This takes about 5 minutes. Ready?
 - ✅ Yes, let's go
 - ❌ Not right now
 
+**Button Actions Configuration:**
+
+1. **"Yes, let's go" Button:**
+   - Click the button in the message editor
+   - Click **"Add Action"** or the **"Then"** arrow
+   - Connect to **Step 2.2: Lounge Name** (Ask Question action)
+
+2. **"Not right now" Button:**
+   - Click the button in the message editor (the "Edit Button" sidebar will open)
+   - In the sidebar, under **"When this button is pressed"**, click **"Perform Actions"**
+   - Click **"+ Add Action"** or **"Add Action"**
+   - In the **"Perform next actions..."** modal that opens:
+     *   Look for **"Send Message"** in one of these categories:
+     *   - **"Live Chat"** category (most likely location - click the chat bubble icon 💬)
+     *   - **"Recently used"** category (if you've used it before - click the star icon ✩)
+     *   - Scroll through other categories if not found
+   - Click **"Send Message"** when you find it
+   - In the message editor that appears, type:
+     ```
+     No problem! DM me anytime to get started. 👋
+     ```
+   - Click **"Done"** to save the button configuration
+   - The flow will naturally end after this message (no need to add "End Flow" explicitly)
+
 **Flow Logic:**
 - If "Yes" → Continue to Step 2.2
-- If "No" → End with "No problem! DM me anytime to get started."
+- If "No" → Send exit message → End flow
 
 ---
 

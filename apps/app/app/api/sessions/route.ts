@@ -1813,20 +1813,101 @@ export async function PATCH(req: NextRequest) {
         // ADMIN can actually DELETE sessions (not just mark as canceled)
         console.log(`[Sessions API] ADMIN delete: Deleting session ${dbSession.id} from database`);
         
-        // Actually delete the session from the database
-        await prisma.session.delete({
-          where: { id: dbSession.id }
-        });
-        
-        // Also delete related ReflexEvents if they exist
+        // Delete related records first (in correct order to avoid foreign key violations)
+        // Note: Order, Delivery, and SessionNote have onDelete: Cascade, so they auto-delete
         try {
+          // Delete SessionEvent records (no cascade delete)
+          await prisma.sessionEvent.deleteMany({
+            where: { sessionId: dbSession.id }
+          });
+          console.log(`[Sessions API] Deleted SessionEvent records for session ${dbSession.id}`);
+        } catch (sessionEventError) {
+          console.warn('[Sessions API] Failed to delete SessionEvent records:', sessionEventError);
+          // Continue anyway - might not exist
+        }
+        
+        try {
+          // Delete ReflexEvent records (no cascade delete)
           await prisma.reflexEvent.deleteMany({
             where: { sessionId: dbSession.id }
           });
+          console.log(`[Sessions API] Deleted ReflexEvent records for session ${dbSession.id}`);
         } catch (reflexError) {
-          // Log but don't fail if reflex events deletion fails
-          console.warn('[Sessions API] Failed to delete related ReflexEvents:', reflexError);
+          console.warn('[Sessions API] Failed to delete ReflexEvent records:', reflexError);
+          // Continue anyway - might not exist
         }
+        
+        try {
+          // Delete Payment records (no cascade delete)
+          await prisma.payment.deleteMany({
+            where: { sessionId: dbSession.id }
+          });
+          console.log(`[Sessions API] Deleted Payment records for session ${dbSession.id}`);
+        } catch (paymentError) {
+          console.warn('[Sessions API] Failed to delete Payment records:', paymentError);
+          // Continue anyway - might not exist
+        }
+        
+        try {
+          // Delete CampaignUsage records (no cascade delete)
+          await prisma.campaignUsage.deleteMany({
+            where: { sessionId: dbSession.id }
+          });
+          console.log(`[Sessions API] Deleted CampaignUsage records for session ${dbSession.id}`);
+        } catch (campaignError) {
+          console.warn('[Sessions API] Failed to delete CampaignUsage records:', campaignError);
+          // Continue anyway - might not exist
+        }
+        
+        try {
+          // Delete SettlementReconciliation records (no cascade delete)
+          await prisma.settlementReconciliation.deleteMany({
+            where: { sessionId: dbSession.id }
+          });
+          console.log(`[Sessions API] Deleted SettlementReconciliation records for session ${dbSession.id}`);
+        } catch (settlementError) {
+          console.warn('[Sessions API] Failed to delete SettlementReconciliation records:', settlementError);
+          // Continue anyway - might not exist
+        }
+        
+        try {
+          // Delete PosTicket records (no cascade delete)
+          await prisma.posTicket.deleteMany({
+            where: { sessionId: dbSession.id }
+          });
+          console.log(`[Sessions API] Deleted PosTicket records for session ${dbSession.id}`);
+        } catch (posTicketError) {
+          console.warn('[Sessions API] Failed to delete PosTicket records:', posTicketError);
+          // Continue anyway - might not exist
+        }
+        
+        try {
+          // Delete LoyaltyTransaction records (no cascade delete)
+          await prisma.loyaltyTransaction.deleteMany({
+            where: { sessionId: dbSession.id }
+          });
+          console.log(`[Sessions API] Deleted LoyaltyTransaction records for session ${dbSession.id}`);
+        } catch (loyaltyError) {
+          console.warn('[Sessions API] Failed to delete LoyaltyTransaction records:', loyaltyError);
+          // Continue anyway - might not exist
+        }
+        
+        try {
+          // Delete LoyaltyRedemption records (no cascade delete)
+          await prisma.loyaltyRedemption.deleteMany({
+            where: { sessionId: dbSession.id }
+          });
+          console.log(`[Sessions API] Deleted LoyaltyRedemption records for session ${dbSession.id}`);
+        } catch (redemptionError) {
+          console.warn('[Sessions API] Failed to delete LoyaltyRedemption records:', redemptionError);
+          // Continue anyway - might not exist
+        }
+        
+        // Now delete the session itself
+        // Order, Delivery, and SessionNote will cascade delete automatically
+        await prisma.session.delete({
+          where: { id: dbSession.id }
+        });
         
         console.log(`[Sessions API] ✅ Session ${dbSession.id} deleted successfully`);
         
