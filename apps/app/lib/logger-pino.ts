@@ -55,12 +55,17 @@ const createPinoLogger = () => {
   
   // If multiple transports configured, use multistream
   if (transportStreams.length > 1) {
-    return pino(baseConfig, pino.multistream(transportStreams));
+    // Convert PinoStream[] to StreamEntry[] format expected by multistream
+    const streamEntries = transportStreams.map(({ level, stream }) => ({
+      level,
+      stream: stream as pino.DestinationStream,
+    }));
+    return pino(baseConfig, pino.multistream(streamEntries));
   }
 
   // Single transport (console/stdout)
   if (transportStreams.length === 1) {
-    return pino(baseConfig, transportStreams[0].stream);
+    return pino(baseConfig, transportStreams[0].stream as pino.DestinationStream);
   }
 
   // Fallback: default console output
