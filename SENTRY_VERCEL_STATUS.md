@@ -135,3 +135,4 @@ curl https://your-guest-domain.vercel.app/api/test-sentry
 **Status:** ⚠️ Manual Setup Required  
 **Last Updated:** 2025-01-27
 
+
