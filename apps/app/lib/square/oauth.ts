@@ -24,7 +24,7 @@ export class SquareOAuth {
    * Generate authorization URL for OAuth flow
    */
   static getAuthorizationUrl(state: string): string {
-    const clientId = process.env.SQUARE_APPLICATION_ID;
+    const clientId = process.env.SQUARE_APPLICATION_ID?.trim();
     if (!clientId) {
       throw new Error('SQUARE_APPLICATION_ID environment variable is required');
     }
@@ -43,13 +43,17 @@ export class SquareOAuth {
       'LOCATIONS_READ'
     ].join(' ');
 
+    // Ensure clientId has no whitespace or newlines
+    const cleanClientId = clientId.trim().replace(/[\r\n]/g, '');
+    
     const params = new URLSearchParams({
-      client_id: clientId,
+      client_id: cleanClientId,
       scope: scopes,
       session: 'false',
       state: state
     });
 
+    // Build URL with redirect_uri as separate parameter (Square expects it this way)
     const authUrl = `${this.BASE_URL}/oauth2/authorize?${params.toString()}&redirect_uri=${encodeURIComponent(redirectUri)}`;
     
     // Log for debugging in development

@@ -55,8 +55,8 @@ export class SquareAdapter implements PosAdapter {
         }
       } else {
         // Fallback to environment variables (legacy mode)
-        this.locationId = process.env.SQUARE_LOCATION_ID || null;
-        this.accessToken = process.env.SQUARE_ACCESS_TOKEN || null;
+        this.locationId = process.env.SQUARE_LOCATION_ID?.trim() || null;
+        this.accessToken = process.env.SQUARE_ACCESS_TOKEN?.trim() || null;
       }
 
       if (!this.accessToken) {
