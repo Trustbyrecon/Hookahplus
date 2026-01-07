@@ -22,7 +22,9 @@
     "test:coverage": "vitest --coverage",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:all": "npm run test && npm run test:e2e"
+    "test:all": "npm run test && npm run test:e2e",
+    "test:square": "tsx scripts/test-square-integration.ts",
+    "test:pos": "tsx scripts/test-square-integration.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

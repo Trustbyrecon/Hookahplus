@@ -34,6 +34,8 @@
     "test:smoke": "playwright test --grep @smoke",
     "test:webhook": "playwright test tests/smoke/webhook-flow.spec.ts",
     "test:live-dollar": "playwright test tests/smoke/checkout-flow.spec.ts",
+    "test:square": "cd apps/app && npm run test:square",
+    "test:pos": "cd apps/app && npm run test:pos",
     "check:env-parity": "node scripts/check-env-parity.js",
     "reflex:gate": "node scripts/reflex-gate.js",
     "reflex:score": "node scripts/reflex-score.js"
