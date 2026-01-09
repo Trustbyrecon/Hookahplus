@@ -16,15 +16,17 @@ function getCorsHeaders(req: NextRequest) {
     'https://hookahplus.net',
     'https://app.hookahplus.net',
     process.env.NEXT_PUBLIC_APP_URL,
-  ].filter(Boolean);
+  ].filter(Boolean) as string[];
   
   // In development, allow any origin; in production, check against allowed list
-  const allowedOrigin = 
-    process.env.NODE_ENV === 'development' 
-      ? origin || '*'
-      : origin && allowedOrigins.some(allowed => origin.includes(allowed))
-        ? origin
-        : allowedOrigins[0] || '*';
+  let allowedOrigin: string;
+  if (process.env.NODE_ENV === 'development') {
+    allowedOrigin = origin || '*';
+  } else if (origin && allowedOrigins.some(allowed => origin.includes(allowed))) {
+    allowedOrigin = origin;
+  } else {
+    allowedOrigin = allowedOrigins[0] || '*';
+  }
   
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
