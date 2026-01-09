@@ -185,8 +185,8 @@ export default function InvestorsPage() {
         primaryCTA={{
           text: 'Book a founder call',
           onClick: () => {
-            const message = encodeURIComponent('Hi! I\'d like to book a founder call to learn more about Hookah+ investment opportunities.');
-            window.open(`https://ig.me/m/hookahplusnet?text=${message}`, '_blank');
+            const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL || 'https://calendly.com/clark-dwayne/new-meeting';
+            window.open(calendlyUrl, '_blank');
           },
         }}
         secondaryCTA={{
@@ -659,8 +659,8 @@ export default function InvestorsPage() {
                       size="lg"
                       className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white"
                       onClick={() => {
-                        const message = encodeURIComponent('Hi! I\'d like to book a founder call to learn more about Hookah+ investment opportunities.');
-                        window.open(`https://ig.me/m/hookahplusnet?text=${message}`, '_blank');
+                        const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL || 'https://calendly.com/clark-dwayne/new-meeting';
+                        window.open(calendlyUrl, '_blank');
                       }}
                     >
                       <Calendar className="w-5 h-5 mr-2" />
@@ -701,8 +701,8 @@ export default function InvestorsPage() {
                   size="lg"
                   className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white px-8 py-4"
                   onClick={() => {
-                    const message = encodeURIComponent('Hi! I\'d like to book a founder call to learn more about Hookah+ investment opportunities.');
-                    window.open(`https://ig.me/m/hookahplusnet?text=${message}`, '_blank');
+                    const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL || 'https://calendly.com/clark-dwayne/new-meeting';
+                    window.open(calendlyUrl, '_blank');
                   }}
                 >
                   <Calendar className="w-5 h-5 mr-2" />
