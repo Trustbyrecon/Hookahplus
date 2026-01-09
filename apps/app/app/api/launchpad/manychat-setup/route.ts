@@ -4,6 +4,48 @@ import { generateLoungeOpsConfig } from '../../../../lib/launchpad/config-genera
 import { formatManyChatAPIResponse, formatManyChatErrorResponse } from '../../../../lib/launchpad/manychat-response-formatter';
 
 /**
+ * Get CORS headers for ManyChat requests
+ */
+function getCorsHeaders(req: NextRequest) {
+  const origin = req.headers.get('origin');
+  
+  // Allow ManyChat domains and your app domains
+  const allowedOrigins = [
+    'https://manychat.com',
+    'https://app.manychat.com',
+    'https://hookahplus.net',
+    'https://app.hookahplus.net',
+    process.env.NEXT_PUBLIC_APP_URL,
+  ].filter(Boolean);
+  
+  // In development, allow any origin; in production, check against allowed list
+  const allowedOrigin = 
+    process.env.NODE_ENV === 'development' 
+      ? origin || '*'
+      : origin && allowedOrigins.some(allowed => origin.includes(allowed))
+        ? origin
+        : allowedOrigins[0] || '*';
+  
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+    'Access-Control-Max-Age': '86400', // 24 hours
+  };
+}
+
+/**
+ * Handle CORS preflight requests
+ * ManyChat sends OPTIONS request before POST
+ */
+export async function OPTIONS(req: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: getCorsHeaders(req),
+  });
+}
+
+/**
  * POST /api/launchpad/manychat-setup
  * 
  * ManyChat External Request endpoint for LaunchPad Concierge
@@ -27,7 +69,10 @@ export async function POST(req: NextRequest) {
           success: false,
           error: 'lounge_name is required',
         },
-        { status: 400 }
+        { 
+          status: 400,
+          headers: getCorsHeaders(req),
+        }
       );
     }
 
@@ -121,6 +166,8 @@ export async function POST(req: NextRequest) {
           checklist: checklistStr,
         },
       },
+    }, {
+      headers: getCorsHeaders(req),
     });
   } catch (error: any) {
     console.error('[ManyChat Setup] Error:', error);
@@ -135,7 +182,10 @@ export async function POST(req: NextRequest) {
         fallbackMessage: "Quick update: I couldn't generate your kit automatically. Reply 'LAUNCHPAD' again in 2 minutes, or type 'HELP' to get support.",
         details: error.message,
       },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: getCorsHeaders(req),
+      }
     );
   }
 }

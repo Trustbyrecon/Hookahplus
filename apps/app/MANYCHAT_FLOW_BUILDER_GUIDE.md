@@ -251,7 +251,7 @@ After collecting all data, add an **External Request** action:
 
 1. **Click "Add Action"** → **"External Request"**
 2. **Request Type:** POST
-3. **URL:** `https://hookahplus.net/api/launchpad/manychat-setup`
+3. **URL:** `c`
    - Replace with your production URL
    - For testing: `http://localhost:3002/api/launchpad/manychat-setup` (use ngrok)
 
