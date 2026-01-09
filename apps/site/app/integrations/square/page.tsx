@@ -54,11 +54,15 @@ export default function SquareIntegrationPage() {
             </div>
             
             <h1 className="text-4xl md:text-5xl font-bold mb-6">
-              Hookah+ for Square POS
+              Square handles payments. Hookah+ handles memory.
             </h1>
             
-            <p className="text-xl text-zinc-300 mb-8 max-w-2xl mx-auto">
-              Run timed hookah sessions, flavor add-ons, and QR checkout, while Square stays your POS.
+            <p className="text-xl text-zinc-300 mb-4 max-w-2xl mx-auto">
+              Great hospitality is built on memory, not transactions. Hookah+ adds session tracking, guest memory, and loyalty above Square — so your lounge remembers people, not just payments.
+            </p>
+            
+            <p className="text-lg text-zinc-400 mb-8 max-w-2xl mx-auto">
+              We don't replace Square. We complete it.
             </p>
           </div>
         </section>
