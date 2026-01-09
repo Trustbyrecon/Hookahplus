@@ -19,7 +19,7 @@ export default function FAQSection() {
     },
     {
       question: 'Is Hookah+ only for hookah lounges?',
-      answer: 'Yes. It's built specifically for hookah culture and session-based hospitality.'
+      answer: "Yes. It's built specifically for hookah culture and session-based hospitality."
     },
     {
       question: 'How is loyalty different from points?',
