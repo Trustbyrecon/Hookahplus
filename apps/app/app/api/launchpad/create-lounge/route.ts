@@ -182,7 +182,7 @@ export async function POST(req: NextRequest) {
             loungeId: lounge.id,
             zoneId: defaultZone.id,
             tableId: `table-${tableNum}`,
-            name: `Table-${tableNum}`,
+            name: `T-${tableNum}`, // Clean default format: T-001, T-002, etc.
             capacity: 4, // Default capacity
             coordinates: coordinates,
             qrEnabled: true,

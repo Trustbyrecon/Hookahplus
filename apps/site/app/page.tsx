@@ -7,6 +7,7 @@ import Script from 'next/script';
 import WhyFirstHero from '../components/WhyFirstHero';
 import ProblemSection from '../components/ProblemSection';
 import SolutionSection from '../components/SolutionSection';
+import OperationalMirrorSection from '../components/OperationalMirrorSection';
 import HowItWorksSection from '../components/HowItWorksSection';
 import WhatItIsSection from '../components/WhatItIsSection';
 import FeatureGridSection from '../components/FeatureGridSection';
@@ -60,6 +61,9 @@ export default function Home() {
 
         {/* Section 3: Solution (HOW) */}
         <SolutionSection />
+
+        {/* Section 3.5: Operational Mirror (NON-SELLING SALES) */}
+        <OperationalMirrorSection />
 
         {/* Section 4: How It Works (PROOF) */}
         <HowItWorksSection />

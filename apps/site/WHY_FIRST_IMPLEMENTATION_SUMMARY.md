@@ -7,7 +7,7 @@
 
 ## 🎯 Overview
 
-Implemented a complete WHY-first homepage rewrite optimized for AI agents, search, and LLM retrieval, following Simon Sinek's "Start with Why" framework.
+Implemented a complete WHY-first homepage rewrite optimized for AI agents, search, and LLM retrieval, following Simon Sinek's "Start with Why" framework. Includes LaunchPad "non-selling sales" preview that shows operational patterns owners can't unsee.
 
 ---
 
@@ -19,6 +19,7 @@ Implemented a complete WHY-first homepage rewrite optimized for AI agents, searc
 - `WhyFirstHero.tsx` - Hero section with WHY-first messaging
 - `ProblemSection.tsx` - "Memory breaks" problem framing
 - `SolutionSection.tsx` - How Hookah+ restores memory
+- `OperationalMirrorSection.tsx` - **NEW:** LaunchPad "non-selling sales" preview showing operational patterns
 - `HowItWorksSection.tsx` - 4-step proof flow
 - `WhatItIsSection.tsx` - Explicit category lock (What it is / What it is not)
 - `FeatureGridSection.tsx` - Core features scan-friendly grid
@@ -153,6 +154,7 @@ apps/site/
 │   ├── WhyFirstHero.tsx (✅ New)
 │   ├── ProblemSection.tsx (✅ New)
 │   ├── SolutionSection.tsx (✅ New)
+│   ├── OperationalMirrorSection.tsx (✅ New - LaunchPad preview)
 │   ├── HowItWorksSection.tsx (✅ New)
 │   ├── WhatItIsSection.tsx (✅ New)
 │   ├── FeatureGridSection.tsx (✅ New)
@@ -173,6 +175,28 @@ All new components follow existing design system:
 - ✅ Responsive design (mobile-first)
 - ✅ Card components for sections
 - ✅ Button components for CTAs
+
+---
+
+## 🎯 Strategic Addition: Operational Mirror Section
+
+**New Component:** `OperationalMirrorSection.tsx`
+
+This section implements LaunchPad's "non-selling sales" approach by showing operational patterns owners can't unsee:
+
+1. **Memory Breaks at Shift Change** - Shows how context is lost
+2. **Revenue Leakage from Lost Context** - Quantifies the cost ($200-400/week)
+3. **Session Timing Inconsistencies** - Reveals optimization gaps
+4. **Flavor Preferences Lost** - Shows relationship breakdown
+
+**Key Messaging:**
+- "LaunchPad doesn't sell software. It shows you something about your operation you can't unsee."
+- "You are not being asked to buy software. You are being shown what's actually happening in your operation."
+- "Once you see these patterns, you can't unsee them."
+
+**Positioning:** Placed between Solution and How It Works sections to create the "can't unsee" moment before explaining how Hookah+ addresses it.
+
+**CTA:** "See Your Operation" (not "Buy Now") - Low-friction, high-value preview.
 
 ---
 

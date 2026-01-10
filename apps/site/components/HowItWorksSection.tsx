@@ -28,7 +28,7 @@ export default function HowItWorksSection() {
   ];
 
   return (
-    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-zinc-900/30">
+    <section id="how-it-works" className="py-20 px-4 sm:px-6 lg:px-8 bg-zinc-900/30">
       <div className="max-w-5xl mx-auto">
         <motion.h2
           initial={{ opacity: 0, y: 20 }}
