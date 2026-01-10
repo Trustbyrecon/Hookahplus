@@ -63,7 +63,7 @@ export function generateLoungeOpsConfig(
     pos_bridge: {
       pos_type: step5?.posType || 'none',
     },
-    operating_hours: step1.operatingHours,
+    operating_hours: step1.operatingHours || {}, // Optional for mobile operators
     tables_count: step1.tablesCount,
     sections_count: step1.sectionsCount || undefined,
   };
@@ -111,16 +111,19 @@ export function exportConfigAsYAML(config: LoungeOpsConfig): string {
   lines.push('pos_bridge:');
   lines.push(`  pos_type: "${config.pos_bridge.pos_type}"`);
   lines.push('');
-  lines.push('operating_hours:');
-  Object.entries(config.operating_hours).forEach(([day, hours]) => {
-    if (hours) {
-      lines.push(`  ${day}:`);
-      lines.push(`    open: "${hours.open}"`);
-      lines.push(`    close: "${hours.close}"`);
-    } else {
-      lines.push(`  ${day}: null`);
-    }
-  });
+  // Only include operating_hours if they exist (mobile operators don't have fixed hours)
+  if (config.operating_hours && Object.keys(config.operating_hours).length > 0) {
+    lines.push('operating_hours:');
+    Object.entries(config.operating_hours).forEach(([day, hours]) => {
+      if (hours) {
+        lines.push(`  ${day}:`);
+        lines.push(`    open: "${hours.open}"`);
+        lines.push(`    close: "${hours.close}"`);
+      } else {
+        lines.push(`  ${day}: null`);
+      }
+    });
+  }
   lines.push(`tables_count: ${config.tables_count}`);
   if (config.sections_count) {
     lines.push(`sections_count: ${config.sections_count}`);

@@ -6,9 +6,10 @@
 
 export interface VenueSnapshotData {
   loungeName: string;
-  operatingHours: {
+  operatorType: 'brick_and_mortar' | 'mobile'; // Mobile operators don't have fixed venue hours
+  operatingHours?: {
     [key: string]: { open: string; close: string } | null; // day: { open, close } or null for closed
-  };
+  }; // Optional for mobile operators
   tablesCount: number;
   sectionsCount?: number;
   baseSessionPrice: number; // in cents
@@ -42,7 +43,7 @@ export interface StaffRolesData {
 }
 
 export interface POSBridgeData {
-  posType: 'square' | 'clover' | 'toast' | 'none';
+  posType: 'square' | 'clover' | 'toast' | 'stripe' | 'none';
 }
 
 export interface LaunchPadProgress {
@@ -111,7 +112,7 @@ export interface LoungeOpsConfig {
     role: 'owner' | 'manager' | 'staff';
   }>;
   pos_bridge: {
-    pos_type: 'square' | 'clover' | 'toast' | 'none';
+    pos_type: 'square' | 'clover' | 'toast' | 'stripe' | 'none';
     integration_guide_url?: string;
   };
   operating_hours: {

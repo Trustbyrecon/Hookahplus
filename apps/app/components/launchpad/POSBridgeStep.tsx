@@ -14,6 +14,7 @@ const POS_OPTIONS = [
   { value: 'square', label: 'Square', description: 'Square POS integration' },
   { value: 'clover', label: 'Clover', description: 'Clover POS integration' },
   { value: 'toast', label: 'Toast', description: 'Toast POS integration' },
+  { value: 'stripe', label: 'Stripe', description: 'Stripe payment processing' },
   { value: 'none', label: 'None yet', description: 'No POS system currently' },
 ];
 

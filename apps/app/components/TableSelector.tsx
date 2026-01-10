@@ -51,29 +51,46 @@ export function TableSelector({
     if (useLayoutData) {
       const loadTables = async () => {
         try {
+          // Quick check: If no loungeId, skip loading and use demo tables immediately
+          if (!loungeId) {
+            console.log('[TableSelector] No loungeId, using demo table fallback immediately');
+            setLayoutTables([
+              { id: 'table-001', name: 'T-001', capacity: 4, seatingType: 'Booth', zone: 'Main Floor' },
+              { id: 'table-002', name: 'T-002', capacity: 4, seatingType: 'Booth', zone: 'Main Floor' },
+              { id: 'table-003', name: 'T-003', capacity: 6, seatingType: 'Couch', zone: 'Main Floor' },
+              { id: 'table-004', name: 'T-004', capacity: 2, seatingType: 'Bar Seating', zone: 'Main Floor' },
+              { id: 'table-005', name: 'T-005', capacity: 6, seatingType: 'Couch', zone: 'Main Floor' },
+              { id: 'table-006', name: 'T-006', capacity: 8, seatingType: 'Outdoor', zone: 'Main Floor' },
+              { id: 'table-007', name: 'T-007', capacity: 4, seatingType: 'Booth', zone: 'Main Floor' },
+              { id: 'table-008', name: 'T-008', capacity: 10, seatingType: 'VIP', zone: 'VIP Section' },
+              { id: 'table-009', name: 'T-009', capacity: 6, seatingType: 'Couch', zone: 'Main Floor' },
+              { id: 'table-010', name: 'T-010', capacity: 8, seatingType: 'Private Room', zone: 'Private Section' }
+            ]);
+            setLoading(false);
+            return;
+          }
+
           // Load layout tables - try loungeId-specific endpoint first, then fallback
           let loadedTables: any[] = [];
           
-          if (loungeId) {
-            try {
-              const layoutResponse = await fetch(`/api/lounges/${loungeId}/layout`);
-              if (layoutResponse.ok) {
-                const layoutData = await layoutResponse.json();
-                // Convert seats to table format
-                const seats = layoutData.layout?.seats || [];
-                loadedTables = seats.map((seat: any) => ({
-                  id: seat.tableId || seat.id, // Use tableId (e.g., "table-001") as the id, not the UUID
-                  name: seat.name || seat.tableId,
-                  seatingType: seat.seatingType || (seat.zone?.zoneType === 'VIP' ? 'VIP' : 
-                              seat.zone?.zoneType === 'OUTDOOR' ? 'Outdoor' : 'Booth'),
-                  capacity: seat.capacity || 4,
-                  zone: seat.zone?.name || 'Main Floor',
-                  coordinates: seat.coordinates || { x: 0, y: 0 }
-                }));
-              }
-            } catch (error) {
-              console.error('Error loading layout from loungeId endpoint:', error);
+          try {
+            const layoutResponse = await fetch(`/api/lounges/${loungeId}/layout`);
+            if (layoutResponse.ok) {
+              const layoutData = await layoutResponse.json();
+              // Convert seats to table format
+              const seats = layoutData.layout?.seats || [];
+              loadedTables = seats.map((seat: any) => ({
+                id: seat.tableId || seat.id, // Use tableId (e.g., "table-001") as the id, not the UUID
+                name: seat.name || seat.tableId,
+                seatingType: seat.seatingType || (seat.zone?.zoneType === 'VIP' ? 'VIP' : 
+                            seat.zone?.zoneType === 'OUTDOOR' ? 'Outdoor' : 'Booth'),
+                capacity: seat.capacity || 4,
+                zone: seat.zone?.name || 'Main Floor',
+                coordinates: seat.coordinates || { x: 0, y: 0 }
+              }));
             }
+          } catch (error) {
+            console.error('Error loading layout from loungeId endpoint:', error);
           }
           
           // Fallback to general layout endpoint
@@ -109,21 +126,32 @@ export function TableSelector({
           setLayoutTables(loadedTables);
 
           // Load lounge config for LaunchPad data (if loungeId provided)
-          if (loungeId) {
-            try {
-              const configResponse = await fetch(`/api/lounges/${loungeId}/config`);
-              if (configResponse.ok) {
-                const configData = await configResponse.json();
-                if (configData.config && configData.config.configData) {
-                  setLoungeConfig(configData.config.configData);
-                }
+          try {
+            const configResponse = await fetch(`/api/lounges/${loungeId}/config`);
+            if (configResponse.ok) {
+              const configData = await configResponse.json();
+              if (configData.config && configData.config.configData) {
+                setLoungeConfig(configData.config.configData);
               }
-            } catch (configError) {
-              console.error('Error loading lounge config:', configError);
             }
+          } catch (configError) {
+            console.error('Error loading lounge config:', configError);
           }
         } catch (error) {
           console.error('Error loading layout tables:', error);
+          // On error, use demo tables
+          setLayoutTables([
+            { id: 'table-001', name: 'T-001', capacity: 4, seatingType: 'Booth', zone: 'Main Floor' },
+            { id: 'table-002', name: 'T-002', capacity: 4, seatingType: 'Booth', zone: 'Main Floor' },
+            { id: 'table-003', name: 'T-003', capacity: 6, seatingType: 'Couch', zone: 'Main Floor' },
+            { id: 'table-004', name: 'T-004', capacity: 2, seatingType: 'Bar Seating', zone: 'Main Floor' },
+            { id: 'table-005', name: 'T-005', capacity: 6, seatingType: 'Couch', zone: 'Main Floor' },
+            { id: 'table-006', name: 'T-006', capacity: 8, seatingType: 'Outdoor', zone: 'Main Floor' },
+            { id: 'table-007', name: 'T-007', capacity: 4, seatingType: 'Booth', zone: 'Main Floor' },
+            { id: 'table-008', name: 'T-008', capacity: 10, seatingType: 'VIP', zone: 'VIP Section' },
+            { id: 'table-009', name: 'T-009', capacity: 6, seatingType: 'Couch', zone: 'Main Floor' },
+            { id: 'table-010', name: 'T-010', capacity: 8, seatingType: 'Private Room', zone: 'Private Section' }
+          ]);
         } finally {
           setLoading(false);
         }
@@ -132,7 +160,7 @@ export function TableSelector({
     } else {
       setLoading(false);
     }
-  }, [useLayoutData]);
+  }, [useLayoutData, loungeId]);
 
   // Generate default tables from LaunchPad config
   const generateTablesFromConfig = (tablesCount: number): TableType[] => {

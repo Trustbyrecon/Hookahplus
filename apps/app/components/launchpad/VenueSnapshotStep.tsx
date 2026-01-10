@@ -15,6 +15,7 @@ const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'
 export function VenueSnapshotStep({ initialData, onComplete, onBack }: VenueSnapshotStepProps) {
   const [formData, setFormData] = useState<VenueSnapshotData>({
     loungeName: initialData?.loungeName || '',
+    operatorType: initialData?.operatorType || 'brick_and_mortar',
     operatingHours: initialData?.operatingHours || {},
     tablesCount: initialData?.tablesCount || 0,
     sectionsCount: initialData?.sectionsCount || 0,
@@ -23,6 +24,7 @@ export function VenueSnapshotStep({ initialData, onComplete, onBack }: VenueSnap
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const isMobile = formData.operatorType === 'mobile';
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,12 +41,14 @@ export function VenueSnapshotStep({ initialData, onComplete, onBack }: VenueSnap
       newErrors.baseSessionPrice = 'Please enter a valid base session price';
     }
 
-    // Check at least one day has hours
-    const hasHours = Object.values(formData.operatingHours).some(
-      (hours) => hours !== null
-    );
-    if (!hasHours) {
-      newErrors.operatingHours = 'Please set operating hours for at least one day';
+    // Check at least one day has hours (only for brick-and-mortar)
+    if (formData.operatorType === 'brick_and_mortar') {
+      const hasHours = Object.values(formData.operatingHours || {}).some(
+        (hours) => hours !== null
+      );
+      if (!hasHours) {
+        newErrors.operatingHours = 'Please set operating hours for at least one day';
+      }
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -59,9 +63,9 @@ export function VenueSnapshotStep({ initialData, onComplete, onBack }: VenueSnap
     setFormData((prev) => ({
       ...prev,
       operatingHours: {
-        ...prev.operatingHours,
+        ...(prev.operatingHours || {}),
         [day]: {
-          ...(prev.operatingHours[day] || { open: '', close: '' }),
+          ...(prev.operatingHours?.[day] || { open: '', close: '' }),
           [field]: value,
         },
       },
@@ -72,18 +76,18 @@ export function VenueSnapshotStep({ initialData, onComplete, onBack }: VenueSnap
     setFormData((prev) => ({
       ...prev,
       operatingHours: {
-        ...prev.operatingHours,
-        [day]: prev.operatingHours[day] === null ? { open: '17:00', close: '02:00' } : null,
+        ...(prev.operatingHours || {}),
+        [day]: prev.operatingHours?.[day] === null ? { open: '17:00', close: '02:00' } : null,
       },
     }));
   };
 
   const copyHoursToDays = (sourceDay: string, targetDays: string[]) => {
-    const sourceHours = formData.operatingHours[sourceDay];
+    const sourceHours = formData.operatingHours?.[sourceDay];
     if (!sourceHours || sourceHours === null) return;
 
     setFormData((prev) => {
-      const newHours = { ...prev.operatingHours };
+      const newHours = { ...(prev.operatingHours || {}) };
       targetDays.forEach((day) => {
         newHours[day] = { ...sourceHours };
       });
@@ -116,10 +120,67 @@ export function VenueSnapshotStep({ initialData, onComplete, onBack }: VenueSnap
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Operator Type Toggle */}
+        <div>
+          <label className="block text-sm font-medium text-zinc-300 mb-3">
+            Operator Type *
+          </label>
+          <div className="grid grid-cols-2 gap-4">
+            <label
+              className={`flex flex-col items-center gap-2 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                formData.operatorType === 'brick_and_mortar'
+                  ? 'border-teal-500 bg-teal-500/10'
+                  : 'border-zinc-600 bg-zinc-800 hover:border-zinc-500'
+              }`}
+            >
+              <input
+                type="radio"
+                name="operatorType"
+                value="brick_and_mortar"
+                checked={formData.operatorType === 'brick_and_mortar'}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    operatorType: e.target.value as 'brick_and_mortar' | 'mobile',
+                  }))
+                }
+                className="sr-only"
+              />
+              <span className="text-2xl">🏢</span>
+              <span className="text-sm font-medium text-zinc-300">Brick & Mortar</span>
+              <span className="text-xs text-zinc-400 text-center">Fixed location lounge</span>
+            </label>
+            <label
+              className={`flex flex-col items-center gap-2 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                formData.operatorType === 'mobile'
+                  ? 'border-teal-500 bg-teal-500/10'
+                  : 'border-zinc-600 bg-zinc-800 hover:border-zinc-500'
+              }`}
+            >
+              <input
+                type="radio"
+                name="operatorType"
+                value="mobile"
+                checked={formData.operatorType === 'mobile'}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    operatorType: e.target.value as 'brick_and_mortar' | 'mobile',
+                  }))
+                }
+                className="sr-only"
+              />
+              <span className="text-2xl">🚐</span>
+              <span className="text-sm font-medium text-zinc-300">Mobile Operator</span>
+              <span className="text-xs text-zinc-400 text-center">Events & on-location service</span>
+            </label>
+          </div>
+        </div>
+
         {/* Lounge Name */}
         <div>
           <label className="block text-sm font-medium text-zinc-300 mb-2">
-            Lounge name *
+            {isMobile ? 'Business Name' : 'Lounge name'} *
           </label>
           <input
             type="text"
@@ -128,7 +189,7 @@ export function VenueSnapshotStep({ initialData, onComplete, onBack }: VenueSnap
               setFormData((prev) => ({ ...prev, loungeName: e.target.value }))
             }
             className="w-full px-4 py-3 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:border-teal-500 focus:outline-none"
-            placeholder="Your Hookah Lounge Name"
+            placeholder={isMobile ? "Your Mobile Hookah Business Name" : "Your Hookah Lounge Name"}
             required
           />
           {errors.loungeName && (
@@ -136,13 +197,14 @@ export function VenueSnapshotStep({ initialData, onComplete, onBack }: VenueSnap
           )}
         </div>
 
-        {/* Operating Hours */}
+        {/* Operating Hours - Only for Brick & Mortar */}
+        {!isMobile && (
         <div>
           <label className="block text-sm font-medium text-zinc-300 mb-3">
             Operating hours * (Used for shift handoff and session timing)
           </label>
           <div className="mb-3 flex flex-wrap gap-2">
-            {formData.operatingHours.monday && formData.operatingHours.monday !== null && (
+            {formData.operatingHours?.monday && formData.operatingHours.monday !== null && (
               <button
                 type="button"
                 onClick={copyMondayToWeekdays}
@@ -152,7 +214,7 @@ export function VenueSnapshotStep({ initialData, onComplete, onBack }: VenueSnap
                 Copy Mon → Tue-Thu
               </button>
             )}
-            {formData.operatingHours.friday && formData.operatingHours.friday !== null && (
+            {formData.operatingHours?.friday && formData.operatingHours.friday !== null && (
               <button
                 type="button"
                 onClick={copyFridayToSaturday}
@@ -165,7 +227,7 @@ export function VenueSnapshotStep({ initialData, onComplete, onBack }: VenueSnap
           </div>
           <div className="space-y-2">
             {DAYS.map((day) => {
-              const hours = formData.operatingHours[day];
+              const hours = formData.operatingHours?.[day];
               const isClosed = hours === null;
 
               return (
@@ -221,12 +283,14 @@ export function VenueSnapshotStep({ initialData, onComplete, onBack }: VenueSnap
             <p className="mt-2 text-sm text-red-400">{errors.operatingHours}</p>
           )}
         </div>
+        )}
 
         {/* Tables & Sections */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-zinc-300 mb-2">
-              Tables / sections * (Rough count is fine. You can adjust later.)
+              {isMobile ? 'Equipment sets / simultaneous events' : 'Tables / sections'} * 
+              <span className="text-zinc-400 text-xs ml-2">(Rough count is fine. You can adjust later.)</span>
             </label>
             <input
               type="number"

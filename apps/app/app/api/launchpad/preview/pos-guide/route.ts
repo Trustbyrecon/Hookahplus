@@ -172,6 +172,44 @@ H+ tracks sessions and memory. Toast processes payments.
 ---
 
 **Phase 2:** Real-time Toast sync coming soon.`,
+
+    stripe: `# H+ + Stripe Integration Guide
+
+**${loungeName}** - Running H+ Above Stripe
+
+## How It Works
+
+H+ tracks sessions and memory. Stripe processes payments.
+
+### Setup
+
+1. Connect Stripe account in H+ settings
+2. Configure payment methods (card, digital wallet)
+3. Enable automatic session sync
+
+### Current Flow
+
+1. **Start Session:** Create in H+ dashboard
+2. **Track Items:** Add flavors, mixes, add-ons in H+
+3. **Process Payment:** Use Stripe payment link or terminal
+4. **End Session:** Mark complete in H+ after Stripe transaction
+
+### Reconciliation
+
+- H+ session total should match Stripe transaction
+- Use H+ for customer preferences and loyalty
+- Stripe handles payment processing and receipts
+
+### Stripe Features
+
+- **Payment Links:** Generate payment links for sessions
+- **Terminal Integration:** Use Stripe Terminal for in-person payments
+- **Digital Receipts:** Automatic receipt delivery via Stripe
+- **Refund Management:** Handle refunds through Stripe dashboard
+
+---
+
+**Note:** Stripe integration supports both online and in-person payments.`,
   };
 
   return baseGuide[posType as keyof typeof baseGuide] || baseGuide.none;

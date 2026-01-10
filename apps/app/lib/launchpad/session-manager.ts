@@ -109,7 +109,8 @@ export async function createSetupSession(
     if (prefillData.lounge_name) {
       initialProgress.data.step1 = {
         loungeName: prefillData.lounge_name,
-        operatingHours: {},
+        operatorType: prefillData.operator_type === 'mobile' ? 'mobile' : 'brick_and_mortar', // Default to brick-and-mortar
+        operatingHours: prefillData.operator_type === 'mobile' ? undefined : {}, // No hours for mobile
         tablesCount: parseInt(prefillData.seats_tables || '0', 10),
         baseSessionPrice: 0, // Will be set in step 1
         primaryGoal: 'all_above',
