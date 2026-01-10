@@ -301,7 +301,8 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               tableId: formData.tableId,
-              checkAvailability: true
+              checkAvailability: true,
+              loungeId: loungeId // Pass loungeId so it can check Seat table
             })
           });
 

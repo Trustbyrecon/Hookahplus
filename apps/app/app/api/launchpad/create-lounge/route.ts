@@ -150,12 +150,19 @@ export async function POST(req: NextRequest) {
         const seatsToCreate = [];
         for (let i = 1; i <= tablesCount; i++) {
           const tableNum = i.toString().padStart(3, '0');
+          // Store seatingType in coordinates JSON as metadata
+          const coordinates = JSON.stringify({
+            x: 0,
+            y: 0,
+            seatingType: 'Booth' // Default seating type for LaunchPad tables
+          });
           seatsToCreate.push({
             loungeId: lounge.id,
             zoneId: defaultZone.id,
             tableId: `table-${tableNum}`,
             name: `Table-${tableNum}`,
             capacity: 4, // Default capacity
+            coordinates: coordinates,
             qrEnabled: true,
             status: 'ACTIVE',
             priceMultiplier: 1.0

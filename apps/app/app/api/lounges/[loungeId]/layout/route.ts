@@ -70,23 +70,39 @@ export async function GET(
       updatedAt: zone.updatedAt.toISOString()
     }));
 
-    const seatsWithMetadata = seats.map(seat => ({
-      id: seat.id,
-      tableId: seat.tableId,
-      name: seat.name,
-      capacity: seat.capacity,
-      coordinates: seat.coordinates ? JSON.parse(seat.coordinates) : null,
-      qrEnabled: seat.qrEnabled,
-      status: seat.status,
-      priceMultiplier: seat.priceMultiplier,
-      zone: {
-        id: seat.zone.id,
-        name: seat.zone.name,
-        zoneType: seat.zone.zoneType
-      },
-      createdAt: seat.createdAt.toISOString(),
-      updatedAt: seat.updatedAt.toISOString()
-    }));
+    const seatsWithMetadata = seats.map(seat => {
+      // Parse coordinates which may contain seatingType metadata
+      const coords = seat.coordinates ? JSON.parse(seat.coordinates) : null;
+      // Extract seatingType from coordinates metadata, or derive from zoneType
+      let seatingType = coords?.seatingType;
+      if (!seatingType) {
+        // Derive from zoneType as fallback
+        const zoneType = seat.zone?.zoneType;
+        if (zoneType === 'VIP') seatingType = 'VIP';
+        else if (zoneType === 'OUTDOOR') seatingType = 'Outdoor';
+        else if (zoneType === 'PRIVATE') seatingType = 'Private Room';
+        else seatingType = 'Booth'; // Default
+      }
+      
+      return {
+        id: seat.id,
+        tableId: seat.tableId,
+        name: seat.name,
+        capacity: seat.capacity,
+        coordinates: coords ? { x: coords.x || 0, y: coords.y || 0 } : null,
+        seatingType: seatingType,
+        qrEnabled: seat.qrEnabled,
+        status: seat.status,
+        priceMultiplier: seat.priceMultiplier,
+        zone: {
+          id: seat.zone.id,
+          name: seat.zone.name,
+          zoneType: seat.zone.zoneType
+        },
+        createdAt: seat.createdAt.toISOString(),
+        updatedAt: seat.updatedAt.toISOString()
+      };
+    });
 
     return NextResponse.json({
       success: true,
@@ -177,12 +193,21 @@ export async function POST(
           if (!seat.zoneId) {
             throw new Error(`Seat ${seat.tableId} requires zoneId`);
           }
+          // Preserve seatingType in coordinates metadata
+          let coordinatesData = seat.coordinates || { x: 0, y: 0 };
+          if (seat.seatingType) {
+            coordinatesData = {
+              ...coordinatesData,
+              seatingType: seat.seatingType
+            };
+          }
+          
           return prisma.seat.upsert({
             where: { tableId: seat.tableId },
             update: {
               name: seat.name,
               capacity: seat.capacity,
-              coordinates: seat.coordinates ? JSON.stringify(seat.coordinates) : null,
+              coordinates: JSON.stringify(coordinatesData),
               qrEnabled: seat.qrEnabled !== undefined ? seat.qrEnabled : true,
               status: seat.status || 'ACTIVE',
               priceMultiplier: seat.priceMultiplier || 1.0,
@@ -194,7 +219,7 @@ export async function POST(
               tableId: seat.tableId,
               name: seat.name,
               capacity: seat.capacity,
-              coordinates: seat.coordinates ? JSON.stringify(seat.coordinates) : null,
+              coordinates: JSON.stringify(coordinatesData),
               qrEnabled: seat.qrEnabled !== undefined ? seat.qrEnabled : true,
               status: seat.status || 'ACTIVE',
               priceMultiplier: seat.priceMultiplier || 1.0

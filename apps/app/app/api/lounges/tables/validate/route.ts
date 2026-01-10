@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const { tableId, partySize, checkAvailability = true } = body || {};
+    const { tableId, partySize, checkAvailability = true, loungeId } = body || {};
 
     if (!tableId) {
       return NextResponse.json(
@@ -28,53 +28,99 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Load layout
-    let layoutSetting;
-    try {
-      layoutSetting = await prisma.orgSetting.findUnique({
-        where: { key: 'lounge_layout' }
-      });
-    } catch (error) {
-      console.error('[Table Validation API] Error loading layout:', error);
-      // Return 200 with valid=false for missing layout (not a server error)
-      return NextResponse.json({
-        valid: false,
-        error: 'No lounge layout configured. Please set up tables in Lounge Layout Manager first.',
-        suggestion: 'Visit /lounge-layout to configure your tables'
-      });
-    }
-
-    if (!layoutSetting) {
-      return NextResponse.json({
-        valid: false,
-        error: 'No lounge layout configured. Please set up tables in Lounge Layout Manager first.',
-        suggestion: 'Visit /lounge-layout to configure your tables'
-      });
-    }
-
-    let layoutData;
+    let tableExists = false;
     let tables: any[] = [];
-    
-    try {
-      layoutData = JSON.parse(layoutSetting.value);
-      tables = layoutData.tables || [];
-    } catch (error) {
-      console.error('[Table Validation API] Error parsing layout data:', error);
-      return NextResponse.json({
-        valid: false,
-        error: 'Invalid lounge layout data',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      }, { status: 500 });
+    let table: any = null;
+
+    // Check Seat table first (new system) if loungeId provided
+    if (loungeId) {
+      try {
+        const seats = await prisma.seat.findMany({
+          where: { 
+            loungeId: loungeId,
+            status: 'ACTIVE'
+          },
+          include: {
+            zone: true
+          }
+        });
+
+        if (seats.length > 0) {
+          tables = seats.map(seat => ({
+            id: seat.tableId,
+            name: seat.name || seat.tableId,
+            capacity: seat.capacity || 4,
+            seatingType: seat.zone?.zoneType === 'VIP' ? 'VIP' : 
+                        seat.zone?.zoneType === 'OUTDOOR' ? 'Outdoor' : 'Booth',
+            zone: seat.zone?.name || 'Main Floor'
+          }));
+
+          table = seats.find(seat => 
+            seat.tableId === tableId ||
+            seat.name === tableId ||
+            seat.name?.toLowerCase() === tableId.toLowerCase() ||
+            seat.tableId?.toLowerCase() === tableId.toLowerCase()
+          );
+
+          if (table) {
+            tableExists = true;
+            table = {
+              id: table.tableId,
+              name: table.name || table.tableId,
+              capacity: table.capacity || 4,
+              seatingType: table.zone?.zoneType === 'VIP' ? 'VIP' : 
+                          table.zone?.zoneType === 'OUTDOOR' ? 'Outdoor' : 'Booth',
+              zone: table.zone?.name || 'Main Floor'
+            };
+          }
+        }
+      } catch (error) {
+        console.error('[Table Validation API] Error loading seats:', error);
+      }
     }
 
-    // Find table
-    let table = tables.find((t: any) => 
-      t.id === tableId || 
-      t.name === tableId ||
-      t.name?.toLowerCase() === tableId.toLowerCase()
-    );
+    // Fallback to orgSetting if no seats found
+    if (!tableExists) {
+      let layoutSetting;
+      try {
+        layoutSetting = await prisma.orgSetting.findUnique({
+          where: { key: 'lounge_layout' }
+        });
+      } catch (error) {
+        console.error('[Table Validation API] Error loading layout:', error);
+        return NextResponse.json({
+          valid: false,
+          error: 'No lounge layout configured. Please set up tables in Lounge Layout Manager first.',
+          suggestion: 'Visit /lounge-layout to configure your tables'
+        });
+      }
 
-    if (!table) {
+      if (layoutSetting) {
+        try {
+          const layoutData = JSON.parse(layoutSetting.value);
+          tables = layoutData.tables || [];
+          
+          table = tables.find((t: any) => 
+            t.id === tableId || 
+            t.name === tableId ||
+            t.name?.toLowerCase() === tableId.toLowerCase()
+          );
+
+          if (table) {
+            tableExists = true;
+          }
+        } catch (error) {
+          console.error('[Table Validation API] Error parsing layout data:', error);
+          return NextResponse.json({
+            valid: false,
+            error: 'Invalid lounge layout data',
+            details: error instanceof Error ? error.message : 'Unknown error'
+          }, { status: 500 });
+        }
+      }
+    }
+
+    if (!tableExists || !table) {
       // Suggest similar table names
       const suggestions = tables
         .filter((t: any) => 
@@ -86,9 +132,9 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         valid: false,
-        error: `Table "${tableId}" not found in lounge layout.`,
+        error: `Table "${tableId}" not found in lounge layout. Please configure tables in Lounge Layout Manager first.`,
         suggestions: suggestions.length > 0 ? suggestions : undefined,
-        availableTables: tables.map((t: any) => ({ id: t.id, name: t.name, capacity: t.capacity }))
+        availableTables: tables.map((t: any) => ({ id: t.id, name: t.name, capacity: t.capacity || 4 }))
       });
     }
 

@@ -161,7 +161,10 @@ export default function FlavorWheelSelector({
     }));
     return [...custom, ...STAFF_PRESETS];
   }, [customPresets, isDemoMode]);
-  const [showPresets, setShowPresets] = useState(customFlavors && customFlavors.length > 0 ? false : true); // Hide presets if using custom flavors
+  // Show presets by default if LaunchPad presets exist, otherwise hide if custom flavors are loaded
+  const [showPresets, setShowPresets] = useState(
+    customPresets.length > 0 ? true : (customFlavors && customFlavors.length > 0 ? false : true)
+  );
   const [popularityData, setPopularityData] = useState<Map<string, number>>(new Map());
   const [loadingPopularity, setLoadingPopularity] = useState(false);
 
