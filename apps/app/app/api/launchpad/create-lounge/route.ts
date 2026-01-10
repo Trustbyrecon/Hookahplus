@@ -117,6 +117,62 @@ export async function POST(req: NextRequest) {
     // Generate Staff Playbook
     const staffPlaybook = generateStaffPlaybook(config, dashboardUrl);
     
+    // Auto-create basic table layout from LaunchPad config
+    // This prevents "lounge layout needs to be config first" error
+    try {
+      // Create default zone if it doesn't exist
+      let defaultZone = await prisma.zone.findFirst({
+        where: {
+          loungeId: lounge.id,
+          name: 'Main Floor'
+        }
+      });
+
+      if (!defaultZone) {
+        defaultZone = await prisma.zone.create({
+          data: {
+            loungeId: lounge.id,
+            name: 'Main Floor',
+            zoneType: 'MAIN',
+            displayOrder: 0
+          }
+        });
+      }
+
+      // Create tables based on tables_count from LaunchPad config
+      const tablesCount = config.tables_count || 12; // Default to 12 if not specified
+      const existingSeats = await prisma.seat.findMany({
+        where: { loungeId: lounge.id }
+      });
+
+      // Only create tables if none exist
+      if (existingSeats.length === 0 && tablesCount > 0) {
+        const seatsToCreate = [];
+        for (let i = 1; i <= tablesCount; i++) {
+          const tableNum = i.toString().padStart(3, '0');
+          seatsToCreate.push({
+            loungeId: lounge.id,
+            zoneId: defaultZone.id,
+            tableId: `table-${tableNum}`,
+            name: `Table-${tableNum}`,
+            capacity: 4, // Default capacity
+            qrEnabled: true,
+            status: 'ACTIVE',
+            priceMultiplier: 1.0
+          });
+        }
+
+        await prisma.seat.createMany({
+          data: seatsToCreate
+        });
+
+        console.log(`[LaunchPad Create Lounge] Created ${tablesCount} default tables for lounge ${lounge.id}`);
+      }
+    } catch (tableError) {
+      console.error('[LaunchPad Create Lounge] Error creating default tables:', tableError);
+      // Don't fail the entire creation if table creation fails
+    }
+    
     // TODO: Create pricing rules from config
     // This would create PricingRule records based on the config
 

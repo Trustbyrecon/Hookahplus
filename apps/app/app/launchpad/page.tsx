@@ -21,6 +21,7 @@ function LaunchPadPageContent() {
   const [progress, setProgress] = useState<LaunchPadProgress | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [source, setSource] = useState<string>('web');
 
   // Initialize session
   useEffect(() => {
@@ -30,7 +31,8 @@ function LaunchPadPageContent() {
         
         // Check for token in URL (from ManyChat or direct link)
         const tokenFromUrl = searchParams.get('token');
-        const source = searchParams.get('source') || 'web';
+        const urlSource = searchParams.get('source') || 'web';
+        setSource(urlSource);
 
         if (tokenFromUrl) {
           // Load existing session
@@ -64,7 +66,7 @@ function LaunchPadPageContent() {
         }
 
         // Create new session
-        const prefillData = source === 'manychat' ? {
+        const prefillData = urlSource === 'manychat' ? {
           subscriber_id: searchParams.get('subscriber_id'),
           instagram_username: searchParams.get('instagram_username'),
           custom_fields: {
@@ -81,7 +83,7 @@ function LaunchPadPageContent() {
         const response = await fetch('/api/launchpad/session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ source, prefillData }),
+          body: JSON.stringify({ source: urlSource, prefillData }),
         });
 
         const result = await response.json();
@@ -220,7 +222,7 @@ function LaunchPadPageContent() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">H+ LaunchPad</h1>
           <p className="text-zinc-400">From zero to live sessions in under an hour.</p>
-          {searchParams.get('source') === 'manychat' && (
+          {source === 'manychat' && (
             <p className="text-sm text-teal-400 mt-2">
               Setup started via Instagram DM
             </p>

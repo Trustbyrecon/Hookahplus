@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowRight, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { SessionRulesData } from '../../types/launchpad';
 
@@ -14,9 +14,18 @@ export function SessionRulesStep({ initialData, onComplete, onBack }: SessionRul
   const [formData, setFormData] = useState<SessionRulesData>({
     sessionType: initialData?.sessionType || 'flat',
     gracePeriodMinutes: initialData?.gracePeriodMinutes ?? 5,
-    extensionPolicy: initialData?.extensionPolicy || 'manual',
+    extensionPolicy: initialData?.extensionPolicy || (initialData?.sessionType === 'flat' ? 'na' : 'manual'),
     compPolicyEnabled: initialData?.compPolicyEnabled ?? false,
   });
+
+  // Auto-set to N/A when switching to flat-rate
+  useEffect(() => {
+    if (formData.sessionType === 'flat' && formData.extensionPolicy !== 'na') {
+      setFormData((prev) => ({ ...prev, extensionPolicy: 'na' }));
+    } else if (formData.sessionType === 'timed' && formData.extensionPolicy === 'na') {
+      setFormData((prev) => ({ ...prev, extensionPolicy: 'manual' }));
+    }
+  }, [formData.sessionType]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,46 +123,60 @@ export function SessionRulesStep({ initialData, onComplete, onBack }: SessionRul
           <label className="block text-sm font-medium text-zinc-300 mb-3">
             Extensions *
           </label>
-          <div className="space-y-3">
-            <label className="flex items-center gap-3 p-4 bg-zinc-800 border border-zinc-600 rounded-lg cursor-pointer hover:border-teal-500 transition-colors">
-              <input
-                type="radio"
-                name="extensionPolicy"
-                value="manual"
-                checked={formData.extensionPolicy === 'manual'}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    extensionPolicy: e.target.value as 'manual' | 'auto',
-                  }))
-                }
-                className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-              />
-              <div>
-                <div className="font-semibold text-white">Manual only</div>
-                <div className="text-sm text-zinc-400">Staff must approve each extension</div>
+          {formData.sessionType === 'flat' ? (
+            <div className="p-4 bg-zinc-800 border border-zinc-600 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-4 h-4 rounded-full bg-teal-600 flex items-center justify-center">
+                  <div className="w-2 h-2 rounded-full bg-white"></div>
+                </div>
+                <div>
+                  <div className="font-semibold text-white">N/A (Flat-rate pricing)</div>
+                  <div className="text-sm text-zinc-400">Extensions don't apply to flat-rate sessions</div>
+                </div>
               </div>
-            </label>
-            <label className="flex items-center gap-3 p-4 bg-zinc-800 border border-zinc-600 rounded-lg cursor-pointer hover:border-teal-500 transition-colors">
-              <input
-                type="radio"
-                name="extensionPolicy"
-                value="auto"
-                checked={formData.extensionPolicy === 'auto'}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    extensionPolicy: e.target.value as 'manual' | 'auto',
-                  }))
-                }
-                className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-              />
-              <div>
-                <div className="font-semibold text-white">Auto-extend with prompt</div>
-                <div className="text-sm text-zinc-400">System prompts guest, staff approves payment</div>
-              </div>
-            </label>
-          </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <label className="flex items-center gap-3 p-4 bg-zinc-800 border border-zinc-600 rounded-lg cursor-pointer hover:border-teal-500 transition-colors">
+                <input
+                  type="radio"
+                  name="extensionPolicy"
+                  value="manual"
+                  checked={formData.extensionPolicy === 'manual'}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      extensionPolicy: e.target.value as 'manual' | 'auto',
+                    }))
+                  }
+                  className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                />
+                <div>
+                  <div className="font-semibold text-white">Manual only</div>
+                  <div className="text-sm text-zinc-400">Staff must approve each extension</div>
+                </div>
+              </label>
+              <label className="flex items-center gap-3 p-4 bg-zinc-800 border border-zinc-600 rounded-lg cursor-pointer hover:border-teal-500 transition-colors">
+                <input
+                  type="radio"
+                  name="extensionPolicy"
+                  value="auto"
+                  checked={formData.extensionPolicy === 'auto'}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      extensionPolicy: e.target.value as 'manual' | 'auto',
+                    }))
+                  }
+                  className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                />
+                <div>
+                  <div className="font-semibold text-white">Auto-extend with prompt</div>
+                  <div className="text-sm text-zinc-400">System prompts guest, staff approves payment</div>
+                </div>
+              </label>
+            </div>
+          )}
         </div>
 
         {/* Comp Policy */}

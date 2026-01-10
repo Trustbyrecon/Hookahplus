@@ -39,7 +39,7 @@ export function generateStaffPlaybook(
 - **Session Type:** ${config.session_type === 'flat' ? 'Flat Fee' : 'Timed'}
 - **Base Price:** $${config.base_session_price.toFixed(2)}
 - **Grace Period:** ${config.grace_period_minutes} minutes
-- **Extensions:** ${config.extension_policy === 'auto' ? 'Auto-prompt' : 'Manual only'}
+- **Extensions:** ${config.extension_policy === 'na' ? 'N/A (Flat-rate)' : config.extension_policy === 'auto' ? 'Auto-prompt' : 'Manual only'}
 - **Comp Policy:** ${config.comp_policy_enabled ? 'Manager approval required' : 'Disabled'}
 
 ---

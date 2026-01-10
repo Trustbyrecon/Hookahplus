@@ -23,6 +23,7 @@ interface TableSelectorProps {
   showPricing?: boolean;
   useLayoutData?: boolean; // New: Use layout data instead of hardcoded
   partySize?: number; // New: Filter by capacity
+  loungeId?: string; // New: Lounge ID for loading LaunchPad config
   className?: string;
 }
 
@@ -34,6 +35,7 @@ export function TableSelector({
   showPricing = false,
   useLayoutData = true, // Default to using layout data
   partySize,
+  loungeId,
   className = ''
 }: TableSelectorProps) {
   const { sessions } = useSessionContextSafe();
@@ -42,16 +44,66 @@ export function TableSelector({
   const [filterAvailability, setFilterAvailability] = useState<string>('all');
   const [layoutTables, setLayoutTables] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loungeConfig, setLoungeConfig] = useState<any>(null);
 
-  // Load tables from layout if enabled
+  // Load tables from layout and lounge config if enabled
   useEffect(() => {
     if (useLayoutData) {
       const loadTables = async () => {
         try {
-          const response = await fetch('/api/lounges?layout=true');
-          if (response.ok) {
-            const data = await response.json();
-            setLayoutTables(data.layout?.tables || []);
+          // Load layout tables - try loungeId-specific endpoint first, then fallback
+          let loadedTables: any[] = [];
+          
+          if (loungeId) {
+            try {
+              const layoutResponse = await fetch(`/api/lounges/${loungeId}/layout`);
+              if (layoutResponse.ok) {
+                const layoutData = await layoutResponse.json();
+                // Convert seats to table format
+                const seats = layoutData.layout?.seats || [];
+                loadedTables = seats.map((seat: any) => ({
+                  id: seat.id,
+                  name: seat.name || seat.tableId,
+                  seatingType: seat.zone?.zoneType === 'VIP' ? 'VIP' : 
+                              seat.zone?.zoneType === 'OUTDOOR' ? 'Outdoor' : 'Booth',
+                  capacity: seat.capacity || 4,
+                  zone: seat.zone?.name || 'Main Floor',
+                  coordinates: seat.coordinates || { x: 0, y: 0 }
+                }));
+              }
+            } catch (error) {
+              console.error('Error loading layout from loungeId endpoint:', error);
+            }
+          }
+          
+          // Fallback to general layout endpoint
+          if (loadedTables.length === 0) {
+            try {
+              const layoutResponse = await fetch('/api/lounges?layout=true');
+              if (layoutResponse.ok) {
+                const layoutData = await layoutResponse.json();
+                loadedTables = layoutData.layout?.tables || layoutData.layout?.seats || [];
+              }
+            } catch (error) {
+              console.error('Error loading layout tables:', error);
+            }
+          }
+          
+          setLayoutTables(loadedTables);
+
+          // Load lounge config for LaunchPad data (if loungeId provided)
+          if (loungeId) {
+            try {
+              const configResponse = await fetch(`/api/lounges/${loungeId}/config`);
+              if (configResponse.ok) {
+                const configData = await configResponse.json();
+                if (configData.config && configData.config.configData) {
+                  setLoungeConfig(configData.config.configData);
+                }
+              }
+            } catch (configError) {
+              console.error('Error loading lounge config:', configError);
+            }
           }
         } catch (error) {
           console.error('Error loading layout tables:', error);
@@ -64,6 +116,30 @@ export function TableSelector({
       setLoading(false);
     }
   }, [useLayoutData]);
+
+  // Generate default tables from LaunchPad config
+  const generateTablesFromConfig = (tablesCount: number): TableType[] => {
+    const tables: TableType[] = [];
+    const capacity = 4; // Default capacity
+    
+    for (let i = 1; i <= tablesCount; i++) {
+      const tableNum = i.toString().padStart(3, '0');
+      tables.push({
+        id: `table-${tableNum}`,
+        name: `Table-${tableNum}`,
+        type: 'table',
+        capacity: capacity,
+        availability: 'available',
+        location: 'Main Floor',
+        description: 'Standard table seating',
+        icon: '🪑',
+        color: 'bg-green-500',
+        priceMultiplier: 1.0
+      });
+    }
+    
+    return tables;
+  };
 
   // Convert layout tables to TableType format and merge with availability
   const getAvailableTables = (): TableType[] => {
@@ -118,7 +194,11 @@ export function TableSelector({
       });
     }
     
-    // Fallback to hardcoded tables
+    // Fallback: Use LaunchPad config if available, otherwise hardcoded tables
+    if (loungeConfig && loungeConfig.tables_count && loungeConfig.tables_count > 0) {
+      return generateTablesFromConfig(loungeConfig.tables_count);
+    }
+    
     return TABLE_TYPES;
   };
 
@@ -255,8 +335,16 @@ export function TableSelector({
           <div>
             <p className="font-medium">No tables configured</p>
             <p className="text-xs text-blue-300 mt-1">
-              Visit <a href="/lounge-layout" className="underline">Lounge Layout Manager</a> to set up your tables.
-              Falling back to default tables.
+              {loungeConfig && loungeConfig.tables_count ? (
+                <>
+                  Using {loungeConfig.tables_count} tables from LaunchPad setup. Visit <a href="/lounge-layout" className="underline">Lounge Layout Manager</a> to customize your table layout.
+                </>
+              ) : (
+                <>
+                  Visit <a href="/lounge-layout" className="underline">Lounge Layout Manager</a> to set up your tables.
+                  Falling back to default tables.
+                </>
+              )}
             </p>
           </div>
         </div>

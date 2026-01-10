@@ -27,7 +27,7 @@ export interface FlavorsMixesData {
 export interface SessionRulesData {
   sessionType: 'flat' | 'timed';
   gracePeriodMinutes: 0 | 5 | 10;
-  extensionPolicy: 'manual' | 'auto';
+  extensionPolicy: 'manual' | 'auto' | 'na';
   compPolicyEnabled: boolean;
 }
 
@@ -98,7 +98,7 @@ export interface LoungeOpsConfig {
   session_type: 'flat' | 'timed';
   base_session_price: number;
   grace_period_minutes: number;
-  extension_policy: 'manual' | 'auto';
+  extension_policy: 'manual' | 'auto' | 'na';
   comp_policy_enabled: boolean;
   flavors: {
     standard: Array<{ name: string; price?: number }>;

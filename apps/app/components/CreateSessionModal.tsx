@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, User, Phone, Clock, Flame, DollarSign, Users, FileText, MapPin } from 'lucide-react';
 import { TableSelector } from './TableSelector';
 import { TableType } from '../lib/tableTypes';
@@ -14,6 +14,7 @@ interface CreateSessionModalProps {
   demoMenuFlavors?: string[] | null; // For demo mode: flavors from uploaded menu
   isDemoSlug?: boolean; // True when accessed via /demo/[slug] route
   demoSource?: 'onboarding' | 'marketing'; // Demo source for routing
+  loungeId?: string; // Lounge ID for loading LaunchPad config
 }
 
 interface SessionData {
@@ -72,7 +73,7 @@ const timerDurations = [
   { value: 120, label: '2 hours', description: 'Ultimate session' }
 ];
 
-export default function CreateSessionModal({ isOpen, onClose, onCreateSession, isDemoMode = false, demoMenuFlavors = null, isDemoSlug = false, demoSource = 'marketing' }: CreateSessionModalProps) {
+export default function CreateSessionModal({ isOpen, onClose, onCreateSession, isDemoMode = false, demoMenuFlavors = null, isDemoSlug = false, demoSource = 'marketing', loungeId }: CreateSessionModalProps) {
   // Handle escape key
   React.useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -107,8 +108,33 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
 
   const [selectedTable, setSelectedTable] = useState<TableType | null>(null);
   const [showTableSelector, setShowTableSelector] = useState(false);
+  const [launchpadFlavors, setLaunchpadFlavors] = useState<string[]>([]);
 
   const [errors, setErrors] = useState<Partial<Record<keyof SessionData, string>>>({});
+
+  // Load LaunchPad flavors from config
+  useEffect(() => {
+    if (loungeId && !isDemoMode) {
+      const loadLaunchpadFlavors = async () => {
+        try {
+          const response = await fetch(`/api/lounges/${loungeId}/config`);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.config && data.config.configData && data.config.configData.flavors) {
+              const allFlavors = [
+                ...(data.config.configData.flavors.standard || []).map((f: any) => f.name),
+                ...(data.config.configData.flavors.premium || []).map((f: any) => f.name)
+              ];
+              setLaunchpadFlavors(allFlavors);
+            }
+          }
+        } catch (error) {
+          console.error('Error loading LaunchPad flavors:', error);
+        }
+      };
+      loadLaunchpadFlavors();
+    }
+  }, [loungeId, isDemoMode]);
 
   // Calculate total amount based on pricing model
   const calculateTotalAmount = (pricingModel: 'flat' | 'time-based', timerDuration: number, flavorMixPrice: number, basePrice: number = 30, tableMultiplier: number = 1) => {
@@ -580,6 +606,7 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
                         showPricing={true}
                         useLayoutData={true}
                         partySize={formData.timerDuration ? undefined : undefined} // Can add party size field later
+                        loungeId={loungeId}
                         className="p-4 bg-zinc-800/50 rounded-lg border border-zinc-700"
                       />
                     </div>
@@ -664,7 +691,13 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
                     maxSelections={4}
                     mode="staff"
                     className=""
-                    customFlavors={isDemoMode && demoMenuFlavors ? demoMenuFlavors : undefined}
+                    customFlavors={
+                      isDemoMode && demoMenuFlavors 
+                        ? demoMenuFlavors 
+                        : launchpadFlavors.length > 0 
+                          ? launchpadFlavors 
+                          : undefined
+                    }
                     isDemoMode={isDemoMode}
                   />
                 </div>

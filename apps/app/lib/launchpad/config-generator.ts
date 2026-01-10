@@ -48,7 +48,7 @@ export function generateLoungeOpsConfig(
     session_type: step3?.sessionType || 'flat',
     base_session_price: step1.baseSessionPrice / 100, // Convert cents to dollars
     grace_period_minutes: step3?.gracePeriodMinutes || 0,
-    extension_policy: step3?.extensionPolicy || 'manual',
+    extension_policy: step3?.extensionPolicy || (step3?.sessionType === 'flat' ? 'na' : 'manual'),
     comp_policy_enabled: step3?.compPolicyEnabled || false,
     flavors: {
       standard: standardFlavors,
