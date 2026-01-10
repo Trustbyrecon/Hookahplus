@@ -9,35 +9,35 @@ datasource db {
 }
 
 model Session {
-  id                  String         @id @default(cuid())
+  id                  String          @id @default(cuid())
   externalRef         String?
   source              SessionSource
   trustSignature      String
-  state               SessionState   @default(PENDING)
+  state               SessionState    @default(PENDING)
   customerPhone       String?
   flavorMix           Json?
   loungeId            String
-  version             Int            @default(1)
-  createdAt           DateTime       @default(now())
-  updatedAt           DateTime       @updatedAt
+  version             Int             @default(1)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
   tableId             String?
   customerRef         String?
   flavor              String?
-  priceCents          Int?           @default(3000)
+  priceCents          Int?            @default(3000)
   edgeCase            String?
   edgeNote            String?
   assignedBOHId       String?
   assignedFOHId       String?
-  startedAt           DateTime?      @db.Timestamptz(6)
-  endedAt             DateTime?      @db.Timestamptz(6)
+  startedAt           DateTime?       @db.Timestamptz(6)
+  endedAt             DateTime?       @db.Timestamptz(6)
   durationSecs        Int?
   paymentIntent       String?
   paymentStatus       String?
   orderItems          String?
   posMode             String?
   timerDuration       Int?
-  timerStartedAt      DateTime?      @db.Timestamptz(6)
-  timerPausedAt       DateTime?      @db.Timestamptz(6)
+  timerStartedAt      DateTime?       @db.Timestamptz(6)
+  timerPausedAt       DateTime?       @db.Timestamptz(6)
   timerPausedDuration Int?
   timerStatus         String?
   zone                String?
@@ -45,20 +45,20 @@ model Session {
   specialRequests     String?
   tableNotes          String?
   qrCodeUrl           String?
-  sessionStateV1      String?        @map("session_state_v1")
-  paused              Boolean?       @default(false)
-  tenantId            String?        @map("tenant_id") @db.Uuid
-  preorderId          String?        @map("preorder_id")
-  loungeConfigVersion Int?           @map("lounge_config_version")
-  seatId              String?        @map("seat_id")
-  zoneId              String?        @map("zone_id")
-  stage               String?        @map("nan_stage")
-  action              String?        @map("nan_action")
-  hid                 String?        // Hookah+ Network ID (portable customer identifier)
-  preorder            PreOrder?      @relation(fields: [preorderId], references: [id])
-  seat                Seat?          @relation(fields: [seatId], references: [id])
-  tenant              Tenant?        @relation(fields: [tenantId], references: [id], onUpdate: NoAction)
-  zoneRelation        Zone?          @relation("SessionZone", fields: [zoneId], references: [id])
+  sessionStateV1      String?         @map("session_state_v1")
+  paused              Boolean?        @default(false)
+  tenantId            String?         @map("tenant_id") @db.Uuid
+  preorderId          String?         @map("preorder_id")
+  loungeConfigVersion Int?            @map("lounge_config_version")
+  seatId              String?         @map("seat_id")
+  zoneId              String?         @map("zone_id")
+  stage               String?         @map("nan_stage")
+  action              String?         @map("nan_action")
+  hid                 String? // Hookah+ Network ID (portable customer identifier)
+  preorder            PreOrder?       @relation(fields: [preorderId], references: [id])
+  seat                Seat?           @relation(fields: [seatId], references: [id])
+  tenant              Tenant?         @relation(fields: [tenantId], references: [id], onUpdate: NoAction)
+  zoneRelation        Zone?           @relation("SessionZone", fields: [zoneId], references: [id])
   networkProfile      NetworkProfile? @relation(fields: [hid], references: [hid])
   SessionEvent        SessionEvent[]
   deliveries          Delivery[]
@@ -86,18 +86,18 @@ model Session {
 }
 
 model Tenant {
-  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name        String
-  createdAt   DateTime?     @default(now()) @map("created_at") @db.Timestamptz(6)
-  sessions    Session[]
-  memberships Membership[]
-  menu_files  MenuFile[]
-  payments    Payment[]
-  events      ReflexEvent[]
-  campaigns   Campaign[]
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String
+  createdAt       DateTime?        @default(now()) @map("created_at") @db.Timestamptz(6)
+  sessions        Session[]
+  memberships     Membership[]
+  menu_files      MenuFile[]
+  payments        Payment[]
+  events          ReflexEvent[]
+  campaigns       Campaign[]
   loyaltyAccounts LoyaltyAccount[]
-  loyaltyTiers   LoyaltyTier[]
-  loyaltyRewards LoyaltyReward[]
+  loyaltyTiers    LoyaltyTier[]
+  loyaltyRewards  LoyaltyReward[]
   squareMerchants SquareMerchant[]
 
   @@index([createdAt], map: "idx_tenants_created_at")
@@ -411,7 +411,7 @@ model Category {
   id           String   @id @default(cuid())
   name         String   @map("name")
   description  String?  @map("description")
-  displayOrder  Int      @default(0) @map("display_order")
+  displayOrder Int      @default(0) @map("display_order")
   isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -486,31 +486,31 @@ model PricingRule {
 }
 
 model Campaign {
-  id              String    @id @default(cuid())
-  loungeId        String    @map("lounge_id")
-  tenantId        String?   @map("tenant_id") @db.Uuid
-  name            String
-  type            String    // 'loyalty' | 'promotional' | 'email' | 'sms' | 'social' | 'percentage_off' | 'first_x_customers' | 'buy_x_get_y' | 'time_limited'
-  status          String    @default("draft") // 'draft' | 'active' | 'paused' | 'completed' | 'scheduled'
-  description     String?
-  targetAudience   String?   @map("target_audience")
-  startDate       DateTime  @map("start_date") @db.Timestamptz(6)
-  endDate         DateTime? @map("end_date") @db.Timestamptz(6)
-  budgetCents     Int       @default(0) @map("budget_cents")
-  spentCents      Int       @default(0) @map("spent_cents")
-  reach           Int       @default(0)
-  engagement      Float     @default(0) // percentage
-  conversions     Int       @default(0)
-  roi             Float     @default(0) // return on investment multiplier
-  channels        String?   // JSON array of channels
-  campaignConfig  Json?     @map("campaign_config") // Type-specific configuration (percentage, buyXGetY, etc.)
-  qrPrefix        String?   @map("qr_prefix") // For QR code tracking
-  isActive        Boolean   @default(true) @map("is_active")
-  createdBy       String?   @map("created_by")
-  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
-  tenant          Tenant?   @relation(fields: [tenantId], references: [id], onUpdate: NoAction)
-  campaignUsages  CampaignUsage[]
+  id             String          @id @default(cuid())
+  loungeId       String          @map("lounge_id")
+  tenantId       String?         @map("tenant_id") @db.Uuid
+  name           String
+  type           String // 'loyalty' | 'promotional' | 'email' | 'sms' | 'social' | 'percentage_off' | 'first_x_customers' | 'buy_x_get_y' | 'time_limited'
+  status         String          @default("draft") // 'draft' | 'active' | 'paused' | 'completed' | 'scheduled'
+  description    String?
+  targetAudience String?         @map("target_audience")
+  startDate      DateTime        @map("start_date") @db.Timestamptz(6)
+  endDate        DateTime?       @map("end_date") @db.Timestamptz(6)
+  budgetCents    Int             @default(0) @map("budget_cents")
+  spentCents     Int             @default(0) @map("spent_cents")
+  reach          Int             @default(0)
+  engagement     Float           @default(0) // percentage
+  conversions    Int             @default(0)
+  roi            Float           @default(0) // return on investment multiplier
+  channels       String? // JSON array of channels
+  campaignConfig Json?           @map("campaign_config") // Type-specific configuration (percentage, buyXGetY, etc.)
+  qrPrefix       String?         @map("qr_prefix") // For QR code tracking
+  isActive       Boolean         @default(true) @map("is_active")
+  createdBy      String?         @map("created_by")
+  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+  tenant         Tenant?         @relation(fields: [tenantId], references: [id], onUpdate: NoAction)
+  campaignUsages CampaignUsage[]
 
   @@index([loungeId, status, startDate])
   @@index([loungeId, isActive])
@@ -520,14 +520,14 @@ model Campaign {
 }
 
 model CampaignUsage {
-  id          String    @id @default(cuid())
-  campaignId  String    @map("campaign_id")
-  sessionId   String?   @map("session_id")
-  customerRef String?   @map("customer_ref")
-  discountCents Int?    @map("discount_cents")
-  appliedAt   DateTime  @default(now()) @map("applied_at") @db.Timestamptz(6)
-  metadata    Json?
-  campaign    Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  id            String   @id @default(cuid())
+  campaignId    String   @map("campaign_id")
+  sessionId     String?  @map("session_id")
+  customerRef   String?  @map("customer_ref")
+  discountCents Int?     @map("discount_cents")
+  appliedAt     DateTime @default(now()) @map("applied_at") @db.Timestamptz(6)
+  metadata      Json?
+  campaign      Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 
   @@index([campaignId, appliedAt])
   @@index([sessionId])
@@ -705,27 +705,27 @@ model SquareMerchant {
 }
 
 model LoyaltyAccount {
-  id               String              @id @default(cuid())
-  loungeId         String?             @map("lounge_id")
-  tenantId         String?             @map("tenant_id") @db.Uuid
-  customerId       String?             @map("customer_id")
-  customerPhone    String?             @map("customer_phone")
-  balanceCents     Int                 @default(0) @map("balance_cents")
-  totalEarnedCents Int                 @default(0) @map("total_earned_cents")
-  totalRedeemedCents Int               @default(0) @map("total_redeemed_cents")
-  pointsBalance    Int                 @default(0) @map("points_balance")
-  totalPointsEarned Int               @default(0) @map("total_points_earned")
-  totalPointsRedeemed Int             @default(0) @map("total_points_redeemed")
-  currentTier      String              @default("bronze") @map("current_tier") // bronze | silver | gold | platinum
-  visitCount       Int                 @default(0) @map("visit_count")
-  lastVisitAt      DateTime?           @map("last_visit_at") @db.Timestamptz(6)
-  isActive         Boolean             @default(true) @map("is_active")
-  createdAt        DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt        DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
-  transactions     LoyaltyTransaction[]
-  wallet           LoyaltyWallet?
-  redemptions      LoyaltyRedemption[]
-  tenant           Tenant?             @relation(fields: [tenantId], references: [id], onUpdate: NoAction)
+  id                  String               @id @default(cuid())
+  loungeId            String?              @map("lounge_id")
+  tenantId            String?              @map("tenant_id") @db.Uuid
+  customerId          String?              @map("customer_id")
+  customerPhone       String?              @map("customer_phone")
+  balanceCents        Int                  @default(0) @map("balance_cents")
+  totalEarnedCents    Int                  @default(0) @map("total_earned_cents")
+  totalRedeemedCents  Int                  @default(0) @map("total_redeemed_cents")
+  pointsBalance       Int                  @default(0) @map("points_balance")
+  totalPointsEarned   Int                  @default(0) @map("total_points_earned")
+  totalPointsRedeemed Int                  @default(0) @map("total_points_redeemed")
+  currentTier         String               @default("bronze") @map("current_tier") // bronze | silver | gold | platinum
+  visitCount          Int                  @default(0) @map("visit_count")
+  lastVisitAt         DateTime?            @map("last_visit_at") @db.Timestamptz(6)
+  isActive            Boolean              @default(true) @map("is_active")
+  createdAt           DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+  transactions        LoyaltyTransaction[]
+  wallet              LoyaltyWallet?
+  redemptions         LoyaltyRedemption[]
+  tenant              Tenant?              @relation(fields: [tenantId], references: [id], onUpdate: NoAction)
 
   @@index([customerId], map: "idx_loyalty_account_customer_id")
   @@index([customerPhone], map: "idx_loyalty_account_customer_phone")
@@ -736,20 +736,20 @@ model LoyaltyAccount {
 }
 
 model LoyaltyTransaction {
-  id                String         @id @default(cuid())
-  accountId         String         @map("account_id")
-  type              String         @map("type")
-  amountCents       Int            @map("amount_cents")
-  balanceBeforeCents Int           @map("balance_before_cents")
-  balanceAfterCents Int           @map("balance_after_cents")
-  source            String         @map("source")
-  sessionId         String?        @map("session_id")
-  posTicketId       String?        @map("pos_ticket_id")
-  stripeChargeId    String?        @map("stripe_charge_id")
-  metadata          String?        @map("metadata")
-  version           Int            @default(1) @map("version")
-  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
-  account           LoyaltyAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  id                 String         @id @default(cuid())
+  accountId          String         @map("account_id")
+  type               String         @map("type")
+  amountCents        Int            @map("amount_cents")
+  balanceBeforeCents Int            @map("balance_before_cents")
+  balanceAfterCents  Int            @map("balance_after_cents")
+  source             String         @map("source")
+  sessionId          String?        @map("session_id")
+  posTicketId        String?        @map("pos_ticket_id")
+  stripeChargeId     String?        @map("stripe_charge_id")
+  metadata           String?        @map("metadata")
+  version            Int            @default(1) @map("version")
+  createdAt          DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  account            LoyaltyAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
   @@index([accountId, createdAt], map: "idx_loyalty_transaction_account_created")
   @@index([sessionId], map: "idx_loyalty_transaction_session_id")
@@ -772,21 +772,21 @@ model LoyaltyWallet {
 }
 
 model LoyaltyTier {
-  id                String    @id @default(cuid())
-  loungeId          String?   @map("lounge_id")
-  tenantId          String?   @map("tenant_id") @db.Uuid
-  tierName          String    @map("tier_name") // bronze | silver | gold | platinum
-  minPoints         Int       @default(0) @map("min_points")
-  maxPoints         Int?      @map("max_points")
-  discountPercent   Float     @default(0) @map("discount_percent")
-  benefits          Json?     // Array of benefit strings
-  pointsPerDollar   Float     @default(1) @map("points_per_dollar") // Points earned per dollar spent
-  isActive          Boolean   @default(true) @map("is_active")
-  displayOrder      Int       @default(0) @map("display_order")
-  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
-  tenant            Tenant?   @relation(fields: [tenantId], references: [id], onUpdate: NoAction)
-  rewards           LoyaltyReward[]
+  id              String          @id @default(cuid())
+  loungeId        String?         @map("lounge_id")
+  tenantId        String?         @map("tenant_id") @db.Uuid
+  tierName        String          @map("tier_name") // bronze | silver | gold | platinum
+  minPoints       Int             @default(0) @map("min_points")
+  maxPoints       Int?            @map("max_points")
+  discountPercent Float           @default(0) @map("discount_percent")
+  benefits        Json? // Array of benefit strings
+  pointsPerDollar Float           @default(1) @map("points_per_dollar") // Points earned per dollar spent
+  isActive        Boolean         @default(true) @map("is_active")
+  displayOrder    Int             @default(0) @map("display_order")
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+  tenant          Tenant?         @relation(fields: [tenantId], references: [id], onUpdate: NoAction)
+  rewards         LoyaltyReward[]
 
   @@unique([loungeId, tierName])
   @@index([loungeId, isActive])
@@ -796,27 +796,27 @@ model LoyaltyTier {
 }
 
 model LoyaltyReward {
-  id                String       @id @default(cuid())
-  loungeId          String?      @map("lounge_id")
-  tenantId          String?      @map("tenant_id") @db.Uuid
-  tierId            String?      @map("tier_id")
-  name              String
-  description       String?
-  pointsCost        Int          @map("points_cost")
-  discountPercent   Float?       @map("discount_percent")
-  discountAmountCents Int?       @map("discount_amount_cents")
-  rewardType        String       @map("reward_type") // discount | free_item | upgrade | perk
-  isActive          Boolean      @default(true) @map("is_active")
-  maxRedemptions    Int?         @map("max_redemptions")
-  redemptionCount   Int          @default(0) @map("redemption_count")
-  validFrom         DateTime?    @map("valid_from") @db.Timestamptz(6)
-  validUntil        DateTime?    @map("valid_until") @db.Timestamptz(6)
-  displayOrder      Int          @default(0) @map("display_order")
-  createdAt         DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt         DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
-  tier              LoyaltyTier? @relation(fields: [tierId], references: [id], onDelete: SetNull)
-  tenant            Tenant?      @relation(fields: [tenantId], references: [id], onUpdate: NoAction)
-  redemptions       LoyaltyRedemption[]
+  id                  String              @id @default(cuid())
+  loungeId            String?             @map("lounge_id")
+  tenantId            String?             @map("tenant_id") @db.Uuid
+  tierId              String?             @map("tier_id")
+  name                String
+  description         String?
+  pointsCost          Int                 @map("points_cost")
+  discountPercent     Float?              @map("discount_percent")
+  discountAmountCents Int?                @map("discount_amount_cents")
+  rewardType          String              @map("reward_type") // discount | free_item | upgrade | perk
+  isActive            Boolean             @default(true) @map("is_active")
+  maxRedemptions      Int?                @map("max_redemptions")
+  redemptionCount     Int                 @default(0) @map("redemption_count")
+  validFrom           DateTime?           @map("valid_from") @db.Timestamptz(6)
+  validUntil          DateTime?           @map("valid_until") @db.Timestamptz(6)
+  displayOrder        Int                 @default(0) @map("display_order")
+  createdAt           DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+  tier                LoyaltyTier?        @relation(fields: [tierId], references: [id], onDelete: SetNull)
+  tenant              Tenant?             @relation(fields: [tenantId], references: [id], onUpdate: NoAction)
+  redemptions         LoyaltyRedemption[]
 
   @@index([loungeId, isActive])
   @@index([tierId])
@@ -826,20 +826,20 @@ model LoyaltyReward {
 }
 
 model LoyaltyRedemption {
-  id                String         @id @default(cuid())
-  accountId         String         @map("account_id")
-  rewardId          String         @map("reward_id")
-  sessionId         String?        @map("session_id")
-  pointsSpent       Int            @map("points_spent")
-  discountCents     Int?           @map("discount_cents")
-  status            String         @default("pending") // pending | applied | expired | cancelled
-  appliedAt         DateTime?      @map("applied_at") @db.Timestamptz(6)
-  expiresAt         DateTime?      @map("expires_at") @db.Timestamptz(6)
-  metadata          Json?
-  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt         DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
-  account           LoyaltyAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  reward            LoyaltyReward  @relation(fields: [rewardId], references: [id], onDelete: Restrict)
+  id            String         @id @default(cuid())
+  accountId     String         @map("account_id")
+  rewardId      String         @map("reward_id")
+  sessionId     String?        @map("session_id")
+  pointsSpent   Int            @map("points_spent")
+  discountCents Int?           @map("discount_cents")
+  status        String         @default("pending") // pending | applied | expired | cancelled
+  appliedAt     DateTime?      @map("applied_at") @db.Timestamptz(6)
+  expiresAt     DateTime?      @map("expires_at") @db.Timestamptz(6)
+  metadata      Json?
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  account       LoyaltyAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  reward        LoyaltyReward  @relation(fields: [rewardId], references: [id], onDelete: Restrict)
 
   @@index([accountId, createdAt])
   @@index([rewardId])
@@ -984,22 +984,22 @@ enum session_status {
 
 // Network-wide customer profiles (Hookah+ Network Identity Layer)
 model NetworkProfile {
-  id            String   @id @default(cuid())
-  hid           String   @unique // Hookah+ ID (portable identifier)
-  phoneHash     String?  @map("phone_hash") // SHA256 hash of phone
-  emailHash     String?  @map("email_hash") // SHA256 hash of email
-  consentLevel  String   @default("shadow") @map("consent_level") // shadow | claimed | network_shared
-  tier          String?  // Current loyalty tier
-  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
-  
-  preferences   NetworkPreference?
-  badges        NetworkBadge[]
-  sessions      NetworkSession[]
-  notes         NetworkSessionNote[]
-  piiLinks      NetworkPIILink[]
-  sessionsRef   Session[] // Sessions linked to this profile
-  
+  id           String   @id @default(cuid())
+  hid          String   @unique // Hookah+ ID (portable identifier)
+  phoneHash    String?  @map("phone_hash") // SHA256 hash of phone
+  emailHash    String?  @map("email_hash") // SHA256 hash of email
+  consentLevel String   @default("shadow") @map("consent_level") // shadow | claimed | network_shared
+  tier         String? // Current loyalty tier
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  preferences NetworkPreference?
+  badges      NetworkBadge[]
+  sessions    NetworkSession[]
+  notes       NetworkSessionNote[]
+  piiLinks    NetworkPIILink[]
+  sessionsRef Session[] // Sessions linked to this profile
+
   @@index([hid], map: "idx_network_profile_hid")
   @@index([phoneHash], map: "idx_network_profile_phone_hash")
   @@index([emailHash], map: "idx_network_profile_email_hash")
@@ -1008,28 +1008,28 @@ model NetworkProfile {
 }
 
 model NetworkPreference {
-  id            String        @id @default(cuid())
-  hid           String        @unique
-  topFlavors    Json?         @map("top_flavors") // Array of favorite flavors
-  flavorVector  String?       @map("flavor_vector") // ML embedding (JSON string)
-  devicePrefs   Json?         @map("device_prefs") // Device preferences
-  updatedAt     DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
-  
-  profile       NetworkProfile @relation(fields: [hid], references: [hid], onDelete: Cascade)
-  
+  id           String   @id @default(cuid())
+  hid          String   @unique
+  topFlavors   Json?    @map("top_flavors") // Array of favorite flavors
+  flavorVector String?  @map("flavor_vector") // ML embedding (JSON string)
+  devicePrefs  Json?    @map("device_prefs") // Device preferences
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  profile NetworkProfile @relation(fields: [hid], references: [hid], onDelete: Cascade)
+
   @@index([hid], map: "idx_network_preference_hid")
   @@map("network_preferences")
 }
 
 model NetworkBadge {
-  id         String        @id @default(cuid())
-  hid        String
-  badgeCode  String        @map("badge_code")
-  awardedAt  DateTime      @default(now()) @map("awarded_at") @db.Timestamptz(6)
-  meta      Json?         // Additional metadata
-  
-  profile    NetworkProfile @relation(fields: [hid], references: [hid], onDelete: Cascade)
-  
+  id        String   @id @default(cuid())
+  hid       String
+  badgeCode String   @map("badge_code")
+  awardedAt DateTime @default(now()) @map("awarded_at") @db.Timestamptz(6)
+  meta      Json? // Additional metadata
+
+  profile NetworkProfile @relation(fields: [hid], references: [hid], onDelete: Cascade)
+
   @@unique([hid, badgeCode], map: "idx_network_badge_unique")
   @@index([hid], map: "idx_network_badge_hid")
   @@index([badgeCode], map: "idx_network_badge_code")
@@ -1037,19 +1037,19 @@ model NetworkBadge {
 }
 
 model NetworkSession {
-  id         String        @id // Use sessionId-based ID (NS-{sessionId})
+  id         String    @id // Use sessionId-based ID (NS-{sessionId})
   hid        String
-  sessionId  String        @unique @map("session_id") // Link to Session.id (unique)
-  loungeId  String        @map("lounge_id")
-  startTs    DateTime?    @map("start_ts") @db.Timestamptz(6)
-  endTs      DateTime?    @map("end_ts") @db.Timestamptz(6)
-  items      Json?         // Order items
-  spendCents Int?          @map("spend_cents")
-  posRef     String?       @map("pos_ref")
-  rating     Int?          // Customer rating (1-5)
-  
-  profile    NetworkProfile @relation(fields: [hid], references: [hid], onDelete: Cascade)
-  
+  sessionId  String    @unique @map("session_id") // Link to Session.id (unique)
+  loungeId   String    @map("lounge_id")
+  startTs    DateTime? @map("start_ts") @db.Timestamptz(6)
+  endTs      DateTime? @map("end_ts") @db.Timestamptz(6)
+  items      Json? // Order items
+  spendCents Int?      @map("spend_cents")
+  posRef     String?   @map("pos_ref")
+  rating     Int? // Customer rating (1-5)
+
+  profile NetworkProfile @relation(fields: [hid], references: [hid], onDelete: Cascade)
+
   @@index([hid], map: "idx_network_session_hid")
   @@index([sessionId], map: "idx_network_session_session_id")
   @@index([loungeId], map: "idx_network_session_lounge_id")
@@ -1057,18 +1057,18 @@ model NetworkSession {
 }
 
 model NetworkSessionNote {
-  id         String        @id @default(cuid())
+  id         String   @id @default(cuid())
   hid        String
-  noteId     String        @unique @map("note_id") // Link to SessionNote.id
-  loungeId   String        @map("lounge_id")
-  staffId    String?       @map("staff_id")
-  noteText   String        @map("note_text")
-  shareScope String        @default("lounge") @map("share_scope") // lounge | network
-  tags       Json?         // Behavioral tags
-  createdAt  DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  
-  profile    NetworkProfile @relation(fields: [hid], references: [hid], onDelete: Cascade)
-  
+  noteId     String   @unique @map("note_id") // Link to SessionNote.id
+  loungeId   String   @map("lounge_id")
+  staffId    String?  @map("staff_id")
+  noteText   String   @map("note_text")
+  shareScope String   @default("lounge") @map("share_scope") // lounge | network
+  tags       Json? // Behavioral tags
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  profile NetworkProfile @relation(fields: [hid], references: [hid], onDelete: Cascade)
+
   @@index([hid], map: "idx_network_session_note_hid")
   @@index([loungeId], map: "idx_network_session_note_lounge_id")
   @@index([shareScope], map: "idx_network_session_note_scope")
@@ -1076,16 +1076,16 @@ model NetworkSessionNote {
 }
 
 model NetworkPIILink {
-  id        String        @id @default(cuid())
-  hid       String
-  piiType   String        @map("pii_type") // phone | email | qr_token
-  piiHash   String        @map("pii_hash") // Hashed identifier
-  verified  Boolean       @default(false)
-  verifiedAt DateTime?    @map("verified_at") @db.Timestamptz(6)
-  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  
-  profile   NetworkProfile @relation(fields: [hid], references: [hid], onDelete: Cascade)
-  
+  id         String    @id @default(cuid())
+  hid        String
+  piiType    String    @map("pii_type") // phone | email | qr_token
+  piiHash    String    @map("pii_hash") // Hashed identifier
+  verified   Boolean   @default(false)
+  verifiedAt DateTime? @map("verified_at") @db.Timestamptz(6)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  profile NetworkProfile @relation(fields: [hid], references: [hid], onDelete: Cascade)
+
   @@unique([piiType, piiHash], map: "idx_network_pii_unique")
   @@index([hid], map: "idx_network_pii_hid")
   @@index([piiHash], map: "idx_network_pii_hash")
@@ -1094,22 +1094,28 @@ model NetworkPIILink {
 
 // LaunchPad SetupSession - Anonymous onboarding sessions
 model SetupSession {
-  id            String    @id @default(cuid())
-  token         String    @unique
-  progress      Json      // LaunchPadProgress type
-  loungeId      String?   @unique @map("lounge_id")
-  source        String?   // "manychat" | "web" | "direct"
-  manychatUserId String?  @map("manychat_user_id")
-  instagramHandle String? @map("instagram_handle")
-  prefillData   Json?     @map("prefill_data") // ManyChat collected data
-  userId        String?   @map("user_id") // Set at Go Live
-  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  expiresAt     DateTime  @map("expires_at") @db.Timestamptz(6)
-  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id              String    @id @default(cuid())
+  token           String    @unique
+  setupLink       String?   @map("setup_link") // Auto-generated: /launchpad?token={token}
+  status          String    @default("draft") // draft | in_progress | completed | activated | expired | abandoned
+  progress        Json // LaunchPadProgress type
+  loungeId        String?   @unique @map("lounge_id")
+  source          String? // "manychat" | "web" | "direct"
+  manychatUserId  String?   @map("manychat_user_id")
+  instagramHandle String?   @map("instagram_handle")
+  prefillData     Json?     @map("prefill_data") // ManyChat collected data
+  userId          String?   @map("user_id") // Set at Go Live
+  leadId          String?   @map("lead_id") // Link to Soft Lead (auto-created)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt       DateTime  @map("expires_at") @db.Timestamptz(6)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  lastActivityAt  DateTime? @map("last_activity_at") @db.Timestamptz(6) // Track for abandonment detection
 
   @@index([token], map: "idx_setup_session_token")
   @@index([expiresAt], map: "idx_setup_session_expires")
   @@index([loungeId], map: "idx_setup_session_lounge_id")
   @@index([source], map: "idx_setup_session_source")
+  @@index([status], map: "idx_setup_session_status")
+  @@index([lastActivityAt], map: "idx_setup_session_last_activity")
   @@map("setup_sessions")
 }

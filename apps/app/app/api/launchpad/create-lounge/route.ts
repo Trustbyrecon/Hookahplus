@@ -87,6 +87,28 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Create base session pricing rule so it can be retrieved by /api/lounges/[loungeId]/config
+    const baseSessionPriceCents = Math.round(config.base_session_price * 100);
+    try {
+      await prisma.pricingRule.create({
+        data: {
+          loungeId: lounge.id,
+          ruleType: 'BASE_SESSION',
+          ruleConfig: JSON.stringify({
+            priceCents: baseSessionPriceCents,
+            pricingModel: config.session_type,
+          }),
+          version: 1,
+          isActive: true,
+          effectiveAt: new Date(),
+        },
+      });
+      console.log(`[LaunchPad Create Lounge] Created base session pricing rule: $${config.base_session_price} (${baseSessionPriceCents} cents)`);
+    } catch (pricingRuleError) {
+      console.warn('[LaunchPad Create Lounge] Could not create pricing rule (non-critical):', pricingRuleError);
+      // Don't fail the entire creation if pricing rule creation fails
+    }
+
     // Link setup session to lounge
     await linkSetupSessionToLounge(token, userId, lounge.id);
 
@@ -250,11 +272,35 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: any) {
     console.error('[LaunchPad Create Lounge] Error:', error);
+    console.error('[LaunchPad Create Lounge] Error details:', {
+      message: error.message,
+      code: error.code,
+      meta: error.meta,
+      stack: error.stack,
+    });
+    
+    // Provide more detailed error information
+    let errorMessage = 'Failed to create lounge';
+    let errorDetails = error.message || 'Unknown error';
+    
+    // Handle specific Prisma errors
+    if (error.code === 'P2002') {
+      errorMessage = 'Lounge name already exists';
+      errorDetails = 'A lounge with this name already exists. Please choose a different name.';
+    } else if (error.code === 'P2003') {
+      errorMessage = 'Database constraint violation';
+      errorDetails = 'A required relationship is missing. Please check your setup session.';
+    } else if (error.message?.includes('does not exist') || error.message?.includes('relation')) {
+      errorMessage = 'Database migration required';
+      errorDetails = 'Please run: npx prisma migrate dev';
+    }
+    
     return NextResponse.json(
       {
         success: false,
-        error: 'Failed to create lounge',
-        details: error.message,
+        error: errorMessage,
+        details: errorDetails,
+        code: error.code || 'UNKNOWN_ERROR',
       },
       { status: 500 }
     );

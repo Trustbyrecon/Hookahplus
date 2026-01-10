@@ -62,10 +62,10 @@ export function TableSelector({
                 // Convert seats to table format
                 const seats = layoutData.layout?.seats || [];
                 loadedTables = seats.map((seat: any) => ({
-                  id: seat.id,
+                  id: seat.tableId || seat.id, // Use tableId (e.g., "table-001") as the id, not the UUID
                   name: seat.name || seat.tableId,
-                  seatingType: seat.zone?.zoneType === 'VIP' ? 'VIP' : 
-                              seat.zone?.zoneType === 'OUTDOOR' ? 'Outdoor' : 'Booth',
+                  seatingType: seat.seatingType || (seat.zone?.zoneType === 'VIP' ? 'VIP' : 
+                              seat.zone?.zoneType === 'OUTDOOR' ? 'Outdoor' : 'Booth'),
                   capacity: seat.capacity || 4,
                   zone: seat.zone?.name || 'Main Floor',
                   coordinates: seat.coordinates || { x: 0, y: 0 }
@@ -145,12 +145,17 @@ export function TableSelector({
   const getAvailableTables = (): TableType[] => {
     if (useLayoutData && layoutTables.length > 0) {
       return layoutTables.map((table: any) => {
+        // Use tableId if available (from Seat model), otherwise use id
+        const tableIdentifier = table.tableId || table.id;
+        
         // Check if table has active session
         const activeSession = sessions.find(s => {
           const sessionTableId = s.tableId;
-          return sessionTableId === table.id ||
+          return sessionTableId === tableIdentifier ||
                  sessionTableId === table.name ||
-                 sessionTableId?.toLowerCase() === table.name?.toLowerCase();
+                 sessionTableId === table.tableId ||
+                 sessionTableId?.toLowerCase() === table.name?.toLowerCase() ||
+                 sessionTableId?.toLowerCase() === tableIdentifier?.toLowerCase();
         });
 
         const isOccupied = activeSession && 
@@ -176,8 +181,8 @@ export function TableSelector({
                         'Main Floor';
 
         return {
-          id: table.id,
-          name: table.name,
+          id: tableIdentifier, // Use tableId (e.g., "table-001") not the UUID
+          name: table.name || tableIdentifier,
           type: mapSeatingTypeToType(table.seatingType || 'Booth'),
           capacity: table.capacity || 4,
           availability: isOccupied ? 'occupied' : 'available',

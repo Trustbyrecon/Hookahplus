@@ -62,6 +62,7 @@ export interface LaunchPadProgress {
 
 export interface SetupSessionResponse {
   token: string;
+  setupLink?: string; // Auto-generated setup link
   expiresAt: string;
   progress?: LaunchPadProgress;
 }

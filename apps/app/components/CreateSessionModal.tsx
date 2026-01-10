@@ -74,6 +74,18 @@ const timerDurations = [
 ];
 
 export default function CreateSessionModal({ isOpen, onClose, onCreateSession, isDemoMode = false, demoMenuFlavors = null, isDemoSlug = false, demoSource = 'marketing', loungeId }: CreateSessionModalProps) {
+  // Calculate total amount function (defined before useState to be available in useEffect)
+  const calculateTotalAmount = (pricingModel: 'flat' | 'time-based', timerDuration: number, flavorMixPrice: number, basePrice: number = 30, tableMultiplier: number = 1) => {
+    if (pricingModel === 'flat') {
+      // Base price with table multiplier + flavor add-ons
+      return (basePrice * tableMultiplier) + flavorMixPrice;
+    } else {
+      // Time-based: $0.50 per minute + flavor add-ons
+      const timeBasedPrice = timerDuration * 0.50;
+      return timeBasedPrice + flavorMixPrice;
+    }
+  };
+
   // Handle escape key
   React.useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -110,10 +122,11 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
   const [showTableSelector, setShowTableSelector] = useState(false);
   const [launchpadFlavors, setLaunchpadFlavors] = useState<string[]>([]);
   const [launchpadPresets, setLaunchpadPresets] = useState<Array<{ id: string; name: string; flavors: string[]; description?: string }>>([]);
+  const [launchpadBasePrice, setLaunchpadBasePrice] = useState<number | null>(null);
 
   const [errors, setErrors] = useState<Partial<Record<keyof SessionData, string>>>({});
 
-  // Load LaunchPad flavors and presets from config
+  // Load LaunchPad flavors, presets, and base price from config
   useEffect(() => {
     if (loungeId && !isDemoMode) {
       const loadLaunchpadData = async () => {
@@ -121,31 +134,66 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
           const response = await fetch(`/api/lounges/${loungeId}/config`);
           if (response.ok) {
             const data = await response.json();
-            if (data.config && data.config.configData) {
-              const configData = data.config.configData;
-              
-              // Load flavors
-              if (configData.flavors) {
-                const allFlavors = [
-                  ...(configData.flavors.standard || []).map((f: any) => f.name),
-                  ...(configData.flavors.premium || []).map((f: any) => f.name)
-                ];
-                setLaunchpadFlavors(allFlavors);
+            if (data.config) {
+              // Load base price (from pricing rules or config data)
+              if (data.config.baseSessionPrice) {
+                // baseSessionPrice is in cents, convert to dollars
+                const basePriceDollars = data.config.baseSessionPrice / 100;
+                setLaunchpadBasePrice(basePriceDollars);
+                // Update form data with LaunchPad base price
+                setFormData(prev => ({
+                  ...prev,
+                  basePrice: basePriceDollars,
+                  amount: calculateTotalAmount(
+                    prev.pricingModel,
+                    prev.timerDuration,
+                    prev.flavorMixPrice,
+                    basePriceDollars,
+                    selectedTable?.priceMultiplier || 1
+                  )
+                }));
+              } else if (data.config.configData?.base_session_price) {
+                // Fallback to configData if pricing rules don't have it
+                const basePriceDollars = data.config.configData.base_session_price;
+                setLaunchpadBasePrice(basePriceDollars);
+                setFormData(prev => ({
+                  ...prev,
+                  basePrice: basePriceDollars,
+                  amount: calculateTotalAmount(
+                    prev.pricingModel,
+                    prev.timerDuration,
+                    prev.flavorMixPrice,
+                    basePriceDollars,
+                    selectedTable?.priceMultiplier || 1
+                  )
+                }));
               }
 
-              // Load common mixes as presets
-              if (configData.common_mixes && configData.common_mixes.length > 0) {
-                const presets = configData.common_mixes.map((mix: string, idx: number) => {
-                  // Parse mix string (e.g., "Double Apple + Mint" or "Mango, Strawberry")
-                  const flavors = mix.split(/[+,]/).map(f => f.trim()).filter(Boolean);
-                  return {
-                    id: `launchpad-preset-${idx}`,
-                    name: mix,
-                    flavors: flavors,
-                    description: `LaunchPad preset: ${mix}`
-                  };
-                });
-                setLaunchpadPresets(presets);
+              const configData = data.config.configData;
+              if (configData) {
+                // Load flavors
+                if (configData.flavors) {
+                  const allFlavors = [
+                    ...(configData.flavors.standard || []).map((f: any) => f.name),
+                    ...(configData.flavors.premium || []).map((f: any) => f.name)
+                  ];
+                  setLaunchpadFlavors(allFlavors);
+                }
+
+                // Load common mixes as presets
+                if (configData.common_mixes && configData.common_mixes.length > 0) {
+                  const presets = configData.common_mixes.map((mix: string, idx: number) => {
+                    // Parse mix string (e.g., "Double Apple + Mint" or "Mango, Strawberry")
+                    const flavors = mix.split(/[+,]/).map(f => f.trim()).filter(Boolean);
+                    return {
+                      id: `launchpad-preset-${idx}`,
+                      name: mix,
+                      flavors: flavors,
+                      description: `LaunchPad preset: ${mix}`
+                    };
+                  });
+                  setLaunchpadPresets(presets);
+                }
               }
             }
           }
@@ -155,19 +203,8 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
       };
       loadLaunchpadData();
     }
-  }, [loungeId, isDemoMode]);
+  }, [loungeId, isDemoMode, selectedTable]);
 
-  // Calculate total amount based on pricing model
-  const calculateTotalAmount = (pricingModel: 'flat' | 'time-based', timerDuration: number, flavorMixPrice: number, basePrice: number = 30, tableMultiplier: number = 1) => {
-    if (pricingModel === 'flat') {
-      // Base price with table multiplier + flavor add-ons
-      return (basePrice * tableMultiplier) + flavorMixPrice;
-    } else {
-      // Time-based: $0.50 per minute + flavor add-ons
-      const timeBasedPrice = timerDuration * 0.50;
-      return timeBasedPrice + flavorMixPrice;
-    }
-  };
 
   const handleInputChange = (field: keyof SessionData, value: string | number) => {
     setFormData(prev => {

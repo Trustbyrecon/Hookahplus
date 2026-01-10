@@ -85,8 +85,8 @@ export async function GET(
       }
       
       return {
-        id: seat.id,
-        tableId: seat.tableId,
+        id: seat.tableId, // Use tableId as the primary identifier, not the UUID
+        tableId: seat.tableId, // Also include tableId explicitly
         name: seat.name,
         capacity: seat.capacity,
         coordinates: coords ? { x: coords.x || 0, y: coords.y || 0 } : null,

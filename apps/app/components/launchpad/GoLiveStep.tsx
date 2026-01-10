@@ -69,7 +69,10 @@ export function GoLiveStep({ sessionToken, onBack }: GoLiveStepProps) {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to create account');
+        // Show detailed error message
+        const errorMsg = result.details || result.error || 'Failed to create account';
+        console.error('[Go Live] Error response:', result);
+        throw new Error(errorMsg);
       }
 
       // Redirect to dashboard

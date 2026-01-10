@@ -285,7 +285,7 @@ export function VenueSnapshotStep({ initialData, onComplete, onBack }: VenueSnap
                   baseSessionPrice: Math.round(parseFloat(e.target.value) * 100) || 0,
                 }))
               }
-              className="w-full pl-8 pr-4 py-3 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:border-teal-500 focus:outline-none"
+              className="w-full pl-8 pr-4 py-3 bg-zinc-800 border border-zinc-600 rounded-lg text-white focus:border-teal-500 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               placeholder="30.00"
               required
             />
