@@ -1000,21 +1000,57 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
     }
 
     // Validate tableId against saved layout
+    // First check Seat table (new system), then fallback to orgSetting (legacy)
     try {
+      let tableExists = false;
+      let tables: any[] = [];
+
+      // Check Seat table first (new system)
+      if (finalLoungeId) {
+        const seats = await prisma.seat.findMany({
+          where: { 
+            loungeId: finalLoungeId,
+            status: 'ACTIVE'
+          },
+          include: {
+            zone: true
+          }
+        });
+
+        if (seats.length > 0) {
+          tables = seats.map(seat => ({
+            id: seat.tableId,
+            name: seat.name || seat.tableId,
+            capacity: seat.capacity,
+            zone: seat.zone?.name || 'Main Floor'
+          }));
+
+          tableExists = seats.some(seat => 
+            seat.tableId === data.tableId ||
+            seat.name === data.tableId ||
+            seat.name?.toLowerCase() === data.tableId.toLowerCase() ||
+            seat.tableId?.toLowerCase() === data.tableId.toLowerCase()
+          );
+        }
+      }
+
+      // Fallback to orgSetting if no seats found
+      if (!tableExists && tables.length === 0) {
       const layoutSetting = await prisma.orgSetting.findUnique({
         where: { key: 'lounge_layout' }
       });
 
       if (layoutSetting) {
         const layoutData = JSON.parse(layoutSetting.value);
-        const tables = layoutData.tables || [];
+          tables = layoutData.tables || [];
         
-        // Check if table exists in layout
-        const tableExists = tables.some((t: any) => 
+          tableExists = tables.some((t: any) => 
           t.id === data.tableId || 
           t.name === data.tableId ||
           t.name?.toLowerCase() === data.tableId.toLowerCase()
         );
+        }
+      }
 
         if (!tableExists) {
           // Suggest similar tables
@@ -1049,10 +1085,6 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
         if (table && table.capacity) {
           // Note: Party size validation would require additional data
           // This is a foundation - can be enhanced with party size from request
-        }
-      } else {
-        // Layout not configured - warn but don't block (for backward compatibility)
-        console.warn('[Sessions API] No lounge layout configured. Table validation skipped.');
       }
     } catch (layoutError: any) {
       // Don't block session creation if layout check fails (graceful degradation)

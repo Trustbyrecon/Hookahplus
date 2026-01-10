@@ -109,30 +109,51 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
   const [selectedTable, setSelectedTable] = useState<TableType | null>(null);
   const [showTableSelector, setShowTableSelector] = useState(false);
   const [launchpadFlavors, setLaunchpadFlavors] = useState<string[]>([]);
+  const [launchpadPresets, setLaunchpadPresets] = useState<Array<{ name: string; flavors: string[] }>>([]);
 
   const [errors, setErrors] = useState<Partial<Record<keyof SessionData, string>>>({});
 
-  // Load LaunchPad flavors from config
+  // Load LaunchPad flavors and presets from config
   useEffect(() => {
     if (loungeId && !isDemoMode) {
-      const loadLaunchpadFlavors = async () => {
+      const loadLaunchpadData = async () => {
         try {
           const response = await fetch(`/api/lounges/${loungeId}/config`);
           if (response.ok) {
             const data = await response.json();
-            if (data.config && data.config.configData && data.config.configData.flavors) {
-              const allFlavors = [
-                ...(data.config.configData.flavors.standard || []).map((f: any) => f.name),
-                ...(data.config.configData.flavors.premium || []).map((f: any) => f.name)
-              ];
-              setLaunchpadFlavors(allFlavors);
+            if (data.config && data.config.configData) {
+              const configData = data.config.configData;
+              
+              // Load flavors
+              if (configData.flavors) {
+                const allFlavors = [
+                  ...(configData.flavors.standard || []).map((f: any) => f.name),
+                  ...(configData.flavors.premium || []).map((f: any) => f.name)
+                ];
+                setLaunchpadFlavors(allFlavors);
+              }
+
+              // Load common mixes as presets
+              if (configData.common_mixes && configData.common_mixes.length > 0) {
+                const presets = configData.common_mixes.map((mix: string, idx: number) => {
+                  // Parse mix string (e.g., "Double Apple + Mint" or "Mango, Strawberry")
+                  const flavors = mix.split(/[+,]/).map(f => f.trim()).filter(Boolean);
+                  return {
+                    id: `launchpad-preset-${idx}`,
+                    name: mix,
+                    flavors: flavors,
+                    description: `LaunchPad preset: ${mix}`
+                  };
+                });
+                setLaunchpadPresets(presets);
+              }
             }
           }
         } catch (error) {
-          console.error('Error loading LaunchPad flavors:', error);
+          console.error('Error loading LaunchPad data:', error);
         }
       };
-      loadLaunchpadFlavors();
+      loadLaunchpadData();
     }
   }, [loungeId, isDemoMode]);
 
@@ -698,6 +719,7 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
                           ? launchpadFlavors 
                           : undefined
                     }
+                    customPresets={launchpadPresets}
                     isDemoMode={isDemoMode}
                   />
                 </div>

@@ -130,6 +130,7 @@ interface FlavorWheelSelectorProps {
   mode?: 'staff' | 'customer';
   className?: string;
   customFlavors?: string[]; // For demo mode: flavors from uploaded menu
+  customPresets?: Array<{ id: string; name: string; flavors: string[]; description?: string }>; // LaunchPad common mixes
   isDemoMode?: boolean; // If true, flavors are free
   sortByPopularity?: boolean; // Sort flavors by popularity (default: true)
   loungeId?: string; // Optional lounge ID for popularity calculation
@@ -142,12 +143,24 @@ export default function FlavorWheelSelector({
   mode = 'staff',
   className = '',
   customFlavors = [],
+  customPresets = [],
   isDemoMode = false,
   sortByPopularity = true,
   loungeId
 }: FlavorWheelSelectorProps) {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string[]>(selectedFlavors);
+  // Merge custom presets with default presets
+  const allPresets = useMemo(() => {
+    const custom = customPresets.map(p => ({
+      id: p.id,
+      name: p.name,
+      flavors: p.flavors,
+      description: p.description || `LaunchPad preset: ${p.name}`,
+      price: p.flavors.length * (isDemoMode ? 0 : 2.00) // Calculate price
+    }));
+    return [...custom, ...STAFF_PRESETS];
+  }, [customPresets, isDemoMode]);
   const [showPresets, setShowPresets] = useState(customFlavors && customFlavors.length > 0 ? false : true); // Hide presets if using custom flavors
   const [popularityData, setPopularityData] = useState<Map<string, number>>(new Map());
   const [loadingPopularity, setLoadingPopularity] = useState(false);
@@ -285,11 +298,59 @@ export default function FlavorWheelSelector({
   };
 
   // Handle preset selection
-  const selectPreset = (preset: typeof STAFF_PRESETS[0]) => {
+  const selectPreset = (preset: typeof allPresets[0]) => {
     try {
-      setSelected(preset.flavors);
-      onSelectionChange(preset.flavors, preset.price);
-      setShowPresets(false);
+      // Convert flavor names to IDs for LaunchPad presets
+      const flavorIds: string[] = [];
+      for (const flavorName of preset.flavors) {
+        // Try to find in custom flavors first
+        if (customFlavors && customFlavors.length > 0) {
+          const idx = customFlavors.findIndex(f => f.toLowerCase() === flavorName.toLowerCase());
+          if (idx >= 0) {
+            flavorIds.push(`custom-${idx}`);
+            continue;
+          }
+        }
+        // Try to find in standard categories
+        let found = false;
+        for (const category of FLAVOR_CATEGORIES) {
+          const flavor = category.items.find(item => 
+            item.label.toLowerCase() === flavorName.toLowerCase() ||
+            item.id.toLowerCase() === flavorName.toLowerCase()
+          );
+          if (flavor) {
+            flavorIds.push(flavor.id);
+            found = true;
+            break;
+          }
+        }
+        // If not found and it's already an ID, use as-is
+        if (!found && !flavorName.includes('-')) {
+          flavorIds.push(flavorName);
+        }
+      }
+      
+      if (flavorIds.length > 0 && flavorIds.length <= maxSelections) {
+        setSelected(flavorIds);
+        // Calculate price inline (same logic as calculatePrice function)
+        const totalPrice = isDemoMode ? 0 : flavorIds.reduce((total, flavorId) => {
+          if (flavorId.startsWith('custom-')) {
+            const idx = parseInt(flavorId.replace('custom-', ''));
+            if (customFlavors && customFlavors[idx]) {
+              return total + 2.00;
+            }
+          }
+          for (const category of FLAVOR_CATEGORIES) {
+            const flavor = category.items.find(item => item.id === flavorId);
+            if (flavor) {
+              return total + flavor.price;
+            }
+          }
+          return total;
+        }, 0);
+        onSelectionChange(flavorIds, totalPrice);
+        setShowPresets(false);
+      }
     } catch (error) {
       console.error('Error in selectPreset:', error);
     }
@@ -377,7 +438,7 @@ export default function FlavorWheelSelector({
             </button>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            {STAFF_PRESETS.map((preset) => (
+            {allPresets.map((preset) => (
               <button
                 key={preset.id}
                 onClick={(e) => {

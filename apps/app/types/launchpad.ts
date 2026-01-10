@@ -104,6 +104,7 @@ export interface LoungeOpsConfig {
     standard: Array<{ name: string; price?: number }>;
     premium: Array<{ name: string; price: number }>;
   };
+  common_mixes?: string[]; // Common mixes from LaunchPad
   staff: Array<{
     email: string;
     role: 'owner' | 'manager' | 'staff';

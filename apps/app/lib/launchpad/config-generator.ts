@@ -54,6 +54,7 @@ export function generateLoungeOpsConfig(
       standard: standardFlavors,
       premium: premiumFlavors,
     },
+    common_mixes: step2?.commonMixes || [], // Add common mixes to config
     staff:
       step4?.staff.map((s) => ({
         email: s.email,

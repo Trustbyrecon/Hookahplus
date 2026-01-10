@@ -341,8 +341,8 @@ export function TableSelector({
                 </>
               ) : (
                 <>
-                  Visit <a href="/lounge-layout" className="underline">Lounge Layout Manager</a> to set up your tables.
-                  Falling back to default tables.
+              Visit <a href="/lounge-layout" className="underline">Lounge Layout Manager</a> to set up your tables.
+              Falling back to default tables.
                 </>
               )}
             </p>

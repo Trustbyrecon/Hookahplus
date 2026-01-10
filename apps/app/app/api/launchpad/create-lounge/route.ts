@@ -166,6 +166,38 @@ export async function POST(req: NextRequest) {
           data: seatsToCreate
         });
 
+        // Also save to orgSetting for backward compatibility with table validation
+        const layoutData = {
+          tables: seatsToCreate.map((seat, idx) => ({
+            id: seat.tableId,
+            name: seat.name,
+            seatingType: 'Booth',
+            capacity: seat.capacity,
+            coordinates: { x: 0, y: 0 },
+            zone: 'Main Floor'
+          })),
+          updatedAt: new Date().toISOString()
+        };
+
+        try {
+          await prisma.orgSetting.upsert({
+            where: { key: 'lounge_layout' },
+            update: {
+              value: JSON.stringify(layoutData),
+              updatedAt: new Date()
+            },
+            create: {
+              key: 'lounge_layout',
+              value: JSON.stringify(layoutData),
+              description: 'Lounge floor plan layout with table configurations',
+              category: 'ui',
+              isActive: true
+            }
+          });
+        } catch (orgSettingError) {
+          console.warn('[LaunchPad Create Lounge] Could not save to orgSetting (non-critical):', orgSettingError);
+        }
+
         console.log(`[LaunchPad Create Lounge] Created ${tablesCount} default tables for lounge ${lounge.id}`);
       }
     } catch (tableError) {
