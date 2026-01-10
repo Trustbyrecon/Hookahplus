@@ -89,6 +89,23 @@ export function TableSelector({
             }
           }
           
+          // Graceful fallback: Use demo tables if no layout found (for demo/onboarding)
+          if (loadedTables.length === 0) {
+            console.log('[TableSelector] No layout found, using demo table fallback');
+            loadedTables = [
+              { id: 'table-001', name: 'T-001', capacity: 4, seatingType: 'Booth', zone: 'Main Floor' },
+              { id: 'table-002', name: 'T-002', capacity: 4, seatingType: 'Booth', zone: 'Main Floor' },
+              { id: 'table-003', name: 'T-003', capacity: 6, seatingType: 'Couch', zone: 'Main Floor' },
+              { id: 'table-004', name: 'T-004', capacity: 2, seatingType: 'Bar Seating', zone: 'Main Floor' },
+              { id: 'table-005', name: 'T-005', capacity: 6, seatingType: 'Couch', zone: 'Main Floor' },
+              { id: 'table-006', name: 'T-006', capacity: 8, seatingType: 'Outdoor', zone: 'Main Floor' },
+              { id: 'table-007', name: 'T-007', capacity: 4, seatingType: 'Booth', zone: 'Main Floor' },
+              { id: 'table-008', name: 'T-008', capacity: 10, seatingType: 'VIP', zone: 'VIP Section' },
+              { id: 'table-009', name: 'T-009', capacity: 6, seatingType: 'Couch', zone: 'Main Floor' },
+              { id: 'table-010', name: 'T-010', capacity: 8, seatingType: 'Private Room', zone: 'Private Section' }
+            ];
+          }
+          
           setLayoutTables(loadedTables);
 
           // Load lounge config for LaunchPad data (if loungeId provided)
@@ -333,8 +350,8 @@ export function TableSelector({
         </div>
       )}
 
-      {/* No Layout Warning */}
-      {!loading && useLayoutData && layoutTables.length === 0 && (
+      {/* No Layout Warning - Only show if not using demo fallback */}
+      {!loading && useLayoutData && layoutTables.length === 0 && !loungeId && (
         <div className="flex items-center gap-2 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg text-blue-400 text-sm mb-4">
           <AlertCircle className="w-4 h-4" />
           <div>

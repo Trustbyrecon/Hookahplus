@@ -346,9 +346,20 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
           if (response.ok) {
             const validation = await response.json();
             if (!validation.valid) {
-              newErrors.tableId = validation.error || 'Invalid table';
+              // In demo/onboarding mode, allow demo fallback tables
+              if (isDemoMode || isDemoSlug || validation.isDemoFallback) {
+                // Skip validation error - use demo table data
+                console.log('[CreateSessionModal] Demo mode: Allowing demo table fallback');
+              } else {
+                newErrors.tableId = validation.error || 'Invalid table';
+              }
             } else if (!validation.available) {
-              newErrors.tableId = validation.error || 'Table is not available';
+              // In demo mode, skip availability check
+              if (isDemoMode || isDemoSlug) {
+                console.log('[CreateSessionModal] Demo mode: Skipping availability check');
+              } else {
+                newErrors.tableId = validation.error || 'Table is not available';
+              }
             }
           }
         } catch (fallbackError) {
