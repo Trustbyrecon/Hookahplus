@@ -109,7 +109,7 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
   const [selectedTable, setSelectedTable] = useState<TableType | null>(null);
   const [showTableSelector, setShowTableSelector] = useState(false);
   const [launchpadFlavors, setLaunchpadFlavors] = useState<string[]>([]);
-  const [launchpadPresets, setLaunchpadPresets] = useState<Array<{ name: string; flavors: string[] }>>([]);
+  const [launchpadPresets, setLaunchpadPresets] = useState<Array<{ id: string; name: string; flavors: string[]; description?: string }>>([]);
 
   const [errors, setErrors] = useState<Partial<Record<keyof SessionData, string>>>({});
 
