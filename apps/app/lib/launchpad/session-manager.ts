@@ -127,21 +127,44 @@ export async function createSetupSession(
   }
 
   try {
-    // Create SetupSession with status = 'draft'
-    const setupSession = await prisma.setupSession.create({
-      data: {
-        token,
-        setupLink,
-        status: 'draft',
-        progress: initialProgress as any,
-        expiresAt,
-        source,
-        prefillData: prefillData ? (prefillData as any) : null,
-        manychatUserId: prefillData?.subscriber_id || null,
-        instagramHandle: prefillData?.instagram_username || null,
-        lastActivityAt: now,
-      },
-    });
+    // Create SetupSession with status = 'draft' (graceful fallback if status field doesn't exist)
+    let setupSession;
+    try {
+      setupSession = await prisma.setupSession.create({
+        data: {
+          token,
+          setupLink,
+          status: 'draft',
+          progress: initialProgress as any,
+          expiresAt,
+          source,
+          prefillData: prefillData ? (prefillData as any) : null,
+          manychatUserId: prefillData?.subscriber_id || null,
+          instagramHandle: prefillData?.instagram_username || null,
+          lastActivityAt: now,
+        },
+      });
+    } catch (createError: any) {
+      // Graceful fallback: status field may not exist if migration hasn't run
+      if (createError?.message?.includes('Unknown argument `status`') || createError?.code === 'P2025') {
+        console.warn('[Session Manager] Status field not available, creating without status field');
+        setupSession = await prisma.setupSession.create({
+          data: {
+            token,
+            setupLink,
+            progress: initialProgress as any,
+            expiresAt,
+            source,
+            prefillData: prefillData ? (prefillData as any) : null,
+            manychatUserId: prefillData?.subscriber_id || null,
+            instagramHandle: prefillData?.instagram_username || null,
+            lastActivityAt: now,
+          },
+        });
+      } else {
+        throw createError;
+      }
+    }
 
     // Auto-create Soft Lead
     const leadId = await createSoftLead(setupSession.id, source, prefillData);
@@ -179,15 +202,25 @@ export async function createSetupSession(
  */
 async function checkAndUpdateStatus(setupSession: any): Promise<SetupSessionStatus> {
   const now = new Date();
-  const status = setupSession.status as SetupSessionStatus;
+  // Graceful fallback: status field may not exist if migration hasn't run
+  const status = (setupSession.status || 'draft') as SetupSessionStatus;
 
   // Check expiration
   if (now > setupSession.expiresAt) {
     if (status !== 'expired' && status !== 'activated') {
-      await prisma.setupSession.update({
-        where: { id: setupSession.id },
-        data: { status: 'expired' },
-      });
+      try {
+        await prisma.setupSession.update({
+          where: { id: setupSession.id },
+          data: { status: 'expired' },
+        });
+      } catch (error: any) {
+        // Graceful fallback: status field may not exist
+        if (error?.message?.includes('Unknown argument `status`')) {
+          console.warn('[Session Manager] Status field not available, skipping status update');
+        } else {
+          throw error;
+        }
+      }
       return 'expired';
     }
     return 'expired';
@@ -197,10 +230,19 @@ async function checkAndUpdateStatus(setupSession: any): Promise<SetupSessionStat
   if (status === 'in_progress' && setupSession.lastActivityAt) {
     const daysSinceActivity = (now.getTime() - setupSession.lastActivityAt.getTime()) / (1000 * 60 * 60 * 24);
     if (daysSinceActivity > ABANDONMENT_DAYS) {
-      await prisma.setupSession.update({
-        where: { id: setupSession.id },
-        data: { status: 'abandoned' },
-      });
+      try {
+        await prisma.setupSession.update({
+          where: { id: setupSession.id },
+          data: { status: 'abandoned' },
+        });
+      } catch (error: any) {
+        // Graceful fallback: status field may not exist
+        if (error?.message?.includes('Unknown argument `status`')) {
+          console.warn('[Session Manager] Status field not available, skipping status update');
+        } else {
+          throw error;
+        }
+      }
       return 'abandoned';
     }
   }
@@ -307,7 +349,8 @@ export async function saveProgress(
   };
 
   // Determine new status based on progress
-  let newStatus: SetupSessionStatus = existing.status as SetupSessionStatus;
+  // Graceful fallback: status field may not exist if migration hasn't run
+  let newStatus: SetupSessionStatus = (existing.status || 'draft') as SetupSessionStatus;
   
   // Transition: draft → in_progress (when Step 1 completed)
   if (step === 1 && newStatus === 'draft') {
@@ -325,16 +368,35 @@ export async function saveProgress(
   const expiresAt = calculateExpiration();
   const now = new Date();
 
-  await prisma.setupSession.update({
-    where: { token },
-    data: {
-      progress: updatedProgress as any,
-      status: newStatus,
-      expiresAt,
-      lastActivityAt: now,
-      updatedAt: now,
-    },
-  });
+  // Graceful fallback: status field may not exist if migration hasn't run
+  try {
+    await prisma.setupSession.update({
+      where: { token },
+      data: {
+        progress: updatedProgress as any,
+        status: newStatus,
+        expiresAt,
+        lastActivityAt: now,
+        updatedAt: now,
+      },
+    });
+  } catch (error: any) {
+    // If status field doesn't exist, update without it (graceful degradation)
+    if (error?.message?.includes('Unknown argument `status`') || error?.code === 'P2025') {
+      console.warn('[Session Manager] Status field not available, updating without status field');
+      await prisma.setupSession.update({
+        where: { token },
+        data: {
+          progress: updatedProgress as any,
+          expiresAt,
+          lastActivityAt: now,
+          updatedAt: now,
+        },
+      });
+    } else {
+      throw error;
+    }
+  }
 }
 
 /**
@@ -354,15 +416,33 @@ export async function linkSetupSessionToLounge(
   }
 
   // Transition: completed → activated
-  await prisma.setupSession.update({
-    where: { token },
-    data: {
-      userId,
-      loungeId,
-      status: 'activated',
-      updatedAt: new Date(),
-    },
-  });
+  // Graceful fallback: status field may not exist if migration hasn't run
+  try {
+    await prisma.setupSession.update({
+      where: { token },
+      data: {
+        userId,
+        loungeId,
+        status: 'activated',
+        updatedAt: new Date(),
+      },
+    });
+  } catch (error: any) {
+    // If status field doesn't exist, update without it (graceful degradation)
+    if (error?.message?.includes('Unknown argument `status`') || error?.code === 'P2025') {
+      console.warn('[Session Manager] Status field not available, updating without status field');
+      await prisma.setupSession.update({
+        where: { token },
+        data: {
+          userId,
+          loungeId,
+          updatedAt: new Date(),
+        },
+      });
+    } else {
+      throw error;
+    }
+  }
 
   // Update Lead status to activated
   await updateLeadStatus(setupSession.leadId, 'activated');
