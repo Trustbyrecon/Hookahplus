@@ -87,9 +87,16 @@ export async function POST(req: NextRequest) {
       console.log(`[Session Start] App build response:`, JSON.stringify(appResult, null, 2));
       
       // Extract session ID from multiple possible locations
+      // Check: session.id, id, sessionId (in that order of preference)
       const appSessionId = appResult.session?.id || appResult.id || appResult.sessionId;
       
+      console.log(`[Session Start] Extracted appSessionId:`, appSessionId);
+      console.log(`[Session Start] Response has success:`, appResult.success);
+      console.log(`[Session Start] Response is OK:`, appResponse.ok);
+      console.log(`[Session Start] Response has session:`, !!appResult.session);
+      
       // Check if response has a session (even if status is not 200, idempotency might return existing session)
+      // Priority 1: success=true and has session ID
       if (appResult.success && appSessionId) {
         console.log(`[Session Start] ✅ Successfully created/synced session in app build database:`, appSessionId);
         
@@ -104,15 +111,30 @@ export async function POST(req: NextRequest) {
           message: 'Session started successfully and synced to Fire Session Dashboard',
           synced: true
         });
-      } else if (appResponse.ok && appSessionId) {
-        // Fallback: check if response is OK and has session ID
-        console.log(`[Session Start] ✅ Session found in app build:`, appSessionId);
+      } 
+      // Priority 2: HTTP OK and has session ID (even if success field is missing)
+      else if (appResponse.ok && appSessionId) {
+        console.log(`[Session Start] ✅ Session found in app build (HTTP OK):`, appSessionId);
         return NextResponse.json({
           success: true,
           session: {
             ...sessionData,
             appSessionId: appSessionId,
             appSession: appResult.session || appResult
+          },
+          message: 'Session started successfully and synced to Fire Session Dashboard',
+          synced: true
+        });
+      }
+      // Priority 3: Has session object with ID (even if success field is false or missing)
+      else if (appResult.session?.id) {
+        console.log(`[Session Start] ✅ Session found in app build (has session object):`, appResult.session.id);
+        return NextResponse.json({
+          success: true,
+          session: {
+            ...sessionData,
+            appSessionId: appResult.session.id,
+            appSession: appResult.session
           },
           message: 'Session started successfully and synced to Fire Session Dashboard',
           synced: true
