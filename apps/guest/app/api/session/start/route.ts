@@ -73,9 +73,11 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify(appSessionPayload),
       });
 
-      if (appResponse.ok) {
-        const appResult = await appResponse.json();
-        console.log(`[Session Start] ✅ Successfully created session in app build database:`, appResult.session?.id);
+      const appResult = await appResponse.json();
+      
+      // Check if response has a session (even if status is not 200, idempotency might return existing session)
+      if (appResult.success && appResult.session?.id) {
+        console.log(`[Session Start] ✅ Successfully created/synced session in app build database:`, appResult.session.id);
         console.log(`[Session Start] App build response:`, JSON.stringify(appResult, null, 2));
         
         // Merge app session data with guest session data
@@ -83,7 +85,20 @@ export async function POST(req: NextRequest) {
           success: true,
           session: {
             ...sessionData,
-            appSessionId: appResult.session?.id,
+            appSessionId: appResult.session.id || appResult.id || appResult.sessionId,
+            appSession: appResult.session
+          },
+          message: 'Session started successfully and synced to Fire Session Dashboard',
+          synced: true
+        });
+      } else if (appResponse.ok && appResult.session?.id) {
+        // Fallback: check if response is OK and has session
+        console.log(`[Session Start] ✅ Session found in app build:`, appResult.session.id);
+        return NextResponse.json({
+          success: true,
+          session: {
+            ...sessionData,
+            appSessionId: appResult.session.id || appResult.id || appResult.sessionId,
             appSession: appResult.session
           },
           message: 'Session started successfully and synced to Fire Session Dashboard',
