@@ -140,18 +140,25 @@ export async function POST(req: NextRequest) {
           synced: true
         });
       } else {
-        // No session found in response
+        // No session found in response - log full details for debugging
         const errorData = appResult.error ? appResult : { 
           error: appResult.error || 'Unknown error',
           status: appResponse.status,
           statusText: appResponse.statusText,
-          response: appResult
+          response: appResult,
+          hasSuccess: 'success' in appResult,
+          successValue: appResult.success,
+          hasSession: !!appResult.session,
+          hasId: !!appResult.id,
+          hasSessionId: !!appResult.sessionId,
+          sessionIdValue: appResult.session?.id || appResult.id || appResult.sessionId
         };
         
         console.error(`[Session Start] ❌ Failed to sync to app build database:`, {
           status: appResponse.status,
           statusText: appResponse.statusText,
-          error: errorData
+          error: errorData,
+          fullResponse: JSON.stringify(appResult, null, 2)
         });
         
         // Continue anyway - guest session still works even if app build is unavailable
@@ -161,7 +168,18 @@ export async function POST(req: NextRequest) {
           message: 'Session started successfully (database sync unavailable)',
           warning: 'Could not sync to Fire Session Dashboard',
           syncError: errorData,
-          synced: false
+          synced: false,
+          // Include debug info in development
+          debug: process.env.NODE_ENV === 'development' ? {
+            appResponseStatus: appResponse.status,
+            appResponseOk: appResponse.ok,
+            appResultKeys: Object.keys(appResult || {}),
+            appResultSuccess: appResult.success,
+            appResultHasSession: !!appResult.session,
+            appResultSessionId: appResult.session?.id,
+            appResultId: appResult.id,
+            appResultSessionIdField: appResult.sessionId
+          } : undefined
         });
       }
     } catch (appError) {
