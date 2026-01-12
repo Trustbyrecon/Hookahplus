@@ -28,6 +28,8 @@ export async function GET(request: NextRequest) {
     const baseWhere = {
       loungeId: loungeId,
       paymentStatus: 'succeeded' as const,
+      // Exclude voided/canceled sessions - they are not viable transactions
+      state: { notIn: ['CANCELED'] as any }
     };
 
     // Calculate date ranges

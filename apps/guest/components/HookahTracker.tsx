@@ -643,27 +643,112 @@ export const HookahTracker: React.FC<HookahTrackerProps> = ({
           </div>
         </div>
 
-        {/* Staff Contact */}
-        <div className="bg-gradient-to-r from-zinc-800/50 to-zinc-700/50 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
-                <Users className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h4 className="font-semibold">Need Help?</h4>
-                <p className="text-sm text-zinc-400">
-                  Our staff is here to assist you
-                </p>
+        {/* Contact Staff & Session Controls - Show after session is active */}
+        {(isComplete || (sessionData && (sessionData.status === 'ACTIVE' || sessionData.status === 'DELIVERED'))) && (
+          <div className="space-y-4 mb-6">
+            {/* Contact Staff */}
+            <div className="bg-gradient-to-r from-zinc-800/50 to-zinc-700/50 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
+                    <Users className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold">Need Help?</h4>
+                    <p className="text-sm text-zinc-400">
+                      Our staff is here to assist you
+                    </p>
+                  </div>
+                </div>
+                
+                <button 
+                  onClick={() => {
+                    // TODO: Implement contact staff API call
+                    addNotification('Staff notification sent! Someone will be with you shortly.');
+                    if (typeof window !== 'undefined' && window.gtag) {
+                      window.gtag('event', 'contact_staff', {
+                        event_category: 'session',
+                        event_label: 'staff_request',
+                        session_id: sessionId
+                      });
+                    }
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2"
+                >
+                  <Eye className="w-4 h-4" />
+                  <span>Contact Staff</span>
+                </button>
               </div>
             </div>
-            
-            <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2">
-              <Eye className="w-4 h-4" />
-              <span>Contact Staff</span>
-            </button>
+
+            {/* Session Action Controls */}
+            <div className="bg-gradient-to-br from-zinc-900 via-zinc-800 to-black border border-zinc-700 rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-full flex items-center justify-center">
+                    <Zap className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white">Session Controls</h3>
+                    <p className="text-sm text-zinc-400">Request service during your session</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                {/* Refresh Coals */}
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    addNotification('Coal refresh requested! Staff will bring fresh coals shortly.');
+                    if (typeof window !== 'undefined' && window.gtag) {
+                      window.gtag('event', 'session_action', {
+                        event_category: 'session',
+                        event_label: 'refresh_coals',
+                        session_id: sessionId
+                      });
+                    }
+                  }}
+                  className="p-4 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 transition-all duration-300 transform"
+                >
+                  <div className="flex flex-col items-center space-y-2">
+                    <Flame className="w-6 h-6 text-white" />
+                    <div className="text-center">
+                      <div className="text-sm font-semibold text-white">Refresh Coals</div>
+                      <div className="text-xs text-white/80">Fresh heat</div>
+                    </div>
+                  </div>
+                </motion.button>
+
+                {/* Request New Bowl */}
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    addNotification('New bowl requested! Staff will prepare a fresh bowl for you.');
+                    if (typeof window !== 'undefined' && window.gtag) {
+                      window.gtag('event', 'session_action', {
+                        event_category: 'session',
+                        event_label: 'request_new_bowl',
+                        session_id: sessionId
+                      });
+                    }
+                  }}
+                  className="p-4 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 transition-all duration-300 transform"
+                >
+                  <div className="flex flex-col items-center space-y-2">
+                    <Coffee className="w-6 h-6 text-white" />
+                    <div className="text-center">
+                      <div className="text-sm font-semibold text-white">Request New Bowl</div>
+                      <div className="text-xs text-white/80">Fresh flavor</div>
+                    </div>
+                  </div>
+                </motion.button>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Completion Message */}
         <AnimatePresence>

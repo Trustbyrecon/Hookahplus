@@ -477,6 +477,9 @@ export const GET = withRequestContext(async (req: NextRequest): Promise<NextResp
       whereClause.tenantId = tenantId;
     }
     
+    // CRITICAL: Exclude voided/canceled sessions - they are no longer viable transactions
+    whereClause.state = { notIn: ['CANCELED'] as any };
+    
     // CRITICAL: Only show sessions with payment confirmed
     // Sessions should only appear after payment is verified
     whereClause.OR = [

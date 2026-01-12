@@ -1656,6 +1656,8 @@ export default function SimpleFSDDesign({
               {(() => {
                 const bohSessions = sessions.filter(s => {
                   const status = getSessionStatus(s);
+                  // Exclude voided sessions - they are no longer viable transactions
+                  if (status === 'VOIDED' || s.state === 'CANCELED') return false;
                   // Include PAID_CONFIRMED (ready for prep), PREP_IN_PROGRESS, HEAT_UP, READY_FOR_DELIVERY
                   // Also include STAFF_HOLD and REMAKE (edge cases that need BOH attention)
                   return ['PAID_CONFIRMED', 'PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY', 'STAFF_HOLD', 'REMAKE'].includes(status);
@@ -1687,6 +1689,8 @@ export default function SimpleFSDDesign({
               {(() => {
                 const fohSessions = sessions.filter(s => {
                   const status = getSessionStatus(s);
+                  // Exclude voided sessions - they are no longer viable transactions
+                  if (status === 'VOIDED' || s.state === 'CANCELED') return false;
                   // Include READY_FOR_DELIVERY (FOH can pick up), OUT_FOR_DELIVERY, DELIVERED, ACTIVE
                   // Also include CLOSE_PENDING (FOH handles closing)
                   return ['READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE', 'CLOSE_PENDING'].includes(status);
@@ -1718,7 +1722,9 @@ export default function SimpleFSDDesign({
             <div className="space-y-4">
               {sessions.filter(s => {
                 const status = getSessionStatus(s);
-                return ['STAFF_HOLD', 'STOCK_BLOCKED', 'REMAKE', 'REFUND_REQUESTED', 'FAILED_PAYMENT', 'VOIDED'].includes(status);
+                // Exclude voided sessions - they should not appear in FSD at all
+                if (status === 'VOIDED' || s.state === 'CANCELED') return false;
+                return ['STAFF_HOLD', 'STOCK_BLOCKED', 'REMAKE', 'REFUND_REQUESTED', 'FAILED_PAYMENT'].includes(status);
               }).length === 0 ? (
                 <div className="text-center py-12">
                   <AlertTriangle className="w-16 h-16 mx-auto mb-4 text-zinc-600" />
@@ -1728,7 +1734,9 @@ export default function SimpleFSDDesign({
               ) : (
                 sessions.filter(s => {
                   const status = getSessionStatus(s);
-                  return ['STAFF_HOLD', 'STOCK_BLOCKED', 'REMAKE', 'REFUND_REQUESTED', 'FAILED_PAYMENT', 'VOIDED'].includes(status);
+                  // Exclude voided sessions - they should not appear in FSD at all
+                  if (status === 'VOIDED' || s.state === 'CANCELED') return false;
+                  return ['STAFF_HOLD', 'STOCK_BLOCKED', 'REMAKE', 'REFUND_REQUESTED', 'FAILED_PAYMENT'].includes(status);
                 }).map(renderSessionCard)
               )}
             </div>

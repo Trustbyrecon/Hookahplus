@@ -295,7 +295,8 @@ export function PostCheckoutEngagement({
               </div>
 
               <div className="space-y-4">
-                {loungeInstagram && (
+                {/* Lounge Instagram - Priority display with graceful fallback */}
+                {loungeInstagram ? (
                   <div className="bg-zinc-800 rounded-lg p-6">
                     <div className="flex items-center justify-between mb-4">
                       <div>
@@ -322,6 +323,17 @@ export function PostCheckoutEngagement({
                         <ExternalLink className="w-4 h-4" />
                       </button>
                     </div>
+                  </div>
+                ) : (
+                  <div className="bg-zinc-800/50 rounded-lg p-6 border border-zinc-700/50">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h4 className="text-lg font-semibold text-white">{loungeName || 'Lounge'}</h4>
+                        <p className="text-sm text-zinc-400">Instagram coming soon</p>
+                      </div>
+                      <Instagram className="w-8 h-8 text-zinc-600" />
+                    </div>
+                    <p className="text-xs text-zinc-500 italic">Follow us for updates and special offers</p>
                   </div>
                 )}
 

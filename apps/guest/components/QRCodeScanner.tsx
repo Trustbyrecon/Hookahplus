@@ -283,11 +283,12 @@ const QRCodeScannerComponent: React.FC<QRCodeScannerProps> = ({
         {cameraPermission === 'prompt' && (
           <button
             onClick={startCameraScan}
-            disabled={isScanning}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-600 text-white py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
+            disabled={true}
+            className="w-full bg-zinc-600 text-zinc-400 cursor-not-allowed py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
+            title="Camera scan feature coming soon"
           >
             <Camera className="w-4 h-4" />
-            <span>{isScanning ? 'Starting Camera...' : 'Start Camera Scan'}</span>
+            <span>Start Camera Scan (Coming Soon)</span>
           </button>
         )}
 

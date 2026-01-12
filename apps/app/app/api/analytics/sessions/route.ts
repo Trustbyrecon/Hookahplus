@@ -20,7 +20,9 @@ export async function GET(request: NextRequest) {
     const whereClause: any = {
       createdAt: {
         gte: cutoffDate
-      }
+      },
+      // Exclude voided/canceled sessions - they are not viable transactions
+      state: { notIn: ['CANCELED'] as any }
     };
 
     if (loungeId) {
