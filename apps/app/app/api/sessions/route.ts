@@ -1122,22 +1122,44 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
       console.warn('[Sessions API] Layout validation error (non-blocking):', layoutError.message);
     }
 
-    // Check if session already exists for this table (simplified duplicate check)
+    // Check if session already exists (idempotency check)
+    // First check by externalRef if provided, then by tableId
     // Use minimal select to avoid columns that don't exist
     let existingSession: any = null;
     try {
-      existingSession = await prisma.session.findFirst({
-        where: {
-          tableId: data.tableId,
-          state: { notIn: ['CLOSED', 'CANCELED'] as any }
-        },
-        select: {
-          id: true,
-          tableId: true,
-          state: true,
-          customerRef: true,
-        }
-      });
+      // If externalRef is provided, check by externalRef first (more specific)
+      if (finalExternalRef) {
+        existingSession = await prisma.session.findFirst({
+          where: {
+            externalRef: finalExternalRef,
+            state: { notIn: ['CLOSED', 'CANCELED'] as any }
+          },
+          select: {
+            id: true,
+            tableId: true,
+            state: true,
+            customerRef: true,
+            externalRef: true,
+          }
+        });
+      }
+      
+      // If not found by externalRef, check by tableId (fallback)
+      if (!existingSession) {
+        existingSession = await prisma.session.findFirst({
+          where: {
+            tableId: data.tableId,
+            state: { notIn: ['CLOSED', 'CANCELED'] as any }
+          },
+          select: {
+            id: true,
+            tableId: true,
+            state: true,
+            customerRef: true,
+            externalRef: true,
+          }
+        });
+      }
     } catch (prismaError: any) {
       console.warn('[Sessions API] Could not check for existing session:', prismaError.message);
       existingSession = null;
