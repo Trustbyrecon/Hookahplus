@@ -22,15 +22,15 @@
 10. ✅ Logged in as: trustbyrecon
 11. ✅ Total: 41 environment variables in production
 
-### ❌ Missing (2 variables)
+### ✅ Found with Alternative Name (1 variable)
 
-1. ❌ `STRIPE_WEBHOOK_SECRET` - Missing in production environment
-   - **Note:** You mentioned Stripe is confirmed. This might be:
-     - Named differently in Vercel
-     - Needs to be added from Stripe webhook secret
-     - Already set but with different name
+1. ✅ `STRIPE_WEBHOOK_SECRET` - Found as `STRIPE_WEBHOOK_SECRET_APP` in production
+   - **Status:** ✅ Verified - exists in Vercel with name `STRIPE_WEBHOOK_SECRET_APP`
+   - **Note:** The application code should use `STRIPE_WEBHOOK_SECRET_APP` or map it to `STRIPE_WEBHOOK_SECRET`
 
-2. ❌ `NEXT_PUBLIC_GUEST_URL` - Missing in production environment
+### ❌ Missing (1 variable)
+
+1. ❌ `NEXT_PUBLIC_GUEST_URL` - Missing in production environment
    - **Note:** This might be optional or named differently
 
 ---

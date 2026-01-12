@@ -17,7 +17,7 @@ import { join } from 'path';
 interface EnvVar {
   key: string;
   value: string;
-  type: 'system' | 'secret' | 'encrypted';
+  type: 'system' | 'encrypted' | 'protected';
   target?: string[];
 }
 
@@ -108,7 +108,8 @@ console.log('\n📋 Check 4: Environment Variables');
 const requiredVars = [
   'DATABASE_URL',
   'STRIPE_SECRET_KEY',
-  'STRIPE_WEBHOOK_SECRET',
+  'STRIPE_WEBHOOK_SECRET', // Also check for STRIPE_WEBHOOK_SECRET_APP variant
+  'STRIPE_WEBHOOK_SECRET_APP', // Alternative name used in Vercel
   'NEXT_PUBLIC_STRIPE_PUBLIC_KEY',
   'NEXT_PUBLIC_APP_URL',
   'NEXT_PUBLIC_GUEST_URL',
@@ -170,13 +171,33 @@ try {
   const foundVars: string[] = [];
   const missingVars: string[] = [];
   
+  // Special handling for Stripe webhook (check both names)
+  const stripeWebhookKey1 = 'STRIPE_WEBHOOK_SECRET';
+  const stripeWebhookKey2 = 'STRIPE_WEBHOOK_SECRET_APP';
+  const stripeWebhookFound = envVars.find(env => 
+    env.key === stripeWebhookKey1 || env.key === stripeWebhookKey2
+  );
+  
   requiredVars.forEach(varName => {
+    // Skip duplicate check for STRIPE_WEBHOOK_SECRET if we already found the alternative
+    if (varName === 'STRIPE_WEBHOOK_SECRET' && stripeWebhookFound) {
+      if (stripeWebhookFound.key === 'STRIPE_WEBHOOK_SECRET_APP') {
+        addResult('STRIPE_WEBHOOK_SECRET', 'pass', `Found as STRIPE_WEBHOOK_SECRET_APP (targets: ${stripeWebhookFound.target?.join(', ') || 'production'})`);
+        foundVars.push('STRIPE_WEBHOOK_SECRET');
+        return; // Skip the normal check
+      }
+    }
+    
     const found = envVars.find(env => env.key === varName);
     if (found) {
       foundVars.push(varName);
       const targets = found.target?.join(', ') || 'production';
       addResult(varName, 'pass', `Found (targets: ${targets})`);
     } else {
+      // Don't mark as missing if it's the alternative name and we found the other one
+      if (varName === 'STRIPE_WEBHOOK_SECRET_APP' && stripeWebhookFound) {
+        return; // Already reported as STRIPE_WEBHOOK_SECRET
+      }
       missingVars.push(varName);
       addResult(varName, 'fail', 'Missing in production environment');
     }
