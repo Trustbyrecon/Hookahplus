@@ -1993,6 +1993,17 @@ export async function PATCH(req: NextRequest) {
           updatedAt: Date.now()
         };
         console.log(`[Sessions API] ADMIN bypass: ${action} from ${currentSession.status} to ${targetStatus}`);
+      } else if (userRole === 'ADMIN' && action === 'VOID_SESSION') {
+        // ADMIN can void from any state - bypass state machine validation
+        // Note: This is different from the delete path above - this marks as VOIDED instead of deleting
+        const targetStatus = 'VOIDED';
+        updatedSession = {
+          ...currentSession,
+          status: targetStatus as SessionStatus,
+          currentStage: STATUS_TO_STAGE[targetStatus as SessionStatus],
+          updatedAt: Date.now()
+        };
+        console.log(`[Sessions API] ADMIN bypass: ${action} from ${currentSession.status} to ${targetStatus}`);
       } else {
         // Use the state machine to transition the session for all other cases
         try {

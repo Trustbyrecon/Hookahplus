@@ -135,11 +135,31 @@ export default function SimpleFSDDesign({
   className = '',
   isDemoMode = false
 }: SimpleFSDDesignProps) {
-  // Get feature flags for conditional rendering
-  const featureFlags = typeof window !== 'undefined' ? getFeatureFlags() : {
+  // Initialize feature flags with defaults to avoid hydration mismatch
+  const [featureFlags, setFeatureFlags] = useState({
     showTestSessionButton: false,
-    isDevelopment: false
-  };
+    isDevelopment: false,
+    firstLightCompleted: false,
+    firstLightFocus: false,
+    metricsEnabled: false,
+    alphaStabilityActive: false,
+    isProduction: false,
+    isDemoMode: false,
+    showFirstLightBanner: false,
+    showFirstLightHealthCard: false,
+    showFirstLightChecklist: false,
+    showClearOldSessions: false,
+    showFirstLightFocusToggle: false,
+    showAlphaStabilityBanners: false,
+    showFlywheelBanner: false,
+  });
+  
+  // Load feature flags after mount to avoid hydration issues
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setFeatureFlags(getFeatureFlags());
+    }
+  }, []);
   
   const [activeTab, setActiveTab] = useState('overview');
   const [hoveredAction, setHoveredAction] = useState<string | null>(null);

@@ -59,7 +59,24 @@ function FireSessionDashboardContent() {
   const [previousSessionCount, setPreviousSessionCount] = useState(0);
   const [alphaStabilityMode, setAlphaStabilityMode] = useState(false);
   const [metricsEnabled, setMetricsEnabled] = useState(false);
-  const [featureFlags, setFeatureFlags] = useState(getFeatureFlags());
+  // Initialize with defaults to avoid hydration mismatch (getFeatureFlags uses window/localStorage)
+  const [featureFlags, setFeatureFlags] = useState<ReturnType<typeof getFeatureFlags>>({
+    firstLightCompleted: false,
+    firstLightFocus: false,
+    metricsEnabled: false,
+    alphaStabilityActive: false,
+    isDevelopment: false,
+    isProduction: false,
+    isDemoMode: false,
+    showFirstLightBanner: true,
+    showFirstLightHealthCard: false,
+    showFirstLightChecklist: false,
+    showTestSessionButton: false,
+    showClearOldSessions: false,
+    showFirstLightFocusToggle: false,
+    showAlphaStabilityBanners: false,
+    showFlywheelBanner: false,
+  });
   const [sessionClaimTimes, setSessionClaimTimes] = useState<Map<string, number>>(new Map());
   const demoProgressionTimersRef = useRef<Map<string, NodeJS.Timeout[]>>(new Map());
 
@@ -103,20 +120,24 @@ function FireSessionDashboardContent() {
   // Check for demo mode from URL params
   const isDemoMode = searchParams.get('mode') === 'demo';
   
-  // Update feature flags when localStorage changes
+  // Update feature flags when localStorage changes (after mount to avoid hydration issues)
   useEffect(() => {
     const updateFlags = () => {
-      setFeatureFlags(getFeatureFlags());
+      const flags = getFeatureFlags();
+      setFeatureFlags(flags);
       // Sync state with flags
-      setFirstLightFocus(featureFlags.firstLightFocus);
-      setAlphaStabilityMode(featureFlags.alphaStabilityActive);
-      setMetricsEnabled(featureFlags.metricsEnabled);
+      setFirstLightFocus(flags.firstLightFocus);
+      setAlphaStabilityMode(flags.alphaStabilityActive);
+      setMetricsEnabled(flags.metricsEnabled);
     };
     
-    updateFlags();
-    // Listen for storage changes (from other tabs)
-    window.addEventListener('storage', updateFlags);
-    return () => window.removeEventListener('storage', updateFlags);
+    // Only update after mount (client-side only)
+    if (typeof window !== 'undefined') {
+      updateFlags();
+      // Listen for storage changes (from other tabs)
+      window.addEventListener('storage', updateFlags);
+      return () => window.removeEventListener('storage', updateFlags);
+    }
   }, []);
   const paymentConfirmed = searchParams.get('payment') === 'confirmed';
   const sessionIdFromUrl = searchParams.get('session');

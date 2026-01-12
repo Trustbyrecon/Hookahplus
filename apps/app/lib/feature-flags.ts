@@ -66,9 +66,17 @@ export function getFeatureFlags(): FeatureFlags {
   const isDevelopment = process.env.NODE_ENV === 'development';
   const isProduction = process.env.NODE_ENV === 'production';
   
-  // Check if in demo mode from URL
-  const urlParams = new URLSearchParams(window.location.search);
-  const isDemoMode = urlParams.get('mode') === 'demo';
+  // Check if in demo mode from URL (safely handle SSR)
+  let isDemoMode = false;
+  if (typeof window !== 'undefined' && window.location) {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      isDemoMode = urlParams.get('mode') === 'demo';
+    } catch (e) {
+      // Fallback if URL parsing fails
+      isDemoMode = false;
+    }
+  }
 
   // Determine what to show based on flags
   const showFirstLightBanner = !firstLightCompleted && !isDemoMode;
