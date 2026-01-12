@@ -136,7 +136,8 @@ async function testGuestAppSync(): Promise<TestResult[]> {
   if (appSessionId) {
     console.log('\n📋 Step 3: Verifying session in app build database...');
     try {
-      const appSessionResponse = await fetch(`${APP_URL}/api/sessions`, {
+      // Query by sessionId directly (more reliable than fetching all sessions)
+      const appSessionResponse = await fetch(`${APP_URL}/api/sessions?sessionId=${appSessionId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -144,10 +145,11 @@ async function testGuestAppSync(): Promise<TestResult[]> {
       });
 
       if (appSessionResponse.ok) {
-        const appSessions = await appSessionResponse.json();
-        const foundSession = Array.isArray(appSessions) 
-          ? appSessions.find((s: any) => s.id === appSessionId)
-          : (appSessions.session?.id === appSessionId ? appSessions.session : null);
+        const appSessionResult = await appSessionResponse.json();
+        // Handle both single session response and array response
+        const foundSession = appSessionResult.session || 
+                           (Array.isArray(appSessionResult) ? appSessionResult.find((s: any) => s.id === appSessionId) : null) ||
+                           (appSessionResult.id === appSessionId ? appSessionResult : null);
 
         if (foundSession) {
           results.push({
