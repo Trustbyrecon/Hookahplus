@@ -1081,27 +1081,12 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
             tableExists = true;
             // Continue with session creation using demo table
           } else {
-            // Suggest similar tables (from actual tables or demo tables)
-            const allTables = [...tables, ...demoTables];
-            const suggestions = allTables
-              .filter((t: any) => 
-                t.name?.toLowerCase().includes(data.tableId.toLowerCase()) ||
-                t.id?.toLowerCase().includes(data.tableId.toLowerCase())
-              )
-              .slice(0, 3)
-              .map((t: any) => t.name || t.id);
-
-            return NextResponse.json({
-              success: false,
-              error: `Table "${data.tableId}" not found. Using demo mode - table will be created automatically.`,
-              suggestion: 'Demo mode: Table will be created automatically. For production, configure tables in Lounge Layout Manager.',
-              suggestions: suggestions.length > 0 ? suggestions : undefined,
-              availableTables: allTables.map((t: any) => ({ id: t.id, name: t.name, capacity: t.capacity || 4 })),
-              isDemoFallback: true
-            }, { 
-              status: 400,
-              headers: getCorsHeaders(req),
-            });
+            // In demo/onboarding mode, allow any table ID and create session anyway
+            // This enables guest sync and demo flows to work without pre-configured tables
+            console.log(`[Sessions API] Table "${data.tableId}" not found, but allowing in demo mode - session will be created`);
+            tableExists = true; // Allow session creation even if table doesn't exist
+            // Log warning but don't block
+            console.warn(`[Sessions API] Demo mode: Creating session with non-existent table "${data.tableId}". For production, configure tables in Lounge Layout Manager.`);
           }
         }
 
