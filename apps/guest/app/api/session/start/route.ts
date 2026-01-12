@@ -73,45 +73,58 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify(appSessionPayload),
       });
 
-      const appResult = await appResponse.json();
+      // Parse response once (can't read body twice)
+      let appResult: any;
+      try {
+        appResult = await appResponse.json();
+      } catch (parseError) {
+        // If JSON parsing fails, try to get text
+        const errorText = await appResponse.text().catch(() => 'Unknown error');
+        appResult = { error: errorText || 'Failed to parse response' };
+      }
+      
+      console.log(`[Session Start] App build response status:`, appResponse.status);
+      console.log(`[Session Start] App build response:`, JSON.stringify(appResult, null, 2));
+      
+      // Extract session ID from multiple possible locations
+      const appSessionId = appResult.session?.id || appResult.id || appResult.sessionId;
       
       // Check if response has a session (even if status is not 200, idempotency might return existing session)
-      if (appResult.success && appResult.session?.id) {
-        console.log(`[Session Start] ✅ Successfully created/synced session in app build database:`, appResult.session.id);
-        console.log(`[Session Start] App build response:`, JSON.stringify(appResult, null, 2));
+      if (appResult.success && appSessionId) {
+        console.log(`[Session Start] ✅ Successfully created/synced session in app build database:`, appSessionId);
         
         // Merge app session data with guest session data
         return NextResponse.json({
           success: true,
           session: {
             ...sessionData,
-            appSessionId: appResult.session.id || appResult.id || appResult.sessionId,
+            appSessionId: appSessionId,
             appSession: appResult.session
           },
           message: 'Session started successfully and synced to Fire Session Dashboard',
           synced: true
         });
-      } else if (appResponse.ok && appResult.session?.id) {
-        // Fallback: check if response is OK and has session
-        console.log(`[Session Start] ✅ Session found in app build:`, appResult.session.id);
+      } else if (appResponse.ok && appSessionId) {
+        // Fallback: check if response is OK and has session ID
+        console.log(`[Session Start] ✅ Session found in app build:`, appSessionId);
         return NextResponse.json({
           success: true,
           session: {
             ...sessionData,
-            appSessionId: appResult.session.id || appResult.id || appResult.sessionId,
-            appSession: appResult.session
+            appSessionId: appSessionId,
+            appSession: appResult.session || appResult
           },
           message: 'Session started successfully and synced to Fire Session Dashboard',
           synced: true
         });
       } else {
-        const errorText = await appResponse.text();
-        let errorData;
-        try {
-          errorData = errorText ? JSON.parse(errorText) : { error: 'Unknown error' };
-        } catch {
-          errorData = { error: errorText || 'Unknown error' };
-        }
+        // No session found in response
+        const errorData = appResult.error ? appResult : { 
+          error: appResult.error || 'Unknown error',
+          status: appResponse.status,
+          statusText: appResponse.statusText,
+          response: appResult
+        };
         
         console.error(`[Session Start] ❌ Failed to sync to app build database:`, {
           status: appResponse.status,
