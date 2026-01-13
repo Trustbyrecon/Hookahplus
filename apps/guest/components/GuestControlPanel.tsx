@@ -60,7 +60,7 @@ export default function GuestControlPanel({ sessionId: sessionIdProp, onClose }:
                 flavor: session.flavorMix?.join(' + ') || session.flavor || 'Custom Mix',
                 status: session.status || session.state || 'ACTIVE',
                 sessionDuration: session.sessionDuration || 45 * 60,
-                sessionType: session.sessionType || 'flat',
+                sessionType: session.sessionType || 'FLAT',
                 amount: session.totalAmount || session.amount || 3000,
                 ...session
               };
@@ -80,7 +80,7 @@ export default function GuestControlPanel({ sessionId: sessionIdProp, onClose }:
                 flavor: 'Custom Mix',
                 status: 'ACTIVE',
                 sessionDuration: 45 * 60,
-                sessionType: 'flat',
+                sessionType: 'FLAT',
                 amount: 3000
               };
               setSessionFromUrl(demoSession);
