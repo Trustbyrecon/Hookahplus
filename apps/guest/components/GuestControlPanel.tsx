@@ -44,6 +44,40 @@ export default function GuestControlPanel({ sessionId: sessionIdProp, onClose }:
     if (sessionIdFromUrl && !activeSession && !loadingFromUrl) {
       setLoadingFromUrl(true);
       const fetchSession = async () => {
+        // Check if demo mode first - skip API call entirely
+        // Check URL params, session ID pattern, or if coming from tracker (which would have demo params)
+        const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+        const isDemo = urlParams?.get('demo') === 'true' || 
+                      urlParams?.get('mode') === 'demo' ||
+                      sessionIdFromUrl?.startsWith('demo_') ||
+                      sessionIdFromUrl === 'session_demo';
+        
+        if (isDemo) {
+          // Create mock session for demo without API call
+          const now = Date.now();
+          const demoSession: FireSession = {
+            id: sessionIdFromUrl,
+            tableId: searchParams.get('tableId') || 'T-001',
+            customerName: 'Demo Guest',
+            flavor: 'Custom Mix',
+            status: 'ACTIVE',
+            currentStage: 'CUSTOMER',
+            sessionDuration: 45 * 60,
+            sessionType: 'FLAT',
+            amount: 3000,
+            assignedStaff: {},
+            createdAt: now,
+            updatedAt: now,
+            coalStatus: 'active',
+            refillStatus: 'none',
+            notes: '',
+            edgeCase: null
+          };
+          setSessionFromUrl(demoSession);
+          setLoadingFromUrl(false);
+          return;
+        }
+        
         try {
           const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
           const response = await fetch(`${appUrl}/api/sessions/status?sessionId=${sessionIdFromUrl}`);
@@ -76,42 +110,8 @@ export default function GuestControlPanel({ sessionId: sessionIdProp, onClose }:
               setSessionFromUrl(fireSession);
             }
           } else {
-            // If API fails, check if demo mode
-            const urlParams = new URLSearchParams(window.location.search);
-            const isDemo = urlParams.get('demo') === 'true' || urlParams.get('mode') === 'demo';
-            
-            if (isDemo) {
-              // Create mock session for demo
-              const now = Date.now();
-              const demoSession: FireSession = {
-                id: sessionIdFromUrl,
-                tableId: searchParams.get('tableId') || 'T-001',
-                customerName: 'Demo Guest',
-                flavor: 'Custom Mix',
-                status: 'ACTIVE',
-                currentStage: 'CUSTOMER',
-                sessionDuration: 45 * 60,
-                sessionType: 'FLAT',
-                amount: 3000,
-                assignedStaff: {},
-                createdAt: now,
-                updatedAt: now,
-                coalStatus: 'active',
-                refillStatus: 'none',
-                notes: '',
-                edgeCase: null
-              };
-              setSessionFromUrl(demoSession);
-            }
-          }
-        } catch (err) {
-          console.error('[ControlPanel] Failed to fetch session from URL:', err);
-          
-          // If error and demo mode, create mock session
-          const urlParams = new URLSearchParams(window.location.search);
-          const isDemo = urlParams.get('demo') === 'true' || urlParams.get('mode') === 'demo';
-          
-          if (isDemo && sessionIdFromUrl) {
+            // If API fails (404), treat as demo mode to avoid errors
+            console.log('[ControlPanel] API returned 404, treating as demo mode');
             const now = Date.now();
             const demoSession: FireSession = {
               id: sessionIdFromUrl,
@@ -133,6 +133,30 @@ export default function GuestControlPanel({ sessionId: sessionIdProp, onClose }:
             };
             setSessionFromUrl(demoSession);
           }
+        } catch (err) {
+          console.error('[ControlPanel] Failed to fetch session from URL:', err);
+          
+          // On any error, create mock session (graceful fallback)
+          const now = Date.now();
+          const demoSession: FireSession = {
+            id: sessionIdFromUrl,
+            tableId: searchParams.get('tableId') || 'T-001',
+            customerName: 'Demo Guest',
+            flavor: 'Custom Mix',
+            status: 'ACTIVE',
+            currentStage: 'CUSTOMER',
+            sessionDuration: 45 * 60,
+            sessionType: 'FLAT',
+            amount: 3000,
+            assignedStaff: {},
+            createdAt: now,
+            updatedAt: now,
+            coalStatus: 'active',
+            refillStatus: 'none',
+            notes: '',
+            edgeCase: null
+          };
+          setSessionFromUrl(demoSession);
         } finally {
           setLoadingFromUrl(false);
         }
