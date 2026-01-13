@@ -1317,7 +1317,7 @@ export default function SimpleFSDDesign({
           className="flex items-center space-x-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
         >
           <Plus className="w-4 h-4" />
-          <span>New Session</span>
+          <span>Start New Order</span>
         </button>
         {/* Test Session Button - Show only in development mode based on feature flags */}
         {!isDemoMode && featureFlags.showTestSessionButton && (
@@ -1363,10 +1363,10 @@ export default function SimpleFSDDesign({
       {/* Tabs */}
       <div className="flex space-x-1 mb-6">
         {[
-          { id: 'overview', label: 'OVERVIEW', icon: '📊' },
-          { id: 'boh', label: 'BOH', icon: '👨‍🍳' },
-          { id: 'foh', label: 'FOH', icon: '👨‍💼' },
-          { id: 'edge', label: 'EDGE CASES', icon: '⚠️' }
+          { id: 'overview', label: 'All Orders', icon: '📊' },
+          { id: 'boh', label: 'Kitchen', icon: '👨‍🍳' },
+          { id: 'foh', label: 'Floor', icon: '👨‍💼' },
+          { id: 'edge', label: 'Issues', icon: '⚠️' }
         ].map((tab) => (
           <button
             key={tab.id}
@@ -1386,20 +1386,23 @@ export default function SimpleFSDDesign({
       {/* Tab Content */}
       {activeTab === 'overview' && (
         <div className="space-y-4">
-          {/* Quick Actions Bar - Context-Aware Workflow Actions */}
-          <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4 mb-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-zinc-300">Quick Actions - Night After Night Flow</h3>
-              <span className="text-xs text-zinc-500">{sessions.length} session(s)</span>
+          {/* Next Action Now - Priority Actions for Operators */}
+          <div className="bg-gradient-to-r from-orange-500/10 to-teal-500/10 border-2 border-orange-500/30 rounded-lg p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-bold text-white mb-1">What Needs Your Attention Now</h3>
+                <p className="text-sm text-zinc-400">Take action on these items to keep orders moving</p>
+              </div>
+              <span className="text-xs text-zinc-500 bg-zinc-800/50 px-3 py-1 rounded-full">{sessions.length} total</span>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {/* New Session - Always available */}
+            <div className="flex flex-wrap gap-3">
+              {/* Start New Order - Always available */}
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent('openCreateSessionModal'))}
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm"
+                className="px-5 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm font-semibold shadow-lg"
               >
-                <Plus className="w-4 h-4" />
-                <span>New Session</span>
+                <Plus className="w-5 h-5" />
+                <span>Start New Order</span>
               </button>
 
               {/* Context-Aware Actions - Only show when sessions are available */}
@@ -1430,7 +1433,7 @@ export default function SimpleFSDDesign({
 
                 return (
                   <>
-                    {/* Confirm Payment - Show if unpaid session exists */}
+                    {/* Take Payment - Show if unpaid session exists */}
                     {unpaidSession && (
                       <button
                         onClick={async () => {
@@ -1548,58 +1551,58 @@ export default function SimpleFSDDesign({
                             alert(`❌ Payment error: ${error instanceof Error ? error.message : 'Unknown error'}`);
                           }
                         }}
-                        className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm"
-                        title={`Confirm payment for ${unpaidSession.tableId}${unpaidSession.customerName ? ` (${unpaidSession.customerName})` : ''}`}
+                        className="px-5 py-3 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm font-semibold shadow-lg"
+                        title={`Take payment for ${unpaidSession.tableId}${unpaidSession.customerName ? ` (${unpaidSession.customerName})` : ''}`}
                       >
-                        <DollarSign className="w-4 h-4" />
-                        <span>Confirm Payment → {unpaidSession.tableId}</span>
+                        <DollarSign className="w-5 h-5" />
+                        <span>Take Payment → {unpaidSession.tableId}</span>
                       </button>
                     )}
 
-                    {/* BOH: Claim Prep - Show if prep session exists */}
+                    {/* Start Prep - Show if prep session exists */}
                     {prepSession && (
                       <button
                         onClick={async () => {
                           await handleSessionAction('claim_prep', prepSession.id);
                         }}
-                        className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm"
-                        title={`Claim prep for ${prepSession.tableId}${prepSession.customerName ? ` (${prepSession.customerName})` : ''}`}
+                        className="px-5 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm font-semibold shadow-lg"
+                        title={`Start preparing hookah for ${prepSession.tableId}${prepSession.customerName ? ` (${prepSession.customerName})` : ''}`}
                       >
-                        <ChefHat className="w-4 h-4" />
-                        <span>BOH: Claim Prep → {prepSession.tableId}</span>
+                        <ChefHat className="w-5 h-5" />
+                        <span>Start Prep → {prepSession.tableId}</span>
                       </button>
                     )}
 
-                    {/* FOH: Deliver - Show if delivery session exists */}
+                    {/* Deliver to Table - Show if delivery session exists */}
                     {deliverySession && (
                       <button
                         onClick={async () => {
                           await handleSessionAction('deliver_now', deliverySession.id);
                         }}
-                        className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm"
-                        title={`Deliver to ${deliverySession.tableId}${deliverySession.customerName ? ` (${deliverySession.customerName})` : ''}`}
+                        className="px-5 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm font-semibold shadow-lg"
+                        title={`Take hookah to ${deliverySession.tableId}${deliverySession.customerName ? ` (${deliverySession.customerName})` : ''}`}
                       >
-                        <Truck className="w-4 h-4" />
-                        <span>FOH: Deliver → {deliverySession.tableId}</span>
+                        <Truck className="w-5 h-5" />
+                        <span>Deliver to Table → {deliverySession.tableId}</span>
                       </button>
                     )}
 
-                    {/* Light Session - Show if light session exists */}
+                    {/* Light Hookah - Show if light session exists */}
                     {lightSession && (
                       <button
                         onClick={async () => {
                           await handleSessionAction('start_active', lightSession.id);
-                          alert(`🔥 Session ${lightSession.tableId} is now LIT! Timer started.`);
+                          alert(`🔥 Hookah at ${lightSession.tableId} is now lit! Timer started.`);
                         }}
-                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm"
-                        title={`Light session for ${lightSession.tableId}${lightSession.customerName ? ` (${lightSession.customerName})` : ''}`}
+                        className="px-5 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm font-semibold shadow-lg"
+                        title={`Light hookah for ${lightSession.tableId}${lightSession.customerName ? ` (${lightSession.customerName})` : ''}`}
                       >
-                        <Flame className="w-4 h-4" />
-                        <span>Light Session → {lightSession.tableId}</span>
+                        <Flame className="w-5 h-5" />
+                        <span>Light Hookah → {lightSession.tableId}</span>
                       </button>
                     )}
 
-                    {/* Refresh - Always available */}
+                    {/* Update - Always available */}
                     <button
                       onClick={async () => {
                         if (refreshSessions) {
@@ -1613,10 +1616,10 @@ export default function SimpleFSDDesign({
                           window.location.reload();
                         }
                       }}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm"
+                      className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm"
                     >
                       <RefreshCw className="w-4 h-4" />
-                      <span>Refresh</span>
+                      <span>Update</span>
                     </button>
                   </>
                 );
@@ -1635,7 +1638,7 @@ export default function SimpleFSDDesign({
                 onClick={handleCreateSession}
                 className="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
               >
-                Create Session
+                Start New Order
               </button>
             </div>
           ) : (
@@ -1650,7 +1653,7 @@ export default function SimpleFSDDesign({
           <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
               <Package className="w-5 h-5 text-orange-400" />
-              <span>Back of House Operations</span>
+              <span>Kitchen Orders</span>
             </h3>
             <div className="space-y-4">
               {(() => {
@@ -1665,8 +1668,8 @@ export default function SimpleFSDDesign({
                 return bohSessions.length === 0 ? (
                   <div className="text-center py-12">
                     <Package className="w-16 h-16 mx-auto mb-4 text-zinc-600" />
-                    <h3 className="text-lg font-medium text-zinc-300 mb-2">No BOH Sessions</h3>
-                    <p className="text-zinc-500">No sessions currently in Back of House stage</p>
+                    <h3 className="text-lg font-medium text-zinc-300 mb-2">No Kitchen Orders</h3>
+                    <p className="text-zinc-500">No orders currently in kitchen</p>
                   </div>
                 ) : (
                   bohSessions.map(renderSessionCard)
@@ -1683,7 +1686,7 @@ export default function SimpleFSDDesign({
           <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
               <Truck className="w-5 h-5 text-teal-400" />
-              <span>Front of House Operations</span>
+              <span>Floor Orders</span>
             </h3>
             <div className="space-y-4">
               {(() => {
@@ -1698,8 +1701,8 @@ export default function SimpleFSDDesign({
                 return fohSessions.length === 0 ? (
                   <div className="text-center py-12">
                     <Truck className="w-16 h-16 mx-auto mb-4 text-zinc-600" />
-                    <h3 className="text-lg font-medium text-zinc-300 mb-2">No FOH Sessions</h3>
-                    <p className="text-zinc-500">No sessions currently in Front of House stage</p>
+                    <h3 className="text-lg font-medium text-zinc-300 mb-2">No Floor Orders</h3>
+                    <p className="text-zinc-500">No orders currently ready for floor service</p>
                   </div>
                 ) : (
                   fohSessions.map(renderSessionCard)
@@ -1717,7 +1720,7 @@ export default function SimpleFSDDesign({
           <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
               <AlertTriangle className="w-5 h-5 text-red-400" />
-              <span>Edge Cases & Escalations</span>
+              <span>Issues & Problems</span>
             </h3>
             <div className="space-y-4">
               {sessions.filter(s => {
@@ -1728,8 +1731,8 @@ export default function SimpleFSDDesign({
               }).length === 0 ? (
                 <div className="text-center py-12">
                   <AlertTriangle className="w-16 h-16 mx-auto mb-4 text-zinc-600" />
-                  <h3 className="text-lg font-medium text-zinc-300 mb-2">No Edge Cases</h3>
-                  <p className="text-zinc-500">All sessions are operating normally</p>
+                  <h3 className="text-lg font-medium text-zinc-300 mb-2">No Issues</h3>
+                  <p className="text-zinc-500">All orders are running smoothly</p>
                 </div>
               ) : (
                 sessions.filter(s => {
@@ -1747,12 +1750,12 @@ export default function SimpleFSDDesign({
       {/* Enhanced Stats with Workflow States */}
       {sessions.length > 0 && (
         <div className="mt-8 space-y-4">
-          {/* Main Stats */}
+          {/* Main Stats - Actionable for Operators */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4">
               <div className="flex items-center space-x-2">
                 <Users className="w-5 h-5 text-blue-400" />
-                <span className="text-sm text-zinc-400">Total Sessions</span>
+                <span className="text-sm text-zinc-400">Total Orders</span>
               </div>
               <p className="text-2xl font-bold text-white mt-1">
                 {isMounted ? sessions.length : '...'}
@@ -1762,7 +1765,7 @@ export default function SimpleFSDDesign({
             <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4">
               <div className="flex items-center space-x-2">
                 <Play className="w-5 h-5 text-green-400" />
-                <span className="text-sm text-zinc-400">Active</span>
+                <span className="text-sm text-zinc-400">Active Now</span>
               </div>
               <p className="text-2xl font-bold text-white mt-1">
                 {isMounted ? sessions.filter(s => (s.status || s.state) === 'ACTIVE').length : '...'}
@@ -1772,7 +1775,7 @@ export default function SimpleFSDDesign({
             <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4">
               <div className="flex items-center space-x-2">
                 <Package className="w-5 h-5 text-orange-400" />
-                <span className="text-sm text-zinc-400">BOH Prep</span>
+                <span className="text-sm text-zinc-400">In Kitchen</span>
               </div>
               <p className="text-2xl font-bold text-white mt-1">
                 {isMounted ? sessions.filter(s => ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(s.status || s.state)).length : '...'}
@@ -1782,7 +1785,7 @@ export default function SimpleFSDDesign({
             <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4">
               <div className="flex items-center space-x-2">
                 <Truck className="w-5 h-5 text-teal-400" />
-                <span className="text-sm text-zinc-400">FOH Delivery</span>
+                <span className="text-sm text-zinc-400">Ready to Deliver</span>
               </div>
               <p className="text-2xl font-bold text-white mt-1">
                 {isMounted ? sessions.filter(s => ['OUT_FOR_DELIVERY', 'DELIVERED'].includes(s.status || s.state)).length : '...'}

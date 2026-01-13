@@ -127,6 +127,7 @@ export default function GuestPortal() {
   const [showHookahTracker, setShowHookahTracker] = useState(false);
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [customerName, setCustomerName] = useState<string>('');
+  const [createdSessionId, setCreatedSessionId] = useState<string | null>(null);
   const [pricingModel, setPricingModel] = useState<'flat' | 'time-based'>('flat');
   const [sessionDuration, setSessionDuration] = useState(60); // Default 60 minutes
   
@@ -370,6 +371,37 @@ export default function GuestPortal() {
           }
         }
         
+        // Check if demo mode - skip Stripe checkout entirely
+        const urlParams = new URLSearchParams(window.location.search);
+        const isDemo = urlParams.get('demo') === 'true' || urlParams.get('mode') === 'demo';
+        const isAccelerated = urlParams.get('accelerated') === 'true';
+        
+        // In demo mode, skip payment and go directly to tracker
+        if (isDemo && appSessionId) {
+          console.log('[Fire Session] Demo mode: Skipping Stripe checkout, redirecting to tracker');
+          
+          // Clear cart after successful session start
+          items.forEach(item => remove(item.id));
+          
+          // Refresh staff dashboard if open
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('sessionCreated', { 
+              detail: { 
+                sessionData: result.session,
+                synced: result.synced,
+                appSessionId: appSessionId
+              } 
+            }));
+          }
+          
+          // Redirect directly to tracker
+          const loungeId = tableData?.loungeId || urlParams.get('loungeId') || 'default-lounge';
+          const tableId = tableData?.tableId || 'T-001';
+          const trackerUrl = `/hookah-tracker?sessionId=${appSessionId}&loungeId=${loungeId}&tableId=${tableId}&demo=true&mode=demo${isAccelerated ? '&accelerated=true' : ''}`;
+          window.location.href = trackerUrl;
+          return; // Exit early, don't attempt Stripe checkout
+        }
+        
         // Determine payment model (default to independent for now, can be configured per lounge)
         // TODO: Fetch lounge config from database to determine payment model
         const paymentModel = 'independent'; // Default: 80% use case
@@ -416,19 +448,29 @@ export default function GuestPortal() {
             
             // Special handling for Stripe configuration errors
             if (checkoutError.isConfigurationError || checkoutError.error === 'Stripe not configured') {
-              const setupMessage = 
-                `⚠️ Stripe Payment Not Configured\n\n` +
-                `Session created successfully, but payment checkout requires Stripe setup.\n\n` +
-                `To enable payments:\n` +
-                `1. Get test key: ${checkoutError.setupUrl || 'https://dashboard.stripe.com/apikeys'}\n` +
-                `2. Add to apps/guest/.env.local:\n` +
-                `   STRIPE_SECRET_KEY=sk_test_...\n` +
-                `3. Restart guest build server\n\n` +
-                `Session ID: ${appSessionId}\n` +
-                `You can manually confirm payment in the FSD.`;
+              // Check if demo mode - handle gracefully without alert
+              const urlParams = new URLSearchParams(window.location.search);
+              const isDemo = urlParams.get('demo') === 'true' || urlParams.get('mode') === 'demo';
               
-              alert(setupMessage);
-              throw new Error('Stripe not configured');
+              if (!isDemo) {
+                // Only show alert in production mode
+                const setupMessage = 
+                  `⚠️ Stripe Payment Not Configured\n\n` +
+                  `Session created successfully, but payment checkout requires Stripe setup.\n\n` +
+                  `To enable payments:\n` +
+                  `1. Get test key: ${checkoutError.setupUrl || 'https://dashboard.stripe.com/apikeys'}\n` +
+                  `2. Add to apps/guest/.env.local:\n` +
+                  `   STRIPE_SECRET_KEY=sk_test_...\n` +
+                  `3. Restart guest build server\n\n` +
+                  `Session ID: ${appSessionId}\n` +
+                  `You can manually confirm payment in the FSD.`;
+                
+                alert(setupMessage);
+              } else {
+                // Demo mode: just log and continue
+                console.log('Demo mode: Payment checkout unavailable, continuing to tracker');
+              }
+              // Don't throw error - continue to success modal/tracker
             }
             
             throw new Error(checkoutError.error || checkoutError.details || 'Failed to create checkout session');
@@ -462,32 +504,37 @@ export default function GuestPortal() {
               }
             }
           } else {
-            // Checkout failed - show user-friendly error
+            // Checkout failed - handle gracefully, especially for demo mode
             const errorMsg = checkoutData.error || checkoutData.details || 'Unknown error';
             console.error('⚠️ Stripe checkout failed:', errorMsg, checkoutData);
             
-            if (errorMsg.includes('Stripe not configured') || errorMsg.includes('STRIPE_SECRET_KEY')) {
-              alert(
-                `⚠️ Payment checkout unavailable.\n\n` +
-                `Stripe is not configured for the guest build.\n\n` +
-                `To enable payment:\n` +
-                `1. Get test key from: https://dashboard.stripe.com/apikeys\n` +
-                `2. Add to guest build .env.local: STRIPE_SECRET_KEY=sk_test_...\n` +
-                `3. Restart dev server\n\n` +
-                `Session is created but needs payment to proceed.`
-              );
-            } else {
-              alert(`⚠️ Payment checkout failed: ${errorMsg}\n\nSession is created but needs payment to proceed.`);
+            // Check if demo mode - handle gracefully without alert
+            const urlParams = new URLSearchParams(window.location.search);
+            const isDemo = urlParams.get('demo') === 'true' || urlParams.get('mode') === 'demo';
+            
+            if (!isDemo) {
+              // Only show alert in production mode
+              if (errorMsg.includes('Stripe not configured') || errorMsg.includes('STRIPE_SECRET_KEY')) {
+                console.warn('Payment checkout unavailable in demo mode - continuing without payment');
+              } else {
+                console.warn('Payment checkout failed - continuing with session:', errorMsg);
+              }
             }
-            // Continue to success modal even if Stripe fails
+            // Continue to success modal even if Stripe fails - session is created
           }
         } catch (stripeError) {
           console.error('⚠️ Stripe checkout error (session still created):', stripeError);
-          alert(`⚠️ Payment checkout error: ${stripeError instanceof Error ? stripeError.message : 'Unknown error'}\n\nSession is created but needs payment to proceed.`);
+          
+          // Check if demo mode - handle gracefully without alert
+          const urlParams = new URLSearchParams(window.location.search);
+          const isDemo = urlParams.get('demo') === 'true' || urlParams.get('mode') === 'demo';
+          
+          if (!isDemo) {
+            // Only log in production, don't show alert
+            console.warn('Payment checkout unavailable - session created, continuing to tracker');
+          }
           // Continue to success modal even if Stripe fails
         }
-        
-        setShowSuccessModal(true);
         
         // Clear cart after successful session start
         items.forEach(item => remove(item.id));
@@ -502,6 +549,20 @@ export default function GuestPortal() {
             } 
           }));
         }
+        
+        // Store session ID for use in success modal
+        setCreatedSessionId(appSessionId);
+        
+        // Auto-redirect to tracker (skip success modal for seamless flow)
+        const urlParams = new URLSearchParams(window.location.search);
+        const isDemo = urlParams.get('demo') === 'true' || urlParams.get('mode') === 'demo';
+        const isAccelerated = urlParams.get('accelerated') === 'true';
+        const loungeId = tableData?.loungeId || urlParams.get('loungeId') || 'default-lounge';
+        const tableId = tableData?.tableId || 'T-001';
+        const trackerUrl = `/hookah-tracker?sessionId=${appSessionId}&loungeId=${loungeId}&tableId=${tableId}${isDemo ? '&demo=true&mode=demo' : ''}${isAccelerated ? '&accelerated=true' : ''}`;
+        
+        // Redirect directly to tracker (tracker will auto-advance to control panel)
+        window.location.href = trackerUrl;
       } else {
         console.error('[Fire Session] API Error:', {
           status: response.status,
@@ -892,10 +953,35 @@ export default function GuestPortal() {
       {/* Success Modal */}
       <SuccessModal
         isOpen={showSuccessModal}
-        onClose={() => setShowSuccessModal(false)}
+        onClose={() => {
+          setShowSuccessModal(false);
+          // After closing, redirect to tracker if we have session info
+          if (createdSessionId) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const loungeId = tableData?.loungeId || urlParams.get('loungeId') || 'default-lounge';
+            const tableId = tableData?.tableId || 'T-001';
+            const isDemo = urlParams.get('demo') === 'true' || urlParams.get('mode') === 'demo';
+            const isAccelerated = urlParams.get('accelerated') === 'true';
+            const trackerUrl = `/hookah-tracker?sessionId=${createdSessionId}&loungeId=${loungeId}&tableId=${tableId}${isDemo ? '&demo=true&mode=demo' : ''}${isAccelerated ? '&accelerated=true' : ''}`;
+            window.location.href = trackerUrl;
+          }
+        }}
+        message="Your session is ready! Track your order and manage your experience."
+        actionText="Track Your Order"
         onAction={() => {
           setShowSuccessModal(false);
-          window.open('https://hookahplus-iursz2jf6-dwaynes-projects-1c5c280a.vercel.app/fire-session-dashboard', '_blank');
+          // Redirect to tracker
+          if (createdSessionId) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const loungeId = tableData?.loungeId || urlParams.get('loungeId') || 'default-lounge';
+            const tableId = tableData?.tableId || 'T-001';
+            const isDemo = urlParams.get('demo') === 'true' || urlParams.get('mode') === 'demo';
+            const isAccelerated = urlParams.get('accelerated') === 'true';
+            const trackerUrl = `/hookah-tracker?sessionId=${createdSessionId}&loungeId=${loungeId}&tableId=${tableId}${isDemo ? '&demo=true&mode=demo' : ''}${isAccelerated ? '&accelerated=true' : ''}`;
+            window.location.href = trackerUrl;
+          } else {
+            window.location.href = '/control-panel';
+          }
         }}
       />
       

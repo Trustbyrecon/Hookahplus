@@ -13,7 +13,8 @@ import {
   AlertCircle,
   RefreshCw,
   Shield,
-  CheckCircle
+  CheckCircle,
+  Share2
 } from 'lucide-react';
 import { SessionStatus } from '../../types/session';
 import Breadcrumbs from '../../components/Breadcrumbs';
@@ -518,6 +519,44 @@ function FireSessionDashboardContent() {
                 <CheckCircle className="w-4 h-4" />
                 Try Guest Experience (2-3 min)
               </button>
+              <button
+                onClick={() => {
+                  // Generate shareable demo link - points to guest portal to start from beginning
+                  const guestTrackerUrl = process.env.NEXT_PUBLIC_GUEST_URL || 'https://guest.hookahplus.net';
+                  const loungeId = demoLounge || 'default-lounge';
+                  
+                  // Point to guest portal with demo mode - they'll go through full ordering flow
+                  const shareUrl = `${guestTrackerUrl}/?loungeId=${loungeId}&demo=true&mode=demo&accelerated=true`;
+                  
+                  // Copy to clipboard
+                  if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(shareUrl).then(() => {
+                      // Show success notification
+                      const notification = document.createElement('div');
+                      notification.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg z-50 max-w-md';
+                      notification.textContent = '✅ Share link copied to clipboard!';
+                      document.body.appendChild(notification);
+                      setTimeout(() => {
+                        notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                        setTimeout(() => notification.remove(), 300);
+                      }, 3000);
+                    }).catch(err => {
+                      console.error('Failed to copy:', err);
+                      // Fallback: show in alert
+                      alert(`Share this link:\n\n${shareUrl}`);
+                    });
+                  } else {
+                    // Fallback for older browsers
+                    alert(`Share this link:\n\n${shareUrl}`);
+                  }
+                  
+                  console.log('[Demo Mode] 📋 Share link generated:', shareUrl);
+                }}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+              >
+                <Share2 className="w-4 h-4" />
+                Share Guest Link
+              </button>
             </div>
           </div>
         </div>
@@ -609,26 +648,14 @@ function FireSessionDashboardContent() {
           </div>
         )}
 
-        {/* First Light Achievement Celebration - Show once, then hide after completion */}
+        {/* First Light Achievement Celebration - Reduced visibility, collapsible */}
         {!isDemoMode && firstLightAchieved && !featureFlags.firstLightCompleted && (
-          <div className="mb-6 animate-in fade-in slide-in-from-top duration-500">
-            <div className="bg-gradient-to-r from-teal-500/20 via-emerald-500/20 to-green-500/20 border-2 border-teal-500/50 rounded-lg p-6 shadow-lg shadow-teal-500/20">
+          <div className="mb-4">
+            <div className="bg-zinc-800/30 border border-zinc-700 rounded-lg p-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-gradient-to-br from-teal-400 to-emerald-500 rounded-full flex items-center justify-center animate-pulse">
-                    <CheckCircle className="w-8 h-8 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-bold text-white mb-1">
-                      🎉 First Light Achieved! 🎉
-                    </h3>
-                    <p className="text-teal-200">
-                      Your first session has been created and persisted to the database!
-                    </p>
-                    <p className="text-teal-300/80 text-sm mt-1">
-                      Session count: <span className="font-bold text-teal-200">{sessions.length}</span> • Database: <span className="font-bold text-teal-200">Connected</span>
-                    </p>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-400" />
+                  <span className="text-sm text-zinc-400">First session created successfully</span>
                 </div>
                 <button
                   onClick={() => {
@@ -636,9 +663,9 @@ function FireSessionDashboardContent() {
                     markFirstLightCompleted();
                     setFeatureFlags(getFeatureFlags());
                   }}
-                  className="text-zinc-400 hover:text-white transition-colors px-3 py-1"
+                  className="text-zinc-500 hover:text-zinc-400 transition-colors px-2 py-1 text-xs"
                 >
-                  ✕
+                  Dismiss
                 </button>
               </div>
             </div>
@@ -890,13 +917,12 @@ function FireSessionDashboardContent() {
           </div>
         )}
         
-        {/* Persistent Alpha Stability Controls - Show based on feature flags */}
+        {/* Persistent Alpha Stability Controls - Reduced visibility */}
         {featureFlags.showAlphaStabilityBanners && !alphaStabilityMode && !metricsEnabled && (
-          <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4 mb-6">
+          <div className="bg-zinc-800/30 border border-zinc-700 rounded-lg p-3 mb-4">
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="text-sm font-semibold text-white mb-1">🚀 Spark the Flywheel</h4>
-                <p className="text-xs text-zinc-400">First Light complete! Enable metrics and activate Alpha Stability to unlock the full Night After Night flow.</p>
+                <p className="text-xs text-zinc-400">System ready for advanced features</p>
               </div>
               <div className="flex gap-2">
                 <button
@@ -906,7 +932,7 @@ function FireSessionDashboardContent() {
                     await refreshSessions();
                     setFeatureFlags(getFeatureFlags());
                   }}
-                  className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-sm font-medium transition-colors"
+                  className="px-3 py-1 bg-zinc-700 hover:bg-zinc-600 text-white rounded text-xs transition-colors"
                 >
                   Enable Metrics
                 </button>
@@ -918,7 +944,7 @@ function FireSessionDashboardContent() {
                     await refreshSessions();
                     setFeatureFlags(getFeatureFlags());
                   }}
-                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium transition-colors"
+                  className="px-3 py-1 bg-zinc-700 hover:bg-zinc-600 text-white rounded text-xs transition-colors"
                 >
                   Alpha Stability
                 </button>
@@ -927,32 +953,21 @@ function FireSessionDashboardContent() {
           </div>
         )}
         
-        {/* Flywheel Status - Show based on feature flags */}
+        {/* Flywheel Status - Reduced visibility, smaller banner */}
         {featureFlags.showFlywheelBanner && sessions.some(s => {
           const status = s.status || (s.state === 'PENDING' && (s.paymentStatus === 'succeeded' || s.externalRef?.startsWith('cs_')) ? 'PAID_CONFIRMED' : 'NEW');
           return status === 'PAID_CONFIRMED';
         }) && (
-          <div className="mb-6 bg-gradient-to-r from-orange-500/20 via-amber-500/20 to-yellow-500/20 border-2 border-orange-500/50 rounded-lg p-6 shadow-lg shadow-orange-500/20">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-amber-500 rounded-full flex items-center justify-center animate-pulse">
-                <Flame className="w-8 h-8 text-white" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-2xl font-bold text-white mb-1">
-                  🔥 Flywheel Ready to Spark!
-                </h3>
-                <p className="text-orange-200 mb-2">
-                  You have paid sessions ready for the Night After Night flow.
-                </p>
-                <p className="text-orange-300/80 text-sm">
-                  Paid Sessions: <span className="font-bold text-orange-200">
-                    {sessions.filter(s => {
-                      const status = s.status || (s.state === 'PENDING' && (s.paymentStatus === 'succeeded' || s.externalRef?.startsWith('cs_')) ? 'PAID_CONFIRMED' : 'NEW');
-                      return status === 'PAID_CONFIRMED';
-                    }).length}
-                  </span> • 
-                  Next Action: <span className="font-bold text-orange-200">BOH: Claim Prep</span>
-                </p>
+          <div className="mb-4">
+            <div className="bg-zinc-800/30 border border-zinc-700 rounded-lg p-3">
+              <div className="flex items-center gap-2">
+                <Flame className="w-4 h-4 text-orange-400" />
+                <span className="text-sm text-zinc-400">
+                  {sessions.filter(s => {
+                    const status = s.status || (s.state === 'PENDING' && (s.paymentStatus === 'succeeded' || s.externalRef?.startsWith('cs_')) ? 'PAID_CONFIRMED' : 'NEW');
+                    return status === 'PAID_CONFIRMED';
+                  }).length} paid session(s) ready for prep
+                </span>
               </div>
             </div>
           </div>

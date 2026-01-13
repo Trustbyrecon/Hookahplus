@@ -18,9 +18,14 @@ function HookahTrackerContent() {
   }, [searchParams]);
 
   const handleTrackerComplete = () => {
-    // When tracking is complete, redirect to App build FSM/FSD
-    const appBuildUrl = `https://hookahplus-app-prod.vercel.app/fire-session-dashboard?session=${sessionId}&table=${tableId}&lounge=${loungeId}`;
-    window.open(appBuildUrl, '_blank');
+    // When tracking is complete, redirect to guest control panel
+    // Check if demo mode
+    const urlParams = new URLSearchParams(window.location.search);
+    const isDemo = urlParams.get('demo') === 'true' || urlParams.get('mode') === 'demo';
+    
+    // Always include session info in redirect
+    const isAccelerated = urlParams.get('accelerated') === 'true';
+    window.location.href = `/control-panel?sessionId=${sessionId}&tableId=${tableId}&loungeId=${loungeId}&demo=${isDemo ? 'true' : 'false'}${isDemo ? '&mode=demo' : ''}${isAccelerated ? '&accelerated=true' : ''}`;
   };
 
   return (

@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import Button from './Button';
-import { ArrowRight, Clock, Users, CheckCircle } from 'lucide-react';
+import { ArrowRight, Clock, Users, CheckCircle, Share2 } from 'lucide-react';
 import { trackDemoRequest } from '../lib/ctaTracking';
 
 export default function WhyFirstHero() {
@@ -67,6 +67,46 @@ export default function WhyFirstHero() {
               }}
             >
               Built for Hookah Lounges
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              className="px-8 py-4 text-lg border-2 border-blue-500/50 text-blue-400 hover:bg-blue-500/10 hover:border-blue-400 transition-all"
+              onClick={() => {
+                // Generate shareable demo link - points to guest portal to start from beginning
+                const guestTrackerUrl = process.env.NEXT_PUBLIC_GUEST_URL || 'https://guest.hookahplus.net';
+                const loungeId = 'default-lounge';
+                
+                // Point to guest portal with demo mode - they'll go through full ordering flow
+                const shareUrl = `${guestTrackerUrl}/?loungeId=${loungeId}&demo=true&mode=demo&accelerated=true`;
+                
+                // Copy to clipboard
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                  navigator.clipboard.writeText(shareUrl).then(() => {
+                    // Show success notification
+                    const notification = document.createElement('div');
+                    notification.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg z-50 max-w-md';
+                    notification.textContent = '✅ Guest experience link copied! Share it to let others try Hookah+.';
+                    document.body.appendChild(notification);
+                    setTimeout(() => {
+                      notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                      setTimeout(() => notification.remove(), 300);
+                    }, 4000);
+                  }).catch(err => {
+                    console.error('Failed to copy:', err);
+                    // Fallback: show in alert
+                    alert(`Share this link to try the guest experience:\n\n${shareUrl}`);
+                  });
+                } else {
+                  // Fallback for older browsers
+                  alert(`Share this link to try the guest experience:\n\n${shareUrl}`);
+                }
+                
+                trackDemoRequest('Hero', { action: 'share_guest_link' });
+              }}
+            >
+              <Share2 className="w-5 h-5 mr-2" />
+              Try Guest Experience
             </Button>
           </motion.div>
 

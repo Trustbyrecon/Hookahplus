@@ -133,7 +133,11 @@ export const HookahTracker: React.FC<HookahTrackerProps> = ({
   // Fetch real session data from app build
   useEffect(() => {
     const fetchSessionData = async () => {
-      // Check for demo mode from URL params
+      // Check for demo mode from URL params (client-side only)
+      if (typeof window === 'undefined') {
+        return;
+      }
+      
       const urlParams = new URLSearchParams(window.location.search);
       const isDemoMode = urlParams.get('demo') === 'true' || 
                         urlParams.get('mode') === 'demo' ||
@@ -322,13 +326,13 @@ export const HookahTracker: React.FC<HookahTrackerProps> = ({
     // Check if accelerated mode is enabled (2-3 minute trial)
     const isAccelerated = (window as any).__hookahTrackerAccelerated === true;
     
-    // Accelerated mode: 2-3 minute realistic trial
+    // Accelerated mode: 4 seconds per stage (16s total)
     // Quick mode: 18 second fast demo
     const timings = isAccelerated ? {
-      step1: 20000,   // 20s - Order received → Prep in progress
-      step2: 60000,   // 60s - Prep → Heat up (40s after step1)
-      step3: 120000,  // 120s - Heat up → Ready for delivery (60s after step2)
-      complete: 150000 // 150s - Ready → Delivered (30s after step3) = 2.5 minutes total
+      step1: 4000,    // 4s - Order received → Prep in progress
+      step2: 8000,    // 8s - Prep → Heat up (4s after step1)
+      step3: 12000,   // 12s - Heat up → Ready for delivery (4s after step2)
+      complete: 16000 // 16s - Ready → Delivered (4s after step3) = 16 seconds total
     } : {
       step1: 3000,    // 3s - Quick demo
       step2: 8000,    // 8s
@@ -337,8 +341,8 @@ export const HookahTracker: React.FC<HookahTrackerProps> = ({
     };
 
     if (isAccelerated) {
-      setEstimatedTotalTime('2-3 minutes');
-      addNotification('🎭 Accelerated Demo Mode - Experience the full guest journey in 2-3 minutes!');
+      setEstimatedTotalTime('16 seconds');
+      addNotification('🎭 Accelerated Demo Mode - Experience the full guest journey in 16 seconds!');
     }
 
     // Simulate progression through steps
@@ -779,12 +783,23 @@ export const HookahTracker: React.FC<HookahTrackerProps> = ({
                   Have a great session!
                 </p>
                 
-                <button
-                  onClick={() => setIsComplete(false)}
-                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors font-medium"
-                >
-                  Got It
-                </button>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <button
+                    onClick={() => {
+                      // Redirect to guest control panel
+                      window.location.href = '/control-panel';
+                    }}
+                    className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-lg transition-colors font-medium"
+                  >
+                    Manage Session
+                  </button>
+                  <button
+                    onClick={() => setIsComplete(false)}
+                    className="bg-zinc-700 hover:bg-zinc-600 text-white px-6 py-3 rounded-lg transition-colors font-medium"
+                  >
+                    Continue Tracking
+                  </button>
+                </div>
               </motion.div>
             </motion.div>
           )}

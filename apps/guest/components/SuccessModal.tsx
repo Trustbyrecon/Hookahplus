@@ -125,7 +125,7 @@ export default function SuccessModal({
             <p className={`text-zinc-300 text-sm leading-relaxed transition-all duration-500 delay-200 ${
               animationStep >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
             }`}>
-              {message}
+              {message || "Your session is ready! Track your order and manage your experience."}
             </p>
           </div>
 
@@ -144,10 +144,26 @@ export default function SuccessModal({
             )}
             
             <button
-              onClick={onClose}
+              onClick={() => {
+                // Redirect to tracker/control panel instead of closing
+                const urlParams = new URLSearchParams(window.location.search);
+                const sessionId = urlParams.get('sessionId') || urlParams.get('session');
+                const loungeId = urlParams.get('loungeId') || 'default-lounge';
+                const tableId = urlParams.get('tableId') || 'T-001';
+                const isDemo = urlParams.get('demo') === 'true' || urlParams.get('mode') === 'demo';
+                
+                if (sessionId) {
+                  // Redirect to tracker first, then it will redirect to control panel
+                  const trackerUrl = `/hookah-tracker?sessionId=${sessionId}&loungeId=${loungeId}&tableId=${tableId}${isDemo ? '&demo=true&mode=demo&accelerated=true' : ''}`;
+                  window.location.href = trackerUrl;
+                } else {
+                  // Fallback: redirect to control panel
+                  window.location.href = '/control-panel';
+                }
+              }}
               className="w-full px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-medium transition-colors"
             >
-              {actionText ? 'Continue Shopping' : 'Complete My Order'}
+              {actionText ? 'Continue Shopping' : 'Track Your Order'}
             </button>
           </div>
 

@@ -1,26 +1,75 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import { Clock, CreditCard, AlertCircle, CheckCircle, Flame } from 'lucide-react';
 import { useGuestSessionContext } from '../../contexts/GuestSessionContext';
 import { STATUS_TO_TRACKER_STAGE } from '../../../app/types/enhancedSession';
 import Badge from '../../components/Badge';
+import { FireSession } from '../../../app/types/enhancedSession';
 
-export default function ExtendSessionPage() {
+function ExtendSessionContent() {
+  const searchParams = useSearchParams();
   const { activeSession, refreshSessions, tableId, customerPhone, loading } = useGuestSessionContext();
   const [selectedExtension, setSelectedExtension] = useState('20min');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [sessionFromUrl, setSessionFromUrl] = useState<FireSession | null>(null);
+  const [loadingFromUrl, setLoadingFromUrl] = useState(false);
   
-  // Load active session on mount
+  // Get sessionId from URL params
+  const sessionIdFromUrl = searchParams.get('sessionId');
+  
+  // Fetch session directly from URL if provided
   useEffect(() => {
-    if (!activeSession && (tableId || customerPhone) && !loading) {
+    if (sessionIdFromUrl && !activeSession && !loadingFromUrl) {
+      setLoadingFromUrl(true);
+      const fetchSession = async () => {
+        try {
+          const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
+          const response = await fetch(`${appUrl}/api/sessions/status?sessionId=${sessionIdFromUrl}`);
+          
+          if (response.ok) {
+            const data = await response.json();
+            const session = data.session || data;
+            if (session && session.id) {
+              // Convert to FireSession format
+              const fireSession: FireSession = {
+                id: session.id,
+                tableId: session.tableId || 'T-001',
+                customerName: session.customerName || 'Guest',
+                flavor: session.flavorMix?.join(' + ') || session.flavor || 'Custom Mix',
+                status: session.status || session.state || 'ACTIVE',
+                sessionDuration: session.sessionDuration || 45 * 60,
+                sessionType: session.sessionType || 'flat',
+                amount: session.totalAmount || session.amount || 3000,
+                ...session
+              };
+              setSessionFromUrl(fireSession);
+            }
+          }
+        } catch (err) {
+          console.error('[ExtendSession] Failed to fetch session from URL:', err);
+        } finally {
+          setLoadingFromUrl(false);
+        }
+      };
+      fetchSession();
+    }
+  }, [sessionIdFromUrl, activeSession, loadingFromUrl]);
+  
+  // Load active session on mount (if no sessionId in URL)
+  useEffect(() => {
+    if (!sessionIdFromUrl && !activeSession && (tableId || customerPhone) && !loading) {
       refreshSessions();
     }
-  }, [activeSession, tableId, customerPhone, loading, refreshSessions]);
+  }, [sessionIdFromUrl, activeSession, tableId, customerPhone, loading, refreshSessions]);
+  
+  // Use session from URL if available, otherwise use context session
+  const currentSession = sessionFromUrl || activeSession;
 
   const extensionOptions = [
     {
@@ -54,7 +103,7 @@ export default function ExtendSessionPage() {
   ];
 
   const handleExtendSession = async () => {
-    if (!activeSession) {
+    if (!currentSession) {
       setError('No active session found. Please start a session first.');
       return;
     }
@@ -72,12 +121,12 @@ export default function ExtendSessionPage() {
       const minutes = parseInt(selectedOption.duration.split(' ')[0]);
       
       // Call extend API
-      const response = await fetch(`/api/sessions/${activeSession.id}/extend`, {
+      const response = await fetch(`/api/sessions/${currentSession.id}/extend`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           extensionMinutes: minutes,
-          pricingModel: activeSession.sessionType === 'TIME_BASED' ? 'time-based' : 'flat',
+          pricingModel: currentSession.sessionType === 'TIME_BASED' ? 'time-based' : 'flat',
           paymentConfirmed: false, // Will create Stripe checkout if needed
         })
       });
@@ -115,7 +164,7 @@ export default function ExtendSessionPage() {
   const selectedOption = extensionOptions.find(opt => opt.id === selectedExtension);
   
   // Show loading state
-  if (loading) {
+  if (loading || loadingFromUrl) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
         <div className="max-w-2xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
@@ -127,9 +176,9 @@ export default function ExtendSessionPage() {
       </div>
     );
   }
-  
+
   // Show error if no active session
-  if (!activeSession) {
+  if (!currentSession) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
         <div className="max-w-2xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
@@ -164,21 +213,21 @@ export default function ExtendSessionPage() {
         </div>
         
         {/* Active Session Info */}
-        {activeSession && (
+        {currentSession && (
           <Card className="mb-6 p-6 border-teal-500/30 bg-teal-500/10">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-3">
                 <Flame className="w-5 h-5 text-teal-400" />
                 <span className="font-semibold">Current Session</span>
                 <Badge className="bg-teal-500/20 text-teal-400">
-                  {STATUS_TO_TRACKER_STAGE[activeSession.status as keyof typeof STATUS_TO_TRACKER_STAGE]}
+                  {STATUS_TO_TRACKER_STAGE[currentSession.status as keyof typeof STATUS_TO_TRACKER_STAGE] || 'Active'}
                 </Badge>
               </div>
             </div>
             <div className="text-sm text-zinc-300 space-y-1">
-              <div>Table: {activeSession.tableId}</div>
-              <div>Flavor: {activeSession.flavor}</div>
-              <div>Duration: {Math.round((activeSession.sessionDuration || 0) / 60)} minutes</div>
+              <div>Table: {currentSession.tableId}</div>
+              <div>Flavor: {currentSession.flavor || 'Custom Mix'}</div>
+              <div>Duration: {Math.round((currentSession.sessionDuration || 0) / 60)} minutes</div>
             </div>
           </Card>
         )}
@@ -260,7 +309,7 @@ export default function ExtendSessionPage() {
                   <div className="space-y-2 text-sm text-zinc-400">
                     <div className="flex justify-between">
                       <span>Current Table:</span>
-                      <span className="text-white">{activeSession?.tableId || 'N/A'}</span>
+                      <span className="text-white">{currentSession?.tableId || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Extension:</span>
@@ -310,5 +359,22 @@ export default function ExtendSessionPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function ExtendSessionPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
+        <div className="max-w-2xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500 mx-auto mb-4"></div>
+            <p className="text-zinc-400">Loading...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <ExtendSessionContent />
+    </Suspense>
   );
 }
