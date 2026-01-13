@@ -554,12 +554,11 @@ export default function GuestPortal() {
         setCreatedSessionId(appSessionId);
         
         // Auto-redirect to tracker (skip success modal for seamless flow)
-        const urlParams = new URLSearchParams(window.location.search);
-        const isDemo = urlParams.get('demo') === 'true' || urlParams.get('mode') === 'demo';
-        const isAccelerated = urlParams.get('accelerated') === 'true';
-        const loungeId = tableData?.loungeId || urlParams.get('loungeId') || 'default-lounge';
+        // Reuse urlParams, isDemo, and isAccelerated from earlier (line 375-377)
+        // Get loungeId and tableId from tableData or URL params
+        const finalLoungeId = tableData?.loungeId || urlParams.get('loungeId') || loungeId || 'default-lounge';
         const tableId = tableData?.tableId || 'T-001';
-        const trackerUrl = `/hookah-tracker?sessionId=${appSessionId}&loungeId=${loungeId}&tableId=${tableId}${isDemo ? '&demo=true&mode=demo' : ''}${isAccelerated ? '&accelerated=true' : ''}`;
+        const trackerUrl = `/hookah-tracker?sessionId=${appSessionId}&loungeId=${finalLoungeId}&tableId=${tableId}${isDemo ? '&demo=true&mode=demo' : ''}${isAccelerated ? '&accelerated=true' : ''}`;
         
         // Redirect directly to tracker (tracker will auto-advance to control panel)
         window.location.href = trackerUrl;
