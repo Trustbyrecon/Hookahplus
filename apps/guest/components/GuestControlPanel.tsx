@@ -53,15 +53,24 @@ export default function GuestControlPanel({ sessionId: sessionIdProp, onClose }:
             const session = data.session || data;
             if (session && session.id) {
               // Convert to FireSession format
+              const now = Date.now();
               const fireSession: FireSession = {
                 id: session.id,
                 tableId: session.tableId || searchParams.get('tableId') || 'T-001',
                 customerName: session.customerName || 'Guest',
                 flavor: session.flavorMix?.join(' + ') || session.flavor || 'Custom Mix',
                 status: session.status || session.state || 'ACTIVE',
+                currentStage: session.currentStage || 'CUSTOMER',
                 sessionDuration: session.sessionDuration || 45 * 60,
                 sessionType: session.sessionType || 'FLAT',
                 amount: session.totalAmount || session.amount || 3000,
+                assignedStaff: session.assignedStaff || {},
+                createdAt: session.createdAt || now,
+                updatedAt: session.updatedAt || now,
+                coalStatus: session.coalStatus || 'active',
+                refillStatus: session.refillStatus || 'none',
+                notes: session.notes || '',
+                edgeCase: session.edgeCase || null,
                 ...session
               };
               setSessionFromUrl(fireSession);
@@ -73,15 +82,24 @@ export default function GuestControlPanel({ sessionId: sessionIdProp, onClose }:
             
             if (isDemo) {
               // Create mock session for demo
+              const now = Date.now();
               const demoSession: FireSession = {
                 id: sessionIdFromUrl,
                 tableId: searchParams.get('tableId') || 'T-001',
                 customerName: 'Demo Guest',
                 flavor: 'Custom Mix',
                 status: 'ACTIVE',
+                currentStage: 'CUSTOMER',
                 sessionDuration: 45 * 60,
                 sessionType: 'FLAT',
-                amount: 3000
+                amount: 3000,
+                assignedStaff: {},
+                createdAt: now,
+                updatedAt: now,
+                coalStatus: 'active',
+                refillStatus: 'none',
+                notes: '',
+                edgeCase: null
               };
               setSessionFromUrl(demoSession);
             }
@@ -94,15 +112,24 @@ export default function GuestControlPanel({ sessionId: sessionIdProp, onClose }:
           const isDemo = urlParams.get('demo') === 'true' || urlParams.get('mode') === 'demo';
           
           if (isDemo && sessionIdFromUrl) {
+            const now = Date.now();
             const demoSession: FireSession = {
               id: sessionIdFromUrl,
               tableId: searchParams.get('tableId') || 'T-001',
               customerName: 'Demo Guest',
               flavor: 'Custom Mix',
               status: 'ACTIVE',
+              currentStage: 'CUSTOMER',
               sessionDuration: 45 * 60,
-              sessionType: 'flat',
-              amount: 3000
+              sessionType: 'FLAT',
+              amount: 3000,
+              assignedStaff: {},
+              createdAt: now,
+              updatedAt: now,
+              coalStatus: 'active',
+              refillStatus: 'none',
+              notes: '',
+              edgeCase: null
             };
             setSessionFromUrl(demoSession);
           }
