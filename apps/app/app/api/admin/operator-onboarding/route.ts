@@ -147,6 +147,7 @@ export async function GET(req: NextRequest) {
     const stage = searchParams.get('stage');
     const source = searchParams.get('source');
     const ctaSource = searchParams.get('ctaSource'); // Filter by CTA source
+    const demoFilter = searchParams.get('demo'); // Filter for demo-related leads
 
     // #region agent log
     fetch('http://127.0.0.1:7242/ingest/3e564bfc-6ffb-442f-a8df-25d3d77bd219',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:136',message:'Query parameters',data:{stage,source,ctaSource,nodeEnv:process.env.NODE_ENV},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
@@ -211,6 +212,14 @@ export async function GET(req: NextRequest) {
     // Filter by CTA source if provided
     if (ctaSource) {
       whereClause.ctaSource = ctaSource;
+    }
+
+    // Filter for demo-related leads (guest_demo, guest_control_panel sources)
+    if (demoFilter === 'true') {
+      // Override source filter to show only demo sources
+      whereClause.source = {
+        in: ['guest_demo', 'guest_control_panel']
+      };
     }
 
     let events;
@@ -360,9 +369,11 @@ export async function GET(req: NextRequest) {
         
         // Stage tracking (stored in payload or default)
         // CTA events have stage in payload, otherwise use defaults
+        // Demo completions are marked as new-leads for visibility
         stage: payload.stage || data.stage || 
           (event.type === 'pos.waitlist.signup' ? 'new-leads' : 
-           event.type?.startsWith('cta.') ? 'new-leads' : 'intake'),
+           event.type?.startsWith('cta.') ? 'new-leads' : 
+           (data.source === 'guest_demo' || data.source === 'guest_control_panel') ? 'new-leads' : 'intake'),
         
         // Management fields - check both payload locations
         notes: payload.notes || (payload.behavior?.payload?.notes) || data.notes || [],
@@ -381,13 +392,17 @@ export async function GET(req: NextRequest) {
       return lead;
     });
 
-    // Filter by stage if provided
+    // Filter by stage if provided (or demo filter)
     let filteredLeads = leads;
-    if (stage && stage !== 'all') {
+    if (demoFilter === 'true') {
+      // Filter for demo-related leads
+      filteredLeads = leads.filter(lead => lead.source === 'guest_demo' || lead.source === 'guest_control_panel');
+    } else if (stage && stage !== 'all') {
       filteredLeads = leads.filter(lead => lead.stage === stage);
     }
 
     // Calculate statistics
+    const demoLeads = leads.filter(l => l.source === 'guest_demo' || l.source === 'guest_control_panel');
     const stats = {
       total: leads.length,
       newLeads: leads.filter(l => l.stage === 'new-leads').length,
@@ -396,6 +411,17 @@ export async function GET(req: NextRequest) {
       scheduled: leads.filter(l => l.stage === 'scheduled').length,
       onboarding: leads.filter(l => l.stage === 'onboarding').length,
       complete: leads.filter(l => l.stage === 'complete').length,
+      // Demo activity stats
+      demoActivity: {
+        total: demoLeads.length,
+        guestDemo: leads.filter(l => l.source === 'guest_demo').length,
+        controlPanel: leads.filter(l => l.source === 'guest_control_panel').length,
+        recent: demoLeads.filter(l => {
+          const createdAt = new Date(l.createdAt);
+          const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+          return createdAt > dayAgo;
+        }).length
+      },
       // CTA source breakdown
       byCtaSource: {
         website: leads.filter(l => l.ctaSource === 'website').length,

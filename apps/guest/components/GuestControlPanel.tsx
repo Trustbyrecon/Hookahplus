@@ -14,7 +14,11 @@ import {
   CheckCircle,
   AlertCircle,
   ChefHat,
-  CreditCard
+  CreditCard,
+  Sparkles,
+  ArrowRight,
+  Smartphone,
+  ExternalLink
 } from 'lucide-react';
 import { useGuestSessionContext } from '../contexts/GuestSessionContext';
 import { STATUS_TO_TRACKER_STAGE } from '../../app/types/enhancedSession';
@@ -35,7 +39,9 @@ export default function GuestControlPanel({ sessionId: sessionIdProp, onClose }:
   const [actionType, setActionType] = useState<'extend' | 'refill' | 'newbowl' | 'closeout' | null>(null);
   const [sessionFromUrl, setSessionFromUrl] = useState<FireSession | null>(null);
   const [loadingFromUrl, setLoadingFromUrl] = useState(false);
+  const [hasCheckedSession, setHasCheckedSession] = useState(false); // Track if we've completed initial check
   const hasFetchedRef = useRef(false);
+  const hasTrackedViewRef = useRef(false);
   
   // Get sessionId from URL params or prop
   const sessionIdFromUrl = searchParams.get('sessionId') || sessionIdProp;
@@ -167,6 +173,7 @@ export default function GuestControlPanel({ sessionId: sessionIdProp, onClose }:
           setSessionFromUrl(demoSession);
         } finally {
           setLoadingFromUrl(false);
+          setHasCheckedSession(true); // Mark that we've completed the check
         }
       };
       fetchSession();
@@ -177,15 +184,29 @@ export default function GuestControlPanel({ sessionId: sessionIdProp, onClose }:
   useEffect(() => {
     // Don't refresh if we have a session from URL or if we already have an active session
     if (sessionIdFromUrl || activeSession || sessionFromUrl) {
+      if (!sessionIdFromUrl && !activeSession && !sessionFromUrl) {
+        // If we've checked and have no session, mark as checked
+        setHasCheckedSession(true);
+      }
       return;
     }
     
     // Only refresh if we have table/customer info and we're not already loading
     if ((tableId || customerPhone) && !loading) {
-      refreshSessions();
+      refreshSessions().then(() => {
+        setHasCheckedSession(true);
+      }).catch(() => {
+        setHasCheckedSession(true);
+      });
+    } else {
+      // No table/customer info and no sessionId - mark as checked
+      setHasCheckedSession(true);
     }
   }, [sessionIdFromUrl, activeSession, sessionFromUrl, tableId, customerPhone, loading, refreshSessions]);
   
+  // Use session from URL if available, otherwise use context session
+  const currentSession = sessionFromUrl || activeSession;
+
   // Auto-open action from URL parameter (e.g., ?action=extend)
   useEffect(() => {
     const actionParam = searchParams.get('action');
@@ -193,9 +214,32 @@ export default function GuestControlPanel({ sessionId: sessionIdProp, onClose }:
       setActionType(actionParam as 'extend' | 'refill' | 'newbowl' | 'closeout');
     }
   }, [searchParams]);
-  
-  // Use session from URL if available, otherwise use context session
-  const currentSession = sessionFromUrl || activeSession;
+
+  // Track control panel view in demo mode (only once)
+  useEffect(() => {
+    const isDemo = searchParams.get('demo') === 'true' || searchParams.get('mode') === 'demo';
+    if (isDemo && currentSession && typeof window !== 'undefined' && !hasTrackedViewRef.current) {
+      hasTrackedViewRef.current = true;
+      // Track that operator viewed the control panel
+      fetch('/api/demo-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'demo_completed',
+          data: {
+            source: 'guest_control_panel',
+            operatorType: searchParams.get('operatorType') || 'mobile',
+            sessionId: currentSession.id,
+            completedAt: new Date().toISOString(),
+            demoType: 'control_panel_view',
+            event: 'control_panel_viewed'
+          }
+        })
+      }).catch(err => {
+        console.warn('[Demo Tracking] Failed to track control panel view:', err);
+      });
+    }
+  }, [currentSession, searchParams]);
 
   const extensionOptions = [
     { id: '20min', duration: '20 Minutes', price: 10.00, popular: true },
@@ -440,7 +484,8 @@ export default function GuestControlPanel({ sessionId: sessionIdProp, onClose }:
     }
   };
 
-  if (loading || loadingFromUrl) {
+  // Show loading only if we're actively loading AND haven't completed the check yet
+  if ((loading || loadingFromUrl) && !hasCheckedSession) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white flex items-center justify-center">
         <div className="text-center">
@@ -451,13 +496,14 @@ export default function GuestControlPanel({ sessionId: sessionIdProp, onClose }:
     );
   }
 
-  if (!currentSession) {
+  // Only show "No Active Session" after we've completed checking (prevents flashing)
+  if (!currentSession && hasCheckedSession) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
         <div className="max-w-2xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
           <Card className="p-8">
             <div className="text-center">
-              <AlertCircle className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
+              <Clock className="w-16 h-16 text-zinc-500 mx-auto mb-4 opacity-50" />
               <h2 className="text-2xl font-bold text-white mb-2">No Active Session</h2>
               <p className="text-zinc-400 mb-6">
                 You don't have an active session. Start a new session to use these controls.
@@ -465,7 +511,7 @@ export default function GuestControlPanel({ sessionId: sessionIdProp, onClose }:
               <Button
                 variant="primary"
                 onClick={() => window.location.href = '/'}
-                className="w-full"
+                className="w-full transition-all hover:scale-105"
               >
                 Start New Session
               </Button>
@@ -476,11 +522,95 @@ export default function GuestControlPanel({ sessionId: sessionIdProp, onClose }:
     );
   }
 
+  // If we haven't checked yet and don't have a session, show a subtle loading state
+  if (!currentSession && !hasCheckedSession) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-pulse">
+            <Clock className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
+            <p className="text-zinc-500 text-sm">Checking for active session...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const selectedOption = extensionOptions.find(opt => opt.id === selectedExtension);
+
+  // Check if in demo mode
+  const isDemo = searchParams.get('demo') === 'true' || searchParams.get('mode') === 'demo';
+  const operatorType = searchParams.get('operatorType') || 'mobile'; // Default to mobile for demo
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
       <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        {/* Demo Mode Conversion CTA Banner */}
+        {isDemo && (
+          <Card className="p-6 mb-6 bg-gradient-to-r from-teal-500/20 to-cyan-500/20 border-teal-500/50">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="w-5 h-5 text-teal-400" />
+                  <h3 className="text-xl font-bold text-white">
+                    Love this guest experience?
+                  </h3>
+                </div>
+                <p className="text-zinc-300 mb-2">
+                  Get Hookah+ for your {operatorType === 'mobile' ? 'mobile hookah business' : 'hookah lounge'}. 
+                  {operatorType === 'mobile' && ' No fixed location needed.'}
+                </p>
+                <div className="flex flex-wrap gap-2 text-sm text-zinc-400">
+                  <span className="flex items-center gap-1">
+                    <CheckCircle className="w-4 h-4 text-teal-400" />
+                    Works anywhere
+                  </span>
+                  {operatorType === 'mobile' && (
+                    <>
+                      <span className="flex items-center gap-1">
+                        <CheckCircle className="w-4 h-4 text-teal-400" />
+                        QR codes for events
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <CheckCircle className="w-4 h-4 text-teal-400" />
+                        Mobile-friendly dashboard
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+              <Button
+                variant="primary"
+                size="lg"
+                className="whitespace-nowrap"
+                onClick={() => {
+                  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hookahplus.net';
+                  window.open(`${siteUrl}/onboarding?source=demo&type=${operatorType}`, '_blank');
+                }}
+                leftIcon={<ArrowRight className="w-5 h-5" />}
+              >
+                Start Free Trial
+              </Button>
+            </div>
+          </Card>
+        )}
+
+        {/* Mobile Operator Messaging Banner */}
+        {isDemo && operatorType === 'mobile' && (
+          <Card className="p-4 mb-6 bg-blue-500/10 border-blue-500/30">
+            <div className="flex items-start gap-3">
+              <Smartphone className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <h4 className="font-semibold text-blue-300 mb-1">Perfect for Mobile Operators</h4>
+                <p className="text-sm text-zinc-300">
+                  This guest experience works seamlessly for mobile hookah businesses. Your customers can order from any location, 
+                  track their hookah in real-time, and manage their session—all from their phone.
+                </p>
+              </div>
+            </div>
+          </Card>
+        )}
+
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-2">Manage Your Session</h1>
@@ -722,6 +852,41 @@ export default function GuestControlPanel({ sessionId: sessionIdProp, onClose }:
             >
               {isProcessing ? 'Closing...' : 'Close Out & Pay'}
             </Button>
+          </Card>
+        )}
+
+        {/* Operator Dashboard Preview (Demo Mode Only) */}
+        {isDemo && (
+          <Card className="p-6 mt-8 bg-zinc-900/50 border-zinc-700">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                  <Flame className="w-5 h-5 text-teal-400" />
+                  See the Operator Dashboard
+                </h3>
+                <p className="text-zinc-400 text-sm mb-3">
+                  Experience the full power of Hookah+ from the operator's perspective. 
+                  See how easy it is to manage sessions, track orders, and delight customers.
+                </p>
+                <div className="flex flex-wrap gap-2 text-xs text-zinc-500">
+                  <span>• Real-time session tracking</span>
+                  <span>• Staff management</span>
+                  <span>• Analytics dashboard</span>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="lg"
+                className="whitespace-nowrap"
+                onClick={() => {
+                  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.hookahplus.net';
+                  window.open(`${appUrl}/fire-session-dashboard?demo=true&mode=demo`, '_blank');
+                }}
+                leftIcon={<ExternalLink className="w-4 h-4" />}
+              >
+                View Dashboard
+              </Button>
+            </div>
           </Card>
         )}
 

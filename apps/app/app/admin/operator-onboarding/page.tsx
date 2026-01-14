@@ -28,7 +28,8 @@ import {
   AlertCircle,
   Star,
   Link as LinkIcon,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Sparkles
 } from 'lucide-react';
 import GlobalNavigation from '../../../components/GlobalNavigation';
 import Button from '../../../components/Button';
@@ -109,6 +110,12 @@ interface Stats {
   scheduled: number;
   onboarding: number;
   complete: number;
+  demoActivity?: {
+    total: number;
+    guestDemo: number;
+    controlPanel: number;
+    recent: number;
+  };
 }
 
 export default function OperatorOnboardingPage() {
@@ -181,7 +188,7 @@ export default function OperatorOnboardingPage() {
       setIsLoading(true);
       setError(null);
 
-      const url = `/api/admin/operator-onboarding${selectedStage !== 'all' ? `?stage=${selectedStage}` : ''}`;
+      const url = `/api/admin/operator-onboarding${selectedStage === 'demo' ? '?demo=true' : selectedStage !== 'all' ? `?stage=${selectedStage}` : ''}`;
       const response = await fetch(url);
 
       if (!response.ok) {
@@ -758,11 +765,20 @@ export default function OperatorOnboardingPage() {
         />
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-7 gap-4 mb-8">
+        <div className={`grid grid-cols-2 ${stats.demoActivity ? 'md:grid-cols-8' : 'md:grid-cols-7'} gap-4 mb-8`}>
           <div className="bg-zinc-800/50 backdrop-blur-sm border border-zinc-700 rounded-xl p-4">
             <div className="text-2xl font-bold text-white">{stats.total}</div>
             <div className="text-sm text-zinc-400">Total Leads</div>
           </div>
+          {stats.demoActivity && (
+            <div className="bg-purple-500/20 border border-purple-500/30 rounded-xl p-4">
+              <div className="text-2xl font-bold text-purple-400">{stats.demoActivity.total}</div>
+              <div className="text-sm text-zinc-400">Demo Activity</div>
+              {stats.demoActivity.recent > 0 && (
+                <div className="text-xs text-purple-300 mt-1">{stats.demoActivity.recent} in last 24h</div>
+              )}
+            </div>
+          )}
           <div className="bg-cyan-500/20 border border-cyan-500/30 rounded-xl p-4">
             <div className="text-2xl font-bold text-cyan-400">{stats.newLeads}</div>
             <div className="text-sm text-zinc-400">New Leads</div>
@@ -797,17 +813,20 @@ export default function OperatorOnboardingPage() {
               <span className="text-sm text-zinc-400">Filter by Stage:</span>
             </div>
             <div className="flex gap-2 flex-wrap">
-              {(['all', 'new-leads', 'intake', 'follow-up', 'scheduled', 'onboarding', 'complete'] as const).map((stage) => (
+              {(['all', 'demo', 'new-leads', 'intake', 'follow-up', 'scheduled', 'onboarding', 'complete'] as const).map((stage) => (
                 <button
                   key={stage}
                   onClick={() => setSelectedStage(stage)}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     selectedStage === stage
-                      ? 'bg-teal-600 text-white'
+                      ? stage === 'demo' ? 'bg-purple-600 text-white' : 'bg-teal-600 text-white'
                       : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
                   }`}
                 >
-                  {stage === 'all' ? 'All' : stage === 'new-leads' ? 'New Leads' : stage.charAt(0).toUpperCase() + stage.slice(1)}
+                  {stage === 'all' ? 'All' : 
+                   stage === 'demo' ? `🎯 Demo Activity${stats.demoActivity?.total ? ` (${stats.demoActivity.total})` : ''}` :
+                   stage === 'new-leads' ? 'New Leads' : 
+                   stage.charAt(0).toUpperCase() + stage.slice(1)}
                 </button>
               ))}
             </div>
@@ -979,9 +998,16 @@ export default function OperatorOnboardingPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 py-1 bg-zinc-700 text-zinc-300 text-xs rounded-full">
-                          {lead.source}
-                        </span>
+                        <div className="flex flex-col gap-1">
+                          <span className="px-2 py-1 bg-zinc-700 text-zinc-300 text-xs rounded-full">
+                            {lead.source}
+                          </span>
+                          {(lead.source === 'guest_demo' || lead.source === 'guest_control_panel') && (
+                            <span className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-xs rounded-full border border-purple-500/30">
+                              🎯 Demo
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <select
@@ -1001,6 +1027,48 @@ export default function OperatorOnboardingPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
+                          {(lead.source === 'guest_demo' || lead.source === 'guest_control_panel') && (
+                            <>
+                              <button
+                                onClick={() => {
+                                  updateLeadStage(lead.id, 'intake');
+                                  showActionMessage(`Moved ${lead.businessName} to Intake`);
+                                }}
+                                className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-lg transition-colors"
+                                title="Move to Intake"
+                              >
+                                Intake
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    const response = await fetch('/api/admin/operator-onboarding', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({
+                                        action: 'create_demo_session',
+                                        leadId: lead.id,
+                                        businessName: lead.businessName
+                                      })
+                                    });
+                                    const data = await response.json();
+                                    if (data.success && data.demoLink) {
+                                      showActionMessage('Demo session created! Link copied to clipboard.');
+                                      navigator.clipboard.writeText(data.demoLink);
+                                    } else {
+                                      showActionMessage(data.error || 'Failed to create demo session');
+                                    }
+                                  } catch (err) {
+                                    showActionMessage('Failed to create demo session');
+                                  }
+                                }}
+                                className="px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs rounded-lg transition-colors"
+                                title="Create Demo Session"
+                              >
+                                Demo
+                              </button>
+                            </>
+                          )}
                           <button
                             onClick={() => {
                               setSelectedLead(lead);
@@ -1778,6 +1846,68 @@ function LeadDetailModal({
                 )}
               </div>
             </div>
+
+            {/* Demo Activity Info */}
+            {(lead.source === 'guest_demo' || lead.source === 'guest_control_panel') && (
+              <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4 mb-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <Sparkles className="w-5 h-5 text-purple-400" />
+                  <h3 className="text-lg font-semibold text-purple-300">Demo Activity</h3>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-zinc-400">Source:</span>
+                    <span className="text-white">{lead.source === 'guest_demo' ? 'Guest Demo Completion' : 'Control Panel View'}</span>
+                  </div>
+                  {lead.notes && lead.notes.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-purple-500/20">
+                      <div className="text-xs text-zinc-500 mb-1">Demo Details:</div>
+                      <div className="text-zinc-300 text-xs">
+                        {lead.notes[lead.notes.length - 1]?.content || 'No details available'}
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex gap-2 mt-4">
+                    <button
+                      onClick={() => {
+                        onUpdateStage(lead.id, 'intake');
+                        showActionMessage('Moved to Intake - ready for outreach');
+                      }}
+                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-lg transition-colors"
+                    >
+                      Move to Intake
+                    </button>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const response = await fetch('/api/admin/operator-onboarding', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              action: 'create_demo_session',
+                              leadId: lead.id,
+                              businessName: lead.businessName
+                            })
+                          });
+                          const data = await response.json();
+                          if (data.success && data.demoLink) {
+                            showActionMessage('Demo session created! Link copied to clipboard.');
+                            navigator.clipboard.writeText(data.demoLink);
+                          } else {
+                            showActionMessage(data.error || 'Failed to create demo session');
+                          }
+                        } catch (err) {
+                          showActionMessage('Failed to create demo session');
+                        }
+                      }}
+                      className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs rounded-lg transition-colors"
+                    >
+                      Create Demo Session
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Business Details */}
             <div className="bg-zinc-900/50 rounded-lg p-4 space-y-4">

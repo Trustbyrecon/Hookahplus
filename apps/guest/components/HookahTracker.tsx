@@ -368,6 +368,34 @@ export const HookahTracker: React.FC<HookahTrackerProps> = ({
         if (isAccelerated) {
           addNotification('✨ Demo complete! This is what your customers experience.');
         }
+        
+        // Track demo completion for operator conversion
+        if (useDemo && typeof window !== 'undefined') {
+          const urlParams = new URLSearchParams(window.location.search);
+          const isDemo = urlParams.get('demo') === 'true' || urlParams.get('mode') === 'demo';
+          const operatorType = urlParams.get('operatorType') || 'mobile';
+          
+          if (isDemo) {
+            // Track demo completion
+            fetch('/api/demo-requests', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'demo_completed',
+                data: {
+                  source: 'guest_demo',
+                  operatorType: operatorType,
+                  sessionId: sessionId,
+                  completedAt: new Date().toISOString(),
+                  demoType: isAccelerated ? 'accelerated' : 'standard'
+                }
+              })
+            }).catch(err => {
+              console.warn('[Demo Tracking] Failed to track completion:', err);
+            });
+          }
+        }
+        
         onComplete?.();
       }, timings.complete)
     ];

@@ -34,6 +34,69 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (action === 'demo_completed') {
+      // Track demo completion for operator conversion
+      console.log('[Demo Completed] Tracking demo completion:', {
+        source: data.source,
+        operatorType: data.operatorType,
+        sessionId: data.sessionId,
+        demoType: data.demoType
+      });
+
+      try {
+        // Create lead in Operator Onboarding via app API
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
+        console.log('[Demo Completed] Connecting to app build at:', appUrl);
+        
+        const headers: Record<string, string> = { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        };
+        
+        const webhookApiKey = process.env.WEBHOOK_API_KEY;
+        if (webhookApiKey) {
+          headers['x-webhook-api-key'] = webhookApiKey;
+        }
+        
+        const onboardingResponse = await fetch(`${appUrl}/api/admin/operator-onboarding`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            action: 'create_lead',
+            leadData: {
+              businessName: 'Demo Visitor',
+              ownerName: 'Demo User',
+              email: 'demo@hookahplus.net',
+              phone: '',
+              location: '',
+              stage: 'new-leads', // Demo completions are new leads ready for outreach
+              source: data.source || 'guest_demo',
+              createdAt: data.completedAt || new Date().toISOString(),
+              notes: `Demo completed via ${data.source}. Operator type: ${data.operatorType}. Demo type: ${data.demoType || 'standard'}. Session ID: ${data.sessionId || 'unknown'}`
+            }
+          })
+        });
+
+        if (onboardingResponse.ok) {
+          const result = await onboardingResponse.json();
+          console.log('[Demo Completed] Lead created in Operator Onboarding:', result.leadId);
+        } else {
+          const errorText = await onboardingResponse.text();
+          console.warn('[Demo Completed] Failed to create lead in Operator Onboarding:', {
+            status: onboardingResponse.status,
+            error: errorText
+          });
+        }
+      } catch (error) {
+        console.error('[Demo Completed] Error creating lead:', error);
+      }
+
+      return NextResponse.json({ 
+        success: true,
+        message: 'Demo completion tracked successfully'
+      });
+    }
+
     if (action === 'onboarding_submission') {
       // Create lead in Operator Onboarding Management
       console.log('[Onboarding Submission] Creating lead in Operator Onboarding:', {
