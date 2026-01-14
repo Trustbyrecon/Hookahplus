@@ -61,7 +61,7 @@ export default function SupportPage() {
     },
     {
       question: 'Can I extend my session?',
-      answer: 'Yes, you can extend your session in 20-minute increments. Use the "Extend Session" option in the navigation.'
+      answer: 'Yes, you can extend your session in 20-minute increments. Use the "Control Panel" option in the navigation.'
     },
     {
       question: 'What are the session stages?',
@@ -130,10 +130,10 @@ export default function SupportPage() {
               <Button 
                 variant="outline" 
                 className="flex items-center space-x-2"
-                onClick={() => window.location.href = '/extend-session'}
+                onClick={() => window.location.href = '/control-panel'}
               >
                 <Clock className="w-4 h-4" />
-                <span>Extend Session</span>
+                <span>Control Panel</span>
               </Button>
               <Button 
                 variant="outline" 

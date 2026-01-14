@@ -28,7 +28,7 @@ export const GlobalNavigation: React.FC<GlobalNavigationProps> = ({
     if (currentPage) return currentPage;
     if (pathname === '/') return 'home';
     if (pathname === '/rewards') return 'rewards';
-    if (pathname === '/extend-session') return 'extend-session';
+    if (pathname === '/extend-session' || pathname === '/control-panel') return 'control-panel';
     if (pathname === '/support') return 'support';
     if (pathname === '/docs') return 'docs';
     return 'home';
@@ -39,7 +39,7 @@ export const GlobalNavigation: React.FC<GlobalNavigationProps> = ({
   const navigationItems = [
     { name: 'Home', href: '/', icon: Home, current: activePage === 'home' },
     { name: 'Your Rewards', href: '/rewards', icon: Trophy, current: activePage === 'rewards' },
-    { name: 'Extend Session', href: '/extend-session', icon: Clock, current: activePage === 'extend-session' }
+    { name: 'Control Panel', href: '/control-panel', icon: Clock, current: activePage === 'control-panel' }
   ];
 
   return (

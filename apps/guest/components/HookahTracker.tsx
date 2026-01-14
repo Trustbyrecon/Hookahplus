@@ -786,8 +786,16 @@ export const HookahTracker: React.FC<HookahTrackerProps> = ({
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <button
                     onClick={() => {
-                      // Redirect to guest control panel
-                      window.location.href = '/control-panel';
+                      // Redirect to guest control panel with session info
+                      const urlParams = new URLSearchParams(window.location.search);
+                      const sessionId = urlParams.get('sessionId') || sessionId;
+                      const loungeId = urlParams.get('loungeId') || loungeId;
+                      const tableId = urlParams.get('tableId') || tableId;
+                      const isDemo = urlParams.get('demo') === 'true' || urlParams.get('mode') === 'demo';
+                      const isAccelerated = urlParams.get('accelerated') === 'true';
+                      
+                      const controlPanelUrl = `/control-panel?sessionId=${sessionId}&loungeId=${loungeId}&tableId=${tableId}${isDemo ? '&demo=true&mode=demo' : ''}${isAccelerated ? '&accelerated=true' : ''}`;
+                      window.location.href = controlPanelUrl;
                     }}
                     className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-lg transition-colors font-medium"
                   >

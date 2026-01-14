@@ -7,10 +7,15 @@ function mapPrismaStateToFireSession(state: string | SessionState, paymentStatus
   const stateStr = typeof state === 'string' ? state : String(state);
   
   // Special handling: PENDING + paymentStatus 'succeeded' = PAID_CONFIRMED
-  // OR: PENDING + externalRef (Stripe checkout session ID or test session) = PAID_CONFIRMED
+  // OR: PENDING + externalRef (Stripe checkout session ID, test session, or guest session) = PAID_CONFIRMED
   // This is the key fix: after Stripe payment, sessions should show as PAID_CONFIRMED
+  // Guest sessions (externalRef starting with 'guest-') are treated as paid for demo/test purposes
   const isPaid = paymentStatus === 'succeeded' || 
-                 (externalRef && (externalRef.startsWith('cs_') || externalRef.startsWith('test_cs_')));
+                 (externalRef && (
+                   externalRef.startsWith('cs_') || 
+                   externalRef.startsWith('test_cs_') ||
+                   externalRef.startsWith('guest-') // Guest sessions from guest build are treated as paid
+                 ));
   
   if (stateStr === 'PENDING' && isPaid) {
     return 'PAID_CONFIRMED';

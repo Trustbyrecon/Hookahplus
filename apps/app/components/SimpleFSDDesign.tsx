@@ -585,7 +585,11 @@ export default function SimpleFSDDesign({
     // For demo sessions, check status first if state is not available
     const state = session.state || (session.status === 'PAID_CONFIRMED' ? 'PENDING' : session.status === 'PREP_IN_PROGRESS' ? 'ACTIVE' : 'NEW');
     const hasPayment = session.paymentStatus === 'succeeded' || 
-                      (session.externalRef && (session.externalRef.startsWith('cs_') || session.externalRef.startsWith('test_cs_'))) ||
+                      (session.externalRef && (
+                        session.externalRef.startsWith('cs_') || 
+                        session.externalRef.startsWith('test_cs_') ||
+                        session.externalRef.startsWith('guest-') // Guest sessions from guest build are treated as paid
+                      )) ||
                       session.status === 'PAID_CONFIRMED' || // Demo mode: status indicates payment
                       (session.amount && session.amount > 0); // Has amount = paid
     const assignedBOHId = session.assignedBOHId || session.assigned_boh_id || session.assignedStaff?.boh;
