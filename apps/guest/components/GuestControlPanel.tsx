@@ -624,26 +624,26 @@ export default function GuestControlPanel({ sessionId: sessionIdProp, onClose }:
               <Flame className="w-5 h-5 text-teal-400" />
               <span className="font-semibold">Active Session</span>
               <Badge className="bg-teal-500/20 text-teal-400">
-                {STATUS_TO_TRACKER_STAGE[currentSession.status as keyof typeof STATUS_TO_TRACKER_STAGE] || 'Active'}
+                {currentSession?.status ? (STATUS_TO_TRACKER_STAGE[currentSession.status as keyof typeof STATUS_TO_TRACKER_STAGE] || 'Active') : 'Active'}
               </Badge>
             </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-zinc-300">
             <div>
               <div className="text-zinc-400">Table</div>
-              <div className="font-medium text-white">{currentSession.tableId}</div>
+              <div className="font-medium text-white">{currentSession?.tableId || 'N/A'}</div>
             </div>
             <div>
               <div className="text-zinc-400">Flavor</div>
-              <div className="font-medium text-white">{currentSession.flavor || 'Custom Mix'}</div>
+              <div className="font-medium text-white">{currentSession?.flavor || 'Custom Mix'}</div>
             </div>
             <div>
               <div className="text-zinc-400">Duration</div>
-              <div className="font-medium text-white">{Math.round((currentSession.sessionDuration || 0) / 60)} min</div>
+              <div className="font-medium text-white">{currentSession?.sessionDuration ? `${Math.round(currentSession.sessionDuration / 60)} min` : 'N/A'}</div>
             </div>
             <div>
               <div className="text-zinc-400">Status</div>
-              <div className="font-medium text-white">{currentSession.status || 'Active'}</div>
+              <div className="font-medium text-white">{currentSession?.status || 'Active'}</div>
             </div>
           </div>
         </Card>
