@@ -6,7 +6,7 @@ import crypto from "crypto";
 
 export async function GET(req: Request, { params }: { params: { id: string } }) {
   try {
-    const session = await prisma.session.findUnique({
+    const session = await prisma.hookahSession.findUnique({
       where: { id: params.id },
       include: { events: true }
     });
@@ -34,7 +34,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       return Response.json("expectedVersion is required for optimistic concurrency", { status: 400 });
     }
 
-    const current = await prisma.session.findUnique({ 
+    const current = await prisma.hookahSession.findUnique({ 
       where: { id: params.id } 
     });
     
@@ -50,7 +50,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       .update(JSON.stringify({ state, flavorMix, note }))
       .digest("hex");
 
-    const updated = await prisma.session.update({
+    const updated = await prisma.hookahSession.update({
       where: { id: params.id },
       data: {
         ...(state ? { state } : {}),

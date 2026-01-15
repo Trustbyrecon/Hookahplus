@@ -4,8 +4,17 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { prisma } from "@/apps/web/lib/prisma";
 import { decryptSecret, squareRevokeToken } from "@/apps/web/lib/square";
+import { auth } from "@/apps/web/auth";
 
 export async function POST(req: Request) {
+  const session = await auth();
+  if (!session?.user?.email) {
+    return NextResponse.json(
+      { ok: false, error: "Unauthorized", hint: "Sign in to disconnect Square." },
+      { status: 401 }
+    );
+  }
+
   let body: any = {};
   try {
     body = await req.json();

@@ -31,7 +31,7 @@ export async function POST(req: Request) {
       const loungeId = (session.metadata?.loungeId as string) || "default";
       const externalRef = session.id; // anchor by Stripe session id
 
-      await prisma.session.upsert({
+      await prisma.hookahSession.upsert({
         where: { 
           loungeId_externalRef: { 
             loungeId, 

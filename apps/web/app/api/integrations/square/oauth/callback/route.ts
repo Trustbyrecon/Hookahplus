@@ -2,6 +2,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { prisma } from "@/apps/web/lib/prisma";
 import {
   decryptSecret,
@@ -16,16 +17,42 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get("code");
   const state = searchParams.get("state");
+  const error = searchParams.get("error");
+  const errorDescription = searchParams.get("error_description");
+
+  // User clicked "Deny" or OAuth failed upstream.
+  if (error) {
+    const url = new URL(`${getAppBaseUrl()}/integrations/square/error`);
+    url.searchParams.set("reason", error);
+    if (errorDescription) url.searchParams.set("details", errorDescription);
+    return NextResponse.redirect(url.toString(), { status: 302 });
+  }
 
   if (!code) return NextResponse.json({ error: "Missing code" }, { status: 400 });
   if (!state) return NextResponse.json({ error: "Missing state" }, { status: 400 });
 
   let loungeId = "";
+  let csrf = "";
   try {
     const decoded = verifyOAuthState(state);
     loungeId = decoded.loungeId;
+    csrf = decoded.csrf;
   } catch (e: any) {
-    return NextResponse.json({ error: "Invalid state", details: e?.message }, { status: 400 });
+    const url = new URL(`${getAppBaseUrl()}/integrations/square/error`);
+    url.searchParams.set("reason", "invalid_state");
+    url.searchParams.set("details", e?.message || "state_validation_failed");
+    return NextResponse.redirect(url.toString(), { status: 302 });
+  }
+
+  // CSRF validation: cookie must match state payload.
+  const cookieStore = await cookies();
+  const csrfCookie = cookieStore.get("sq_oauth_csrf")?.value;
+  cookieStore.set("sq_oauth_csrf", "", { path: "/api/integrations/square/oauth/callback", maxAge: 0 });
+  if (!csrfCookie || csrfCookie !== csrf) {
+    const url = new URL(`${getAppBaseUrl()}/integrations/square/error`);
+    url.searchParams.set("reason", "csrf_failed");
+    url.searchParams.set("details", "CSRF validation failed. Please try connecting again.");
+    return NextResponse.redirect(url.toString(), { status: 302 });
   }
 
   const redirectUri = `${getAppBaseUrl()}/api/integrations/square/oauth/callback`;
@@ -93,12 +120,10 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Token encryption self-check failed", details: e?.message }, { status: 500 });
   }
 
-  return NextResponse.json({
-    ok: true,
-    loungeId,
-    merchantId,
-    locationId,
-    scopes: scopes.split(" ").filter(Boolean),
-  });
+  const okUrl = new URL(`${getAppBaseUrl()}/integrations/square/connected`);
+  okUrl.searchParams.set("loungeId", loungeId);
+  okUrl.searchParams.set("merchantId", merchantId);
+  okUrl.searchParams.set("locationId", locationId);
+  return NextResponse.redirect(okUrl.toString(), { status: 302 });
 }
 

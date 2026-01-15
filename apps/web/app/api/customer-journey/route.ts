@@ -79,7 +79,7 @@ async function handleCreateBooking(data: any) {
     };
 
     // Create the session
-    const session = await prisma.session.upsert({
+    const session = await prisma.hookahSession.upsert({
       where: {
         loungeId_externalRef: {
           loungeId: sessionData.loungeId,
@@ -156,7 +156,7 @@ async function handleCreateBooking(data: any) {
 async function handleGetActiveSessions() {
   try {
     // Get active sessions from durable sessions
-    const sessions = await prisma.session.findMany({
+    const sessions = await prisma.hookahSession.findMany({
       where: {
         state: "ACTIVE"
       },

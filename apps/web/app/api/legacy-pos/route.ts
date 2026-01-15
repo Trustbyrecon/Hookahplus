@@ -4,7 +4,7 @@ import { prisma } from '../../../lib/prisma';
 // Create BOH session from legacy POS order
 async function createBOHSession(orderData: any) {
   try {
-    const session = await prisma.session.upsert({
+    const session = await prisma.hookahSession.upsert({
       where: {
         loungeId_externalRef: {
           loungeId: orderData.loungeId || 'default',
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
-    const sessions = await prisma.session.findMany({
+    const sessions = await prisma.hookahSession.findMany({
       where: {
         source: 'LEGACY_POS' as any
       },
