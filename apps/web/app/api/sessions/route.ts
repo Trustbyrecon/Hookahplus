@@ -1,88 +1,69 @@
 // apps/web/app/api/sessions/route.ts
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
+import {
+  getAllSessions,
+  getSession,
+  getSessionsByState,
+  getSessionsByTable,
+  putSession,
+  seedSession,
+  type Session,
+  type SessionState,
+} from "@/lib/sessionState";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { sessionId, tableId, state, meta, timers } = body;
+    const { sessionId, tableId, state, meta } = body || {};
+    if (!sessionId) return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
 
-    console.log('📝 Creating session:', { sessionId, tableId, state, meta });
+    const base = getSession(sessionId) || seedSession(sessionId, tableId || "T-1");
 
-    // Create session data
-    const session = {
+    const next: Session = {
+      ...base,
       id: sessionId,
-      table: tableId,
-      state: state || 'PAID_CONFIRMED',
+      table: tableId || base.table,
+      state: (state as SessionState) || base.state,
       meta: {
-        customerId: meta?.customerId || 'Customer',
-        phone: meta?.phone || '+1 (555) 123-4567',
-        email: meta?.email || 'customer@hookahplus.com',
-        flavors: meta?.flavors || ['Blue Mist'],
-        selectedItems: meta?.selectedItems || [],
-        totalAmount: meta?.totalAmount || 0,
-        source: meta?.source || 'preorder',
-        ...meta
+        ...base.meta,
+        loungeId: meta?.loungeId || base.meta.loungeId || "lounge_demo",
+        createdBy: meta?.createdBy || base.meta.createdBy || "system",
+        ...(meta || {}),
       },
-      timers: {
-        createdAt: timers?.createdAt || Date.now(),
-        paidAt: timers?.paidAt || Date.now(),
-        ...timers
-      }
     };
 
-    // Store in session state (this would normally go to a database)
-    // For now, we'll use a simple in-memory store
-    if (typeof global !== 'undefined') {
-      if (!global.sessionStore) {
-        global.sessionStore = new Map();
-      }
-      global.sessionStore.set(sessionId, session);
-    }
+    putSession(next);
 
-    console.log('✅ Session created and stored:', sessionId);
-
-    return NextResponse.json({ 
-      success: true, 
-      session,
-      message: 'Session created successfully'
+    return NextResponse.json({
+      success: true,
+      session: next,
+      message: "Session stored",
     });
-
   } catch (error: any) {
-    console.error('❌ Error creating session:', error);
-    return NextResponse.json(
-      { error: error.message || 'Failed to create session' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message || "Failed to create session" }, { status: 500 });
   }
 }
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const sessionId = searchParams.get('sessionId');
+    const sessionId = searchParams.get("sessionId");
+    const state = searchParams.get("state") as SessionState | null;
+    const table = searchParams.get("table");
 
     if (sessionId) {
-      // Get specific session
-      if (typeof global !== 'undefined' && global.sessionStore) {
-        const session = global.sessionStore.get(sessionId);
-        if (session) {
-          return NextResponse.json({ success: true, session });
-        }
-      }
-      return NextResponse.json({ error: 'Session not found' }, { status: 404 });
-    } else {
-      // Get all sessions
-      if (typeof global !== 'undefined' && global.sessionStore) {
-        const sessions = Array.from(global.sessionStore.values());
-        return NextResponse.json({ success: true, sessions });
-      }
-      return NextResponse.json({ success: true, sessions: [] });
+      const session = getSession(sessionId);
+      if (!session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
+      return NextResponse.json({ success: true, session });
     }
+
+    let sessions: Session[] = [];
+    if (state) sessions = getSessionsByState(state);
+    else if (table) sessions = getSessionsByTable(table);
+    else sessions = getAllSessions();
+
+    return NextResponse.json({ success: true, sessions });
   } catch (error: any) {
-    console.error('❌ Error fetching sessions:', error);
-    return NextResponse.json(
-      { error: error.message || 'Failed to fetch sessions' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message || "Failed to fetch sessions" }, { status: 500 });
   }
 }

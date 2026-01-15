@@ -234,7 +234,11 @@ const allowed: Record<SessionState, Partial<Record<Command, SessionState>>> = {
     CLOSE_SESSION: "CLOSED", // idempotent close
     REFUND_REQUEST: "REFUND_REQUESTED",
   },
-  CLOSED: {},
+  CLOSED: {
+    // Square webhooks (and other back-office systems) may trigger post-close refunds/voids.
+    REFUND_REQUEST: "REFUND_REQUESTED",
+    VOID: "VOIDED",
+  },
   FAILED_PAYMENT: { VOID: "VOIDED" },
   STOCK_BLOCKED: {
     CLAIM_PREP: "PREP_IN_PROGRESS",

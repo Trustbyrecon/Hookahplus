@@ -72,3 +72,49 @@ model SessionEvent {
 
   @@index([sessionId])
 }
+
+// --- Square integration (private install MVP) ---
+model SquareConnection {
+  id              String   @id @default(cuid())
+  loungeId         String   @unique
+  merchantId       String
+  locationId       String
+  scopes           String
+  accessTokenEnc   String
+  refreshTokenEnc  String?
+  tokenExpiresAt   DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  orderLinks       SquareOrderLink[]
+
+  @@index([merchantId])
+}
+
+model SquareOrderLink {
+  id             String   @id @default(cuid())
+  loungeId        String
+  sessionId       String
+  squareOrderId   String   @unique
+  status          String   // CREATED | PAID | REFUNDED | VOIDED
+  squarePaymentId String?
+  squareRefundId  String?
+  receiptUrl      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  connection      SquareConnection @relation(fields: [loungeId], references: [loungeId])
+
+  @@unique([loungeId, sessionId])
+  @@index([loungeId, status])
+}
+
+model SquareWebhookEvent {
+  id          String   @id @default(cuid())
+  eventId     String   @unique
+  eventType   String?
+  merchantId  String?
+  body        String
+  receivedAt  DateTime @default(now())
+  processedAt DateTime?
+}
