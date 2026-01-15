@@ -30,7 +30,20 @@ export async function GET(req: Request) {
 
   const redirectUri = `${getAppBaseUrl()}/api/integrations/square/oauth/callback`;
 
-  const token = await squareExchangeOAuthCode({ code, redirectUri });
+  let token: any;
+  try {
+    token = await squareExchangeOAuthCode({ code, redirectUri });
+  } catch (e: any) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "Square OAuth exchange failed",
+        hint: "Confirm SQUARE_ENV, redirect URI, and app credentials in Square Developer Dashboard.",
+        details: e?.message,
+      },
+      { status: 500 }
+    );
+  }
   const accessToken = token.access_token;
   const refreshToken = token.refresh_token;
   const merchantId = token.merchant_id || "unknown";

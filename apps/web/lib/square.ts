@@ -30,6 +30,20 @@ export type SquareCreateOrderResult = {
   order?: any;
 };
 
+export class SquareApiError extends Error {
+  public status: number;
+  public bodyText: string;
+  public retryAfterSeconds?: number;
+
+  constructor(message: string, opts: { status: number; bodyText: string; retryAfterSeconds?: number }) {
+    super(message);
+    this.name = "SquareApiError";
+    this.status = opts.status;
+    this.bodyText = opts.bodyText;
+    this.retryAfterSeconds = opts.retryAfterSeconds;
+  }
+}
+
 function requireEnv(name: string): string {
   const v = process.env[name];
   if (!v) throw new Error(`Missing ${name}`);
@@ -58,6 +72,10 @@ export function getSquareAuthorizeUrl(env: SquareEnv) {
   return env === "production"
     ? "https://connect.squareup.com/oauth2/authorize"
     : "https://connect.squareupsandbox.com/oauth2/authorize";
+}
+
+export function getSquareVersion(): string {
+  return process.env.SQUARE_VERSION || "2025-10-16";
 }
 
 function base64UrlEncode(input: Buffer | string) {
@@ -160,26 +178,70 @@ export function buildSquareAuthorizeRedirect(params: {
   return { url: url.toString(), state };
 }
 
+function sleep(ms: number) {
+  return new Promise<void>(resolve => setTimeout(resolve, ms));
+}
+
+function computeBackoffMs(attempt: number) {
+  const base = 250;
+  const max = 5000;
+  const exp = Math.min(max, base * Math.pow(2, attempt - 1));
+  const jitter = Math.floor(Math.random() * 150);
+  return exp + jitter;
+}
+
+function parseRetryAfterSeconds(value: string | null): number | undefined {
+  if (!value) return undefined;
+  const asNum = Number(value);
+  if (!Number.isNaN(asNum) && asNum >= 0) return asNum;
+  // If it's an HTTP date, ignore for MVP.
+  return undefined;
+}
+
 export async function squareFetch<T>(
   accessToken: string,
   path: string,
   init: RequestInit & { method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH" } = { method: "GET" }
 ): Promise<T> {
   const env = getSquareEnv();
-  const res = await fetch(`${getSquareConnectBaseUrl(env)}${path}`, {
-    ...init,
-    headers: {
-      "Authorization": `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-      ...(init.headers || {}),
-    },
-  });
+  const url = `${getSquareConnectBaseUrl(env)}${path}`;
 
-  const text = await res.text();
-  if (!res.ok) {
-    throw new Error(`Square API error ${res.status}: ${text}`);
+  const maxAttempts = 5;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const res = await fetch(url, {
+      ...init,
+      headers: {
+        "Authorization": `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+        "Square-Version": getSquareVersion(),
+        ...(init.headers || {}),
+      },
+    });
+
+    const text = await res.text();
+    if (res.ok) return text ? (JSON.parse(text) as T) : ({} as T);
+
+    const retryAfterSeconds = parseRetryAfterSeconds(res.headers.get("retry-after"));
+    const isRetryable =
+      res.status === 429 ||
+      (res.status >= 500 && res.status <= 599);
+
+    // If not retryable or last attempt, throw.
+    if (!isRetryable || attempt === maxAttempts) {
+      throw new SquareApiError(`Square API error ${res.status}`, {
+        status: res.status,
+        bodyText: text,
+        retryAfterSeconds,
+      });
+    }
+
+    // Rate limit / transient errors: exponential backoff (+ honor Retry-After if present).
+    const waitMs = retryAfterSeconds !== undefined ? retryAfterSeconds * 1000 : computeBackoffMs(attempt);
+    await sleep(waitMs);
   }
-  return text ? (JSON.parse(text) as T) : ({} as T);
+
+  // Unreachable, but TS wants a return/throw.
+  throw new SquareApiError("Square API error (exhausted retries)", { status: 500, bodyText: "" });
 }
 
 export async function squareListLocations(accessToken: string): Promise<SquareLocation[]> {
@@ -245,6 +307,58 @@ export async function squareExchangeOAuthCode(params: {
     merchant_id?: string;
     scope?: string;
   };
+}
+
+export async function squareRefreshOAuthToken(params: { refreshToken: string }) {
+  const env = getSquareEnv();
+  const url = `${getSquareOAuthBaseUrl(env)}/oauth2/token`;
+
+  const payload = {
+    client_id: requireEnv("SQUARE_APPLICATION_ID"),
+    client_secret: requireEnv("SQUARE_APPLICATION_SECRET"),
+    refresh_token: params.refreshToken,
+    grant_type: "refresh_token",
+  };
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const text = await res.text();
+  if (!res.ok) throw new Error(`Square OAuth refresh error ${res.status}: ${text}`);
+  return JSON.parse(text) as {
+    access_token: string;
+    refresh_token?: string;
+    expires_at?: string;
+    merchant_id?: string;
+    scope?: string;
+  };
+}
+
+export async function squareRevokeToken(params: { accessToken: string }) {
+  // Spec: https://developer.squareup.com/reference/square/oauth-api/revoke-token
+  const env = getSquareEnv();
+  const url = `${getSquareOAuthBaseUrl(env)}/oauth2/revoke`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Authorization": `Client ${requireEnv("SQUARE_APPLICATION_SECRET")}`,
+      "Square-Version": getSquareVersion(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      client_id: requireEnv("SQUARE_APPLICATION_ID"),
+      access_token: params.accessToken,
+      revoke_only_access_token: false,
+    }),
+  });
+
+  const text = await res.text();
+  if (!res.ok) throw new Error(`Square OAuth revoke error ${res.status}: ${text}`);
+  return text ? JSON.parse(text) as { success: boolean } : { success: true };
 }
 
 export function getAppBaseUrl(): string {

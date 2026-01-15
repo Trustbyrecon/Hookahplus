@@ -7,6 +7,7 @@ export default function DocumentationPage() {
   const [activeSection, setActiveSection] = useState('getting-started');
   const [trustLockVerified, setTrustLockVerified] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@hookahplus.com';
 
   useEffect(() => {
     // Trust-Lock verification for documentation access
@@ -100,6 +101,36 @@ export default function DocumentationPage() {
       }
     },
     {
+      id: 'square-integration',
+      title: 'Square POS Integration',
+      icon: '🧾',
+      content: {
+        overview: 'Connect Square to sync Hookah+ sessions into Square Orders and keep status up to date via webhooks.',
+        sections: [
+          {
+            title: 'Connect Square (OAuth)',
+            content:
+              '1. Ask your admin for your loungeId\n2. Visit /api/integrations/square/oauth/start?loungeId=YOUR_LOUNGE_ID\n3. Approve requested permissions in Square\n4. You should see an “ok: true” response with merchantId and locationId'
+          },
+          {
+            title: 'Connection Check',
+            content:
+              'Use /api/integrations/square/connection-check?loungeId=YOUR_LOUNGE_ID\n\nIf this fails:\n• Reconnect Square\n• Confirm APP_BASE_URL matches your deployed domain\n• Confirm SQUARE_ENV is correct (sandbox vs production)'
+          },
+          {
+            title: 'Order Creation + Status Sync',
+            content:
+              'When FOH closes a session, Hookah+ creates a Square Order (idempotent).\n\nSquare webhooks then update Hookah+ status for:\n• Paid\n• Refunded\n• Canceled/Void'
+          },
+          {
+            title: 'Disconnect / Uninstall',
+            content:
+              'POST /api/integrations/square/disconnect with JSON body: { \"loungeId\": \"...\" }\n\nThis revokes Square authorization (best-effort) and removes the local connection.'
+          }
+        ]
+      }
+    },
+    {
       id: 'troubleshooting',
       title: 'Troubleshooting',
       icon: '🔧',
@@ -116,7 +147,7 @@ export default function DocumentationPage() {
           },
           {
             title: 'Support',
-            content: '• Contact support\n• Submit tickets\n• Live chat\n• Community forum'
+            content: `• Contact support: ${supportEmail}\n• Include loungeId, merchantId (if known), and recent timestamps\n• Share the error message shown in the API response`
           }
         ]
       }

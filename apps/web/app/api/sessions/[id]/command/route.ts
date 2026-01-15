@@ -4,7 +4,8 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { reduce, getSession, putSession, seedSession, type Command, type Session } from "@/lib/sessionState";
 import { prisma } from "@/apps/web/lib/prisma";
-import { decryptSecret, squareCreateOrder } from "@/apps/web/lib/square";
+import { squareCreateOrder } from "@/apps/web/lib/square";
+import { withSquareConnection } from "@/apps/web/lib/squareConnection";
 
 const DEFAULT_CURRENCY = (process.env.SQUARE_CURRENCY || "USD").toUpperCase();
 
@@ -33,10 +34,6 @@ async function maybeCreateSquareOrderForClosedSession(session: Session) {
   });
   if (existing) return { skipped: true, reason: "already_linked" as const, squareOrderId: existing.squareOrderId };
 
-  const conn = await prisma.squareConnection.findUnique({ where: { loungeId } });
-  if (!conn) return { skipped: true, reason: "not_connected" as const };
-
-  const accessToken = decryptSecret(conn.accessTokenEnc);
   const referenceId = `${loungeId}:${session.id}`;
   const idempotencyKey = `${loungeId}:${session.id}:order:v1`;
 
@@ -50,21 +47,28 @@ async function maybeCreateSquareOrderForClosedSession(session: Session) {
     };
   });
 
-  const created = await squareCreateOrder(accessToken, {
-    locationId: conn.locationId,
-    referenceId,
-    idempotencyKey,
-    lineItems: lineItems.length
-      ? lineItems
-      : [
-          {
-            name: "Hookah+ Session",
-            quantity: "1",
-            basePriceMoney: { amount: BigInt(0), currency: DEFAULT_CURRENCY },
-            note: "fallback_line_item",
-          },
-        ],
-  });
+  let created: { orderId: string };
+  try {
+    created = await withSquareConnection(loungeId, async ({ accessToken, locationId }) => {
+      return await squareCreateOrder(accessToken, {
+        locationId,
+        referenceId,
+        idempotencyKey,
+        lineItems: lineItems.length
+          ? lineItems
+          : [
+              {
+                name: "Hookah+ Session",
+                quantity: "1",
+                basePriceMoney: { amount: BigInt(0), currency: DEFAULT_CURRENCY },
+                note: "fallback_line_item",
+              },
+            ],
+      });
+    });
+  } catch {
+    return { skipped: true, reason: "not_connected" as const };
+  }
 
   await prisma.squareOrderLink.create({
     data: {

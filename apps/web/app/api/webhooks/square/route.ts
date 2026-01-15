@@ -101,6 +101,30 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Failed to store webhook event", details: e?.message }, { status: 500 });
   }
 
+  // Handle authorization revocation / app deauthorization (best-effort).
+  // Square event naming varies by subscription; treat any "oauth" + "revok" as a revocation signal.
+  if (merchantId && eventType.toLowerCase().includes("oauth") && eventType.toLowerCase().includes("revok")) {
+    const loungeIds = (await prisma.squareConnection.findMany({
+      where: { merchantId },
+      select: { loungeId: true },
+    })).map(x => x.loungeId);
+
+    await prisma.$transaction([
+      prisma.squareOrderLink.deleteMany({ where: { loungeId: { in: loungeIds } } }),
+      prisma.squareConnection.deleteMany({ where: { merchantId } }),
+    ]);
+
+    await prisma.squareWebhookEvent.update({
+      where: { eventId },
+      data: { processedAt: new Date() },
+    });
+
+    return NextResponse.json(
+      { ok: true, processed: true, eventId, eventType, merchantId, action: "disconnected" },
+      { status: 200 }
+    );
+  }
+
   const { payment, refund, order } = extractObjects(evt);
 
   const squareOrderId: string | undefined =
