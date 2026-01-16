@@ -5,7 +5,6 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import crypto from "crypto";
 import { getAppBaseUrl, signOAuthState } from "@/apps/web/lib/square";
-import { auth } from "@/apps/web/auth";
 
 function requireEnv(name: string) {
   const v = process.env[name];
@@ -14,13 +13,6 @@ function requireEnv(name: string) {
 }
 
 export async function GET(req: Request) {
-  const session = await auth();
-  if (!session?.user?.email) {
-    const url = new URL(`${getAppBaseUrl()}/auth/signin`);
-    url.searchParams.set("callbackUrl", req.url);
-    return NextResponse.redirect(url.toString(), { status: 302 });
-  }
-
   const { searchParams } = new URL(req.url);
   const loungeId = searchParams.get("loungeId");
   if (!loungeId) return NextResponse.json({ error: "Missing loungeId" }, { status: 400 });

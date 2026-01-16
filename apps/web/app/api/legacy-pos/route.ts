@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create BOH session for each hookah item
-    const sessions = [];
+    const sessions: any[] = [];
     for (const item of hookahItems) {
       const sessionData = {
         loungeId: body.loungeId || 'default',

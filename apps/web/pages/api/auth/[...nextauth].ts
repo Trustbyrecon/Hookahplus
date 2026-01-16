@@ -1,10 +1,10 @@
-import NextAuth from "next-auth";
+import type { NextApiRequest, NextApiResponse } from "next";
+import NextAuth, { type NextAuthOptions } from "next-auth";
 import EmailProvider from "next-auth/providers/email";
-import { PrismaAdapter } from "@auth/prisma-adapter";
+import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "@/apps/web/lib/prisma";
 
-// Minimal Auth.js config for seller login (magic link).
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   session: { strategy: "database" },
   providers: [
@@ -18,5 +18,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     verifyRequest: "/auth/verify",
     error: "/auth/error",
   },
-});
+};
+
+export default function auth(req: NextApiRequest, res: NextApiResponse) {
+  return NextAuth(req, res, authOptions);
+}
 
