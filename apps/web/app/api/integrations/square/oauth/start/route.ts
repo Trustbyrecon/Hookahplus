@@ -24,6 +24,7 @@ export async function GET(req: Request) {
     "LOCATIONS_READ",
     "MERCHANT_PROFILE_READ",
     "PAYMENTS_READ",
+    "PAYMENTS_WRITE",
   ];
 
   // CSRF protection: store nonce in cookie and embed in signed state.

@@ -11,23 +11,60 @@ export type SquareLocation = {
   id: string;
   name?: string;
   status?: string;
+  currency?: string;
 };
 
 export type SquareCreateOrderInput = {
   locationId: string;
   referenceId: string;
   idempotencyKey: string;
+  customerId?: string;
   lineItems: Array<{
     name: string;
     quantity: string; // Square expects a string quantity
     basePriceMoney: SquareMoney;
     note?: string;
   }>;
+  // Optional order modifiers (use when applicable)
+  taxes?: any[];
+  discounts?: any[];
+  serviceCharges?: any[];
 };
 
 export type SquareCreateOrderResult = {
   orderId: string;
   order?: any;
+};
+
+export type SquareCreateExternalPaymentInput = {
+  idempotencyKey: string;
+  amountMoney: { amount: bigint; currency: string };
+  orderId: string;
+  locationId: string;
+  customerId?: string;
+  externalSource?: string; // e.g. "Hookah+"
+  note?: string;
+};
+
+export type SquareCreateExternalPaymentResult = {
+  paymentId: string;
+  payment?: any;
+};
+
+export type SquareGetPaymentResult = {
+  payment?: any;
+};
+
+export type SquareCreateRefundInput = {
+  idempotencyKey: string;
+  paymentId: string;
+  amountMoney: { amount: bigint; currency: string };
+  reason?: string;
+};
+
+export type SquareCreateRefundResult = {
+  refundId: string;
+  refund?: any;
 };
 
 export class SquareApiError extends Error {
@@ -76,6 +113,10 @@ export function getSquareAuthorizeUrl(env: SquareEnv) {
 
 export function getSquareVersion(): string {
   return process.env.SQUARE_VERSION || "2025-10-16";
+}
+
+export function getSquareOrderSourceName(): string {
+  return process.env.SQUARE_ORDER_SOURCE_NAME || "Hookah+";
 }
 
 function base64UrlEncode(input: Buffer | string) {
@@ -249,12 +290,18 @@ export async function squareListLocations(accessToken: string): Promise<SquareLo
   return out.locations || [];
 }
 
+export async function squareRetrieveLocation(accessToken: string, locationId: string) {
+  return await squareFetch<{ location?: SquareLocation }>(accessToken, `/v2/locations/${locationId}`, { method: "GET" });
+}
+
 export async function squareCreateOrder(accessToken: string, input: SquareCreateOrderInput): Promise<SquareCreateOrderResult> {
   const payload = {
     idempotency_key: input.idempotencyKey,
     order: {
       location_id: input.locationId,
       reference_id: input.referenceId,
+      source: { name: getSquareOrderSourceName() },
+      ...(input.customerId ? { customer_id: input.customerId } : {}),
       line_items: input.lineItems.map(li => ({
         name: li.name,
         quantity: li.quantity,
@@ -264,6 +311,9 @@ export async function squareCreateOrder(accessToken: string, input: SquareCreate
         },
         ...(li.note ? { note: li.note } : {}),
       })),
+      ...(input.taxes ? { taxes: input.taxes } : {}),
+      ...(input.discounts ? { discounts: input.discounts } : {}),
+      ...(input.serviceCharges ? { service_charges: input.serviceCharges } : {}),
     },
   };
 
@@ -275,6 +325,81 @@ export async function squareCreateOrder(accessToken: string, input: SquareCreate
   const orderId = out?.order?.id;
   if (!orderId) throw new Error("Square create order succeeded but returned no order.id");
   return { orderId, order: out.order };
+}
+
+export async function squareCreateExternalPayment(
+  accessToken: string,
+  input: SquareCreateExternalPaymentInput
+): Promise<SquareCreateExternalPaymentResult> {
+  const payload: any = {
+    idempotency_key: input.idempotencyKey,
+    source_id: "EXTERNAL",
+    amount_money: {
+      amount: input.amountMoney.amount.toString(),
+      currency: input.amountMoney.currency,
+    },
+    location_id: input.locationId,
+    order_id: input.orderId,
+    autocomplete: true,
+    external_details: {
+      type: "OTHER",
+      source: input.externalSource || getSquareOrderSourceName(),
+    },
+  };
+  if (input.customerId) payload.customer_id = input.customerId;
+  if (input.note) payload.note = input.note;
+
+  const out = await squareFetch<{ payment?: any }>(accessToken, "/v2/payments", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
+  const paymentId = out?.payment?.id;
+  if (!paymentId) throw new Error("Square create payment succeeded but returned no payment.id");
+  return { paymentId, payment: out.payment };
+}
+
+export async function squareGetPayment(accessToken: string, paymentId: string): Promise<SquareGetPaymentResult> {
+  return await squareFetch<{ payment?: any }>(accessToken, `/v2/payments/${paymentId}`, { method: "GET" });
+}
+
+export async function squarePayOrder(accessToken: string, params: { orderId: string; idempotencyKey: string; paymentIds: string[] }) {
+  const payload = { idempotency_key: params.idempotencyKey, payment_ids: params.paymentIds };
+  return await squareFetch<{ order?: any }>(accessToken, `/v2/orders/${params.orderId}/pay`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function squareCancelOrder(accessToken: string, params: { orderId: string; orderVersion: number; idempotencyKey: string }) {
+  const payload = {
+    idempotency_key: params.idempotencyKey,
+    order: { state: "CANCELED", version: params.orderVersion },
+  };
+  return await squareFetch<{ order?: any }>(accessToken, `/v2/orders/${params.orderId}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function squareCreateRefund(accessToken: string, input: SquareCreateRefundInput): Promise<SquareCreateRefundResult> {
+  const payload: any = {
+    idempotency_key: input.idempotencyKey,
+    payment_id: input.paymentId,
+    amount_money: {
+      amount: input.amountMoney.amount.toString(),
+      currency: input.amountMoney.currency,
+    },
+    reason: input.reason || "Refund requested in partner app",
+  };
+
+  const out = await squareFetch<{ refund?: any }>(accessToken, "/v2/refunds", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  const refundId = out?.refund?.id;
+  if (!refundId) throw new Error("Square create refund succeeded but returned no refund.id");
+  return { refundId, refund: out.refund };
 }
 
 export async function squareExchangeOAuthCode(params: {

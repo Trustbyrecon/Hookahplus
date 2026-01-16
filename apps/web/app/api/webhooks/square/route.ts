@@ -89,126 +89,145 @@ export async function POST(req: Request) {
 
   if (!eventId) return NextResponse.json({ error: "Missing event_id" }, { status: 400 });
 
-  // Dedupe: store the event; if it already exists, acknowledge.
-  try {
-    await prisma.squareWebhookEvent.create({
-      data: { eventId, eventType, merchantId, body: raw },
-    });
-  } catch (e: any) {
-    if (e?.code === "P2002") {
-      return NextResponse.json({ ok: true, deduped: true, eventId }, { status: 200 });
-    }
-    return NextResponse.json({ error: "Failed to store webhook event", details: e?.message }, { status: 500 });
+  // Dedupe: ONLY ack duplicates once processedAt is set.
+  // This allows Square retries to re-process if we previously crashed mid-handler.
+  let existing = await prisma.squareWebhookEvent.findUnique({ where: { eventId } });
+  if (existing?.processedAt) {
+    return NextResponse.json({ ok: true, deduped: true, eventId }, { status: 200 });
   }
-
-  // Handle authorization revocation / app deauthorization (best-effort).
-  // Square event naming varies by subscription; treat any "oauth" + "revok" as a revocation signal.
-  if (merchantId && eventType.toLowerCase().includes("oauth") && eventType.toLowerCase().includes("revok")) {
-    const loungeIds = (await prisma.squareConnection.findMany({
-      where: { merchantId },
-      select: { loungeId: true },
-    })).map(x => x.loungeId);
-
-    await prisma.$transaction([
-      prisma.squareOrderLink.deleteMany({ where: { loungeId: { in: loungeIds } } }),
-      prisma.squareConnection.deleteMany({ where: { merchantId } }),
-    ]);
-
-    await prisma.squareWebhookEvent.update({
-      where: { eventId },
-      data: { processedAt: new Date() },
-    });
-
-    return NextResponse.json(
-      { ok: true, processed: true, eventId, eventType, merchantId, action: "disconnected" },
-      { status: 200 }
-    );
-  }
-
-  const { payment, refund, order } = extractObjects(evt);
-
-  const squareOrderId: string | undefined =
-    payment?.order_id || refund?.order_id || order?.id;
-  const squarePaymentId: string | undefined = payment?.id || refund?.payment_id;
-  const squareRefundId: string | undefined = refund?.id;
-
-  const link =
-    (squareOrderId
-      ? await prisma.squareOrderLink.findUnique({ where: { squareOrderId } })
-      : null) ||
-    (squarePaymentId
-      ? await prisma.squareOrderLink.findFirst({ where: { squarePaymentId } })
-      : null);
-
-  if (!link) {
-    await prisma.squareWebhookEvent.update({
-      where: { eventId },
-      data: { processedAt: new Date() },
-    });
-    return NextResponse.json(
-      { ok: true, processed: false, reason: "unlinked_event", eventId, eventType, merchantId, at: nowIso() },
-      { status: 200 }
-    );
-  }
-
-  // Determine desired status update.
-  let nextStatus: "CREATED" | "PAID" | "REFUNDED" | "VOIDED" | null = null;
-
-  const paymentStatus = (payment?.status || "").toUpperCase();
-  const refundStatus = (refund?.status || "").toUpperCase();
-  const orderState = (order?.state || "").toUpperCase();
-
-  if (refund && (refundStatus === "COMPLETED" || refundStatus === "SUCCESS")) {
-    nextStatus = "REFUNDED";
-  } else if (payment && paymentStatus === "COMPLETED") {
-    nextStatus = "PAID";
-  } else if (payment && paymentStatus === "CANCELED") {
-    nextStatus = "VOIDED";
-  } else if (order && orderState === "CANCELED") {
-    nextStatus = "VOIDED";
-  }
-
-  if (nextStatus) {
-    await prisma.squareOrderLink.update({
-      where: { id: link.id },
-      data: {
-        status: nextStatus,
-        ...(squarePaymentId ? { squarePaymentId } : {}),
-        ...(squareRefundId ? { squareRefundId } : {}),
-      },
-    });
-
-    // Update Hookah+ in-memory session status.
-    const meta = {
-      source: "square.webhook",
-      eventId,
-      eventType,
-      squareOrderId: link.squareOrderId,
-      squarePaymentId,
-      squareRefundId,
-      nextStatus,
-    };
-
-    if (nextStatus === "PAID") {
-      const s = getSession(link.sessionId);
-      if (s) {
-        s.payment.status = "confirmed";
-        putSession(s);
+  if (!existing) {
+    try {
+      await prisma.squareWebhookEvent.create({
+        data: { eventId, eventType, merchantId, body: raw },
+      });
+    } catch (e: any) {
+      if (e?.code === "P2002") {
+        existing = await prisma.squareWebhookEvent.findUnique({ where: { eventId } });
+        if (existing?.processedAt) {
+          return NextResponse.json({ ok: true, deduped: true, eventId }, { status: 200 });
+        }
+        // else: fall through to processing (retry semantics)
+      } else {
+        return NextResponse.json({ error: "Failed to store webhook event", details: e?.message }, { status: 500 });
       }
-      await noteSession(link.sessionId, meta);
     }
-    if (nextStatus === "REFUNDED") await applyRefundToSession(link.sessionId, meta);
-    if (nextStatus === "VOIDED") await applyVoidToSession(link.sessionId, meta);
   }
 
-  await prisma.squareWebhookEvent.update({
-    where: { eventId },
-    data: { processedAt: new Date() },
-  });
+  try {
+    // Handle authorization revocation / app deauthorization (best-effort).
+    // Square event naming varies by subscription; treat any "oauth" + "revok" as a revocation signal.
+    if (merchantId && eventType.toLowerCase().includes("oauth") && eventType.toLowerCase().includes("revok")) {
+      const loungeIds = (await prisma.squareConnection.findMany({
+        where: { merchantId },
+        select: { loungeId: true },
+      })).map(x => x.loungeId);
 
-  return NextResponse.json(
-    { ok: true, processed: true, eventId, eventType, merchantId, squareOrderId: link.squareOrderId, nextStatus, at: nowIso() },
-    { status: 200 }
-  );
+      await prisma.$transaction([
+        prisma.squareOrderLink.deleteMany({ where: { loungeId: { in: loungeIds } } }),
+        prisma.squareConnection.deleteMany({ where: { merchantId } }),
+      ]);
+
+      await prisma.squareWebhookEvent.update({
+        where: { eventId },
+        data: { processedAt: new Date() },
+      });
+
+      return NextResponse.json(
+        { ok: true, processed: true, eventId, eventType, merchantId, action: "disconnected" },
+        { status: 200 }
+      );
+    }
+
+    const { payment, refund, order } = extractObjects(evt);
+
+    const squareOrderId: string | undefined =
+      payment?.order_id || refund?.order_id || order?.id;
+    const squarePaymentId: string | undefined = payment?.id || refund?.payment_id;
+    const squareRefundId: string | undefined = refund?.id;
+
+    const link =
+      (squareOrderId
+        ? await prisma.squareOrderLink.findUnique({ where: { squareOrderId } })
+        : null) ||
+      (squarePaymentId
+        ? await prisma.squareOrderLink.findFirst({ where: { squarePaymentId } })
+        : null);
+
+    if (!link) {
+      await prisma.squareWebhookEvent.update({
+        where: { eventId },
+        data: { processedAt: new Date() },
+      });
+      return NextResponse.json(
+        { ok: true, processed: false, reason: "unlinked_event", eventId, eventType, merchantId, at: nowIso() },
+        { status: 200 }
+      );
+    }
+
+    // Determine desired status update.
+    let nextStatus: "CREATED" | "PAID" | "REFUNDED" | "VOIDED" | null = null;
+
+    const paymentStatus = (payment?.status || "").toUpperCase();
+    const refundStatus = (refund?.status || "").toUpperCase();
+    const orderState = (order?.state || "").toUpperCase();
+
+    if (refund && (refundStatus === "COMPLETED" || refundStatus === "SUCCESS")) {
+      nextStatus = "REFUNDED";
+    } else if (payment && paymentStatus === "COMPLETED") {
+      nextStatus = "PAID";
+    } else if (payment && paymentStatus === "CANCELED") {
+      nextStatus = "VOIDED";
+    } else if (order && orderState === "CANCELED") {
+      nextStatus = "VOIDED";
+    }
+
+    if (nextStatus) {
+      await prisma.squareOrderLink.update({
+        where: { id: link.id },
+        data: {
+          status: nextStatus,
+          ...(squarePaymentId ? { squarePaymentId } : {}),
+          ...(squareRefundId ? { squareRefundId } : {}),
+        },
+      });
+
+      // Update Hookah+ in-memory session status.
+      const meta = {
+        source: "square.webhook",
+        eventId,
+        eventType,
+        squareOrderId: link.squareOrderId,
+        squarePaymentId,
+        squareRefundId,
+        nextStatus,
+      };
+
+      if (nextStatus === "PAID") {
+        const s = getSession(link.sessionId);
+        if (s) {
+          s.payment.status = "confirmed";
+          putSession(s);
+        }
+        await noteSession(link.sessionId, meta);
+      }
+      if (nextStatus === "REFUNDED") await applyRefundToSession(link.sessionId, meta);
+      if (nextStatus === "VOIDED") await applyVoidToSession(link.sessionId, meta);
+    }
+
+    await prisma.squareWebhookEvent.update({
+      where: { eventId },
+      data: { processedAt: new Date() },
+    });
+
+    return NextResponse.json(
+      { ok: true, processed: true, eventId, eventType, merchantId, squareOrderId: link.squareOrderId, nextStatus, at: nowIso() },
+      { status: 200 }
+    );
+  } catch (e: any) {
+    // Ensure failures show up in runtime logs so operators can debug quickly.
+    console.error("[square_webhook] processing_failed", { eventId, eventType, merchantId, error: e?.message });
+    // Leave processedAt unset so Square retries will re-process (see dedupe logic above).
+    return NextResponse.json({ error: "Webhook processing failed", eventId }, { status: 500 });
+  }
 }
 
