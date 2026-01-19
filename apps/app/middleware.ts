@@ -80,7 +80,8 @@ export async function middleware(request: NextRequest) {
     '/api/test-session', // Test endpoints for development
     '/api/test-sentry', // Sentry test endpoint (for testing error tracking)
     '/api/test-sentry-debug', // Sentry debug diagnostic endpoint
-    '/api/square/oauth', // Square OAuth flow (authorize, callback, status, disconnect)
+    '/api/square/oauth', // Square OAuth flow (authorize, callback)
+    '/api/square/webhook', // Square webhooks MUST be public (Square servers cannot auth)
     '/login',
     '/signup',
     '/admin/login', // Admin login page is public

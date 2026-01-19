@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SquareOAuth } from '../../../../../lib/square/oauth';
-import { prisma } from '../../../../../lib/db';
-import { encrypt } from '../../../../../lib/utils/encryption';
 import { cookies } from 'next/headers';
 import { getCurrentTenant } from '../../../../../lib/auth';
 
@@ -61,6 +59,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Defensive: avoid hard-crashing if DB isn't configured.
+    // PrismaClient will throw at import time if DATABASE_URL is missing.
+    if (!process.env.DATABASE_URL) {
+      return NextResponse.redirect(
+        `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/square/connect?error=${encodeURIComponent('server_misconfigured')}&details=${encodeURIComponent('DATABASE_URL is not set in this environment. Square OAuth cannot complete.')}`
+      );
+    }
+
     // Verify state token
     const cookieStore = await cookies();
     const storedState = cookieStore.get('square_oauth_state')?.value;
@@ -96,6 +102,14 @@ export async function GET(request: NextRequest) {
 
     // Calculate expiration time
     const expiresAt = new Date(Date.now() + tokens.expiresIn * 1000);
+
+    // Lazy-load DB + encryption AFTER we know the callback is real.
+    // This prevents /api/square/oauth/callback from 500ing on direct browser hits in
+    // partially configured environments.
+    const [{ prisma }, { encrypt }] = await Promise.all([
+      import('../../../../../lib/db'),
+      import('../../../../../lib/utils/encryption'),
+    ]);
 
     // Store merchant credentials
     await prisma.squareMerchant.upsert({
