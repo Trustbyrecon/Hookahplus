@@ -17,8 +17,22 @@ interface SquareMerchantInfo {
 }
 
 export class SquareOAuth {
-  private static readonly BASE_URL = 'https://connect.squareup.com';
   private static readonly API_VERSION = '2024-01-18';
+
+  private static getEnv(): 'sandbox' | 'production' {
+    const raw = (process.env.SQUARE_ENV || '').toLowerCase();
+    if (raw === 'sandbox' || raw === 'production') return raw;
+    // Heuristic fallback: sandbox client IDs start with "sandbox-".
+    const clientId = process.env.SQUARE_APPLICATION_ID?.trim() || '';
+    if (clientId.startsWith('sandbox-')) return 'sandbox';
+    return 'production';
+  }
+
+  private static getBaseUrl(): string {
+    return this.getEnv() === 'sandbox'
+      ? 'https://connect.squareupsandbox.com'
+      : 'https://connect.squareup.com';
+  }
 
   /**
    * Generate authorization URL for OAuth flow
@@ -54,12 +68,14 @@ export class SquareOAuth {
     });
 
     // Build URL with redirect_uri as separate parameter (Square expects it this way)
-    const authUrl = `${this.BASE_URL}/oauth2/authorize?${params.toString()}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+    const baseUrl = this.getBaseUrl();
+    const authUrl = `${baseUrl}/oauth2/authorize?${params.toString()}&redirect_uri=${encodeURIComponent(redirectUri)}`;
     
     // Log for debugging in development
     if (process.env.NODE_ENV === 'development') {
       console.log('[Square OAuth] Generated auth URL:', {
-        baseUrl: this.BASE_URL,
+        env: this.getEnv(),
+        baseUrl,
         clientId: clientId.substring(0, 20) + '...',
         redirectUri,
         hasState: !!state
@@ -81,7 +97,7 @@ export class SquareOAuth {
       throw new Error('Square OAuth credentials not configured');
     }
 
-    const response = await fetch(`${this.BASE_URL}/oauth2/token`, {
+    const response = await fetch(`${this.getBaseUrl()}/oauth2/token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -121,7 +137,7 @@ export class SquareOAuth {
       throw new Error('Square OAuth credentials not configured');
     }
 
-    const response = await fetch(`${this.BASE_URL}/oauth2/token`, {
+    const response = await fetch(`${this.getBaseUrl()}/oauth2/token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -153,7 +169,7 @@ export class SquareOAuth {
    * Get merchant information from Square API
    */
   static async getMerchantInfo(accessToken: string): Promise<SquareMerchantInfo> {
-    const response = await fetch(`${this.BASE_URL}/v2/merchants`, {
+    const response = await fetch(`${this.getBaseUrl()}/v2/merchants`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -174,7 +190,7 @@ export class SquareOAuth {
     }
 
     // Get locations
-    const locationsResponse = await fetch(`${this.BASE_URL}/v2/locations`, {
+    const locationsResponse = await fetch(`${this.getBaseUrl()}/v2/locations`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -206,7 +222,7 @@ export class SquareOAuth {
       throw new Error('Square OAuth credentials not configured');
     }
 
-    const response = await fetch(`${this.BASE_URL}/oauth2/revoke`, {
+    const response = await fetch(`${this.getBaseUrl()}/oauth2/revoke`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

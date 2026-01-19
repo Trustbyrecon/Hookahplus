@@ -17,6 +17,11 @@ async function verifySetup() {
   const appSecret = process.env.SQUARE_APPLICATION_SECRET?.trim();
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
   const redirectUri = `${appUrl}/api/square/oauth/callback`;
+  const squareEnv = (process.env.SQUARE_ENV || '').toLowerCase() === 'sandbox'
+    ? 'sandbox'
+    : (process.env.SQUARE_ENV || '').toLowerCase() === 'production'
+      ? 'production'
+      : (appId?.startsWith('sandbox-') ? 'sandbox' : 'production');
 
   console.log(`   SQUARE_APPLICATION_ID: ${appId ? `✅ SET` : '❌ NOT SET'}`);
   if (appId) {
@@ -33,6 +38,7 @@ async function verifySetup() {
   }
 
   console.log(`\n   NEXT_PUBLIC_APP_URL: ${appUrl}`);
+  console.log(`   SQUARE_ENV: ${squareEnv}`);
   console.log(`   Redirect URI: ${redirectUri}\n`);
 
   if (!appId || !appSecret) {
@@ -88,8 +94,10 @@ async function verifySetup() {
     console.log(`   🌐 Domain: ${url.hostname}`);
     console.log(`   📍 Path: ${url.pathname}`);
     
-    if (url.hostname !== 'connect.squareup.com') {
-      console.log(`   ⚠️  WARNING: Expected 'connect.squareup.com', got '${url.hostname}'`);
+    const expectedHost = squareEnv === 'sandbox' ? 'connect.squareupsandbox.com' : 'connect.squareup.com';
+    if (url.hostname !== expectedHost) {
+      console.log(`   ⚠️  WARNING: Expected '${expectedHost}', got '${url.hostname}'`);
+      console.log(`      This can cause "Unable to find client by that client_id" if sandbox/prod mismatch.`);
     }
     
     const clientIdParam = url.searchParams.get('client_id');
