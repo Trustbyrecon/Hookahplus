@@ -5,6 +5,7 @@ import { X, User, Phone, Clock, Flame, DollarSign, Users, FileText, MapPin } fro
 import { TableSelector } from './TableSelector';
 import { TableType } from '../lib/tableTypes';
 import FlavorWheelSelector from './FlavorWheelSelector';
+import type { FireSession } from '../types/enhancedSession';
 
 interface CreateSessionModalProps {
   isOpen: boolean;
@@ -439,81 +440,44 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
       
       // In demo mode, route through new demo-session API
       if (isDemoMode) {
-        console.log('[CreateSessionModal] 🎭 Demo Mode: Routing through demo-session API');
-        try {
-          const response = await fetch('/api/demo-session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              // For staff-facing demo from FSD, always use simulated mode (no Stripe redirect)
-              mode: 'simulated',
-              loungeId: (isDemoSlug ? 'demo-lounge' : 'default-lounge'),
-              operatorId: undefined,
-              source: demoSource,
-              sessionData: {
-                tableId: formData.tableId || selectedTable?.id || 'table-001',
-                customerName: formData.customerName,
-                customerPhone: formData.customerPhone,
-                flavorMix: formData.flavorMix.length > 0 ? formData.flavorMix : [formData.flavor || 'Custom Mix'],
-                amount: totalAmountDollars,
-                pricingModel: formData.pricingModel,
-                timerDuration: formData.timerDuration,
-              },
-            })
-          });
-          
-          const data = await response.json();
-          
-          if (data.status === 'error') {
-            throw new Error(data.reason || 'Failed to create demo session');
-          }
-          
-          // Show user-facing message
-          if (data.message) {
-            console.log('[CreateSessionModal] Demo mode message:', data.message);
-          }
-          
-          // For staff-facing demo, always treat as simulated: never redirect to Stripe
-          if (data.simulatedSessionId) {
-            // Simulated mode - complete payment immediately
-            console.log('[CreateSessionModal] 🎭 Simulated Mode: Completing payment');
-            
-            // Call complete endpoint to finalize simulated payment
-            const completeResponse = await fetch('/api/demo-session/complete', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                simulatedSessionId: data.simulatedSessionId,
-                sessionId: sessionId,
-                loungeId: (isDemoSlug ? 'demo-lounge' : 'default-lounge'),
-                amountCents: totalAmountCents,
-                flavorMix: formData.flavorMix.length > 0 ? JSON.stringify(formData.flavorMix) : null,
-                tableId: formData.tableId || selectedTable?.id || 'table-001',
-                customerPhone: formData.customerPhone,
-              })
-            });
-            
-            if (completeResponse.ok) {
-              console.log('[CreateSessionModal] 🎭 Simulated payment completed');
-              onClose();
-              window.dispatchEvent(new Event('refreshSessions'));
-              return;
-            } else {
-              throw new Error('Failed to complete simulated payment');
-            }
-          } else {
-            // Fallback: no simulatedSessionId returned
-            console.warn('[CreateSessionModal] Demo session response missing simulatedSessionId. Skipping payment flow.');
-            onClose();
-            window.dispatchEvent(new Event('refreshSessions'));
-            return;
-          }
-        } catch (error) {
-          console.error('[CreateSessionModal] Demo session error:', error);
-          alert(`Demo session error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-          // Don't close modal on error - let user retry
-          return;
-        }
+        // Staff-facing demo: keep everything in-memory (no protected API calls)
+        // This avoids auth/DB dependencies and makes demo creation always work.
+        const normalizeDemoTableLabel = (id: string) => {
+          const m = id?.toLowerCase().match(/^table-0*(\d{1,4})$/);
+          if (!m) return id;
+          const pad = String(parseInt(m[1], 10)).padStart(3, '0');
+          return `T-${pad}`;
+        };
+
+        const demoSession: FireSession = {
+          id: sessionId,
+          tableId: normalizeDemoTableLabel(formData.tableId || selectedTable?.id || 'table-001'),
+          customerName: formData.customerName || 'Demo Customer',
+          customerPhone: formData.customerPhone || '',
+          flavor: formData.flavorMix.length > 0 ? formData.flavorMix.join(' + ') : (formData.flavor || 'Custom Mix'),
+          amount: totalAmountCents,
+          status: 'PAID_CONFIRMED' as any,
+          state: 'PENDING' as any,
+          paymentStatus: 'succeeded' as any,
+          externalRef: `test_cs_demo_${sessionId}`,
+          currentStage: 'BOH' as any,
+          assignedStaff: { boh: undefined, foh: undefined },
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          sessionStartTime: undefined,
+          sessionDuration: (formData.timerDuration || 60) * 60,
+          coalStatus: 'active' as any,
+          refillStatus: 'none' as any,
+          notes: formData.notes || 'Demo session created from staff dashboard',
+          edgeCase: null,
+          bohState: 'PREPARING' as any,
+          guestTimerDisplay: false,
+        };
+
+        window.dispatchEvent(new CustomEvent('hp:addDemoSession', { detail: { session: demoSession } }));
+        onClose();
+        window.dispatchEvent(new Event('refreshSessions'));
+        return;
       }
       
       // Production mode: Immediately trigger payment (Stripe checkout) with session ID

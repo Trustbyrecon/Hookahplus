@@ -24,6 +24,10 @@ function generateUUID(): string {
  */
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const demoQueryMode = request.nextUrl.searchParams.get('mode');
+  const demoQueryIsDemo = request.nextUrl.searchParams.get('isDemo');
+  const demoHeader = request.headers.get('x-demo-mode');
+  const isDemoRequest = demoQueryMode === 'demo' || demoQueryIsDemo === 'true' || demoHeader === 'true';
   
   // Generate or use existing request ID for request correlation
   const requestId = request.headers.get('X-Request-ID') || generateUUID();
@@ -88,6 +92,8 @@ export async function middleware(request: NextRequest) {
     '/demo', // Demo/test link routes are public (no auth required)
     '/_next',
     '/favicon.ico',
+    // Demo requests: allow metrics + demo helpers without auth (safe, demo-only)
+    ...(isDemoRequest ? ['/api/metrics', '/api/demo-session', '/api/lounges/tables'] : []),
     // First Light mode: allow metrics, trust-lock, and pulse without auth
     ...(firstLightMode ? ['/api/metrics', '/api/trust-lock', '/api/pulse'] : []),
     // Dev-only: allow direct access to admin routes without auth

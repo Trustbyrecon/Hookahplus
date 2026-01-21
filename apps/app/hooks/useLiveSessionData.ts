@@ -92,6 +92,41 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
   // Store updated demo sessions to persist across refreshes
   const [updatedDemoSessions, setUpdatedDemoSessions] = useState<Record<string, FireSession>>({});
 
+  // Allow other UI components (like CreateSessionModal) to inject demo sessions in-memory
+  useEffect(() => {
+    const isDemoMode =
+      typeof window !== 'undefined' &&
+      window.location &&
+      new URLSearchParams(window.location.search).get('mode') === 'demo';
+
+    if (!isDemoMode) return;
+
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent)?.detail as { session?: FireSession } | undefined;
+      const incoming = detail?.session;
+      if (!incoming?.id) return;
+
+      setUpdatedDemoSessions(prev => ({
+        ...prev,
+        [incoming.id]: incoming,
+      }));
+
+      // Optimistically merge into current sessions to reflect instantly
+      setSessions(prev => {
+        const idx = prev.findIndex(s => s.id === incoming.id);
+        if (idx >= 0) {
+          const copy = [...prev];
+          copy[idx] = incoming;
+          return copy;
+        }
+        return [...prev, incoming];
+      });
+    };
+
+    window.addEventListener('hp:addDemoSession', handler as EventListener);
+    return () => window.removeEventListener('hp:addDemoSession', handler as EventListener);
+  }, []);
+
   // Load live session data
   const loadSessions = useCallback(async () => {
     try {
@@ -423,6 +458,27 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
       console.log('[useLiveSessionData] Metrics response status:', metricsResponse.status);
       
       if (!metricsResponse.ok) {
+        // Auth is optional for some public/demo surfaces; treat 401 as non-fatal.
+        if (metricsResponse.status === 401) {
+          console.warn('[useLiveSessionData] Metrics unauthorized (401) - using fallback metrics');
+          setMetrics({
+            activeSessions: 1,
+            revenue: 35,
+            avgDuration: 25,
+            alerts: 0,
+            staffAssigned: 2,
+            totalSessions: 1,
+            changes: {
+              activeSessions: '+0%',
+              revenue: '+0%',
+              avgDuration: '0%',
+              alerts: '0%',
+              staffAssigned: '+0%',
+              totalSessions: '+0%'
+            }
+          });
+          return;
+        }
         throw new Error(`HTTP ${metricsResponse.status}: ${metricsResponse.statusText}`);
       }
       

@@ -30,6 +30,91 @@ export class TableLayoutService {
   private static CACHE_TTL = 30000; // 30 seconds
 
   /**
+   * Demo/default table metadata used when no layout exists yet.
+   * This enables a graceful onboarding flow where sessions can still be created.
+   */
+  private static readonly DEMO_TABLES: LayoutTable[] = [
+    { id: 'table-001', name: 'T-001', seatingType: 'Booth', capacity: 4, coordinates: { x: 0, y: 0 }, zone: 'Main Floor' },
+    { id: 'table-002', name: 'T-002', seatingType: 'Booth', capacity: 4, coordinates: { x: 0, y: 0 }, zone: 'Main Floor' },
+    { id: 'table-003', name: 'T-003', seatingType: 'Couch', capacity: 6, coordinates: { x: 0, y: 0 }, zone: 'Main Floor' },
+    { id: 'table-004', name: 'T-004', seatingType: 'Bar Seating', capacity: 2, coordinates: { x: 0, y: 0 }, zone: 'Main Floor' },
+    { id: 'table-005', name: 'T-005', seatingType: 'Couch', capacity: 6, coordinates: { x: 0, y: 0 }, zone: 'Main Floor' },
+    { id: 'table-006', name: 'T-006', seatingType: 'Outdoor', capacity: 8, coordinates: { x: 0, y: 0 }, zone: 'Main Floor' },
+    { id: 'table-007', name: 'T-007', seatingType: 'Booth', capacity: 4, coordinates: { x: 0, y: 0 }, zone: 'Main Floor' },
+    { id: 'table-008', name: 'T-008', seatingType: 'VIP', capacity: 10, coordinates: { x: 0, y: 0 }, zone: 'VIP Section' },
+    { id: 'table-009', name: 'T-009', seatingType: 'Couch', capacity: 6, coordinates: { x: 0, y: 0 }, zone: 'Main Floor' },
+    { id: 'table-010', name: 'T-010', seatingType: 'Private Room', capacity: 8, coordinates: { x: 0, y: 0 }, zone: 'Private Section' },
+  ];
+
+  private static normalizeTableToken(input: string | undefined | null): string {
+    return (input || '').trim();
+  }
+
+  /**
+   * Build a set of candidate IDs/names for matching.
+   * Supports:
+   * - `table-002` <-> `T-002`
+   * - `Table-002` / `Table 002` (LaunchPad-generated names)
+   */
+  private static tableIdCandidates(raw: string): string[] {
+    const token = this.normalizeTableToken(raw);
+    if (!token) return [];
+
+    const out = new Set<string>([token]);
+    const lower = token.toLowerCase();
+
+    // Match common numeric patterns
+    const mTable = lower.match(/^table[-\s]?0*(\d{1,4})$/);
+    const mT = lower.match(/^t[-\s]?0*(\d{1,4})$/);
+    const mName = lower.match(/^table[-\s]+0*(\d{1,4})$/);
+
+    const numStr = (mTable?.[1] || mT?.[1] || mName?.[1]) ?? null;
+    if (numStr) {
+      const n = parseInt(numStr, 10);
+      const pad = String(n).padStart(3, '0');
+      out.add(`table-${pad}`);
+      out.add(`T-${pad}`);
+      out.add(`Table-${pad}`);
+      out.add(`Table ${pad}`);
+      // Also accept non-padded forms
+      out.add(`table-${n}`);
+      out.add(`T-${n}`);
+      out.add(`Table-${n}`);
+      out.add(`Table ${n}`);
+    }
+
+    return Array.from(out);
+  }
+
+  private static inferTableFromToken(raw: string): LayoutTable | null {
+    const token = this.normalizeTableToken(raw);
+    if (!token) return null;
+
+    const candidates = this.tableIdCandidates(token).map(s => s.toLowerCase());
+    // Prefer explicit demo table definition when it matches any candidate.
+    const demoMatch = this.DEMO_TABLES.find(t =>
+      candidates.includes(t.id.toLowerCase()) || candidates.includes(t.name.toLowerCase())
+    );
+    if (demoMatch) return demoMatch;
+
+    // If it's a numeric table token outside the baked demo list, still allow it with sane defaults.
+    const lower = token.toLowerCase();
+    const m = lower.match(/(?:^table[-\s]?|^t[-\s]?|^table[-\s]+)0*(\d{1,4})$/);
+    if (!m) return null;
+
+    const n = parseInt(m[1], 10);
+    const pad = String(n).padStart(3, '0');
+    return {
+      id: `table-${pad}`,
+      name: `T-${pad}`,
+      seatingType: 'Booth',
+      capacity: 4,
+      coordinates: { x: 0, y: 0 },
+      zone: 'Main Floor',
+    };
+  }
+
+  /**
    * Load tables from saved layout
    */
   static async loadTables(): Promise<LayoutTable[]> {
@@ -66,19 +151,22 @@ export class TableLayoutService {
    */
   static async validateTableId(tableId: string): Promise<{ valid: boolean; table?: LayoutTable; error?: string }> {
     const tables = await this.loadTables();
-    
-    // Try exact match first
-    let table = tables.find(t => t.id === tableId);
-    
-    // Try name match (case-insensitive)
-    if (!table) {
-      table = tables.find(t => 
-        t.name.toLowerCase() === tableId.toLowerCase() ||
-        t.name === tableId
-      );
-    }
 
+    const candidates = this.tableIdCandidates(tableId);
+    const candidateLower = new Set(candidates.map(c => c.toLowerCase()));
+
+    // Try exact match first (id), then name/id case-insensitive against candidates
+    let table =
+      tables.find(t => t.id === tableId) ||
+      tables.find(t => candidateLower.has((t.id || '').toLowerCase()) || candidateLower.has((t.name || '').toLowerCase()));
+
+    // Graceful fallback: if layout isn't configured or doesn't include this table, infer a default.
     if (!table) {
+      const inferred = this.inferTableFromToken(tableId);
+      if (inferred) {
+        return { valid: true, table: inferred };
+      }
+
       return {
         valid: false,
         error: `Table "${tableId}" not found in lounge layout. Please configure tables in Lounge Layout Manager first.`
