@@ -28,6 +28,11 @@ interface PageHeroProps {
     onClick: () => void;
     href?: string;
   };
+  tertiaryCTA?: {
+    text: string;
+    onClick: () => void;
+    href?: string;
+  };
   trustIndicators?: TrustIndicator[];
   className?: string;
 }
@@ -38,6 +43,7 @@ export default function PageHero({
   benefit,
   primaryCTA,
   secondaryCTA,
+  tertiaryCTA,
   trustIndicators,
   className = ''
 }: PageHeroProps) {
@@ -87,7 +93,7 @@ export default function PageHero({
           )}
 
           {/* CTAs */}
-          {(primaryCTA || secondaryCTA) && (
+          {(primaryCTA || secondaryCTA || tertiaryCTA) && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -115,6 +121,17 @@ export default function PageHero({
                   {...(secondaryCTA.href ? { href: secondaryCTA.href } : {})}
                 >
                   {secondaryCTA.text}
+                </Button>
+              )}
+              {tertiaryCTA && (
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="px-8 py-4 text-lg border-2 border-zinc-700 text-zinc-300 hover:bg-zinc-800/60 hover:border-zinc-500 hover:text-white transition-all"
+                  onClick={tertiaryCTA.onClick}
+                  {...(tertiaryCTA.href ? { href: tertiaryCTA.href } : {})}
+                >
+                  {tertiaryCTA.text}
                 </Button>
               )}
             </motion.div>

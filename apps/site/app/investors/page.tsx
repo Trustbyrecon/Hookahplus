@@ -33,6 +33,9 @@ import {
 } from 'lucide-react';
 
 export default function InvestorsPage() {
+  const interactDeckUrl =
+    'https://app.interactlabs.ai?organization_id=6970d63ecfdf8d0c48a360e1&project_id=6970e4f3cfdf8d0c48a36343&type=slides';
+
   const problems = [
     {
       icon: <Clock className="w-6 h-6 text-red-400" />,
@@ -196,6 +199,12 @@ export default function InvestorsPage() {
             window.open(`https://ig.me/m/hookahplusnet?text=${message}`, '_blank');
           },
         }}
+        tertiaryCTA={{
+          text: 'View interactive deck',
+          onClick: () => {
+            window.open(interactDeckUrl, '_blank', 'noopener,noreferrer');
+          },
+        }}
         trustIndicators={[
           { icon: <Users className="w-4 h-4 text-teal-400" />, text: 'Founder: Dwayne Clark' },
           { icon: <Zap className="w-4 h-4 text-teal-400" />, text: 'Stage: MVP live, pilot lounges in motion' },
@@ -203,6 +212,56 @@ export default function InvestorsPage() {
       />
 
       <div className="max-w-7xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
+        {/* Interactive Deck Embed */}
+        <section className="mb-16">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <Card className="border-zinc-700">
+              <div className="p-8">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                  <div>
+                    <h2 className="text-2xl md:text-3xl font-bold text-white">
+                      Interactive Pitch Deck
+                    </h2>
+                    <p className="text-zinc-400 mt-2">
+                      View the Interact deck inline below, or open it in a new tab.
+                      If it doesn&apos;t load here, the provider may block embeds.
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="border-teal-500/50 text-teal-400 hover:bg-teal-500/10 hover:border-teal-400"
+                    onClick={() => window.open(interactDeckUrl, '_blank', 'noopener,noreferrer')}
+                  >
+                    <Globe className="w-5 h-5 mr-2" />
+                    Open interactive deck
+                  </Button>
+                </div>
+
+                <div
+                  className="relative w-full overflow-hidden rounded-xl border border-zinc-700 bg-zinc-900/50"
+                  style={{ aspectRatio: '16 / 9' }}
+                >
+                  <iframe
+                    src={interactDeckUrl}
+                    title="Hookah+ Interactive Pitch Deck"
+                    className="absolute inset-0 h-full w-full"
+                    loading="lazy"
+                    allow="fullscreen; clipboard-write"
+                    referrerPolicy="no-referrer"
+                    sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"
+                  />
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        </section>
+
         {/* 1. The Problem */}
         <section className="mb-16">
           <motion.div
@@ -678,6 +737,15 @@ export default function InvestorsPage() {
                       <Mail className="w-5 h-5 mr-2" />
                       Request full deck
                     </Button>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="border-zinc-700 text-zinc-300 hover:bg-zinc-800/60 hover:border-zinc-500 hover:text-white"
+                      onClick={() => window.open(interactDeckUrl, '_blank', 'noopener,noreferrer')}
+                    >
+                      <Globe className="w-5 h-5 mr-2" />
+                      View interactive deck
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -719,6 +787,15 @@ export default function InvestorsPage() {
                 >
                   <FileText className="w-5 h-5 mr-2" />
                   Request the full investor deck
+                </Button>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="border-teal-500/50 text-teal-400 hover:bg-teal-500/10 hover:border-teal-400 px-8 py-4"
+                  onClick={() => window.open(interactDeckUrl, '_blank', 'noopener,noreferrer')}
+                >
+                  <Globe className="w-5 h-5 mr-2" />
+                  View interactive deck
                 </Button>
                 <Button
                   variant="outline"
