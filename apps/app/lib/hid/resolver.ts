@@ -1,9 +1,21 @@
 import { prisma } from '../prisma';
 import { Prisma } from '@prisma/client';
 import { createHash, randomBytes } from 'crypto';
+import { getHIDSalt } from '../env';
 
 // Salt for hashing (store in env in production)
-const HID_SALT = process.env.HID_SALT || 'hookahplus-network-salt-2025';
+const DEFAULT_HID_SALT = 'hookahplus-network-salt-2025';
+const HID_SALT = getHIDSalt();
+const isProduction = process.env.NODE_ENV === 'production';
+if (isProduction && HID_SALT === DEFAULT_HID_SALT && process.env.ALLOW_INSECURE_HID_SALT !== 'true') {
+  // Do not throw (to avoid hard outages), but make the risk visible in logs/telemetry.
+  // Identity will fragment across environments if this is not set properly.
+  // Intentionally does NOT log any PII.
+  // eslint-disable-next-line no-console
+  console.warn(
+    '[HID Resolver] HID_SALT is using the default fallback. Set HID_SALT in production to avoid identity fragmentation.'
+  );
+}
 
 export interface HIDResolveInput {
   phone?: string;
@@ -39,15 +51,34 @@ function hashPII(value: string): string {
     .digest('hex');
 }
 
+function normalizePhone(phone: string): string {
+  // Keep it simple: strip whitespace and common separators; preserve leading +
+  const trimmed = phone.trim();
+  const hasPlus = trimmed.startsWith('+');
+  const digitsOnly = trimmed.replace(/[^\d]/g, '');
+  return hasPlus ? `+${digitsOnly}` : digitsOnly;
+}
+
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
 /**
  * Generate deterministic HID from phone/email
  */
-function generateHID(phone?: string, email?: string): string {
+function generateHID(params: { phone?: string; email?: string; qrToken?: string; deviceId?: string }): string {
+  const { phone, email, qrToken, deviceId } = params;
   if (phone) {
-    return `HID-${hashPII(phone).substring(0, 16).toUpperCase()}`;
+    return `HID-${hashPII(normalizePhone(phone)).substring(0, 16).toUpperCase()}`;
   }
   if (email) {
-    return `HID-${hashPII(email.toLowerCase()).substring(0, 16).toUpperCase()}`;
+    return `HID-${hashPII(normalizeEmail(email)).substring(0, 16).toUpperCase()}`;
+  }
+  if (qrToken) {
+    return `HID-${hashPII(String(qrToken).trim()).substring(0, 16).toUpperCase()}`;
+  }
+  if (deviceId) {
+    return `HID-${hashPII(String(deviceId).trim()).substring(0, 16).toUpperCase()}`;
   }
   // Guest/anonymous: use random bytes
   return `HID-GUEST-${randomBytes(8).toString('hex').toUpperCase()}`;
@@ -58,13 +89,15 @@ function generateHID(phone?: string, email?: string): string {
  */
 export async function resolveHID(input: HIDResolveInput): Promise<HIDResolveResult> {
   const { phone, email, qrToken, deviceId } = input;
+  const normalizedPhone = phone ? normalizePhone(phone) : undefined;
+  const normalizedEmail = email ? normalizeEmail(email) : undefined;
 
   // Step 1: Try to find existing profile by phone/email hash
   let existingProfile = null;
   let hid: string | null = null;
 
-  if (phone) {
-    const phoneHash = hashPII(phone);
+  if (normalizedPhone) {
+    const phoneHash = hashPII(normalizedPhone);
     const piiLink = await prisma.networkPIILink.findUnique({
       where: {
         piiType_piiHash: {
@@ -88,13 +121,63 @@ export async function resolveHID(input: HIDResolveInput): Promise<HIDResolveResu
     }
   }
 
-  if (!hid && email) {
-    const emailHash = hashPII(email.toLowerCase());
+  if (!hid && normalizedEmail) {
+    const emailHash = hashPII(normalizedEmail);
     const piiLink = await prisma.networkPIILink.findUnique({
       where: {
         piiType_piiHash: {
           piiType: 'email',
           piiHash: emailHash,
+        },
+      },
+      include: {
+        profile: {
+          include: {
+            preferences: true,
+            badges: true,
+          },
+        },
+      },
+    });
+
+    if (piiLink) {
+      existingProfile = piiLink.profile;
+      hid = piiLink.profile.hid;
+    }
+  }
+
+  if (!hid && qrToken) {
+    const qrHash = hashPII(String(qrToken).trim());
+    const piiLink = await prisma.networkPIILink.findUnique({
+      where: {
+        piiType_piiHash: {
+          piiType: 'qr_token',
+          piiHash: qrHash,
+        },
+      },
+      include: {
+        profile: {
+          include: {
+            preferences: true,
+            badges: true,
+          },
+        },
+      },
+    });
+
+    if (piiLink) {
+      existingProfile = piiLink.profile;
+      hid = piiLink.profile.hid;
+    }
+  }
+
+  if (!hid && deviceId) {
+    const deviceHash = hashPII(String(deviceId).trim());
+    const piiLink = await prisma.networkPIILink.findUnique({
+      where: {
+        piiType_piiHash: {
+          piiType: 'device_id',
+          piiHash: deviceHash,
         },
       },
       include: {
@@ -126,7 +209,7 @@ export async function resolveHID(input: HIDResolveInput): Promise<HIDResolveResu
   const mergeCandidates = await findMergeCandidates(phone, email, deviceId);
 
   // Step 4: Create new profile
-  hid = generateHID(phone, email);
+  hid = generateHID({ phone: normalizedPhone, email: normalizedEmail, qrToken, deviceId });
 
   // Check if HID already exists (collision handling)
   const existingHID = await prisma.networkProfile.findUnique({
@@ -138,56 +221,89 @@ export async function resolveHID(input: HIDResolveInput): Promise<HIDResolveResu
     hid = `${hid}-${randomBytes(4).toString('hex').toUpperCase()}`;
   }
 
-  const newProfile = await prisma.networkProfile.create({
-    data: {
-      hid,
-      phoneHash: phone ? hashPII(phone) : null,
-      emailHash: email ? hashPII(email.toLowerCase()) : null,
-      consentLevel: 'shadow', // Default: unclaimed
-    },
-    include: {
-      preferences: true,
-      badges: true,
-    },
-  });
-
-  // Create PII links
-  if (phone) {
-    await prisma.networkPIILink.create({
+  let newProfile: any;
+  try {
+    newProfile = await prisma.networkProfile.create({
       data: {
         hid,
-        piiType: 'phone',
-        piiHash: hashPII(phone),
-        verified: false,
+        phoneHash: normalizedPhone ? hashPII(normalizedPhone) : null,
+        emailHash: normalizedEmail ? hashPII(normalizedEmail) : null,
+        consentLevel: 'shadow', // Default: unclaimed
+      },
+      include: {
+        preferences: true,
+        badges: true,
       },
     });
-  }
 
-  if (email) {
-    await prisma.networkPIILink.create({
-      data: {
-        hid,
-        piiType: 'email',
-        piiHash: hashPII(email.toLowerCase()),
-        verified: false,
-      },
-    });
-  }
+    // Create PII links (best effort, but must be idempotent under concurrency)
+    const linksToCreate: Array<{ piiType: string; piiHash: string }> = [];
+    if (normalizedPhone) linksToCreate.push({ piiType: 'phone', piiHash: hashPII(normalizedPhone) });
+    if (normalizedEmail) linksToCreate.push({ piiType: 'email', piiHash: hashPII(normalizedEmail) });
+    if (qrToken) linksToCreate.push({ piiType: 'qr_token', piiHash: hashPII(String(qrToken).trim()) });
+    if (deviceId) linksToCreate.push({ piiType: 'device_id', piiHash: hashPII(String(deviceId).trim()) });
 
-  if (qrToken) {
-    await prisma.networkPIILink.create({
-      data: {
-        hid,
-        piiType: 'qr_token',
-        piiHash: hashPII(qrToken),
-        verified: false,
-      },
-    });
+    for (const link of linksToCreate) {
+      await prisma.networkPIILink.create({
+        data: {
+          hid,
+          piiType: link.piiType,
+          piiHash: link.piiHash,
+          verified: false,
+        },
+      });
+    }
+  } catch (error: any) {
+    // Likely a concurrency race on (piiType, piiHash). Re-read and return the winning profile.
+    const isUniqueViolation =
+      error?.code === 'P2002' ||
+      (typeof error?.message === 'string' && error.message.toLowerCase().includes('unique'));
+
+    if (isUniqueViolation) {
+      const winningLink =
+        (normalizedPhone &&
+          (await prisma.networkPIILink.findUnique({
+            where: { piiType_piiHash: { piiType: 'phone', piiHash: hashPII(normalizedPhone) } },
+            include: { profile: { include: { preferences: true, badges: true } } },
+          }))) ||
+        (normalizedEmail &&
+          (await prisma.networkPIILink.findUnique({
+            where: { piiType_piiHash: { piiType: 'email', piiHash: hashPII(normalizedEmail) } },
+            include: { profile: { include: { preferences: true, badges: true } } },
+          }))) ||
+        (qrToken &&
+          (await prisma.networkPIILink.findUnique({
+            where: { piiType_piiHash: { piiType: 'qr_token', piiHash: hashPII(String(qrToken).trim()) } },
+            include: { profile: { include: { preferences: true, badges: true } } },
+          }))) ||
+        (deviceId &&
+          (await prisma.networkPIILink.findUnique({
+            where: { piiType_piiHash: { piiType: 'device_id', piiHash: hashPII(String(deviceId).trim()) } },
+            include: { profile: { include: { preferences: true, badges: true } } },
+          })));
+
+      if (winningLink?.profile?.hid) {
+        // Cleanup the orphaned profile we attempted to create.
+        try {
+          await prisma.networkProfile.delete({ where: { hid } });
+        } catch {
+          // Non-fatal
+        }
+
+        return {
+          hid: winningLink.profile.hid,
+          status: 'existing',
+          profile: mapToNetworkProfile(winningLink.profile),
+        };
+      }
+    }
+
+    throw error;
   }
 
   return {
     hid,
-    status: mergeCandidates.length > 0 ? 'merged' : 'new',
+    status: 'new',
     profile: mapToNetworkProfile(newProfile),
     mergeCandidates: mergeCandidates.length > 0 ? mergeCandidates : undefined,
   };

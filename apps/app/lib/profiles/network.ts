@@ -12,6 +12,10 @@ export interface NetworkProfileData {
     noteId: string;
     loungeId: string;
     shareScope: 'lounge' | 'network';
+    noteText?: string;
+    staffId?: string | null;
+    tags?: any;
+    createdAt?: string;
   }>;
 }
 
@@ -147,6 +151,10 @@ export async function getNetworkProfile(
       noteId: n.noteId,
       loungeId: n.loungeId,
       shareScope: n.shareScope as 'lounge' | 'network',
+      noteText: n.noteText,
+      staffId: n.staffId || null,
+      tags: (n.tags as any) || undefined,
+      createdAt: n.createdAt?.toISOString?.() || undefined,
     })),
   };
 }

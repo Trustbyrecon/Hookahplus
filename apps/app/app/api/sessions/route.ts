@@ -35,6 +35,8 @@ import { mapSessionState } from '../../../lib/taxonomy/enums-v1';
 import { trackUnknown } from '../../../lib/taxonomy/unknown-tracker';
 import { convertPrismaSessionToFireSession } from '../../../lib/session-utils-prisma';
 import { withQueryTimeout, QUERY_TIMEOUTS } from '../../../lib/db-helpers';
+import { resolveHID } from '../../../lib/hid/resolver';
+import { syncSessionToNetwork } from '../../../lib/profiles/network';
 
 /**
  * Handle session settlement when closing
@@ -1399,6 +1401,55 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
         } catch (eventError) {
           // Log but don't fail the request if event creation fails
           console.error('[Sessions API] Failed to create analytics event:', eventError);
+        }
+
+        // Moat: best-effort HID resolution + network session sync (non-blocking)
+        // Never log raw PII here. HID itself is safe; phone/email are not.
+        if (!isDemoMode && (data.customerPhone || body?.customerEmail)) {
+          try {
+            const customerEmail =
+              body?.customerEmail && typeof body.customerEmail === 'string'
+                ? body.customerEmail.trim()
+                : undefined;
+
+            const hidResult = await resolveHID({
+              phone: data.customerPhone || undefined,
+              email: customerEmail || undefined,
+            });
+
+            if (hidResult?.hid) {
+              await syncSessionToNetwork(
+                newSession.id,
+                hidResult.hid,
+                finalLoungeId,
+                Array.isArray(data.flavorMix) ? data.flavorMix : undefined,
+                finalPriceCents || undefined,
+                data.externalRef || undefined
+              );
+
+              logger.info(
+                {
+                  component: 'network',
+                  action: 'sync_session',
+                  sessionId: newSession.id,
+                  loungeId: finalLoungeId,
+                  hidPrefix: String(hidResult.hid).slice(0, 8),
+                },
+                'Network session sync completed'
+              );
+            }
+          } catch (networkError) {
+            logger.warn(
+              {
+                component: 'network',
+                action: 'sync_session_failed',
+                sessionId: newSession.id,
+                loungeId: finalLoungeId,
+                error: networkError instanceof Error ? networkError.message : String(networkError),
+              },
+              'Network session sync failed (non-blocking)'
+            );
+          }
         }
         
         // In demo mode, update session to PAID_CONFIRMED state immediately
