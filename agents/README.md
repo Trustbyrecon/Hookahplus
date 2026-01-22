@@ -49,6 +49,126 @@ await Orchestrator.batchInject([
 ]);
 ```
 
+## 🧭 Operating Playbook (how we run the personas)
+
+This is the short, reusable “how we work” section for day-to-day execution. Use it to route ownership quickly, preserve invariants, and ensure every risky change ends with a new gate.
+
+### Default lane (golden path)
+
+Most changes should run the **default lane**:
+
+- **Astra.SessionOS (Accountable)**: defines contract + invariants (API/data model/failure modes/rollback plan)
+- **Lumen.Design (Consulted)**: designs operator rail + recovery states (empty/error/offline/sync-fail)
+- **Kestrel.QA (Accountable for gates)**: adds tests + CI rules (“golden path cannot break”)
+- **Atlas.Platform (Accountable for safety)**: adds observability (metrics/alerts/dashboards/SLO notes)
+
+Other personas join as **interrupt lanes** when triggered by the change.
+
+### Reusable flows (copy/paste style)
+
+#### Flow 1: New feature on the operator golden path
+
+Example: “Add customer notes to session close, still no PII leakage.”
+
+- **Astra.SessionOS**: contract/invariants; failure modes; rollback plan
+- **Lumen.Design**: screen states; recovery states; staff-visible behavior on sync failure
+- **Care.DPO**: data boundaries; logging rules; retention stance; export/delete implications; safe fields only
+- **Kestrel.QA**: unit tests + E2E; CI rule “golden path cannot break”
+- **Atlas.Platform**: metrics + alerts + dashboards; SLO notes
+- **Bridge.SupportOps**: support macros + runbooks (“If X happens, do Y”), escalation triggers
+- **Harbor.LoungeSuccess**: staff onboarding + pilot checklist updates
+
+#### Flow 2: Payments / webhook-like work (high risk, idempotency-first)
+
+Example: “Stripe webhook confirms payment, must link exactly one session.”
+
+- **Astra.SessionOS** owns the invariant mapping: “event replay never creates a second paid session”
+- **Kestrel.QA** pairs early: replay tests, retry storms, ordering variations
+- **Atlas.Platform** ensures production safety: alert on failure spikes, queue depth, retry rates
+- **Care.DPO** checks payload logging/storage minimization: no raw PII, no sensitive payload dumps
+
+This is where the HID resolver/idempotency pattern becomes the template.
+
+#### Flow 3: POS integration work (vendor risk lane)
+
+Example: “Clover adapter adds order import, must not antagonize vendor policies.”
+
+- **Anvil.Integrations**: adapter harness + replay protection
+- **Sentinel.POS**: vendor posture + risk constraints (policies/limits/terms)
+- **Astra.SessionOS**: invariant compatibility with the session engine
+- **Kestrel.QA**: contract tests for adapter inputs
+- **Atlas.Platform**: operational dashboards for adapter failures
+- **Bridge.SupportOps**: vendor-specific troubleshooting playbook
+
+#### Flow 4: Incident response (when something breaks in the wild)
+
+Trigger examples: missing HID trail, duplicate sessions, sync failure spike.
+
+- **Bridge.SupportOps** triages + classifies (P0 privacy, P0 money, P1 reliability, etc.)
+- **Atlas.Platform** stabilizes (mitigate/rollback/feature flag/rate limit/disable best-effort if harming)
+- **Astra.SessionOS** fixes root cause (patch/migration/reconciliation job/invariant guard)
+- **Care.DPO** involved if any data exposure or request risk
+- **Kestrel.QA** adds a test/gate that prevents reintroduction
+- **Harbor.LoungeSuccess** updates training so staff doesn’t trigger the failure mode
+
+Rule: **every incident ends with a new gate or invariant check**.
+
+### Daily loop (fastest pattern)
+
+- Pick the top 1–2 tasks.
+- Start with the **accountable** persona (usually **Astra**).
+- Produce a short “task card”:
+  - what changes / where in code / which invariant is at risk
+  - what tests must pass
+  - what metric must be added or checked
+- Pull in 1–2 consult personas only as needed.
+- End with **Kestrel** verifying gates and **Atlas** verifying observability if risk-heavy.
+
+### Weekly loop (moat pulse rhythm)
+
+- **Atlas.Platform**: reliability + drift report
+- **EchoPrime.Insights**: usage + retention signals
+- **Harbor.LoungeSuccess**: pilot friction report
+- **Astra.SessionOS**: converts signals into next-week engineering priorities
+- **Lumen.Design**: ensures the rail stays clean as features stack
+
+### “Which agent first?” (routing rule)
+
+- Touches sessions, HID, payments, network sync: **start with Astra**
+- Touches UI/staff flow: **start with Lumen**, loop Astra in immediately
+- Touches CI/tests/release risk: **start with Kestrel**
+- Touches alerts/env/SLOs/deploy: **start with Atlas**
+- Touches vendor adapters: **start with Anvil**, consult Sentinel
+- Touches data handling/logging/exports: **start with Care.DPO**
+- Touches onboarding/pilots: **start with Harbor**
+- Touches support process: **start with Bridge**
+- Touches analytics correctness: **start with EchoPrime.Insights**
+- Touches messaging/launch/training content: **start with EchoPrime.BrandLoop**
+
+### One-page workflow diagram (default + interrupts)
+
+```mermaid
+flowchart LR
+  A[Astra.SessionOS<br/>Contract + invariants] --> L[Lumen.Design<br/>Operator rail + recovery]
+  L --> K[Kestrel.QA<br/>Tests + CI gates]
+  K --> P[Atlas.Platform<br/>Metrics + alerts + SLO notes]
+
+  %% Interrupt lanes
+  A -. data boundaries / logging / retention .-> D[Care.DPO<br/>Privacy + compliance]
+  A -. vendor posture / policy risk .-> S[Sentinel.POS<br/>Vendor risk constraints]
+  A -. adapters / replay harness .-> N[Anvil.Integrations<br/>Adapter harness + idempotency]
+
+  %% Incident lane
+  B[Bridge.SupportOps<br/>Triage + runbooks] -. incident triggers .-> P
+  B -. classify + escalate .-> A
+  A -. root cause patch/reconcile .-> K
+  B -. training update .-> H[Harbor.LoungeSuccess<br/>Onboarding + pilot scripts]
+
+  %% Growth/insights loop
+  I[EchoPrime.Insights<br/>Usage + retention signals] -. weekly pulse .-> A
+  R[EchoPrime.BrandLoop<br/>Messaging + launch content] -. enablement .-> H
+```
+
 ## 📁 Project Structure
 
 ```
