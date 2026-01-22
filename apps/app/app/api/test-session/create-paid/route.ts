@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/db';
-import { SessionState, SessionSource } from '@prisma/client';
+import type { SessionSource, SessionState } from '@prisma/client';
 import crypto from 'crypto';
 
 const seal = (o: unknown) =>
@@ -38,7 +38,8 @@ export async function POST(req: NextRequest) {
     // Generate trust signature
     const trustSignature = seal({
       loungeId: 'test-lounge',
-      source: SessionSource.QR,
+      // Avoid runtime enum access in case prisma enums are not present in this build.
+      source: 'QR',
       externalRef,
       customerPhone: null,
       flavorMix,
@@ -51,8 +52,9 @@ export async function POST(req: NextRequest) {
       const createData: any = {
         id: sessionId,
         externalRef,
-        source: SessionSource.QR,
-        state: SessionState.PENDING, // Will show as PAID_CONFIRMED in UI
+        // Avoid runtime enum access (SessionSource/SessionState can be undefined if prisma client differs)
+        source: 'QR' as SessionSource,
+        state: 'PENDING' as SessionState, // Will show as PAID_CONFIRMED in UI
         trustSignature,
         tableId,
         customerRef: customerName,
@@ -70,6 +72,40 @@ export async function POST(req: NextRequest) {
         data: createData
       });
     } catch (createError: any) {
+      const createErrorMessage = createError instanceof Error ? createError.message : String(createError);
+      const isDbConnectionError =
+        createErrorMessage.includes("Can't reach database") ||
+        createErrorMessage.toLowerCase().includes('connection') ||
+        createErrorMessage.includes('the URL must start with the protocol') ||
+        createError?.code === 'P1001' ||
+        createError?.code === 'P1012' ||
+        createError?.name === 'PrismaClientInitializationError';
+
+      const isDevelopment = process.env.NODE_ENV === 'development';
+      const allowFallback = isDevelopment || process.env.ALLOW_DB_FALLBACK === 'true';
+
+      // Graceful fallback: if DB isn't available, return a non-persistent "paid" test session
+      // so the UI can still run the Night After Night workflow demo.
+      if (isDbConnectionError && allowFallback) {
+        console.warn('[Test Session] Database unavailable - returning ephemeral paid test session (fallback mode)');
+        return NextResponse.json({
+          success: true,
+          fallbackMode: true,
+          ephemeral: true,
+          session: {
+            id: sessionId,
+            tableId,
+            customerName,
+            status: 'PAID_CONFIRMED',
+            paymentStatus: 'succeeded',
+            externalRef,
+            amount: amountCents,
+            flavorMix: Array.isArray(flavorMix) ? JSON.stringify(flavorMix) : String(flavorMix || '[]'),
+          },
+          message: 'Database unavailable. Created an ephemeral paid test session for workflow testing (will not persist).',
+        }, { status: 200 });
+      }
+
       // If creation fails due to missing columns, use raw SQL fallback
       if (createError?.code === 'P2022' || createError?.message?.includes('does not exist')) {
         console.warn('[Test Session] Column missing, using raw SQL fallback:', createError?.message);
@@ -93,7 +129,7 @@ export async function POST(req: NextRequest) {
           ) VALUES (
             ${escapeSql(sessionId)},
             ${escapeSql(externalRef)},
-            ${escapeSql(SessionSource.QR)},
+            ${escapeSql('QR')},
             ${escapeSql('PENDING')},
             ${escapeSql(trustSignature)},
             ${escapeSql(tableId)},

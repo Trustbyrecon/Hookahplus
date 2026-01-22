@@ -28,7 +28,22 @@ const globalForPrisma = global as unknown as { prisma?: PrismaClient };
 // - Connection pool settings are controlled via DATABASE_URL (?connection_limit=30&pool_timeout=10)
 // - Prisma automatically uses these settings from the connection string
 // - Add query_timeout to prevent long-running queries from hanging
-const databaseUrl = process.env.DATABASE_URL || '';
+let databaseUrl = process.env.DATABASE_URL || '';
+
+// Local dev hardening:
+// If DATABASE_URL is set to a bare sqlite path (e.g. "./prisma/dev.db"), Prisma will throw
+// "the URL must start with the protocol `file:`". Auto-prefix it to keep dev unblocked.
+// This is safe because it only applies when the URL has no protocol at all.
+if (process.env.NODE_ENV !== 'production') {
+  const trimmed = databaseUrl.trim();
+  const hasProtocol = trimmed.includes('://') || trimmed.startsWith('file:');
+  if (trimmed && !hasProtocol) {
+    databaseUrl = `file:${trimmed}`;
+    process.env.DATABASE_URL = databaseUrl;
+    console.warn('[db.ts] ⚠️ DATABASE_URL had no protocol; auto-prefixed with file: for local dev');
+  }
+}
+
 const hasQueryTimeout = databaseUrl.includes('query_timeout');
 const finalDatabaseUrl = hasQueryTimeout 
   ? databaseUrl 

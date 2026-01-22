@@ -1474,6 +1474,71 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
       }
       
       // Return appropriate error response
+      const createErrorMessage = createError instanceof Error ? createError.message : String(createError);
+      const isDbConnectionError =
+        createErrorMessage.includes("Can't reach database") ||
+        createErrorMessage.toLowerCase().includes('connection') ||
+        createErrorMessage.includes('the URL must start with the protocol') ||
+        createError?.code === 'P1001' ||
+        createError?.code === 'P1012' ||
+        createError?.name === 'PrismaClientInitializationError';
+
+      const isDevelopment = process.env.NODE_ENV === 'development';
+      const allowFallback = isDevelopment || process.env.ALLOW_DB_FALLBACK === 'true';
+
+      // Graceful fallback: allow creating an ephemeral session when DB is unavailable
+      // This keeps onboarding/testing unblocked (session will not persist).
+      if (isDbConnectionError && allowFallback) {
+        console.warn('[Sessions API] Database unavailable - returning ephemeral session (fallback mode)');
+
+        const priceCentsFallback = data.amount
+          ? (data.amount < 100 ? Math.round(data.amount * 100) : Math.round(data.amount))
+          : 3000;
+
+        const fallbackSession: FireSession = {
+          id: sessionId,
+          tableId: data.tableId,
+          customerName: data.customerName,
+          customerPhone: data.customerPhone || '',
+          flavor: (data.flavorMix && data.flavorMix.length > 0 ? data.flavorMix.join(' + ') : 'Custom Mix') as any,
+          amount: priceCentsFallback,
+          status: 'PAID_CONFIRMED' as any,
+          state: 'PENDING' as any,
+          paymentStatus: 'succeeded' as any,
+          externalRef: data.externalRef || `fallback_${sessionId}`,
+          currentStage: 'BOH' as any,
+          assignedStaff: { boh: data.assignedBoh || undefined, foh: data.assignedFoh || undefined } as any,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          sessionStartTime: undefined,
+          sessionDuration: data.sessionDuration || 45 * 60,
+          coalStatus: 'active' as any,
+          refillStatus: 'none' as any,
+          notes: data.notes || 'Ephemeral session (DB not configured)',
+          edgeCase: null,
+          bohState: 'PREPARING' as any,
+          guestTimerDisplay: false,
+        };
+
+        return NextResponse.json(
+          {
+            success: true,
+            fallbackMode: true,
+            ephemeral: true,
+            id: fallbackSession.id,
+            sessionId: fallbackSession.id,
+            session: fallbackSession,
+            message: 'Database unavailable. Created an ephemeral session for testing (will not persist).',
+            nextActions: ['CLAIM_PREP', 'PUT_ON_HOLD'],
+            businessLogic: 'Ephemeral session created so you can keep testing without database setup.'
+          },
+          {
+            status: 200,
+            headers: getCorsHeaders(req),
+          }
+        );
+      }
+
       return NextResponse.json({
         error: 'Failed to create session',
         details: createError?.message || 'Unknown error',

@@ -339,7 +339,18 @@ function FireSessionDashboardContent() {
       }
 
       console.log('[Create Session] Success:', responseData);
-      await refreshSessions(); // Refresh live data
+      
+      // If DB fallback mode is active, sessions won't persist via GET /api/sessions.
+      // Inject the returned session into the in-memory dashboard so the user can keep testing.
+      if (responseData?.fallbackMode && responseData?.session) {
+        try {
+          window.dispatchEvent(new CustomEvent('hp:addDemoSession', { detail: { session: responseData.session } }));
+        } catch (e) {
+          // non-blocking
+        }
+      }
+
+      await refreshSessions(); // Refresh live data (may be empty in fallback mode)
       
       // Return session ID for payment checkout
       return responseData.session?.id || responseData.id;

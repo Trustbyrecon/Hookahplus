@@ -74,6 +74,7 @@ export async function middleware(request: NextRequest) {
     '/api/health/live',
     '/api/health/ready',
     '/api/sessions', // QR code access (POST only)
+    '/api/preorders', // Pre-order flow must be public (QR + E2E)
     '/api/checkout-session',
     '/api/webhooks',
     '/api/tenants', // Allow tenant creation during signup

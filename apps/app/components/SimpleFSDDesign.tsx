@@ -1328,6 +1328,13 @@ export default function SimpleFSDDesign({
           <button
             onClick={async () => {
               try {
+                const toDisplayTableId = (id: string) => {
+                  const m = id?.toLowerCase().match(/^table-0*(\d{1,4})$/);
+                  if (!m) return id;
+                  const pad = String(parseInt(m[1], 10)).padStart(3, '0');
+                  return `T-${pad}`;
+                };
+
                 const response = await fetch('/api/test-session/create-paid', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
@@ -1341,6 +1348,43 @@ export default function SimpleFSDDesign({
                 
                 const result = await response.json();
                 if (result.success) {
+                  // If this is a fallback/ephemeral response, inject it into the in-memory dashboard
+                  // so it shows up immediately even when GET /api/sessions returns empty fallbackMode.
+                  if (result?.fallbackMode && result?.session?.id) {
+                    try {
+                      window.dispatchEvent(new CustomEvent('hp:addDemoSession', {
+                        detail: {
+                          session: {
+                            id: result.session.id,
+                            tableId: toDisplayTableId(result.session.tableId || 'table-001'),
+                            customerName: result.session.customerName || 'Test Customer',
+                            customerPhone: '',
+                            flavor: 'Mint + Grape',
+                            amount: result.session.amount || 3000,
+                            status: 'PAID_CONFIRMED',
+                            state: 'PENDING',
+                            paymentStatus: 'succeeded',
+                            externalRef: result.session.externalRef || `test_cs_${result.session.id}`,
+                            currentStage: 'BOH',
+                            assignedStaff: { boh: undefined, foh: undefined },
+                            createdAt: Date.now(),
+                            updatedAt: Date.now(),
+                            sessionStartTime: undefined,
+                            sessionDuration: 45 * 60,
+                            coalStatus: 'active',
+                            refillStatus: 'none',
+                            notes: 'Ephemeral paid test session (DB not configured)',
+                            edgeCase: null,
+                            bohState: 'PREPARING',
+                            guestTimerDisplay: false
+                          }
+                        }
+                      }));
+                    } catch (e) {
+                      // non-blocking
+                    }
+                  }
+
                   alert(`✅ Test session created!\n\nSession ID: ${result.session.id}\nTable: ${result.session.tableId}\nStatus: ${result.session.status}\n\nRefresh to see it in the dashboard.`);
                   if (refreshSessions) {
                     await refreshSessions();

@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/db';
 import { createGhostLogEntry } from '../../../lib/ghost-log';
 import { v4 as uuidv4 } from 'uuid';
-
-const prisma = new PrismaClient();
 
 /**
  * POST /api/preorders
@@ -157,7 +155,13 @@ export async function POST(req: NextRequest) {
 
   } catch (error) {
     console.error('Error creating preorder:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: 'Internal server error',
+        details: process.env.NODE_ENV === 'development' && error instanceof Error ? error.message : undefined
+      },
+      { status: 500 }
+    );
   }
 }
 

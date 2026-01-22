@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { logSessionEvent } from '@/lib/session-events';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/db';
 
 /**
  * POST /api/sessions/[id]/startTimer
