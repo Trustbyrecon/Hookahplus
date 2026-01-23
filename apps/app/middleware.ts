@@ -41,30 +41,33 @@ export async function middleware(request: NextRequest) {
   // Add request ID to response headers for client correlation
   response.headers.set('X-Request-ID', requestId);
 
-  // Create Supabase client for middleware
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            request.cookies.set(name, value);
-            response.cookies.set(name, value, options);
-          });
-        },
-      },
-    }
-  );
-
-  // Get current user
-  const { data: { user }, error } = await supabase.auth.getUser();
-
   // Check if First Light mode is enabled (bypasses auth for core routes)
   const firstLightMode = process.env.FIRST_LIGHT_MODE === 'true';
+
+  // Supabase env can be intentionally absent in CI/dev harnesses; fail-open so the app can boot.
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const hasSupabaseEnv = !!supabaseUrl && !!supabaseAnonKey;
+
+  // Create Supabase client for middleware (only when configured)
+  const supabase = hasSupabaseEnv
+    ? createServerClient(supabaseUrl, supabaseAnonKey, {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              request.cookies.set(name, value);
+              response.cookies.set(name, value, options);
+            });
+          },
+        },
+      })
+    : null;
+
+  // Get current user (best-effort)
+  const { data: { user } } = supabase ? await supabase.auth.getUser() : { data: { user: null } };
   
   // Public routes that don't require authentication
   const publicRoutes = [
