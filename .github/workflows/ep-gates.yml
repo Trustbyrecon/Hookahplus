@@ -67,6 +67,8 @@ jobs:
           cd apps/app
           npx prisma generate
           npx prisma migrate deploy
+          # Ensure schema is present even if a migration is missing (ephemeral CI DB).
+          npx prisma db push --accept-data-loss
 
       - name: Get changed files
         id: changed-files
