@@ -89,8 +89,11 @@ function generateHID(params: { phone?: string; email?: string; qrToken?: string;
  */
 export async function resolveHID(input: HIDResolveInput): Promise<HIDResolveResult> {
   const { phone, email, qrToken, deviceId } = input;
-  const normalizedPhone = phone ? normalizePhone(phone) : undefined;
-  const normalizedEmail = email ? normalizeEmail(email) : undefined;
+  // Coerce empty strings to undefined so downstream logic doesn't produce `"" | ...` unions.
+  const normalizedPhone = phone ? normalizePhone(phone) || undefined : undefined;
+  const normalizedEmail = email ? normalizeEmail(email) || undefined : undefined;
+  const normalizedQrToken = qrToken ? String(qrToken).trim() || undefined : undefined;
+  const normalizedDeviceId = deviceId ? String(deviceId).trim() || undefined : undefined;
 
   // Step 1: Try to find existing profile by phone/email hash
   let existingProfile = null;
@@ -209,7 +212,12 @@ export async function resolveHID(input: HIDResolveInput): Promise<HIDResolveResu
   const mergeCandidates = await findMergeCandidates(phone, email, deviceId);
 
   // Step 4: Create new profile
-  hid = generateHID({ phone: normalizedPhone, email: normalizedEmail, qrToken, deviceId });
+  hid = generateHID({
+    phone: normalizedPhone,
+    email: normalizedEmail,
+    qrToken: normalizedQrToken,
+    deviceId: normalizedDeviceId,
+  });
 
   // Check if HID already exists (collision handling)
   const existingHID = await prisma.networkProfile.findUnique({
@@ -240,8 +248,8 @@ export async function resolveHID(input: HIDResolveInput): Promise<HIDResolveResu
     const linksToCreate: Array<{ piiType: string; piiHash: string }> = [];
     if (normalizedPhone) linksToCreate.push({ piiType: 'phone', piiHash: hashPII(normalizedPhone) });
     if (normalizedEmail) linksToCreate.push({ piiType: 'email', piiHash: hashPII(normalizedEmail) });
-    if (qrToken) linksToCreate.push({ piiType: 'qr_token', piiHash: hashPII(String(qrToken).trim()) });
-    if (deviceId) linksToCreate.push({ piiType: 'device_id', piiHash: hashPII(String(deviceId).trim()) });
+    if (normalizedQrToken) linksToCreate.push({ piiType: 'qr_token', piiHash: hashPII(normalizedQrToken) });
+    if (normalizedDeviceId) linksToCreate.push({ piiType: 'device_id', piiHash: hashPII(normalizedDeviceId) });
 
     for (const link of linksToCreate) {
       await prisma.networkPIILink.create({
@@ -260,27 +268,33 @@ export async function resolveHID(input: HIDResolveInput): Promise<HIDResolveResu
       (typeof error?.message === 'string' && error.message.toLowerCase().includes('unique'));
 
     if (isUniqueViolation) {
+      // Avoid `a && b` here: TS correctly models that it can return `""` (falsy string),
+      // which then pollutes the inferred type and breaks `.profile` access.
       const winningLink =
-        (normalizedPhone &&
-          (await prisma.networkPIILink.findUnique({
-            where: { piiType_piiHash: { piiType: 'phone', piiHash: hashPII(normalizedPhone) } },
-            include: { profile: { include: { preferences: true, badges: true } } },
-          }))) ||
-        (normalizedEmail &&
-          (await prisma.networkPIILink.findUnique({
-            where: { piiType_piiHash: { piiType: 'email', piiHash: hashPII(normalizedEmail) } },
-            include: { profile: { include: { preferences: true, badges: true } } },
-          }))) ||
-        (qrToken &&
-          (await prisma.networkPIILink.findUnique({
-            where: { piiType_piiHash: { piiType: 'qr_token', piiHash: hashPII(String(qrToken).trim()) } },
-            include: { profile: { include: { preferences: true, badges: true } } },
-          }))) ||
-        (deviceId &&
-          (await prisma.networkPIILink.findUnique({
-            where: { piiType_piiHash: { piiType: 'device_id', piiHash: hashPII(String(deviceId).trim()) } },
-            include: { profile: { include: { preferences: true, badges: true } } },
-          })));
+        (normalizedPhone
+          ? await prisma.networkPIILink.findUnique({
+              where: { piiType_piiHash: { piiType: 'phone', piiHash: hashPII(normalizedPhone) } },
+              include: { profile: { include: { preferences: true, badges: true } } },
+            })
+          : null) ||
+        (normalizedEmail
+          ? await prisma.networkPIILink.findUnique({
+              where: { piiType_piiHash: { piiType: 'email', piiHash: hashPII(normalizedEmail) } },
+              include: { profile: { include: { preferences: true, badges: true } } },
+            })
+          : null) ||
+        (normalizedQrToken
+          ? await prisma.networkPIILink.findUnique({
+              where: { piiType_piiHash: { piiType: 'qr_token', piiHash: hashPII(normalizedQrToken) } },
+              include: { profile: { include: { preferences: true, badges: true } } },
+            })
+          : null) ||
+        (normalizedDeviceId
+          ? await prisma.networkPIILink.findUnique({
+              where: { piiType_piiHash: { piiType: 'device_id', piiHash: hashPII(normalizedDeviceId) } },
+              include: { profile: { include: { preferences: true, badges: true } } },
+            })
+          : null);
 
       if (winningLink?.profile?.hid) {
         // Cleanup the orphaned profile we attempted to create.
