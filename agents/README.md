@@ -78,6 +78,8 @@ Example: “Add customer notes to session close, still no PII leakage.”
 - **Bridge.SupportOps**: support macros + runbooks (“If X happens, do Y”), escalation triggers
 - **Harbor.LoungeSuccess**: staff onboarding + pilot checklist updates
 
+Playbook (copy/paste task card + DoD): `agents/flows/FLOW_1_OPERATOR_GOLDEN_PATH.md`
+
 #### Flow 2: Payments / webhook-like work (high risk, idempotency-first)
 
 Example: “Stripe webhook confirms payment, must link exactly one session.”

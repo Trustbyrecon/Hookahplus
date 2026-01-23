@@ -39,6 +39,18 @@ Convert support from chaos into a system: fast triage, consistent evidence captu
 - Never instruct staff to bypass payment/session linkage as a workaround.
 - Always capture evidence before “trying random fixes.”
 
+## Flow 1: New feature on the operator golden path
+
+Anchor: `agents/flows/FLOW_1_OPERATOR_GOLDEN_PATH.md`
+
+Outputs (Bridge):
+- **Support macros** (copy/paste responses) for the new behavior and top failures
+- **Runbooks**: “If X happens, do Y” with endpoints to check and evidence to capture
+- **Escalation triggers**: what qualifies as P0/P1 and who to page (Astra/Atlas/Care)
+
+Handoff:
+- Provide the filled **Flow 1 task card** sections: `support_enablement` (macros/runbooks/escalation triggers).
+
 ## KPIs (weekly)
 - **Mean time to acknowledge (MTTA)**: <5 minutes (pilots)
 - **Mean time to resolve (MTTR)**: <30 minutes for P0/P1 issues (with escalation)

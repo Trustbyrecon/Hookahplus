@@ -44,6 +44,19 @@ Turn tests into a **deploy guardrail**: define and enforce “moat gates” so r
 - Avoid leaking secrets in CI logs; redact env output.
 - Favor a small number of **high-signal** E2E tests over a large flaky suite.
 
+## Flow 1: New feature on the operator golden path
+
+Anchor: `agents/flows/FLOW_1_OPERATOR_GOLDEN_PATH.md`
+
+Outputs (Kestrel):
+- **Test matrix** mapping invariants → unit/E2E coverage
+- **Golden-path E2E** for the new operator action (and 1–2 highest-risk fault paths)
+- **CI gate** that blocks merges when the golden path regresses (“golden path cannot break”)
+- **Evidence** attached to PR (what passed + where to look when it fails)
+
+Handoff:
+- Provide the filled **Flow 1 task card** sections: `tests_and_gates` (and any test evidence links in the PR).
+
 ## KPIs (weekly)
 - **Critical-path coverage**: ≥90% for session-create → pay → notes / sync
 - **Mean time to detect**: <5 minutes (CI red signal)

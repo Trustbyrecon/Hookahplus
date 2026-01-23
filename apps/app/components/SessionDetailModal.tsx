@@ -12,6 +12,7 @@ import { FireSession, SessionAction, SessionStatus, UserRole } from '../types/en
 import { calculateSingleSessionTrustScore, getTrustScoreColor } from '../lib/trustScoring';
 import { formatDuration, isValidTransition, canPerformAction } from '../lib/sessionStateMachine';
 import { ACTION_TO_STATUS } from '../types/enhancedSession';
+import CloseSessionModal from './CloseSessionModal';
 
 interface SessionDetailModalProps {
   session: FireSession | null;
@@ -33,6 +34,7 @@ const SessionDetailModal: React.FC<SessionDetailModalProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [isExecutingAction, setIsExecutingAction] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showCloseModal, setShowCloseModal] = useState(false);
 
   useEffect(() => {
     if (session) {
@@ -144,6 +146,12 @@ const SessionDetailModal: React.FC<SessionDetailModalProps> = ({
 
   const handleSessionAction = async (action: SessionAction) => {
     if (!session || isExecutingAction) return;
+
+    // Close session is special: optional staff note capture, non-blocking
+    if (action === 'CLOSE_SESSION') {
+      setShowCloseModal(true);
+      return;
+    }
 
     setIsExecutingAction(true);
     try {
@@ -585,6 +593,15 @@ const SessionDetailModal: React.FC<SessionDetailModalProps> = ({
         tableId={session.tableId}
         onReport={handleReportEdgeCase}
         userRole={userRole}
+      />
+
+      <CloseSessionModal
+        isOpen={showCloseModal}
+        onClose={() => setShowCloseModal(false)}
+        sessionId={session.id}
+        userRole={userRole}
+        operatorId={`user-${userRole?.toLowerCase() || 'manager'}`}
+        refreshSessions={refreshSessions}
       />
     </div>
   );

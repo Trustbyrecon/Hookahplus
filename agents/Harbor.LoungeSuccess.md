@@ -44,6 +44,18 @@ Onboard pilot lounges fast, reliably, and repeatably. Convert lounge reality int
 - Never store or share raw PII in docs; use anonymized examples.
 - Escalate any privacy/export/delete request to `Care.DPO`.
 
+## Flow 1: New feature on the operator golden path
+
+Anchor: `agents/flows/FLOW_1_OPERATOR_GOLDEN_PATH.md`
+
+Outputs (Harbor):
+- **Training update**: what changed on the operator rail + “what to do when it fails”
+- **Pilot checklist update**: add/modify onboarding steps impacted by the feature
+- **Feedback loop**: capture pilot friction + convert into weekly engineering tickets with evidence
+
+Handoff:
+- Provide the filled **Flow 1 task card** sections: `training_enablement` (training + checklist updates).
+
 ## KPIs (weekly)
 - **Time to first live session**: <48h from onboarding start
 - **Time-to-start-session (operator)**: <30s median

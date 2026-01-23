@@ -3,6 +3,7 @@ import { createGhostLogEntry } from '../../../../lib/ghost-log';
 import { prisma } from '../../../../lib/prisma';
 import { resolveHID } from '../../../../lib/hid/resolver';
 import { syncNoteToNetwork } from '../../../../lib/profiles/network';
+import { validateStaffNote } from '../../../../lib/staff-note-validation';
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,6 +27,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Note is required' }, { status: 400 });
     }
 
+    // Validate note content (defense-in-depth). Never log note content.
+    const noteValidation = validateStaffNote(note);
+    if (!noteValidation.ok) {
+      const message =
+        noteValidation.reason === 'too_long'
+          ? 'Note is too long'
+          : noteValidation.reason === 'pii_detected'
+          ? 'Note appears to contain PII (email/phone). Remove it and try again.'
+          : 'Note is required';
+      return NextResponse.json(
+        { error: message, code: noteValidation.reason },
+        { status: 400 }
+      );
+    }
+
     // Validate share_scope
     if (share_scope !== 'lounge' && share_scope !== 'network') {
       return NextResponse.json({ error: 'share_scope must be "lounge" or "network"' }, { status: 400 });
@@ -47,10 +63,10 @@ export async function POST(req: NextRequest) {
       kind: 'session.note.created',
       note_id: sessionNote.id,
       session_id,
-      note,
       visibility,
       share_scope,
       created_by,
+      note_len: typeof note === 'string' ? note.trim().length : undefined,
       timestamp: sessionNote.createdAt.toISOString()
     });
 

@@ -14,6 +14,19 @@ Own privacy/export/delete flows.
 - Verify identity
 - Retain audit skeleton; redact PII
 
+## Flow 1: New feature on the operator golden path
+
+Anchor: `agents/flows/FLOW_1_OPERATOR_GOLDEN_PATH.md`
+
+Outputs (Care.DPO):
+- **Data boundaries**: what fields are allowed (safe-by-default) vs disallowed (PII/sensitive)
+- **Logging rules**: explicit “never log” list + approved safe identifiers
+- **Retention stance**: how long the new data lives and where (session vs profile vs network)
+- **Export/delete implications**: whether the new field is included in export and what delete/erasure means
+
+Handoff:
+- Provide the filled **Flow 1 task card** sections: `data_classification` and `logging_rules`.
+
 ## Implementation Status
 - ✅ Basic export functionality in BehavioralMemoryStaffPanel
 - ❌ Export token system

@@ -40,6 +40,19 @@ Own the **Session OS** golden path end-to-end: session creation, pricing, paymen
 - Never introduce a flow that can create duplicate orders/sessions under retries.
 - Any schema changes require a rollback plan and a verification query.
 
+## Flow 1: New feature on the operator golden path
+
+Anchor: `agents/flows/FLOW_1_OPERATOR_GOLDEN_PATH.md`
+
+Outputs (Astra):
+- **Contract/invariants**: what must remain true (including idempotency + “no duplicates” rules)
+- **API + data shape**: request/response, storage location, length bounds, safe identifiers
+- **Failure modes**: how the system behaves under retries, partial writes, sync failure, DB issues
+- **Rollback plan**: flag strategy + migration rollback (if any) + verification query
+
+Handoff:
+- Provide the filled **Flow 1 task card** sections: `invariants`, `failure_modes`, `rollback_plan`, and any `db`/`api` entries.
+
 ## KPIs (weekly)
 - **Payment failures**: <0.5% of attempts
 - **Duplicate orders/sessions**: 0 (across retries/replays)

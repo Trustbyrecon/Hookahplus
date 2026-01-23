@@ -58,6 +58,7 @@ import SessionDetailModal from './SessionDetailModal';
 import GuestIntelligenceModal from './GuestIntelligenceModal';
 import ResolveEdgeCaseModal from './ResolveEdgeCaseModal';
 import SessionExtensionModal from './SessionExtensionModal';
+import CloseSessionModal from './CloseSessionModal';
 
 interface SimpleFSDDesignProps {
   sessions?: any[];
@@ -178,6 +179,8 @@ export default function SimpleFSDDesign({
     currentDuration: number;
     remainingTime: number;
   } | null>(null);
+  const [showCloseModal, setShowCloseModal] = useState(false);
+  const [closeSessionId, setCloseSessionId] = useState<string>('');
   
   // Fix hydration mismatch - only render counts after mount
   useEffect(() => {
@@ -373,6 +376,13 @@ export default function SimpleFSDDesign({
       };
 
       const mappedAction = actionMap[action.toLowerCase()] || action.toUpperCase();
+
+      // Close session is special: optional staff note capture, non-blocking
+      if (mappedAction === 'CLOSE_SESSION') {
+        setCloseSessionId(sessionId);
+        setShowCloseModal(true);
+        return;
+      }
       
       // Use PATCH endpoint at /api/sessions
       const response = await fetch(`/api/sessions`, {
@@ -1941,6 +1951,18 @@ export default function SimpleFSDDesign({
           }}
         />
       )}
+
+      <CloseSessionModal
+        isOpen={showCloseModal}
+        onClose={() => {
+          setShowCloseModal(false);
+          setCloseSessionId('');
+        }}
+        sessionId={closeSessionId}
+        userRole={userRole}
+        operatorId={`user-${userRole?.toLowerCase() || 'manager'}`}
+        refreshSessions={refreshSessions}
+      />
     </div>
   );
 }

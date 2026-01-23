@@ -43,6 +43,19 @@ Make the **Operator golden path** inevitable under pressure: session start → m
 - Never “hide” drift: if sync is best-effort, the operator must see a simple status and a recovery path.
 - Prefer progressive disclosure; show only what’s needed at each step.
 
+## Flow 1: New feature on the operator golden path
+
+Anchor: `agents/flows/FLOW_1_OPERATOR_GOLDEN_PATH.md`
+
+Outputs (Lumen):
+- **Rail spec**: the minimal-branching operator steps, with “cannot proceed unless…” rules
+- **Screen states**: empty/loading/success/error + offline/sync-fail variants
+- **Recovery states**: operator-facing message + primary/secondary CTAs for each failure mode
+- **Staff-visible sync behavior**: what staff sees when best-effort sync is pending/failed (no silent drift)
+
+Handoff:
+- Provide the filled **Flow 1 task card** sections: `surfaces.ui`, `failure_modes` (operator copy/CTAs), and any `flags` UX implications.
+
 ## KPIs (weekly)
 - **Task success rate**: >95% on 5 pilot tasks
 - **Time-to-start-session**: <30s median

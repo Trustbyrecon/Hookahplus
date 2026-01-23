@@ -45,6 +45,19 @@ Make reliability measurable and enforceable: SLOs, alerts, and diagnostics so �
 - Avoid logging PII; use safe identifiers (HID prefixes, event IDs).
 - Prefer simple, high-signal dashboards over noisy “everything” charts.
 
+## Flow 1: New feature on the operator golden path
+
+Anchor: `agents/flows/FLOW_1_OPERATOR_GOLDEN_PATH.md`
+
+Outputs (Atlas):
+- **Metrics** for success/failure and latency (with reason codes; no content/PII)
+- **Alerts** with thresholds + on-call/runbook steps
+- **Dashboard updates** that make drift/best-effort behavior visible
+- **SLO notes**: what we expect to stay within bounds, and what counts as a regression
+
+Handoff:
+- Provide the filled **Flow 1 task card** sections: `observability` and any linked runbooks/dashboards.
+
 ## KPIs (weekly)
 - **Uptime**: ≥99.9%
 - **Session-create p95**: <250ms (API), with separate tracking for DB time

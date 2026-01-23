@@ -46,6 +46,19 @@ This agent complements (not replaces) `agents/Care.DPO.md`, which focuses on pri
 - Any feature that expands collection requires explicit justification and minimization.
 - Prefer hashing + salted identifiers over storing raw contact fields.
 
+## Flow 1 support: operator golden path features
+
+Anchor: `agents/flows/FLOW_1_OPERATOR_GOLDEN_PATH.md`
+
+When to join Flow 1:
+- the feature adds/changes **what staff can enter** (notes, preferences, contact fields)
+- the feature changes **logging/telemetry** volume or shape
+- the feature changes **consent** or any network-shared behavior
+
+Outputs (Care.DPO.Compliance):
+- **PII handling contract** addendum (what must never be collected/logged)
+- **Incident evidence hygiene** (what evidence to capture without storing sensitive content)
+
 ## KPIs (weekly)
 - **Pilot compliance readiness**: 100% checklist completion before go-live
 - **PII incidents**: 0 (log leakage, accidental exposure)
