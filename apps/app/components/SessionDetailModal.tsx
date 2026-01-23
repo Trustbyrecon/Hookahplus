@@ -13,6 +13,7 @@ import { calculateSingleSessionTrustScore, getTrustScoreColor } from '../lib/tru
 import { formatDuration, isValidTransition, canPerformAction } from '../lib/sessionStateMachine';
 import { ACTION_TO_STATUS } from '../types/enhancedSession';
 import CloseSessionModal from './CloseSessionModal';
+import { getFeatureFlags } from '../lib/feature-flags';
 
 interface SessionDetailModalProps {
   session: FireSession | null;
@@ -35,12 +36,20 @@ const SessionDetailModal: React.FC<SessionDetailModalProps> = ({
   const [isExecutingAction, setIsExecutingAction] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showCloseModal, setShowCloseModal] = useState(false);
+  const [enableCloseNoteModal, setEnableCloseNoteModal] = useState(false);
 
   useEffect(() => {
     if (session) {
       setEditedNotes(session.notes || '');
     }
   }, [session]);
+
+  // Load pilot flags after mount (avoid SSR/hydration mismatches)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setEnableCloseNoteModal(getFeatureFlags().enableCloseNoteModal);
+    }
+  }, []);
 
   if (!isOpen || !session) return null;
 
@@ -148,7 +157,7 @@ const SessionDetailModal: React.FC<SessionDetailModalProps> = ({
     if (!session || isExecutingAction) return;
 
     // Close session is special: optional staff note capture, non-blocking
-    if (action === 'CLOSE_SESSION') {
+    if (action === 'CLOSE_SESSION' && enableCloseNoteModal) {
       setShowCloseModal(true);
       return;
     }
