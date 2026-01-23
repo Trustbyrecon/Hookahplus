@@ -153,6 +153,7 @@ export default function SimpleFSDDesign({
     showFirstLightFocusToggle: false,
     showAlphaStabilityBanners: false,
     showFlywheelBanner: false,
+    enableCloseNoteModal: false,
   });
   
   // Load feature flags after mount to avoid hydration issues
@@ -378,7 +379,7 @@ export default function SimpleFSDDesign({
       const mappedAction = actionMap[action.toLowerCase()] || action.toUpperCase();
 
       // Close session is special: optional staff note capture, non-blocking
-      if (mappedAction === 'CLOSE_SESSION') {
+      if (mappedAction === 'CLOSE_SESSION' && featureFlags.enableCloseNoteModal) {
         setCloseSessionId(sessionId);
         setShowCloseModal(true);
         return;

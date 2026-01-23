@@ -31,6 +31,9 @@ export interface FeatureFlags {
   showFirstLightFocusToggle: boolean;
   showAlphaStabilityBanners: boolean;
   showFlywheelBanner: boolean;
+
+  // Pilot flags
+  enableCloseNoteModal: boolean;
 }
 
 /**
@@ -55,6 +58,7 @@ export function getFeatureFlags(): FeatureFlags {
       showFirstLightFocusToggle: false,
       showAlphaStabilityBanners: false,
       showFlywheelBanner: false,
+      enableCloseNoteModal: false,
     };
   }
 
@@ -88,6 +92,9 @@ export function getFeatureFlags(): FeatureFlags {
   const showAlphaStabilityBanners = !alphaStabilityActive && firstLightCompleted && !isDemoMode;
   const showFlywheelBanner = firstLightCompleted && !alphaStabilityActive && !isDemoMode;
 
+  // Pilot: close-note modal on session close (default off)
+  const enableCloseNoteModal = localStorage.getItem('enableCloseNoteModal') === 'true';
+
   return {
     firstLightCompleted,
     firstLightFocus,
@@ -104,6 +111,7 @@ export function getFeatureFlags(): FeatureFlags {
     showFirstLightFocusToggle,
     showAlphaStabilityBanners,
     showFlywheelBanner,
+    enableCloseNoteModal,
   };
 }
 
@@ -148,6 +156,7 @@ export function resetFeatureFlags(): void {
     localStorage.removeItem('firstLightFocus');
     localStorage.removeItem('metricsEnabled');
     localStorage.removeItem('alphaStabilityMode');
+    localStorage.removeItem('enableCloseNoteModal');
   }
 }
 
