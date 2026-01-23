@@ -1427,28 +1427,22 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
                 data.externalRef || undefined
               );
 
-              logger.info(
-                {
-                  component: 'network',
-                  action: 'sync_session',
-                  sessionId: newSession.id,
-                  loungeId: finalLoungeId,
-                  hidPrefix: String(hidResult.hid).slice(0, 8),
-                },
-                'Network session sync completed'
-              );
-            }
-          } catch (networkError) {
-            logger.warn(
-              {
+              logger.info('Network session sync completed', {
                 component: 'network',
-                action: 'sync_session_failed',
+                action: 'sync_session',
                 sessionId: newSession.id,
                 loungeId: finalLoungeId,
-                error: networkError instanceof Error ? networkError.message : String(networkError),
-              },
-              'Network session sync failed (non-blocking)'
-            );
+                hidPrefix: String(hidResult.hid).slice(0, 8),
+              });
+            }
+          } catch (networkError) {
+            logger.warn('Network session sync failed (non-blocking)', {
+              component: 'network',
+              action: 'sync_session_failed',
+              sessionId: newSession.id,
+              loungeId: finalLoungeId,
+              error: networkError instanceof Error ? networkError.message : String(networkError),
+            });
           }
         }
         
