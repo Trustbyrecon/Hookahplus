@@ -14,24 +14,22 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 9
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: npm ci
       - name: Build & Smoke
         run: |
-          pnpm run build || true
+          npm run build || true
           # Skip smoke tests for now - require dev server and browser setup
           echo "Smoke tests skipped - requires dev server and Playwright browsers"
       - name: Webhook Test
         run: |
-          pnpm run test:webhook || true
+          npm run test:webhook || true
       - name: Reflex Gate
         run: |
-          pnpm run reflex:gate || true
+          npm run reflex:gate || true
 
   staging:
     needs: preview
@@ -41,11 +39,11 @@ jobs:
       - uses: actions/checkout@v4
       - name: Environment Parity Check
         run: |
-          pnpm install --no-frozen-lockfile
-          pnpm run check:env-parity
+          npm ci
+          npm run check:env-parity
       - name: Full Test Suite
         run: |
-          pnpm run test || true
+          npm run test || true
 
   production:
     needs: staging
@@ -55,8 +53,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: $1 Live Test
         run: |
-          pnpm install --no-frozen-lockfile
-          pnpm run test:live-dollar || true
+          npm ci
+          npm run test:live-dollar || true
       - name: Reflex Score Check
         run: |
-          pnpm run reflex:score --min 0.92 || true
+          npm run reflex:score --min 0.92 || true

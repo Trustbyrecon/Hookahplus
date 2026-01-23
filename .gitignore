@@ -6,7 +6,7 @@ out/
 
 # Node dependencies
 node_modules/
-package-lock.json
+
 
 # Environment files (includes RESEND_API_KEY and other secrets)
 .env
@@ -75,7 +75,6 @@ STRIPE_KEY_ADDED.md
 app/dashboard/node_modules/
 app/dashboard/out/
 app/dashboard/.next/
-app/dashboard/package-lock.json
 
 # Project-specific
 ReflexAutoOps_StarterKit/
