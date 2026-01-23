@@ -53,7 +53,7 @@ import {
 } from '../lib/sessionStateMachine';
 import { getSessionHealth } from '../lib/session-utils';
 import { calculateSingleSessionTrustScore, getTrustScoreColor } from '../lib/trustScoring';
-import { getFeatureFlags } from '../lib/feature-flags';
+import { getFeatureFlags, refreshRemoteFeatureFlags } from '../lib/feature-flags';
 import SessionDetailModal from './SessionDetailModal';
 import GuestIntelligenceModal from './GuestIntelligenceModal';
 import ResolveEdgeCaseModal from './ResolveEdgeCaseModal';
@@ -158,10 +158,20 @@ export default function SimpleFSDDesign({
   
   // Load feature flags after mount to avoid hydration issues
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window === 'undefined') return;
+
+    (async () => {
+      const first = Array.isArray(sessions) ? (sessions[0] as any) : undefined;
+      const loungeId =
+        (first?.loungeId as string | undefined) ||
+        (first?.lounge_id as string | undefined) ||
+        undefined;
+
+      // Best-effort remote toggle; fail-open default off
+      await refreshRemoteFeatureFlags({ loungeId });
       setFeatureFlags(getFeatureFlags());
-    }
-  }, []);
+    })();
+  }, [sessions]);
   
   const [activeTab, setActiveTab] = useState('overview');
   const [hoveredAction, setHoveredAction] = useState<string | null>(null);

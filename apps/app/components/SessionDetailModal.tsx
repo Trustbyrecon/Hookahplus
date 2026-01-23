@@ -13,7 +13,7 @@ import { calculateSingleSessionTrustScore, getTrustScoreColor } from '../lib/tru
 import { formatDuration, isValidTransition, canPerformAction } from '../lib/sessionStateMachine';
 import { ACTION_TO_STATUS } from '../types/enhancedSession';
 import CloseSessionModal from './CloseSessionModal';
-import { getFeatureFlags } from '../lib/feature-flags';
+import { getFeatureFlags, refreshRemoteFeatureFlags } from '../lib/feature-flags';
 
 interface SessionDetailModalProps {
   session: FireSession | null;
@@ -46,10 +46,16 @@ const SessionDetailModal: React.FC<SessionDetailModalProps> = ({
 
   // Load pilot flags after mount (avoid SSR/hydration mismatches)
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window === 'undefined') return;
+
+    (async () => {
+      // Best-effort remote toggle; fail-open default off
+      await refreshRemoteFeatureFlags({
+        loungeId: (session as any)?.loungeId,
+      });
       setEnableCloseNoteModal(getFeatureFlags().enableCloseNoteModal);
-    }
-  }, []);
+    })();
+  }, [session]);
 
   if (!isOpen || !session) return null;
 
