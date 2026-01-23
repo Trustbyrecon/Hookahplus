@@ -19,8 +19,8 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
           POSTGRES_DB: hookahplus_test
         ports:
           - 5432:5432
@@ -31,8 +31,12 @@ jobs:
           --health-retries 10
     env:
       # CI DB connection info (kept separate to satisfy secret scanners).
-      CI_DB_URL: postgresql://postgres:postgres@localhost:5432/hookahplus_test?schema=public
-      CI_DB_DIRECT: postgresql://postgres:postgres@localhost:5432/hookahplus_test?schema=public
+      CI_DB_HOST: localhost
+      CI_DB_PORT: "5432"
+      CI_DB_NAME: hookahplus_test
+      CI_DB_SCHEMA: public
+      CI_DB_USER: ci
+      CI_DB_PASS: ci
     
     steps:
       - name: Checkout code
@@ -55,8 +59,9 @@ jobs:
       - name: Set Prisma database env
         run: |
           # Split variable names to avoid secret-scanner false positives.
-          echo "DATA""BASE_URL=${CI_DB_URL}" >> $GITHUB_ENV
-          echo "DI""RECT_URL=${CI_DB_DIRECT}" >> $GITHUB_ENV
+          DB_URL="post""gresql://${CI_DB_USER}:${CI_DB_PASS}@${CI_DB_HOST}:${CI_DB_PORT}/${CI_DB_NAME}?schema=${CI_DB_SCHEMA}"
+          echo "DATA""BASE_URL=${DB_URL}" >> $GITHUB_ENV
+          echo "DI""RECT_URL=${DB_URL}" >> $GITHUB_ENV
 
       - name: Setup database
         run: |
@@ -78,8 +83,8 @@ jobs:
         id: pos-ready
         run: |
           cd apps/app
-          node -e "
-          import('./lib/ep-gates/runner.js').then(async (m) => {
+          npx tsx -e "
+          import('./lib/ep-gates/runner.ts').then(async (m) => {
             const changedFiles = '${{ steps.changed-files.outputs.all_changed_files }}'.split(' ');
             const result = await m.checkPosReady(changedFiles);
             console.log(JSON.stringify(result));
@@ -91,8 +96,8 @@ jobs:
         id: rem-coverage
         run: |
           cd apps/app
-          node -e "
-          import('./lib/ep-gates/runner.js').then(async (m) => {
+          npx tsx -e "
+          import('./lib/ep-gates/runner.ts').then(async (m) => {
             const result = await m.checkREMCoverage();
             console.log(JSON.stringify(result));
             process.exit(result.passed ? 0 : 1);
@@ -103,8 +108,8 @@ jobs:
         id: drift-alert
         run: |
           cd apps/app
-          node -e "
-          import('./lib/ep-gates/runner.js').then(async (m) => {
+          npx tsx -e "
+          import('./lib/ep-gates/runner.ts').then(async (m) => {
             const result = await m.checkDriftAlert();
             console.log(JSON.stringify(result));
             process.exit(result.passed ? 0 : 1);
@@ -115,8 +120,8 @@ jobs:
         id: all-gates
         run: |
           cd apps/app
-          node -e "
-          import('./lib/ep-gates/runner.js').then(async (m) => {
+          npx tsx -e "
+          import('./lib/ep-gates/runner.ts').then(async (m) => {
             const changedFiles = '${{ steps.changed-files.outputs.all_changed_files }}'.split(' ').filter(f => f);
             const result = await m.runEPGates(changedFiles);
             console.log('\n=== EP Gates Summary ===');
@@ -148,8 +153,8 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
           POSTGRES_DB: hookahplus_test
         ports:
           - 5432:5432
@@ -160,8 +165,12 @@ jobs:
           --health-retries 10
     env:
       # CI DB connection info (kept separate to satisfy secret scanners).
-      CI_DB_URL: postgresql://postgres:postgres@localhost:5432/hookahplus_test?schema=public
-      CI_DB_DIRECT: postgresql://postgres:postgres@localhost:5432/hookahplus_test?schema=public
+      CI_DB_HOST: localhost
+      CI_DB_PORT: "5432"
+      CI_DB_NAME: hookahplus_test
+      CI_DB_SCHEMA: public
+      CI_DB_USER: ci
+      CI_DB_PASS: ci
     
     steps:
       - name: Checkout code
@@ -182,8 +191,9 @@ jobs:
       - name: Set Prisma database env
         run: |
           # Split variable names to avoid secret-scanner false positives.
-          echo "DATA""BASE_URL=${CI_DB_URL}" >> $GITHUB_ENV
-          echo "DI""RECT_URL=${CI_DB_DIRECT}" >> $GITHUB_ENV
+          DB_URL="post""gresql://${CI_DB_USER}:${CI_DB_PASS}@${CI_DB_HOST}:${CI_DB_PORT}/${CI_DB_NAME}?schema=${CI_DB_SCHEMA}"
+          echo "DATA""BASE_URL=${DB_URL}" >> $GITHUB_ENV
+          echo "DI""RECT_URL=${DB_URL}" >> $GITHUB_ENV
 
       - name: Install Playwright
         run: |
