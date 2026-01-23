@@ -36,6 +36,8 @@ export interface FeatureFlags {
   enableCloseNoteModal: boolean;
 }
 
+const REMOTE_ENABLE_CLOSE_NOTE_MODAL_KEY = 'remoteEnableCloseNoteModal';
+
 /**
  * Get feature flags from localStorage and environment
  */
@@ -93,7 +95,11 @@ export function getFeatureFlags(): FeatureFlags {
   const showFlywheelBanner = firstLightCompleted && !alphaStabilityActive && !isDemoMode;
 
   // Pilot: close-note modal on session close (default off)
-  const enableCloseNoteModal = localStorage.getItem('enableCloseNoteModal') === 'true';
+  // - local override: per-browser toggle for testing
+  // - remote: cached result from /api/config (tenant/lounged-scoped)
+  const localOverrideCloseNoteModal = localStorage.getItem('enableCloseNoteModal') === 'true';
+  const remoteCloseNoteModal = localStorage.getItem(REMOTE_ENABLE_CLOSE_NOTE_MODAL_KEY) === 'true';
+  const enableCloseNoteModal = localOverrideCloseNoteModal || remoteCloseNoteModal;
 
   return {
     firstLightCompleted,
@@ -113,6 +119,28 @@ export function getFeatureFlags(): FeatureFlags {
     showFlywheelBanner,
     enableCloseNoteModal,
   };
+}
+
+/**
+ * Fetch remote feature flags and cache in localStorage.
+ *
+ * Fail-open behavior:
+ * - If fetch fails, do nothing (cached value remains; default is off).
+ */
+export async function refreshRemoteFeatureFlags(params?: { loungeId?: string }): Promise<void> {
+  if (typeof window === 'undefined') return;
+
+  try {
+    const loungeId = params?.loungeId?.trim();
+    const url = loungeId ? `/api/config?loungeId=${encodeURIComponent(loungeId)}` : '/api/config';
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) return;
+    const data = await res.json().catch(() => null);
+    const enabled = !!data?.featureFlags?.enableCloseNoteModal;
+    localStorage.setItem(REMOTE_ENABLE_CLOSE_NOTE_MODAL_KEY, enabled ? 'true' : 'false');
+  } catch {
+    // ignore (fail-open)
+  }
 }
 
 /**
@@ -157,6 +185,7 @@ export function resetFeatureFlags(): void {
     localStorage.removeItem('metricsEnabled');
     localStorage.removeItem('alphaStabilityMode');
     localStorage.removeItem('enableCloseNoteModal');
+    localStorage.removeItem(REMOTE_ENABLE_CLOSE_NOTE_MODAL_KEY);
   }
 }
 
