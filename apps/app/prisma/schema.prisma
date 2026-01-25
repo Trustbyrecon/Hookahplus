@@ -139,6 +139,31 @@ model Payment {
   @@map("payments")
 }
 
+model WebhookEvent {
+  id          String             @id @default(cuid())
+  provider    String
+  eventId     String
+  eventType   String
+  payloadHash String?
+  sessionId   String?            @map("session_id")
+  metadata    String?
+  status      WebhookEventStatus @default(PROCESSING)
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+
+  session     Session?           @relation(fields: [sessionId], references: [id], onUpdate: NoAction)
+
+  @@unique([provider, eventId], map: "idx_webhook_events_provider_event")
+  @@index([sessionId], map: "idx_webhook_events_session")
+  @@map("webhook_events")
+}
+
+enum WebhookEventStatus {
+  PROCESSING
+  SUCCESS
+  FAILURE
+}
+
 model ReflexEvent {
   id                  String   @id @default(cuid())
   type                String

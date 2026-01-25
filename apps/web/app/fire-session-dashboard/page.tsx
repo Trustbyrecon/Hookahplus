@@ -65,58 +65,54 @@ export default function FireSessionDashboard() {
     foh: ['Sarah Chen', 'Alex Johnson', 'Mike Rodriguez']
   });
   const [sessionTimers, setSessionTimers] = useState<Record<string, {remaining: number, total: number, isActive: boolean}>>({});
+  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [demoLounge, setDemoLounge] = useState('districk-hookah');
+  const [isResettingDemo, setIsResettingDemo] = useState(false);
 
-  // Load real-time sessions from durable sessions API
-  useEffect(() => {
-    const loadRealTimeData = async () => {
-      try {
-        // Load active sessions from durable sessions API (exclude CLOSED)
-        const response = await fetch('/api/sessions?state=ACTIVE');
-        const result = await response.json();
+  const loadRealTimeData = async () => {
+    try {
+      const response = await fetch('/api/sessions?state=ACTIVE');
+      const result = await response.json();
+      
+      if (result.success) {
+        const realSessions: FireSession[] = result.sessions
+          .filter((session: any) => session.state !== 'CLOSED')
+          .map((session: any) => ({
+          id: session.id,
+          tableId: session.externalRef || 'T-001',
+          customerName: session.customerPhone ? `Customer ${session.customerPhone}` : 'Anonymous',
+          flavor: session.flavorMix?.flavors?.join(' + ') || 'Custom Mix',
+          amount: 3000,
+          status: mapDurableSessionStateToFireSession(session.state),
+          currentStage: mapDurableSessionStateToStage(session.state),
+          assignedStaff: {
+            boh: 'staff_001',
+            foh: 'staff_002'
+          },
+          createdAt: new Date(session.createdAt).getTime(),
+          updatedAt: new Date(session.updatedAt).getTime(),
+          sessionStartTime: session.state === 'ACTIVE' ? new Date(session.createdAt).getTime() : undefined,
+          sessionDuration: session.state === 'ACTIVE' ? Date.now() - new Date(session.createdAt).getTime() : 0,
+          coalStatus: 'active' as const,
+          refillStatus: 'none' as const,
+          notes: `Source: ${session.source}, External Ref: ${session.externalRef}`,
+          edgeCase: session.source === 'WALK_IN' ? 'Walk-in customer' : null
+        }));
         
-        if (result.success) {
-          // Convert durable sessions to fire session format
-          // Filter out CLOSED sessions - they should not appear in FSD after settlement
-          const realSessions: FireSession[] = result.sessions
-            .filter((session: any) => session.state !== 'CLOSED')
-            .map((session: any) => ({
-            id: session.id,
-            tableId: session.externalRef || 'T-001', // Use externalRef as tableId
-            customerName: session.customerPhone ? `Customer ${session.customerPhone}` : 'Anonymous',
-            flavor: session.flavorMix?.flavors?.join(' + ') || 'Custom Mix',
-            amount: 3000, // Default amount for hookah session
-            status: mapDurableSessionStateToFireSession(session.state),
-            currentStage: mapDurableSessionStateToStage(session.state),
-            assignedStaff: {
-              boh: 'staff_001',
-              foh: 'staff_002'
-            },
-            createdAt: new Date(session.createdAt).getTime(),
-            updatedAt: new Date(session.updatedAt).getTime(),
-            sessionStartTime: session.state === 'ACTIVE' ? new Date(session.createdAt).getTime() : undefined,
-            sessionDuration: session.state === 'ACTIVE' ? Date.now() - new Date(session.createdAt).getTime() : 0,
-            coalStatus: 'active' as const,
-            refillStatus: 'none' as const,
-            notes: `Source: ${session.source}, External Ref: ${session.externalRef}`,
-            edgeCase: session.source === 'WALK_IN' ? 'Walk-in customer' : null
-          }));
-          
-          setSessions(realSessions);
-        } else {
-          console.error('Failed to load real-time data:', result.error);
-          setSessions([]);
-        }
-      } catch (error) {
-        console.error('Error loading real-time data:', error);
+        setSessions(realSessions);
+      } else {
+        console.error('Failed to load real-time data:', result.error);
         setSessions([]);
       }
-    };
+    } catch (error) {
+      console.error('Error loading real-time data:', error);
+      setSessions([]);
+    }
+  };
 
+  useEffect(() => {
     loadRealTimeData();
-    
-    // Set up real-time updates every 5 seconds
     const interval = setInterval(loadRealTimeData, 5000);
-    
     return () => clearInterval(interval);
   }, []);
 
@@ -174,6 +170,12 @@ export default function FireSessionDashboard() {
     if (urlParams.get('newSession') === 'true') {
       createNewSession();
     }
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setIsDemoMode(params.get('mode') === 'demo');
+    setDemoLounge(params.get('lounge') || 'districk-hookah');
   }, []);
 
   // Timer countdown effect
@@ -411,6 +413,30 @@ export default function FireSessionDashboard() {
     }
   };
 
+  const resetDemoSession = async () => {
+    if (!isDemoMode) return;
+    setIsResettingDemo(true);
+    try {
+      const response = await fetch(`/api/demo/reset-session?mode=demo&loungeId=${encodeURIComponent(demoLounge)}`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || `HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      alert(`Demo session reset (sessionId: ${data.sessionId})`);
+      await loadRealTimeData();
+    } catch (error: any) {
+      console.error('Failed to reset demo session:', error);
+      alert(`Demo reset failed: ${error?.message || error}`);
+    } finally {
+      setIsResettingDemo(false);
+    }
+  };
+
   const addSessionNote = (sessionId: string) => {
     if (!newNote.trim()) return;
     
@@ -637,6 +663,17 @@ export default function FireSessionDashboard() {
               <option value="boh">👨‍🍳 BOH Staff</option>
               <option value="foh">👥 FOH Staff</option>
             </select>
+            {isDemoMode && (
+              <button
+                onClick={resetDemoSession}
+                disabled={isResettingDemo}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  isResettingDemo ? 'bg-zinc-600 text-zinc-400 cursor-not-allowed' : 'bg-amber-600 hover:bg-amber-500 text-white'
+                }`}
+              >
+                {isResettingDemo ? 'Resetting...' : 'Reset Demo Session'}
+              </button>
+            )}
           </div>
         </div>
 
