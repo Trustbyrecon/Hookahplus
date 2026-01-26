@@ -355,7 +355,7 @@ export async function POST(req: Request) {
       }
     }
 
-    if (event.type === "charge.refunded" || event.type === "payment_intent.amount_refunded") {
+    if (event.type === "charge.refunded") {
       await handleStripeRefund({
         event,
         sessionIdFromMetadata:
