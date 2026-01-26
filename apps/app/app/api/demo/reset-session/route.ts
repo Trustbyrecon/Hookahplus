@@ -19,7 +19,7 @@ export async function POST(req: Request) {
       state: {
         in: [SessionState.PENDING, SessionState.ACTIVE, SessionState.PAUSED],
       },
-      sessionNotes: {
+      notes: {
         some: {
           text: {
             contains: demoNoteFilterText,
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
       data: {
         state: SessionState.CANCELED,
         updatedAt: new Date(),
-        sessionNotes: {
+        notes: {
           create: {
             noteType: 'info',
             text: 'Demo session voided via reset endpoint',
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
       priceCents: 3500,
       paymentStatus: 'pending',
       externalRef: `demo-${timestamp}`,
-      sessionNotes: {
+      notes: {
         create: {
           noteType: 'info',
           text: 'Demo session created via reset endpoint',
