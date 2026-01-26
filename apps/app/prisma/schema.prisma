@@ -64,6 +64,7 @@ model Session {
   deliveries          Delivery[]
   orders              Order[]
   payments            Payment[]
+  webhookEvents       WebhookEvent[]
   notes               SessionNote[]
 
   @@unique([loungeId, externalRef])
