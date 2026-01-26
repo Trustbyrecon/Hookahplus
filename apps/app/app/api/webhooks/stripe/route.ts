@@ -26,6 +26,7 @@ async function readRawBody(req: Request): Promise<string> {
 }
 
 export async function POST(req: Request) {
+  let webhookRecordId: string | null = null;
   try {
     if (!stripe) {
       console.error('[Stripe Webhook] Stripe not configured - missing STRIPE_SECRET_KEY');
@@ -97,8 +98,6 @@ export async function POST(req: Request) {
       console.warn('[Stripe Webhook] Duplicate event received (ignored):', eventId, event.type);
       return Response.json({ processed: true }, { status: 200 });
     }
-
-    let webhookRecordId: string | null = null;
 
     const markWebhookSuccess = (sessionId?: string) => {
       if (!webhookRecordId) return Promise.resolve(null);
