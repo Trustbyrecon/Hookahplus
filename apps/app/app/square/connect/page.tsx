@@ -17,13 +17,17 @@ import { Card, Button, Badge } from '../../../components';
 function SquareConnectContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [loungeId, setLoungeId] = useState('HOPE_GLOBAL_FORUM'); // Default lounge ID
+  const loungeIdParam = searchParams.get('loungeId');
+  const [loungeId, setLoungeId] = useState(loungeIdParam || 'HOPE_GLOBAL_FORUM'); // Default lounge ID
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const success = searchParams.get('connected') === 'true';
   const errorParam = searchParams.get('error');
 
   useEffect(() => {
+    if (loungeIdParam && loungeIdParam !== loungeId) {
+      setLoungeId(loungeIdParam);
+    }
     if (errorParam) {
       const decodedError = decodeURIComponent(errorParam);
       setError(decodedError);
@@ -150,6 +154,20 @@ function SquareConnectContent() {
             </div>
 
             <div className="pt-6">
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                  Lounge ID
+                </label>
+                <input
+                  value={loungeId}
+                  onChange={(e) => setLoungeId(e.target.value)}
+                  placeholder="e.g. HOPE_GLOBAL_FORUM"
+                  className="w-full rounded-lg bg-zinc-900 border border-zinc-700 px-3 py-2 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-teal-500/50"
+                />
+                <p className="mt-2 text-xs text-zinc-500">
+                  This is the Hookah+ lounge key used to store your Square merchant mapping.
+                </p>
+              </div>
               <Button
                 onClick={handleConnect}
                 disabled={loading}

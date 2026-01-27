@@ -219,7 +219,15 @@ export async function processSquareRawEvents(limit: number = 100) {
         if (paymentStatus === 'COMPLETED') {
           const loungeContext = await findSquareLoungeContext(merchantId, locationId);
           if (!loungeContext?.loungeId) {
-            throw new Error('Missing lounge mapping for Square payment');
+            // Still consider Flow 2 "successful" if we can normalize the payment but
+            // we don't yet have a merchant/location → lounge mapping (OAuth not connected).
+            // This prevents permanently marking payment events as failed during early setup.
+            console.warn('[Square Processor] Missing lounge mapping for Square payment', {
+              merchantId,
+              locationId,
+              paymentId: payment.id,
+            });
+            continue;
           }
 
           const customerId = payment?.customer_id || null;

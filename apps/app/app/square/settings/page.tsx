@@ -31,7 +31,8 @@ interface SquareStatus {
 function SquareSettingsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [loungeId] = useState('HOPE_GLOBAL_FORUM'); // Default lounge ID
+  const loungeIdParam = searchParams.get('loungeId');
+  const [loungeId, setLoungeId] = useState(loungeIdParam || 'HOPE_GLOBAL_FORUM'); // Default lounge ID
   const [status, setStatus] = useState<SquareStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [disconnecting, setDisconnecting] = useState(false);
@@ -39,7 +40,13 @@ function SquareSettingsContent() {
 
   useEffect(() => {
     loadStatus();
-  }, []);
+  }, [loungeId]);
+
+  useEffect(() => {
+    if (loungeIdParam && loungeIdParam !== loungeId) {
+      setLoungeId(loungeIdParam);
+    }
+  }, [loungeIdParam, loungeId]);
 
   const loadStatus = async () => {
     try {
@@ -113,6 +120,29 @@ function SquareSettingsContent() {
             Manage your Square POS integration
           </p>
         </div>
+
+        <Card className="p-6 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-zinc-300 mb-2">
+                Lounge ID
+              </label>
+              <input
+                value={loungeId}
+                onChange={(e) => setLoungeId(e.target.value)}
+                placeholder="e.g. HOPE_GLOBAL_FORUM"
+                className="w-full rounded-lg bg-zinc-900 border border-zinc-700 px-3 py-2 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-teal-500/50"
+              />
+              <p className="mt-2 text-xs text-zinc-500">
+                Status and connection are shown for this lounge.
+              </p>
+            </div>
+            <Button onClick={loadStatus} variant="outline">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
+        </Card>
 
         {connected && (
           <Card className="p-6 mb-6 border-green-500/30 bg-green-500/10">
