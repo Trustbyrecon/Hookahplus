@@ -90,6 +90,7 @@ export async function middleware(request: NextRequest) {
     '/api/test-sentry-debug', // Sentry debug diagnostic endpoint
     '/api/square/oauth', // Square OAuth flow (authorize, callback)
     '/api/square/webhook', // Square webhooks MUST be public (Square servers cannot auth)
+    '/api/square/process', // Square processor is called by Vercel Cron (auth handled in route)
     '/login',
     '/signup',
     '/admin/login', // Admin login page is public
