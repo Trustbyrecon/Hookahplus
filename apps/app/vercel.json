@@ -16,5 +16,11 @@
     "app/**/*.ts": {
       "memory": 1024
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/square/process?limit=250",
+      "schedule": "*/5 * * * *"
+    }
+  ]
 }
