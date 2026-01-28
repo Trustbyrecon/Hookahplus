@@ -14,6 +14,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
  * - tier: 'starter' | 'pro' | 'trust_plus'
  * - billingCycle: 'monthly' | 'annual'
  * - email: (optional) customer email
+ * - addons: Array<{ key: string; name?: string }> (optional)
  */
 export async function POST(req: NextRequest) {
   try {
@@ -83,6 +84,16 @@ export async function POST(req: NextRequest) {
         monthly: process.env.PRICE_ADDON_CUSTOM_INTEGRATIONS,
         annual: process.env.PRICE_ADDON_CUSTOM_INTEGRATIONS_ANNUAL,
       },
+      // Agentic Commerce: $49/mo add-on (or annual equivalent) + optional metered usage line item
+      agentic_commerce: {
+        monthly: process.env.PRICE_ADDON_AGENTIC_COMMERCE,
+        annual: process.env.PRICE_ADDON_AGENTIC_COMMERCE_ANNUAL,
+      },
+      // Usage: $0.25 per agentic checkout (metered). Keep interval aligned to billing cycle.
+      agentic_commerce_usage: {
+        monthly: process.env.PRICE_ADDON_AGENTIC_COMMERCE_USAGE,
+        annual: process.env.PRICE_ADDON_AGENTIC_COMMERCE_USAGE_ANNUAL,
+      },
       priority_support: {
         monthly: process.env.PRICE_ADDON_PRIORITY_SUPPORT,
         annual: process.env.PRICE_ADDON_PRIORITY_SUPPORT_ANNUAL,
@@ -101,13 +112,33 @@ export async function POST(req: NextRequest) {
     const addonMetadata: string[] = [];
     addons.forEach((addon: any) => {
       const addonKey = addon.key; // e.g., 'flavor_intelligence'
+      // Special case: Agentic Commerce bundles a base add-on + metered usage item
+      if (addonKey === 'agentic_commerce') {
+        const basePriceId = addonPriceMap.agentic_commerce?.[billingCycle];
+        const usagePriceId = addonPriceMap.agentic_commerce_usage?.[billingCycle];
+
+        if (basePriceId) {
+          lineItems.push({ price: basePriceId, quantity: 1 });
+          addonMetadata.push('agentic_commerce');
+        } else {
+          console.warn(`[Subscribe] Add-on price not found for: agentic_commerce (${billingCycle})`);
+        }
+
+        if (usagePriceId) {
+          // Metered usage is tracked separately; Stripe will invoice based on usage records.
+          // This line item adds the metered price to the subscription.
+          lineItems.push({ price: usagePriceId, quantity: 1 });
+          addonMetadata.push('agentic_commerce_usage');
+        } else {
+          console.warn(`[Subscribe] Add-on usage price not found for: agentic_commerce_usage (${billingCycle})`);
+        }
+
+        return;
+      }
+
       const addonPriceId = addonPriceMap[addonKey]?.[billingCycle];
-      
       if (addonPriceId) {
-        lineItems.push({
-          price: addonPriceId,
-          quantity: 1
-        });
+        lineItems.push({ price: addonPriceId, quantity: 1 });
         addonMetadata.push(addonKey);
       } else {
         console.warn(`[Subscribe] Add-on price not found for: ${addonKey} (${billingCycle})`);

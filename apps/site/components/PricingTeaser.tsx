@@ -18,7 +18,7 @@ const tiers = [
   {
     name: 'Pro',
     price: '$249/mo',
-    blurb: '≤3 venues • loyalty pricing • full dashboard',
+    blurb: '≤3 venues • agent-ready reservations • full dashboard',
     icon: <BarChart3 className="w-6 h-6" />,
     color: 'blue',
     popular: true,

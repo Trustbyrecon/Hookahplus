@@ -204,6 +204,26 @@ export default function PricingPage() {
       ],
       availableFor: 'pro', // Available for Pro and Trust+
       includedIn: null
+    },
+    {
+      key: 'agentic_commerce',
+      name: 'Agentic Commerce (Stripe Beta)',
+      price: {
+        monthly: 49,
+        annual: 490
+      },
+      description: 'Let AI agents reserve + collect deposits in-chat — H+ fulfills via your Session OS.',
+      icon: <Shield className="w-5 h-5" />,
+      highValueFeature: 'Agent-ready reservations',
+      hoverText: 'Enable agent-initiated reservation holds/session deposits using Stripe’s agentic commerce flow. H+ remains the system of record via secure webhook reconciliation. Includes $0.25 per agentic checkout usage.',
+      features: [
+        'In-chat reservation holds',
+        'Session deposit checkout',
+        'Webhook-driven reconciliation',
+        'Usage reporting (+$0.25 per checkout)'
+      ],
+      availableFor: 'pro', // Pro/Trust+ add-on
+      includedIn: null
     }
   ];
 
@@ -424,15 +444,15 @@ export default function PricingPage() {
           </div>
         </div>
 
-        {/* Simplified Add-ons - Starter boosters only, collapsed by default */}
+        {/* Add-ons (collapsed by default) */}
         <div className="mb-16">
           <details className="max-w-4xl mx-auto">
             <summary className="text-2xl font-bold text-center mb-8 cursor-pointer hover:text-teal-400 transition-colors">
-              Starter Add-ons (Boosters)
+              Add-ons
             </summary>
             <div className="mb-4 p-4 bg-blue-500/10 rounded-lg border border-blue-500/30 text-center">
               <p className="text-sm text-zinc-300">
-                <span className="font-semibold text-blue-400">Note:</span> Flavor Intelligence, Advanced Analytics, and Staff Performance Suite are <span className="font-semibold text-teal-400">included in Pro</span>. These add-ons are available for Starter tier only.
+                <span className="font-semibold text-blue-400">Note:</span> Some add-ons are <span className="font-semibold text-teal-400">included in Pro</span>, while others are available as <span className="font-semibold text-teal-400">Pro/Trust+</span> upgrades.
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">

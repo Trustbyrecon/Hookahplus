@@ -15,7 +15,7 @@ test.describe('Site App - Navigation and Functionality', () => {
     
     // Look for navigation links
     const navLinks = page.locator('nav a').or(page.locator('[role="navigation"] a'));
-    await expect(navLinks).toHaveCount.greaterThan(0);
+    expect(await navLinks.count()).toBeGreaterThan(0);
     
     // Check for cross-app navigation links
     const appLink = page.locator('text=Staff').or(page.locator('text=Admin')).or(page.locator('[href*="app"]'));

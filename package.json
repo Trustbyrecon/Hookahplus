@@ -71,6 +71,9 @@
     "stripe": "^14.21.0",
     "zod": "^3.22.4"
   },
+  "overrides": {
+    "eslint": "8.57.0"
+  },
   "prisma": {
     "schema": "prisma/schema.prisma"
   }
