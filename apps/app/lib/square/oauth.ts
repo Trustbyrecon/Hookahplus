@@ -19,6 +19,14 @@ interface SquareMerchantInfo {
 export class SquareOAuth {
   private static readonly API_VERSION = '2024-01-18';
 
+  private static getAppUrl(): string {
+    // Vercel env vars are sometimes pasted with quotes/backticks. Normalize defensively.
+    let appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002').trim();
+    appUrl = appUrl.replace(/^`|`$/g, '').replace(/^"|"$/g, '').replace(/^'|'$/g, '');
+    appUrl = appUrl.replace(/\/+$/g, '');
+    return appUrl;
+  }
+
   private static getEnv(): 'sandbox' | 'production' {
     const raw = (process.env.SQUARE_ENV || '').toLowerCase();
     if (raw === 'sandbox' || raw === 'production') return raw;
@@ -48,7 +56,7 @@ export class SquareOAuth {
       console.warn('[Square OAuth] Application ID format may be incorrect. Expected format: sandbox-sq0idb-... or sq0idb-...');
     }
 
-    const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/api/square/oauth/callback`;
+    const redirectUri = `${this.getAppUrl()}/api/square/oauth/callback`;
     const scopes = [
       'ORDERS_WRITE',
       'ORDERS_READ',
@@ -91,7 +99,7 @@ export class SquareOAuth {
   static async exchangeCode(code: string): Promise<SquareTokens> {
     const clientId = process.env.SQUARE_APPLICATION_ID;
     const clientSecret = process.env.SQUARE_APPLICATION_SECRET;
-    const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/api/square/oauth/callback`;
+    const redirectUri = `${this.getAppUrl()}/api/square/oauth/callback`;
 
     if (!clientId || !clientSecret) {
       throw new Error('Square OAuth credentials not configured');
