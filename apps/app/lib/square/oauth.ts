@@ -57,13 +57,10 @@ export class SquareOAuth {
     }
 
     const redirectUri = `${this.getAppUrl()}/api/square/oauth/callback`;
-    const scopes = [
-      'ORDERS_WRITE',
-      'ORDERS_READ',
-      'PAYMENTS_WRITE',
-      'MERCHANT_PROFILE_READ',
-      'LOCATIONS_READ'
-    ].join(' ');
+    // For Flow 2 read-only mapping we only need merchant + location info.
+    // Locations can be retrieved with MERCHANT_PROFILE_READ per Square docs.
+    // Keep scopes minimal to avoid Square sandbox rejecting invalid/unavailable scopes.
+    const scopes = ['MERCHANT_PROFILE_READ'].join(' ');
 
     // Ensure clientId has no whitespace or newlines
     const cleanClientId = clientId.trim().replace(/[\r\n]/g, '');
