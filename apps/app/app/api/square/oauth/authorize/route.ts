@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
       httpOnly: true,
       secure: !isDevelopment,
       sameSite: 'lax',
+      path: '/', // must be readable by /api/square/oauth/callback
       maxAge: 600 // 10 minutes
     });
 
@@ -37,6 +38,7 @@ export async function GET(request: NextRequest) {
       httpOnly: true,
       secure: !isDevelopment,
       sameSite: 'lax',
+      path: '/', // must be readable by /api/square/oauth/callback
       maxAge: 600
     });
 
