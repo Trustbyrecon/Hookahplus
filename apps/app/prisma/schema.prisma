@@ -740,11 +740,57 @@ model SquareEventRaw {
   receivedAt  DateTime @default(now()) @map("received_at") @db.Timestamptz(6)
   processedAt DateTime? @map("processed_at") @db.Timestamptz(6)
   errorMessage String? @map("error_message")
+  status       String   @default("new")
+  attemptCount Int      @default(0) @map("attempt_count")
+  claimedAt    DateTime? @map("claimed_at") @db.Timestamptz(6)
+  nextRetryAt  DateTime? @map("next_retry_at") @db.Timestamptz(6)
+  lastErrorAt  DateTime? @map("last_error_at") @db.Timestamptz(6)
+  aiEnrichments AiEnrichment[]
+  alerts        Alert[]
 
   @@index([merchantId], map: "idx_square_events_raw_merchant_id")
   @@index([eventType], map: "idx_square_events_raw_event_type")
   @@index([processedAt], map: "idx_square_events_raw_processed_at")
   @@map("square_events_raw")
+}
+
+model AiEnrichment {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  source    String   @default("square")
+  kind      String
+  rawEventId String?  @map("raw_event_id") @db.Uuid
+  loungeId  String?  @map("lounge_id")
+  sessionId String?  @map("session_id")
+  model     String
+  output    Json
+  latencyMs Int?     @map("latency_ms")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  rawEvent SquareEventRaw? @relation(fields: [rawEventId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([loungeId, kind, createdAt(sort: Desc)], map: "ai_enrichment_lounge_kind_created_idx")
+  @@unique([rawEventId, kind], map: "ai_enrichment_raw_kind_uq")
+  @@map("ai_enrichment")
+}
+
+model Alert {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  source    String   @default("square")
+  type      String
+  severity  String
+  message   String
+  rawEventId String? @map("raw_event_id") @db.Uuid
+  loungeId  String?  @map("lounge_id")
+  sessionId String?  @map("session_id")
+  meta      Json?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  resolvedAt DateTime? @map("resolved_at") @db.Timestamptz(6)
+
+  rawEvent SquareEventRaw? @relation(fields: [rawEventId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([createdAt(sort: Desc)], map: "alerts_created_at_idx")
+  @@index([loungeId, createdAt(sort: Desc)], map: "alerts_lounge_created_at_idx")
+  @@map("alerts")
 }
 
 model SquareOrder {
