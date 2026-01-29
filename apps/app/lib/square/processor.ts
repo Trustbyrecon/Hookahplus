@@ -3,6 +3,7 @@ import { Prisma, SessionSource, SessionState } from '@prisma/client';
 import { prisma } from '../db';
 import { getHIDSalt } from '../env';
 import { callOpenAIJson } from '../ai/openai-json';
+import { z } from 'zod';
 import { resolveHID } from '../hid/resolver';
 import { validateStaffNote } from '../staff-note-validation';
 import { syncSessionToNetwork } from '../profiles/network';
@@ -162,17 +163,12 @@ type SessionNoteSuggestionsOutput = {
   missing_data: string[];
 };
 
-function getSessionNoteSuggestionsSchema() {
-  // Lazily require zod to keep startup light.
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { z } = require('zod');
-  return z.object({
-    enrichment_complete: z.boolean(),
-    confidence: z.number().min(0).max(1),
-    suggestions: z.array(z.string()).max(5),
-    missing_data: z.array(z.string()).default([]),
-  });
-}
+const SessionNoteSuggestionsSchema: z.ZodType<SessionNoteSuggestionsOutput> = z.object({
+  enrichment_complete: z.boolean(),
+  confidence: z.number().min(0).max(1),
+  suggestions: z.array(z.string()).max(5),
+  missing_data: z.array(z.string()).default([]),
+});
 
 function clamp01(n: number) {
   return Math.max(0, Math.min(1, n));
@@ -617,10 +613,10 @@ export async function processSquareRawEvents(limit: number = 100) {
                   2
                 );
 
-                const resp = await callOpenAIJson({
+                const resp = await callOpenAIJson<SessionNoteSuggestionsOutput>({
                   system,
                   user,
-                  schema: getSessionNoteSuggestionsSchema(),
+                  schema: SessionNoteSuggestionsSchema,
                   timeoutMs: 10_000,
                 });
 
@@ -638,9 +634,9 @@ export async function processSquareRawEvents(limit: number = 100) {
 
                   const out: SessionNoteSuggestionsOutput = {
                     enrichment_complete: true,
-                    confidence: clamp01((resp.data as any).confidence),
+                    confidence: clamp01(resp.data.confidence),
                     suggestions: safeSuggestions,
-                    missing_data: (resp.data as any).missing_data || [],
+                    missing_data: resp.data.missing_data || [],
                   };
 
                   await upsertAiEnrichment({
