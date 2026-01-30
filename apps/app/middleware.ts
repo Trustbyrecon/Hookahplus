@@ -92,6 +92,7 @@ export async function middleware(request: NextRequest) {
     '/api/square/webhook', // Square webhooks MUST be public (Square servers cannot auth)
     '/api/square/process', // Square processor is called by Vercel Cron (auth handled in route)
     '/api/square/diagnostics', // Square diagnostics for server-to-server validation
+    '/api/square/status', // Square status returns non-secret connection metadata (merchantId, locations)
     '/login',
     '/signup',
     '/admin/login', // Admin login page is public
