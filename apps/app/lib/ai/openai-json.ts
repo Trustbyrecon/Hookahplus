@@ -8,7 +8,9 @@ type OpenAIChatMessage =
 type CallOpenAIJsonParams<T> = {
   system: string;
   user: string;
-  schema: z.ZodType<T>;
+  // Accept schemas whose INPUT may be wider than T (e.g. defaults make input optional),
+  // as long as OUTPUT validates to T.
+  schema: z.ZodType<T, z.ZodTypeDef, unknown>;
   model?: string;
   timeoutMs?: number;
 };

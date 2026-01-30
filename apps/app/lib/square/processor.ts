@@ -156,19 +156,14 @@ type PricingAnomalyOutput = {
   recommended_action: 'continue' | 'alert' | 'repair';
 };
 
-type SessionNoteSuggestionsOutput = {
-  enrichment_complete: boolean;
-  confidence: number;
-  suggestions: string[];
-  missing_data: string[];
-};
-
-const SessionNoteSuggestionsSchema: z.ZodType<SessionNoteSuggestionsOutput> = z.object({
+const SessionNoteSuggestionsSchema = z.object({
   enrichment_complete: z.boolean(),
   confidence: z.number().min(0).max(1),
   suggestions: z.array(z.string()).max(5),
   missing_data: z.array(z.string()).default([]),
 });
+
+type SessionNoteSuggestionsOutput = z.infer<typeof SessionNoteSuggestionsSchema>;
 
 function clamp01(n: number) {
   return Math.max(0, Math.min(1, n));
