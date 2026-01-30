@@ -140,7 +140,9 @@ export async function GET(request: NextRequest) {
 
     // Redirect to success page
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/square/settings?connected=true`
+      `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/square/settings?connected=true&loungeId=${encodeURIComponent(
+        loungeId
+      )}`
     );
   } catch (error) {
     console.error('[Square OAuth] Callback error:', error);

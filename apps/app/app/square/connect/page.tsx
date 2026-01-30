@@ -67,7 +67,7 @@ function SquareConnectContent() {
                 Your Square account has been successfully connected to Hookah+.
               </p>
               <Button
-                onClick={() => router.push('/square/settings')}
+                onClick={() => router.push(`/square/settings?loungeId=${encodeURIComponent(loungeId)}`)}
                 className="mt-6"
               >
                 Go to Square Settings
