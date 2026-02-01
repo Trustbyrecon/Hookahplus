@@ -31,6 +31,7 @@
     "db:migrate:app": "cd apps/app && npx prisma migrate deploy",
     "test:e2e": "cypress run",
     "test:e2e:open": "cypress open",
+    "test": "npm --workspace @hookahplus/app run test",
     "test:sync:all": "npm run cmd:test:sync:golden && npm run cmd:test:sync:faults",
     "reflex:ci": "tsx scripts/reflex-smoke.ts --ci",
     "test:smoke": "playwright test --grep @smoke",
