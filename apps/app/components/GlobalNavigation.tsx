@@ -373,6 +373,15 @@ const GlobalNavigation: React.FC = () => {
           flowState: 'active',
           nextAction: 'Configure pricing tiers',
           aiRecommendation: 'Optimize add-on pricing for maximum revenue'
+        },
+        {
+          label: 'ROI Calculator',
+          href: '/roi-calculator',
+          icon: <TrendingUp className="w-4 h-4" />,
+          description: 'Estimate monthly ROI',
+          flowState: 'active',
+          nextAction: 'Model uplift and payback',
+          aiRecommendation: 'Use this to show owner value fast'
         }
       ]
     },

@@ -113,6 +113,10 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# Keep orchestrator logs (task execution notes) tracked
+!orchestrator/logs/
+!orchestrator/logs/**
+
 # Runtime data
 pids/
 *.pid
