@@ -30,6 +30,7 @@ export class SquareAdapter implements PosAdapter {
   private accessToken: string | null = null;
   private merchantId: string | null = null;
   private initialized = false;
+  private readonly idempotencyCache = new Map<string, string>();
   
   constructor(private cfg: { venueId: string }) {
     // Initialization is now async - use initialize() method
@@ -142,21 +143,32 @@ export class SquareAdapter implements PosAdapter {
     
     try {
       const baseUrl = getSquareApiBaseUrl();
-      // Check if order already exists (idempotency)
-      const existingOrder = await this.findOrderByHpId(hpOrder.hp_order_id);
-      if (existingOrder) {
-        return { pos_order_id: existingOrder.id, created: false };
+      const cached = this.idempotencyCache.get(hpOrder.hp_order_id);
+      if (cached) {
+        return { pos_order_id: cached, created: false };
       }
+      // Idempotency: rely on Square's `idempotency_key` for deterministic retries.
+      // NOTE: Searching by `reference_id` via Orders Search is not reliable in all Square
+      // environments/configs (and can accidentally return an unrelated/paid order),
+      // which then breaks downstream item updates. For the MVP + smoke tests, always
+      // create via idempotency_key and let Square dedupe.
 
       // MVP: create a Square Order draft with reference to hpOrder.hp_order_id (idempotency)
       // Doc: https://developer.squareup.com/reference/square/orders-api/create-order
+      const line_items = (hpOrder.items || []).map((it) => ({
+        name: it.name,
+        quantity: String(it.qty),
+        base_price_money: { amount: it.unit_amount, currency: "USD" },
+        note: it.notes || `SKU: ${it.sku}`,
+      }));
+
       const body = {
         idempotency_key: hpOrder.hp_order_id,
         order: {
           location_id: this.locationId!,
           reference_id: hpOrder.hp_order_id,
           customer_id: undefined, // optional
-          line_items: [], // we will add via upsertItems()
+          line_items,
           ...(hpOrder.table && { note: `Table: ${hpOrder.table}` }),
           ...(hpOrder.guest_count && { note: `Guests: ${hpOrder.guest_count}` })
         },
@@ -178,7 +190,9 @@ export class SquareAdapter implements PosAdapter {
       }
 
       const json = await res.json();
-      return { pos_order_id: json.order.id, created: true };
+      const posOrderId = json.order.id as string;
+      this.idempotencyCache.set(hpOrder.hp_order_id, posOrderId);
+      return { pos_order_id: posOrderId, created: true };
     } catch (error) {
       console.error("Square attachOrder error:", error);
       throw new Error(`Failed to attach order: ${error instanceof Error ? error.message : 'Unknown error'}`);
