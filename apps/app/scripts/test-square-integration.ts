@@ -168,6 +168,14 @@ class SquareIntegrationTester {
     try {
       await this.adapter.initialize();
       console.log('   ✅ Adapter initialized successfully');
+      try {
+        const dbg = (this.adapter as any)?.debugState?.();
+        if (dbg) {
+          console.log(`   🔎 Auth mode: ${dbg.authMode}${dbg.merchantId ? ` (merchant: ${dbg.merchantId})` : ''}`);
+        }
+      } catch {
+        // ignore
+      }
       this.addResult(testName, true);
     } catch (error) {
       console.error(`   ❌ ${testName} failed:`, error);

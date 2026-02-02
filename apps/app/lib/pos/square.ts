@@ -31,9 +31,24 @@ export class SquareAdapter implements PosAdapter {
   private merchantId: string | null = null;
   private initialized = false;
   private readonly idempotencyCache = new Map<string, string>();
+  private authMode: 'oauth' | 'legacy' = 'legacy';
   
   constructor(private cfg: { venueId: string }) {
     // Initialization is now async - use initialize() method
+  }
+
+  /**
+   * Debug helper for smoke tests / ops.
+   * Not part of the PosAdapter interface; safe to call via `as any`.
+   */
+  debugState() {
+    return {
+      venueId: this.cfg.venueId,
+      authMode: this.authMode,
+      merchantId: this.merchantId,
+      locationId: this.locationId,
+      squareEnv: (process.env.SQUARE_ENV || '').toLowerCase() || undefined,
+    };
   }
 
   /**
@@ -53,6 +68,7 @@ export class SquareAdapter implements PosAdapter {
           : null;
 
       if (merchant) {
+        this.authMode = 'oauth';
         // Check if token needs refresh
         if (merchant.expiresAt && merchant.expiresAt < new Date()) {
           await this.refreshAccessToken(merchant);
@@ -72,6 +88,7 @@ export class SquareAdapter implements PosAdapter {
           this.merchantId = merchant.merchantId;
         }
       } else {
+        this.authMode = 'legacy';
         // Fallback to environment variables (legacy mode)
         this.locationId = process.env.SQUARE_LOCATION_ID?.trim() || null;
         this.accessToken = process.env.SQUARE_ACCESS_TOKEN?.trim() || null;
