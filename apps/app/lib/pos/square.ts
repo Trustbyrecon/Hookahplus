@@ -4,6 +4,19 @@ import { prisma } from '../db';
 import { decrypt, encrypt } from '../utils/encryption';
 import { SquareOAuth } from '../square/oauth';
 
+const SQUARE_API_VERSION = '2024-01-18';
+
+function getSquareApiBaseUrl(): string {
+  const raw = (process.env.SQUARE_ENV || '').toLowerCase();
+  if (raw === 'sandbox') return 'https://connect.squareupsandbox.com';
+  if (raw === 'production') return 'https://connect.squareup.com';
+  // Heuristic: sandbox app IDs are prefixed with "sandbox-"
+  const appId = (process.env.SQUARE_APPLICATION_ID || '').trim().replace(/[\r\n]/g, '');
+  return appId.startsWith('sandbox-')
+    ? 'https://connect.squareupsandbox.com'
+    : 'https://connect.squareup.com';
+}
+
 const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2025-08-27.basil' as any })
   : null;
@@ -128,6 +141,7 @@ export class SquareAdapter implements PosAdapter {
     await this.ensureInitialized();
     
     try {
+      const baseUrl = getSquareApiBaseUrl();
       // Check if order already exists (idempotency)
       const existingOrder = await this.findOrderByHpId(hpOrder.hp_order_id);
       if (existingOrder) {
@@ -148,11 +162,11 @@ export class SquareAdapter implements PosAdapter {
         },
       };
 
-      const res = await fetch("https://connect.squareup.com/v2/orders", {
+      const res = await fetch(`${baseUrl}/v2/orders`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Square-Version": "2024-01-18",
+          "Square-Version": SQUARE_API_VERSION,
           Authorization: `Bearer ${this.accessToken}`,
         },
         body: JSON.stringify(body),
@@ -175,6 +189,7 @@ export class SquareAdapter implements PosAdapter {
     await this.ensureInitialized();
     
     try {
+      const baseUrl = getSquareApiBaseUrl();
       // Get current order to preserve existing data
       const currentOrder = await this.getOrder(pos_order_id);
       
@@ -188,11 +203,11 @@ export class SquareAdapter implements PosAdapter {
       }));
 
       // Square: use Orders API → Update Order
-      const res = await fetch(`https://connect.squareup.com/v2/orders/${pos_order_id}`, {
+      const res = await fetch(`${baseUrl}/v2/orders/${pos_order_id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "Square-Version": "2024-01-18",
+          "Square-Version": SQUARE_API_VERSION,
           Authorization: `Bearer ${this.accessToken}`,
         },
         body: JSON.stringify({ 
@@ -218,15 +233,16 @@ export class SquareAdapter implements PosAdapter {
     await this.ensureInitialized();
     
     try {
+      const baseUrl = getSquareApiBaseUrl();
       if (tender) {
         // Pattern B: add "External Paid: Hookah+ $X" adjustment or note
         // Square often expects Payments API to capture money; for MVP, we can mark it externally in order metadata
         // Alternatively, create a non-capturing "other tender" is not directly supported; many teams use a "note" + set state.
-        await fetch(`https://connect.squareup.com/v2/orders/${pos_order_id}`, {
+        await fetch(`${baseUrl}/v2/orders/${pos_order_id}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            "Square-Version": "2024-01-18",
+            "Square-Version": SQUARE_API_VERSION,
             Authorization: `Bearer ${this.accessToken}`,
           },
           body: JSON.stringify({
@@ -239,11 +255,11 @@ export class SquareAdapter implements PosAdapter {
         });
       } else {
         // If payment is captured inside Square, you'd use Payments API here instead
-        await fetch(`https://connect.squareup.com/v2/orders/${pos_order_id}`, {
+        await fetch(`${baseUrl}/v2/orders/${pos_order_id}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            "Square-Version": "2024-01-18",
+            "Square-Version": SQUARE_API_VERSION,
             Authorization: `Bearer ${this.accessToken}`,
           },
           body: JSON.stringify({ order: { state: "COMPLETED" } }),
@@ -259,11 +275,12 @@ export class SquareAdapter implements PosAdapter {
     await this.ensureInitialized();
     
     try {
-      const response = await fetch("https://connect.squareup.com/v2/orders/search", {
+      const baseUrl = getSquareApiBaseUrl();
+      const response = await fetch(`${baseUrl}/v2/orders/search`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Square-Version": "2024-01-18",
+          "Square-Version": SQUARE_API_VERSION,
           Authorization: `Bearer ${this.accessToken}`,
         },
         body: JSON.stringify({
@@ -293,11 +310,12 @@ export class SquareAdapter implements PosAdapter {
   private async getOrder(orderId: string) {
     await this.ensureInitialized();
     
-    const res = await fetch(`https://connect.squareup.com/v2/orders/${orderId}`, {
+    const baseUrl = getSquareApiBaseUrl();
+    const res = await fetch(`${baseUrl}/v2/orders/${orderId}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "Square-Version": "2024-01-18",
+        "Square-Version": SQUARE_API_VERSION,
         Authorization: `Bearer ${this.accessToken}`,
       },
     });
