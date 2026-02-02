@@ -114,12 +114,6 @@ export default function LandingPage() {
                   Fire Dashboard
                 </Button>
               </Link>
-              <Link href="/roi-calculator">
-                <Button className="btn-pretty-secondary">
-                  <TrendingUp className="w-4 h-4 mr-2" />
-                  ROI Calculator
-                </Button>
-              </Link>
             </div>
           </div>
         </div>

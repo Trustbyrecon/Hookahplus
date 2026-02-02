@@ -30,19 +30,23 @@ export class SquareAdapter implements PosAdapter {
     if (this.initialized) return;
 
     try {
-      // Try to load from database (OAuth mode)
-      const merchant = await prisma.squareMerchant.findUnique({
-        where: { loungeId: this.cfg.venueId }
-      });
+      const squareMerchantDelegate = (prisma as any)?.squareMerchant;
+
+      // Try to load from database (OAuth mode) when the Prisma model exists.
+      const merchant =
+        squareMerchantDelegate?.findUnique
+          ? await squareMerchantDelegate.findUnique({ where: { loungeId: this.cfg.venueId } })
+          : null;
 
       if (merchant) {
         // Check if token needs refresh
         if (merchant.expiresAt && merchant.expiresAt < new Date()) {
           await this.refreshAccessToken(merchant);
           // Reload after refresh
-          const refreshed = await prisma.squareMerchant.findUnique({
-            where: { loungeId: this.cfg.venueId }
-          });
+          const refreshed =
+            squareMerchantDelegate?.findUnique
+              ? await squareMerchantDelegate.findUnique({ where: { loungeId: this.cfg.venueId } })
+              : null;
           if (refreshed) {
             this.accessToken = decrypt(refreshed.accessToken);
             this.locationId = refreshed.locationIds[0] || null;
@@ -85,7 +89,12 @@ export class SquareAdapter implements PosAdapter {
       const tokens = await SquareOAuth.refreshToken(decrypt(merchant.refreshToken));
       const expiresAt = new Date(Date.now() + tokens.expiresIn * 1000);
 
-      await prisma.squareMerchant.update({
+      const squareMerchantDelegate = (prisma as any)?.squareMerchant;
+      if (!squareMerchantDelegate?.update) {
+        throw new Error('Square OAuth store is not configured in Prisma (missing squareMerchant model)');
+      }
+
+      await squareMerchantDelegate.update({
         where: { id: merchant.id },
         data: {
           accessToken: encrypt(tokens.accessToken),

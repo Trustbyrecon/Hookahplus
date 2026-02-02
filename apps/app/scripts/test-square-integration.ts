@@ -104,9 +104,13 @@ class SquareIntegrationTester {
     console.log(`\n1️⃣ Testing ${testName}...`);
 
     try {
-      const merchant = await prisma.squareMerchant.findUnique({
-        where: { loungeId: this.venueId }
-      });
+      // This script is used in multiple environments. Some deployments use Supabase
+      // for Square OAuth storage and do not have a `squareMerchant` model in Prisma.
+      const squareMerchantDelegate = (prisma as any)?.squareMerchant;
+      const merchant =
+        squareMerchantDelegate?.findUnique
+          ? await squareMerchantDelegate.findUnique({ where: { loungeId: this.venueId } })
+          : null;
 
       if (merchant) {
         console.log('   ✅ Square merchant found in database');
@@ -119,6 +123,9 @@ class SquareIntegrationTester {
           hasExpiration: !!merchant.expiresAt
         });
       } else {
+        if (!squareMerchantDelegate?.findUnique) {
+          console.log('   ⚠️  Prisma model `squareMerchant` not found; skipping DB OAuth lookup');
+        }
         // Check for legacy env vars
         const hasEnvToken = !!process.env.SQUARE_ACCESS_TOKEN;
         const hasEnvLocation = !!process.env.SQUARE_LOCATION_ID;

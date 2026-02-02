@@ -307,7 +307,7 @@ export default function PricingIntelligenceBoard() {
           </label>
           {selectedSub && <span className="text-sm text-white/70">Selected: <b>{selectedSub}</b></span>}
           <a
-            href="/roi-calculator"
+            href="https://hookahplus.net/pricing"
             className="sm:ml-auto inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm hover:bg-white/10"
           >
             Open ROI Calculator

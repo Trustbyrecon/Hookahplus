@@ -365,24 +365,7 @@ const GlobalNavigation: React.FC = () => {
           nextAction: 'Access operator controls',
           aiRecommendation: 'Monitor system metrics and trust score'
         },
-        {
-          label: 'Pricing Intelligence',
-          href: '/pricing',
-          icon: <BarChart3 className="w-4 h-4" />,
-          description: 'Revenue optimization and pricing strategy',
-          flowState: 'active',
-          nextAction: 'Configure pricing tiers',
-          aiRecommendation: 'Optimize add-on pricing for maximum revenue'
-        },
-        {
-          label: 'ROI Calculator',
-          href: '/roi-calculator',
-          icon: <TrendingUp className="w-4 h-4" />,
-          description: 'Estimate monthly ROI',
-          flowState: 'active',
-          nextAction: 'Model uplift and payback',
-          aiRecommendation: 'Use this to show owner value fast'
-        }
+        // NOTE: Public pricing + ROI live on hookahplus.net (marketing site).
       ]
     },
     {
@@ -476,6 +459,15 @@ const GlobalNavigation: React.FC = () => {
           flowState: 'idle',
           nextAction: 'Access admin functions',
           aiRecommendation: 'Review system settings'
+        },
+        {
+          label: 'Pricing Intelligence',
+          href: '/admin/pricing-intelligence',
+          icon: <BarChart3 className="w-4 h-4" />,
+          description: 'Internal pricing strategy board',
+          flowState: 'idle',
+          nextAction: 'Configure pricing tiers',
+          aiRecommendation: 'Optimize add-on pricing for maximum revenue'
         },
         {
           label: 'QR Generator',
