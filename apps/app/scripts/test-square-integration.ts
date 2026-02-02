@@ -28,6 +28,22 @@ import type { HpOrder, HpItem, ExternalTender } from '../lib/pos/types';
 import { prisma } from '../lib/db';
 import crypto from 'crypto';
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isDbConnectivityError(err: unknown): boolean {
+  const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
+  return (
+    msg.includes("can't reach database server") ||
+    msg.includes("ecconnrefused") ||
+    msg.includes("enotfound") ||
+    msg.includes("timeout") ||
+    msg.includes("could not connect") ||
+    msg.includes("connection")
+  );
+}
+
 // Simple trust lock creation for testing
 function createTrustLock(orderId: string): { sig: string } {
   const secret = process.env.TRUSTLOCK_SECRET;
@@ -51,6 +67,7 @@ class SquareIntegrationTester {
   private adapter: SquareAdapter;
   private testOrderId: string;
   private posOrderId: string | null = null;
+  private sawDbUnavailableForOAuthLookup = false;
 
   constructor(venueId: string) {
     this.venueId = venueId;
@@ -109,12 +126,23 @@ class SquareIntegrationTester {
       const squareMerchantDelegate = (prisma as any)?.squareMerchant;
       let merchant: any = null;
       try {
-        merchant =
-          squareMerchantDelegate?.findUnique
-            ? await squareMerchantDelegate.findUnique({ where: { loungeId: this.venueId } })
-            : null;
+        if (squareMerchantDelegate?.findUnique) {
+          // Retry a few times to avoid falling back to legacy if the DB comes up shortly after startup.
+          // `lib/db.ts` tests the connection non-blocking; this keeps our smoke tests aligned with prod OAuth.
+          for (let attempt = 1; attempt <= 5; attempt++) {
+            try {
+              merchant = await squareMerchantDelegate.findUnique({ where: { loungeId: this.venueId } });
+              break;
+            } catch (e) {
+              if (!isDbConnectivityError(e) || attempt === 5) throw e;
+              this.sawDbUnavailableForOAuthLookup = true;
+              await sleep(500 * attempt);
+            }
+          }
+        }
       } catch (e) {
         // If DB isn't reachable, continue with legacy env mode checks.
+        this.sawDbUnavailableForOAuthLookup = this.sawDbUnavailableForOAuthLookup || isDbConnectivityError(e);
         console.log('   ⚠️  DB unavailable for OAuth lookup; continuing with legacy env checks');
         merchant = null;
       }
@@ -176,6 +204,48 @@ class SquareIntegrationTester {
       } catch {
         // ignore
       }
+
+      // OAuth-first hardening:
+      // Even if the first lookup happened before the DB was ready (or the pooler flapped),
+      // do a post-init lookup and only retry on connectivity errors. If we now find the
+      // merchant row, re-initialize the adapter so the rest of the suite runs OAuth-first.
+      const squareMerchantDelegate = (prisma as any)?.squareMerchant;
+      const dbg = (this.adapter as any)?.debugState?.();
+      const isLegacy = dbg?.authMode === 'legacy';
+      if (isLegacy && squareMerchantDelegate?.findUnique) {
+        if (this.sawDbUnavailableForOAuthLookup) {
+          console.log('   🔁 Retrying OAuth merchant lookup after DB connection...');
+        } else {
+          console.log('   🔎 Checking for OAuth merchant in DB (post-init)...');
+        }
+        let merchant: any = null;
+        for (let attempt = 1; attempt <= 5; attempt++) {
+          try {
+            merchant = await squareMerchantDelegate.findUnique({ where: { loungeId: this.venueId } });
+            break;
+          } catch (e) {
+            if (!isDbConnectivityError(e) || attempt === 5) throw e;
+            await sleep(500 * attempt);
+          }
+        }
+
+        if (merchant) {
+          console.log('   ✅ OAuth merchant now available; re-initializing adapter in OAuth mode');
+          this.adapter = new SquareAdapter({ venueId: this.venueId });
+          await this.adapter.initialize();
+          try {
+            const dbg2 = (this.adapter as any)?.debugState?.();
+            if (dbg2) {
+              console.log(`   🔎 Auth mode (after retry): ${dbg2.authMode}${dbg2.merchantId ? ` (merchant: ${dbg2.merchantId})` : ''}`);
+            }
+          } catch {
+            // ignore
+          }
+        } else {
+          console.log('   ℹ️  OAuth merchant not found; continuing in legacy mode');
+        }
+      }
+
       this.addResult(testName, true);
     } catch (error) {
       console.error(`   ❌ ${testName} failed:`, error);
