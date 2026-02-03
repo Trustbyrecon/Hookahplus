@@ -63,7 +63,7 @@ import CloseSessionModal from './CloseSessionModal';
 interface SimpleFSDDesignProps {
   sessions?: any[];
   userRole?: 'BOH' | 'FOH' | 'MANAGER' | 'ADMIN';
-  onSessionAction?: (action: string, sessionId: string) => void;
+  onSessionAction?: (sessionId: string, action: string) => void;
   refreshSessions?: () => void | Promise<void>;
   className?: string;
   isDemoMode?: boolean;

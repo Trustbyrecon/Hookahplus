@@ -275,11 +275,44 @@ function FireSessionDashboardContent() {
   }, [sessions, isDemoMode, sessionClaimTimes]);
 
   const handleCreateSession = async (sessionData: any) => {
-    // In demo mode, don't call API - just return a demo session ID
+    // In demo mode, create in-memory session and inject so Claim Prep / NAN flow work
     if (isDemoMode) {
       console.log('[Create Session] 🎭 Demo Mode: Creating in-memory demo session (no API call)');
-      const demoSessionId = `demo-session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      // Refresh to show the new demo session in the list
+      const now = Date.now();
+      const demoSessionId = `demo-session-${now}-${Math.random().toString(36).substr(2, 9)}`;
+      const tableId = sessionData?.table_id || sessionData?.tableId || `T-${String(Math.floor(Math.random() * 900) + 100)}`;
+      const customerName = sessionData?.customer_name || sessionData?.customerName || 'Demo Guest';
+      const demoSession = {
+        id: demoSessionId,
+        tableId,
+        customerName,
+        customerPhone: sessionData?.customer_phone || sessionData?.customerPhone || '',
+        flavor: sessionData?.flavor_mix ? (Array.isArray(sessionData.flavor_mix) ? sessionData.flavor_mix.join(' + ') : sessionData.flavor_mix) : 'Double Apple + Mint',
+        amount: sessionData?.amount ? Math.round(Number(sessionData.amount) * 100) : 2500,
+        status: 'PAID_CONFIRMED' as const,
+        state: 'PENDING' as const,
+        paymentStatus: 'succeeded',
+        externalRef: `test_cs_${demoSessionId}`,
+        stage: 'Payment' as const,
+        action: undefined,
+        currentStage: 'BOH' as const,
+        assignedStaff: { boh: undefined, foh: undefined },
+        createdAt: now,
+        updatedAt: now,
+        sessionStartTime: undefined,
+        sessionDuration: (sessionData?.timer_duration ? Number(sessionData.timer_duration) * 60 : 45 * 60),
+        coalStatus: 'active' as const,
+        refillStatus: 'none' as const,
+        notes: '',
+        edgeCase: null,
+        bohState: undefined,
+        guestTimerDisplay: false
+      };
+      try {
+        window.dispatchEvent(new CustomEvent('hp:addDemoSession', { detail: { session: demoSession } }));
+      } catch (e) {
+        console.warn('[Create Session] hp:addDemoSession dispatch failed:', e);
+      }
       await refreshSessions();
       return demoSessionId;
     }

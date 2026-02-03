@@ -40,7 +40,7 @@ function generateRichDemoData(): FireSession[] {
       bohState: undefined,
       guestTimerDisplay: false
     },
-    // Optional: already-Lit session for testing later stages
+    // Second PAID_CONFIRMED session for Claim Prep (Sarah & Friends)
     {
       id: 'demo-session-2',
       tableId: 'T-005',
@@ -48,24 +48,24 @@ function generateRichDemoData(): FireSession[] {
       customerPhone: '+1 (555) 234-5678',
       flavor: 'Blue Mist + Mint Fresh',
       amount: 3500,
-      status: 'ACTIVE',
-      state: 'ACTIVE',
+      status: 'PAID_CONFIRMED',
+      state: 'PENDING',
       paymentStatus: 'succeeded',
       externalRef: 'test_cs_demo_session_2',
-      stage: 'Light',
-      action: 'START_ACTIVE',
-      currentStage: 'CUSTOMER',
-      assignedStaff: { boh: 'demo-boh', foh: 'demo-foh' },
+      stage: 'Payment',
+      action: undefined,
+      currentStage: 'BOH',
+      assignedStaff: { boh: undefined, foh: undefined },
       createdAt: thirtyMinutesAgo,
-      updatedAt: now - (5 * 60 * 1000),
-      sessionStartTime: now - (25 * 60 * 1000),
+      updatedAt: now,
+      sessionStartTime: undefined,
       sessionDuration: 60 * 60,
       coalStatus: 'active',
       refillStatus: 'none',
-      notes: 'Demo session - already lit',
+      notes: '',
       edgeCase: null,
-      bohState: 'PREPARING',
-      guestTimerDisplay: true
+      bohState: undefined,
+      guestTimerDisplay: false
     }
   ];
 }
