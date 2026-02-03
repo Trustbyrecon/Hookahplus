@@ -3,6 +3,11 @@
 ## Overview
 E2E tests validate complete user flows from start to finish.
 
+## Running E2E (including Night After Night / demo claim prep)
+- **With Playwright starting the app:** `npm run test:e2e` (port 3002 must be free).
+- **With app already running:** `USE_EXISTING_SERVER=1 npx playwright test e2e/flows/night-after-night-engine.spec.ts --project=chromium`.
+- See `tasks/demo-nan-claim-prep-e2e-task-brief.md` for demo NAN (Claim Prep) flow and E2E details.
+
 ## Test Scenarios
 
 ### Scenario 1: Create Session with Table Selection

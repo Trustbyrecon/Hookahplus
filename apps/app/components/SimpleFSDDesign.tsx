@@ -226,7 +226,7 @@ export default function SimpleFSDDesign({
     if ((isDemoMode || isDemoSession) && onSessionAction) {
       console.log(`[Demo Mode] 🎭 Using callback for action: ${action} on session: ${sessionId}`);
       try {
-        await onSessionAction(action, sessionId);
+        await onSessionAction(sessionId, action);
         
         // Show success message for demo mode (same as API path)
         const actionMap: Record<string, string> = {
@@ -546,7 +546,7 @@ export default function SimpleFSDDesign({
     }
 
     if (onSessionAction) {
-      onSessionAction(action, sessionId);
+      onSessionAction(sessionId, action);
     }
   };
 
