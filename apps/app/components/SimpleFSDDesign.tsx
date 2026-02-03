@@ -292,6 +292,12 @@ export default function SimpleFSDDesign({
       return;
     }
 
+    // Demo mode: refill and flavor upsell handled in-memory by onSessionAction
+    if (isDemoMode && (action.toLowerCase() === 'request_refill' || action === 'REQUEST_REFILL' || action.toLowerCase() === 'complete_refill' || action === 'COMPLETE_REFILL' || action.toLowerCase() === 'request_flavor_bowl')) {
+      onSessionAction?.(sessionId, action.toLowerCase());
+      return;
+    }
+
     // Special handling for REQUEST_REFILL - use refill API
     if (action.toLowerCase() === 'request_refill' || action === 'REQUEST_REFILL') {
       try {
@@ -300,7 +306,8 @@ export default function SimpleFSDDesign({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userRole,
-            operatorId: `foh-${userRole.toLowerCase()}`
+            operatorId: `foh-${userRole.toLowerCase()}`,
+            refillType: 'coal'
           })
         });
 
@@ -319,6 +326,33 @@ export default function SimpleFSDDesign({
       } catch (error) {
         console.error('Error requesting refill:', error);
         alert(`Failed to request refill: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        return;
+      }
+    }
+
+    // Flavor upsell (non-demo): POST refill with refillType flavor
+    if (action.toLowerCase() === 'request_flavor_bowl') {
+      try {
+        const response = await fetch(`/api/sessions/${sessionId}/refill`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userRole,
+            operatorId: `foh-${userRole.toLowerCase()}`,
+            refillType: 'flavor'
+          })
+        });
+        const result = await response.json();
+        if (result.success) {
+          alert('Flavor bowl requested! BOH will prepare new bowl.');
+          if (refreshSessions) await refreshSessions();
+        } else {
+          throw new Error(result.details || result.error || 'Failed to request flavor bowl');
+        }
+        return;
+      } catch (error) {
+        console.error('Error requesting flavor bowl:', error);
+        alert(`Failed to request flavor bowl: ${error instanceof Error ? error.message : 'Unknown error'}`);
         return;
       }
     }
@@ -1173,6 +1207,48 @@ export default function SimpleFSDDesign({
               )}
             </div>
             
+            {/* Staff – verbal / outside QR: coal refill & flavor upsell (ACTIVE sessions) */}
+            {sessionStatus === 'ACTIVE' && (
+              <div className="pt-2 border-t border-zinc-800">
+                <div className="flex items-center space-x-1 text-xs text-zinc-400 mb-2">
+                  <UserCheck className="w-3 h-3" />
+                  <span className="font-medium">Staff – verbal / outside QR:</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {availableActions.includes('REQUEST_REFILL') && canUserPerformAction('REQUEST_REFILL', userRole) && (session.refillStatus !== 'requested') && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleSessionAction('request_refill', sessionId); }}
+                      className="flex items-center space-x-1 px-3 py-1.5 rounded text-xs font-medium bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+                      title="Customer asked for new coals (verbal or outside QR)"
+                    >
+                      <Coffee className="w-3 h-3" />
+                      <span>Coal refill</span>
+                    </button>
+                  )}
+                  {sessionStatus === 'ACTIVE' && canUserPerformAction('REQUEST_REFILL', userRole) && (session.refillStatus !== 'requested') && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleSessionAction('request_flavor_bowl', sessionId); }}
+                      className="flex items-center space-x-1 px-3 py-1.5 rounded text-xs font-medium bg-violet-500 hover:bg-violet-600 text-white transition-colors"
+                      title="Customer asked for new flavor bowl (verbal or outside QR)"
+                    >
+                      <Flame className="w-3 h-3" />
+                      <span>New flavor bowl</span>
+                    </button>
+                  )}
+                  {availableActions.includes('COMPLETE_REFILL') && canUserPerformAction('COMPLETE_REFILL', userRole) && (session.refillStatus === 'requested') && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleSessionAction('complete_refill', sessionId); }}
+                      className="flex items-center space-x-1 px-3 py-1.5 rounded text-xs font-medium bg-orange-500 hover:bg-orange-600 text-white transition-colors"
+                      title="Mark refill/flavor bowl delivered"
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                      <span>Complete refill</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+            
             {/* Secondary Actions - Less common but available */}
             {(availableActions.filter(a => !['CLAIM_PREP', 'HEAT_UP', 'READY_FOR_DELIVERY', 'DELIVER_NOW', 'MARK_DELIVERED', 'START_ACTIVE'].includes(a)).length > 0) && (
               <div className="pt-2 border-t border-zinc-800">
@@ -1913,6 +1989,8 @@ export default function SimpleFSDDesign({
         }}
         userRole={userRole}
         refreshSessions={refreshSessions}
+        isDemoMode={isDemoMode}
+        onSessionAction={onSessionAction}
       />
       
       {/* Guest Intelligence Modal */}

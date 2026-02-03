@@ -593,6 +593,9 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
           'start_active': 'START_ACTIVE',
           'pause_session': 'PAUSE_SESSION',
           'resume_session': 'RESUME_SESSION',
+          'request_refill': 'REQUEST_REFILL',
+          'complete_refill': 'COMPLETE_REFILL',
+          'request_flavor_bowl': 'REQUEST_REFILL',
           'close_session': 'CLOSE_SESSION',
           'put_on_hold': 'PUT_ON_HOLD',
           'resolve_hold': 'RESOLVE_HOLD',
@@ -608,6 +611,8 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
           'START_ACTIVE': 'START_ACTIVE',
           'PAUSE_SESSION': 'PAUSE_SESSION',
           'RESUME_SESSION': 'RESUME_SESSION',
+          'REQUEST_REFILL': 'REQUEST_REFILL',
+          'COMPLETE_REFILL': 'COMPLETE_REFILL',
           'CLOSE_SESSION': 'CLOSE_SESSION',
           'PUT_ON_HOLD': 'PUT_ON_HOLD',
           'RESOLVE_HOLD': 'RESOLVE_HOLD',
@@ -616,6 +621,35 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
 
         const normalizedAction = action.toLowerCase();
         const sessionAction = (actionMap[normalizedAction] || actionMap[action] || action.toUpperCase()) as any;
+
+        // Refill / flavor upsell: update refillStatus in-place (no status change)
+        if (sessionAction === 'REQUEST_REFILL' || normalizedAction === 'request_flavor_bowl') {
+          const updatedSessionsRefill = [...sessions];
+          const idx = updatedSessionsRefill.findIndex(s => s.id === sessionId);
+          if (idx !== -1) {
+            const s = updatedSessionsRefill[idx];
+            if (s.refillStatus === 'requested') return; // already requested
+            const updated = { ...s, refillStatus: 'requested' as const, updatedAt: Date.now() };
+            updated.notes = (updated.notes || '') + (normalizedAction === 'request_flavor_bowl' ? '\nFlavor upsell requested (staff/verbal).' : '\nCoal refill requested (staff/verbal).');
+            updatedSessionsRefill[idx] = updated;
+            setSessions(updatedSessionsRefill);
+            setUpdatedDemoSessions(prev => ({ ...prev, [sessionId]: updated }));
+          }
+          return;
+        }
+        if (sessionAction === 'COMPLETE_REFILL') {
+          const updatedSessionsRefill = [...sessions];
+          const idx = updatedSessionsRefill.findIndex(s => s.id === sessionId);
+          if (idx !== -1) {
+            const s = updatedSessionsRefill[idx];
+            const updated = { ...s, refillStatus: 'delivered' as const, updatedAt: Date.now() };
+            updated.notes = (updated.notes || '') + '\nRefill completed (staff).';
+            updatedSessionsRefill[idx] = updated;
+            setSessions(updatedSessionsRefill);
+            setUpdatedDemoSessions(prev => ({ ...prev, [sessionId]: updated }));
+          }
+          return;
+        }
         
         // Apply state machine transition
         const updatedSession = nextStateWithTrust(

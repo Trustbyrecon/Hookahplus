@@ -20,8 +20,8 @@ export async function POST(
 ) {
   try {
     const { id: sessionId } = params;
-    const body = await request.json();
-    const { userRole = 'FOH', operatorId } = body;
+    const body = await request.json().catch(() => ({}));
+    const { userRole = 'FOH', operatorId, refillType = 'coal', flavorName, costCents } = body;
 
     // Find session
     const dbSession = await prisma.session.findFirst({
@@ -97,8 +97,10 @@ export async function POST(
     return NextResponse.json({
       success: true,
       session: updatedFireSession,
-      message: 'Refill requested successfully',
-      businessLogic: 'Refill requested - BOH notified to prepare new coals'
+      message: refillType === 'flavor' ? 'Flavor bowl requested successfully' : 'Refill requested successfully',
+      businessLogic: refillType === 'flavor'
+        ? 'Flavor upsell requested - BOH notified to prepare new bowl'
+        : 'Refill requested - BOH notified to prepare new coals'
     });
 
   } catch (error: any) {
