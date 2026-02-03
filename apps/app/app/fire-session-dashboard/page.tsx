@@ -27,6 +27,7 @@ import FirstLightHealthCard from '../../components/FirstLightHealthCard';
 import FirstLightChecklist from '../../components/FirstLightChecklist';
 import { WeekOneWinsCard } from '../../components/launchpad/WeekOneWinsCard';
 import { PreviewModeBanner } from '../../components/launchpad/PreviewModeBanner';
+import ShiftGuide from '../../components/ShiftGuide';
 import { getFeatureFlags, markFirstLightCompleted, enableMetrics, activateAlphaStability } from '../../lib/feature-flags';
 
 export default function FireSessionDashboard() {
@@ -983,6 +984,9 @@ function FireSessionDashboardContent() {
             </div>
           </div>
         )}
+
+        {/* P1: Shift start/end guide + closeout (habit + money motivation) */}
+        <ShiftGuide />
 
         {/* Session Management */}
         <SimpleFSDDesign

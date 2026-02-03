@@ -1010,6 +1010,10 @@ export default function SimpleFSDDesign({
             {(timerUpdates[session.id] ?? calculateRemainingTime(session)) <= 0 && (
               <p className="text-xs text-red-400 mt-1">Session expired</p>
             )}
+            {/* P1: Timer nudge — habit formation when session ending soon */}
+            {(session.sessionTimer?.isActive && (timerUpdates[session.id] ?? calculateRemainingTime(session)) > 0 && (timerUpdates[session.id] ?? calculateRemainingTime(session)) <= 5 * 60) && (
+              <p className="text-xs text-amber-300 mt-1">Session ending soon — offer extension or close.</p>
+            )}
           </div>
         )}
 

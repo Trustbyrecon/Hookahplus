@@ -118,9 +118,9 @@ const SessionTimer: React.FC<SessionTimerProps> = ({
         </div>
 
         {isLowTime && !isTimeUp && (
-          <div className="flex items-center justify-center space-x-2 text-orange-400 animate-pulse">
+          <div className="flex items-center justify-center space-x-2 text-amber-300 animate-pulse">
             <Flame className="w-4 h-4" />
-            <span className="text-sm font-medium">Time running low!</span>
+            <span className="text-sm font-medium">Session ending soon — ask staff to extend or close.</span>
           </div>
         )}
 

@@ -121,18 +121,7 @@ const findOrCreateSessionForPayment = async (params: {
   });
   if (existingByRef) return existingByRef;
 
-  const recentSession = await prisma.session.findFirst({
-    where: {
-      loungeId,
-      state: { in: [SessionState.PENDING, SessionState.ACTIVE, SessionState.PAUSED] },
-      createdAt: {
-        gte: new Date(Date.now() - 6 * 60 * 60 * 1000),
-      },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
-  if (recentSession) return recentSession;
-
+  // P0 Stripe-first: no "recent session" guess — link only by externalRef or create new session
   const trustSignature = crypto
     .createHash('sha256')
     .update(
