@@ -156,6 +156,7 @@ const findOrCreateSessionForPayment = async (params: {
       paymentStatus: 'succeeded',
       customerPhone: customerPhone || null,
       tenantId: tenantId || null,
+      paymentGateway: 'square', // Hookah-only Contract v1: GMV reporting
     },
   });
 };
@@ -423,11 +424,15 @@ export async function processSquareRawEvents(limit: number = 100) {
             const hookahAmountCents = getHookahAmountCentsFromLineItems(order?.line_items ?? []);
 
             let session: Awaited<ReturnType<typeof findOrCreateSessionForPayment>>;
+            // Attached GMV: when session is linked to this order, we bill on full tab total (order total), not just hookah lines
+            const orderTotalCents = order?.total_money?.amount != null ? Math.round(Number(order.total_money.amount)) : null;
+            const attachedGmvCents = orderTotalCents ?? amountCents ?? 0;
+
             if (hookahAmountCents > 0) {
               session = await findOrCreateSessionForPayment({
                 loungeId: loungeContext.loungeId,
                 tenantId: loungeContext.tenantId,
-                amountCents: hookahAmountCents,
+                amountCents: attachedGmvCents > 0 ? attachedGmvCents : hookahAmountCents,
                 referenceId,
                 paymentId: payment.id,
                 orderId: paymentOrderId,
@@ -437,8 +442,9 @@ export async function processSquareRawEvents(limit: number = 100) {
                 where: { id: session.id },
                 data: {
                   paymentStatus: 'succeeded',
-                  priceCents: hookahAmountCents,
+                  priceCents: attachedGmvCents > 0 ? attachedGmvCents : hookahAmountCents,
                   externalRef: referenceId || paymentOrderId || payment.id,
+                  paymentGateway: 'square', // Hookah-only Contract v1: GMV reporting
                 },
               });
             } else {
@@ -459,6 +465,8 @@ export async function processSquareRawEvents(limit: number = 100) {
                   data: {
                     paymentStatus: 'succeeded',
                     externalRef: referenceId || paymentOrderId || payment.id,
+                    paymentGateway: 'square', // Hookah-only Contract v1: GMV reporting
+                    ...(attachedGmvCents > 0 ? { priceCents: attachedGmvCents } : {}),
                   },
                 });
               } else {

@@ -210,6 +210,7 @@ export async function POST(req: Request) {
           paymentIntent: paymentIntentId,
           priceCents: priceCents,
           externalRef: externalRef, // Store Stripe checkout session ID
+          paymentGateway: 'stripe', // Hookah-only Contract v1: GMV reporting
         updatedAt: new Date(),
       };
 
@@ -315,6 +316,7 @@ export async function POST(req: Request) {
           data: {
             paymentStatus: 'succeeded',
             paymentIntent: paymentIntent.id,
+            paymentGateway: 'stripe', // Hookah-only Contract v1: GMV reporting
             // State will be updated via checkout.session.completed webhook
           },
         });

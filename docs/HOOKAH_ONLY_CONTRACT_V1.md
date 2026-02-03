@@ -89,7 +89,7 @@ Single source of truth for **hookah GMV** (Stripe + Square), **0.7% take** on th
   - From each order’s `line_items`, compute `hookah_amount_cents` = sum of line item totals where `(name || variation_name || '').trim().startsWith(HOOKAH_ITEM_NAME_PREFIX)`.
   - Create/update Session and GMV only when `hookah_amount_cents > 0`; set session amount to `hookah_amount_cents` (not full order total).
   - When `hookah_amount_cents === 0`: attach to existing session by reference only; do not create new session for GMV.
-- [ ] **Reporting** — Expose `GMV_hookah_stripe` and `GMV_hookah_square` (and total) for the period for billing/analytics.
+- [x] **Reporting** — Expose `GMV_hookah_stripe` and `GMV_hookah_square` (and total) for the period for billing/analytics. Implemented: `GET /api/analytics/gmv?windowDays=30&loungeId=&tenantId=`; uses `Session.paymentGateway` and `Payment` table. Run migration for `payment_gateway` on `Session` (see §9).
 
 ### Optional
 
@@ -115,3 +115,12 @@ Single source of truth for **hookah GMV** (Stripe + Square), **0.7% take** on th
 - **GMV_hookah:** Stripe = sum of payments with `h_session`; Square = sum of hookah_amount_cents from processor.
 
 Tick off checklist items as you implement; update this doc when you add category-based rules (v2).
+
+---
+
+## 9. GMV reporting and migration
+
+- **Endpoint:** `GET /api/analytics/gmv?windowDays=30&loungeId=&tenantId=`
+- **Response:** `gmv_hookah_stripe_cents`, `gmv_hookah_square_cents`, `gmv_hookah_total_cents` (and dollar equivalents), plus `count_stripe`, `count_square`, `period`, `filter`.
+- **Source:** Stripe GMV from `Payment` (status succeeded, paidAt in period); Square GMV from `Session` where `paymentGateway = 'square'`, `paymentStatus = 'succeeded'`, `updatedAt` in period.
+- **Migration:** Add column `payment_gateway` (nullable string) to `Session`. Set `paymentGateway: 'stripe'` in Stripe webhook when confirming payment; set `paymentGateway: 'square'` in Square processor when creating/updating session. Then run: `npx prisma migrate dev --name add_session_payment_gateway` (or `prisma db push`).

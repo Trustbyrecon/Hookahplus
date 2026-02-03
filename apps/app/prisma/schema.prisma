@@ -55,6 +55,7 @@ model Session {
   stage               String?         @map("nan_stage")
   action              String?         @map("nan_action")
   hid                 String? // Hookah+ Network ID (portable customer identifier)
+  paymentGateway      String?         @map("payment_gateway") // 'stripe' | 'square' — for GMV_hookah reporting (Hookah-only Contract v1)
   preorder            PreOrder?       @relation(fields: [preorderId], references: [id])
   seat                Seat?           @relation(fields: [seatId], references: [id])
   tenant              Tenant?         @relation(fields: [tenantId], references: [id], onUpdate: NoAction)
