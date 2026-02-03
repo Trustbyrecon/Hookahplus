@@ -34,7 +34,7 @@ export default function Home() {
       "@type": "Offer",
       "price": "0.00",
       "priceCurrency": "USD",
-      "description": "Pilot pricing varies by lounge. Request demo for current plans."
+      "description": "Subscription tiers (Starter, Pro, Trust+) plus 0.7% on hookah GMV when paid via Hookah+ (Stripe). Request demo for current plans."
     },
     "url": siteUrl,
     "aggregateRating": {

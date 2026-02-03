@@ -253,6 +253,27 @@ export default function PricingPage() {
       />
 
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        {/* Hookah GMV take (0.7%) + Why */}
+        <div className="mb-10 p-6 bg-teal-500/10 rounded-xl border border-teal-500/30 max-w-3xl mx-auto">
+          <div className="flex items-start gap-3">
+            <DollarSign className="w-6 h-6 text-teal-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-1">Payment processing on hookah GMV</h3>
+              <p className="text-zinc-300 text-sm mb-2">
+                When you run hookah session payments through Hookah+ (Stripe), we apply a <strong className="text-teal-400">0.7%</strong> take on that GMV. Subscription plans (below) are separate.
+              </p>
+              <details className="group">
+                <summary className="text-xs text-teal-400 cursor-pointer hover:text-teal-300 inline-flex items-center gap-1">
+                  <Info className="w-3.5 h-3.5" /> Why 0.7%?
+                </summary>
+                <p className="mt-2 text-xs text-zinc-400 leading-relaxed">
+                  We keep it low so our incentives align with yours: we grow when your hookah revenue grows. No hidden fees, no surprise bumps. The percentage covers payment infrastructure and lets us invest in the features that drive your volume — memory, loyalty, and workflow — without nickel-and-diming per session.
+                </p>
+              </details>
+            </div>
+          </div>
+        </div>
+
         {/* Simplified Billing Cycle Toggle - less prominent */}
         <div className="flex items-center justify-center gap-3 mb-12">
           <button

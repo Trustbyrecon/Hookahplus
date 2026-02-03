@@ -10,6 +10,26 @@ import { syncSessionToNetwork } from '../profiles/network';
 import { awardLoyaltyPoints } from '../../core/handlePaymentCompleted';
 import { log } from '../logger-pino';
 
+/** Hookah-only Contract v1: prefix for Square line items that count as hookah GMV. */
+const HOOKAH_ITEM_NAME_PREFIX = (process.env.HOOKAH_ITEM_NAME_PREFIX ?? 'H+ ').trimEnd() || 'H+ ';
+
+function getHookahAmountCentsFromLineItems(lineItems: unknown): number {
+  const items = Array.isArray(lineItems) ? lineItems : [];
+  let total = 0;
+  for (const li of items) {
+    const name = (li && typeof li === 'object' && ('name' in li) ? (li as any).name : null) ?? '';
+    const variationName = (li && typeof li === 'object' && ('variation_name' in li) ? (li as any).variation_name : null) ?? '';
+    const displayName = String(name || variationName || '').trim();
+    if (displayName.startsWith(HOOKAH_ITEM_NAME_PREFIX)) {
+      const amount = (li && typeof li === 'object' && 'total_money' in li && (li as any).total_money?.amount != null)
+        ? Number((li as any).total_money.amount)
+        : 0;
+      total += Math.round(amount);
+    }
+  }
+  return total;
+}
+
 type SquareEnvelope = {
   merchant_id?: string;
   type?: string;
@@ -399,26 +419,62 @@ export async function processSquareRawEvents(limit: number = 100) {
             const customerId = payment?.customer_id || null;
             const identity = await resolveSquareCustomerIdentity(customerId);
             const referenceId = payment?.reference_id || order?.reference_id || null;
+            // Hookah-only Contract v1: GMV from prefix-matched line items only
+            const hookahAmountCents = getHookahAmountCentsFromLineItems(order?.line_items ?? []);
 
-            const session = await findOrCreateSessionForPayment({
-              loungeId: loungeContext.loungeId,
-              tenantId: loungeContext.tenantId,
-              amountCents: amountCents || 0,
-              referenceId,
-              paymentId: payment.id,
-              orderId: paymentOrderId,
-              customerPhone: identity.phone,
-            });
+            let session: Awaited<ReturnType<typeof findOrCreateSessionForPayment>>;
+            if (hookahAmountCents > 0) {
+              session = await findOrCreateSessionForPayment({
+                loungeId: loungeContext.loungeId,
+                tenantId: loungeContext.tenantId,
+                amountCents: hookahAmountCents,
+                referenceId,
+                paymentId: payment.id,
+                orderId: paymentOrderId,
+                customerPhone: identity.phone,
+              });
+              await prisma.session.update({
+                where: { id: session.id },
+                data: {
+                  paymentStatus: 'succeeded',
+                  priceCents: hookahAmountCents,
+                  externalRef: referenceId || paymentOrderId || payment.id,
+                },
+              });
+            } else {
+              // No hookah-eligible line items (Hookah-only Contract v1): attach to existing by reference only; do not create for GMV
+              const existingByRef = referenceId || paymentOrderId || payment.id
+                ? await prisma.session.findFirst({
+                    where: {
+                      loungeId: loungeContext.loungeId,
+                      externalRef: referenceId || paymentOrderId || payment.id,
+                    },
+                    orderBy: { createdAt: 'desc' },
+                  })
+                : null;
+              if (existingByRef) {
+                session = existingByRef;
+                await prisma.session.update({
+                  where: { id: session.id },
+                  data: {
+                    paymentStatus: 'succeeded',
+                    externalRef: referenceId || paymentOrderId || payment.id,
+                  },
+                });
+              } else {
+                // No hookah GMV and no existing session: skip session create (do not count toward GMV)
+                log.info('square.hookah_gmv_skip', {
+                  component: 'square',
+                  action: 'payment_completed',
+                  paymentId: payment.id,
+                  loungeId: loungeContext.loungeId,
+                  reason: 'hookah_amount_cents_zero_no_existing_ref',
+                });
+                session = null as any;
+              }
+            }
 
-            await prisma.session.update({
-              where: { id: session.id },
-              data: {
-                paymentStatus: 'succeeded',
-                priceCents: amountCents || session.priceCents,
-                externalRef: referenceId || paymentOrderId || payment.id,
-              },
-            });
-
+            if (session) {
             // ---------------------------
             // AI Enrich #1: pricing anomaly
             // ---------------------------
@@ -707,6 +763,7 @@ export async function processSquareRawEvents(limit: number = 100) {
                 items: JSON.stringify(order?.line_items || []),
               },
             });
+            }
           }
         }
       }

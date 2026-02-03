@@ -432,6 +432,10 @@ export const POST = withRequestContext(async (request: NextRequest): Promise<Nex
         metadata: {
           h_session: sessionId, // Opaque UUID only
         },
+        // 0.7% platform take on hookah GMV (Hookah-only Contract v1). Only valid with Stripe Connect.
+        ...(process.env.STRIPE_APPLICATION_FEE_ENABLED === 'true' && typeof amountInCents === 'number' && amountInCents > 0
+          ? { application_fee_amount: Math.round(amountInCents * 0.007) }
+          : {}),
       },
       // Expire checkout sessions after 30 minutes
       expires_at: Math.floor(Date.now() / 1000) + (30 * 60),
