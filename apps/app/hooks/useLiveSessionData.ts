@@ -12,31 +12,60 @@ function generateRichDemoData(): FireSession[] {
   const now = Date.now();
   const thirtyMinutesAgo = now - (30 * 60 * 1000);
 
-    // Single demo session showing night after night flow - starts as ACTIVE (Lit)
   return [
+    // PAID_CONFIRMED session so NAN flows from Claim Prep (Payment → Prep → …)
     {
       id: 'demo-session-1',
+      tableId: 'T-001',
+      customerName: 'Demo Guest',
+      customerPhone: '+1 (555) 000-0000',
+      flavor: 'Double Apple + Mint',
+      amount: 2500,
+      status: 'PAID_CONFIRMED',
+      state: 'PENDING',
+      paymentStatus: 'succeeded',
+      externalRef: 'test_cs_demo_session_1',
+      stage: 'Payment',
+      action: undefined,
+      currentStage: 'BOH',
+      assignedStaff: { boh: undefined, foh: undefined },
+      createdAt: now - (2 * 60 * 1000),
+      updatedAt: now,
+      sessionStartTime: undefined,
+      sessionDuration: 45 * 60,
+      coalStatus: 'active',
+      refillStatus: 'none',
+      notes: '',
+      edgeCase: null,
+      bohState: undefined,
+      guestTimerDisplay: false
+    },
+    // Optional: already-Lit session for testing later stages
+    {
+      id: 'demo-session-2',
       tableId: 'T-005',
       customerName: 'Sarah & Friends',
       customerPhone: '+1 (555) 234-5678',
       flavor: 'Blue Mist + Mint Fresh',
-        amount: 3500,
-        status: 'ACTIVE', // Already lit for demo
-        state: 'ACTIVE',
-      paymentStatus: 'succeeded', // Required for hasPayment check
-      externalRef: 'test_cs_demo_session_1', // Required for hasPayment check
-      currentStage: 'BOH',
-      assignedStaff: { boh: undefined, foh: undefined },
+      amount: 3500,
+      status: 'ACTIVE',
+      state: 'ACTIVE',
+      paymentStatus: 'succeeded',
+      externalRef: 'test_cs_demo_session_2',
+      stage: 'Light',
+      action: 'START_ACTIVE',
+      currentStage: 'CUSTOMER',
+      assignedStaff: { boh: 'demo-boh', foh: 'demo-foh' },
       createdAt: thirtyMinutesAgo,
       updatedAt: now - (5 * 60 * 1000),
-      sessionStartTime: undefined,
-      sessionDuration: 60 * 60, // 60 minutes
+      sessionStartTime: now - (25 * 60 * 1000),
+      sessionDuration: 60 * 60,
       coalStatus: 'active',
       refillStatus: 'none',
-      notes: 'Demo session - ready to test night after night flow',
+      notes: 'Demo session - already lit',
       edgeCase: null,
       bohState: 'PREPARING',
-      guestTimerDisplay: false
+      guestTimerDisplay: true
     }
   ];
 }
@@ -598,6 +627,10 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
           },
           'MANAGER' // Allow all actions in demo mode
         );
+
+        // Lock NAN flow: set stage (Payment/Prep/Ready/Deliver/Light) and action so UI advances
+        updatedSession.stage = STATUS_TO_TRACKER_STAGE[updatedSession.status as keyof typeof STATUS_TO_TRACKER_STAGE] ?? (updatedSession.stage as TrackerStage) ?? 'Payment';
+        updatedSession.action = sessionAction;
 
         // Handle special actions that require additional updates
         if (sessionAction === 'CLAIM_PREP') {
