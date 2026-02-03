@@ -21,8 +21,13 @@ See `tasks/demo-nan-claim-prep-e2e-task-brief.md` for demo NAN (Claim Prep) flow
 ### Run NAN E2E against production (light demo)
 Use production as the target instead of localhost. **Requires:** production DB has `payment_gateway` (run Supabase migration `20260201000001_add_payment_gateway.sql` or `prisma/add_payment_gateway.sql` once). Production must allow `/api/test-session/create-paid` and PATCH `/api/sessions` (consider a feature flag or demo-only route in production).
 
+From **repo root**:
 ```bash
-cd apps/app
+cd apps/app && PLAYWRIGHT_BASE_URL=https://app.hookahplus.net USE_EXISTING_SERVER=1 npx playwright test e2e/flows/night-after-night-engine.spec.ts --project=chromium
+```
+
+From **apps/app** (if you're already there, omit `cd apps/app`):
+```bash
 PLAYWRIGHT_BASE_URL=https://app.hookahplus.net USE_EXISTING_SERVER=1 npx playwright test e2e/flows/night-after-night-engine.spec.ts --project=chromium
 ```
 No local server is started; all requests go to production. Run with a single worker to avoid timeout cascades.

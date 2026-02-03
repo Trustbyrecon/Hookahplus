@@ -48,7 +48,7 @@ npm run test:e2e -- e2e/flows/night-after-night-engine.spec.ts
 # Terminal 2:
 USE_EXISTING_SERVER=1 npx playwright test e2e/flows/night-after-night-engine.spec.ts --project=chromium
 
-# Option C: Run against production (light demo) — no local server
+# Option C: Run against production (light demo) — no local server (run from apps/app)
 # Production must have payment_gateway column (Supabase migration 20260201000001_add_payment_gateway.sql).
 PLAYWRIGHT_BASE_URL=https://app.hookahplus.net USE_EXISTING_SERVER=1 npx playwright test e2e/flows/night-after-night-engine.spec.ts --project=chromium
 ```
