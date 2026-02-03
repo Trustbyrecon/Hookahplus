@@ -13,7 +13,8 @@ import { log } from '../logger-pino';
 /** Hookah-only Contract v1: prefix for Square line items that count as hookah GMV. */
 const HOOKAH_ITEM_NAME_PREFIX = (process.env.HOOKAH_ITEM_NAME_PREFIX ?? 'H+ ').trimEnd() || 'H+ ';
 
-function getHookahAmountCentsFromLineItems(lineItems: unknown): number {
+/** Exported for unit tests (Hookah-only Contract v1). */
+export function getHookahAmountCentsFromLineItems(lineItems: unknown): number {
   const items = Array.isArray(lineItems) ? lineItems : [];
   let total = 0;
   for (const li of items) {
