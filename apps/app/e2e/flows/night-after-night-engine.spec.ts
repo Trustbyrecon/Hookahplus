@@ -10,6 +10,7 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Night After Night Engine - E2E Tests', () => {
+  test.setTimeout(90_000); // API-heavy; server may be cold when USE_EXISTING_SERVER=1
   const testLoungeId = 'night-after-night';
   const testTableId = 'T-001';
   const testFlavorMix = ['Mint', 'Grape'];
@@ -26,8 +27,10 @@ test.describe('Night After Night Engine - E2E Tests', () => {
     const res = await page.request.post('/api/test-session/create-paid', {
       data: { loungeId, tableId },
     });
-    expect(res.ok()).toBeTruthy();
-    const json = await res.json();
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok()) {
+      throw new Error(`create-paid failed ${res.status()}: ${JSON.stringify(json)}`);
+    }
     const session = json.session || json;
     expect(session?.id).toBeTruthy();
     return session;
