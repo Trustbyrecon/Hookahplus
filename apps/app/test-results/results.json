@@ -142,7 +142,7 @@
           "specs": [
             {
               "title": "Pathway 1: Pre-order → Payment → Session Creation → Guest Tracker",
-              "ok": false,
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -155,53 +155,18 @@
                     {
                       "workerIndex": 0,
                       "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 3199,
-                      "error": {
-                        "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3002/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3002/\", waiting until \"load\"\u001b[22m\n",
-                        "stack": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3002/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3002/\", waiting until \"load\"\u001b[22m\n\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\flows\\night-after-night-engine.spec.ts:55:16",
-                        "location": {
-                          "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\flows\\night-after-night-engine.spec.ts",
-                          "column": 16,
-                          "line": 55
-                        },
-                        "snippet": "\u001b[0m \u001b[90m 53 |\u001b[39m   test\u001b[33m.\u001b[39mbeforeEach(\u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m 54 |\u001b[39m     \u001b[90m// Set up test environment\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m\n \u001b[90m 58 |\u001b[39m   test(\u001b[32m'Pathway 1: Pre-order → Payment → Session Creation → Guest Tracker'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\flows\\night-after-night-engine.spec.ts",
-                            "column": 16,
-                            "line": 55
-                          },
-                          "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3002/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3002/\", waiting until \"load\"\u001b[22m\n\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   test\u001b[33m.\u001b[39mbeforeEach(\u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m 54 |\u001b[39m     \u001b[90m// Set up test environment\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m\n \u001b[90m 58 |\u001b[39m   test(\u001b[32m'Pathway 1: Pre-order → Payment → Session Creation → Guest Tracker'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m\n\u001b[2m    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\flows\\night-after-night-engine.spec.ts:55:16\u001b[22m"
-                        }
-                      ],
+                      "status": "passed",
+                      "duration": 2864,
+                      "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-02-03T19:49:32.823Z",
+                      "startTime": "2026-02-03T21:28:54.249Z",
                       "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\flows-night-after-night-en-16c5e-on-Creation-→-Guest-Tracker-chromium\\test-failed-1.png"
-                        },
-                        {
-                          "name": "video",
-                          "contentType": "video/webm",
-                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\flows-night-after-night-en-16c5e-on-Creation-→-Guest-Tracker-chromium\\video.webm"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\flows\\night-after-night-engine.spec.ts",
-                        "column": 16,
-                        "line": 55
-                      }
+                      "attachments": []
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
               "id": "f1a6c5611daedfbbca0b-c80c4c63ee3e441d2243",
@@ -211,7 +176,7 @@
             },
             {
               "title": "Pathway 2: Session → Order → Delivery → Active (Night After Night Flow)",
-              "ok": false,
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -222,55 +187,20 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 1,
+                      "workerIndex": 0,
                       "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 2782,
-                      "error": {
-                        "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3002/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3002/\", waiting until \"load\"\u001b[22m\n",
-                        "stack": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3002/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3002/\", waiting until \"load\"\u001b[22m\n\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\flows\\night-after-night-engine.spec.ts:55:16",
-                        "location": {
-                          "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\flows\\night-after-night-engine.spec.ts",
-                          "column": 16,
-                          "line": 55
-                        },
-                        "snippet": "\u001b[0m \u001b[90m 53 |\u001b[39m   test\u001b[33m.\u001b[39mbeforeEach(\u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m 54 |\u001b[39m     \u001b[90m// Set up test environment\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m\n \u001b[90m 58 |\u001b[39m   test(\u001b[32m'Pathway 1: Pre-order → Payment → Session Creation → Guest Tracker'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\flows\\night-after-night-engine.spec.ts",
-                            "column": 16,
-                            "line": 55
-                          },
-                          "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3002/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3002/\", waiting until \"load\"\u001b[22m\n\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   test\u001b[33m.\u001b[39mbeforeEach(\u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m 54 |\u001b[39m     \u001b[90m// Set up test environment\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m\n \u001b[90m 58 |\u001b[39m   test(\u001b[32m'Pathway 1: Pre-order → Payment → Session Creation → Guest Tracker'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m\n\u001b[2m    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\flows\\night-after-night-engine.spec.ts:55:16\u001b[22m"
-                        }
-                      ],
+                      "status": "passed",
+                      "duration": 3398,
+                      "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-02-03T19:49:39.151Z",
+                      "startTime": "2026-02-03T21:28:58.763Z",
                       "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\flows-night-after-night-en-b01c7-ive-Night-After-Night-Flow--chromium\\test-failed-1.png"
-                        },
-                        {
-                          "name": "video",
-                          "contentType": "video/webm",
-                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\flows-night-after-night-en-b01c7-ive-Night-After-Night-Flow--chromium\\video.webm"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\flows\\night-after-night-engine.spec.ts",
-                        "column": 16,
-                        "line": 55
-                      }
+                      "attachments": []
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
               "id": "f1a6c5611daedfbbca0b-4825b757db0be29fdcdd",
@@ -280,7 +210,7 @@
             },
             {
               "title": "Pathway 3: Payment Confirmation Triggers Hookah Tracker Redirect",
-              "ok": false,
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -291,55 +221,20 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 2,
+                      "workerIndex": 0,
                       "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 2696,
-                      "error": {
-                        "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3002/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3002/\", waiting until \"load\"\u001b[22m\n",
-                        "stack": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3002/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3002/\", waiting until \"load\"\u001b[22m\n\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\flows\\night-after-night-engine.spec.ts:55:16",
-                        "location": {
-                          "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\flows\\night-after-night-engine.spec.ts",
-                          "column": 16,
-                          "line": 55
-                        },
-                        "snippet": "\u001b[0m \u001b[90m 53 |\u001b[39m   test\u001b[33m.\u001b[39mbeforeEach(\u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m 54 |\u001b[39m     \u001b[90m// Set up test environment\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m\n \u001b[90m 58 |\u001b[39m   test(\u001b[32m'Pathway 1: Pre-order → Payment → Session Creation → Guest Tracker'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\flows\\night-after-night-engine.spec.ts",
-                            "column": 16,
-                            "line": 55
-                          },
-                          "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3002/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3002/\", waiting until \"load\"\u001b[22m\n\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   test\u001b[33m.\u001b[39mbeforeEach(\u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m 54 |\u001b[39m     \u001b[90m// Set up test environment\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m\n \u001b[90m 58 |\u001b[39m   test(\u001b[32m'Pathway 1: Pre-order → Payment → Session Creation → Guest Tracker'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m\n\u001b[2m    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\flows\\night-after-night-engine.spec.ts:55:16\u001b[22m"
-                        }
-                      ],
+                      "status": "passed",
+                      "duration": 1875,
+                      "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-02-03T19:49:43.022Z",
+                      "startTime": "2026-02-03T21:29:02.189Z",
                       "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\flows-night-after-night-en-34198-ers-Hookah-Tracker-Redirect-chromium\\test-failed-1.png"
-                        },
-                        {
-                          "name": "video",
-                          "contentType": "video/webm",
-                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\flows-night-after-night-en-34198-ers-Hookah-Tracker-Redirect-chromium\\video.webm"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\flows\\night-after-night-engine.spec.ts",
-                        "column": 16,
-                        "line": 55
-                      }
+                      "attachments": []
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
               "id": "f1a6c5611daedfbbca0b-e62a37e8979035381253",
@@ -349,7 +244,7 @@
             },
             {
               "title": "Pathway 4: Full Night After Night Flow - Pre-order to Active Session",
-              "ok": false,
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -360,55 +255,20 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 3,
+                      "workerIndex": 0,
                       "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 2711,
-                      "error": {
-                        "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3002/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3002/\", waiting until \"load\"\u001b[22m\n",
-                        "stack": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3002/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3002/\", waiting until \"load\"\u001b[22m\n\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\flows\\night-after-night-engine.spec.ts:55:16",
-                        "location": {
-                          "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\flows\\night-after-night-engine.spec.ts",
-                          "column": 16,
-                          "line": 55
-                        },
-                        "snippet": "\u001b[0m \u001b[90m 53 |\u001b[39m   test\u001b[33m.\u001b[39mbeforeEach(\u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m 54 |\u001b[39m     \u001b[90m// Set up test environment\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m\n \u001b[90m 58 |\u001b[39m   test(\u001b[32m'Pathway 1: Pre-order → Payment → Session Creation → Guest Tracker'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\flows\\night-after-night-engine.spec.ts",
-                            "column": 16,
-                            "line": 55
-                          },
-                          "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3002/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3002/\", waiting until \"load\"\u001b[22m\n\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   test\u001b[33m.\u001b[39mbeforeEach(\u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m 54 |\u001b[39m     \u001b[90m// Set up test environment\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m\n \u001b[90m 58 |\u001b[39m   test(\u001b[32m'Pathway 1: Pre-order → Payment → Session Creation → Guest Tracker'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m\n\u001b[2m    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\flows\\night-after-night-engine.spec.ts:55:16\u001b[22m"
-                        }
-                      ],
+                      "status": "passed",
+                      "duration": 2845,
+                      "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-02-03T19:49:46.794Z",
+                      "startTime": "2026-02-03T21:29:04.090Z",
                       "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\flows-night-after-night-en-706f6-Pre-order-to-Active-Session-chromium\\test-failed-1.png"
-                        },
-                        {
-                          "name": "video",
-                          "contentType": "video/webm",
-                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\flows-night-after-night-en-706f6-Pre-order-to-Active-Session-chromium\\video.webm"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\flows\\night-after-night-engine.spec.ts",
-                        "column": 16,
-                        "line": 55
-                      }
+                      "attachments": []
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
               "id": "f1a6c5611daedfbbca0b-f9c5dfd06fad36a4900c",
@@ -418,7 +278,7 @@
             },
             {
               "title": "Pathway 5: Guest Experience - Payment → Tracker → Session Status Updates",
-              "ok": false,
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -429,55 +289,20 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 4,
+                      "workerIndex": 0,
                       "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 2881,
-                      "error": {
-                        "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3002/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3002/\", waiting until \"load\"\u001b[22m\n",
-                        "stack": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3002/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3002/\", waiting until \"load\"\u001b[22m\n\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\flows\\night-after-night-engine.spec.ts:55:16",
-                        "location": {
-                          "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\flows\\night-after-night-engine.spec.ts",
-                          "column": 16,
-                          "line": 55
-                        },
-                        "snippet": "\u001b[0m \u001b[90m 53 |\u001b[39m   test\u001b[33m.\u001b[39mbeforeEach(\u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m 54 |\u001b[39m     \u001b[90m// Set up test environment\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m\n \u001b[90m 58 |\u001b[39m   test(\u001b[32m'Pathway 1: Pre-order → Payment → Session Creation → Guest Tracker'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\flows\\night-after-night-engine.spec.ts",
-                            "column": 16,
-                            "line": 55
-                          },
-                          "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3002/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3002/\", waiting until \"load\"\u001b[22m\n\n\n\u001b[0m \u001b[90m 53 |\u001b[39m   test\u001b[33m.\u001b[39mbeforeEach(\u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m 54 |\u001b[39m     \u001b[90m// Set up test environment\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 57 |\u001b[39m\n \u001b[90m 58 |\u001b[39m   test(\u001b[32m'Pathway 1: Pre-order → Payment → Session Creation → Guest Tracker'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m\n\u001b[2m    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\flows\\night-after-night-engine.spec.ts:55:16\u001b[22m"
-                        }
-                      ],
+                      "status": "passed",
+                      "duration": 3525,
+                      "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-02-03T19:49:51.091Z",
+                      "startTime": "2026-02-03T21:29:06.949Z",
                       "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\flows-night-after-night-en-bb9eb-er-→-Session-Status-Updates-chromium\\test-failed-1.png"
-                        },
-                        {
-                          "name": "video",
-                          "contentType": "video/webm",
-                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\flows-night-after-night-en-bb9eb-er-→-Session-Status-Updates-chromium\\video.webm"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\flows\\night-after-night-engine.spec.ts",
-                        "column": 16,
-                        "line": 55
-                      }
+                      "attachments": []
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
               "id": "f1a6c5611daedfbbca0b-ea292ddd16576d430a80",
@@ -492,11 +317,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-02-03T19:49:31.870Z",
-    "duration": 22298.993,
-    "expected": 0,
+    "startTime": "2026-02-03T21:28:53.262Z",
+    "duration": 17334.823,
+    "expected": 5,
     "skipped": 0,
-    "unexpected": 5,
+    "unexpected": 0,
     "flaky": 0
   }
 }

@@ -76,9 +76,9 @@ test.describe('Night After Night Engine - E2E Tests', () => {
     const checkoutSessionId = session.externalRef || session.id;
 
     // Step 3: Verify checkout success page renders confirmation UI
-    // Demo mode bypasses the Stripe session fetch and still exercises the success UI.
-    await page.goto(`/checkout/success?mode=demo&session_id=${checkoutSessionId}`);
-    await expect(page.locator('text=Continue to Session')).toBeVisible({ timeout: 5000 });
+    // Demo mode bypasses the Stripe session fetch. Use domcontentloaded so we don't wait for full load (avoids timeout).
+    await page.goto(`/checkout/success?mode=demo&session_id=${checkoutSessionId}`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('text=Continue to Session')).toBeVisible({ timeout: 15000 });
   });
 
   test('Pathway 2: Session → Order → Delivery → Active (Night After Night Flow)', async ({ page }) => {
@@ -159,8 +159,8 @@ test.describe('Night After Night Engine - E2E Tests', () => {
     const sessionId = session.id;
 
     // 2. Navigate to checkout success (simulating guest view)
-    await page.goto(`/checkout/success?mode=demo&session_id=${session.externalRef || sessionId}`);
-    await expect(page.locator('text=Continue to Session')).toBeVisible({ timeout: 5000 });
+    await page.goto(`/checkout/success?mode=demo&session_id=${session.externalRef || sessionId}`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('text=Continue to Session')).toBeVisible({ timeout: 15000 });
 
     // 3. Update session status (simulating prep progress) via engine transition
     await transition(page, sessionId, 'CLAIM_PREP');

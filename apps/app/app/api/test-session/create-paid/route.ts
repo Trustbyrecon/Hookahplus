@@ -147,11 +147,12 @@ export async function POST(req: NextRequest) {
           )
         `);
         
-        // Fetch the created session
-        session = await prisma.session.findUnique({
-          where: { id: sessionId }
-        });
-        
+        // Fetch without Prisma so we don't require payment_gateway (column may not exist yet)
+        const rows = await prisma.$queryRawUnsafe<any[]>(
+          `SELECT id, "externalRef", source, state, "tableId", "customerRef", "priceCents", "paymentStatus", "paymentIntent", "durationSecs", "flavorMix" FROM "Session" WHERE id = $1`,
+          sessionId
+        );
+        session = rows?.[0];
         if (!session) {
           throw new Error('Failed to create session via raw SQL');
         }

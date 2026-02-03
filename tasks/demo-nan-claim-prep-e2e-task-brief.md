@@ -32,8 +32,9 @@ Ensure the NAN (Payment → Prep → Ready → Deliver → Light) workflow flows
 ## How to Run E2E (Night After Night / Claim Prep)
 
 ### Prerequisites
-- App running (e.g. `npm run dev` in `apps/app`) on `http://localhost:3002`
-- Database available (sessions created by `/api/test-session/create-paid` and updated by PATCH `/api/sessions`)
+- **Option B only:** App must be running on `http://localhost:3002` (e.g. `cd apps/app && npm run dev`). If not, you get `net::ERR_CONNECTION_REFUSED` and all tests fail in `beforeEach`.
+- Database available (sessions from `/api/test-session/create-paid` and PATCH `/api/sessions`).
+- **If create-paid returns 500 "column Session.payment_gateway does not exist":** Run the migration: `cd apps/app && npx prisma db execute --file prisma/add_payment_gateway.sql` (or apply `prisma/add_payment_gateway.sql` manually). The create-paid route also has a raw-SQL fallback that works when the column is missing (it uses a SELECT that omits `payment_gateway`).
 
 ### Run the NAN E2E test
 ```bash
@@ -42,8 +43,14 @@ cd apps/app
 # Option A: Let Playwright start the server (port 3002 must be free)
 npm run test:e2e -- e2e/flows/night-after-night-engine.spec.ts
 
-# Option B: Use existing server (app already running on 3002)
+# Option B: Use existing server — start the app first in another terminal!
+# Terminal 1: cd apps/app && npm run dev
+# Terminal 2:
 USE_EXISTING_SERVER=1 npx playwright test e2e/flows/night-after-night-engine.spec.ts --project=chromium
+
+# Option C: Run against production (light demo) — no local server
+# Production must have payment_gateway column (Supabase migration 20260201000001_add_payment_gateway.sql).
+PLAYWRIGHT_BASE_URL=https://app.hookahplus.net USE_EXISTING_SERVER=1 npx playwright test e2e/flows/night-after-night-engine.spec.ts --project=chromium
 ```
 
 ### Relevant tests
