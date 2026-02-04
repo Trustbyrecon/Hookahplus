@@ -70,8 +70,8 @@ export class SquareOAuth {
     const redirectUri = `${this.getAppUrl()}/api/square/oauth/callback`;
     // Sandbox OAuth scopes for our MVP:
     // - MERCHANT_PROFILE_READ: fetch merchant + locations
-    // - ORDERS_READ/ORDERS_WRITE: allow order injection for smoke tests / Flow 3
-    const scopes = ['MERCHANT_PROFILE_READ', 'ORDERS_READ', 'ORDERS_WRITE'].join(' ');
+    // Keep scopes minimal to reduce sandbox auth failures.
+    const scopes = ['MERCHANT_PROFILE_READ'].join(' ');
 
     // Ensure clientId has no whitespace or newlines
     const cleanClientId = clientId;
