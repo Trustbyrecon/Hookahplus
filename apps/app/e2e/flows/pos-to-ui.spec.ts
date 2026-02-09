@@ -59,7 +59,7 @@ test.describe('POS to UI E2E Flow', () => {
     await page.goto('/admin/qr');
     
     // Verify page loads (non-QR-only changes allowed)
-    await expect(page.getByText('QR Code Generator')).toBeVisible();
+    await expect(page.getByRole('heading', { name: /QR Code Management/i })).toBeVisible({ timeout: 5000 });
     
     // Note: Actual QR-only change blocking would be tested via API gate checks
   });
