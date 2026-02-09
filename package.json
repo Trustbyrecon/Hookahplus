@@ -42,6 +42,7 @@
     "test:square:smoke:oauth": "cd apps/app && npm run test:square:oauth",
     "test:square:smoke:aliethia": "cd apps/app && npm run test:square -- Aliethia",
     "test:square:smoke:oauth:aliethia": "cd apps/app && npm run test:square:oauth -- Aliethia",
+    "test:square:smoke:oauth:aliethia:sandbox": "cd apps/app && npm run test:square:oauth -- AliethiaSandbox",
     "test:pos": "cd apps/app && npm run test:pos",
     "check:env-parity": "node scripts/check-env-parity.js",
     "reflex:gate": "node scripts/reflex-gate.js",

@@ -17,6 +17,20 @@ function getSquareApiBaseUrl(): string {
     : 'https://connect.squareup.com';
 }
 
+function getSquareRuntimeEnv(): 'sandbox' | 'production' {
+  const raw = (process.env.SQUARE_ENV || '').toLowerCase();
+  if (raw === 'sandbox' || raw === 'production') return raw;
+  const appId = (process.env.SQUARE_APPLICATION_ID || '').trim().replace(/[\r\n]/g, '');
+  return appId.startsWith('sandbox-') ? 'sandbox' : 'production';
+}
+
+function inferExpectedEnvFromLoungeId(loungeId: string): 'sandbox' | 'production' | null {
+  const id = (loungeId || '').trim().toLowerCase();
+  if (!id) return null;
+  if (id.endsWith('sandbox')) return 'sandbox';
+  return null;
+}
+
 const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2025-08-27.basil' as any })
   : null;
@@ -32,6 +46,7 @@ export class SquareAdapter implements PosAdapter {
   private initialized = false;
   private readonly idempotencyCache = new Map<string, string>();
   private authMode: 'oauth' | 'legacy' = 'legacy';
+  private static readonly OAUTH_REFRESH_RUNWAY_DAYS = 7;
   
   constructor(private cfg: { venueId: string }) {
     // Initialization is now async - use initialize() method
@@ -69,8 +84,37 @@ export class SquareAdapter implements PosAdapter {
 
       if (merchant) {
         this.authMode = 'oauth';
-        // Check if token needs refresh
-        if (merchant.expiresAt && merchant.expiresAt < new Date()) {
+        // Fail-fast guard: in a shared DB setup, avoid "prod token + sandbox API" (and vice versa)
+        // by using loungeId naming convention (e.g. AliethiaSandbox) as a hard lane separator.
+        const expectedEnv = inferExpectedEnvFromLoungeId(this.cfg.venueId);
+        const runtimeEnv = getSquareRuntimeEnv();
+        if (expectedEnv && expectedEnv !== runtimeEnv) {
+          throw new Error(
+            `Square ENV mismatch: loungeId=${this.cfg.venueId} implies ${expectedEnv} but runtime SQUARE_ENV is ${runtimeEnv}. ` +
+              `Use a matching loungeId lane (e.g. AliethiaSandbox for sandbox) or set SQUARE_ENV=${expectedEnv}.`
+          );
+        }
+
+        const now = new Date();
+        const expiresAt: Date | null = merchant.expiresAt ?? null;
+        const runwayMs = SquareAdapter.OAUTH_REFRESH_RUNWAY_DAYS * 24 * 60 * 60 * 1000;
+        const msRemaining = expiresAt ? expiresAt.getTime() - now.getTime() : null;
+        const daysRemaining = msRemaining == null ? null : msRemaining / (24 * 60 * 60 * 1000);
+        const needsRefreshSoon =
+          expiresAt != null && msRemaining != null && msRemaining <= runwayMs;
+
+        // Trust signal: token runway (helps prevent CI/live surprises).
+        if (expiresAt) {
+          console.log('[Square OAuth] token_runway', {
+            venueId: this.cfg.venueId,
+            merchantId: merchant.merchantId,
+            daysRemaining: Math.round((daysRemaining ?? 0) * 10) / 10,
+            action: needsRefreshSoon ? 'refresh' : 'skip',
+          });
+        }
+
+        // Refresh if token is expired or within runway window.
+        if (needsRefreshSoon || (expiresAt && expiresAt < now)) {
           await this.refreshAccessToken(merchant);
           // Reload after refresh
           const refreshed =
@@ -78,12 +122,26 @@ export class SquareAdapter implements PosAdapter {
               ? await squareMerchantDelegate.findUnique({ where: { loungeId: this.cfg.venueId } })
               : null;
           if (refreshed) {
-            this.accessToken = decrypt(refreshed.accessToken);
+            try {
+              this.accessToken = decrypt(refreshed.accessToken);
+            } catch (e) {
+              throw new Error(
+                `Square token decrypt failed after refresh. This usually means ENCRYPTION_KEY differs between the environment that stored the token and the environment reading it. ` +
+                  `If you share a DB between local/prod, use the same ENCRYPTION_KEY (recommended) or reconnect Square for loungeId=${this.cfg.venueId}.`
+              );
+            }
             this.locationId = refreshed.locationIds[0] || null;
             this.merchantId = refreshed.merchantId;
           }
         } else {
-          this.accessToken = decrypt(merchant.accessToken);
+          try {
+            this.accessToken = decrypt(merchant.accessToken);
+          } catch (e) {
+            throw new Error(
+              `Square token decrypt failed. This usually means ENCRYPTION_KEY differs between the environment that stored the token and the environment reading it. ` +
+                `If you share a DB between local/prod, use the same ENCRYPTION_KEY (recommended) or reconnect Square for loungeId=${this.cfg.venueId}.`
+            );
+          }
           this.locationId = merchant.locationIds[0] || null;
           this.merchantId = merchant.merchantId;
         }
@@ -117,7 +175,16 @@ export class SquareAdapter implements PosAdapter {
     }
 
     try {
-      const tokens = await SquareOAuth.refreshToken(decrypt(merchant.refreshToken));
+      let refreshTokenPlain: string;
+      try {
+        refreshTokenPlain = decrypt(merchant.refreshToken);
+      } catch (e) {
+        throw new Error(
+          `Square refresh token decrypt failed. This usually means ENCRYPTION_KEY differs between the environment that stored the token and the environment reading it. ` +
+            `Reconnect Square for loungeId=${this.cfg.venueId}.`
+        );
+      }
+      const tokens = await SquareOAuth.refreshToken(refreshTokenPlain);
       const expiresAt = new Date(Date.now() + tokens.expiresIn * 1000);
 
       const squareMerchantDelegate = (prisma as any)?.squareMerchant;
