@@ -205,8 +205,11 @@ export default function CampaignsPage() {
     firstXCustomers: 50,
     buyXGetY: { buy: 2, get: 1 },
     timeLimit: 24, // hours
+    daysOfWeek: [] as number[],
+    startTime: '',
+    endTime: '',
     discountAmount: 0,
-    minimumSpend: 0
+    minimumSpend: 0,
   });
 
   const tabs = [
