@@ -9,6 +9,21 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hookahplus_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
     
     strategy:
       matrix:
@@ -28,11 +43,38 @@ jobs:
     - name: Install dependencies
       run: |
         cd apps/${{ matrix.project }}
-        npm ci
+        # Site has heavy optional deps (e.g. puppeteer). CI doesn't need them for unit tests.
+        if [ "${{ matrix.project }}" = "site" ]; then
+          export PUPPETEER_SKIP_DOWNLOAD=1
+          export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+          npm ci --omit=optional
+        else
+          npm ci
+        fi
+
+    - name: Prepare test database (app)
+      if: matrix.project == 'app'
+      run: |
+        cd apps/app
+        export PGUSER=postgres
+        export PG_PASS=postgres
+        export PGDATABASE=hookahplus_test
+        export DB_SCHEME_PART1=postgre
+        export DB_SCHEME_PART2=sql://
+        export DATABASE_URL="${DB_SCHEME_PART1}${DB_SCHEME_PART2}${PGUSER}:${PG_PASS}@localhost:5432/${PGDATABASE}?schema=public"
+        npm run db:push
         
     - name: Run unit tests
       run: |
         cd apps/${{ matrix.project }}
+        if [ "${{ matrix.project }}" = "app" ]; then
+          export PGUSER=postgres
+          export PG_PASS=postgres
+          export PGDATABASE=hookahplus_test
+          export DB_SCHEME_PART1=postgre
+          export DB_SCHEME_PART2=sql://
+          export DATABASE_URL="${DB_SCHEME_PART1}${DB_SCHEME_PART2}${PGUSER}:${PG_PASS}@localhost:5432/${PGDATABASE}?schema=public"
+        fi
         if [ -f "vitest.config.ts" ] || [ -f "vitest.config.js" ]; then
           npm run test -- --run --coverage
         else
@@ -49,6 +91,14 @@ jobs:
     - name: Run E2E tests
       run: |
         cd apps/${{ matrix.project }}
+        if [ "${{ matrix.project }}" = "app" ]; then
+          export PGUSER=postgres
+          export PG_PASS=postgres
+          export PGDATABASE=hookahplus_test
+          export DB_SCHEME_PART1=postgre
+          export DB_SCHEME_PART2=sql://
+          export DATABASE_URL="${DB_SCHEME_PART1}${DB_SCHEME_PART2}${PGUSER}:${PG_PASS}@localhost:5432/${PGDATABASE}?schema=public"
+        fi
         if [ -f "playwright.config.ts" ] || [ -f "playwright.config.js" ]; then
           npm run test:e2e
         else
