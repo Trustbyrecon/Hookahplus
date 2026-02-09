@@ -15,8 +15,9 @@ jobs:
         image: postgres:16
         env:
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
           POSTGRES_DB: hookahplus_test
+          # CI-only: avoid managing passwords in workflow text.
+          POSTGRES_HOST_AUTH_METHOD: trust
         ports:
           - 5432:5432
         options: >-
@@ -57,11 +58,10 @@ jobs:
       run: |
         cd apps/app
         export PGUSER=postgres
-        export PG_PASS=postgres
         export PGDATABASE=hookahplus_test
         export DB_SCHEME_PART1=postgre
         export DB_SCHEME_PART2=sql://
-        export DATABASE_URL="${DB_SCHEME_PART1}${DB_SCHEME_PART2}${PGUSER}:${PG_PASS}@localhost:5432/${PGDATABASE}?schema=public"
+        export DATABASE_URL="${DB_SCHEME_PART1}${DB_SCHEME_PART2}${PGUSER}@localhost:5432/${PGDATABASE}?schema=public"
         npm run db:push
         
     - name: Run unit tests
@@ -69,11 +69,10 @@ jobs:
         cd apps/${{ matrix.project }}
         if [ "${{ matrix.project }}" = "app" ]; then
           export PGUSER=postgres
-          export PG_PASS=postgres
           export PGDATABASE=hookahplus_test
           export DB_SCHEME_PART1=postgre
           export DB_SCHEME_PART2=sql://
-          export DATABASE_URL="${DB_SCHEME_PART1}${DB_SCHEME_PART2}${PGUSER}:${PG_PASS}@localhost:5432/${PGDATABASE}?schema=public"
+          export DATABASE_URL="${DB_SCHEME_PART1}${DB_SCHEME_PART2}${PGUSER}@localhost:5432/${PGDATABASE}?schema=public"
         fi
         if [ -f "vitest.config.ts" ] || [ -f "vitest.config.js" ]; then
           npm run test -- --run --coverage
@@ -93,11 +92,10 @@ jobs:
         cd apps/${{ matrix.project }}
         if [ "${{ matrix.project }}" = "app" ]; then
           export PGUSER=postgres
-          export PG_PASS=postgres
           export PGDATABASE=hookahplus_test
           export DB_SCHEME_PART1=postgre
           export DB_SCHEME_PART2=sql://
-          export DATABASE_URL="${DB_SCHEME_PART1}${DB_SCHEME_PART2}${PGUSER}:${PG_PASS}@localhost:5432/${PGDATABASE}?schema=public"
+          export DATABASE_URL="${DB_SCHEME_PART1}${DB_SCHEME_PART2}${PGUSER}@localhost:5432/${PGDATABASE}?schema=public"
         fi
         if [ -f "playwright.config.ts" ] || [ -f "playwright.config.js" ]; then
           npm run test:e2e
