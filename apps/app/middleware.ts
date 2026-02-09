@@ -78,6 +78,7 @@ export async function middleware(request: NextRequest) {
     '/api/health/ready',
     '/api/sessions', // QR code access (POST only)
     '/api/preorders', // Pre-order flow must be public (QR + E2E)
+    '/api/reflex/track', // Reflex tracking is intentionally public (client + server events)
     '/api/checkout-session',
     '/api/webhooks',
     '/api/tenants', // Allow tenant creation during signup
@@ -113,6 +114,8 @@ export async function middleware(request: NextRequest) {
           '/admin/operator-onboarding',
           '/api/admin',
           '/api/admin/operator-onboarding',
+          '/api/pos/tickets', // CI/E2E + local dev helpers
+          '/api/pos/reconcile', // Local metrics dashboard + CI/E2E
           '/api/analytics', // Allow analytics APIs without auth in development
           '/api/analytics/unified', // Unified analytics in development
           '/api/lounges/analytics', // Lounge analytics in development
