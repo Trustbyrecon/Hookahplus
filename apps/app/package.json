@@ -6,10 +6,10 @@
   "scripts": {
     "dev": "next dev --port 3002",
     "dev:default": "next dev",
-    "build": "prisma generate && next build && node scripts/generate-sitemap.js",
+    "build": "node scripts/prisma-generate.mjs && next build && node scripts/generate-sitemap.js",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "prisma generate",
+    "postinstall": "node scripts/prisma-generate.mjs",
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
     "db:generate": "prisma generate",
