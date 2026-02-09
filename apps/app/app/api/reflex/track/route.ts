@@ -63,6 +63,11 @@ export async function POST(req: NextRequest) {
   }
 }
 
+/* Duplicate legacy implementation below (disabled).
+ * The file previously contained two route handlers and re-imports, which breaks Next compilation.
+ * Keep this commented for now to preserve history without impacting builds/tests.
+ */
+/*
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "../../../../lib/db";
@@ -268,3 +273,4 @@ export async function POST(req: Request) {
     trustEventId: trustEvent.id,
   });
 }
+*/
