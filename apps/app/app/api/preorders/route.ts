@@ -114,7 +114,9 @@ export async function POST(req: NextRequest) {
 
     // Fire Reflex event for monorepo sync
     try {
-      await fetch('/api/reflex/track', {
+      // Server-side fetch requires an absolute URL.
+      const reflexUrl = new URL('/api/reflex/track', req.url);
+      await fetch(reflexUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
