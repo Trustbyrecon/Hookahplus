@@ -32,13 +32,20 @@ function SquareSettingsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const loungeIdParam = searchParams.get('loungeId');
-  const [loungeId, setLoungeId] = useState(loungeIdParam || 'HOPE_GLOBAL_FORUM'); // Default lounge ID
+  // Hydration hardening: do not derive initial state from searchParams during SSR,
+  // because searchParams can be unavailable/partial on the first client render.
+  const [loungeId, setLoungeId] = useState('HOPE_GLOBAL_FORUM'); // Default lounge ID
   const [status, setStatus] = useState<SquareStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [disconnecting, setDisconnecting] = useState(false);
   const connected = searchParams.get('connected') === 'true';
 
   useEffect(() => {
+    // Sync loungeId from URL after mount (prevents hydration mismatch).
+    if (loungeIdParam && loungeIdParam !== loungeId) {
+      setLoungeId(loungeIdParam);
+      return;
+    }
     loadStatus();
   }, [loungeId]);
 
@@ -46,7 +53,7 @@ function SquareSettingsContent() {
     if (loungeIdParam && loungeIdParam !== loungeId) {
       setLoungeId(loungeIdParam);
     }
-  }, [loungeIdParam, loungeId]);
+  }, [loungeIdParam]);
 
   const loadStatus = async () => {
     try {
@@ -149,6 +156,24 @@ function SquareSettingsContent() {
             <div className="flex items-center gap-2 text-green-400">
               <CheckCircle className="w-5 h-5" />
               <span className="font-semibold">Successfully connected!</span>
+            </div>
+          </Card>
+        )}
+
+        {connected && status && !status.connected && (
+          <Card className="p-6 mb-6 border-yellow-500/30 bg-yellow-500/10">
+            <div className="flex items-start gap-3 text-yellow-300">
+              <AlertTriangle className="w-5 h-5 mt-0.5" />
+              <div className="space-y-1">
+                <div className="font-semibold">Connection not persisted</div>
+                <div className="text-sm text-zinc-300">
+                  This page was opened with <code className="text-yellow-200">connected=true</code>, but the server does not see a
+                  <code className="text-yellow-200"> square_merchants</code> record for lounge <code className="text-yellow-200">{loungeId}</code>.
+                </div>
+                <div className="text-sm text-zinc-400">
+                  Next step: open <code className="text-yellow-200">/api/square/status?loungeId={loungeId}</code> and re-run the OAuth flow.
+                </div>
+              </div>
             </div>
           </Card>
         )}

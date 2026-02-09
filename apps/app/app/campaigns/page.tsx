@@ -61,7 +61,10 @@ export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [loungeId, setLoungeId] = useState<string>('HOPE_GLOBAL_FORUM'); // Default lounge ID
+  // Aliethia-aligned default lounge/tenant id (env override; replaces dated HOPE_GLOBAL_FORUM)
+  const [loungeId, setLoungeId] = useState<string>(
+    () => process.env.NEXT_PUBLIC_DEFAULT_LOUNGE_ID || process.env.NEXT_PUBLIC_ALIETHIA_LOUNGE_ID || 'ALIETHIA'
+  );
   const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
@@ -267,7 +270,10 @@ export default function CampaignsPage() {
       } else if (newCampaign.type === 'time_limited') {
         campaignConfig = {
           timeLimit: newCampaign.timeLimit,
-          discountAmount: newCampaign.discountAmount
+          discountAmount: newCampaign.discountAmount,
+          daysOfWeek: newCampaign.daysOfWeek?.length ? newCampaign.daysOfWeek : undefined,
+          startTime: newCampaign.startTime || undefined,
+          endTime: newCampaign.endTime || undefined
         };
       }
 
@@ -313,7 +319,10 @@ export default function CampaignsPage() {
           buyXGetY: { buy: 2, get: 1 },
           timeLimit: 24,
           discountAmount: 0,
-          minimumSpend: 0
+          minimumSpend: 0,
+          daysOfWeek: [],
+          startTime: '17:00',
+          endTime: '20:00'
         });
         setShowCreateModal(false);
       }
@@ -386,7 +395,10 @@ export default function CampaignsPage() {
       buyXGetY: (campaign.campaignConfig as any)?.buyXGetY || { buy: 2, get: 1 },
       timeLimit: (campaign.campaignConfig as any)?.timeLimit || 24,
       discountAmount: (campaign.campaignConfig as any)?.discountAmount || 0,
-      minimumSpend: (campaign.campaignConfig as any)?.minimumSpend || 0
+      minimumSpend: (campaign.campaignConfig as any)?.minimumSpend || 0,
+      daysOfWeek: (campaign.campaignConfig as any)?.daysOfWeek ?? [],
+      startTime: (campaign.campaignConfig as any)?.startTime ?? '17:00',
+      endTime: (campaign.campaignConfig as any)?.endTime ?? '20:00'
     });
     setShowEditModal(true);
   };
@@ -417,7 +429,10 @@ export default function CampaignsPage() {
       } else if (newCampaign.type === 'time_limited') {
         campaignConfig = {
           timeLimit: newCampaign.timeLimit,
-          discountAmount: newCampaign.discountAmount
+          discountAmount: newCampaign.discountAmount,
+          daysOfWeek: newCampaign.daysOfWeek?.length ? newCampaign.daysOfWeek : undefined,
+          startTime: newCampaign.startTime || undefined,
+          endTime: newCampaign.endTime || undefined
         };
       }
 
@@ -467,7 +482,10 @@ export default function CampaignsPage() {
           buyXGetY: { buy: 2, get: 1 },
           timeLimit: 24,
           discountAmount: 0,
-          minimumSpend: 0
+          minimumSpend: 0,
+          daysOfWeek: [],
+          startTime: '17:00',
+          endTime: '20:00'
         });
       }
     } catch (err) {
@@ -1388,18 +1406,80 @@ export default function CampaignsPage() {
                 )}
 
                 {newCampaign.type === 'time_limited' && (
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-300 mb-2">Time Limit (hours)</label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="168"
-                      value={newCampaign.timeLimit}
-                      onChange={(e) => setNewCampaign(prev => ({ ...prev, timeLimit: parseInt(e.target.value) || 24 }))}
-                      className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                      placeholder="24"
-                    />
-                  </div>
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-300 mb-2">Time Limit (hours)</label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={newCampaign.timeLimit}
+                        onChange={(e) => {
+                          const v = e.target.value.replace(/\D/g, '');
+                          const n = v === '' ? 24 : Math.min(168, Math.max(1, parseInt(v, 10) || 24));
+                          setNewCampaign(prev => ({ ...prev, timeLimit: v === '' ? 24 : n }));
+                        }}
+                        onBlur={(e) => {
+                          const v = e.target.value.trim();
+                          if (v === '' || Number.isNaN(parseInt(v, 10))) setNewCampaign(prev => ({ ...prev, timeLimit: 24 }));
+                        }}
+                        className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        placeholder="e.g. 3"
+                      />
+                      <p className="text-xs text-zinc-400 mt-1">Valid for this many hours once active (no up/down arrows)</p>
+                    </div>
+                    <div className="space-y-3 pt-2 border-t border-zinc-700">
+                      <p className="text-sm font-medium text-zinc-300">Happy hour window (optional)</p>
+                      <p className="text-xs text-zinc-400">Apply only on selected days and times (e.g. Wed 5pm–8pm)</p>
+                      <div>
+                        <label className="block text-xs font-medium text-zinc-400 mb-2">Apply on days</label>
+                        <div className="flex flex-wrap gap-2">
+                          {[
+                            { value: 0, label: 'Sun' },
+                            { value: 1, label: 'Mon' },
+                            { value: 2, label: 'Tue' },
+                            { value: 3, label: 'Wed' },
+                            { value: 4, label: 'Thu' },
+                            { value: 5, label: 'Fri' },
+                            { value: 6, label: 'Sat' }
+                          ].map(({ value, label }) => (
+                            <label key={value} className="inline-flex items-center gap-1.5 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={(newCampaign.daysOfWeek || []).includes(value)}
+                                onChange={(e) => {
+                                  const current = newCampaign.daysOfWeek || [];
+                                  const next = e.target.checked ? [...current, value] : current.filter(d => d !== value);
+                                  setNewCampaign(prev => ({ ...prev, daysOfWeek: next }));
+                                }}
+                                className="rounded border-zinc-600 bg-zinc-700 text-teal-500 focus:ring-teal-500"
+                              />
+                              <span className="text-sm text-zinc-300">{label}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-medium text-zinc-400 mb-1">Start time</label>
+                          <input
+                            type="time"
+                            value={newCampaign.startTime || '17:00'}
+                            onChange={(e) => setNewCampaign(prev => ({ ...prev, startTime: e.target.value }))}
+                            className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-zinc-400 mb-1">End time</label>
+                          <input
+                            type="time"
+                            value={newCampaign.endTime || '20:00'}
+                            onChange={(e) => setNewCampaign(prev => ({ ...prev, endTime: e.target.value }))}
+                            className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </>
                 )}
 
                 <div>
@@ -1500,7 +1580,10 @@ export default function CampaignsPage() {
                       buyXGetY: { buy: 2, get: 1 },
                       timeLimit: 24,
                       discountAmount: 0,
-                      minimumSpend: 0
+                      minimumSpend: 0,
+                      daysOfWeek: [],
+                      startTime: '17:00',
+                      endTime: '20:00'
                     });
                   }} 
                   className="flex-1"

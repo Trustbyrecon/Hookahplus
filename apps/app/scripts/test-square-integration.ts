@@ -68,9 +68,11 @@ class SquareIntegrationTester {
   private testOrderId: string;
   private posOrderId: string | null = null;
   private sawDbUnavailableForOAuthLookup = false;
+  private requireOAuth: boolean;
 
-  constructor(venueId: string) {
+  constructor(venueId: string, opts?: { requireOAuth?: boolean }) {
     this.venueId = venueId;
+    this.requireOAuth = !!opts?.requireOAuth;
     this.adapter = new SquareAdapter({ venueId });
     this.testOrderId = `test_sq_${Date.now()}`;
   }
@@ -158,6 +160,12 @@ class SquareIntegrationTester {
           hasExpiration: !!merchant.expiresAt
         });
       } else {
+        if (this.requireOAuth) {
+          throw new Error(
+            `OAuth required but no Square merchant found in DB for loungeId=${this.venueId}. ` +
+              `Connect Square via /square/connect?loungeId=${encodeURIComponent(this.venueId)}`
+          );
+        }
         if (!squareMerchantDelegate?.findUnique) {
           console.log('   ⚠️  Prisma model `squareMerchant` not found; skipping DB OAuth lookup');
         }
@@ -203,6 +211,13 @@ class SquareIntegrationTester {
         }
       } catch {
         // ignore
+      }
+
+      if (this.requireOAuth) {
+        const dbg = (this.adapter as any)?.debugState?.();
+        if (dbg?.authMode !== 'oauth') {
+          throw new Error(`OAuth required but adapter initialized in ${dbg?.authMode || 'unknown'} mode`);
+        }
       }
 
       // OAuth-first hardening:
@@ -543,15 +558,21 @@ class SquareIntegrationTester {
 
 // Main execution
 async function main() {
-  const venueId = process.argv[2] || process.env.DEFAULT_VENUE_ID || 'default_venue';
+  const rawArgs = process.argv.slice(2);
+  const requireOAuth =
+    rawArgs.includes('--oauth') ||
+    rawArgs.includes('--require-oauth') ||
+    (process.env.SQUARE_SMOKE_REQUIRE_OAUTH || '').toLowerCase() === 'true';
+  const venueId =
+    rawArgs.find((a) => a && !a.startsWith('-')) || process.env.DEFAULT_VENUE_ID || 'default_venue';
 
   if (!venueId) {
     console.error('❌ Error: Venue ID required');
-    console.error('Usage: tsx apps/app/scripts/test-square-integration.ts [venueId]');
+    console.error('Usage: tsx apps/app/scripts/test-square-integration.ts [venueId] [--oauth]');
     process.exit(1);
   }
 
-  const tester = new SquareIntegrationTester(venueId);
+  const tester = new SquareIntegrationTester(venueId, { requireOAuth });
   await tester.runAllTests();
 }
 

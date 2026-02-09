@@ -24,6 +24,7 @@
     "test:e2e:ui": "playwright test --ui",
     "test:all": "npm run test && npm run test:e2e",
     "test:square": "tsx scripts/test-square-integration.ts",
+    "test:square:oauth": "tsx scripts/test-square-integration.ts --oauth",
     "test:pos": "tsx scripts/test-square-integration.ts",
     "debug:square": "tsx scripts/debug-square-token.ts",
     "verify:square": "tsx scripts/verify-square-oauth-setup.ts"

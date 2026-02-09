@@ -18,16 +18,17 @@ function SquareConnectContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const loungeIdParam = searchParams.get('loungeId');
-  const [loungeId, setLoungeId] = useState(loungeIdParam || 'HOPE_GLOBAL_FORUM'); // Default lounge ID
+  // Hydration hardening: do not derive initial state from searchParams during SSR,
+  // because searchParams can be unavailable/partial on the first client render.
+  const [loungeId, setLoungeId] = useState('HOPE_GLOBAL_FORUM'); // Default lounge ID
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const success = searchParams.get('connected') === 'true';
   const errorParam = searchParams.get('error');
 
   useEffect(() => {
-    if (loungeIdParam && loungeIdParam !== loungeId) {
-      setLoungeId(loungeIdParam);
-    }
+    // Sync loungeId from URL after mount (prevents hydration mismatch).
+    if (loungeIdParam && loungeIdParam !== loungeId) setLoungeId(loungeIdParam);
     if (errorParam) {
       const decodedError = decodeURIComponent(errorParam);
       setError(decodedError);
@@ -41,7 +42,7 @@ function SquareConnectContent() {
         setError('Lounge ID not found. Please try connecting again.');
       }
     }
-  }, [errorParam]);
+  }, [loungeIdParam, errorParam]);
 
   const handleConnect = () => {
     setLoading(true);

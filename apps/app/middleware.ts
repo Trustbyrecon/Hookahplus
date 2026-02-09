@@ -93,6 +93,9 @@ export async function middleware(request: NextRequest) {
     '/api/square/process', // Square processor is called by Vercel Cron (auth handled in route)
     '/api/square/diagnostics', // Square diagnostics for server-to-server validation
     '/api/square/status', // Square status returns non-secret connection metadata (merchantId, locations)
+    // Dev/First Light convenience: allow disconnect without auth to re-authorize scopes locally.
+    // Protected in production by omission (see below).
+    ...(process.env.NODE_ENV !== 'production' || firstLightMode ? ['/api/square/disconnect'] : []),
     '/login',
     '/signup',
     '/admin/login', // Admin login page is public
@@ -101,8 +104,8 @@ export async function middleware(request: NextRequest) {
     '/favicon.ico',
     // Demo requests: allow metrics + demo helpers without auth (safe, demo-only)
     ...(isDemoRequest ? ['/api/metrics', '/api/demo-session', '/api/lounges/tables'] : []),
-    // First Light mode: allow metrics, trust-lock, and pulse without auth
-    ...(firstLightMode ? ['/api/metrics', '/api/trust-lock', '/api/pulse'] : []),
+    // First Light mode: allow metrics, trust-lock, pulse, and campaigns without auth (Aliethia-aligned)
+    ...(firstLightMode ? ['/api/metrics', '/api/trust-lock', '/api/pulse', '/api/campaigns'] : []),
     // Dev-only: allow direct access to admin routes without auth
     ...(process.env.NODE_ENV !== 'production'
       ? [
