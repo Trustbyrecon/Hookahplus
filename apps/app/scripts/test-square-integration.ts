@@ -464,6 +464,17 @@ class SquareIntegrationTester {
         return;
       }
 
+      const stripeConfigured = Boolean(
+        (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY.trim()) ||
+          (process.env.STRIPE_TEST_SECRET_KEY && process.env.STRIPE_TEST_SECRET_KEY.trim()),
+      );
+
+      if (!stripeConfigured) {
+        console.log('   ⚠️  Skipping: Stripe not configured (STRIPE_SECRET_KEY missing)');
+        this.addResult(testName, true, 'Skipped - Stripe not configured', { skipped: true });
+        return;
+      }
+
       // Test reconcileTicket method
       if (this.adapter.reconcileTicket) {
         console.log(`   🔍 Testing reconcileTicket for order ${this.posOrderId}`);
@@ -507,9 +518,17 @@ class SquareIntegrationTester {
         });
       }
     } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+
+      if (message.includes('Stripe not configured for reconciliation')) {
+        console.log('   ⚠️  Skipping: Stripe not configured for reconciliation');
+        this.addResult(testName, true, 'Skipped - Stripe not configured', { skipped: true });
+        return;
+      }
+
       console.error(`   ❌ ${testName} failed:`, error);
       // Don't throw - reconciliation is optional
-      this.addResult(testName, false, error instanceof Error ? error.message : String(error));
+      this.addResult(testName, false, message);
     }
   }
 
