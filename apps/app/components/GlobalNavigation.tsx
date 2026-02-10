@@ -484,6 +484,15 @@ const GlobalNavigation: React.FC = () => {
           nextAction: 'Create QR codes for tables',
           aiRecommendation: 'Generate QR codes for customer entry flow'
         },
+        {
+          label: 'POS Inbox',
+          href: '/admin/pos-inbox',
+          icon: <FileText className="w-4 h-4" />,
+          description: 'Review POS tickets and attach to sessions',
+          flowState: 'active',
+          nextAction: 'Attach recent tickets to sessions',
+          aiRecommendation: 'Use AliethiaSandbox locally; validate Aliethia in prod'
+        },
       ]
     }
   ];
