@@ -67,6 +67,36 @@ export class SquareAdapter implements PosAdapter {
   }
 
   /**
+   * Read-only connectivity probe for smoke checks.
+   * Verifies that the current access token can reach Square APIs.
+   *
+   * Not part of the PosAdapter interface; safe to call via `as any`.
+   */
+  async probeOAuthReadOnly(): Promise<{ locationCount: number; locationIds: string[] }> {
+    await this.ensureInitialized();
+
+    const baseUrl = getSquareApiBaseUrl();
+    const res = await fetch(`${baseUrl}/v2/locations`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Square-Version": SQUARE_API_VERSION,
+        Authorization: `Bearer ${this.accessToken}`,
+      },
+    });
+
+    if (!res.ok) {
+      const err = await res.text().catch(() => "");
+      throw new Error(`Square probe failed: ${res.status} ${res.statusText}${err ? ` - ${err}` : ""}`);
+    }
+
+    const json = await res.json();
+    const locations: Array<{ id?: string }> = Array.isArray(json?.locations) ? json.locations : [];
+    const locationIds = locations.map((l) => l.id).filter(Boolean) as string[];
+    return { locationCount: locationIds.length, locationIds };
+  }
+
+  /**
    * Initialize adapter by loading merchant credentials
    * Must be called before using adapter methods
    */

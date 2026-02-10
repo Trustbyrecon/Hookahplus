@@ -69,10 +69,12 @@ class SquareIntegrationTester {
   private posOrderId: string | null = null;
   private sawDbUnavailableForOAuthLookup = false;
   private requireOAuth: boolean;
+  private probeOnly: boolean;
 
-  constructor(venueId: string, opts?: { requireOAuth?: boolean }) {
+  constructor(venueId: string, opts?: { requireOAuth?: boolean; probeOnly?: boolean }) {
     this.venueId = venueId;
     this.requireOAuth = !!opts?.requireOAuth;
+    this.probeOnly = !!opts?.probeOnly;
     this.adapter = new SquareAdapter({ venueId });
     this.testOrderId = `test_sq_${Date.now()}`;
   }
@@ -91,6 +93,13 @@ class SquareIntegrationTester {
 
       // Test 3: Test capabilities
       await this.testCapabilities();
+
+      // Probe-only mode: prod-safe validation (no order writes)
+      if (this.probeOnly) {
+        await this.testReadOnlyProbe();
+        this.printResults();
+        return;
+      }
 
       // Test 4: Create order (idempotency test)
       await this.testOrderCreation();
@@ -115,6 +124,24 @@ class SquareIntegrationTester {
       this.addResult('Fatal Error', false, error instanceof Error ? error.message : String(error));
       this.printResults();
       process.exit(1);
+    }
+  }
+
+  private async testReadOnlyProbe(): Promise<void> {
+    const testName = 'Read-only Square API Probe';
+    console.log(`\n4️⃣ Testing ${testName}...`);
+
+    try {
+      const probe = await (this.adapter as any).probeOAuthReadOnly?.();
+      if (!probe) {
+        throw new Error('Adapter does not support read-only probe');
+      }
+      console.log(`   ✅ Square API reachable (locations: ${probe.locationCount})`);
+      this.addResult(testName, true, undefined, probe);
+    } catch (error) {
+      console.error(`   ❌ ${testName} failed:`, error);
+      this.addResult(testName, false, error instanceof Error ? error.message : String(error));
+      throw error;
     }
   }
 
@@ -582,6 +609,10 @@ async function main() {
     rawArgs.includes('--oauth') ||
     rawArgs.includes('--require-oauth') ||
     (process.env.SQUARE_SMOKE_REQUIRE_OAUTH || '').toLowerCase() === 'true';
+  const probeOnly =
+    rawArgs.includes('--probe') ||
+    rawArgs.includes('--read-only') ||
+    rawArgs.includes('--readonly');
   const venueId =
     rawArgs.find((a) => a && !a.startsWith('-')) || process.env.DEFAULT_VENUE_ID || 'default_venue';
 
@@ -591,7 +622,7 @@ async function main() {
     process.exit(1);
   }
 
-  const tester = new SquareIntegrationTester(venueId, { requireOAuth });
+  const tester = new SquareIntegrationTester(venueId, { requireOAuth, probeOnly });
   await tester.runAllTests();
 }
 
