@@ -53,6 +53,14 @@ jobs:
           npm ci
         fi
 
+    - name: Work around npm optional dep bug (app)
+      if: matrix.project == 'app'
+      run: |
+        # Occasionally npm fails to install Rollup's platform binary optional dep in CI.
+        # Ensure the linux x64 binary package is present before running Vitest.
+        cd apps/app
+        npm i --no-save @rollup/rollup-linux-x64-gnu@4.52.4
+
     - name: Prepare test database (app)
       if: matrix.project == 'app'
       run: |
