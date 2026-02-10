@@ -250,43 +250,44 @@ export class PosSyncService {
     unmatchedTickets: number;
   }> {
     try {
-      const where: any = { loungeId };
-      if (tenantId) where.tenantId = tenantId;
-
       // Get total paid sessions
-      const totalSessions = await prisma.session.count({
-        where: {
-          ...where,
-          paymentStatus: 'succeeded'
-        }
+      const sessionWhere: any = { loungeId, paymentStatus: 'succeeded' };
+      if (tenantId) sessionWhere.tenantId = tenantId;
+
+      const sessions = await prisma.session.findMany({
+        where: sessionWhere,
+        select: { id: true },
+        take: 5000,
       });
+      const sessionIds = sessions.map((s) => s.id);
+      const totalSessions = sessionIds.length;
 
       // Get reconciled sessions
       const reconciledSessions = await prisma.settlementReconciliation.count({
         where: {
-          ...where,
-          status: 'matched'
-        }
+          sessionId: { in: sessionIds },
+          status: 'matched',
+        } as any,
       });
 
       // Get orphaned charges (Stripe charges without POS tickets)
       const orphanedCharges = await prisma.settlementReconciliation.count({
         where: {
-          ...where,
+          sessionId: { in: sessionIds },
           status: 'orphaned',
           stripeChargeId: { not: null },
           posTicketId: null
-        }
+        } as any,
       });
 
       // Get unmatched tickets (POS tickets without Stripe charges)
       const unmatchedTickets = await prisma.settlementReconciliation.count({
         where: {
-          ...where,
+          sessionId: { in: sessionIds },
           status: 'orphaned',
           posTicketId: { not: null },
           stripeChargeId: null
-        }
+        } as any,
       });
 
       const reconciliationRate = totalSessions > 0 
