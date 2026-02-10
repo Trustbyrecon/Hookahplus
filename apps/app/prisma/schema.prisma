@@ -5,7 +5,6 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
 }
 
 model Session {
@@ -55,6 +54,7 @@ model Session {
   stage               String?         @map("nan_stage")
   action              String?         @map("nan_action")
   hid                 String? // Hookah+ Network ID (portable customer identifier)
+  paymentGateway      String?         @map("payment_gateway") // 'stripe' | 'square' — for GMV_hookah reporting (Hookah-only Contract v1)
   preorder            PreOrder?       @relation(fields: [preorderId], references: [id])
   seat                Seat?           @relation(fields: [seatId], references: [id])
   tenant              Tenant?         @relation(fields: [tenantId], references: [id], onUpdate: NoAction)
@@ -64,6 +64,7 @@ model Session {
   deliveries          Delivery[]
   orders              Order[]
   payments            Payment[]
+  webhookEvents       WebhookEvent[]
   notes               SessionNote[]
 
   @@unique([loungeId, externalRef])
@@ -137,6 +138,31 @@ model Payment {
   @@index([status], map: "idx_payments_status")
   @@index([tenantId], map: "idx_payments_tenant_id")
   @@map("payments")
+}
+
+model WebhookEvent {
+  id          String             @id @default(cuid())
+  provider    String
+  eventId     String
+  eventType   String
+  payloadHash String?
+  sessionId   String?            @map("session_id")
+  metadata    String?
+  status      WebhookEventStatus @default(PROCESSING)
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+
+  session     Session?           @relation(fields: [sessionId], references: [id], onUpdate: NoAction)
+
+  @@unique([provider, eventId], map: "idx_webhook_events_provider_event")
+  @@index([sessionId], map: "idx_webhook_events_session")
+  @@map("webhook_events")
+}
+
+enum WebhookEventStatus {
+  PROCESSING
+  SUCCESS
+  FAILURE
 }
 
 model ReflexEvent {
@@ -702,6 +728,125 @@ model SquareMerchant {
   @@index([loungeId], map: "idx_square_merchant_lounge_id")
   @@index([merchantId], map: "idx_square_merchant_merchant_id")
   @@map("square_merchants")
+}
+
+model SquareEventRaw {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  eventId     String   @unique @map("event_id")
+  eventType   String   @map("event_type")
+  merchantId  String?  @map("merchant_id")
+  locationId  String?  @map("location_id")
+  payload     Json
+  receivedAt  DateTime @default(now()) @map("received_at") @db.Timestamptz(6)
+  processedAt DateTime? @map("processed_at") @db.Timestamptz(6)
+  errorMessage String? @map("error_message")
+  status       String   @default("new")
+  attemptCount Int      @default(0) @map("attempt_count")
+  claimedAt    DateTime? @map("claimed_at") @db.Timestamptz(6)
+  nextRetryAt  DateTime? @map("next_retry_at") @db.Timestamptz(6)
+  lastErrorAt  DateTime? @map("last_error_at") @db.Timestamptz(6)
+  aiEnrichments AiEnrichment[]
+  alerts        Alert[]
+
+  @@index([merchantId], map: "idx_square_events_raw_merchant_id")
+  @@index([eventType], map: "idx_square_events_raw_event_type")
+  @@index([processedAt], map: "idx_square_events_raw_processed_at")
+  @@map("square_events_raw")
+}
+
+model AiEnrichment {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  source    String   @default("square")
+  kind      String
+  rawEventId String?  @map("raw_event_id") @db.Uuid
+  loungeId  String?  @map("lounge_id")
+  sessionId String?  @map("session_id")
+  model     String
+  output    Json
+  latencyMs Int?     @map("latency_ms")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  rawEvent SquareEventRaw? @relation(fields: [rawEventId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([loungeId, kind, createdAt(sort: Desc)], map: "ai_enrichment_lounge_kind_created_idx")
+  @@unique([rawEventId, kind], map: "ai_enrichment_raw_kind_uq")
+  @@map("ai_enrichment")
+}
+
+model Alert {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  source    String   @default("square")
+  type      String
+  severity  String
+  message   String
+  rawEventId String? @map("raw_event_id") @db.Uuid
+  loungeId  String?  @map("lounge_id")
+  sessionId String?  @map("session_id")
+  meta      Json?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  resolvedAt DateTime? @map("resolved_at") @db.Timestamptz(6)
+
+  rawEvent SquareEventRaw? @relation(fields: [rawEventId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([createdAt(sort: Desc)], map: "alerts_created_at_idx")
+  @@index([loungeId, createdAt(sort: Desc)], map: "alerts_lounge_created_at_idx")
+  @@map("alerts")
+}
+
+model SquareOrder {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId       String   @unique @map("order_id")
+  merchantId    String?  @map("merchant_id")
+  locationId    String?  @map("location_id")
+  status        String?
+  totalCents    Int?     @map("total_cents")
+  currency      String?
+  lineItems     Json?    @map("line_items")
+  raw           Json
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([merchantId], map: "idx_square_orders_merchant_id")
+  @@index([locationId], map: "idx_square_orders_location_id")
+  @@index([status], map: "idx_square_orders_status")
+  @@map("square_orders")
+}
+
+model SquarePayment {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  paymentId    String   @unique @map("payment_id")
+  orderId      String?  @map("order_id")
+  merchantId   String?  @map("merchant_id")
+  locationId   String?  @map("location_id")
+  status       String?
+  amountCents  Int?     @map("amount_cents")
+  currency     String?
+  cardBrand    String?  @map("card_brand")
+  cardLast4    String?  @map("card_last4")
+  raw          Json
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([merchantId], map: "idx_square_payments_merchant_id")
+  @@index([locationId], map: "idx_square_payments_location_id")
+  @@index([status], map: "idx_square_payments_status")
+  @@map("square_payments")
+}
+
+model SquareCustomer {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customerId String   @unique @map("customer_id")
+  merchantId String?  @map("merchant_id")
+  locationId String?  @map("location_id")
+  phoneHash  String?  @map("phone_hash")
+  emailHash  String?  @map("email_hash")
+  raw        Json
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([merchantId], map: "idx_square_customers_merchant_id")
+  @@index([locationId], map: "idx_square_customers_location_id")
+  @@map("square_customers")
 }
 
 model LoyaltyAccount {

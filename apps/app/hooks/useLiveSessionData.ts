@@ -12,30 +12,59 @@ function generateRichDemoData(): FireSession[] {
   const now = Date.now();
   const thirtyMinutesAgo = now - (30 * 60 * 1000);
 
-    // Single demo session showing night after night flow - starts as ACTIVE (Lit)
   return [
+    // PAID_CONFIRMED session so NAN flows from Claim Prep (Payment → Prep → …)
     {
       id: 'demo-session-1',
+      tableId: 'T-001',
+      customerName: 'Demo Guest',
+      customerPhone: '+1 (555) 000-0000',
+      flavor: 'Double Apple + Mint',
+      amount: 2500,
+      status: 'PAID_CONFIRMED',
+      state: 'PENDING',
+      paymentStatus: 'succeeded',
+      externalRef: 'test_cs_demo_session_1',
+      stage: 'Payment',
+      action: undefined,
+      currentStage: 'BOH',
+      assignedStaff: { boh: undefined, foh: undefined },
+      createdAt: now - (2 * 60 * 1000),
+      updatedAt: now,
+      sessionStartTime: undefined,
+      sessionDuration: 45 * 60,
+      coalStatus: 'active',
+      refillStatus: 'none',
+      notes: '',
+      edgeCase: null,
+      bohState: undefined,
+      guestTimerDisplay: false
+    },
+    // Second PAID_CONFIRMED session for Claim Prep (Sarah & Friends)
+    {
+      id: 'demo-session-2',
       tableId: 'T-005',
       customerName: 'Sarah & Friends',
       customerPhone: '+1 (555) 234-5678',
       flavor: 'Blue Mist + Mint Fresh',
-        amount: 3500,
-        status: 'ACTIVE', // Already lit for demo
-        state: 'ACTIVE',
-      paymentStatus: 'succeeded', // Required for hasPayment check
-      externalRef: 'test_cs_demo_session_1', // Required for hasPayment check
+      amount: 3500,
+      status: 'PAID_CONFIRMED',
+      state: 'PENDING',
+      paymentStatus: 'succeeded',
+      externalRef: 'test_cs_demo_session_2',
+      stage: 'Payment',
+      action: undefined,
       currentStage: 'BOH',
       assignedStaff: { boh: undefined, foh: undefined },
       createdAt: thirtyMinutesAgo,
-      updatedAt: now - (5 * 60 * 1000),
+      updatedAt: now,
       sessionStartTime: undefined,
-      sessionDuration: 60 * 60, // 60 minutes
+      sessionDuration: 60 * 60,
       coalStatus: 'active',
       refillStatus: 'none',
-      notes: 'Demo session - ready to test night after night flow',
+      notes: '',
       edgeCase: null,
-      bohState: 'PREPARING',
+      bohState: undefined,
       guestTimerDisplay: false
     }
   ];
@@ -564,6 +593,9 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
           'start_active': 'START_ACTIVE',
           'pause_session': 'PAUSE_SESSION',
           'resume_session': 'RESUME_SESSION',
+          'request_refill': 'REQUEST_REFILL',
+          'complete_refill': 'COMPLETE_REFILL',
+          'request_flavor_bowl': 'REQUEST_REFILL',
           'close_session': 'CLOSE_SESSION',
           'put_on_hold': 'PUT_ON_HOLD',
           'resolve_hold': 'RESOLVE_HOLD',
@@ -579,6 +611,8 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
           'START_ACTIVE': 'START_ACTIVE',
           'PAUSE_SESSION': 'PAUSE_SESSION',
           'RESUME_SESSION': 'RESUME_SESSION',
+          'REQUEST_REFILL': 'REQUEST_REFILL',
+          'COMPLETE_REFILL': 'COMPLETE_REFILL',
           'CLOSE_SESSION': 'CLOSE_SESSION',
           'PUT_ON_HOLD': 'PUT_ON_HOLD',
           'RESOLVE_HOLD': 'RESOLVE_HOLD',
@@ -587,6 +621,35 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
 
         const normalizedAction = action.toLowerCase();
         const sessionAction = (actionMap[normalizedAction] || actionMap[action] || action.toUpperCase()) as any;
+
+        // Refill / flavor upsell: update refillStatus in-place (no status change)
+        if (sessionAction === 'REQUEST_REFILL' || normalizedAction === 'request_flavor_bowl') {
+          const updatedSessionsRefill = [...sessions];
+          const idx = updatedSessionsRefill.findIndex(s => s.id === sessionId);
+          if (idx !== -1) {
+            const s = updatedSessionsRefill[idx];
+            if (s.refillStatus === 'requested') return; // already requested
+            const updated = { ...s, refillStatus: 'requested' as const, updatedAt: Date.now() };
+            updated.notes = (updated.notes || '') + (normalizedAction === 'request_flavor_bowl' ? '\nFlavor upsell requested (staff/verbal).' : '\nCoal refill requested (staff/verbal).');
+            updatedSessionsRefill[idx] = updated;
+            setSessions(updatedSessionsRefill);
+            setUpdatedDemoSessions(prev => ({ ...prev, [sessionId]: updated }));
+          }
+          return;
+        }
+        if (sessionAction === 'COMPLETE_REFILL') {
+          const updatedSessionsRefill = [...sessions];
+          const idx = updatedSessionsRefill.findIndex(s => s.id === sessionId);
+          if (idx !== -1) {
+            const s = updatedSessionsRefill[idx];
+            const updated = { ...s, refillStatus: 'delivered' as const, updatedAt: Date.now() };
+            updated.notes = (updated.notes || '') + '\nRefill completed (staff).';
+            updatedSessionsRefill[idx] = updated;
+            setSessions(updatedSessionsRefill);
+            setUpdatedDemoSessions(prev => ({ ...prev, [sessionId]: updated }));
+          }
+          return;
+        }
         
         // Apply state machine transition
         const updatedSession = nextStateWithTrust(
@@ -598,6 +661,10 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
           },
           'MANAGER' // Allow all actions in demo mode
         );
+
+        // Lock NAN flow: set stage (Payment/Prep/Ready/Deliver/Light) and action so UI advances
+        updatedSession.stage = STATUS_TO_TRACKER_STAGE[updatedSession.status as keyof typeof STATUS_TO_TRACKER_STAGE] ?? (updatedSession.stage as TrackerStage) ?? 'Payment';
+        updatedSession.action = sessionAction;
 
         // Handle special actions that require additional updates
         if (sessionAction === 'CLAIM_PREP') {

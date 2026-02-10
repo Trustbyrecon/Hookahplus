@@ -11,8 +11,10 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
+  /* Opt out of parallel tests on CI; use 1 worker when using existing server or production URL to avoid timeout cascades. */
+  workers: process.env.CI || process.env.USE_EXISTING_SERVER || process.env.PLAYWRIGHT_BASE_URL ? 1 : undefined,
+  /* E2E tests hit API and can be slow; default 30s is too low when server is cold. */
+  timeout: process.env.USE_EXISTING_SERVER ? 90_000 : 60_000,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
     ['html'],
@@ -56,11 +58,15 @@ export default defineConfig({
     },
   ],
 
-  /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3002',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
-  },
+  /* Run your local dev server before starting the tests (skip if USE_EXISTING_SERVER=1) */
+  ...(process.env.USE_EXISTING_SERVER
+    ? {}
+    : {
+        webServer: {
+          command: 'npm run dev',
+          url: 'http://localhost:3002',
+          reuseExistingServer: !process.env.CI,
+          timeout: 120 * 1000,
+        },
+      }),
 });

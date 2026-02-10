@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const loungeId = searchParams.get('loungeId');
     const isDevelopment = process.env.NODE_ENV === 'development';
+    const runwayDays = 7;
 
     if (!loungeId) {
       return NextResponse.json(
@@ -40,8 +41,13 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const isExpired = merchant.expiresAt && merchant.expiresAt < new Date();
+    const now = new Date();
+    const isExpired = merchant.expiresAt && merchant.expiresAt < now;
     const isActive = merchant.isActive && !isExpired;
+    const msRemaining = merchant.expiresAt ? merchant.expiresAt.getTime() - now.getTime() : null;
+    const daysRemaining = msRemaining == null ? null : msRemaining / (24 * 60 * 60 * 1000);
+    const needsRefreshSoon =
+      merchant.expiresAt != null && msRemaining != null && msRemaining <= runwayDays * 24 * 60 * 60 * 1000;
 
     return NextResponse.json({
       success: true,
@@ -51,7 +57,10 @@ export async function GET(request: NextRequest) {
       merchantId: merchant.merchantId,
       locationIds: merchant.locationIds,
       expiresAt: merchant.expiresAt,
-      createdAt: merchant.createdAt
+      createdAt: merchant.createdAt,
+      daysRemaining,
+      needsRefreshSoon,
+      refreshRunwayDays: runwayDays,
     });
   } catch (error) {
     console.error('Error getting Square status:', error);

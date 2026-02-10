@@ -33,6 +33,7 @@ export interface LogContext {
 // Create Pino logger instance
 const createPinoLogger = () => {
   const isDevelopment = process.env.NODE_ENV === 'development';
+  const isCI = process.env.CI === 'true' || !!process.env.CI;
   const logLevel = process.env.LOG_LEVEL?.toLowerCase() || (isDevelopment ? 'debug' : 'info');
 
   const baseConfig: pino.LoggerOptions = {
@@ -70,7 +71,8 @@ const createPinoLogger = () => {
 
   // Fallback: default console output
   // In development, use pretty printing
-  if (isDevelopment && process.env.STRUCTURED_LOGGING !== 'true') {
+  // NOTE: In CI we avoid pino transports (worker threads) to prevent Next/webpack worker resolution issues.
+  if (isDevelopment && !isCI && process.env.STRUCTURED_LOGGING !== 'true') {
     return pino(
       baseConfig,
       pino.transport({

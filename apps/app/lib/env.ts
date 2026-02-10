@@ -70,3 +70,23 @@ export const getGuestUrl = (): string => {
 export const getHIDSalt = (): string => {
   return getEnvVar('HID_SALT', 'hookahplus-network-salt-2025');
 };
+
+/**
+ * Server-only OpenAI key.
+ * Returns empty string during Vercel build to avoid build failures.
+ */
+export const getOpenAIKey = (): string => {
+  const value = process.env.OPENAI_API_KEY;
+  if (!value) {
+    if (process.env.NODE_ENV === 'production' && process.env.VERCEL === '1') {
+      return '';
+    }
+    return '';
+  }
+  return value;
+};
+
+export const getOpenAIModel = (): string => {
+  // Prefer an override, else use a cost-effective default.
+  return process.env.OPENAI_MODEL || 'gpt-4o-mini';
+};

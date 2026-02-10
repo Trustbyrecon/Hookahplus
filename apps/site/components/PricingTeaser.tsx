@@ -18,7 +18,7 @@ const tiers = [
   {
     name: 'Pro',
     price: '$249/mo',
-    blurb: '≤3 venues • loyalty pricing • full dashboard',
+    blurb: '≤3 venues • agent-ready reservations • full dashboard',
     icon: <BarChart3 className="w-6 h-6" />,
     color: 'blue',
     popular: true,
@@ -50,8 +50,11 @@ export default function PricingTeaser() {
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Simple pricing for serious lounges
           </h2>
-          <p className="text-lg text-zinc-400 max-w-2xl mx-auto mb-4">
+          <p className="text-lg text-zinc-400 max-w-2xl mx-auto mb-2">
             Starter, Pro, and Lounge Network options — built for any volume of sessions.
+          </p>
+          <p className="text-sm text-teal-400/90 max-w-xl mx-auto mb-4">
+            Plus 0.7% on hookah GMV when you run payments through Hookah+ (Stripe). We grow with your volume.
           </p>
         </div>
 

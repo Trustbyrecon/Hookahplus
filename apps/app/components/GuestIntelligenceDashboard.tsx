@@ -101,6 +101,8 @@ interface GuestIntelligenceDashboardProps {
   sessionId?: string;
   customerId?: string; // Alternative to sessionId for wallet integration
   tableId?: string;
+  loungeId?: string;
+  hid?: string;
   onClose: () => void;
 }
 
@@ -109,6 +111,8 @@ export default function GuestIntelligenceDashboard({
   sessionId, 
   customerId,
   tableId, 
+  loungeId,
+  hid,
   onClose 
 }: GuestIntelligenceDashboardProps) {
   const [behavioralMemory, setBehavioralMemory] = useState<BehavioralMemory | null>(null);
@@ -126,6 +130,117 @@ export default function GuestIntelligenceDashboard({
         // Try to fetch real data from API
         let realData: BehavioralMemory | null = null;
         let useDemo = false;
+        let networkNotes: SessionNote[] | null = null;
+
+        const resolvedLoungeId =
+          loungeId ||
+          (session as any)?.loungeId ||
+          (session as any)?.lounge_id ||
+          undefined;
+        const resolvedHid = hid || (session as any)?.hid || undefined;
+
+        if (resolvedHid && resolvedLoungeId) {
+          try {
+            const bundleResponse = await fetch(
+              `/api/network-memory/bundle?hid=${encodeURIComponent(
+                resolvedHid
+              )}&loungeId=${encodeURIComponent(resolvedLoungeId)}`
+            );
+            if (bundleResponse.ok) {
+              const bundlePayload = await bundleResponse.json();
+              if (bundlePayload?.success && bundlePayload?.data?.profile) {
+                const bundle = bundlePayload.data;
+                const summary = bundle.summary || {};
+                const preferences = bundle.profile?.preferences || {};
+                const sessions = Array.isArray(bundle.sessions) ? bundle.sessions : [];
+                const notes = Array.isArray(bundle.notes) ? bundle.notes : [];
+
+                const averageDuration = sessions.length
+                  ? Math.round(
+                      sessions.reduce((sum: number, s: any) => {
+                        if (!s?.start_ts || !s?.end_ts) return sum;
+                        const start = new Date(s.start_ts).getTime();
+                        const end = new Date(s.end_ts).getTime();
+                        const minutes = Math.max(0, Math.round((end - start) / 60000));
+                        return sum + minutes;
+                      }, 0) / sessions.length
+                    )
+                  : 0;
+
+                realData = {
+                  guestId: resolvedHid,
+                  preferences: {
+                    favoriteFlavors: preferences.top_flavors || [],
+                    preferredZone: resolvedLoungeId,
+                    averageSessionDuration: averageDuration,
+                    spendingPattern:
+                      (summary.total_spend_cents || 0) > 5000 ? 'premium' : 'budget',
+                    visitFrequency:
+                      (summary.sessions_count || 0) >= 3 ? 'regular' : 'occasional',
+                    preferredTimeSlots: [],
+                    typicalOrderPattern: [],
+                  },
+                  trustScore: Math.min(
+                    100,
+                    50 +
+                      (summary.sessions_count || 0) * 5 +
+                      (summary.notes_count || 0) * 3
+                  ),
+                  loyaltyTier: (bundle.profile?.tier as any) || 'bronze',
+                  badges: (bundle.profile?.badges || []).map((badge: any, index: number) => ({
+                    id: badge.badge_code || `badge_${index}`,
+                    name: badge.badge_code || 'Badge',
+                    description: badge.meta?.description || 'Earned badge',
+                    icon: <Star className="w-4 h-4" />,
+                    color: 'text-yellow-400',
+                    earnedAt: badge.awarded_at || new Date().toISOString().split('T')[0],
+                    category: 'loyalty',
+                  })),
+                  badgeProgress: [],
+                  sessionHistory: sessions.map((s: any) => {
+                    const start = s?.start_ts ? new Date(s.start_ts) : null;
+                    const end = s?.end_ts ? new Date(s.end_ts) : null;
+                    const duration =
+                      start && end ? Math.max(0, Math.round((end.getTime() - start.getTime()) / 60000)) : 0;
+                    return {
+                      id: s.session_id || `session_${Math.random().toString(36).slice(2, 8)}`,
+                      date: (start || new Date()).toISOString().split('T')[0],
+                      duration,
+                      totalSpent: (s.spend_cents || 0) / 100,
+                      satisfaction: s.rating || 4,
+                      notes: 'Network session',
+                      piiMasked: true,
+                    };
+                  }),
+                  predictiveInsights: {
+                    nextVisitPrediction:
+                      (summary.sessions_count || 0) >= 2
+                        ? 'Likely to return within 2 weeks'
+                        : 'New guest - monitor return signals',
+                    likelyOrder: preferences.top_flavors || [],
+                    optimalServiceTiming: 'Optimize based on recent sessions',
+                    upsellProbability: Math.min(
+                      95,
+                      40 + (summary.sessions_count || 0) * 10
+                    ),
+                  },
+                };
+
+                networkNotes = notes.map((note: any) => ({
+                  id: note.note_id || `note_${Math.random().toString(36).slice(2, 8)}`,
+                  content: note.note_text || '',
+                  author: note.staff_id || 'staff',
+                  createdAt: note.created_at || new Date().toISOString(),
+                  piiLevel: 'low',
+                  category: 'customer',
+                }));
+                useDemo = false;
+              }
+            }
+          } catch (error) {
+            console.warn('[GID] Failed to fetch network memory bundle:', error);
+          }
+        }
         
         // Try customerId first (for wallet integration), then sessionId
         if (customerId) {
@@ -223,7 +338,9 @@ export default function GuestIntelligenceDashboard({
         setBehavioralMemory(memory);
         
         // Use real notes if available from API, otherwise use mock
-        if (realData && sessionId && sessionId !== 'session_demo') {
+        if (networkNotes) {
+          setSessionNotes(networkNotes);
+        } else if (realData && sessionId && sessionId !== 'session_demo') {
           try {
             const notesResponse = await fetch(`/api/guest-intelligence/${sessionId}`);
             if (notesResponse.ok) {
@@ -257,7 +374,7 @@ export default function GuestIntelligenceDashboard({
     };
 
     loadIntelligenceData();
-  }, [session, sessionId, tableId]);
+  }, [session, sessionId, tableId, loungeId, hid]);
 
   // PII Masking function
   const getPiiMaskedContent = (content: string, piiLevel: string) => {

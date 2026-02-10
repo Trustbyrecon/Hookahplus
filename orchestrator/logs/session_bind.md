@@ -37,6 +37,27 @@
 ## Next Steps
 Proceed to Task 5: ROI calculator page deployment
 
+---
+
+## 2026-02-01 Update (apps/app deployment target)
+This repo now deploys the operator app from `apps/app` (Vercel project `apps/app/vercel.json`).
+
+### What changed
+- Added orchestrator-compatible command endpoint: `apps/app/app/api/sessions/[id]/command/route.ts`
+- Added `sendCmd` helper: `apps/app/lib/cmd.ts`
+- Added BOH/FOH cards:
+  - `apps/app/components/boh/PrepCard.tsx`
+  - `apps/app/components/foh/RunCard.tsx`
+- Added demo page: `apps/app/app/demo/fire-session/page.tsx`
+
+### Notes
+- This implementation reuses the existing `apps/app` session model + state machine rather than the old `hookahplus-v2-` in-memory reducer.
+- Edge actions supported:
+  - `REMAKE` maps to `REQUEST_REMAKE`
+  - `STOCK_BLOCKED` sets session edge-case + persists status marker
+  - `MOVE_TABLE` updates `tableId`
+  - `ADD_COAL_SWAP` records a note (side-effect)
+
 ## Technical Details
 - **Commands Supported**: All 18 commands from sessionState.ts
 - **State Transitions**: Full state machine with validation

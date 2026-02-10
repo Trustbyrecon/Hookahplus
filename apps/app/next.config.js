@@ -30,15 +30,20 @@ const nextConfig = {
   },
 };
 
-// Wrap with Sentry config if DSN is provided
-const configWithSentry = process.env.NEXT_PUBLIC_SENTRY_DSN
-  ? withSentryConfig(nextConfig, {
-      // Sentry webpack plugin options
-      silent: true,
-      org: process.env.SENTRY_ORG,
-      project: process.env.SENTRY_PROJECT,
-    })
-  : nextConfig;
+// Wrap with Sentry webpack plugin only when fully configured.
+// This avoids preview/CI builds failing when DSN is set but auth/token/org/project are not.
+const sentryWebpackConfigured =
+  !!process.env.SENTRY_AUTH_TOKEN && !!process.env.SENTRY_ORG && !!process.env.SENTRY_PROJECT;
+
+const configWithSentry =
+  process.env.NEXT_PUBLIC_SENTRY_DSN && sentryWebpackConfigured
+    ? withSentryConfig(nextConfig, {
+        // Sentry webpack plugin options
+        silent: true,
+        org: process.env.SENTRY_ORG,
+        project: process.env.SENTRY_PROJECT,
+      })
+    : nextConfig;
 
 module.exports = configWithSentry;
 

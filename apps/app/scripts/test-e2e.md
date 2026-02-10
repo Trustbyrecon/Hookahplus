@@ -3,6 +3,35 @@
 ## Overview
 E2E tests validate complete user flows from start to finish.
 
+## Running E2E (including Night After Night / demo claim prep)
+
+**If you see `net::ERR_CONNECTION_REFUSED` at http://localhost:3002/**  
+The app is not running. With `USE_EXISTING_SERVER=1`, Playwright does **not** start the server — you must start it first.
+
+- **Option A — Playwright starts the app (recommended if port 3002 is free):**
+  ```bash
+  cd apps/app && npm run test:e2e -- e2e/flows/night-after-night-engine.spec.ts
+  ```
+- **Option B — Use an already-running app:**  
+  1. In one terminal: `cd apps/app && npm run dev` (leave it running).  
+  2. In another terminal: `cd apps/app && USE_EXISTING_SERVER=1 npx playwright test e2e/flows/night-after-night-engine.spec.ts --project=chromium`
+
+See `tasks/demo-nan-claim-prep-e2e-task-brief.md` for demo NAN (Claim Prep) flow and E2E details.
+
+### Run NAN E2E against production (light demo)
+Use production as the target instead of localhost. **Requires:** production DB has `payment_gateway` (run Supabase migration `20260201000001_add_payment_gateway.sql` or `prisma/add_payment_gateway.sql` once). Production must allow `/api/test-session/create-paid` and PATCH `/api/sessions` (consider a feature flag or demo-only route in production).
+
+From **repo root**:
+```bash
+cd apps/app && PLAYWRIGHT_BASE_URL=https://app.hookahplus.net USE_EXISTING_SERVER=1 npx playwright test e2e/flows/night-after-night-engine.spec.ts --project=chromium
+```
+
+From **apps/app** (if you're already there, omit `cd apps/app`):
+```bash
+PLAYWRIGHT_BASE_URL=https://app.hookahplus.net USE_EXISTING_SERVER=1 npx playwright test e2e/flows/night-after-night-engine.spec.ts --project=chromium
+```
+No local server is started; all requests go to production. Run with a single worker to avoid timeout cascades.
+
 ## Test Scenarios
 
 ### Scenario 1: Create Session with Table Selection

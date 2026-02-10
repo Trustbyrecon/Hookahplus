@@ -204,6 +204,26 @@ export default function PricingPage() {
       ],
       availableFor: 'pro', // Available for Pro and Trust+
       includedIn: null
+    },
+    {
+      key: 'agentic_commerce',
+      name: 'Agentic Commerce (Stripe Beta)',
+      price: {
+        monthly: 49,
+        annual: 490
+      },
+      description: 'Let AI agents reserve + collect deposits in-chat — H+ fulfills via your Session OS.',
+      icon: <Shield className="w-5 h-5" />,
+      highValueFeature: 'Agent-ready reservations',
+      hoverText: 'Enable agent-initiated reservation holds/session deposits using Stripe’s agentic commerce flow. H+ remains the system of record via secure webhook reconciliation. Includes $0.25 per agentic checkout usage.',
+      features: [
+        'In-chat reservation holds',
+        'Session deposit checkout',
+        'Webhook-driven reconciliation',
+        'Usage reporting (+$0.25 per checkout)'
+      ],
+      availableFor: 'pro', // Pro/Trust+ add-on
+      includedIn: null
     }
   ];
 
@@ -233,6 +253,27 @@ export default function PricingPage() {
       />
 
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        {/* Hookah GMV take (0.7%) + Why */}
+        <div className="mb-10 p-6 bg-teal-500/10 rounded-xl border border-teal-500/30 max-w-3xl mx-auto">
+          <div className="flex items-start gap-3">
+            <DollarSign className="w-6 h-6 text-teal-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-1">Payment processing on hookah GMV</h3>
+              <p className="text-zinc-300 text-sm mb-2">
+                When you run hookah session payments through Hookah+ (Stripe), we apply a <strong className="text-teal-400">0.7%</strong> take on that GMV. Subscription plans (below) are separate.
+              </p>
+              <details className="group">
+                <summary className="text-xs text-teal-400 cursor-pointer hover:text-teal-300 inline-flex items-center gap-1">
+                  <Info className="w-3.5 h-3.5" /> Why 0.7%?
+                </summary>
+                <p className="mt-2 text-xs text-zinc-400 leading-relaxed">
+                  We keep it low so our incentives align with yours: we grow when your hookah revenue grows. No hidden fees, no surprise bumps. The percentage covers payment infrastructure and lets us invest in the features that drive your volume — memory, loyalty, and workflow — without nickel-and-diming per session.
+                </p>
+              </details>
+            </div>
+          </div>
+        </div>
+
         {/* Simplified Billing Cycle Toggle - less prominent */}
         <div className="flex items-center justify-center gap-3 mb-12">
           <button
@@ -424,15 +465,15 @@ export default function PricingPage() {
           </div>
         </div>
 
-        {/* Simplified Add-ons - Starter boosters only, collapsed by default */}
+        {/* Add-ons (collapsed by default) */}
         <div className="mb-16">
           <details className="max-w-4xl mx-auto">
             <summary className="text-2xl font-bold text-center mb-8 cursor-pointer hover:text-teal-400 transition-colors">
-              Starter Add-ons (Boosters)
+              Add-ons
             </summary>
             <div className="mb-4 p-4 bg-blue-500/10 rounded-lg border border-blue-500/30 text-center">
               <p className="text-sm text-zinc-300">
-                <span className="font-semibold text-blue-400">Note:</span> Flavor Intelligence, Advanced Analytics, and Staff Performance Suite are <span className="font-semibold text-teal-400">included in Pro</span>. These add-ons are available for Starter tier only.
+                <span className="font-semibold text-blue-400">Note:</span> Some add-ons are <span className="font-semibold text-teal-400">included in Pro</span>, while others are available as <span className="font-semibold text-teal-400">Pro/Trust+</span> upgrades.
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">

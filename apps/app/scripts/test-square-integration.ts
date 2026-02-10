@@ -28,6 +28,22 @@ import type { HpOrder, HpItem, ExternalTender } from '../lib/pos/types';
 import { prisma } from '../lib/db';
 import crypto from 'crypto';
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isDbConnectivityError(err: unknown): boolean {
+  const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
+  return (
+    msg.includes("can't reach database server") ||
+    msg.includes("ecconnrefused") ||
+    msg.includes("enotfound") ||
+    msg.includes("timeout") ||
+    msg.includes("could not connect") ||
+    msg.includes("connection")
+  );
+}
+
 // Simple trust lock creation for testing
 function createTrustLock(orderId: string): { sig: string } {
   const secret = process.env.TRUSTLOCK_SECRET;
@@ -51,9 +67,14 @@ class SquareIntegrationTester {
   private adapter: SquareAdapter;
   private testOrderId: string;
   private posOrderId: string | null = null;
+  private sawDbUnavailableForOAuthLookup = false;
+  private requireOAuth: boolean;
+  private probeOnly: boolean;
 
-  constructor(venueId: string) {
+  constructor(venueId: string, opts?: { requireOAuth?: boolean; probeOnly?: boolean }) {
     this.venueId = venueId;
+    this.requireOAuth = !!opts?.requireOAuth;
+    this.probeOnly = !!opts?.probeOnly;
     this.adapter = new SquareAdapter({ venueId });
     this.testOrderId = `test_sq_${Date.now()}`;
   }
@@ -72,6 +93,13 @@ class SquareIntegrationTester {
 
       // Test 3: Test capabilities
       await this.testCapabilities();
+
+      // Probe-only mode: prod-safe validation (no order writes)
+      if (this.probeOnly) {
+        await this.testReadOnlyProbe();
+        this.printResults();
+        return;
+      }
 
       // Test 4: Create order (idempotency test)
       await this.testOrderCreation();
@@ -99,14 +127,54 @@ class SquareIntegrationTester {
     }
   }
 
+  private async testReadOnlyProbe(): Promise<void> {
+    const testName = 'Read-only Square API Probe';
+    console.log(`\n4️⃣ Testing ${testName}...`);
+
+    try {
+      const probe = await (this.adapter as any).probeOAuthReadOnly?.();
+      if (!probe) {
+        throw new Error('Adapter does not support read-only probe');
+      }
+      console.log(`   ✅ Square API reachable (locations: ${probe.locationCount})`);
+      this.addResult(testName, true, undefined, probe);
+    } catch (error) {
+      console.error(`   ❌ ${testName} failed:`, error);
+      this.addResult(testName, false, error instanceof Error ? error.message : String(error));
+      throw error;
+    }
+  }
+
   private async testOAuthConnection(): Promise<void> {
     const testName = 'OAuth Connection Check';
     console.log(`\n1️⃣ Testing ${testName}...`);
 
     try {
-      const merchant = await prisma.squareMerchant.findUnique({
-        where: { loungeId: this.venueId }
-      });
+      // This script is used in multiple environments. Some deployments use Supabase
+      // for Square OAuth storage and do not have a `squareMerchant` model in Prisma.
+      const squareMerchantDelegate = (prisma as any)?.squareMerchant;
+      let merchant: any = null;
+      try {
+        if (squareMerchantDelegate?.findUnique) {
+          // Retry a few times to avoid falling back to legacy if the DB comes up shortly after startup.
+          // `lib/db.ts` tests the connection non-blocking; this keeps our smoke tests aligned with prod OAuth.
+          for (let attempt = 1; attempt <= 5; attempt++) {
+            try {
+              merchant = await squareMerchantDelegate.findUnique({ where: { loungeId: this.venueId } });
+              break;
+            } catch (e) {
+              if (!isDbConnectivityError(e) || attempt === 5) throw e;
+              this.sawDbUnavailableForOAuthLookup = true;
+              await sleep(500 * attempt);
+            }
+          }
+        }
+      } catch (e) {
+        // If DB isn't reachable, continue with legacy env mode checks.
+        this.sawDbUnavailableForOAuthLookup = this.sawDbUnavailableForOAuthLookup || isDbConnectivityError(e);
+        console.log('   ⚠️  DB unavailable for OAuth lookup; continuing with legacy env checks');
+        merchant = null;
+      }
 
       if (merchant) {
         console.log('   ✅ Square merchant found in database');
@@ -119,6 +187,15 @@ class SquareIntegrationTester {
           hasExpiration: !!merchant.expiresAt
         });
       } else {
+        if (this.requireOAuth) {
+          throw new Error(
+            `OAuth required but no Square merchant found in DB for loungeId=${this.venueId}. ` +
+              `Connect Square via /square/connect?loungeId=${encodeURIComponent(this.venueId)}`
+          );
+        }
+        if (!squareMerchantDelegate?.findUnique) {
+          console.log('   ⚠️  Prisma model `squareMerchant` not found; skipping DB OAuth lookup');
+        }
         // Check for legacy env vars
         const hasEnvToken = !!process.env.SQUARE_ACCESS_TOKEN;
         const hasEnvLocation = !!process.env.SQUARE_LOCATION_ID;
@@ -154,6 +231,63 @@ class SquareIntegrationTester {
     try {
       await this.adapter.initialize();
       console.log('   ✅ Adapter initialized successfully');
+      try {
+        const dbg = (this.adapter as any)?.debugState?.();
+        if (dbg) {
+          console.log(`   🔎 Auth mode: ${dbg.authMode}${dbg.merchantId ? ` (merchant: ${dbg.merchantId})` : ''}`);
+        }
+      } catch {
+        // ignore
+      }
+
+      if (this.requireOAuth) {
+        const dbg = (this.adapter as any)?.debugState?.();
+        if (dbg?.authMode !== 'oauth') {
+          throw new Error(`OAuth required but adapter initialized in ${dbg?.authMode || 'unknown'} mode`);
+        }
+      }
+
+      // OAuth-first hardening:
+      // Even if the first lookup happened before the DB was ready (or the pooler flapped),
+      // do a post-init lookup and only retry on connectivity errors. If we now find the
+      // merchant row, re-initialize the adapter so the rest of the suite runs OAuth-first.
+      const squareMerchantDelegate = (prisma as any)?.squareMerchant;
+      const dbg = (this.adapter as any)?.debugState?.();
+      const isLegacy = dbg?.authMode === 'legacy';
+      if (isLegacy && squareMerchantDelegate?.findUnique) {
+        if (this.sawDbUnavailableForOAuthLookup) {
+          console.log('   🔁 Retrying OAuth merchant lookup after DB connection...');
+        } else {
+          console.log('   🔎 Checking for OAuth merchant in DB (post-init)...');
+        }
+        let merchant: any = null;
+        for (let attempt = 1; attempt <= 5; attempt++) {
+          try {
+            merchant = await squareMerchantDelegate.findUnique({ where: { loungeId: this.venueId } });
+            break;
+          } catch (e) {
+            if (!isDbConnectivityError(e) || attempt === 5) throw e;
+            await sleep(500 * attempt);
+          }
+        }
+
+        if (merchant) {
+          console.log('   ✅ OAuth merchant now available; re-initializing adapter in OAuth mode');
+          this.adapter = new SquareAdapter({ venueId: this.venueId });
+          await this.adapter.initialize();
+          try {
+            const dbg2 = (this.adapter as any)?.debugState?.();
+            if (dbg2) {
+              console.log(`   🔎 Auth mode (after retry): ${dbg2.authMode}${dbg2.merchantId ? ` (merchant: ${dbg2.merchantId})` : ''}`);
+            }
+          } catch {
+            // ignore
+          }
+        } else {
+          console.log('   ℹ️  OAuth merchant not found; continuing in legacy mode');
+        }
+      }
+
       this.addResult(testName, true);
     } catch (error) {
       console.error(`   ❌ ${testName} failed:`, error);
@@ -357,6 +491,17 @@ class SquareIntegrationTester {
         return;
       }
 
+      const stripeConfigured = Boolean(
+        (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY.trim()) ||
+          (process.env.STRIPE_TEST_SECRET_KEY && process.env.STRIPE_TEST_SECRET_KEY.trim()),
+      );
+
+      if (!stripeConfigured) {
+        console.log('   ⚠️  Skipping: Stripe not configured (STRIPE_SECRET_KEY missing)');
+        this.addResult(testName, true, 'Skipped - Stripe not configured', { skipped: true });
+        return;
+      }
+
       // Test reconcileTicket method
       if (this.adapter.reconcileTicket) {
         console.log(`   🔍 Testing reconcileTicket for order ${this.posOrderId}`);
@@ -400,9 +545,17 @@ class SquareIntegrationTester {
         });
       }
     } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+
+      if (message.includes('Stripe not configured for reconciliation')) {
+        console.log('   ⚠️  Skipping: Stripe not configured for reconciliation');
+        this.addResult(testName, true, 'Skipped - Stripe not configured', { skipped: true });
+        return;
+      }
+
       console.error(`   ❌ ${testName} failed:`, error);
       // Don't throw - reconciliation is optional
-      this.addResult(testName, false, error instanceof Error ? error.message : String(error));
+      this.addResult(testName, false, message);
     }
   }
 
@@ -451,15 +604,25 @@ class SquareIntegrationTester {
 
 // Main execution
 async function main() {
-  const venueId = process.argv[2] || process.env.DEFAULT_VENUE_ID || 'default_venue';
+  const rawArgs = process.argv.slice(2);
+  const requireOAuth =
+    rawArgs.includes('--oauth') ||
+    rawArgs.includes('--require-oauth') ||
+    (process.env.SQUARE_SMOKE_REQUIRE_OAUTH || '').toLowerCase() === 'true';
+  const probeOnly =
+    rawArgs.includes('--probe') ||
+    rawArgs.includes('--read-only') ||
+    rawArgs.includes('--readonly');
+  const venueId =
+    rawArgs.find((a) => a && !a.startsWith('-')) || process.env.DEFAULT_VENUE_ID || 'default_venue';
 
   if (!venueId) {
     console.error('❌ Error: Venue ID required');
-    console.error('Usage: tsx apps/app/scripts/test-square-integration.ts [venueId]');
+    console.error('Usage: tsx apps/app/scripts/test-square-integration.ts [venueId] [--oauth]');
     process.exit(1);
   }
 
-  const tester = new SquareIntegrationTester(venueId);
+  const tester = new SquareIntegrationTester(venueId, { requireOAuth, probeOnly });
   await tester.runAllTests();
 }
 

@@ -18,7 +18,7 @@ test.describe('Guardrail Enforcement E2E', () => {
     // The gate runner is tested via the CI workflow
     // Here we verify the page loads correctly
     await page.goto('/admin/qr');
-    await expect(page.getByText(/QR/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('heading', { name: /QR Code Management/i })).toBeVisible({ timeout: 5000 });
   });
 
   test('G3: EP.REM.Coverage gate validates REM format', async ({ page }) => {

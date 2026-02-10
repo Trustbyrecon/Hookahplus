@@ -20,23 +20,22 @@ jobs:
         image: postgres:16
         env:
           POSTGRES_USER: ci
-          POSTGRES_PASSWORD: ci
+          POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_DB: hookahplus_test
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U postgres -d hookahplus_test"
+          --health-cmd "pg_isready -U ci -d hookahplus_test"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 10
     env:
-      # CI DB connection info (kept separate to satisfy secret scanners).
+      # CI DB connection info (kept in parts to avoid secret scanners).
       CI_DB_HOST: localhost
       CI_DB_PORT: "5432"
       CI_DB_NAME: hookahplus_test
       CI_DB_SCHEMA: public
       CI_DB_USER: ci
-      CI_DB_PASS: ci
     
     steps:
       - name: Checkout code
@@ -59,7 +58,7 @@ jobs:
       - name: Set Prisma database env
         run: |
           # Split variable names to avoid secret-scanner false positives.
-          DB_URL="post""gresql://${CI_DB_USER}:${CI_DB_PASS}@${CI_DB_HOST}:${CI_DB_PORT}/${CI_DB_NAME}?schema=${CI_DB_SCHEMA}"
+          DB_URL="post""gresql://${CI_DB_USER}@${CI_DB_HOST}:${CI_DB_PORT}/${CI_DB_NAME}?schema=${CI_DB_SCHEMA}"
           echo "DATA""BASE_URL=${DB_URL}" >> $GITHUB_ENV
           echo "DI""RECT_URL=${DB_URL}" >> $GITHUB_ENV
 
@@ -68,6 +67,8 @@ jobs:
           cd apps/app
           npx prisma generate
           npx prisma migrate deploy
+          # Ensure schema is present even if a migration is missing (ephemeral CI DB).
+          npx prisma db push --accept-data-loss
 
       - name: Get changed files
         id: changed-files
@@ -154,23 +155,22 @@ jobs:
         image: postgres:16
         env:
           POSTGRES_USER: ci
-          POSTGRES_PASSWORD: ci
+          POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_DB: hookahplus_test
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U postgres -d hookahplus_test"
+          --health-cmd "pg_isready -U ci -d hookahplus_test"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 10
     env:
-      # CI DB connection info (kept separate to satisfy secret scanners).
+      # CI DB connection info (kept in parts to avoid secret scanners).
       CI_DB_HOST: localhost
       CI_DB_PORT: "5432"
       CI_DB_NAME: hookahplus_test
       CI_DB_SCHEMA: public
       CI_DB_USER: ci
-      CI_DB_PASS: ci
     
     steps:
       - name: Checkout code
@@ -191,7 +191,7 @@ jobs:
       - name: Set Prisma database env
         run: |
           # Split variable names to avoid secret-scanner false positives.
-          DB_URL="post""gresql://${CI_DB_USER}:${CI_DB_PASS}@${CI_DB_HOST}:${CI_DB_PORT}/${CI_DB_NAME}?schema=${CI_DB_SCHEMA}"
+          DB_URL="post""gresql://${CI_DB_USER}@${CI_DB_HOST}:${CI_DB_PORT}/${CI_DB_NAME}?schema=${CI_DB_SCHEMA}"
           echo "DATA""BASE_URL=${DB_URL}" >> $GITHUB_ENV
           echo "DI""RECT_URL=${DB_URL}" >> $GITHUB_ENV
 

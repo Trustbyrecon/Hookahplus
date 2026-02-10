@@ -17,6 +17,9 @@ import { Card, Button, Badge } from '../../../components';
 function SquareConnectContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const loungeIdParam = searchParams.get('loungeId');
+  // Hydration hardening: do not derive initial state from searchParams during SSR,
+  // because searchParams can be unavailable/partial on the first client render.
   const [loungeId, setLoungeId] = useState('HOPE_GLOBAL_FORUM'); // Default lounge ID
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +27,8 @@ function SquareConnectContent() {
   const errorParam = searchParams.get('error');
 
   useEffect(() => {
+    // Sync loungeId from URL after mount (prevents hydration mismatch).
+    if (loungeIdParam && loungeIdParam !== loungeId) setLoungeId(loungeIdParam);
     if (errorParam) {
       const decodedError = decodeURIComponent(errorParam);
       setError(decodedError);
@@ -37,7 +42,7 @@ function SquareConnectContent() {
         setError('Lounge ID not found. Please try connecting again.');
       }
     }
-  }, [errorParam]);
+  }, [loungeIdParam, errorParam]);
 
   const handleConnect = () => {
     setLoading(true);
@@ -63,7 +68,7 @@ function SquareConnectContent() {
                 Your Square account has been successfully connected to Hookah+.
               </p>
               <Button
-                onClick={() => router.push('/square/settings')}
+                onClick={() => router.push(`/square/settings?loungeId=${encodeURIComponent(loungeId)}`)}
                 className="mt-6"
               >
                 Go to Square Settings
@@ -150,6 +155,20 @@ function SquareConnectContent() {
             </div>
 
             <div className="pt-6">
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                  Lounge ID
+                </label>
+                <input
+                  value={loungeId}
+                  onChange={(e) => setLoungeId(e.target.value)}
+                  placeholder="e.g. HOPE_GLOBAL_FORUM"
+                  className="w-full rounded-lg bg-zinc-900 border border-zinc-700 px-3 py-2 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-teal-500/50"
+                />
+                <p className="mt-2 text-xs text-zinc-500">
+                  This is the Hookah+ lounge key used to store your Square merchant mapping.
+                </p>
+              </div>
               <Button
                 onClick={handleConnect}
                 disabled={loading}

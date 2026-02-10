@@ -1124,6 +1124,17 @@ function LoungeLayoutPageContent() {
                         </Button>
                       </div>
 
+                      {/* Timer nudge in guest experience > Control Panel — session ending soon */}
+                      {selectedTableSession?.sessionTimer?.isActive &&
+                        typeof selectedTableSession.sessionTimer.remaining === 'number' &&
+                        selectedTableSession.sessionTimer.remaining <= 5 * 60 &&
+                        selectedTableSession.sessionTimer.remaining > 0 && (
+                        <div className="mt-4 p-3 rounded-lg bg-amber-900/30 border border-amber-600/50 text-amber-200 text-sm flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-amber-400 shrink-0" />
+                          <span>Session ending soon — offer extension or close.</span>
+                        </div>
+                      )}
+
                       {/* Mini Session Control Panel - NAN Workflow */}
                       <div className="mt-4 pt-4 border-t border-zinc-700">
                         <h4 className="text-sm font-semibold text-zinc-300 mb-3">Session Control</h4>

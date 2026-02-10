@@ -300,12 +300,18 @@ export default function PricingIntelligenceBoard() {
         </header>
 
         {/* Controls */}
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
           <label className="inline-flex items-center gap-2 text-sm">
             <input type="checkbox" checked={annual} onChange={(e)=>setAnnual(e.target.checked)} />
             <span>Annual billing (save 15%)</span>
           </label>
           {selectedSub && <span className="text-sm text-white/70">Selected: <b>{selectedSub}</b></span>}
+          <a
+            href="https://hookahplus.net/pricing"
+            className="sm:ml-auto inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm hover:bg-white/10"
+          >
+            Open ROI Calculator
+          </a>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

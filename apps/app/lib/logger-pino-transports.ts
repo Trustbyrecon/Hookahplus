@@ -37,6 +37,16 @@ export interface PinoStream {
 export function createTransportStreams(): PinoStream[] {
   const streams: PinoStream[] = [];
   const isDevelopment = process.env.NODE_ENV === 'development';
+  const isCI = process.env.CI === 'true' || !!process.env.CI;
+
+  // CI: avoid pino transports (worker threads) to prevent Next/webpack worker resolution issues.
+  if (isCI) {
+    streams.push({
+      level: process.env.LOG_LEVEL?.toLowerCase() || 'info',
+      stream: process.stdout,
+    });
+    return streams;
+  }
 
   // 1. Console/Stdout (always enabled)
   // In development: use pino-pretty for readable output

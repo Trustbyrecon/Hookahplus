@@ -12,6 +12,8 @@ try {
 
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'Hookah+ <noreply@hookahplus.net>';
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hookahplus.net';
+/** App dashboard URL (operator-onboarding lives here; do not use SITE_URL for dashboard links). */
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://app.hookahplus.net';
 
 /**
  * Send contact form confirmation email
@@ -214,7 +216,7 @@ export async function sendHopeLeadNotification(leadData: {
           </div>
 
           <div style="text-align: center; margin-top: 30px;">
-            <a href="${SITE_URL}/admin/operator-onboarding?source=hope_global_forum" 
+            <a href="${APP_URL}/admin/operator-onboarding?source=hope_global_forum" 
                style="display: inline-block; background: linear-gradient(135deg, #14b8a6, #06b6d4); color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
               View Lead in Dashboard →
             </a>
@@ -398,7 +400,7 @@ export async function sendWorldShishaLeadNotification(data: {
           </div>
 
           <div style="text-align: center; margin-top: 30px;">
-            <a href="${SITE_URL}/admin/operator-onboarding?source=world_shisha_2026" 
+            <a href="${APP_URL}/admin/operator-onboarding?source=world_shisha_2026" 
                style="display: inline-block; background: linear-gradient(135deg, #14b8a6, #06b6d4); color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
               View Lead in Dashboard →
             </a>
@@ -515,7 +517,7 @@ export async function sendWorldShishaBriefDownloadNotification(data: {
           </div>
 
           <div style="text-align: center; margin-top: 30px;">
-            <a href="${SITE_URL}/admin/operator-onboarding?source=world_shisha_2026&type=brief_download" 
+            <a href="${APP_URL}/admin/operator-onboarding?source=world_shisha_2026&type=brief_download" 
                style="display: inline-block; background: linear-gradient(135deg, #14b8a6, #06b6d4); color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
               View Lead in Dashboard →
             </a>
@@ -670,7 +672,7 @@ export async function sendWorldShishaPilotPackSignupNotification(data: {
           </div>
 
           <div style="text-align: center; margin-top: 30px;">
-            <a href="${SITE_URL}/admin/operator-onboarding?source=world_shisha_2026&type=pilot_pack" 
+            <a href="${APP_URL}/admin/operator-onboarding?source=world_shisha_2026&type=pilot_pack" 
                style="display: inline-block; background: linear-gradient(135deg, #14b8a6, #06b6d4); color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
               View Lead in Dashboard →
             </a>

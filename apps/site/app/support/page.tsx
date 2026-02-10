@@ -115,7 +115,7 @@ const SupportPage = () => {
     {
       id: '6',
       question: 'What are the pricing options for Hookah+?',
-      answer: 'We offer flexible pricing plans starting with a free tier for small venues. Our premium plans include advanced AI features, unlimited sessions, priority support, and custom integrations. Contact our sales team for enterprise pricing.',
+      answer: 'Hookah+ uses subscription tiers (Starter, Pro, Trust+) plus a 0.7% take on hookah GMV when you run payments through Hookah+ (Stripe). The percentage keeps our incentives aligned with yours — we grow when your hookah revenue grows — and covers payment infrastructure without hidden fees. See the Pricing page for tier details and the ROI calculator.',
       category: 'billing'
     },
     {

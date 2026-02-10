@@ -7,7 +7,7 @@
 ### What Was Done
 
 1. ✅ **Stripe Secret Key Updated:**
-   - Key: `sk_test_51RZ0cpDHM3T5fq9re4ZGZMvwqTrYHkQ6ARyolebbtPdu6jThPA9TzV8VyzJtTrIrcOwwiJxkPZ67EJHKWf3PkOHH00ZX9JFBSt`
+   - Key: `sk_test_***REDACTED***` (store in .env.local only)
    - Type: Test Mode (`sk_test_...`) ✅
    - Location: `apps/app/.env.local`
 
@@ -26,7 +26,7 @@
 
 ### Stripe Keys in `.env.local`:
 ```bash
-STRIPE_SECRET_KEY=sk_test_51RZ0cpDHM3T5fq9re4ZGZMvwqTrYHkQ6ARyolebbtPdu6jThPA9TzV8VyzJtTrIrcOwwiJxkPZ67EJHKWf3PkOHH00ZX9JFBSt
+STRIPE_SECRET_KEY=sk_test_***REDACTED***  # Use your key from Stripe Dashboard; never commit
 ```
 
 ### Status:

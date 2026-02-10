@@ -1,0 +1,14 @@
+<testsuites id="" name="" tests="5" failures="0" skipped="0" errors="0" time="17.334823">
+<testsuite name="flows\night-after-night-engine.spec.ts" timestamp="2026-02-03T21:28:53.357Z" hostname="chromium" tests="5" failures="0" skipped="0" time="14.507" errors="0">
+<testcase name="Night After Night Engine - E2E Tests › Pathway 1: Pre-order → Payment → Session Creation → Guest Tracker" classname="flows\night-after-night-engine.spec.ts" time="2.864">
+</testcase>
+<testcase name="Night After Night Engine - E2E Tests › Pathway 2: Session → Order → Delivery → Active (Night After Night Flow)" classname="flows\night-after-night-engine.spec.ts" time="3.398">
+</testcase>
+<testcase name="Night After Night Engine - E2E Tests › Pathway 3: Payment Confirmation Triggers Hookah Tracker Redirect" classname="flows\night-after-night-engine.spec.ts" time="1.875">
+</testcase>
+<testcase name="Night After Night Engine - E2E Tests › Pathway 4: Full Night After Night Flow - Pre-order to Active Session" classname="flows\night-after-night-engine.spec.ts" time="2.845">
+</testcase>
+<testcase name="Night After Night Engine - E2E Tests › Pathway 5: Guest Experience - Payment → Tracker → Session Status Updates" classname="flows\night-after-night-engine.spec.ts" time="3.525">
+</testcase>
+</testsuite>
+</testsuites>

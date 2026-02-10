@@ -19,11 +19,30 @@ interface SquareMerchantInfo {
 export class SquareOAuth {
   private static readonly API_VERSION = '2024-01-18';
 
+  private static normalizeEnvValue(raw?: string): string {
+    if (!raw) return '';
+    // Vercel env vars are sometimes pasted with quotes/backticks. Normalize defensively.
+    return raw
+      .trim()
+      .replace(/^`|`$/g, '')
+      .replace(/^"|"$/g, '')
+      .replace(/^'|'$/g, '')
+      .replace(/[\r\n]/g, '');
+  }
+
+  private static getAppUrl(): string {
+    // Vercel env vars are sometimes pasted with quotes/backticks. Normalize defensively.
+    let appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002').trim();
+    appUrl = appUrl.replace(/^`|`$/g, '').replace(/^"|"$/g, '').replace(/^'|'$/g, '');
+    appUrl = appUrl.replace(/\/+$/g, '');
+    return appUrl;
+  }
+
   private static getEnv(): 'sandbox' | 'production' {
     const raw = (process.env.SQUARE_ENV || '').toLowerCase();
     if (raw === 'sandbox' || raw === 'production') return raw;
     // Heuristic fallback: sandbox client IDs start with "sandbox-".
-    const clientId = process.env.SQUARE_APPLICATION_ID?.trim() || '';
+    const clientId = this.normalizeEnvValue(process.env.SQUARE_APPLICATION_ID);
     if (clientId.startsWith('sandbox-')) return 'sandbox';
     return 'production';
   }
@@ -38,7 +57,7 @@ export class SquareOAuth {
    * Generate authorization URL for OAuth flow
    */
   static getAuthorizationUrl(state: string): string {
-    const clientId = process.env.SQUARE_APPLICATION_ID?.trim();
+    const clientId = this.normalizeEnvValue(process.env.SQUARE_APPLICATION_ID);
     if (!clientId) {
       throw new Error('SQUARE_APPLICATION_ID environment variable is required');
     }
@@ -48,17 +67,15 @@ export class SquareOAuth {
       console.warn('[Square OAuth] Application ID format may be incorrect. Expected format: sandbox-sq0idb-... or sq0idb-...');
     }
 
-    const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/api/square/oauth/callback`;
-    const scopes = [
-      'ORDERS_WRITE',
-      'ORDERS_READ',
-      'PAYMENTS_WRITE',
-      'MERCHANT_PROFILE_READ',
-      'LOCATIONS_READ'
-    ].join(' ');
+    const redirectUri = `${this.getAppUrl()}/api/square/oauth/callback`;
+    // Sandbox OAuth scopes for our MVP:
+    // - MERCHANT_PROFILE_READ: fetch merchant + locations
+    // - ORDERS_READ/ORDERS_WRITE: allow order injection for smoke tests / Flow 3
+    // NOTE: changing scopes requires re-authorizing in Square for the merchant.
+    const scopes = ['MERCHANT_PROFILE_READ', 'ORDERS_READ', 'ORDERS_WRITE'].join(' ');
 
     // Ensure clientId has no whitespace or newlines
-    const cleanClientId = clientId.trim().replace(/[\r\n]/g, '');
+    const cleanClientId = clientId;
     
     const params = new URLSearchParams({
       client_id: cleanClientId,
@@ -89,9 +106,9 @@ export class SquareOAuth {
    * Exchange authorization code for access token
    */
   static async exchangeCode(code: string): Promise<SquareTokens> {
-    const clientId = process.env.SQUARE_APPLICATION_ID;
-    const clientSecret = process.env.SQUARE_APPLICATION_SECRET;
-    const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/api/square/oauth/callback`;
+    const clientId = this.normalizeEnvValue(process.env.SQUARE_APPLICATION_ID);
+    const clientSecret = this.normalizeEnvValue(process.env.SQUARE_APPLICATION_SECRET);
+    const redirectUri = `${this.getAppUrl()}/api/square/oauth/callback`;
 
     if (!clientId || !clientSecret) {
       throw new Error('Square OAuth credentials not configured');
@@ -130,8 +147,8 @@ export class SquareOAuth {
    * Refresh access token using refresh token
    */
   static async refreshToken(refreshToken: string): Promise<SquareTokens> {
-    const clientId = process.env.SQUARE_APPLICATION_ID;
-    const clientSecret = process.env.SQUARE_APPLICATION_SECRET;
+    const clientId = this.normalizeEnvValue(process.env.SQUARE_APPLICATION_ID);
+    const clientSecret = this.normalizeEnvValue(process.env.SQUARE_APPLICATION_SECRET);
 
     if (!clientId || !clientSecret) {
       throw new Error('Square OAuth credentials not configured');
@@ -215,8 +232,8 @@ export class SquareOAuth {
    * Revoke access token (for disconnect)
    */
   static async revokeToken(accessToken: string): Promise<void> {
-    const clientId = process.env.SQUARE_APPLICATION_ID;
-    const clientSecret = process.env.SQUARE_APPLICATION_SECRET;
+    const clientId = this.normalizeEnvValue(process.env.SQUARE_APPLICATION_ID);
+    const clientSecret = this.normalizeEnvValue(process.env.SQUARE_APPLICATION_SECRET);
 
     if (!clientId || !clientSecret) {
       throw new Error('Square OAuth credentials not configured');

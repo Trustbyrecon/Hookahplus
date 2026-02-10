@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { processWebhookWithIdempotency } from '../../../../lib/pos/webhook-framework';
+import { prisma } from '../../../../lib/db';
 
 /** Square Webhook Handler
  * 
@@ -63,46 +63,43 @@ export async function POST(req: NextRequest) {
       console.warn('[Square Webhook] Signature key not configured; skipping verification');
     }
 
-    // Route webhook events with idempotency
-    const eventType = event.type || event.event_type;
-    const externalEventId = event.id || event.event_id || `${eventType}_${Date.now()}`;
-    
-    console.log(`[Square Webhook] Received event: ${eventType}`, event);
+    // Raw ingest into square_events_raw (idempotent by event_id)
+    const eventType = event.type || event.event_type || 'unknown';
+    const eventId = event.id || event.event_id || `${eventType}_${Date.now()}`;
+    const merchantId = event.merchant_id || event.merchantId || null;
 
-    // Process with idempotency and retry logic
-    const result = await processWebhookWithIdempotency(
-      {
-        integrationType: 'square',
-        externalEventId,
-        eventType,
-        payload: event,
-      },
-      async (webhookEvent) => {
-        // Process the event
-        switch (webhookEvent.eventType) {
-          case 'payment.updated':
-            console.log('[Square Webhook] Payment updated:', webhookEvent.payload.data);
-            // TODO: Update Hookah+ session with payment status
-            break;
-          case 'payment.created':
-            console.log('[Square Webhook] Payment created:', webhookEvent.payload.data);
-            // TODO: Link payment to Hookah+ session
-            break;
-          case 'refund.updated':
-            console.log('[Square Webhook] Refund updated:', webhookEvent.payload.data);
-            // TODO: Update Hookah+ session with refund status
-            break;
-          default:
-            console.log('[Square Webhook] Unhandled event type:', webhookEvent.eventType);
-            break;
-        }
+    const payloadObj = event?.data?.object || {};
+    const locationId =
+      payloadObj?.location_id ||
+      payloadObj?.payment?.location_id ||
+      payloadObj?.order?.location_id ||
+      payloadObj?.refund?.location_id ||
+      null;
+
+    try {
+      await prisma.squareEventRaw.create({
+        data: {
+          eventId,
+          eventType,
+          merchantId,
+          locationId,
+          payload: event,
+        },
+      });
+    } catch (error: any) {
+      // Unique violation => already ingested
+      const code = error?.code || error?.meta?.code;
+      if (code !== 'P2002') {
+        console.error('[Square Webhook] Failed to store raw event:', error);
+        return new NextResponse('Failed to store event', { status: 500 });
       }
-    );
+    }
 
-    return NextResponse.json({ 
+    console.log(`[Square Webhook] Ingested raw event: ${eventType}`, eventId);
+    return NextResponse.json({
       received: true,
-      eventId: result.id,
-      status: result.status,
+      eventId,
+      status: 'ingested',
     });
   } catch (error) {
     console.error('[Square Webhook] Handler error:', error);

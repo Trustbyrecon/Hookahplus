@@ -158,6 +158,8 @@ export async function GET(
           sessionStateV1: true,
           paused: true,
           tenantId: true,
+          stage: true,
+          action: true,
         },
       });
     } catch (dbError: any) {

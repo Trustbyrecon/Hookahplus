@@ -5,6 +5,18 @@
   "framework": "nextjs",
   "installCommand": "npm install --omit=optional",
   "ignoreCommand": "bash ../../scripts/vercel-build-site.sh",
+  "redirects": [
+    {
+      "source": "/app/:path*",
+      "destination": "https://hookahplus-app-prod.vercel.app/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/guest/:path*",
+      "destination": "https://hookahplus-guest-prod.vercel.app/:path*",
+      "permanent": false
+    }
+  ],
   "env": {
     "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
     "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "1",

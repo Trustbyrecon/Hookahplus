@@ -72,7 +72,7 @@
 
 ## 📋 Summary
 
-**Your webhook key (`whsec_9K2kuNQOaIW62Ojm8RvmET79lssZ7NbI`) is:**
+**Your webhook key (`whsec_***REDACTED***`) is:**
 
 - ✅ **Protected** by `.gitignore` patterns
 - ✅ **Stored securely** in Vercel Environment Variables

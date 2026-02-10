@@ -43,8 +43,9 @@ cat .env.local | grep STRIPE_SECRET_KEY
 
 Should show:
 ```
-STRIPE_SECRET_KEY=sk_test_51RZ0cpDHM3T5fq9re4ZGZMvwqTrYHkQ6ARyolebbtPdu6jThPA9TzV8VyzJtTrIrcOwwiJxkPZ67EJHKWf3PkOHH00ZX9JFBSt
+STRIPE_SECRET_KEY=sk_test_***REDACTED***
 ```
+(Use your key from Stripe Dashboard; never commit.)
 
 ### Step 3: Start Server Fresh
 

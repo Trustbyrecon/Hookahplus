@@ -260,27 +260,36 @@ export async function resolveHID(input: HIDResolveInput): Promise<HIDResolveResu
       (typeof error?.message === 'string' && error.message.toLowerCase().includes('unique'));
 
     if (isUniqueViolation) {
+      // Use ternaries (not `&&`) so we don't accidentally union in `string` (e.g. "").
       const winningLink =
-        (normalizedPhone &&
-          (await prisma.networkPIILink.findUnique({
-            where: { piiType_piiHash: { piiType: 'phone', piiHash: hashPII(normalizedPhone) } },
-            include: { profile: { include: { preferences: true, badges: true } } },
-          }))) ||
-        (normalizedEmail &&
-          (await prisma.networkPIILink.findUnique({
-            where: { piiType_piiHash: { piiType: 'email', piiHash: hashPII(normalizedEmail) } },
-            include: { profile: { include: { preferences: true, badges: true } } },
-          }))) ||
-        (qrToken &&
-          (await prisma.networkPIILink.findUnique({
-            where: { piiType_piiHash: { piiType: 'qr_token', piiHash: hashPII(String(qrToken).trim()) } },
-            include: { profile: { include: { preferences: true, badges: true } } },
-          }))) ||
-        (deviceId &&
-          (await prisma.networkPIILink.findUnique({
-            where: { piiType_piiHash: { piiType: 'device_id', piiHash: hashPII(String(deviceId).trim()) } },
-            include: { profile: { include: { preferences: true, badges: true } } },
-          })));
+        (normalizedPhone
+          ? await prisma.networkPIILink.findUnique({
+              where: { piiType_piiHash: { piiType: 'phone', piiHash: hashPII(normalizedPhone) } },
+              include: { profile: { include: { preferences: true, badges: true } } },
+            })
+          : null) ??
+        (normalizedEmail
+          ? await prisma.networkPIILink.findUnique({
+              where: { piiType_piiHash: { piiType: 'email', piiHash: hashPII(normalizedEmail) } },
+              include: { profile: { include: { preferences: true, badges: true } } },
+            })
+          : null) ??
+        (qrToken
+          ? await prisma.networkPIILink.findUnique({
+              where: {
+                piiType_piiHash: { piiType: 'qr_token', piiHash: hashPII(String(qrToken).trim()) },
+              },
+              include: { profile: { include: { preferences: true, badges: true } } },
+            })
+          : null) ??
+        (deviceId
+          ? await prisma.networkPIILink.findUnique({
+              where: {
+                piiType_piiHash: { piiType: 'device_id', piiHash: hashPII(String(deviceId).trim()) },
+              },
+              include: { profile: { include: { preferences: true, badges: true } } },
+            })
+          : null);
 
       if (winningLink?.profile?.hid) {
         // Cleanup the orphaned profile we attempted to create.

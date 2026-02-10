@@ -4,6 +4,33 @@ import { prisma } from '../db';
 import { decrypt, encrypt } from '../utils/encryption';
 import { SquareOAuth } from '../square/oauth';
 
+const SQUARE_API_VERSION = '2024-01-18';
+
+function getSquareApiBaseUrl(): string {
+  const raw = (process.env.SQUARE_ENV || '').toLowerCase();
+  if (raw === 'sandbox') return 'https://connect.squareupsandbox.com';
+  if (raw === 'production') return 'https://connect.squareup.com';
+  // Heuristic: sandbox app IDs are prefixed with "sandbox-"
+  const appId = (process.env.SQUARE_APPLICATION_ID || '').trim().replace(/[\r\n]/g, '');
+  return appId.startsWith('sandbox-')
+    ? 'https://connect.squareupsandbox.com'
+    : 'https://connect.squareup.com';
+}
+
+function getSquareRuntimeEnv(): 'sandbox' | 'production' {
+  const raw = (process.env.SQUARE_ENV || '').toLowerCase();
+  if (raw === 'sandbox' || raw === 'production') return raw;
+  const appId = (process.env.SQUARE_APPLICATION_ID || '').trim().replace(/[\r\n]/g, '');
+  return appId.startsWith('sandbox-') ? 'sandbox' : 'production';
+}
+
+function inferExpectedEnvFromLoungeId(loungeId: string): 'sandbox' | 'production' | null {
+  const id = (loungeId || '').trim().toLowerCase();
+  if (!id) return null;
+  if (id.endsWith('sandbox')) return 'sandbox';
+  return null;
+}
+
 const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2025-08-27.basil' as any })
   : null;
@@ -17,9 +44,56 @@ export class SquareAdapter implements PosAdapter {
   private accessToken: string | null = null;
   private merchantId: string | null = null;
   private initialized = false;
+  private readonly idempotencyCache = new Map<string, string>();
+  private authMode: 'oauth' | 'legacy' = 'legacy';
+  private static readonly OAUTH_REFRESH_RUNWAY_DAYS = 7;
   
   constructor(private cfg: { venueId: string }) {
     // Initialization is now async - use initialize() method
+  }
+
+  /**
+   * Debug helper for smoke tests / ops.
+   * Not part of the PosAdapter interface; safe to call via `as any`.
+   */
+  debugState() {
+    return {
+      venueId: this.cfg.venueId,
+      authMode: this.authMode,
+      merchantId: this.merchantId,
+      locationId: this.locationId,
+      squareEnv: (process.env.SQUARE_ENV || '').toLowerCase() || undefined,
+    };
+  }
+
+  /**
+   * Read-only connectivity probe for smoke checks.
+   * Verifies that the current access token can reach Square APIs.
+   *
+   * Not part of the PosAdapter interface; safe to call via `as any`.
+   */
+  async probeOAuthReadOnly(): Promise<{ locationCount: number; locationIds: string[] }> {
+    await this.ensureInitialized();
+
+    const baseUrl = getSquareApiBaseUrl();
+    const res = await fetch(`${baseUrl}/v2/locations`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Square-Version": SQUARE_API_VERSION,
+        Authorization: `Bearer ${this.accessToken}`,
+      },
+    });
+
+    if (!res.ok) {
+      const err = await res.text().catch(() => "");
+      throw new Error(`Square probe failed: ${res.status} ${res.statusText}${err ? ` - ${err}` : ""}`);
+    }
+
+    const json = await res.json();
+    const locations: Array<{ id?: string }> = Array.isArray(json?.locations) ? json.locations : [];
+    const locationIds = locations.map((l) => l.id).filter(Boolean) as string[];
+    return { locationCount: locationIds.length, locationIds };
   }
 
   /**
@@ -30,30 +104,79 @@ export class SquareAdapter implements PosAdapter {
     if (this.initialized) return;
 
     try {
-      // Try to load from database (OAuth mode)
-      const merchant = await prisma.squareMerchant.findUnique({
-        where: { loungeId: this.cfg.venueId }
-      });
+      const squareMerchantDelegate = (prisma as any)?.squareMerchant;
+
+      // Try to load from database (OAuth mode) when the Prisma model exists.
+      const merchant =
+        squareMerchantDelegate?.findUnique
+          ? await squareMerchantDelegate.findUnique({ where: { loungeId: this.cfg.venueId } })
+          : null;
 
       if (merchant) {
-        // Check if token needs refresh
-        if (merchant.expiresAt && merchant.expiresAt < new Date()) {
+        this.authMode = 'oauth';
+        // Fail-fast guard: in a shared DB setup, avoid "prod token + sandbox API" (and vice versa)
+        // by using loungeId naming convention (e.g. AliethiaSandbox) as a hard lane separator.
+        const expectedEnv = inferExpectedEnvFromLoungeId(this.cfg.venueId);
+        const runtimeEnv = getSquareRuntimeEnv();
+        if (expectedEnv && expectedEnv !== runtimeEnv) {
+          throw new Error(
+            `Square ENV mismatch: loungeId=${this.cfg.venueId} implies ${expectedEnv} but runtime SQUARE_ENV is ${runtimeEnv}. ` +
+              `Use a matching loungeId lane (e.g. AliethiaSandbox for sandbox) or set SQUARE_ENV=${expectedEnv}.`
+          );
+        }
+
+        const now = new Date();
+        const expiresAt: Date | null = merchant.expiresAt ?? null;
+        const runwayMs = SquareAdapter.OAUTH_REFRESH_RUNWAY_DAYS * 24 * 60 * 60 * 1000;
+        const msRemaining = expiresAt ? expiresAt.getTime() - now.getTime() : null;
+        const daysRemaining = msRemaining == null ? null : msRemaining / (24 * 60 * 60 * 1000);
+        const needsRefreshSoon =
+          expiresAt != null && msRemaining != null && msRemaining <= runwayMs;
+
+        // Trust signal: token runway (helps prevent CI/live surprises).
+        if (expiresAt) {
+          console.log('[Square OAuth] token_runway', {
+            venueId: this.cfg.venueId,
+            merchantId: merchant.merchantId,
+            daysRemaining: Math.round((daysRemaining ?? 0) * 10) / 10,
+            action: needsRefreshSoon ? 'refresh' : 'skip',
+          });
+        }
+
+        // Refresh if token is expired or within runway window.
+        if (needsRefreshSoon || (expiresAt && expiresAt < now)) {
           await this.refreshAccessToken(merchant);
           // Reload after refresh
-          const refreshed = await prisma.squareMerchant.findUnique({
-            where: { loungeId: this.cfg.venueId }
-          });
+          const refreshed =
+            squareMerchantDelegate?.findUnique
+              ? await squareMerchantDelegate.findUnique({ where: { loungeId: this.cfg.venueId } })
+              : null;
           if (refreshed) {
-            this.accessToken = decrypt(refreshed.accessToken);
+            try {
+              this.accessToken = decrypt(refreshed.accessToken);
+            } catch (e) {
+              throw new Error(
+                `Square token decrypt failed after refresh. This usually means ENCRYPTION_KEY differs between the environment that stored the token and the environment reading it. ` +
+                  `If you share a DB between local/prod, use the same ENCRYPTION_KEY (recommended) or reconnect Square for loungeId=${this.cfg.venueId}.`
+              );
+            }
             this.locationId = refreshed.locationIds[0] || null;
             this.merchantId = refreshed.merchantId;
           }
         } else {
-          this.accessToken = decrypt(merchant.accessToken);
+          try {
+            this.accessToken = decrypt(merchant.accessToken);
+          } catch (e) {
+            throw new Error(
+              `Square token decrypt failed. This usually means ENCRYPTION_KEY differs between the environment that stored the token and the environment reading it. ` +
+                `If you share a DB between local/prod, use the same ENCRYPTION_KEY (recommended) or reconnect Square for loungeId=${this.cfg.venueId}.`
+            );
+          }
           this.locationId = merchant.locationIds[0] || null;
           this.merchantId = merchant.merchantId;
         }
       } else {
+        this.authMode = 'legacy';
         // Fallback to environment variables (legacy mode)
         this.locationId = process.env.SQUARE_LOCATION_ID?.trim() || null;
         this.accessToken = process.env.SQUARE_ACCESS_TOKEN?.trim() || null;
@@ -82,10 +205,24 @@ export class SquareAdapter implements PosAdapter {
     }
 
     try {
-      const tokens = await SquareOAuth.refreshToken(decrypt(merchant.refreshToken));
+      let refreshTokenPlain: string;
+      try {
+        refreshTokenPlain = decrypt(merchant.refreshToken);
+      } catch (e) {
+        throw new Error(
+          `Square refresh token decrypt failed. This usually means ENCRYPTION_KEY differs between the environment that stored the token and the environment reading it. ` +
+            `Reconnect Square for loungeId=${this.cfg.venueId}.`
+        );
+      }
+      const tokens = await SquareOAuth.refreshToken(refreshTokenPlain);
       const expiresAt = new Date(Date.now() + tokens.expiresIn * 1000);
 
-      await prisma.squareMerchant.update({
+      const squareMerchantDelegate = (prisma as any)?.squareMerchant;
+      if (!squareMerchantDelegate?.update) {
+        throw new Error('Square OAuth store is not configured in Prisma (missing squareMerchant model)');
+      }
+
+      await squareMerchantDelegate.update({
         where: { id: merchant.id },
         data: {
           accessToken: encrypt(tokens.accessToken),
@@ -119,31 +256,43 @@ export class SquareAdapter implements PosAdapter {
     await this.ensureInitialized();
     
     try {
-      // Check if order already exists (idempotency)
-      const existingOrder = await this.findOrderByHpId(hpOrder.hp_order_id);
-      if (existingOrder) {
-        return { pos_order_id: existingOrder.id, created: false };
+      const baseUrl = getSquareApiBaseUrl();
+      const cached = this.idempotencyCache.get(hpOrder.hp_order_id);
+      if (cached) {
+        return { pos_order_id: cached, created: false };
       }
+      // Idempotency: rely on Square's `idempotency_key` for deterministic retries.
+      // NOTE: Searching by `reference_id` via Orders Search is not reliable in all Square
+      // environments/configs (and can accidentally return an unrelated/paid order),
+      // which then breaks downstream item updates. For the MVP + smoke tests, always
+      // create via idempotency_key and let Square dedupe.
 
       // MVP: create a Square Order draft with reference to hpOrder.hp_order_id (idempotency)
       // Doc: https://developer.squareup.com/reference/square/orders-api/create-order
+      const line_items = (hpOrder.items || []).map((it) => ({
+        name: it.name,
+        quantity: String(it.qty),
+        base_price_money: { amount: it.unit_amount, currency: "USD" },
+        note: it.notes || `SKU: ${it.sku}`,
+      }));
+
       const body = {
         idempotency_key: hpOrder.hp_order_id,
         order: {
           location_id: this.locationId!,
           reference_id: hpOrder.hp_order_id,
           customer_id: undefined, // optional
-          line_items: [], // we will add via upsertItems()
+          line_items,
           ...(hpOrder.table && { note: `Table: ${hpOrder.table}` }),
           ...(hpOrder.guest_count && { note: `Guests: ${hpOrder.guest_count}` })
         },
       };
 
-      const res = await fetch("https://connect.squareup.com/v2/orders", {
+      const res = await fetch(`${baseUrl}/v2/orders`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Square-Version": "2024-01-18",
+          "Square-Version": SQUARE_API_VERSION,
           Authorization: `Bearer ${this.accessToken}`,
         },
         body: JSON.stringify(body),
@@ -155,7 +304,9 @@ export class SquareAdapter implements PosAdapter {
       }
 
       const json = await res.json();
-      return { pos_order_id: json.order.id, created: true };
+      const posOrderId = json.order.id as string;
+      this.idempotencyCache.set(hpOrder.hp_order_id, posOrderId);
+      return { pos_order_id: posOrderId, created: true };
     } catch (error) {
       console.error("Square attachOrder error:", error);
       throw new Error(`Failed to attach order: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -166,6 +317,7 @@ export class SquareAdapter implements PosAdapter {
     await this.ensureInitialized();
     
     try {
+      const baseUrl = getSquareApiBaseUrl();
       // Get current order to preserve existing data
       const currentOrder = await this.getOrder(pos_order_id);
       
@@ -179,11 +331,11 @@ export class SquareAdapter implements PosAdapter {
       }));
 
       // Square: use Orders API → Update Order
-      const res = await fetch(`https://connect.squareup.com/v2/orders/${pos_order_id}`, {
+      const res = await fetch(`${baseUrl}/v2/orders/${pos_order_id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "Square-Version": "2024-01-18",
+          "Square-Version": SQUARE_API_VERSION,
           Authorization: `Bearer ${this.accessToken}`,
         },
         body: JSON.stringify({ 
@@ -209,15 +361,16 @@ export class SquareAdapter implements PosAdapter {
     await this.ensureInitialized();
     
     try {
+      const baseUrl = getSquareApiBaseUrl();
       if (tender) {
         // Pattern B: add "External Paid: Hookah+ $X" adjustment or note
         // Square often expects Payments API to capture money; for MVP, we can mark it externally in order metadata
         // Alternatively, create a non-capturing "other tender" is not directly supported; many teams use a "note" + set state.
-        await fetch(`https://connect.squareup.com/v2/orders/${pos_order_id}`, {
+        await fetch(`${baseUrl}/v2/orders/${pos_order_id}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            "Square-Version": "2024-01-18",
+            "Square-Version": SQUARE_API_VERSION,
             Authorization: `Bearer ${this.accessToken}`,
           },
           body: JSON.stringify({
@@ -230,11 +383,11 @@ export class SquareAdapter implements PosAdapter {
         });
       } else {
         // If payment is captured inside Square, you'd use Payments API here instead
-        await fetch(`https://connect.squareup.com/v2/orders/${pos_order_id}`, {
+        await fetch(`${baseUrl}/v2/orders/${pos_order_id}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            "Square-Version": "2024-01-18",
+            "Square-Version": SQUARE_API_VERSION,
             Authorization: `Bearer ${this.accessToken}`,
           },
           body: JSON.stringify({ order: { state: "COMPLETED" } }),
@@ -250,11 +403,12 @@ export class SquareAdapter implements PosAdapter {
     await this.ensureInitialized();
     
     try {
-      const response = await fetch("https://connect.squareup.com/v2/orders/search", {
+      const baseUrl = getSquareApiBaseUrl();
+      const response = await fetch(`${baseUrl}/v2/orders/search`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Square-Version": "2024-01-18",
+          "Square-Version": SQUARE_API_VERSION,
           Authorization: `Bearer ${this.accessToken}`,
         },
         body: JSON.stringify({
@@ -284,11 +438,12 @@ export class SquareAdapter implements PosAdapter {
   private async getOrder(orderId: string) {
     await this.ensureInitialized();
     
-    const res = await fetch(`https://connect.squareup.com/v2/orders/${orderId}`, {
+    const baseUrl = getSquareApiBaseUrl();
+    const res = await fetch(`${baseUrl}/v2/orders/${orderId}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "Square-Version": "2024-01-18",
+        "Square-Version": SQUARE_API_VERSION,
         Authorization: `Bearer ${this.accessToken}`,
       },
     });

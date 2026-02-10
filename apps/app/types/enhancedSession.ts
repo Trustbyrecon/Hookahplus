@@ -81,7 +81,7 @@ export const VALID_TRANSITIONS: Record<SessionStatus, SessionStatus[]> = {
   'READY_FOR_DELIVERY': ['OUT_FOR_DELIVERY', 'ACTIVE', 'STAFF_HOLD'],
   'OUT_FOR_DELIVERY': ['DELIVERED', 'ACTIVE', 'STAFF_HOLD'],
   'DELIVERED': ['ACTIVE', 'STAFF_HOLD'],
-  'ACTIVE': ['CLOSE_PENDING', 'STAFF_HOLD'],
+  'ACTIVE': ['ACTIVE', 'CLOSE_PENDING', 'STAFF_HOLD'], // ACTIVE allows same-status actions (refill, pause/resume)
   'CLOSE_PENDING': ['CLOSED', 'ACTIVE'],
   'CLOSED': [],
   'STAFF_HOLD': ['PREP_IN_PROGRESS', 'READY_FOR_DELIVERY', 'ACTIVE', 'CLOSE_PENDING'],
@@ -182,6 +182,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, SessionAction[]> = {
     'CLAIM_PREP',
     'HEAT_UP',
     'READY_FOR_DELIVERY',
+    'COMPLETE_REFILL',
     'PUT_ON_HOLD',
     'RESOLVE_HOLD',
     'REQUEST_REMAKE'

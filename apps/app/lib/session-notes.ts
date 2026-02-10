@@ -12,6 +12,7 @@ const STAFF_ONLY_NOTE_TYPES = [
   'STAFF_OBSERVATION',
   'ISSUE',
   'BEHAVIOR',
+  'AI_SUGGESTION',
   // PREFERENCE can be shared with customers if needed
 ];
 

@@ -125,10 +125,14 @@ export async function POST(
           amount: total,
           currency: 'usd',
           metadata: {
-            sessionId,
+            h_session: sessionId, // Webhook expects h_session (Hookah-only Contract v1)
             loungeId: session.loungeId,
             tableId: session.tableId || ''
-          }
+          },
+          // 0.7% platform take on hookah GMV (Hookah-only Contract v1). Only valid with Stripe Connect.
+          ...(process.env.STRIPE_APPLICATION_FEE_ENABLED === 'true' && typeof total === 'number' && total > 0
+            ? { application_fee_amount: Math.round(total * 0.007) }
+            : {}),
         });
 
         // Update session with payment intent

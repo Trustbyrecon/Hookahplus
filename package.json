@@ -31,12 +31,21 @@
     "db:migrate:app": "cd apps/app && npx prisma migrate deploy",
     "test:e2e": "cypress run",
     "test:e2e:open": "cypress open",
+    "test": "npm --workspace @hookahplus/app run test",
     "test:sync:all": "npm run cmd:test:sync:golden && npm run cmd:test:sync:faults",
     "reflex:ci": "tsx scripts/reflex-smoke.ts --ci",
     "test:smoke": "playwright test --grep @smoke",
     "test:webhook": "playwright test tests/smoke/webhook-flow.spec.ts",
     "test:live-dollar": "playwright test tests/smoke/checkout-flow.spec.ts",
-    "test:square": "cd apps/app && npm run test:square",
+    "test:square": "npm --prefix integrations test",
+    "test:square:smoke": "cd apps/app && npm run test:square",
+    "test:square:smoke:oauth": "cd apps/app && npm run test:square:oauth",
+    "test:square:smoke:oauth:probe": "cd apps/app && npm run test:square:oauth:probe",
+    "test:square:smoke:aliethia": "cd apps/app && npm run test:square -- Aliethia",
+    "test:square:smoke:oauth:aliethia": "cd apps/app && npm run test:square:oauth -- Aliethia",
+    "test:square:smoke:oauth:aliethia:sandbox": "cd apps/app && npm run test:square:oauth -- AliethiaSandbox",
+    "test:square:smoke:oauth:probe:aliethia": "cd apps/app && npm run test:square:oauth:probe -- Aliethia",
+    "test:square:smoke:oauth:probe:aliethia:sandbox": "cd apps/app && npm run test:square:oauth:probe -- AliethiaSandbox",
     "test:pos": "cd apps/app && npm run test:pos",
     "check:env-parity": "node scripts/check-env-parity.js",
     "reflex:gate": "node scripts/reflex-gate.js",
@@ -70,6 +79,9 @@
     "recharts": "^2.8.0",
     "stripe": "^14.21.0",
     "zod": "^3.22.4"
+  },
+  "overrides": {
+    "eslint": "8.57.0"
   },
   "prisma": {
     "schema": "prisma/schema.prisma"

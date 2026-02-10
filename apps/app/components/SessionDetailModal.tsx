@@ -20,6 +20,8 @@ interface SessionDetailModalProps {
   onClose: () => void;
   userRole?: 'BOH' | 'FOH' | 'MANAGER' | 'ADMIN';
   refreshSessions?: () => void | Promise<void>;
+  isDemoMode?: boolean;
+  onSessionAction?: (sessionId: string, action: string) => void;
 }
 
 const SessionDetailModal: React.FC<SessionDetailModalProps> = ({
@@ -28,6 +30,8 @@ const SessionDetailModal: React.FC<SessionDetailModalProps> = ({
   onClose,
   userRole = 'MANAGER',
   refreshSessions,
+  isDemoMode = false,
+  onSessionAction,
 }) => {
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [editedNotes, setEditedNotes] = useState('');
@@ -144,7 +148,8 @@ const SessionDetailModal: React.FC<SessionDetailModalProps> = ({
     'VOID_SESSION': 'Void Session'
   };
 
-  const handleSessionAction = async (action: SessionAction) => {
+  type SessionActionOrFlavor = SessionAction | 'REQUEST_FLAVOR_BOWL';
+  const handleSessionAction = async (action: SessionActionOrFlavor) => {
     if (!session || isExecutingAction) return;
 
     // Close session is special: optional staff note capture, non-blocking
@@ -155,6 +160,14 @@ const SessionDetailModal: React.FC<SessionDetailModalProps> = ({
 
     setIsExecutingAction(true);
     try {
+      // Demo mode: refill / flavor handled by parent
+      if (isDemoMode && onSessionAction && (action === 'REQUEST_REFILL' || action === 'COMPLETE_REFILL' || action === 'REQUEST_FLAVOR_BOWL')) {
+        onSessionAction(session.id, action === 'REQUEST_FLAVOR_BOWL' ? 'request_flavor_bowl' : action.toLowerCase());
+        setIsExecutingAction(false);
+        if (refreshSessions) await refreshSessions();
+        return;
+      }
+
       // Special handling for refill actions
       if (action === 'REQUEST_REFILL') {
         const response = await fetch(`/api/sessions/${session.id}/refill`, {
@@ -162,7 +175,8 @@ const SessionDetailModal: React.FC<SessionDetailModalProps> = ({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userRole,
-            operatorId: `foh-${userRole.toLowerCase()}`
+            operatorId: `foh-${userRole.toLowerCase()}`,
+            refillType: 'coal'
           })
         });
 
@@ -172,6 +186,26 @@ const SessionDetailModal: React.FC<SessionDetailModalProps> = ({
           if (refreshSessions) await refreshSessions();
         } else {
           throw new Error(result.details || result.error || 'Failed to request refill');
+        }
+        return;
+      }
+
+      if (action === 'REQUEST_FLAVOR_BOWL') {
+        const response = await fetch(`/api/sessions/${session.id}/refill`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userRole,
+            operatorId: `foh-${userRole.toLowerCase()}`,
+            refillType: 'flavor'
+          })
+        });
+        const result = await response.json();
+        if (result.success) {
+          alert('Flavor bowl requested! BOH will prepare new bowl.');
+          if (refreshSessions) await refreshSessions();
+        } else {
+          throw new Error(result.details || result.error || 'Failed to request flavor bowl');
         }
         return;
       }
@@ -537,6 +571,47 @@ const SessionDetailModal: React.FC<SessionDetailModalProps> = ({
             <Zap className="w-5 h-5 text-zinc-400" />
             <span className="text-lg font-semibold text-white">Session Actions</span>
           </div>
+          {/* Staff – verbal / outside QR: coal refill & flavor upsell (ACTIVE only) */}
+          {(session.status === 'ACTIVE') && (
+            <div className="mb-3 pb-3 border-b border-zinc-700">
+              <p className="text-xs text-zinc-400 mb-2">Staff – verbal / outside QR</p>
+              <div className="flex flex-wrap gap-2">
+                {getAvailableActions().includes('REQUEST_REFILL') && canPerformAction(userRole as UserRole, 'REQUEST_REFILL') && session.refillStatus !== 'requested' && (
+                  <button
+                    onClick={() => handleSessionAction('REQUEST_REFILL')}
+                    disabled={isExecutingAction}
+                    className="flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium bg-blue-500 hover:bg-blue-600 text-white transition-colors disabled:opacity-50"
+                    title="Customer asked for new coals (verbal or outside QR)"
+                  >
+                    <Coffee className="w-4 h-4" />
+                    <span>Coal refill</span>
+                  </button>
+                )}
+                {canPerformAction(userRole as UserRole, 'REQUEST_REFILL') && session.refillStatus !== 'requested' && (
+                  <button
+                    onClick={() => handleSessionAction('REQUEST_FLAVOR_BOWL')}
+                    disabled={isExecutingAction}
+                    className="flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium bg-violet-500 hover:bg-violet-600 text-white transition-colors disabled:opacity-50"
+                    title="Customer asked for new flavor bowl (verbal or outside QR)"
+                  >
+                    <Flame className="w-4 h-4" />
+                    <span>New flavor bowl</span>
+                  </button>
+                )}
+                {getAvailableActions().includes('COMPLETE_REFILL') && canPerformAction(userRole as UserRole, 'COMPLETE_REFILL') && session.refillStatus === 'requested' && (
+                  <button
+                    onClick={() => handleSessionAction('COMPLETE_REFILL')}
+                    disabled={isExecutingAction}
+                    className="flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium bg-orange-500 hover:bg-orange-600 text-white transition-colors disabled:opacity-50"
+                    title="Mark refill/flavor bowl delivered"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    <span>Complete refill</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
           <div className="flex flex-wrap gap-2">
             {getAvailableActions().map((action) => {
               const canPerform = canPerformAction(userRole as UserRole, action);

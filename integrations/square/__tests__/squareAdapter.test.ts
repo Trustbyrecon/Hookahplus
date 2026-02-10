@@ -1,7 +1,6 @@
 import { SquareAdapter } from "../squareAdapter";
 
-// Temporarily disabled for deployment - Jest test in Playwright environment
-describe.skip("SquareAdapter", () => {
+describe("SquareAdapter", () => {
   let adapter: SquareAdapter;
 
   beforeEach(() => {
@@ -9,27 +8,29 @@ describe.skip("SquareAdapter", () => {
   });
 
   test("sessionStart returns posId with sq_ prefix", async () => {
-    const result = await adapter.sessionStart({ 
-      id: "sess_demo", 
-      table: "T-1", 
-      lines: [] 
+    const result = await adapter.sessionStart({
+      id: "sess_demo",
+      table: "T-1",
+      lines: [],
     });
     expect(result.posId).toMatch(/^sq_/);
   });
 
   test("sessionUpdate completes without error", async () => {
-    await expect(adapter.sessionUpdate("sq_123", {
-      id: "sess_demo",
-      table: "T-1",
-      lines: []
-    })).resolves.toBeUndefined();
+    await expect(
+      adapter.sessionUpdate("sq_123", {
+        id: "sess_demo",
+        table: "T-1",
+        lines: [],
+      })
+    ).resolves.toBeUndefined();
   });
 
   test("syncBill returns OK status", async () => {
     const result = await adapter.syncBill("sq_123", {
       id: "sess_demo",
       table: "T-1",
-      lines: []
+      lines: [],
     });
     expect(result.status).toBe("OK");
   });
@@ -44,3 +45,4 @@ describe.skip("SquareAdapter", () => {
     expect(result.refundId).toMatch(/^rf_/);
   });
 });
+

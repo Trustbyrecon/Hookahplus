@@ -2,7 +2,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import Stripe from "stripe";
-import { PrismaClient, SessionState, SessionSource } from '@prisma/client';
+import { PrismaClient, SessionState, SessionSource, WebhookEventStatus } from '@prisma/client';
 // Use project-level Supabase admin client (one level above app/)
 import { adminClient } from '../../../../lib/supabase';
 import crypto from "crypto";
@@ -26,6 +26,7 @@ async function readRawBody(req: Request): Promise<string> {
 }
 
 export async function POST(req: Request) {
+  let webhookRecordId: string | null = null;
   try {
     if (!stripe) {
       console.error('[Stripe Webhook] Stripe not configured - missing STRIPE_SECRET_KEY');
@@ -57,8 +58,8 @@ export async function POST(req: Request) {
       return Response.json("Missing stripe-signature header", { status: 400 });
     }
 
-    // Read raw body - must be exact bytes as sent by Stripe
-    const raw = await readRawBody(req);
+        // Read raw body - must be exact bytes as sent by Stripe
+        const raw = await readRawBody(req);
     
     if (!raw || raw.length === 0) {
       console.error('[Stripe Webhook] Empty request body');
@@ -66,6 +67,8 @@ export async function POST(req: Request) {
     }
 
     let event: Stripe.Event;
+    const provider = 'stripe';
+    const payloadHash = seal(raw);
 
     try {
       event = stripe.webhooks.constructEvent(
@@ -81,7 +84,48 @@ export async function POST(req: Request) {
       return Response.json(`Webhook Error: ${err.message}`, { status: 400 });
     }
 
-      if (event.type === "checkout.session.completed") {
+    const eventId = event.id;
+    const existingWebhook = await prisma.webhookEvent.findUnique({
+      where: {
+        provider_eventId: {
+          provider,
+          eventId,
+        },
+      },
+    });
+
+    if (existingWebhook) {
+      console.warn('[Stripe Webhook] Duplicate event received (ignored):', eventId, event.type);
+      return Response.json({ processed: true }, { status: 200 });
+    }
+
+    const markWebhookSuccess = (sessionId?: string) => {
+      if (!webhookRecordId) return Promise.resolve(null);
+      return prisma.webhookEvent.update({
+        where: { id: webhookRecordId },
+        data: { status: WebhookEventStatus.SUCCESS, sessionId },
+      });
+    };
+
+    const markWebhookFailure = (sessionId?: string) => {
+      if (!webhookRecordId) return Promise.resolve(null);
+      return prisma.webhookEvent.update({
+        where: { id: webhookRecordId },
+        data: { status: WebhookEventStatus.FAILURE, sessionId },
+      });
+    };
+
+    const webhookRecord = await prisma.webhookEvent.create({
+      data: {
+        provider,
+        eventId,
+        eventType: event.type,
+        payloadHash,
+      },
+    });
+    webhookRecordId = webhookRecord.id;
+
+    if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
       
       // SECURITY: Only use opaque session ID from metadata (h_session)
@@ -91,11 +135,13 @@ export async function POST(req: Request) {
       
       if (!sessionId) {
         console.error('[Stripe Webhook] Missing h_session in metadata - cannot link payment to session');
+        await markWebhookFailure();
         return Response.json({ error: "Missing session ID in metadata" }, { status: 400 });
       }
 
       // Handle session extension
       if (action === 'extend') {
+        await markWebhookSuccess(sessionId);
         return await handleSessionExtension(session, sessionId);
       }
     
@@ -108,6 +154,7 @@ export async function POST(req: Request) {
       
       if (!existingSession) {
         console.error('[Stripe Webhook] Session not found in database:', sessionId);
+        await markWebhookFailure(sessionId);
         return Response.json({ error: "Session not found" }, { status: 404 });
       }
       
@@ -163,6 +210,7 @@ export async function POST(req: Request) {
           paymentIntent: paymentIntentId,
           priceCents: priceCents,
           externalRef: externalRef, // Store Stripe checkout session ID
+          paymentGateway: 'stripe', // Hookah-only Contract v1: GMV reporting
         updatedAt: new Date(),
       };
 
@@ -240,6 +288,8 @@ export async function POST(req: Request) {
       // Legacy code path removed - sessions are always created before checkout
       // All business logic (flavorMix, tableId, loungeId) is stored in our DB, not Stripe
       console.log('[Webhook] Payment confirmed for session:', sessionId, 'from Stripe checkout:', externalRef);
+      await markWebhookSuccess(sessionId);
+      return Response.json("ok", { status: 200 });
     }
     
     // Handle payment_intent.succeeded for additional payment confirmation
@@ -266,6 +316,7 @@ export async function POST(req: Request) {
           data: {
             paymentStatus: 'succeeded',
             paymentIntent: paymentIntent.id,
+            paymentGateway: 'stripe', // Hookah-only Contract v1: GMV reporting
             // State will be updated via checkout.session.completed webhook
           },
         });
@@ -298,14 +349,34 @@ export async function POST(req: Request) {
         }
 
         console.log('[Webhook] PaymentIntent confirmed for session:', sessionId);
+        await markWebhookSuccess(sessionId);
+        return Response.json("ok", { status: 200 });
       } else {
         console.warn('[Webhook] PaymentIntent succeeded but session not found:', sessionId);
       }
     }
 
+    if (event.type === "charge.refunded") {
+      await handleStripeRefund({
+        event,
+        sessionIdFromMetadata:
+          ((event.data.object as any)?.metadata?.h_session as string) || undefined,
+        eventRecordId: webhookRecordId!,
+      });
+      await markWebhookSuccess(event.data.object?.metadata?.h_session);
+      return Response.json("ok", { status: 200 });
+    }
+
+    await markWebhookSuccess(undefined);
     return Response.json("ok", { status: 200 });
   } catch (error: any) {
     console.error('[Stripe Webhook] Error:', error);
+    if (webhookRecordId) {
+      await prisma.webhookEvent.update({
+        where: { id: webhookRecordId },
+        data: { status: WebhookEventStatus.FAILURE },
+      });
+    }
     return Response.json(
       {
         error: "Webhook handler failed",
@@ -417,5 +488,63 @@ async function handleSessionExtension(
       details: error?.message || 'Unknown error'
     }, { status: 500 });
   }
+}
+
+interface HandleStripeRefundInput {
+  event: Stripe.Event;
+  sessionIdFromMetadata?: string;
+  eventRecordId: string;
+}
+
+async function handleStripeRefund({
+  event,
+  sessionIdFromMetadata,
+  eventRecordId,
+}: HandleStripeRefundInput) {
+  const refund = event.data.object as Stripe.Refund;
+  const paymentIntentId = refund.payment_intent as string | undefined;
+
+  const sessionIdFromPayment =
+    paymentIntentId &&
+    (await prisma.payment.findFirst({
+      where: { stripeChargeId: paymentIntentId },
+    }))?.sessionId;
+
+  const sessionId = sessionIdFromMetadata || sessionIdFromPayment;
+
+  if (!sessionId) {
+    console.warn('[Stripe Refund] Unable to resolve session for refund', refund.id);
+      await prisma.webhookEvent.update({
+        where: { id: eventRecordId },
+        data: { metadata: `refund:${refund.id}` },
+      });
+    return;
+  }
+
+  await prisma.webhookEvent.update({
+    where: { id: eventRecordId },
+    data: { sessionId },
+  });
+
+  await prisma.session.update({
+    where: { id: sessionId },
+    data: {
+        paymentStatus: 'refunded',
+        state: SessionState.CANCELED,
+        updatedAt: new Date(),
+    },
+  });
+
+  if (paymentIntentId) {
+    await prisma.payment.updateMany({
+      where: { stripeChargeId: paymentIntentId },
+      data: {
+        status: 'refunded',
+        updatedAt: new Date(),
+      },
+    });
+  }
+
+  console.log('[Stripe Refund] Marked session refunded:', sessionId, 'refundId:', refund.id);
 }
 

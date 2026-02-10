@@ -21,7 +21,8 @@ import {
   UserPlus,
   QrCode,
   ChevronDown,
-  TrendingUp
+  TrendingUp,
+  Target
 } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { SecureRoleSelector } from './SecureRoleSelector';
@@ -200,7 +201,12 @@ const GlobalNavigation: React.FC = () => {
           
           if (sessionsData.success && sessionsData.sessions) {
             const sessions = sessionsData.sessions;
-            setSessionCount(sessions.length);
+            // Match FSD: "Live Sessions" = active only (ACTIVE, DELIVERED, OUT_FOR_DELIVERY)
+            const activeCount = sessions.filter((s: any) => {
+              const status = s.status || s.state || 'NEW';
+              return ['ACTIVE', 'DELIVERED', 'OUT_FOR_DELIVERY'].includes(status);
+            }).length;
+            setSessionCount(activeCount);
             
             // Calculate workflow progress across all sessions using canonical 5-stage model
             const workflowStages = {
@@ -365,15 +371,7 @@ const GlobalNavigation: React.FC = () => {
           nextAction: 'Access operator controls',
           aiRecommendation: 'Monitor system metrics and trust score'
         },
-        {
-          label: 'Pricing Intelligence',
-          href: '/pricing',
-          icon: <BarChart3 className="w-4 h-4" />,
-          description: 'Revenue optimization and pricing strategy',
-          flowState: 'active',
-          nextAction: 'Configure pricing tiers',
-          aiRecommendation: 'Optimize add-on pricing for maximum revenue'
-        }
+        // NOTE: Public pricing + ROI live on hookahplus.net (marketing site).
       ]
     },
     {
@@ -467,6 +465,15 @@ const GlobalNavigation: React.FC = () => {
           flowState: 'idle',
           nextAction: 'Access admin functions',
           aiRecommendation: 'Review system settings'
+        },
+        {
+          label: 'Pricing Intelligence',
+          href: '/admin/pricing-intelligence',
+          icon: <BarChart3 className="w-4 h-4" />,
+          description: 'Internal pricing strategy board',
+          flowState: 'idle',
+          nextAction: 'Configure pricing tiers',
+          aiRecommendation: 'Optimize add-on pricing for maximum revenue'
         },
         {
           label: 'QR Generator',
@@ -750,6 +757,24 @@ const GlobalNavigation: React.FC = () => {
                           </div>
                         </div>
 
+                        {/* Marketing */}
+                        <div>
+                          <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3">Marketing</h3>
+                          <div className="space-y-2">
+                            <Link
+                              href="/campaigns"
+                              onClick={() => setQuickAccessOpen(false)}
+                              className="flex items-center space-x-3 p-2 rounded-lg hover:bg-zinc-800 transition-colors group"
+                            >
+                              <Target className="w-5 h-5 text-amber-400" />
+                              <div className="flex-1">
+                                <div className="text-sm font-medium text-white group-hover:text-teal-400">Marketing Campaigns</div>
+                                <div className="text-xs text-zinc-400">Promotions, coupons & happy hour</div>
+                              </div>
+                            </Link>
+                          </div>
+                        </div>
+
                         {/* Setup & Configuration */}
                         <div>
                           <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3">Setup & Configuration</h3>
@@ -960,6 +985,24 @@ const GlobalNavigation: React.FC = () => {
                         <div className="flex-1">
                           <div className="text-sm font-medium text-white">Staff Operations</div>
                           <div className="text-xs text-zinc-400">Daily operations & tasks</div>
+                        </div>
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* Marketing */}
+                  <div>
+                    <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">Marketing</h3>
+                    <div className="space-y-1">
+                      <Link
+                        href="/campaigns"
+                        onClick={() => setQuickAccessOpen(false)}
+                        className="flex items-center space-x-3 p-2 rounded-lg hover:bg-zinc-800 transition-colors"
+                      >
+                        <Target className="w-4 h-4 text-amber-400" />
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-white">Marketing Campaigns</div>
+                          <div className="text-xs text-zinc-400">Promotions, coupons & happy hour</div>
                         </div>
                       </Link>
                     </div>

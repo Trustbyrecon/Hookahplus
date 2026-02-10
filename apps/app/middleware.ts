@@ -41,30 +41,33 @@ export async function middleware(request: NextRequest) {
   // Add request ID to response headers for client correlation
   response.headers.set('X-Request-ID', requestId);
 
-  // Create Supabase client for middleware
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            request.cookies.set(name, value);
-            response.cookies.set(name, value, options);
-          });
-        },
-      },
-    }
-  );
-
-  // Get current user
-  const { data: { user }, error } = await supabase.auth.getUser();
-
   // Check if First Light mode is enabled (bypasses auth for core routes)
   const firstLightMode = process.env.FIRST_LIGHT_MODE === 'true';
+
+  // Supabase env can be intentionally absent in CI/dev harnesses; fail-open so the app can boot.
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const hasSupabaseEnv = !!supabaseUrl && !!supabaseAnonKey;
+
+  // Create Supabase client for middleware (only when configured)
+  const supabase = hasSupabaseEnv
+    ? createServerClient(supabaseUrl, supabaseAnonKey, {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              request.cookies.set(name, value);
+              response.cookies.set(name, value, options);
+            });
+          },
+        },
+      })
+    : null;
+
+  // Get current user (best-effort)
+  const { data: { user } } = supabase ? await supabase.auth.getUser() : { data: { user: null } };
   
   // Public routes that don't require authentication
   const publicRoutes = [
@@ -75,6 +78,7 @@ export async function middleware(request: NextRequest) {
     '/api/health/ready',
     '/api/sessions', // QR code access (POST only)
     '/api/preorders', // Pre-order flow must be public (QR + E2E)
+    '/api/reflex/track', // Reflex tracking is intentionally public (client + server events)
     '/api/checkout-session',
     '/api/webhooks',
     '/api/tenants', // Allow tenant creation during signup
@@ -87,6 +91,12 @@ export async function middleware(request: NextRequest) {
     '/api/test-sentry-debug', // Sentry debug diagnostic endpoint
     '/api/square/oauth', // Square OAuth flow (authorize, callback)
     '/api/square/webhook', // Square webhooks MUST be public (Square servers cannot auth)
+    '/api/square/process', // Square processor is called by Vercel Cron (auth handled in route)
+    '/api/square/diagnostics', // Square diagnostics for server-to-server validation
+    '/api/square/status', // Square status returns non-secret connection metadata (merchantId, locations)
+    // Dev/First Light convenience: allow disconnect without auth to re-authorize scopes locally.
+    // Protected in production by omission (see below).
+    ...(process.env.NODE_ENV !== 'production' || firstLightMode ? ['/api/square/disconnect'] : []),
     '/login',
     '/signup',
     '/admin/login', // Admin login page is public
@@ -95,8 +105,8 @@ export async function middleware(request: NextRequest) {
     '/favicon.ico',
     // Demo requests: allow metrics + demo helpers without auth (safe, demo-only)
     ...(isDemoRequest ? ['/api/metrics', '/api/demo-session', '/api/lounges/tables'] : []),
-    // First Light mode: allow metrics, trust-lock, and pulse without auth
-    ...(firstLightMode ? ['/api/metrics', '/api/trust-lock', '/api/pulse'] : []),
+    // First Light mode: allow metrics, trust-lock, pulse, and campaigns without auth (Aliethia-aligned)
+    ...(firstLightMode ? ['/api/metrics', '/api/trust-lock', '/api/pulse', '/api/campaigns'] : []),
     // Dev-only: allow direct access to admin routes without auth
     ...(process.env.NODE_ENV !== 'production'
       ? [
@@ -104,6 +114,8 @@ export async function middleware(request: NextRequest) {
           '/admin/operator-onboarding',
           '/api/admin',
           '/api/admin/operator-onboarding',
+          '/api/pos/tickets', // CI/E2E + local dev helpers
+          '/api/pos/reconcile', // Local metrics dashboard + CI/E2E
           '/api/analytics', // Allow analytics APIs without auth in development
           '/api/analytics/unified', // Unified analytics in development
           '/api/lounges/analytics', // Lounge analytics in development

@@ -6,8 +6,27 @@
  */
 
 import { prisma } from '../lib/db';
+import { resolve } from 'path';
 
 async function debugSquareToken() {
+  // Load local env for scripts (Next.js auto-loads, scripts do not).
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const dotenv = require('dotenv');
+    dotenv.config({ path: resolve(process.cwd(), '.env.local') });
+    dotenv.config({ path: resolve(process.cwd(), '.env') });
+  } catch {
+    // ignore
+  }
+
+  const squareEnvRaw = (process.env.SQUARE_ENV || '').toLowerCase();
+  const appId = (process.env.SQUARE_APPLICATION_ID || '').trim().replace(/[\r\n]/g, '');
+  const squareEnv =
+    squareEnvRaw === 'sandbox' || squareEnvRaw === 'production'
+      ? (squareEnvRaw as 'sandbox' | 'production')
+      : (appId.startsWith('sandbox-') ? 'sandbox' : 'production');
+  const baseUrl = squareEnv === 'sandbox' ? 'https://connect.squareupsandbox.com' : 'https://connect.squareup.com';
+
   const venueId = process.argv[2] || 'test_venue';
   
   console.log('🔍 Square Token Debug Tool\n');
@@ -28,9 +47,15 @@ async function debugSquareToken() {
 
   // Check database for OAuth connection
   console.log('2️⃣ Checking Database for OAuth Connection...');
-  const merchant = await prisma.squareMerchant.findUnique({
-    where: { loungeId: venueId }
-  });
+  let merchant: any = null;
+  try {
+    merchant = await prisma.squareMerchant.findUnique({
+      where: { loungeId: venueId }
+    });
+  } catch (e) {
+    console.log('   ⚠️  DB unavailable (skipping OAuth lookup)\n');
+    merchant = null;
+  }
 
   if (merchant) {
     console.log('   ✅ OAuth merchant found in database');
@@ -46,7 +71,7 @@ async function debugSquareToken() {
   console.log('3️⃣ Testing Token with Square API...');
   try {
     // Test 1: Get merchant info
-    const merchantResponse = await fetch('https://connect.squareup.com/v2/merchants', {
+    const merchantResponse = await fetch(`${baseUrl}/v2/merchants`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -75,7 +100,7 @@ async function debugSquareToken() {
     console.log(`   📊 Merchant: ${merchantData.merchant?.[0]?.business_name || merchantData.merchant?.[0]?.id || 'Unknown'}\n`);
 
     // Test 2: Get locations
-    const locationsResponse = await fetch('https://connect.squareup.com/v2/locations', {
+    const locationsResponse = await fetch(`${baseUrl}/v2/locations`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -102,7 +127,7 @@ async function debugSquareToken() {
 
     // Test 3: Check Orders API permissions
     console.log('\n5️⃣ Testing Orders API Permissions...');
-    const testOrderResponse = await fetch('https://connect.squareup.com/v2/orders/search', {
+    const testOrderResponse = await fetch(`${baseUrl}/v2/orders/search`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
