@@ -97,6 +97,53 @@ export class SquareAdapter implements PosAdapter {
   }
 
   /**
+   * Read-only order search helper for POS ticket ingestion.
+   * Uses Orders Search API filtered by created_at.
+   *
+   * Not part of the PosAdapter interface; safe to call via `as any`.
+   */
+  async searchOrdersSince(opts: { since: Date; limit?: number }): Promise<any[]> {
+    await this.ensureInitialized();
+
+    const baseUrl = getSquareApiBaseUrl();
+    const limit = Math.max(1, Math.min(200, opts.limit ?? 50));
+
+    const res = await fetch(`${baseUrl}/v2/orders/search`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Square-Version": SQUARE_API_VERSION,
+        Authorization: `Bearer ${this.accessToken}`,
+      },
+      body: JSON.stringify({
+        location_ids: [this.locationId!],
+        limit,
+        query: {
+          filter: {
+            date_time_filter: {
+              created_at: {
+                start_at: opts.since.toISOString(),
+              },
+            },
+          },
+        },
+        sort: {
+          sort_field: "CREATED_AT",
+          sort_order: "DESC",
+        },
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.text().catch(() => "");
+      throw new Error(`Square order search failed: ${res.status} ${res.statusText}${err ? ` - ${err}` : ""}`);
+    }
+
+    const json = await res.json();
+    return Array.isArray(json?.orders) ? json.orders : [];
+  }
+
+  /**
    * Initialize adapter by loading merchant credentials
    * Must be called before using adapter methods
    */

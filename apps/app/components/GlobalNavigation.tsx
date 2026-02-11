@@ -493,6 +493,15 @@ const GlobalNavigation: React.FC = () => {
           nextAction: 'Attach recent tickets to sessions',
           aiRecommendation: 'Use AliethiaSandbox locally; validate Aliethia in prod'
         },
+        {
+          label: 'POS Ops',
+          href: '/admin/pos-ops',
+          icon: <BarChart3 className="w-4 h-4" />,
+          description: 'POS operational view and exception counts',
+          flowState: 'active',
+          nextAction: 'Pull tickets, review exceptions, and reconcile',
+          aiRecommendation: 'Keep unassigned tickets near zero'
+        },
       ]
     }
   ];
