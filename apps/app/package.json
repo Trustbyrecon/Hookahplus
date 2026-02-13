@@ -33,8 +33,7 @@
     "test:square:smoke:oauth:probe:aliethia:sandbox": "npm run test:square:oauth:probe -- AliethiaSandbox",
     "test:pos": "tsx scripts/test-square-integration.ts",
     "debug:square": "tsx scripts/debug-square-token.ts",
-    "verify:square": "tsx scripts/verify-square-oauth-setup.ts"
-    ,
+    "verify:square": "tsx scripts/verify-square-oauth-setup.ts",
     "pos:square:pull:tickets": "tsx scripts/pull-square-tickets.ts"
   },
   "dependencies": {
@@ -86,6 +85,8 @@
     "@vitest/coverage-v8": "3.2.4",
     "@vitest/ui": "^3.2.4",
     "autoprefixer": "^10.4.0",
+    "eslint": "8.57.0",
+    "eslint-config-next": "14.2.7",
     "jsdom": "^27.0.0",
     "pg": "8.16.3",
     "postcss": "^8.4.0",

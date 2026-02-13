@@ -12,10 +12,10 @@ async function verifySetup() {
   // Load local env for scripts (Next.js auto-loads, scripts do not).
   // Prefer .env.local, fall back to .env.
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const dotenv = require('dotenv');
-    dotenv.config({ path: resolve(process.cwd(), '.env.local') });
-    dotenv.config({ path: resolve(process.cwd(), '.env') });
+    const mod: any = await import("dotenv");
+    const dotenv = mod?.default ?? mod;
+    dotenv.config({ path: resolve(process.cwd(), ".env.local") });
+    dotenv.config({ path: resolve(process.cwd(), ".env") });
   } catch {
     // ignore
   }

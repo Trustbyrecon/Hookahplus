@@ -111,7 +111,12 @@ export async function reconcileAndHealSquare(params: {
         return { orders: Array.isArray(legacy) ? legacy : [], pages: 1, usedCursor: false };
       }
 
-      const page = await fn.call(adapter, { from, to, limit: pageLimit, cursor });
+      const page: { orders: any[]; cursor: string | null } = await fn.call(adapter, {
+        from,
+        to,
+        limit: pageLimit,
+        cursor,
+      });
       const orders = Array.isArray(page?.orders) ? page.orders : [];
       out.push(...orders);
       cursor = typeof page?.cursor === "string" ? page.cursor : null;

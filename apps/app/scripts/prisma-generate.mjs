@@ -31,15 +31,22 @@ if (!process.env.DATABASE_URL) {
 }
 
 function runPrismaGenerate() {
-  const cmd = isWin ? "npm.cmd" : "npm";
+  // On Windows, spawning `.cmd` directly can fail under some shells (e.g. Git Bash) with EINVAL.
+  // Use `shell: true` so npm resolves consistently across environments.
+  const cmd = "npm";
   const args = ["exec", "--", "prisma", "generate"];
-  return spawnSync(cmd, args, { encoding: "utf8" });
+  return spawnSync(cmd, args, { encoding: "utf8", shell: isWin });
 }
 
 const maxAttempts = isWin ? 3 : 1;
 for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
   const result = runPrismaGenerate();
 
+  if (result.error) {
+    process.stderr.write(
+      `[prisma-generate] spawn error: ${result.error.message}\n`,
+    );
+  }
   if (result.stdout) process.stdout.write(result.stdout);
   if (result.stderr) process.stderr.write(result.stderr);
 
