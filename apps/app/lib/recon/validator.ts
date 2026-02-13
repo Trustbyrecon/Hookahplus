@@ -4,11 +4,17 @@
 
 import { z } from "zod";
 
-const actionTypeSchema = z.enum(["refund.request"]);
+const actionTypeSchema = z.enum([
+  "refund.request",
+  "recon.square.unassigned_ticket",
+  "recon.square.reconciliation_drop",
+  "recon.square.payment_mismatch",
+  "recon.square.refund_mismatch",
+]);
 const initiatorTypeSchema = z.enum(["human", "ai"]);
 
-export const actionIntentSchema = z.object({
-  action_type: actionTypeSchema,
+const refundIntentSchema = z.object({
+  action_type: z.literal("refund.request"),
   amount: z.number().min(0),
   session_id: z.string().min(1),
   lounge_id: z.string().min(1),
@@ -23,6 +29,48 @@ export const actionIntentSchema = z.object({
   idempotency_key: z.string().min(1),
   payment_intent_id: z.string().optional(),
 });
+
+const driftCountsSchema = z
+  .object({
+    expected: z.number().min(0).optional(),
+    observed: z.number().min(0).optional(),
+    delta: z.number().optional(),
+    delta_pct: z.number().optional(),
+  })
+  .partial();
+
+const driftEvidenceSchema = z
+  .object({
+    sample_ids: z.array(z.string()).max(50).optional(),
+    reason: z.string().optional(),
+  })
+  .partial();
+
+const driftIntentSchema = z.object({
+  action_type: actionTypeSchema.refine((t) => t !== "refund.request", { message: "drift action_type required" }),
+  lounge_id: z.string().min(1),
+  tenant_id: z.string().uuid().nullable().optional(),
+  location_id: z.string().nullable().optional(),
+  window: z.object({
+    from: z.string().datetime(),
+    to: z.string().datetime(),
+  }),
+  counts: driftCountsSchema.optional(),
+  evidence: driftEvidenceSchema.optional(),
+  risk_hints: z.array(z.string()).max(20).optional(),
+  severity: z.enum(["info", "warning", "critical"]).optional(),
+  timestamp: z.string().datetime(),
+  idempotency_key: z.string().min(1),
+});
+
+export const actionIntentSchema = z.discriminatedUnion("action_type", [
+  refundIntentSchema,
+  // driftIntentSchema uses refine, so we list each literal for discriminated union compatibility
+  driftIntentSchema.extend({ action_type: z.literal("recon.square.unassigned_ticket") }),
+  driftIntentSchema.extend({ action_type: z.literal("recon.square.reconciliation_drop") }),
+  driftIntentSchema.extend({ action_type: z.literal("recon.square.payment_mismatch") }),
+  driftIntentSchema.extend({ action_type: z.literal("recon.square.refund_mismatch") }),
+]);
 
 export type ActionIntentParsed = z.infer<typeof actionIntentSchema>;
 

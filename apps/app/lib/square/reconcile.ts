@@ -2,6 +2,8 @@ import { prisma } from "../db";
 import { SquareAdapter } from "../pos/square";
 import { log } from "../logger-pino";
 import { sendSlackOpsWebhook, type SlackSeverity } from "../ops/slack-webhook";
+import { requestReconDecision } from "../recon/client";
+import { buildSquareDriftIntent } from "../recon/square-drift-intents";
 
 function extractSessionIdFromReferenceId(referenceId: unknown): string | null {
   const ref = typeof referenceId === "string" ? referenceId : "";
@@ -49,6 +51,7 @@ export async function reconcileAndHealSquare(params: {
   widenWindowMinutes?: number;
 }) {
   const loungeId = params.loungeId;
+  const reconDriftEnabled = process.env.RECON_DRIFT_ENABLED === "1";
   const sinceMinutes = clampNumber(params.sinceMinutes ?? 120, 5, 60 * 24 * 14);
   const limit = clampNumber(params.limit ?? 50, 1, 200);
   const graceWindowMinutes = clampNumber(params.graceWindowMinutes ?? 10, 0, 24 * 60);
@@ -63,6 +66,7 @@ export async function reconcileAndHealSquare(params: {
   const now = new Date();
   const graceCutoff = new Date(Date.now() - graceWindowMinutes * 60 * 1000);
   const sandboxWarningOnly = (process.env.SQUARE_ENV || "").toLowerCase() === "sandbox";
+  const isSandboxLane = sandboxWarningOnly && loungeId.toLowerCase() === "aliethiasandbox";
 
   const merchantMeta =
     (prisma as any)?.squareMerchant?.findUnique
@@ -351,31 +355,96 @@ export async function reconcileAndHealSquare(params: {
   }
 
   // 4) Emit ActionIntents (record drift events). This is your “immune system queue” without expanding Recon API yet.
+  const reconByActionType: Record<string, { decision: string; signed_artifact_id: string } | undefined> = {};
   for (const intent of intents) {
     const counts = intent.details?.counts as any;
     const countsExpected = typeof counts?.expected === "number" ? counts.expected : expected;
     const countsObserved = typeof counts?.observedLinked === "number" ? counts.observedLinked : observedLinked;
     const countsDelta = typeof counts?.delta === "number" ? counts.delta : delta;
     const countsDeltaPct = typeof counts?.deltaPct === "number" ? counts.deltaPct : Math.round(deltaPct * 100) / 100;
-    await prisma.driftEvent.create({
-      data: {
-        drift_reason_v1: intent.action_type,
-        action_type: intent.action_type,
-        severity: intent.severity,
-        details: intent.details as any,
-        lounge_id: loungeId,
-        tenant_id: tenantId,
-        location_id: ingest.locationId,
-        window_from: windowFrom,
-        window_to: windowTo,
-        counts_expected: countsExpected,
-        counts_observed: countsObserved,
-        counts_delta: countsDelta,
-        counts_delta_pct: countsDeltaPct,
-        evidence: intent.evidence as any,
-        risk_hints: intent.risk_hints,
-      },
-    });
+    const idempotencyKey = `drift:${intent.action_type}:${loungeId}:${windowFrom.toISOString()}:${windowTo.toISOString()}`;
+    let driftRow: any = null;
+    try {
+      driftRow = await prisma.driftEvent.create({
+        data: {
+          drift_reason_v1: intent.action_type,
+          action_type: intent.action_type,
+          severity: intent.severity,
+          details: intent.details as any,
+          lounge_id: loungeId,
+          tenant_id: tenantId,
+          location_id: ingest.locationId,
+          window_from: windowFrom,
+          window_to: windowTo,
+          counts_expected: countsExpected,
+          counts_observed: countsObserved,
+          counts_delta: countsDelta,
+          counts_delta_pct: countsDeltaPct,
+          evidence: intent.evidence as any,
+          risk_hints: intent.risk_hints,
+          idempotency_key: idempotencyKey,
+        },
+      });
+    } catch (e: any) {
+      const code = e?.code || e?.meta?.code;
+      if (code !== "P2002") throw e;
+      // Already exists (same idempotency_key). Load and continue.
+      driftRow = await prisma.driftEvent.findFirst({
+        where: { idempotency_key: idempotencyKey },
+        select: { id: true },
+      });
+      if (!driftRow?.id) throw e;
+    }
+
+    // Sandbox-only: promote drift into Recon decision artifact.
+    if (reconDriftEnabled && isSandboxLane) {
+      try {
+        const actionIntent = buildSquareDriftIntent({
+          action_type: intent.action_type,
+          lounge_id: loungeId,
+          tenant_id: tenantId,
+          location_id: ingest.locationId,
+          window: { from: windowFrom.toISOString(), to: windowTo.toISOString() },
+          counts: {
+            expected: countsExpected ?? undefined,
+            observed: countsObserved ?? undefined,
+            delta: countsDelta ?? undefined,
+            delta_pct: countsDeltaPct ?? undefined,
+          },
+          evidence: intent.evidence ?? undefined,
+          risk_hints: intent.risk_hints,
+          severity: intent.severity,
+          idempotency_key: idempotencyKey,
+        });
+        const decision = await requestReconDecision(actionIntent as any, "/api/recon/decision");
+        reconByActionType[intent.action_type] = decision;
+        await prisma.driftEvent.update({
+          where: { id: driftRow.id },
+          data: {
+            signed_artifact_id: decision.signed_artifact_id,
+            details: {
+              ...(intent.details as any),
+              recon: {
+                decision: decision.decision,
+                signed_artifact_id: decision.signed_artifact_id,
+                adjusted_amount: (decision as any).adjusted_amount ?? null,
+              },
+            } as any,
+          },
+        });
+      } catch (e: any) {
+        // Do not crash reconcile loop; record error for ops.
+        await prisma.driftEvent.update({
+          where: { id: driftRow.id },
+          data: {
+            details: {
+              ...(intent.details as any),
+              recon_error: e instanceof Error ? e.message : String(e),
+            } as any,
+          },
+        });
+      }
+    }
   }
 
   // 5) Slack alerts with tiers + suppression window + “2 consecutive runs” for unassigned tickets
@@ -497,6 +566,8 @@ export async function reconcileAndHealSquare(params: {
         thresholds: `delta>=${reconcileDeltaAlertMin} or pct>=${reconcileDeltaPctAlertMin}%`,
         window_from: windowFrom.toISOString(),
         window_to: windowTo.toISOString(),
+        recon_decision: reconByActionType["recon.square.reconciliation_drop"]?.decision,
+        recon_artifact: reconByActionType["recon.square.reconciliation_drop"]?.signed_artifact_id,
       },
     });
   }
@@ -514,6 +585,8 @@ export async function reconcileAndHealSquare(params: {
         sessions_with_mismatch: paymentMismatchCount,
         window_from: windowFrom.toISOString(),
         window_to: windowTo.toISOString(),
+        recon_decision: reconByActionType["recon.square.payment_mismatch"]?.decision,
+        recon_artifact: reconByActionType["recon.square.payment_mismatch"]?.signed_artifact_id,
       },
     });
   }

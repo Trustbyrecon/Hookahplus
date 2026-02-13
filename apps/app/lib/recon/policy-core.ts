@@ -67,6 +67,16 @@ function evaluateRefundRequest(intent: ActionIntent): {
   return { decision: "ALLOW" };
 }
 
+function evaluateSquareDrift(intent: ActionIntent): { decision: Decision } {
+  // Sandbox-first: drift intents are never money-moving. We treat them as policy artifacts
+  // to drive a Recon review loop. For now, default to ESCALATE for any drift surface.
+  // (Heals are executed separately in the reconcile loop, and are idempotent.)
+  if (intent.action_type.startsWith("recon.square.")) {
+    return { decision: "ESCALATE" };
+  }
+  return { decision: "ESCALATE" };
+}
+
 /**
  * Run policy core: validate intent, apply mode, run deterministic rules, write artifact, return response.
  * Does NOT call Stripe. When REFUND_EXECUTOR=recon, the caller (API route) will call payment-executor after.
@@ -90,21 +100,14 @@ export async function runPolicyCore(
     };
   }
 
-  // Only refund.request supported in v1
-  if (intent.action_type !== "refund.request") {
-    const artifact_id = await appendArtifact({
-      intent,
-      decision: "BLOCK",
-      mode,
-      policy_version: POLICY_VERSION,
-    });
-    return {
-      decision: "BLOCK",
-      signed_artifact_id: artifact_id,
-    };
-  }
+  const isRefund = intent.action_type === "refund.request";
+  const isSquareDrift = intent.action_type.startsWith("recon.square.");
 
-  const { decision, adjusted_amount } = evaluateRefundRequest(intent);
+  const { decision, adjusted_amount } = isRefund
+    ? evaluateRefundRequest(intent)
+    : isSquareDrift
+      ? evaluateSquareDrift(intent)
+      : { decision: "BLOCK" as const };
 
   // Mode 1 (DEGRADED): medium+ → escalate (we already escalate in rules; no supervisor)
   // So in mode 1 we could tighten: e.g. any non-trivial refund → ESCALATE. For now keep same rules.
@@ -124,6 +127,6 @@ export async function runPolicyCore(
     decision: finalDecision,
     signed_artifact_id: artifact_id,
   };
-  if (adjusted_amount != null) response.adjusted_amount = adjusted_amount;
+  if (isRefund && adjusted_amount != null) response.adjusted_amount = adjusted_amount;
   return response;
 }

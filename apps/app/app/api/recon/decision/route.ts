@@ -39,8 +39,19 @@ export async function POST(req: Request) {
 
     const intent = validation.data as ActionIntent;
 
-    // Action type allowlist: v1 only refund.request
-    if (intent.action_type !== "refund.request") {
+    // Action type allowlist: refund + Square drift (sandbox-only for now)
+    const isRefund = intent.action_type === "refund.request";
+    const isSquareDrift = intent.action_type.startsWith("recon.square.");
+    if (isSquareDrift) {
+      const squareEnv = (process.env.SQUARE_ENV || "").toLowerCase();
+      const allow = squareEnv === "sandbox";
+      if (!allow) {
+        return NextResponse.json(
+          { error: "Unsupported action_type in production", action_type: intent.action_type },
+          { status: 400 }
+        );
+      }
+    } else if (!isRefund) {
       return NextResponse.json(
         { error: "Unsupported action_type", action_type: intent.action_type },
         { status: 400 }
@@ -51,6 +62,7 @@ export async function POST(req: Request) {
 
     const executor = process.env[REFUND_EXECUTOR_ENV] ?? "hookahplus";
     if (
+      isRefund &&
       executor === "recon" &&
       (response.decision === "ALLOW" || response.decision === "ALLOW_WITH_REDUCTION")
     ) {
