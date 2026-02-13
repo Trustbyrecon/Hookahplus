@@ -223,10 +223,43 @@ model DriftEvent {
   details         Json?
   created_at      DateTime? @default(now()) @db.Timestamptz(6)
 
+  // Recon-native ActionIntent shape (canonical drift payload)
+  action_type        String?   @map("action_type")
+  lounge_id          String?   @map("lounge_id")
+  tenant_id          String?   @map("tenant_id") @db.Uuid
+  location_id        String?   @map("location_id")
+  window_from        DateTime? @map("window_from") @db.Timestamptz(6)
+  window_to          DateTime? @map("window_to") @db.Timestamptz(6)
+  counts_expected    Int?      @map("counts_expected")
+  counts_observed    Int?      @map("counts_observed")
+  counts_delta       Int?      @map("counts_delta")
+  counts_delta_pct   Float?    @map("counts_delta_pct")
+  evidence           Json?     @map("evidence")
+  risk_hints         String[]  @default([]) @map("risk_hints")
+  signed_artifact_id String?   @map("signed_artifact_id")
+  idempotency_key    String?   @unique @map("idempotency_key")
+
   @@index([created_at], map: "idx_drift_event_created")
   @@index([drift_reason_v1], map: "idx_drift_event_reason_v1")
   @@index([session_id], map: "idx_drift_event_session")
+  @@index([action_type], map: "idx_drift_event_action_type")
+  @@index([lounge_id, action_type, created_at], map: "idx_drift_event_lounge_action_created")
   @@map("DriftEvent")
+}
+
+model SquareReconCursor {
+  id             String   @id @default(cuid())
+  loungeId       String   @unique @map("lounge_id")
+  tenantId       String?  @map("tenant_id") @db.Uuid
+  locationId     String?  @map("location_id")
+  cursorFrom     DateTime @map("cursor_from") @db.Timestamptz(6)
+  lastWindowTo   DateTime? @map("last_window_to") @db.Timestamptz(6)
+  lastRunId      String?  @map("last_run_id")
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([loungeId], map: "idx_square_recon_cursor_lounge")
+  @@map("square_recon_cursors")
 }
 
 model TaxonomyUnknown {

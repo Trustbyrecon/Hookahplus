@@ -144,6 +144,61 @@ export class SquareAdapter implements PosAdapter {
   }
 
   /**
+   * Cursor-based order search for lossless reconciliation.
+   * Returns a single page (orders + cursor) for pagination.
+   *
+   * Not part of the PosAdapter interface; safe to call via `as any`.
+   */
+  async searchOrdersWindow(opts: { from: Date; to?: Date; limit?: number; cursor?: string | null }): Promise<{ orders: any[]; cursor: string | null }> {
+    await this.ensureInitialized();
+
+    const baseUrl = getSquareApiBaseUrl();
+    const limit = Math.max(1, Math.min(200, opts.limit ?? 200));
+
+    const body: any = {
+      location_ids: [this.locationId!],
+      limit,
+      query: {
+        filter: {
+          date_time_filter: {
+            created_at: {
+              start_at: opts.from.toISOString(),
+              ...(opts.to ? { end_at: opts.to.toISOString() } : {}),
+            },
+          },
+        },
+      },
+      sort: {
+        sort_field: "CREATED_AT",
+        // ASC is easier for cursor windows; either is fine with pagination.
+        sort_order: "ASC",
+      },
+      ...(opts.cursor ? { cursor: opts.cursor } : {}),
+    };
+
+    const res = await fetch(`${baseUrl}/v2/orders/search`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Square-Version": SQUARE_API_VERSION,
+        Authorization: `Bearer ${this.accessToken}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const err = await res.text().catch(() => "");
+      throw new Error(`Square order search (window) failed: ${res.status} ${res.statusText}${err ? ` - ${err}` : ""}`);
+    }
+
+    const json = await res.json();
+    return {
+      orders: Array.isArray(json?.orders) ? json.orders : [],
+      cursor: typeof json?.cursor === "string" ? json.cursor : null,
+    };
+  }
+
+  /**
    * Initialize adapter by loading merchant credentials
    * Must be called before using adapter methods
    */

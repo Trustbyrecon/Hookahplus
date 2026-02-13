@@ -23,11 +23,12 @@ export async function sendSlackOpsWebhook(params: {
   const fields = params.fields ?? {};
   const fieldLines = Object.entries(fields)
     .filter(([, v]) => v !== undefined)
+    .sort(([a], [b]) => a.localeCompare(b))
     .map(([k, v]) => `• *${k}*: ${v === null ? "null" : String(v)}`)
     .join("\n");
 
   const header = `*[H+][${severityLabel(params.severity)}]* ${params.title}`;
-  const body = `${params.text}${fieldLines ? `\n\n${fieldLines}` : ""}`.trim();
+  const body = `${params.text}${fieldLines ? `\n\n${fieldLines}` : ""}`.trim().slice(0, 3800);
 
   try {
     const res = await fetch(url, {

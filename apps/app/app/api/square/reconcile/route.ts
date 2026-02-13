@@ -48,6 +48,7 @@ async function handle(req: NextRequest) {
   const suppressionWindowMinutes = searchParams.get("suppressionWindowMinutes")
     ? Number(searchParams.get("suppressionWindowMinutes"))
     : 60;
+  const widenWindowMinutes = searchParams.get("widenWindowMinutes") ? Number(searchParams.get("widenWindowMinutes")) : 30;
 
   const reconcileDeltaAlertMin = searchParams.get("reconcileDeltaAlertMin") ? Number(searchParams.get("reconcileDeltaAlertMin")) : 2;
   const reconcileDeltaPctAlertMin = searchParams.get("reconcileDeltaPctAlertMin")
@@ -67,6 +68,7 @@ async function handle(req: NextRequest) {
     unassignedTicketAlertAfterRuns,
     reconcileDeltaAlertMin,
     reconcileDeltaPctAlertMin,
+    widenWindowMinutes,
   });
 
   return NextResponse.json({

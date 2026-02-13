@@ -46,6 +46,7 @@ export async function reconcileAndHealSquare(params: {
   unassignedTicketAlertAfterRuns?: number;
   reconcileDeltaAlertMin?: number;
   reconcileDeltaPctAlertMin?: number;
+  widenWindowMinutes?: number;
 }) {
   const loungeId = params.loungeId;
   const sinceMinutes = clampNumber(params.sinceMinutes ?? 120, 5, 60 * 24 * 14);
@@ -56,13 +57,33 @@ export async function reconcileAndHealSquare(params: {
   const unassignedTicketAlertAfterRuns = clampNumber(params.unassignedTicketAlertAfterRuns ?? 2, 1, 10);
   const reconcileDeltaAlertMin = clampNumber(params.reconcileDeltaAlertMin ?? 2, 0, 1_000_000);
   const reconcileDeltaPctAlertMin = clampNumber(params.reconcileDeltaPctAlertMin ?? 1, 0, 100);
+  const widenWindowMinutes = clampNumber(params.widenWindowMinutes ?? 30, 0, 24 * 60);
 
   const runId = `sqrecon_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
-  const since = new Date(Date.now() - sinceMinutes * 60 * 1000);
+  const now = new Date();
   const graceCutoff = new Date(Date.now() - graceWindowMinutes * 60 * 1000);
   const sandboxWarningOnly = (process.env.SQUARE_ENV || "").toLowerCase() === "sandbox";
 
-  // 1) Pull latest orders (fallback truth source) and upsert into pos_tickets
+  const merchantMeta =
+    (prisma as any)?.squareMerchant?.findUnique
+      ? await (prisma as any).squareMerchant.findUnique({
+          where: { loungeId },
+          select: { tenantId: true, locationIds: true },
+        })
+      : null;
+  const tenantId: string | null = merchantMeta?.tenantId ?? null;
+  const primaryLocationId: string | null = Array.isArray(merchantMeta?.locationIds) ? merchantMeta.locationIds[0] ?? null : null;
+
+  // Cursor-based window: reconcile is lossless over time.
+  const existingCursor =
+    (prisma as any)?.squareReconCursor?.findUnique
+      ? await (prisma as any).squareReconCursor.findUnique({ where: { loungeId } })
+      : null;
+  const defaultFrom = new Date(now.getTime() - sinceMinutes * 60 * 1000);
+  const windowFrom = existingCursor?.cursorFrom instanceof Date ? existingCursor.cursorFrom : defaultFrom;
+  const windowTo = now;
+
+  // 1) Pull orders for [windowFrom..windowTo] (fallback truth source) and upsert into pos_tickets
   const adapter = new SquareAdapter({ venueId: loungeId });
   await adapter.initialize();
   const dbg = (adapter as any)?.debugState?.();
@@ -72,72 +93,172 @@ export async function reconcileAndHealSquare(params: {
     );
   }
 
-  const orders: any[] = await (adapter as any).searchOrdersSince?.({ since, limit });
-  if (!Array.isArray(orders)) throw new Error("Square order search returned invalid result");
+  async function pullOrdersWindow(from: Date, to: Date) {
+    const out: any[] = [];
+    let cursor: string | null = null;
+    let pages = 0;
+    const maxPages = 15;
 
-  let ticketsUpserted = 0;
-  let ticketsLinkedByReference = 0;
-  const ticketIds: string[] = [];
+    while (out.length < limit && pages < maxPages) {
+      const pageLimit = Math.min(200, limit - out.length);
+      const fn = (adapter as any).searchOrdersWindow as
+        | ((opts: { from: Date; to?: Date; limit?: number; cursor?: string | null }) => Promise<{ orders: any[]; cursor: string | null }>)
+        | undefined;
 
-  for (const order of orders) {
-    const ticketId = typeof order?.id === "string" ? order.id : null;
-    if (!ticketId) continue;
+      if (!fn) {
+        // Fallback to best-effort legacy method (non-paginated).
+        const legacy = await (adapter as any).searchOrdersSince?.({ since: from, limit });
+        return { orders: Array.isArray(legacy) ? legacy : [], pages: 1, usedCursor: false };
+      }
 
-    const sessionId = extractSessionIdFromReferenceId(order?.reference_id);
-    const { amountCents, currency } = moneyToAmountCents(order?.total_money);
-    const status = typeof order?.state === "string" ? order.state.toLowerCase() : "unknown";
-    const items = order?.line_items ? JSON.stringify(order.line_items).slice(0, 10000) : null;
-
-    await prisma.posTicket.upsert({
-      where: { ticketId },
-      create: {
-        ticketId,
-        sessionId,
-        amountCents,
-        currency,
-        status,
-        posSystem: "square",
-        items,
-      },
-      update: {
-        sessionId,
-        amountCents,
-        currency,
-        status,
-        posSystem: "square",
-        items,
-      },
-    });
-
-    ticketsUpserted += 1;
-    if (sessionId) ticketsLinkedByReference += 1;
-    ticketIds.push(ticketId);
-  }
-
-  // 2) Auto-heal: attach tickets to sessions by deterministic externalRef match (orderId)
-  // This is safe and reversible because it's a pure linkage, and the match key is exact.
-  let ticketsLinkedByExternalRef = 0;
-  if (ticketIds.length > 0) {
-    const sessions = await prisma.session.findMany({
-      where: { loungeId, externalRef: { in: ticketIds } },
-      select: { id: true, externalRef: true },
-      take: 5000,
-    });
-    const sessionIdByExternalRef = new Map<string, string>();
-    for (const s of sessions) {
-      if (s.externalRef) sessionIdByExternalRef.set(s.externalRef, s.id);
+      const page = await fn.call(adapter, { from, to, limit: pageLimit, cursor });
+      const orders = Array.isArray(page?.orders) ? page.orders : [];
+      out.push(...orders);
+      cursor = typeof page?.cursor === "string" ? page.cursor : null;
+      pages += 1;
+      if (!cursor) break;
+      if (orders.length === 0) break;
     }
 
-    for (const ticketId of ticketIds) {
-      const sessionId = sessionIdByExternalRef.get(ticketId);
-      if (!sessionId) continue;
-      const updated = await prisma.posTicket.updateMany({
-        where: { ticketId, sessionId: null },
-        data: { sessionId, status: "attached" },
+    return { orders: out, pages, usedCursor: true };
+  }
+
+  async function ingestAndHeal(from: Date, to: Date, opts?: { replay?: boolean }) {
+    const pull = await pullOrdersWindow(from, to);
+    const orders = pull.orders;
+
+    let ticketsUpserted = 0;
+    let ticketsLinkedByReference = 0;
+    const ticketIds: string[] = [];
+    const orderLocationIds: string[] = [];
+
+    for (const order of orders) {
+      const ticketId = typeof order?.id === "string" ? order.id : null;
+      if (!ticketId) continue;
+
+      const sessionId = extractSessionIdFromReferenceId(order?.reference_id);
+      const { amountCents, currency } = moneyToAmountCents(order?.total_money);
+      const status = typeof order?.state === "string" ? order.state.toLowerCase() : "unknown";
+      const items = order?.line_items ? JSON.stringify(order.line_items).slice(0, 10000) : null;
+
+      const locationId = typeof order?.location_id === "string" ? order.location_id : null;
+      if (locationId) orderLocationIds.push(locationId);
+
+      await prisma.posTicket.upsert({
+        where: { ticketId },
+        create: {
+          ticketId,
+          sessionId,
+          amountCents,
+          currency,
+          status,
+          posSystem: "square",
+          items,
+        },
+        update: {
+          sessionId,
+          amountCents,
+          currency,
+          status,
+          posSystem: "square",
+          items,
+        },
       });
-      if (updated.count > 0) ticketsLinkedByExternalRef += updated.count;
+
+      ticketsUpserted += 1;
+      if (sessionId) ticketsLinkedByReference += 1;
+      ticketIds.push(ticketId);
+    }
+
+    // Auto-heal: attach tickets to sessions by deterministic externalRef match (orderId)
+    let ticketsLinkedByExternalRef = 0;
+    let healEventsWritten = 0;
+    if (ticketIds.length > 0) {
+      const sessions = await prisma.session.findMany({
+        where: { loungeId, externalRef: { in: ticketIds } },
+        select: { id: true, externalRef: true },
+        take: 5000,
+      });
+      const sessionIdByExternalRef = new Map<string, string>();
+      for (const s of sessions) {
+        if (s.externalRef) sessionIdByExternalRef.set(s.externalRef, s.id);
+      }
+
+      for (const ticketId of ticketIds) {
+        const sessionId = sessionIdByExternalRef.get(ticketId);
+        if (!sessionId) continue;
+
+        const updated = await prisma.posTicket.updateMany({
+          where: { ticketId, sessionId: null },
+          data: { sessionId, status: "attached" },
+        });
+        if (updated.count > 0) {
+          ticketsLinkedByExternalRef += updated.count;
+          const idempotencyKey = `heal:attach_ticket:${sessionId}:${ticketId}`;
+          try {
+            await prisma.driftEvent.create({
+              data: {
+                drift_reason_v1: "heal.square.attach_ticket",
+                action_type: "heal.square.attach_ticket",
+                severity: "info",
+                session_id: sessionId,
+                lounge_id: loungeId,
+                tenant_id: tenantId,
+                location_id: primaryLocationId,
+                window_from: from,
+                window_to: to,
+                counts_expected: 1,
+                counts_observed: 1,
+                counts_delta: 0,
+                counts_delta_pct: 0,
+                evidence: { sample_ids: [ticketId], reason: "externalRef_exact_match" } as any,
+                risk_hints: ["deterministic_link"],
+                idempotency_key: idempotencyKey,
+                details: { replay: Boolean(opts?.replay), runId } as any,
+              },
+            });
+            healEventsWritten += 1;
+          } catch (e: any) {
+            // Unique violation (already recorded) is ok.
+            const code = e?.code || e?.meta?.code;
+            if (code !== "P2002") throw e;
+          }
+        }
+      }
+    }
+
+    const expected = orders.length;
+    const observedLinked = ticketsLinkedByReference + ticketsLinkedByExternalRef;
+    const delta = Math.max(0, expected - observedLinked);
+    const deltaPct = expected > 0 ? (delta / expected) * 100 : 0;
+
+    const locationId = dbg?.locationId || primaryLocationId || orderLocationIds[0] || null;
+
+    return {
+      pull,
+      orders,
+      ticketIds,
+      ticketsUpserted,
+      ticketsLinkedByReference,
+      ticketsLinkedByExternalRef,
+      healEventsWritten,
+      reconciliation: { expected, observedLinked, delta, deltaPct },
+      locationId: typeof locationId === "string" ? locationId : null,
+    };
+  }
+
+  let ingest = await ingestAndHeal(windowFrom, windowTo);
+
+  // Widen-window retry once before escalating (handles delayed webhooks, clock skew, brief outages).
+  if (widenWindowMinutes > 0) {
+    const widen = ingest.reconciliation.delta >= reconcileDeltaAlertMin || ingest.reconciliation.deltaPct >= reconcileDeltaPctAlertMin;
+    if (widen) {
+      const widenedFrom = new Date(windowFrom.getTime() - widenWindowMinutes * 60 * 1000);
+      ingest = await ingestAndHeal(widenedFrom, windowTo, { replay: true });
     }
   }
+
+  const ticketIds = ingest.ticketIds;
 
   // 3) Detect drift (anomalies)
   const unassignedTickets = await prisma.posTicket.findMany({
@@ -156,10 +277,10 @@ export async function reconcileAndHealSquare(params: {
 
   // "Reconciliation drop": for this initial pass, treat "orders scanned - linked" as the most actionable anomaly.
   // This aligns with the POS Ops goal: keep unassigned tickets near zero.
-  const expected = orders.length;
-  const observedLinked = ticketsLinkedByReference + ticketsLinkedByExternalRef;
-  const delta = Math.max(0, expected - observedLinked);
-  const deltaPct = expected > 0 ? (delta / expected) * 100 : 0;
+  const expected = ingest.reconciliation.expected;
+  const observedLinked = ingest.reconciliation.observedLinked;
+  const delta = ingest.reconciliation.delta;
+  const deltaPct = ingest.reconciliation.deltaPct;
 
   // "Payment mismatch": sessions that claim Square gateway but are not marked succeeded (last window).
   const paymentMismatchCount = await prisma.session.count({
@@ -167,7 +288,7 @@ export async function reconcileAndHealSquare(params: {
       loungeId,
       paymentGateway: "square",
       paymentStatus: { not: "succeeded" },
-      updatedAt: { gte: since },
+      updatedAt: { gte: windowFrom },
     },
   });
 
@@ -175,19 +296,21 @@ export async function reconcileAndHealSquare(params: {
     action_type: SquareReconActionIntentType;
     severity: "info" | "warning" | "critical";
     details: Record<string, unknown>;
+    evidence: { sample_ids?: string[]; reason?: string } | null;
+    risk_hints: string[];
   }> = [];
 
   if (unassignedCount > 0) {
     intents.push({
       action_type: "recon.square.unassigned_ticket",
       severity: "warning",
+      evidence: { sample_ids: unassignedTickets.map((t) => t.ticketId).slice(0, 10), reason: "unlinked_pos_ticket" },
+      risk_hints: ["money_surface", "processor_truth"],
       details: {
         loungeId,
         runId,
-        window: { since: since.toISOString(), graceCutoff: graceCutoff.toISOString() },
+        window: { from: windowFrom.toISOString(), to: windowTo.toISOString(), graceCutoff: graceCutoff.toISOString() },
         counts: { unassigned: unassignedCount },
-        evidence: { sample_ticket_ids: unassignedTickets.map((t) => t.ticketId).slice(0, 10) },
-        risk_hints: ["money_surface", "processor_truth"],
       },
     });
   }
@@ -196,13 +319,13 @@ export async function reconcileAndHealSquare(params: {
     intents.push({
       action_type: "recon.square.reconciliation_drop",
       severity: "critical",
+      evidence: { sample_ids: ticketIds.slice(0, 10), reason: "orders_scanned_minus_linked" },
+      risk_hints: ["money_surface", "processor_truth"],
       details: {
         loungeId,
         runId,
-        window: { since: since.toISOString() },
+        window: { from: windowFrom.toISOString(), to: windowTo.toISOString() },
         counts: { expected, observedLinked, delta, deltaPct: Math.round(deltaPct * 100) / 100 },
-        evidence: { reason: "orders_scanned_minus_linked" },
-        risk_hints: ["money_surface", "processor_truth"],
       },
     });
   }
@@ -211,24 +334,41 @@ export async function reconcileAndHealSquare(params: {
     intents.push({
       action_type: "recon.square.payment_mismatch",
       severity: "critical",
+      evidence: { reason: "session.paymentGateway=square but paymentStatus!=succeeded" },
+      risk_hints: ["money_surface", "identity_surface"],
       details: {
         loungeId,
         runId,
-        window: { since: since.toISOString() },
+        window: { from: windowFrom.toISOString(), to: windowTo.toISOString() },
         counts: { sessions_with_mismatch: paymentMismatchCount },
-        evidence: { reason: "session.paymentGateway=square but paymentStatus!=succeeded" },
-        risk_hints: ["money_surface", "identity_surface"],
       },
     });
   }
 
   // 4) Emit ActionIntents (record drift events). This is your “immune system queue” without expanding Recon API yet.
   for (const intent of intents) {
+    const counts = intent.details?.counts as any;
+    const countsExpected = typeof counts?.expected === "number" ? counts.expected : expected;
+    const countsObserved = typeof counts?.observedLinked === "number" ? counts.observedLinked : observedLinked;
+    const countsDelta = typeof counts?.delta === "number" ? counts.delta : delta;
+    const countsDeltaPct = typeof counts?.deltaPct === "number" ? counts.deltaPct : Math.round(deltaPct * 100) / 100;
     await prisma.driftEvent.create({
       data: {
         drift_reason_v1: intent.action_type,
+        action_type: intent.action_type,
         severity: intent.severity,
         details: intent.details as any,
+        lounge_id: loungeId,
+        tenant_id: tenantId,
+        location_id: ingest.locationId,
+        window_from: windowFrom,
+        window_to: windowTo,
+        counts_expected: countsExpected,
+        counts_observed: countsObserved,
+        counts_delta: countsDelta,
+        counts_delta_pct: countsDeltaPct,
+        evidence: intent.evidence as any,
+        risk_hints: intent.risk_hints,
       },
     });
   }
@@ -236,7 +376,6 @@ export async function reconcileAndHealSquare(params: {
   // 5) Slack alerts with tiers + suppression window + “2 consecutive runs” for unassigned tickets
   const slackResults: Array<{ type: string; severity: SlackSeverity; sent: boolean; suppressed?: boolean; error?: string }> = [];
 
-  const now = new Date();
   const suppressionCutoff = new Date(Date.now() - suppressionWindowMinutes * 60 * 1000);
   const consecutiveWindow = new Date(Date.now() - cadenceMinutes * unassignedTicketAlertAfterRuns * 60 * 1000 - 60_000);
 
@@ -312,7 +451,8 @@ export async function reconcileAndHealSquare(params: {
           runId,
           unassigned: unassignedCount,
           grace_window_min: graceWindowMinutes,
-          since_min: sinceMinutes,
+          window_from: windowFrom.toISOString(),
+          window_to: windowTo.toISOString(),
           sample_ticket_ids: unassignedTickets.map((t) => t.ticketId).slice(0, 10).join(", "),
         },
       });
@@ -329,7 +469,8 @@ export async function reconcileAndHealSquare(params: {
         runId,
         unassigned: unassignedCount,
         grace_window_min: graceWindowMinutes,
-        since_min: sinceMinutes,
+        window_from: windowFrom.toISOString(),
+        window_to: windowTo.toISOString(),
       },
     });
   }
@@ -349,7 +490,8 @@ export async function reconcileAndHealSquare(params: {
         delta,
         delta_pct: Math.round(deltaPct * 100) / 100,
         thresholds: `delta>=${reconcileDeltaAlertMin} or pct>=${reconcileDeltaPctAlertMin}%`,
-        since_min: sinceMinutes,
+        window_from: windowFrom.toISOString(),
+        window_to: windowTo.toISOString(),
       },
     });
   }
@@ -365,7 +507,32 @@ export async function reconcileAndHealSquare(params: {
         loungeId,
         runId,
         sessions_with_mismatch: paymentMismatchCount,
-        since_min: sinceMinutes,
+        window_from: windowFrom.toISOString(),
+        window_to: windowTo.toISOString(),
+      },
+    });
+  }
+
+  // 6) Persist cursor for next run (small overlap for safety).
+  const overlapMinutes = 2;
+  const nextCursorFrom = new Date(windowTo.getTime() - overlapMinutes * 60 * 1000);
+  if ((prisma as any)?.squareReconCursor?.upsert) {
+    await (prisma as any).squareReconCursor.upsert({
+      where: { loungeId },
+      create: {
+        loungeId,
+        tenantId,
+        locationId: ingest.locationId,
+        cursorFrom: nextCursorFrom,
+        lastWindowTo: windowTo,
+        lastRunId: runId,
+      },
+      update: {
+        tenantId,
+        locationId: ingest.locationId,
+        cursorFrom: nextCursorFrom,
+        lastWindowTo: windowTo,
+        lastRunId: runId,
       },
     });
   }
@@ -375,11 +542,12 @@ export async function reconcileAndHealSquare(params: {
     action: "reconcile_and_heal",
     loungeId,
     runId,
-    since: since.toISOString(),
-    ordersScanned: orders.length,
-    ticketsUpserted,
-    ticketsLinkedByReference,
-    ticketsLinkedByExternalRef,
+    windowFrom: windowFrom.toISOString(),
+    windowTo: windowTo.toISOString(),
+    ordersScanned: ingest.orders.length,
+    ticketsUpserted: ingest.ticketsUpserted,
+    ticketsLinkedByReference: ingest.ticketsLinkedByReference,
+    ticketsLinkedByExternalRef: ingest.ticketsLinkedByExternalRef,
     anomalies: { unassignedCount, delta, deltaPct, paymentMismatchCount },
     slack: slackResults,
   });
@@ -387,12 +555,13 @@ export async function reconcileAndHealSquare(params: {
   return {
     runId,
     loungeId,
-    since: since.toISOString(),
-    ordersScanned: orders.length,
+    window: { from: windowFrom.toISOString(), to: windowTo.toISOString() },
+    ordersScanned: ingest.orders.length,
     tickets: {
-      upserted: ticketsUpserted,
-      linkedByReference: ticketsLinkedByReference,
-      linkedByExternalRef: ticketsLinkedByExternalRef,
+      upserted: ingest.ticketsUpserted,
+      linkedByReference: ingest.ticketsLinkedByReference,
+      linkedByExternalRef: ingest.ticketsLinkedByExternalRef,
+      healEventsWritten: ingest.healEventsWritten,
     },
     anomalies: {
       unassignedTickets: {
