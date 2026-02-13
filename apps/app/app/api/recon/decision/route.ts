@@ -5,10 +5,10 @@
  */
 
 import { NextResponse } from "next/server";
-import { validateActionIntent } from "@/app/lib/recon/validator";
-import { runPolicyCore } from "@/app/lib/recon/policy-core";
-import { verifyReconSignature, SIGNATURE_HEADER } from "@/app/lib/recon/auth";
-import type { ActionIntent } from "@/app/lib/recon/contract";
+import { validateActionIntent } from "@/lib/recon/validator";
+import { runPolicyCore } from "@/lib/recon/policy-core";
+import { verifyReconSignature, SIGNATURE_HEADER } from "@/lib/recon/auth";
+import type { ActionIntent } from "@/lib/recon/contract";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -55,7 +55,7 @@ export async function POST(req: Request) {
       (response.decision === "ALLOW" || response.decision === "ALLOW_WITH_REDUCTION")
     ) {
       // Call payment-executor to perform Stripe refund; attach execution_metadata to response
-      const { executeRefund } = await import("@/app/lib/recon/payment-executor");
+      const { executeRefund } = await import("@/lib/recon/payment-executor");
       const execResult = await executeRefund({
         intent,
         adjusted_amount: response.adjusted_amount,
