@@ -17,11 +17,10 @@ export async function generatePDFFromHTML(
   }
 ): Promise<Buffer | null> {
   try {
-    // Use require to avoid TypeScript static analysis
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     let puppeteer: any;
     try {
-      puppeteer = require('puppeteer');
+      const mod: any = await import("puppeteer");
+      puppeteer = mod?.default ?? mod;
     } catch {
       console.warn('[PDF Generator] Puppeteer not installed. Install with: npm install puppeteer');
       return null;
@@ -65,9 +64,8 @@ export async function generatePDFFromHTML(
  */
 export async function isPDFGenerationAvailable(): Promise<boolean> {
   try {
-    // Use require to avoid TypeScript static analysis
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const puppeteer = require('puppeteer');
+    const mod: any = await import("puppeteer");
+    const puppeteer = mod?.default ?? mod;
     return puppeteer !== null && puppeteer !== undefined;
   } catch {
     return false;
