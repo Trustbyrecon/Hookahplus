@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { processSquareRawEvents } from "../../../../lib/square/processor";
 import { reconcileAndHealSquare } from "../../../../lib/square/reconcile";
+import { prisma } from "../../../../lib/db";
 
 function getBearerToken(req: NextRequest): string | null {
   const authHeader = req.headers.get("authorization");
@@ -33,6 +34,42 @@ async function handle(req: NextRequest) {
   const loungeId = searchParams.get("loungeId") || "";
   if (!loungeId) {
     return NextResponse.json({ error: "loungeId is required" }, { status: 400 });
+  }
+
+  // Guardrail: basic replay protection / cost lever prevention.
+  // Reject if the same lounge was reconciled very recently, unless explicitly forced.
+  const force = (searchParams.get("force") || "").toLowerCase() === "true";
+  const minIntervalSecondsRaw = searchParams.get("minIntervalSeconds");
+  const minIntervalSeconds = Number.isFinite(Number(minIntervalSecondsRaw))
+    ? Math.max(30, Math.min(60 * 60, Number(minIntervalSecondsRaw)))
+    : 120; // default: 2 minutes
+
+  if (!force && (prisma as any)?.squareReconCursor?.findUnique) {
+    const cursor = await (prisma as any).squareReconCursor.findUnique({
+      where: { loungeId },
+      select: { updatedAt: true, lastRunId: true },
+    });
+    const last = cursor?.updatedAt instanceof Date ? cursor.updatedAt : null;
+    if (last) {
+      const ageSeconds = (Date.now() - last.getTime()) / 1000;
+      if (ageSeconds < minIntervalSeconds) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Too Many Requests",
+            details: `Last reconcile was ${Math.round(ageSeconds)}s ago for loungeId=${loungeId}.`,
+            lastRunId: cursor?.lastRunId ?? null,
+            retryAfterSeconds: Math.max(1, Math.round(minIntervalSeconds - ageSeconds)),
+          },
+          {
+            status: 429,
+            headers: {
+              "Retry-After": String(Math.max(1, Math.round(minIntervalSeconds - ageSeconds))),
+            },
+          }
+        );
+      }
+    }
   }
 
   // Stage 1: process webhook backlog (raw events → normalized rows)
