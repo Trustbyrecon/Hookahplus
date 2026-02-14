@@ -89,6 +89,7 @@ model Session {
 model Tenant {
   id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name            String
+  organizationId  String?          @map("organization_id") @db.Uuid
   createdAt       DateTime?        @default(now()) @map("created_at") @db.Timestamptz(6)
   sessions        Session[]
   memberships     Membership[]
@@ -100,10 +101,24 @@ model Tenant {
   loyaltyTiers    LoyaltyTier[]
   loyaltyRewards  LoyaltyReward[]
   squareMerchants SquareMerchant[]
+  organization    Organization?    @relation(fields: [organizationId], references: [id], onUpdate: NoAction)
 
   @@index([createdAt], map: "idx_tenants_created_at")
   @@index([name], map: "idx_tenants_name")
+  @@index([organizationId], map: "idx_tenants_organization_id")
   @@map("tenants")
+}
+
+model Organization {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  tenants   Tenant[]
+
+  @@index([name], map: "idx_organizations_name")
+  @@map("organizations")
 }
 
 model Membership {
@@ -1278,6 +1293,11 @@ model SetupSession {
   status          String    @default("draft") // draft | in_progress | completed | activated | expired | abandoned
   progress        Json // LaunchPadProgress type
   loungeId        String?   @unique @map("lounge_id")
+  organizationId  String?   @map("organization_id") @db.Uuid
+  organizationSlug String?  @map("organization_slug")
+  multiLocationEnabled Boolean @default(false) @map("multi_location_enabled")
+  locationDrafts  Json?     @map("location_drafts")
+  activatedLoungeIds String[] @default([]) @map("activated_lounge_ids")
   source          String? // "manychat" | "web" | "direct"
   manychatUserId  String?   @map("manychat_user_id")
   instagramHandle String?   @map("instagram_handle")
@@ -1292,6 +1312,8 @@ model SetupSession {
   @@index([token], map: "idx_setup_session_token")
   @@index([expiresAt], map: "idx_setup_session_expires")
   @@index([loungeId], map: "idx_setup_session_lounge_id")
+  @@index([organizationId], map: "idx_setup_session_organization_id")
+  @@index([organizationSlug], map: "idx_setup_session_organization_slug")
   @@index([source], map: "idx_setup_session_source")
   @@index([status], map: "idx_setup_session_status")
   @@index([lastActivityAt], map: "idx_setup_session_last_activity")

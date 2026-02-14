@@ -13,8 +13,14 @@ interface VenueSnapshotStepProps {
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
 export function VenueSnapshotStep({ initialData, onComplete, onBack }: VenueSnapshotStepProps) {
+  const defaultLocationName = initialData?.loungeName || '';
   const [formData, setFormData] = useState<VenueSnapshotData>({
     loungeName: initialData?.loungeName || '',
+    organizationName: initialData?.organizationName || '',
+    multiLocationEnabled: Boolean(initialData?.multiLocationEnabled),
+    locations: Array.isArray(initialData?.locations) && initialData.locations.length > 0
+      ? initialData.locations
+      : [{ name: defaultLocationName || 'Location 1', tablesCount: initialData?.tablesCount || 0, sectionsCount: initialData?.sectionsCount || 0, operatingHours: initialData?.operatingHours || {} }],
     operatorType: initialData?.operatorType || 'brick_and_mortar',
     operatingHours: initialData?.operatingHours || {},
     tablesCount: initialData?.tablesCount || 0,
@@ -25,6 +31,7 @@ export function VenueSnapshotStep({ initialData, onComplete, onBack }: VenueSnap
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const isMobile = formData.operatorType === 'mobile';
+  const locations = formData.locations || [];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +46,18 @@ export function VenueSnapshotStep({ initialData, onComplete, onBack }: VenueSnap
     }
     if (formData.baseSessionPrice <= 0) {
       newErrors.baseSessionPrice = 'Please enter a valid base session price';
+    }
+    if (formData.multiLocationEnabled) {
+      if (!formData.organizationName?.trim()) {
+        newErrors.organizationName = 'Organization name is required for multi-location operators';
+      }
+      if (locations.length < 2) {
+        newErrors.locations = 'Add at least 2 locations for multi-location onboarding';
+      }
+      const hasInvalidLocation = locations.some((loc) => !loc.name?.trim() || (loc.tablesCount || 0) <= 0);
+      if (hasInvalidLocation) {
+        newErrors.locations = 'Each location must include a name and table count';
+      }
     }
 
     // Check at least one day has hours (only for brick-and-mortar)
@@ -56,7 +75,40 @@ export function VenueSnapshotStep({ initialData, onComplete, onBack }: VenueSnap
       return;
     }
 
-    onComplete(formData);
+    onComplete({
+      ...formData,
+      locations: formData.multiLocationEnabled ? locations : undefined,
+      organizationName: formData.multiLocationEnabled ? (formData.organizationName || formData.loungeName) : undefined,
+    });
+  };
+
+  const addLocation = () => {
+    setFormData((prev) => ({
+      ...prev,
+      locations: [
+        ...(prev.locations || []),
+        {
+          name: `Location ${(prev.locations || []).length + 1}`,
+          tablesCount: prev.tablesCount || 1,
+          sectionsCount: prev.sectionsCount || 0,
+          operatingHours: prev.operatingHours || {},
+        },
+      ],
+    }));
+  };
+
+  const updateLocation = (idx: number, patch: Partial<NonNullable<VenueSnapshotData['locations']>[number]>) => {
+    setFormData((prev) => ({
+      ...prev,
+      locations: (prev.locations || []).map((loc, i) => (i === idx ? { ...loc, ...patch } : loc)),
+    }));
+  };
+
+  const removeLocation = (idx: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      locations: (prev.locations || []).filter((_, i) => i !== idx),
+    }));
   };
 
   const updateHours = (day: string, field: 'open' | 'close', value: string) => {
@@ -194,6 +246,86 @@ export function VenueSnapshotStep({ initialData, onComplete, onBack }: VenueSnap
           />
           {errors.loungeName && (
             <p className="mt-1 text-sm text-red-400">{errors.loungeName}</p>
+          )}
+        </div>
+
+        <div className="bg-zinc-800/60 border border-zinc-700 rounded-lg p-4">
+          <label className="flex items-center gap-3 text-sm text-zinc-200">
+            <input
+              type="checkbox"
+              checked={Boolean(formData.multiLocationEnabled)}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  multiLocationEnabled: e.target.checked,
+                  organizationName: e.target.checked ? prev.organizationName || prev.loungeName : '',
+                  locations: e.target.checked
+                    ? (prev.locations && prev.locations.length > 0
+                      ? prev.locations
+                      : [{ name: prev.loungeName || 'Location 1', tablesCount: prev.tablesCount || 1, sectionsCount: prev.sectionsCount || 0, operatingHours: prev.operatingHours || {} }])
+                    : prev.locations,
+                }))
+              }
+              className="w-4 h-4"
+            />
+            This operator manages multiple locations
+          </label>
+          {formData.multiLocationEnabled && (
+            <div className="mt-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">Organization name *</label>
+                <input
+                  type="text"
+                  value={formData.organizationName || ''}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, organizationName: e.target.value }))}
+                  className="w-full px-4 py-2 bg-zinc-900 border border-zinc-600 rounded-lg text-white"
+                  placeholder="Aliethia Hospitality Group"
+                />
+                {errors.organizationName && <p className="mt-1 text-sm text-red-400">{errors.organizationName}</p>}
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-zinc-300">Location list</p>
+                  <button type="button" onClick={addLocation} className="px-3 py-1 text-xs bg-teal-600 rounded-lg">Add location</button>
+                </div>
+                {locations.map((loc, idx) => (
+                  <div key={`${idx}-${loc.name}`} className="grid grid-cols-1 md:grid-cols-12 gap-2 p-3 border border-zinc-700 rounded-lg">
+                    <input
+                      type="text"
+                      value={loc.name}
+                      onChange={(e) => updateLocation(idx, { name: e.target.value })}
+                      className="md:col-span-6 px-3 py-2 bg-zinc-900 border border-zinc-600 rounded text-white"
+                      placeholder={`Location ${idx + 1} name`}
+                    />
+                    <input
+                      type="number"
+                      min="1"
+                      value={loc.tablesCount || ''}
+                      onChange={(e) => updateLocation(idx, { tablesCount: parseInt(e.target.value, 10) || 0 })}
+                      className="md:col-span-3 px-3 py-2 bg-zinc-900 border border-zinc-600 rounded text-white"
+                      placeholder="Tables"
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      value={loc.sectionsCount || ''}
+                      onChange={(e) => updateLocation(idx, { sectionsCount: parseInt(e.target.value, 10) || 0 })}
+                      className="md:col-span-2 px-3 py-2 bg-zinc-900 border border-zinc-600 rounded text-white"
+                      placeholder="Sections"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeLocation(idx)}
+                      disabled={locations.length <= 1}
+                      className="md:col-span-1 px-3 py-2 bg-zinc-700 rounded text-xs disabled:opacity-50"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+                {errors.locations && <p className="text-sm text-red-400">{errors.locations}</p>}
+              </div>
+            </div>
           )}
         </div>
 

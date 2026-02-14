@@ -71,6 +71,9 @@ async function createREMCompliantOnboardingEvent(
         menuLink: payload.menuLink,
         baseHookahPrice: payload.baseHookahPrice,
         refillPrice: payload.refillPrice,
+        operatorGroupName: payload.operatorGroupName,
+        locationCount: payload.locationCount,
+        locationNames: payload.locationNames,
         menuFiles: payload.menuFiles || [], // Array of uploaded file metadata
         // Social media links
         instagramUrl: payload.instagramUrl,
@@ -342,6 +345,9 @@ export async function GET(req: NextRequest) {
                   data.location || 
                   data.city || 
                   'Unknown',
+        operatorGroupName: payload.lead?.operatorGroupName || data.operatorGroupName || null,
+        locationCount: Number(payload.lead?.locationCount || data.locationCount || 1),
+        locationNames: payload.lead?.locationNames || data.locationNames || [],
         
         // Business details - check multiple locations for data
         seatingTypes: payload.lead?.seatingTypes || data.seatingTypes || [],
@@ -429,7 +435,11 @@ export async function GET(req: NextRequest) {
         linkedin: leads.filter(l => l.ctaSource === 'linkedin').length,
         email: leads.filter(l => l.ctaSource === 'email').length,
         calendly: leads.filter(l => l.ctaSource === 'calendly').length
-      }
+      },
+      multiLocation: {
+        operators: leads.filter((l: any) => Number(l.locationCount || 1) > 1).length,
+        totalLocations: leads.reduce((acc: number, l: any) => acc + Number(l.locationCount || 1), 0),
+      },
     };
 
     return NextResponse.json({
@@ -854,6 +864,9 @@ export async function POST(req: NextRequest) {
         menuLink: leadData.menuLink || instagramMenuData.menuLink || '',
         baseHookahPrice: leadData.baseHookahPrice || instagramMenuData.basePrice?.toString() || '',
         refillPrice: leadData.refillPrice || instagramMenuData.refillPrice?.toString() || '',
+        operatorGroupName: leadData.operatorGroupName || '',
+        locationCount: Number(leadData.locationCount || 1),
+        locationNames: Array.isArray(leadData.locationNames) ? leadData.locationNames : [],
         menuFiles: leadData.menuFiles || [], // Array of uploaded file metadata
         // Social media links
         instagramUrl: leadData.instagramUrl || '',

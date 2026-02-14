@@ -48,6 +48,9 @@ interface Lead {
   email: string;
   phone: string;
   location: string;
+  operatorGroupName?: string | null;
+  locationCount?: number;
+  locationNames?: string[];
   seatingTypes: string[];
   totalCapacity: string;
   numberOfTables: string;
@@ -116,6 +119,10 @@ interface Stats {
     controlPanel: number;
     recent: number;
   };
+  multiLocation?: {
+    operators: number;
+    totalLocations: number;
+  };
 }
 
 export default function OperatorOnboardingPage() {
@@ -149,6 +156,9 @@ export default function OperatorOnboardingPage() {
     instagramUrl: '',
     facebookUrl: '',
     websiteUrl: '',
+    operatorGroupName: '',
+    locationCount: 1,
+    locationNamesCsv: '',
     source: 'manual',
     stage: 'new-leads' as Lead['stage']
   });
@@ -413,6 +423,10 @@ export default function OperatorOnboardingPage() {
           action: 'create_lead',
           leadData: {
             ...newLeadData,
+            locationNames: (newLeadData.locationNamesCsv || '')
+              .split(',')
+              .map((s) => s.trim())
+              .filter(Boolean),
             createdAt: new Date().toISOString(),
             type: 'onboarding.signup',
             source: 'manual'
@@ -446,6 +460,9 @@ export default function OperatorOnboardingPage() {
         instagramUrl: '',
         facebookUrl: '',
         websiteUrl: '',
+        operatorGroupName: '',
+        locationCount: 1,
+        locationNamesCsv: '',
         source: 'manual',
         stage: 'new-leads'
       });
@@ -760,7 +777,8 @@ export default function OperatorOnboardingPage() {
           }}
           trustIndicators={[
             { icon: <BarChart3 className="w-4 h-4" />, text: `${stats.complete} Completed` },
-            { icon: <TrendingUp className="w-4 h-4" />, text: `${stats.onboarding} In Progress` }
+            { icon: <TrendingUp className="w-4 h-4" />, text: `${stats.onboarding} In Progress` },
+            ...(stats.multiLocation ? [{ icon: <Building2 className="w-4 h-4" />, text: `${stats.multiLocation.operators} Multi-location` }] : [])
           ]}
         />
 
@@ -769,6 +787,9 @@ export default function OperatorOnboardingPage() {
           <div className="bg-zinc-800/50 backdrop-blur-sm border border-zinc-700 rounded-xl p-4">
             <div className="text-2xl font-bold text-white">{stats.total}</div>
             <div className="text-sm text-zinc-400">Total Leads</div>
+            {stats.multiLocation && (
+              <div className="text-xs text-zinc-500 mt-1">{stats.multiLocation.totalLocations} locations tracked</div>
+            )}
           </div>
           {stats.demoActivity && (
             <div className="bg-purple-500/20 border border-purple-500/30 rounded-xl p-4">
@@ -996,6 +1017,12 @@ export default function OperatorOnboardingPage() {
                           <MapPin className="w-4 h-4" />
                           <span>{lead.location}</span>
                         </div>
+                        {Number(lead.locationCount || 1) > 1 && (
+                          <div className="text-xs text-teal-300 mt-1">
+                            {lead.locationCount} locations
+                            {lead.operatorGroupName ? ` • ${lead.operatorGroupName}` : ''}
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex flex-col gap-1">
@@ -1273,6 +1300,9 @@ export default function OperatorOnboardingPage() {
                     instagramUrl: '',
                     facebookUrl: '',
                     websiteUrl: '',
+                    operatorGroupName: '',
+                    locationCount: 1,
+                    locationNamesCsv: '',
                     source: 'manual',
                     stage: 'new-leads'
                   });
@@ -1340,6 +1370,36 @@ export default function OperatorOnboardingPage() {
                   onChange={(e) => setNewLeadData({ ...newLeadData, location: e.target.value })}
                   className="w-full px-4 py-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
                   placeholder="Enter location"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">Operator Group</label>
+                <input
+                  type="text"
+                  value={newLeadData.operatorGroupName}
+                  onChange={(e) => setNewLeadData({ ...newLeadData, operatorGroupName: e.target.value })}
+                  className="w-full px-4 py-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  placeholder="Aliethia Hospitality Group"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">Location Count</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={newLeadData.locationCount}
+                  onChange={(e) => setNewLeadData({ ...newLeadData, locationCount: Math.max(1, parseInt(e.target.value, 10) || 1) })}
+                  className="w-full px-4 py-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">Location Names (comma-separated)</label>
+                <input
+                  type="text"
+                  value={newLeadData.locationNamesCsv}
+                  onChange={(e) => setNewLeadData({ ...newLeadData, locationNamesCsv: e.target.value })}
+                  className="w-full px-4 py-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  placeholder="Downtown, Midtown, North Side"
                 />
               </div>
               
@@ -1448,6 +1508,9 @@ export default function OperatorOnboardingPage() {
                     instagramUrl: '',
                     facebookUrl: '',
                     websiteUrl: '',
+                    operatorGroupName: '',
+                    locationCount: 1,
+                    locationNamesCsv: '',
                     source: 'manual',
                     stage: 'new-leads'
                   });

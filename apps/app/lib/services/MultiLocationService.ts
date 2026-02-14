@@ -5,6 +5,7 @@
  */
 
 import { PrismaClient } from '@prisma/client';
+import { calculateWeekOneWins } from '../launchpad/week1-wins-calculator';
 
 export interface Location {
   id: string;
@@ -63,6 +64,89 @@ export interface CrossLocationAnalytics {
 }
 
 export class MultiLocationService {
+  static async getOrganizationLocationIds(
+    organizationId: string,
+    prisma?: PrismaClient
+  ): Promise<{ success: boolean; loungeIds?: string[]; error?: string }> {
+    try {
+      if (!prisma) return { success: false, error: 'Prisma client required' };
+      const rows = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+        'SELECT id FROM tenants WHERE organization_id = $1 ORDER BY created_at ASC',
+        organizationId
+      );
+      return { success: true, loungeIds: rows.map((r) => r.id) };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to fetch organization locations' };
+    }
+  }
+
+  static async getOnboardingRollupMetrics(
+    loungeIds: string[]
+  ): Promise<{
+    success: boolean;
+    rollup?: {
+      locationCount: number;
+      activeLocations: number;
+      totalWins: number;
+      totalCompedSessionsAvoided: number;
+      totalAddOnsCaptured: number;
+      totalRepeatGuestsRecognized: number;
+      avgTimeSavedPerShift: number;
+      perLocation: Array<{ loungeId: string; totalWins: number; daysActive: number }>;
+    };
+    error?: string;
+  }> {
+    try {
+      const validLoungeIds = loungeIds.filter(Boolean);
+      if (validLoungeIds.length === 0) {
+        return {
+          success: true,
+          rollup: {
+            locationCount: 0,
+            activeLocations: 0,
+            totalWins: 0,
+            totalCompedSessionsAvoided: 0,
+            totalAddOnsCaptured: 0,
+            totalRepeatGuestsRecognized: 0,
+            avgTimeSavedPerShift: 0,
+            perLocation: [],
+          },
+        };
+      }
+
+      const metrics = await Promise.all(validLoungeIds.map((id) => calculateWeekOneWins(id)));
+      const perLocation = validLoungeIds.map((loungeId, idx) => ({
+        loungeId,
+        totalWins: metrics[idx]?.totalWins || 0,
+        daysActive: metrics[idx]?.daysActive || 0,
+      }));
+      const active = metrics.filter(Boolean) as NonNullable<typeof metrics[number]>[];
+      const totalWins = active.reduce((sum, m) => sum + (m.totalWins || 0), 0);
+      const totalCompedSessionsAvoided = active.reduce((sum, m) => sum + (m.compedSessionsAvoided || 0), 0);
+      const totalAddOnsCaptured = active.reduce((sum, m) => sum + (m.addOnsCaptured || 0), 0);
+      const totalRepeatGuestsRecognized = active.reduce((sum, m) => sum + (m.repeatGuestsRecognized || 0), 0);
+      const avgTimeSavedPerShift = active.length
+        ? Math.round(active.reduce((sum, m) => sum + (m.timeSavedPerShift || 0), 0) / active.length)
+        : 0;
+
+      return {
+        success: true,
+        rollup: {
+          locationCount: validLoungeIds.length,
+          activeLocations: active.length,
+          totalWins,
+          totalCompedSessionsAvoided,
+          totalAddOnsCaptured,
+          totalRepeatGuestsRecognized,
+          avgTimeSavedPerShift,
+          perLocation,
+        },
+      };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to compute onboarding rollup' };
+    }
+  }
+
   /**
    * Get all locations for a tenant
    */

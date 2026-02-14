@@ -7,7 +7,13 @@
 import { LaunchPadProgress, LoungeOpsConfig } from '../../types/launchpad';
 
 export function generateLoungeOpsConfig(
-  progress: LaunchPadProgress
+  progress: LaunchPadProgress,
+  overrides?: {
+    loungeName?: string;
+    operatingHours?: { [key: string]: { open: string; close: string } | null };
+    tablesCount?: number;
+    sectionsCount?: number;
+  }
 ): LoungeOpsConfig {
   const step1 = progress.data.step1;
   const step2 = progress.data.step2;
@@ -20,7 +26,8 @@ export function generateLoungeOpsConfig(
   }
 
   // Generate slug from lounge name
-  const slug = step1.loungeName
+  const effectiveLoungeName = overrides?.loungeName || step1.loungeName;
+  const slug = effectiveLoungeName
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
@@ -43,7 +50,7 @@ export function generateLoungeOpsConfig(
       })) || [];
 
   const config: LoungeOpsConfig = {
-    lounge_name: step1.loungeName,
+    lounge_name: effectiveLoungeName,
     slug,
     session_type: step3?.sessionType || 'flat',
     base_session_price: step1.baseSessionPrice / 100, // Convert cents to dollars
@@ -63,9 +70,12 @@ export function generateLoungeOpsConfig(
     pos_bridge: {
       pos_type: step5?.posType || 'none',
     },
-    operating_hours: step1.operatingHours || {}, // Optional for mobile operators
-    tables_count: step1.tablesCount,
-    sections_count: step1.sectionsCount || undefined,
+    operating_hours: overrides?.operatingHours || step1.operatingHours || {}, // Optional for mobile operators
+    tables_count: overrides?.tablesCount ?? step1.tablesCount,
+    sections_count: (() => {
+      const sections = overrides?.sectionsCount ?? step1.sectionsCount;
+      return sections && sections > 0 ? sections : undefined;
+    })(),
   };
 
   return config;

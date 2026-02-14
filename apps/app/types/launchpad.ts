@@ -6,6 +6,16 @@
 
 export interface VenueSnapshotData {
   loungeName: string;
+  organizationName?: string;
+  multiLocationEnabled?: boolean;
+  locations?: Array<{
+    name: string;
+    tablesCount: number;
+    sectionsCount?: number;
+    operatingHours?: {
+      [key: string]: { open: string; close: string } | null;
+    };
+  }>;
   operatorType: 'brick_and_mortar' | 'mobile'; // Mobile operators don't have fixed venue hours
   operatingHours?: {
     [key: string]: { open: string; close: string } | null; // day: { open, close } or null for closed

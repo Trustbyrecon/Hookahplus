@@ -131,7 +131,7 @@ export async function createSetupSession(
     // Create SetupSession with status = 'draft' (graceful fallback if status field doesn't exist)
     let setupSession;
     try {
-      setupSession = await prisma.setupSession.create({
+      setupSession = await (prisma as any).setupSession.create({
         data: {
           token,
           setupLink,
@@ -139,6 +139,8 @@ export async function createSetupSession(
           progress: initialProgress as any,
           expiresAt,
           source,
+          multiLocationEnabled: Boolean(initialProgress?.data?.step1 && (initialProgress.data as any).step1.multiLocationEnabled),
+          locationDrafts: ((initialProgress.data as any).step1?.locations || null) as any,
           prefillData: prefillData ? (prefillData as any) : null,
           manychatUserId: prefillData?.subscriber_id || null,
           instagramHandle: prefillData?.instagram_username || null,
@@ -147,9 +149,14 @@ export async function createSetupSession(
       });
     } catch (createError: any) {
       // Graceful fallback: status field may not exist if migration hasn't run
-      if (createError?.message?.includes('Unknown argument `status`') || createError?.code === 'P2025') {
+      if (
+        createError?.message?.includes('Unknown argument `status`') ||
+        createError?.message?.includes('Unknown argument `multiLocationEnabled`') ||
+        createError?.message?.includes('Unknown argument `locationDrafts`') ||
+        createError?.code === 'P2025'
+      ) {
         console.warn('[Session Manager] Status field not available, creating without status field');
-        setupSession = await prisma.setupSession.create({
+        setupSession = await (prisma as any).setupSession.create({
           data: {
             token,
             setupLink,
@@ -368,14 +375,24 @@ export async function saveProgress(
   // Extend expiration on each save (reset to 7 days)
   const expiresAt = calculateExpiration();
   const now = new Date();
+  const step1Data: any = updatedProgress?.data?.step1 || {};
+  const multiLocationEnabled = Boolean(step1Data?.multiLocationEnabled);
+  const locationDrafts = Array.isArray(step1Data?.locations) ? step1Data.locations : null;
+  const organizationName = typeof step1Data?.organizationName === 'string' ? step1Data.organizationName.trim() : '';
+  const organizationSlug = organizationName
+    ? organizationName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+    : null;
 
   // Graceful fallback: status field may not exist if migration hasn't run
   try {
-    await prisma.setupSession.update({
+    await (prisma as any).setupSession.update({
       where: { token },
       data: {
         progress: updatedProgress as any,
         status: newStatus,
+        multiLocationEnabled,
+        locationDrafts: locationDrafts as any,
+        organizationSlug,
         expiresAt,
         lastActivityAt: now,
         updatedAt: now,
@@ -383,9 +400,15 @@ export async function saveProgress(
     });
   } catch (error: any) {
     // If status field doesn't exist, update without it (graceful degradation)
-    if (error?.message?.includes('Unknown argument `status`') || error?.code === 'P2025') {
+    if (
+      error?.message?.includes('Unknown argument `status`') ||
+      error?.message?.includes('Unknown argument `multiLocationEnabled`') ||
+      error?.message?.includes('Unknown argument `locationDrafts`') ||
+      error?.message?.includes('Unknown argument `organizationSlug`') ||
+      error?.code === 'P2025'
+    ) {
       console.warn('[Session Manager] Status field not available, updating without status field');
-      await prisma.setupSession.update({
+      await (prisma as any).setupSession.update({
         where: { token },
         data: {
           progress: updatedProgress as any,
@@ -406,7 +429,9 @@ export async function saveProgress(
 export async function linkSetupSessionToLounge(
   token: string,
   userId: string,
-  loungeId: string
+  loungeId: string,
+  loungeIds?: string[],
+  organizationId?: string | null
 ): Promise<void> {
   const setupSession = await prisma.setupSession.findUnique({
     where: { token },
@@ -419,20 +444,27 @@ export async function linkSetupSessionToLounge(
   // Transition: completed → activated
   // Graceful fallback: status field may not exist if migration hasn't run
   try {
-    await prisma.setupSession.update({
+    await (prisma as any).setupSession.update({
       where: { token },
       data: {
         userId,
         loungeId,
+        organizationId: organizationId || null,
+        activatedLoungeIds: Array.isArray(loungeIds) && loungeIds.length ? loungeIds : [loungeId],
         status: 'activated',
         updatedAt: new Date(),
       },
     });
   } catch (error: any) {
     // If status field doesn't exist, update without it (graceful degradation)
-    if (error?.message?.includes('Unknown argument `status`') || error?.code === 'P2025') {
+    if (
+      error?.message?.includes('Unknown argument `status`') ||
+      error?.message?.includes('Unknown argument `organizationId`') ||
+      error?.message?.includes('Unknown argument `activatedLoungeIds`') ||
+      error?.code === 'P2025'
+    ) {
       console.warn('[Session Manager] Status field not available, updating without status field');
-      await prisma.setupSession.update({
+      await (prisma as any).setupSession.update({
         where: { token },
         data: {
           userId,
