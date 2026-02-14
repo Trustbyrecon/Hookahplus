@@ -192,9 +192,20 @@ function FireSessionDashboardContent() {
         total24h: number;
         critical24h: number;
         warning24h: number;
+        byActionType?: Record<string, number>;
+        latestActionType?: string | null;
+        latestActionAt?: string | null;
       };
     }>
   >([]);
+  const [reconcilePolicyDefaults, setReconcilePolicyDefaults] = useState<{
+    cadenceMinutes: number;
+    graceWindowMinutes: number;
+    suppressionWindowMinutes: number;
+    unassignedTicketAlertAfterRuns: number;
+    reconcileDeltaAlertMin: number;
+    reconcileDeltaPctAlertMin: number;
+  } | null>(null);
   
   // Determine demo source: onboarding (from /demo/[slug]) or marketing (direct FSD access)
   const effectiveDemoSource: 'onboarding' | 'marketing' = demoSource || (isDemoSlug ? 'onboarding' : 'marketing');
@@ -629,6 +640,9 @@ function FireSessionDashboardContent() {
         setReconcileStatusRows(data.lounges);
       } else {
         setReconcileStatusRows([]);
+      }
+      if (data?.policyDefaults) {
+        setReconcilePolicyDefaults(data.policyDefaults);
       }
     } catch (error) {
       console.error("[FSD] failed to load reconcile status", error);
@@ -1100,6 +1114,13 @@ function FireSessionDashboardContent() {
                     </button>
                   )}
                 </div>
+                {reconcilePolicyDefaults ? (
+                  <p className="text-[11px] text-zinc-500 mb-2">
+                    Org policy defaults: {reconcilePolicyDefaults.cadenceMinutes}m cadence, {reconcilePolicyDefaults.graceWindowMinutes}m grace,
+                    {` `}alert on delta >= {reconcilePolicyDefaults.reconcileDeltaAlertMin}
+                    {` `}or {reconcilePolicyDefaults.reconcileDeltaPctAlertMin}%.
+                  </p>
+                ) : null}
                 {reconcileStatusRows.length === 0 ? (
                   <p className="text-[11px] text-zinc-500">No reconcile metadata yet.</p>
                 ) : (
@@ -1141,6 +1162,12 @@ function FireSessionDashboardContent() {
                             Window end: {row.lastWindowTo ? new Date(row.lastWindowTo).toLocaleString() : "n/a"} ·
                             Drift 24h: {row.drift24h.total24h} total / {row.drift24h.warning24h} warning / {row.drift24h.critical24h} critical
                           </p>
+                          {row.drift24h.latestActionType ? (
+                            <p className="text-[11px] text-zinc-400 mt-1">
+                              Latest recon action: {row.drift24h.latestActionType}
+                              {row.drift24h.latestActionAt ? ` (${new Date(row.drift24h.latestActionAt).toLocaleString()})` : ""}
+                            </p>
+                          ) : null}
                           <p className={`text-[11px] mt-1 ${hint.className}`}>
                             {hint.text}
                           </p>

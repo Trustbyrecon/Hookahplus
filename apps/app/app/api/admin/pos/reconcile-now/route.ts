@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { hasRole } from "../../../../../lib/auth";
 import { processSquareRawEvents } from "../../../../../lib/square/processor";
 import { reconcileAndHealSquare } from "../../../../../lib/square/reconcile";
+import { getReconcilePolicyDefaults } from "../../../../../lib/square/reconcile-policy";
 
 type ReconcileNowBody = {
   loungeId?: string;
@@ -41,14 +42,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const processLimitRaw = Number(body.processLimit ?? 200);
-    const processLimit = Number.isFinite(processLimitRaw) ? Math.max(10, Math.min(1000, processLimitRaw)) : 200;
+    const policyDefaults = getReconcilePolicyDefaults();
+    const processLimitRaw = Number(body.processLimit ?? policyDefaults.processLimit);
+    const processLimit = Number.isFinite(processLimitRaw)
+      ? Math.max(10, Math.min(1000, processLimitRaw))
+      : policyDefaults.processLimit;
 
-    const sinceMinutesRaw = Number(body.sinceMinutes ?? 120);
-    const sinceMinutes = Number.isFinite(sinceMinutesRaw) ? Math.max(5, Math.min(60 * 24 * 14, sinceMinutesRaw)) : 120;
+    const sinceMinutesRaw = Number(body.sinceMinutes ?? policyDefaults.sinceMinutes);
+    const sinceMinutes = Number.isFinite(sinceMinutesRaw)
+      ? Math.max(5, Math.min(60 * 24 * 14, sinceMinutesRaw))
+      : policyDefaults.sinceMinutes;
 
-    const orderLimitRaw = Number(body.orderLimit ?? 50);
-    const orderLimit = Number.isFinite(orderLimitRaw) ? Math.max(1, Math.min(200, orderLimitRaw)) : 50;
+    const orderLimitRaw = Number(body.orderLimit ?? policyDefaults.orderLimit);
+    const orderLimit = Number.isFinite(orderLimitRaw)
+      ? Math.max(1, Math.min(200, orderLimitRaw))
+      : policyDefaults.orderLimit;
 
     const processed = await processSquareRawEvents(processLimit);
     const perLounge = [] as Array<{ loungeId: string; ok: boolean; result?: unknown; error?: string }>;
@@ -59,13 +67,13 @@ export async function POST(req: NextRequest) {
           loungeId,
           sinceMinutes,
           limit: orderLimit,
-          graceWindowMinutes: 10,
-          cadenceMinutes: 15,
-          suppressionWindowMinutes: 60,
-          unassignedTicketAlertAfterRuns: 2,
-          reconcileDeltaAlertMin: 2,
-          reconcileDeltaPctAlertMin: 1,
-          widenWindowMinutes: 30,
+          graceWindowMinutes: policyDefaults.graceWindowMinutes,
+          cadenceMinutes: policyDefaults.cadenceMinutes,
+          suppressionWindowMinutes: policyDefaults.suppressionWindowMinutes,
+          unassignedTicketAlertAfterRuns: policyDefaults.unassignedTicketAlertAfterRuns,
+          reconcileDeltaAlertMin: policyDefaults.reconcileDeltaAlertMin,
+          reconcileDeltaPctAlertMin: policyDefaults.reconcileDeltaPctAlertMin,
+          widenWindowMinutes: policyDefaults.widenWindowMinutes,
         });
         perLounge.push({ loungeId, ok: true, result: recon });
       } catch (error) {
@@ -81,6 +89,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: failed === 0,
       processed,
+      policyDefaults,
       requestedLounges: loungeIds,
       perLounge,
       failed,

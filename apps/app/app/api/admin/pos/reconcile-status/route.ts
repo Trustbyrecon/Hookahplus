@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hasRole } from "../../../../../lib/auth";
 import { prisma } from "../../../../../lib/db";
+import { getReconcilePolicyDefaults } from "../../../../../lib/square/reconcile-policy";
 
 /**
  * GET /api/admin/pos/reconcile-status
@@ -36,6 +37,7 @@ export async function GET(req: NextRequest) {
 
     const now = Date.now();
     const since24h = new Date(now - 24 * 60 * 60 * 1000);
+    const policyDefaults = getReconcilePolicyDefaults();
 
     const cursors = (prisma as any)?.squareReconCursor?.findMany
       ? await (prisma as any).squareReconCursor.findMany({
@@ -77,6 +79,8 @@ export async function GET(req: NextRequest) {
         critical24h: number;
         warning24h: number;
         byActionType: Record<string, number>;
+        latestActionType: string | null;
+        latestActionAt: Date | null;
       }
     >();
 
@@ -86,6 +90,8 @@ export async function GET(req: NextRequest) {
         critical24h: 0,
         warning24h: 0,
         byActionType: {},
+        latestActionType: null,
+        latestActionAt: null,
       });
     }
 
@@ -98,6 +104,10 @@ export async function GET(req: NextRequest) {
       if (event.severity === "warning") bucket.warning24h += 1;
       if (typeof event.action_type === "string" && event.action_type) {
         bucket.byActionType[event.action_type] = (bucket.byActionType[event.action_type] || 0) + 1;
+        if (!bucket.latestActionType) {
+          bucket.latestActionType = event.action_type;
+          bucket.latestActionAt = event.created_at instanceof Date ? event.created_at : null;
+        }
       }
     }
 
@@ -109,13 +119,21 @@ export async function GET(req: NextRequest) {
         lastRunId: cursor?.lastRunId || null,
         lastWindowTo: cursor?.lastWindowTo || null,
         updatedAt: cursor?.updatedAt || null,
-        drift24h: drift,
+        drift24h: {
+          total24h: drift.total24h,
+          critical24h: drift.critical24h,
+          warning24h: drift.warning24h,
+          byActionType: drift.byActionType,
+          latestActionType: drift.latestActionType,
+          latestActionAt: drift.latestActionAt,
+        },
       };
     });
 
     return NextResponse.json({
       success: true,
       generatedAt: new Date(now).toISOString(),
+      policyDefaults,
       lounges,
     });
   } catch (error) {
