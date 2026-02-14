@@ -17,6 +17,7 @@
     "db:status": "prisma migrate status",
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "prisma migrate reset --force && npm run db:seed",
+    "db:test:connectivity": "tsx scripts/simulate-db-connectivity.ts",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",

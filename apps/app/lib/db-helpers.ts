@@ -121,6 +121,42 @@ export async function testDatabaseConnection(
 }
 
 /**
+ * Build practical hints for Prisma connectivity failures (P1001/P1012).
+ */
+export function getDatabaseConnectionHints(params?: {
+  databaseUrl?: string;
+  directUrl?: string;
+  fallbackUrl?: string;
+}): string[] {
+  const databaseUrl = (params?.databaseUrl || process.env.DATABASE_URL || "").trim();
+  const directUrl = (params?.directUrl || process.env.DIRECT_URL || "").trim();
+  const fallbackUrl = (params?.fallbackUrl || process.env.DATABASE_URL_FALLBACK || "").trim();
+  const hints: string[] = [];
+
+  hints.push("Verify DATABASE_URL is set and includes a valid connection protocol (or file: for sqlite).");
+
+  if (databaseUrl.includes("supabase.com")) {
+    if (databaseUrl.includes(":5432")) {
+      hints.push("Current URL uses :5432. If this network blocks direct DB access, use a reachable pooler URL (:6543) as DATABASE_URL_FALLBACK.");
+    }
+    if (databaseUrl.includes(":6543")) {
+      hints.push("Current URL uses :6543 pooler. For migrations, use a reachable DIRECT_URL (typically :5432).");
+    }
+  }
+
+  if (!directUrl) {
+    hints.push("Set DIRECT_URL for schema migrations (db push / migrate) when DATABASE_URL points to a pooler.");
+  }
+
+  if (!fallbackUrl) {
+    hints.push("Optional: set DATABASE_URL_FALLBACK for local failover when primary route is unavailable.");
+  }
+
+  hints.push("Check firewall/network rules for database host:port reachability.");
+  return hints;
+}
+
+/**
  * Timeout configurations for different query types
  */
 export const QUERY_TIMEOUTS = {

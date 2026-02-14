@@ -29,11 +29,21 @@ function buildDatabaseUrlOrThrow(): string {
   }
 
   let databaseUrl = (process.env.DATABASE_URL || "").trim();
+  const fallbackUrl = (process.env.DATABASE_URL_FALLBACK || "").trim();
 
   if (!databaseUrl) {
     throw new Error(
       "DATABASE_URL is not set. Set DATABASE_URL to your database connection string (for example from Supabase/Vercel env).",
     );
+  }
+
+  // P1001 hardening:
+  // Allow an explicit fallback URL when the primary URL is known to fail in some networks.
+  // This mirrors the common Supabase direct-vs-pooler split.
+  if (process.env.USE_DATABASE_URL_FALLBACK === "true" && fallbackUrl) {
+    databaseUrl = fallbackUrl;
+    process.env.DATABASE_URL = databaseUrl;
+    console.warn("[db.ts] ⚠️ Using DATABASE_URL_FALLBACK because USE_DATABASE_URL_FALLBACK=true");
   }
 
   // Local dev hardening (kept from prior version):
@@ -53,6 +63,22 @@ function buildDatabaseUrlOrThrow(): string {
     databaseUrl = databaseUrl.includes("?")
       ? `${databaseUrl}&query_timeout=5000`
       : `${databaseUrl}?query_timeout=5000`;
+  }
+
+  // Helpful diagnostics for common Supabase P1001 cases.
+  if (process.env.NODE_ENV !== "production" && databaseUrl.includes("supabase.com")) {
+    const isDirect5432 = databaseUrl.includes(":5432");
+    const isPooler6543 = databaseUrl.includes(":6543");
+    if (isDirect5432 && !fallbackUrl) {
+      console.warn(
+        "[db.ts] ℹ️ Using Supabase :5432 URL. If you hit P1001 locally, add DATABASE_URL_FALLBACK with your pooler URL (:6543).",
+      );
+    }
+    if (isPooler6543) {
+      console.warn(
+        "[db.ts] ℹ️ Using Supabase pooler URL (:6543). For migrations, prefer a direct URL via DIRECT_URL or a reachable :5432 endpoint.",
+      );
+    }
   }
 
   return databaseUrl;

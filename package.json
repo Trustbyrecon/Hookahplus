@@ -29,6 +29,7 @@
     "cmd:test:sync:faults": "tsx scripts/cmd.test.sync.guestToApp.faults.ts",
     "cmd:sync:inspect": "echo 'Open /admin/sync in your browser'",
     "db:migrate:app": "cd apps/app && npx prisma migrate deploy",
+    "test:db:fallback": "npm -w @hookahplus/app run db:test:connectivity",
     "test:e2e": "cypress run",
     "test:e2e:open": "cypress open",
     "test": "npm --workspace @hookahplus/app run test",
