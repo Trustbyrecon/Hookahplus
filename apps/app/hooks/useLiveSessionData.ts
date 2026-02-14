@@ -204,6 +204,10 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
       // Load active sessions from root Prisma API
       // Add firstLightFocus param if First Light mode is enabled
       const sessionsUrl = new URL('/api/sessions', window.location.origin);
+      const selectedLoungeId = new URLSearchParams(window.location.search).get('lounge');
+      if (selectedLoungeId) {
+        sessionsUrl.searchParams.set('loungeId', selectedLoungeId);
+      }
       if (process.env.NEXT_PUBLIC_FIRST_LIGHT_MODE === 'true' || 
           window.location.search.includes('firstLightFocus=true')) {
         sessionsUrl.searchParams.set('firstLightFocus', 'true');
@@ -479,6 +483,10 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
       
       console.log('[useLiveSessionData] Loading metrics...');
       const metricsUrl = new URL('/api/metrics/live', window.location.origin);
+      const selectedLoungeId = new URLSearchParams(window.location.search).get('lounge');
+      if (selectedLoungeId) {
+        metricsUrl.searchParams.set('loungeId', selectedLoungeId);
+      }
       if (metricsEnabled) {
         metricsUrl.searchParams.set('metricsEnabled', 'true');
         metricsUrl.searchParams.set('alphaStability', 'true');

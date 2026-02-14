@@ -413,6 +413,7 @@ export const GET = withRequestContext(async (req: NextRequest): Promise<NextResp
   try {
     const { searchParams } = new URL(req.url);
     const sessionId = searchParams.get('sessionId') || searchParams.get('id');
+    const loungeIdFilter = searchParams.get('loungeId') || searchParams.get('lounge');
     const status = searchParams.get('status');
     const stage = searchParams.get('stage');
     const role = searchParams.get('role') as UserRole;
@@ -477,6 +478,11 @@ export const GET = withRequestContext(async (req: NextRequest): Promise<NextResp
     // If authenticated, filter by tenant_id (RLS will also enforce)
     if (tenantId) {
       whereClause.tenantId = tenantId;
+    }
+
+    // Optional location scope for operator multi-location context.
+    if (loungeIdFilter) {
+      whereClause.loungeId = loungeIdFilter;
     }
     
     // CRITICAL: Exclude voided/canceled sessions - they are no longer viable transactions
@@ -682,10 +688,17 @@ export const GET = withRequestContext(async (req: NextRequest): Promise<NextResp
     }
     
     if (isDbConnectionError) {
+      const connectivityHints = [
+        'Check DATABASE_URL format and host reachability.',
+        'If using Supabase and :5432 fails locally, use a reachable pooler URL (:6543) for runtime queries.',
+        'Set DATABASE_URL_FALLBACK and USE_DATABASE_URL_FALLBACK=true for local failover.',
+        'For migrations, use DIRECT_URL pointing to a reachable direct endpoint.',
+      ];
       return NextResponse.json({ 
-        error: 'Database connection failed',
+        error: 'Database connection failed (P1001/P1012)',
         details: errorMessage,
-        hint: 'Check DATABASE_URL and ensure database is running'
+        hint: 'Check DATABASE_URL and ensure database is running',
+        connectivityHints,
       }, { 
         status: 503,
         headers: getCorsHeaders(req),
@@ -1574,6 +1587,11 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
             sessionId: fallbackSession.id,
             session: fallbackSession,
             message: 'Database unavailable. Created an ephemeral session for testing (will not persist).',
+            connectivityHints: [
+              'Set DATABASE_URL to a reachable DB host.',
+              'If direct URL (:5432) is blocked on this network, use a pooler URL (:6543) for runtime.',
+              'Set DATABASE_URL_FALLBACK + USE_DATABASE_URL_FALLBACK=true to auto-failover locally.',
+            ],
             nextActions: ['CLAIM_PREP', 'PUT_ON_HOLD'],
             businessLogic: 'Ephemeral session created so you can keep testing without database setup.'
           },

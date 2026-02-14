@@ -67,6 +67,7 @@ interface SimpleFSDDesignProps {
   refreshSessions?: () => void | Promise<void>;
   className?: string;
   isDemoMode?: boolean;
+  scopeLabel?: string;
 }
 
 // Enhanced State Machine - Complete Hookah Lounge Operations
@@ -134,7 +135,8 @@ export default function SimpleFSDDesign({
   onSessionAction,
   refreshSessions,
   className = '',
-  isDemoMode = false
+  isDemoMode = false,
+  scopeLabel
 }: SimpleFSDDesignProps) {
   // Initialize feature flags with defaults to avoid hydration mismatch
   const [featureFlags, setFeatureFlags] = useState({
@@ -1403,6 +1405,11 @@ export default function SimpleFSDDesign({
           <div>
             <h2 className="text-xl font-semibold text-white">Session Management</h2>
             <p className="text-sm text-zinc-400">Manage active hookah sessions</p>
+            {scopeLabel ? (
+              <div className="mt-2 inline-flex items-center rounded-full border border-teal-500/40 bg-teal-500/10 px-3 py-1 text-xs font-medium text-teal-200">
+                Scoped to: {scopeLabel}
+              </div>
+            ) : null}
           </div>
         </div>
         

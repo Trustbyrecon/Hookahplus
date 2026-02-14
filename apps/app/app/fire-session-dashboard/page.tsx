@@ -14,7 +14,9 @@ import {
   RefreshCw,
   Shield,
   CheckCircle,
-  Share2
+  Share2,
+  Building2,
+  MapPin
 } from 'lucide-react';
 import { SessionStatus } from '../../types/session';
 import Breadcrumbs from '../../components/Breadcrumbs';
@@ -29,6 +31,8 @@ import { WeekOneWinsCard } from '../../components/launchpad/WeekOneWinsCard';
 import { PreviewModeBanner } from '../../components/launchpad/PreviewModeBanner';
 import ShiftGuide from '../../components/ShiftGuide';
 import { getFeatureFlags, markFirstLightCompleted, enableMetrics, activateAlphaStability } from '../../lib/feature-flags';
+
+const SELECT_ALL_LOCATIONS = '__all_locations__';
 
 export default function FireSessionDashboard() {
   return (
@@ -144,11 +148,53 @@ function FireSessionDashboardContent() {
   const paymentConfirmed = searchParams.get('payment') === 'confirmed';
   const sessionIdFromUrl = searchParams.get('session');
   const demoLounge = searchParams.get('lounge') || null;
+  const loungeIdsParam = searchParams.get('loungeIds');
+  const organizationIdParam = searchParams.get('organizationId');
   const showWelcome = searchParams.get('welcome') === 'true';
   const demoSource = searchParams.get('source') as 'onboarding' | 'marketing' | null;
   const isDemoSlug = isDemoMode && demoLounge !== null; // True when accessed via /demo/[slug]
   const demoFlavorsParam = searchParams.get('flavors');
   const demoMenuFlavors = demoFlavorsParam ? demoFlavorsParam.split(',').filter(Boolean) : null;
+  const parsedLoungeIds = React.useMemo(
+    () => (loungeIdsParam || '').split(',').map((id) => id.trim()).filter(Boolean),
+    [loungeIdsParam]
+  );
+  const candidateLoungeIds = React.useMemo(
+    () => Array.from(new Set([...(demoLounge ? [demoLounge] : []), ...parsedLoungeIds])),
+    [demoLounge, parsedLoungeIds]
+  );
+  const candidateLoungeIdsKey = React.useMemo(
+    () => candidateLoungeIds.join(','),
+    [candidateLoungeIds]
+  );
+  const [selectedLoungeId, setSelectedLoungeId] = useState<string | null>(demoLounge || parsedLoungeIds[0] || null);
+  const [week1Rollup, setWeek1Rollup] = useState<{
+    locationCount: number;
+    activeLocations: number;
+    totalWins: number;
+    totalCompedSessionsAvoided: number;
+    totalAddOnsCaptured: number;
+    totalRepeatGuestsRecognized: number;
+    avgTimeSavedPerShift: number;
+  } | null>(null);
+  const [rollupLoading, setRollupLoading] = useState(false);
+  const [reconcileNowRunning, setReconcileNowRunning] = useState(false);
+  const [reconcileNowMessage, setReconcileNowMessage] = useState<string | null>(null);
+  const [reconcileNowOk, setReconcileNowOk] = useState<boolean | null>(null);
+  const [reconcileStatusLoading, setReconcileStatusLoading] = useState(false);
+  const [reconcileStatusRows, setReconcileStatusRows] = useState<
+    Array<{
+      loungeId: string;
+      lastRunId: string | null;
+      lastWindowTo: string | null;
+      updatedAt: string | null;
+      drift24h: {
+        total24h: number;
+        critical24h: number;
+        warning24h: number;
+      };
+    }>
+  >([]);
   
   // Determine demo source: onboarding (from /demo/[slug]) or marketing (direct FSD access)
   const effectiveDemoSource: 'onboarding' | 'marketing' = demoSource || (isDemoSlug ? 'onboarding' : 'marketing');
@@ -156,6 +202,66 @@ function FireSessionDashboardContent() {
   // Use session context for shared state
   const { sessions, metrics, loading, error, refreshSessions, updateSessionState, lastUpdated } = useSessionContext();
   const { currentTheme } = useTheme();
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (selectedLoungeId) {
+      localStorage.setItem('active_lounge', selectedLoungeId);
+    } else {
+      localStorage.setItem('active_lounge', SELECT_ALL_LOCATIONS);
+    }
+    const url = new URL(window.location.href);
+    if (selectedLoungeId) {
+      url.searchParams.set('lounge', selectedLoungeId);
+    } else {
+      url.searchParams.delete('lounge');
+    }
+    window.history.replaceState({}, '', url.toString());
+    refreshSessions();
+  }, [selectedLoungeId, refreshSessions]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (selectedLoungeId) return;
+    const remembered = localStorage.getItem('active_lounge');
+    if (remembered === SELECT_ALL_LOCATIONS) {
+      return;
+    }
+    if (remembered && candidateLoungeIds.includes(remembered)) {
+      setSelectedLoungeId(remembered);
+    }
+  }, [candidateLoungeIds, selectedLoungeId]);
+
+  useEffect(() => {
+    if (selectedLoungeId === null) return;
+    if (selectedLoungeId && candidateLoungeIds.includes(selectedLoungeId)) return;
+    setSelectedLoungeId(candidateLoungeIds[0] || null);
+  }, [candidateLoungeIds, selectedLoungeId]);
+
+  useEffect(() => {
+    async function fetchWeek1Rollup() {
+      if (isDemoMode) return;
+      if (!organizationIdParam && candidateLoungeIds.length < 2) {
+        setWeek1Rollup(null);
+        return;
+      }
+      setRollupLoading(true);
+      try {
+        const query = organizationIdParam
+          ? `organizationId=${encodeURIComponent(organizationIdParam)}`
+          : `loungeIds=${encodeURIComponent(candidateLoungeIds.join(','))}`;
+        const response = await fetch(`/api/launchpad/week1-wins?${query}`);
+        if (!response.ok) return;
+        const data = await response.json();
+        setWeek1Rollup(data.metrics || null);
+      } catch (err) {
+        console.error('[FSD] Failed to fetch week-1 rollup:', err);
+      } finally {
+        setRollupLoading(false);
+      }
+    }
+    fetchWeek1Rollup();
+  }, [isDemoMode, organizationIdParam, candidateLoungeIds, candidateLoungeIdsKey]);
 
   // Check database connection status
   useEffect(() => {
@@ -508,6 +614,132 @@ function FireSessionDashboardContent() {
     return `bg-gradient-to-br ${currentTheme.gradients.background} text-${currentTheme.colors.text}`;
   };
 
+  const loadReconcileStatus = React.useCallback(async () => {
+    if (isDemoMode || candidateLoungeIds.length === 0) {
+      setReconcileStatusRows([]);
+      return;
+    }
+    setReconcileStatusLoading(true);
+    try {
+      const query = `loungeIds=${encodeURIComponent(candidateLoungeIds.join(","))}`;
+      const response = await fetch(`/api/admin/pos/reconcile-status?${query}`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      if (Array.isArray(data?.lounges)) {
+        setReconcileStatusRows(data.lounges);
+      } else {
+        setReconcileStatusRows([]);
+      }
+    } catch (error) {
+      console.error("[FSD] failed to load reconcile status", error);
+      setReconcileStatusRows([]);
+    } finally {
+      setReconcileStatusLoading(false);
+    }
+  }, [isDemoMode, candidateLoungeIds, candidateLoungeIdsKey]);
+
+  useEffect(() => {
+    loadReconcileStatus();
+  }, [loadReconcileStatus]);
+
+  const handleRunReconcileNow = async () => {
+    const targetLounges = selectedLoungeId ? [selectedLoungeId] : candidateLoungeIds;
+    if (targetLounges.length === 0) {
+      setReconcileNowOk(false);
+      setReconcileNowMessage("No lounge scope found. Select a location or pass loungeIds in the URL.");
+      return;
+    }
+
+    setReconcileNowRunning(true);
+    setReconcileNowMessage(null);
+    setReconcileNowOk(null);
+
+    try {
+      const response = await fetch("/api/admin/pos/reconcile-now", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ loungeIds: targetLounges }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data?.success === false) {
+        throw new Error(data?.details || data?.error || `HTTP ${response.status}`);
+      }
+
+      const failed = typeof data?.failed === "number" ? data.failed : 0;
+      const requested = Array.isArray(data?.requestedLounges) ? data.requestedLounges.length : targetLounges.length;
+      const processedCount = typeof data?.processed?.processed === "number" ? data.processed.processed : undefined;
+      const processedText = processedCount != null ? `, processed ${processedCount} raw events` : "";
+      setReconcileNowOk(failed === 0);
+      setReconcileNowMessage(
+        failed === 0
+          ? `Reconcile completed for ${requested} lounge(s)${processedText}.`
+          : `Reconcile completed with ${failed} failure(s) across ${requested} lounge(s).`,
+      );
+      refreshSessions();
+      loadReconcileStatus();
+    } catch (error) {
+      setReconcileNowOk(false);
+      setReconcileNowMessage(error instanceof Error ? error.message : "Failed to run reconcile now.");
+    } finally {
+      setReconcileNowRunning(false);
+    }
+  };
+
+  const getReconcileSeverity = (row: {
+    drift24h: { critical24h: number; warning24h: number; total24h: number };
+  }): "critical" | "watch" | "healthy" => {
+    if (row.drift24h.critical24h > 0) return "critical";
+    if (row.drift24h.warning24h > 0 || row.drift24h.total24h > 0) return "watch";
+    return "healthy";
+  };
+
+  const getSeverityStyle = (severity: "critical" | "watch" | "healthy") => {
+    if (severity === "critical") {
+      return {
+        label: "Critical",
+        className: "border-red-500/50 bg-red-500/15 text-red-200",
+      };
+    }
+    if (severity === "watch") {
+      return {
+        label: "Watch",
+        className: "border-amber-500/50 bg-amber-500/15 text-amber-200",
+      };
+    }
+    return {
+      label: "Healthy",
+      className: "border-emerald-500/50 bg-emerald-500/15 text-emerald-200",
+    };
+  };
+
+  const getEscalationHint = (row: {
+    drift24h: { critical24h: number; warning24h: number; total24h: number };
+  }) => {
+    if (row.drift24h.critical24h > 0) {
+      return {
+        text: "Escalated: critical drift detected. Open POS Ops and verify Slack alert delivery.",
+        className: "text-red-300",
+      };
+    }
+    if (row.drift24h.warning24h >= 2) {
+      return {
+        text: "Escalation threshold met: 2+ warnings in 24h. Confirm suppression window and monitor next run.",
+        className: "text-amber-300",
+      };
+    }
+    if (row.drift24h.warning24h === 1) {
+      return {
+        text: "Watch: first warning in 24h. Escalates on repeated warning across consecutive runs.",
+        className: "text-amber-300",
+      };
+    }
+    return {
+      text: "Healthy: no drift escalation signals in the last 24h.",
+      className: "text-emerald-300",
+    };
+  };
+
   return (
     <div className={`min-h-screen ${getThemeClasses()}`}>
       <Suspense fallback={<div className="h-16 bg-zinc-950 border-b border-zinc-800"></div>}>
@@ -641,7 +873,7 @@ function FireSessionDashboardContent() {
               compact={true} 
               window="24h" 
               autoRefresh={true}
-              loungeId={demoLounge || undefined}
+              loungeId={selectedLoungeId || undefined}
             />
           </div>
         )}
@@ -778,10 +1010,165 @@ function FireSessionDashboardContent() {
           </div>
         )}
 
-        {/* Week-1 Wins Card - Show for lounges in first 7 days */}
-        {!isDemoMode && demoLounge && (
+        {/* Operator location context (multi-location wedge) */}
+        {!isDemoMode && candidateLoungeIds.length > 1 && (
+          <div className="mb-6 bg-zinc-900/60 border border-zinc-800 rounded-lg p-4">
+            <div className="flex items-center gap-2 text-zinc-300 mb-3">
+              <Building2 className="w-4 h-4 text-teal-400" />
+              <span className="text-sm font-medium">Operator Location Context</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <label className="text-xs text-zinc-400">Active location:</label>
+              <select
+                value={selectedLoungeId || SELECT_ALL_LOCATIONS}
+                onChange={(e) => setSelectedLoungeId(e.target.value === SELECT_ALL_LOCATIONS ? null : e.target.value)}
+                className="px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white"
+              >
+                <option value={SELECT_ALL_LOCATIONS}>All locations</option>
+                {candidateLoungeIds.map((id) => (
+                  <option key={id} value={id}>
+                    {id}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {week1Rollup && (
+              <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="bg-zinc-800/70 rounded-lg p-3">
+                  <p className="text-xs text-zinc-400">Locations</p>
+                  <p className="text-lg font-semibold text-white">{week1Rollup.locationCount}</p>
+                </div>
+                <div className="bg-zinc-800/70 rounded-lg p-3">
+                  <p className="text-xs text-zinc-400">Active</p>
+                  <p className="text-lg font-semibold text-white">{week1Rollup.activeLocations}</p>
+                </div>
+                <div className="bg-zinc-800/70 rounded-lg p-3">
+                  <p className="text-xs text-zinc-400">Total Wins</p>
+                  <p className="text-lg font-semibold text-teal-400">{week1Rollup.totalWins}</p>
+                </div>
+                <div className="bg-zinc-800/70 rounded-lg p-3">
+                  <p className="text-xs text-zinc-400">Avg Time Saved/Shift</p>
+                  <p className="text-lg font-semibold text-white">{week1Rollup.avgTimeSavedPerShift}m</p>
+                </div>
+              </div>
+            )}
+            {rollupLoading && (
+              <p className="mt-3 text-xs text-zinc-500">Loading org rollup...</p>
+            )}
+            <div className="mt-4 border-t border-zinc-800 pt-3">
+              <p className="text-xs font-medium text-zinc-400 mb-2">Phase C Ready</p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={handleRunReconcileNow}
+                  disabled={reconcileNowRunning}
+                  className="px-3 py-1.5 rounded-lg bg-teal-700 hover:bg-teal-600 disabled:opacity-60 disabled:cursor-not-allowed border border-teal-600 text-xs text-white transition-colors"
+                >
+                  {reconcileNowRunning ? "Running reconcile..." : "Run reconcile now"}
+                </button>
+                <a
+                  href="/admin/pos-inbox"
+                  className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-xs text-zinc-200 transition-colors"
+                >
+                  Open POS Inbox
+                </a>
+                <a
+                  href="/admin/pos-ops"
+                  className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-xs text-zinc-200 transition-colors"
+                >
+                  Open POS Ops View
+                </a>
+                <a
+                  href="/square/settings"
+                  className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-xs text-zinc-200 transition-colors"
+                >
+                  Verify Square Status
+                </a>
+              </div>
+              <div className="mt-3 bg-zinc-800/50 border border-zinc-700 rounded-lg p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-medium text-zinc-300">Reconcile confidence (24h)</p>
+                  {reconcileStatusLoading ? (
+                    <span className="text-[11px] text-zinc-500">Loading...</span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={loadReconcileStatus}
+                      className="text-[11px] text-zinc-400 hover:text-zinc-200 transition-colors"
+                    >
+                      Refresh
+                    </button>
+                  )}
+                </div>
+                {reconcileStatusRows.length === 0 ? (
+                  <p className="text-[11px] text-zinc-500">No reconcile metadata yet.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {reconcileStatusRows
+                      .filter((row) => (selectedLoungeId ? row.loungeId === selectedLoungeId : true))
+                      .map((row) => (
+                        <div key={row.loungeId} className="rounded border border-zinc-700 bg-zinc-900/50 px-2 py-2">
+                          {(() => {
+                            const hint = getEscalationHint(row);
+                            return (
+                              <>
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-zinc-200 font-medium">{row.loungeId}</span>
+                              {(() => {
+                                const severity = getReconcileSeverity(row);
+                                const style = getSeverityStyle(severity);
+                                return (
+                                  <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${style.className}`}>
+                                    {style.label}
+                                  </span>
+                                );
+                              })()}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[11px] text-zinc-400">
+                                Last run: {row.updatedAt ? new Date(row.updatedAt).toLocaleString() : "Never"}
+                              </span>
+                              <a
+                                href={`/admin/pos-ops?loungeId=${encodeURIComponent(row.loungeId)}`}
+                                className="rounded border border-zinc-600 bg-zinc-800 px-2 py-1 text-[11px] text-zinc-200 hover:bg-zinc-700 transition-colors"
+                              >
+                                Open POS Ops
+                              </a>
+                            </div>
+                          </div>
+                          <p className="text-[11px] text-zinc-500 mt-1">
+                            Window end: {row.lastWindowTo ? new Date(row.lastWindowTo).toLocaleString() : "n/a"} ·
+                            Drift 24h: {row.drift24h.total24h} total / {row.drift24h.warning24h} warning / {row.drift24h.critical24h} critical
+                          </p>
+                          <p className={`text-[11px] mt-1 ${hint.className}`}>
+                            {hint.text}
+                          </p>
+                              </>
+                            );
+                          })()}
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+              {reconcileNowMessage ? (
+                <p className={`mt-3 text-xs ${reconcileNowOk ? "text-teal-300" : "text-amber-300"}`}>
+                  {reconcileNowMessage}
+                </p>
+              ) : null}
+            </div>
+          </div>
+        )}
+
+        {/* Week-1 Wins Card - Show for active location */}
+        {!isDemoMode && selectedLoungeId && (
           <div className="mb-6">
-            <WeekOneWinsCard loungeId={demoLounge} />
+            <div className="flex items-center gap-2 mb-3 text-xs text-zinc-500">
+              <MapPin className="w-3 h-3" />
+              <span>Week-1 view for: {selectedLoungeId}</span>
+            </div>
+            <WeekOneWinsCard loungeId={selectedLoungeId} />
           </div>
         )}
 
@@ -1028,6 +1415,7 @@ function FireSessionDashboardContent() {
           refreshSessions={refreshSessions}
           onSessionAction={handleStatusChange}
           isDemoMode={isDemoMode}
+          scopeLabel={selectedLoungeId || 'All locations (org-wide)'}
         />
 
         {/* Related Features - Hidden in demo mode */}
