@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hasRole } from "../../../../../lib/auth";
 import { prisma } from "../../../../../lib/db";
-import { getReconcilePolicyDefaults } from "../../../../../lib/square/reconcile-policy";
+import { getEffectiveReconcilePolicy, getReconcilePolicyDefaults } from "../../../../../lib/square/reconcile-policy";
 
 /**
  * GET /api/admin/pos/reconcile-status
@@ -114,8 +114,11 @@ export async function GET(req: NextRequest) {
     const lounges = loungeIds.map((loungeId) => {
       const cursor = cursorByLounge.get(loungeId) || null;
       const drift = driftByLounge.get(loungeId)!;
+      const { policy: effectivePolicy, hasOverride } = getEffectiveReconcilePolicy(loungeId);
       return {
         loungeId,
+        hasPolicyOverride: hasOverride,
+        effectivePolicy,
         lastRunId: cursor?.lastRunId || null,
         lastWindowTo: cursor?.lastWindowTo || null,
         updatedAt: cursor?.updatedAt || null,

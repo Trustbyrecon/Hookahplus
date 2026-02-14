@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { processSquareRawEvents } from "../../../../lib/square/processor";
 import { reconcileAndHealSquare } from "../../../../lib/square/reconcile";
 import { prisma } from "../../../../lib/db";
-import { getReconcilePolicyDefaults } from "../../../../lib/square/reconcile-policy";
+import { getEffectiveReconcilePolicy, getReconcilePolicyDefaults } from "../../../../lib/square/reconcile-policy";
 
 function getBearerToken(req: NextRequest): string | null {
   const authHeader = req.headers.get("authorization");
@@ -75,10 +75,11 @@ async function handle(req: NextRequest) {
 
   // Stage 1: process webhook backlog (raw events → normalized rows)
   const policyDefaults = getReconcilePolicyDefaults();
+  const { policy: effectivePolicy, hasOverride } = getEffectiveReconcilePolicy(loungeId);
   const processLimit = parseInt(
     searchParams.get("processLimit") ||
       searchParams.get("limit") ||
-      String(policyDefaults.processLimit),
+      String(effectivePolicy.processLimit),
     10
   );
   const processed = await processSquareRawEvents(processLimit);
@@ -86,33 +87,33 @@ async function handle(req: NextRequest) {
   // Stage 2: reconciliation fallback (truth pull + heal + intents + slack)
   const sinceMinutes = searchParams.get("sinceMinutes")
     ? Number(searchParams.get("sinceMinutes"))
-    : policyDefaults.sinceMinutes;
+    : effectivePolicy.sinceMinutes;
   const orderLimit = searchParams.get("orderLimit")
     ? Number(searchParams.get("orderLimit"))
-    : policyDefaults.orderLimit;
+    : effectivePolicy.orderLimit;
 
   const graceWindowMinutes = searchParams.get("graceWindowMinutes")
     ? Number(searchParams.get("graceWindowMinutes"))
-    : policyDefaults.graceWindowMinutes;
+    : effectivePolicy.graceWindowMinutes;
   const cadenceMinutes = searchParams.get("cadenceMinutes")
     ? Number(searchParams.get("cadenceMinutes"))
-    : policyDefaults.cadenceMinutes;
+    : effectivePolicy.cadenceMinutes;
   const suppressionWindowMinutes = searchParams.get("suppressionWindowMinutes")
     ? Number(searchParams.get("suppressionWindowMinutes"))
-    : policyDefaults.suppressionWindowMinutes;
+    : effectivePolicy.suppressionWindowMinutes;
   const widenWindowMinutes = searchParams.get("widenWindowMinutes")
     ? Number(searchParams.get("widenWindowMinutes"))
-    : policyDefaults.widenWindowMinutes;
+    : effectivePolicy.widenWindowMinutes;
 
   const reconcileDeltaAlertMin = searchParams.get("reconcileDeltaAlertMin")
     ? Number(searchParams.get("reconcileDeltaAlertMin"))
-    : policyDefaults.reconcileDeltaAlertMin;
+    : effectivePolicy.reconcileDeltaAlertMin;
   const reconcileDeltaPctAlertMin = searchParams.get("reconcileDeltaPctAlertMin")
     ? Number(searchParams.get("reconcileDeltaPctAlertMin"))
-    : policyDefaults.reconcileDeltaPctAlertMin;
+    : effectivePolicy.reconcileDeltaPctAlertMin;
   const unassignedTicketAlertAfterRuns = searchParams.get("unassignedTicketAlertAfterRuns")
     ? Number(searchParams.get("unassignedTicketAlertAfterRuns"))
-    : policyDefaults.unassignedTicketAlertAfterRuns;
+    : effectivePolicy.unassignedTicketAlertAfterRuns;
 
   const recon = await reconcileAndHealSquare({
     loungeId,
@@ -130,6 +131,8 @@ async function handle(req: NextRequest) {
   return NextResponse.json({
     success: true,
     loungeId,
+    hasPolicyOverride: hasOverride,
+    effectivePolicy,
     policyDefaults,
     process: processed,
     recon,

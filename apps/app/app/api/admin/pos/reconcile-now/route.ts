@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { hasRole } from "../../../../../lib/auth";
 import { processSquareRawEvents } from "../../../../../lib/square/processor";
 import { reconcileAndHealSquare } from "../../../../../lib/square/reconcile";
-import { getReconcilePolicyDefaults } from "../../../../../lib/square/reconcile-policy";
+import { getEffectiveReconcilePolicy, getReconcilePolicyDefaults } from "../../../../../lib/square/reconcile-policy";
 
 type ReconcileNowBody = {
   loungeId?: string;
@@ -43,6 +43,10 @@ export async function POST(req: NextRequest) {
     }
 
     const policyDefaults = getReconcilePolicyDefaults();
+    const hasProcessLimitOverride = body.processLimit != null;
+    const hasSinceMinutesOverride = body.sinceMinutes != null;
+    const hasOrderLimitOverride = body.orderLimit != null;
+
     const processLimitRaw = Number(body.processLimit ?? policyDefaults.processLimit);
     const processLimit = Number.isFinite(processLimitRaw)
       ? Math.max(10, Math.min(1000, processLimitRaw))
@@ -59,27 +63,43 @@ export async function POST(req: NextRequest) {
       : policyDefaults.orderLimit;
 
     const processed = await processSquareRawEvents(processLimit);
-    const perLounge = [] as Array<{ loungeId: string; ok: boolean; result?: unknown; error?: string }>;
+    const perLounge = [] as Array<{
+      loungeId: string;
+      ok: boolean;
+      hasPolicyOverride: boolean;
+      appliedPolicy: ReturnType<typeof getReconcilePolicyDefaults>;
+      result?: unknown;
+      error?: string;
+    }>;
 
     for (const loungeId of loungeIds) {
+      const { policy, hasOverride } = getEffectiveReconcilePolicy(loungeId);
       try {
         const recon = await reconcileAndHealSquare({
           loungeId,
-          sinceMinutes,
-          limit: orderLimit,
-          graceWindowMinutes: policyDefaults.graceWindowMinutes,
-          cadenceMinutes: policyDefaults.cadenceMinutes,
-          suppressionWindowMinutes: policyDefaults.suppressionWindowMinutes,
-          unassignedTicketAlertAfterRuns: policyDefaults.unassignedTicketAlertAfterRuns,
-          reconcileDeltaAlertMin: policyDefaults.reconcileDeltaAlertMin,
-          reconcileDeltaPctAlertMin: policyDefaults.reconcileDeltaPctAlertMin,
-          widenWindowMinutes: policyDefaults.widenWindowMinutes,
+          sinceMinutes: hasSinceMinutesOverride ? sinceMinutes : policy.sinceMinutes,
+          limit: hasOrderLimitOverride ? orderLimit : policy.orderLimit,
+          graceWindowMinutes: policy.graceWindowMinutes,
+          cadenceMinutes: policy.cadenceMinutes,
+          suppressionWindowMinutes: policy.suppressionWindowMinutes,
+          unassignedTicketAlertAfterRuns: policy.unassignedTicketAlertAfterRuns,
+          reconcileDeltaAlertMin: policy.reconcileDeltaAlertMin,
+          reconcileDeltaPctAlertMin: policy.reconcileDeltaPctAlertMin,
+          widenWindowMinutes: policy.widenWindowMinutes,
         });
-        perLounge.push({ loungeId, ok: true, result: recon });
+        perLounge.push({
+          loungeId,
+          ok: true,
+          hasPolicyOverride: hasOverride,
+          appliedPolicy: policy,
+          result: recon,
+        });
       } catch (error) {
         perLounge.push({
           loungeId,
           ok: false,
+          hasPolicyOverride: hasOverride,
+          appliedPolicy: policy,
           error: error instanceof Error ? error.message : "Unknown error",
         });
       }
@@ -88,7 +108,7 @@ export async function POST(req: NextRequest) {
     const failed = perLounge.filter((x) => !x.ok).length;
     return NextResponse.json({
       success: failed === 0,
-      processed,
+      processed: hasProcessLimitOverride ? { ...processed, processLimitOverrideApplied: true } : processed,
       policyDefaults,
       requestedLounges: loungeIds,
       perLounge,

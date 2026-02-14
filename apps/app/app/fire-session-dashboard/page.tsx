@@ -185,6 +185,14 @@ function FireSessionDashboardContent() {
   const [reconcileStatusRows, setReconcileStatusRows] = useState<
     Array<{
       loungeId: string;
+      hasPolicyOverride?: boolean;
+      effectivePolicy?: {
+        cadenceMinutes: number;
+        graceWindowMinutes: number;
+        suppressionWindowMinutes: number;
+        reconcileDeltaAlertMin: number;
+        reconcileDeltaPctAlertMin: number;
+      };
       lastRunId: string | null;
       lastWindowTo: string | null;
       updatedAt: string | null;
@@ -1140,9 +1148,16 @@ function FireSessionDashboardContent() {
                                 const severity = getReconcileSeverity(row);
                                 const style = getSeverityStyle(severity);
                                 return (
-                                  <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${style.className}`}>
-                                    {style.label}
-                                  </span>
+                                  <div className="flex items-center gap-1">
+                                    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${style.className}`}>
+                                      {style.label}
+                                    </span>
+                                    {row.hasPolicyOverride ? (
+                                      <span className="inline-flex items-center rounded-full border border-indigo-500/50 bg-indigo-500/15 px-2 py-0.5 text-[10px] font-medium text-indigo-200">
+                                        Override
+                                      </span>
+                                    ) : null}
+                                  </div>
                                 );
                               })()}
                             </div>
@@ -1162,6 +1177,12 @@ function FireSessionDashboardContent() {
                             Window end: {row.lastWindowTo ? new Date(row.lastWindowTo).toLocaleString() : "n/a"} ·
                             Drift 24h: {row.drift24h.total24h} total / {row.drift24h.warning24h} warning / {row.drift24h.critical24h} critical
                           </p>
+                          {row.effectivePolicy ? (
+                            <p className="text-[11px] text-zinc-500 mt-1">
+                              Effective policy: {row.effectivePolicy.cadenceMinutes}m cadence · {row.effectivePolicy.graceWindowMinutes}m grace ·
+                              delta {row.effectivePolicy.reconcileDeltaAlertMin} / {row.effectivePolicy.reconcileDeltaPctAlertMin}%
+                            </p>
+                          ) : null}
                           {row.drift24h.latestActionType ? (
                             <p className="text-[11px] text-zinc-400 mt-1">
                               Latest recon action: {row.drift24h.latestActionType}
