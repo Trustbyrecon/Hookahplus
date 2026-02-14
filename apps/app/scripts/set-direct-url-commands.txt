@@ -1,0 +1,20 @@
+# Commands to set DIRECT_URL via Vercel CLI
+# Replace [YOUR-PASSWORD] with your Supabase database password
+# Get password from: https://supabase.com/dashboard/project/hsypmyqtlxjwpnkkacmo/settings/database
+
+# For Production
+vercel env add DIRECT_URL production
+# When prompted, paste this (replace [YOUR-PASSWORD]):
+postgresql://postgres.hsypmyqtlxjwpnkkacmo:YOUR_SUPABASE_PASSWORD@aws-0-us-east-2.pooler.supabase.com:5432/postgres?sslmode=require
+
+# For Preview
+vercel env add DIRECT_URL preview
+# Same value as above
+
+# For Development
+vercel env add DIRECT_URL development
+# Same value as above
+
+# Verify
+vercel env ls | grep DIRECT_URL
+
