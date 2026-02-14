@@ -1,0 +1,12 @@
+{
+  "products": {
+    "hookah_session": "prod_T4Txgl92OV9STE",
+    "flavor_addon_150": "prod_T4TxzjWpBhYDGk",
+    "trust_core_pro_mo": "prod_T4TxO6BKPGIpTh"
+  },
+  "prices": {
+    "hookah_session": "price_1S8KzZDHM3T5fq9rZSd0qXHq",
+    "flavor_addon_150": "price_1S8KzaDHM3T5fq9rYNbVkGkA",
+    "trust_core_pro_mo": "price_1S8KzbDHM3T5fq9rKw5wwr2i"
+  }
+}

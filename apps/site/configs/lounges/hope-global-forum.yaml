@@ -1,0 +1,14 @@
+lounge_id: HOPE_GLOBAL_FORUM
+lounge_name: Hope Global Forum
+slug: hope-global-forum
+session_price: 0
+reflex_enabled: false
+tables: []
+campaigns: []
+qr_settings:
+  base_url: https://hookahplus.net
+  include_campaign: false
+  include_table_info: false
+  auto_generate: true
+  bulk_generation: false
+

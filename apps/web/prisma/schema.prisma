@@ -1,0 +1,176 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Badge {
+  id     String  @id
+  label  String
+  scope  String  // 'lounge' | 'network'
+  rule   String  // JSON as string for SQLite compatibility
+  active Boolean @default(true)
+  awards Award[]
+}
+
+model Award {
+  id         String   @id
+  profileId  String
+  badgeId    String
+  badge      Badge    @relation(fields: [badgeId], references: [id])
+  venueId    String?
+  progress   Int      @default(100)
+  awardedAt  DateTime @default(now())
+  awardedBy  String?
+  revoked    Boolean  @default(false)
+
+  @@index([profileId, badgeId, venueId, revoked])
+}
+
+model Event {
+  id        String   @id @default(cuid())
+  ts        DateTime @default(now())
+  type      String   // 'check_in' | 'visit_closed' | 'mix_ordered'
+  profileId String
+  venueId   String?
+  comboHash String?
+  staffId   String?
+
+  @@index([profileId])
+  @@index([profileId, venueId])
+}
+
+model HookahSession {
+  id           String   @id @default(cuid())
+  externalRef  String?  // qrToken | reservationId | stripeCheckoutId
+  source       String  // 'QR' | 'RESERVE' | 'WALK_IN' | 'LEGACY_POS'
+  trustSignature String
+  state        String @default("PENDING")
+  customerPhone String?
+  flavorMix    String?  // JSON as string for SQLite compatibility
+  loungeId     String
+  version      Int @default(1)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  events       SessionEvent[]
+
+  @@index([loungeId, state])
+  @@unique([loungeId, externalRef]) // idempotent anchor
+  @@map("Session")
+}
+
+model SessionEvent {
+  id          String   @id @default(cuid())
+  sessionId   String
+  type        String
+  payloadSeal String
+  data        String  // JSON as string for SQLite compatibility
+  createdAt   DateTime @default(now())
+  session     HookahSession  @relation(fields: [sessionId], references: [id])
+
+  @@index([sessionId])
+}
+
+// --- Square integration (private install MVP) ---
+model SquareConnection {
+  id              String   @id @default(cuid())
+  loungeId         String   @unique
+  merchantId       String
+  locationId       String
+  scopes           String
+  accessTokenEnc   String
+  refreshTokenEnc  String?
+  tokenExpiresAt   DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  orderLinks       SquareOrderLink[]
+
+  @@index([merchantId])
+}
+
+model SquareOrderLink {
+  id             String   @id @default(cuid())
+  loungeId        String
+  sessionId       String
+  squareOrderId   String   @unique
+  status          String   // CREATED | PAID | REFUNDED | VOIDED
+  squarePaymentId String?
+  squareRefundId  String?
+  receiptUrl      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  connection      SquareConnection @relation(fields: [loungeId], references: [loungeId])
+
+  @@unique([loungeId, sessionId])
+  @@index([loungeId, status])
+}
+
+model SquareWebhookEvent {
+  id          String   @id @default(cuid())
+  eventId     String   @unique
+  eventType   String?
+  merchantId  String?
+  body        String
+  receivedAt  DateTime @default(now())
+  processedAt DateTime?
+}
+
+// --- Auth.js (NextAuth) models (required by Prisma Adapter) ---
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("AuthUser")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("AuthAccount")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("AuthSession")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("AuthVerificationToken")
+}

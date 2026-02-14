@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "installCommand": "npm install",
+  "ignoreCommand": "bash ../../scripts/vercel-build-guest.sh",
+  "env": {
+    "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+    "NEXT_PUBLIC_CLARITY_THRESHOLD": "0.98",
+    "NEXT_PUBLIC_RESONANCE_FIELD": "soft-gold-on-obsidian",
+    "NEXT_PUBLIC_SYMBOLIC_MARK": "Open-Gate-Phi",
+    "NEXT_PUBLIC_HARMONIC_SIGNATURE": "Delta-A7"
+  }
+}

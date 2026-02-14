@@ -1,0 +1,1321 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+}
+
+model Session {
+  id                  String          @id @default(cuid())
+  externalRef         String?
+  source              SessionSource
+  trustSignature      String
+  state               SessionState    @default(PENDING)
+  customerPhone       String?
+  flavorMix           Json?
+  loungeId            String
+  version             Int             @default(1)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  tableId             String?
+  customerRef         String?
+  flavor              String?
+  priceCents          Int?            @default(3000)
+  edgeCase            String?
+  edgeNote            String?
+  assignedBOHId       String?
+  assignedFOHId       String?
+  startedAt           DateTime?       @db.Timestamptz(6)
+  endedAt             DateTime?       @db.Timestamptz(6)
+  durationSecs        Int?
+  paymentIntent       String?
+  paymentStatus       String?
+  orderItems          String?
+  posMode             String?
+  timerDuration       Int?
+  timerStartedAt      DateTime?       @db.Timestamptz(6)
+  timerPausedAt       DateTime?       @db.Timestamptz(6)
+  timerPausedDuration Int?
+  timerStatus         String?
+  zone                String?
+  fohUserId           String?
+  specialRequests     String?
+  tableNotes          String?
+  qrCodeUrl           String?
+  sessionStateV1      String?         @map("session_state_v1")
+  paused              Boolean?        @default(false)
+  tenantId            String?         @map("tenant_id") @db.Uuid
+  preorderId          String?         @map("preorder_id")
+  loungeConfigVersion Int?            @map("lounge_config_version")
+  seatId              String?         @map("seat_id")
+  zoneId              String?         @map("zone_id")
+  stage               String?         @map("nan_stage")
+  action              String?         @map("nan_action")
+  hid                 String? // Hookah+ Network ID (portable customer identifier)
+  paymentGateway      String?         @map("payment_gateway") // 'stripe' | 'square' — for GMV_hookah reporting (Hookah-only Contract v1)
+  preorder            PreOrder?       @relation(fields: [preorderId], references: [id])
+  seat                Seat?           @relation(fields: [seatId], references: [id])
+  tenant              Tenant?         @relation(fields: [tenantId], references: [id], onUpdate: NoAction)
+  zoneRelation        Zone?           @relation("SessionZone", fields: [zoneId], references: [id])
+  networkProfile      NetworkProfile? @relation(fields: [hid], references: [hid])
+  SessionEvent        SessionEvent[]
+  deliveries          Delivery[]
+  orders              Order[]
+  payments            Payment[]
+  webhookEvents       WebhookEvent[]
+  notes               SessionNote[]
+
+  @@unique([loungeId, externalRef])
+  @@index([preorderId])
+  @@index([seatId])
+  @@index([zoneId])
+  @@index([loungeConfigVersion])
+  @@index([loungeId, state])
+  @@index([createdAt], map: "idx_session_created_at")
+  @@index([createdAt, source], map: "idx_session_created_at_source")
+  @@index([createdAt, state], map: "idx_session_created_at_state")
+  @@index([customerRef], map: "idx_session_customer_ref")
+  @@index([externalRef], map: "idx_session_external_ref")
+  @@index([loungeId], map: "idx_session_lounge_id")
+  @@index([paused], map: "idx_session_paused")
+  @@index([state], map: "idx_session_state")
+  @@index([sessionStateV1], map: "idx_session_state_v1")
+  @@index([tableId], map: "idx_session_table_id")
+  @@map("Session")
+}
+
+model Tenant {
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String
+  organizationId  String?          @map("organization_id") @db.Uuid
+  createdAt       DateTime?        @default(now()) @map("created_at") @db.Timestamptz(6)
+  sessions        Session[]
+  memberships     Membership[]
+  menu_files      MenuFile[]
+  payments        Payment[]
+  events          ReflexEvent[]
+  campaigns       Campaign[]
+  loyaltyAccounts LoyaltyAccount[]
+  loyaltyTiers    LoyaltyTier[]
+  loyaltyRewards  LoyaltyReward[]
+  squareMerchants SquareMerchant[]
+  organization    Organization?    @relation(fields: [organizationId], references: [id], onUpdate: NoAction)
+
+  @@index([createdAt], map: "idx_tenants_created_at")
+  @@index([name], map: "idx_tenants_name")
+  @@index([organizationId], map: "idx_tenants_organization_id")
+  @@map("tenants")
+}
+
+model Organization {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  tenants   Tenant[]
+
+  @@index([name], map: "idx_organizations_name")
+  @@map("organizations")
+}
+
+model Membership {
+  userId    String    @map("user_id") @db.Uuid
+  tenantId  String    @map("tenant_id") @db.Uuid
+  role      role      @default(viewer)
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([userId, tenantId])
+  @@index([role], map: "idx_memberships_role")
+  @@index([tenantId], map: "idx_memberships_tenant_id")
+  @@index([userId], map: "idx_memberships_user_id")
+  @@index([userId, tenantId], map: "idx_memberships_user_tenant")
+  @@map("memberships")
+}
+
+model Payment {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String    @map("tenant_id") @db.Uuid
+  sessionId      String?   @map("session_id")
+  stripeChargeId String?   @unique @map("stripe_charge_id")
+  amountCents    Int       @map("amount_cents")
+  status         String    @default("pending")
+  paidAt         DateTime? @map("paid_at") @db.Timestamptz(6)
+  createdAt      DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  session        Session?  @relation(fields: [sessionId], references: [id], onUpdate: NoAction)
+  tenant         Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([createdAt], map: "idx_payments_created_at")
+  @@index([status], map: "idx_payments_status")
+  @@index([tenantId], map: "idx_payments_tenant_id")
+  @@map("payments")
+}
+
+model WebhookEvent {
+  id          String             @id @default(cuid())
+  provider    String
+  eventId     String
+  eventType   String
+  payloadHash String?
+  sessionId   String?            @map("session_id")
+  metadata    String?
+  status      WebhookEventStatus @default(PROCESSING)
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+
+  session     Session?           @relation(fields: [sessionId], references: [id], onUpdate: NoAction)
+
+  @@unique([provider, eventId], map: "idx_webhook_events_provider_event")
+  @@index([sessionId], map: "idx_webhook_events_session")
+  @@map("webhook_events")
+}
+
+enum WebhookEventStatus {
+  PROCESSING
+  SUCCESS
+  FAILURE
+}
+
+model ReflexEvent {
+  id                  String   @id @default(cuid())
+  type                String
+  source              String   @default("ui")
+  sessionId           String?
+  paymentIntent       String?
+  payload             String?
+  payloadHash         String?
+  userAgent           String?
+  ip                  String?
+  createdAt           DateTime @default(now()) @db.Timestamptz(6)
+  ctaSource           String?
+  ctaType             String?
+  referrer            String?
+  campaignId          String?
+  metadata            String?
+  trust_event_type_v1 String?
+  tenantId            String?  @map("tenant_id") @db.Uuid
+  trustEventTypeV1    String?
+  tenant              Tenant?  @relation(fields: [tenantId], references: [id], onUpdate: NoAction)
+
+  @@index([createdAt, type], map: "idx_reflex_event_created_at_type")
+  @@index([trust_event_type_v1], map: "idx_reflex_event_trust_type_v1")
+  @@index([createdAt(sort: Desc)], map: "idx_reflex_events_created")
+  @@index([type, createdAt], map: "idx_reflex_events_type_createdat")
+  @@map("reflex_events")
+}
+
+model MenuFile {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  leadId        String?   @map("lead_id")
+  fileName      String    @map("file_name")
+  fileUrl       String    @map("file_url")
+  fileType      String    @map("file_type")
+  fileSize      Int       @map("file_size")
+  uploadedAt    DateTime  @default(now()) @map("uploaded_at") @db.Timestamptz(6)
+  processedAt   DateTime? @map("processed_at") @db.Timestamptz(6)
+  status        String    @default("pending")
+  extractedData Json?     @map("extracted_data")
+  tenantId      String?   @map("tenant_id") @db.Uuid
+  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz(6)
+  tenants       Tenant?   @relation(fields: [tenantId], references: [id], onUpdate: NoAction)
+
+  @@index([leadId], map: "idx_menu_files_lead_id")
+  @@index([status], map: "idx_menu_files_status")
+  @@index([tenantId], map: "idx_menu_files_tenant_id")
+  @@index([uploadedAt], map: "idx_menu_files_uploaded_at")
+  @@map("menu_files")
+}
+
+model DriftEvent {
+  id              String    @id @default(cuid())
+  session_id      String?
+  drift_reason_v1 String?
+  severity        String?
+  details         Json?
+  created_at      DateTime? @default(now()) @db.Timestamptz(6)
+
+  // Recon-native ActionIntent shape (canonical drift payload)
+  action_type        String?   @map("action_type")
+  lounge_id          String?   @map("lounge_id")
+  tenant_id          String?   @map("tenant_id") @db.Uuid
+  location_id        String?   @map("location_id")
+  window_from        DateTime? @map("window_from") @db.Timestamptz(6)
+  window_to          DateTime? @map("window_to") @db.Timestamptz(6)
+  counts_expected    Int?      @map("counts_expected")
+  counts_observed    Int?      @map("counts_observed")
+  counts_delta       Int?      @map("counts_delta")
+  counts_delta_pct   Float?    @map("counts_delta_pct")
+  evidence           Json?     @map("evidence")
+  risk_hints         String[]  @default([]) @map("risk_hints")
+  signed_artifact_id String?   @map("signed_artifact_id")
+  idempotency_key    String?   @unique @map("idempotency_key")
+
+  @@index([created_at], map: "idx_drift_event_created")
+  @@index([drift_reason_v1], map: "idx_drift_event_reason_v1")
+  @@index([session_id], map: "idx_drift_event_session")
+  @@index([action_type], map: "idx_drift_event_action_type")
+  @@index([lounge_id, action_type, created_at], map: "idx_drift_event_lounge_action_created")
+  @@map("DriftEvent")
+}
+
+model SquareReconCursor {
+  id             String   @id @default(cuid())
+  loungeId       String   @unique @map("lounge_id")
+  tenantId       String?  @map("tenant_id") @db.Uuid
+  locationId     String?  @map("location_id")
+  cursorFrom     DateTime @map("cursor_from") @db.Timestamptz(6)
+  lastWindowTo   DateTime? @map("last_window_to") @db.Timestamptz(6)
+  lastRunId      String?  @map("last_run_id")
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([loungeId], map: "idx_square_recon_cursor_lounge")
+  @@map("square_recon_cursors")
+}
+
+model TaxonomyUnknown {
+  id                String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  enum_type         String
+  raw_label         String
+  suggested_mapping String?
+  count             Int?      @default(1)
+  example_event_id  String?
+  example_payload   Json?
+  first_seen        DateTime? @default(now()) @db.Timestamptz(6)
+  last_seen         DateTime? @default(now()) @db.Timestamptz(6)
+  created_at        DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@unique([enum_type, raw_label])
+  @@index([count(sort: Desc)], map: "idx_taxonomy_unknown_count")
+  @@index([last_seen(sort: Desc)], map: "idx_taxonomy_unknown_last_seen")
+  @@index([enum_type], map: "idx_taxonomy_unknown_type")
+  @@map("TaxonomyUnknown")
+}
+
+model Order {
+  id                  String       @id @default(cuid())
+  sessionId           String       @map("session_id")
+  type                String
+  status              String       @default("PENDING")
+  priceSnapshot       String?      @map("price_snapshot")
+  specialInstructions String?      @map("special_instructions")
+  createdAt           DateTime     @default(now()) @map("created_at")
+  updatedAt           DateTime     @updatedAt @map("updated_at")
+  servedAt            DateTime?    @map("served_at")
+  delivery            Delivery?
+  events              OrderEvent[]
+  items               OrderItem[]
+  session             Session      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([status, createdAt])
+  @@index([createdAt(sort: Desc)], map: "idx_orders_created")
+  @@map("orders")
+}
+
+model OrderItem {
+  id         String  @id @default(cuid())
+  orderId    String  @map("order_id")
+  itemType   String  @map("item_type")
+  itemId     String? @map("item_id")
+  name       String
+  quantity   Int     @default(1)
+  priceCents Int     @map("price_cents")
+  metadata   String?
+  order      Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+model OrderEvent {
+  id        String   @id @default(cuid())
+  orderId   String   @map("order_id")
+  eventType String   @map("event_type")
+  staffId   String?  @map("staff_id")
+  metadata  String?
+  createdAt DateTime @default(now()) @map("created_at")
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, createdAt])
+  @@map("order_events")
+}
+
+model PreOrder {
+  id            String    @id @default(cuid())
+  loungeId      String    @map("lounge_id")
+  guestHandle   String?   @map("guest_handle")
+  qrCode        String?   @map("qr_code")
+  status        String    @default("PENDING")
+  scheduledTime DateTime? @map("scheduled_time")
+  partySize     Int       @map("party_size")
+  flavorMixJson String?   @map("flavor_mix_json")
+  basePrice     Int       @map("base_price")
+  lockedPrice   Int?      @map("locked_price")
+  metadata      String?
+  sessionId     String?   @map("session_id")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  convertedAt   DateTime? @map("converted_at")
+  expiresAt     DateTime? @map("expires_at")
+  sessions      Session[]
+
+  @@index([loungeId, status])
+  @@map("preorders")
+}
+
+model Delivery {
+  id          String   @id @default(cuid())
+  sessionId   String   @map("session_id")
+  orderId     String   @unique @map("order_id")
+  deliveredBy String   @map("delivered_by")
+  deliveredAt DateTime @default(now()) @map("delivered_at")
+  notes       String?
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  session     Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([deliveredBy, deliveredAt])
+  @@map("deliveries")
+}
+
+model SessionNote {
+  id              String               @id @default(cuid())
+  sessionId       String               @map("session_id")
+  noteType        String               @map("note_type")
+  text            String
+  sentiment       String?
+  loyaltyImpact   Int?                 @map("loyalty_impact")
+  behavioralTags  String?              @map("behavioral_tags")
+  createdBy       String               @map("created_by")
+  shareScope      String?              @default("lounge") @map("share_scope") // lounge | network
+  createdAt       DateTime             @default(now()) @map("created_at")
+  loyaltyBindings LoyaltyNoteBinding[]
+  session         Session              @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([noteType, createdAt])
+  @@index([shareScope], map: "idx_session_note_share_scope")
+  @@map("session_notes")
+}
+
+model LoyaltyProfile {
+  id                String               @id @default(cuid())
+  loungeId          String               @map("lounge_id")
+  guestKey          String               @map("guest_key")
+  cumulativeSpend   Int                  @default(0) @map("cumulative_spend")
+  visitCount        Int                  @default(0) @map("visit_count")
+  lastVisitAt       DateTime?            @map("last_visit_at")
+  preferenceSummary String?              @map("preference_summary")
+  trustScore        Int                  @default(50) @map("trust_score")
+  createdAt         DateTime             @default(now()) @map("created_at")
+  updatedAt         DateTime             @updatedAt @map("updated_at")
+  noteBindings      LoyaltyNoteBinding[]
+
+  @@unique([loungeId, guestKey])
+  @@index([loungeId])
+  @@map("loyalty_profiles")
+}
+
+model LoyaltyNoteBinding {
+  id               String         @id @default(cuid())
+  loyaltyProfileId String         @map("loyalty_profile_id")
+  sessionNoteId    String         @map("session_note_id")
+  loyaltyProfile   LoyaltyProfile @relation(fields: [loyaltyProfileId], references: [id], onDelete: Cascade)
+  sessionNote      SessionNote    @relation(fields: [sessionNoteId], references: [id], onDelete: Cascade)
+
+  @@unique([loyaltyProfileId, sessionNoteId])
+  @@map("loyalty_note_bindings")
+}
+
+model Zone {
+  id           String    @id @default(cuid())
+  loungeId     String    @map("lounge_id")
+  name         String
+  zoneType     String    @map("zone_type")
+  displayOrder Int       @default(0) @map("display_order")
+  metadata     String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  sessions     Session[] @relation("SessionZone")
+  seats        Seat[]
+
+  @@index([loungeId])
+  @@map("zones")
+}
+
+model Seat {
+  id              String    @id @default(cuid())
+  loungeId        String    @map("lounge_id")
+  zoneId          String    @map("zone_id")
+  tableId         String    @unique @map("table_id")
+  name            String?
+  capacity        Int
+  coordinates     String?
+  qrEnabled       Boolean   @default(true) @map("qr_enabled")
+  status          String    @default("ACTIVE")
+  priceMultiplier Float     @default(1.0) @map("price_multiplier")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  sessions        Session[]
+  zone            Zone      @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+
+  @@index([loungeId, zoneId])
+  @@map("seats")
+}
+
+model Station {
+  id          String   @id @default(cuid())
+  loungeId    String   @map("lounge_id")
+  name        String
+  stationType String   @map("station_type")
+  zoneId      String?  @map("zone_id")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([loungeId])
+  @@map("stations")
+}
+
+model Category {
+  id           String   @id @default(cuid())
+  name         String   @map("name")
+  description  String?  @map("description")
+  displayOrder Int      @default(0) @map("display_order")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  items        Item[]
+
+  @@index([isActive], map: "idx_category_is_active")
+  @@index([displayOrder], map: "idx_category_display_order")
+  @@map("categories")
+}
+
+model Item {
+  id           String   @id @default(cuid())
+  categoryId   String   @map("category_id")
+  name         String   @map("name")
+  description  String?  @map("description")
+  priceCents   Int      @map("price_cents")
+  displayOrder Int      @default(0) @map("display_order")
+  isPopular    Boolean  @default(false) @map("is_popular")
+  prepTime     Int      @default(0) @map("prep_time")
+  allergens    String   @default("") @map("allergens")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  category     Category @relation(fields: [categoryId], references: [id])
+
+  @@index([categoryId], map: "idx_item_category_id")
+  @@index([isActive], map: "idx_item_is_active")
+  @@index([displayOrder], map: "idx_item_display_order")
+  @@map("items")
+}
+
+model Flavor {
+  id          String   @id @default(cuid())
+  loungeId    String?  @map("lounge_id")
+  name        String
+  description String?
+  tags        String?
+  isPremium   Boolean  @default(false) @map("is_premium")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([loungeId])
+  @@map("flavors")
+}
+
+model MixTemplate {
+  id         String   @id @default(cuid())
+  loungeId   String   @map("lounge_id")
+  name       String
+  flavorIds  String   @map("flavor_ids")
+  priceCents Int?     @map("price_cents")
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([loungeId])
+  @@map("mix_templates")
+}
+
+model PricingRule {
+  id          String    @id @default(cuid())
+  loungeId    String    @map("lounge_id")
+  ruleType    String    @map("rule_type")
+  ruleConfig  String    @map("rule_config")
+  version     Int       @default(1)
+  isActive    Boolean   @default(true) @map("is_active")
+  effectiveAt DateTime  @default(now()) @map("effective_at")
+  expiresAt   DateTime? @map("expires_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([loungeId, isActive, effectiveAt])
+  @@map("pricing_rules")
+}
+
+model Campaign {
+  id             String          @id @default(cuid())
+  loungeId       String          @map("lounge_id")
+  tenantId       String?         @map("tenant_id") @db.Uuid
+  name           String
+  type           String // 'loyalty' | 'promotional' | 'email' | 'sms' | 'social' | 'percentage_off' | 'first_x_customers' | 'buy_x_get_y' | 'time_limited'
+  status         String          @default("draft") // 'draft' | 'active' | 'paused' | 'completed' | 'scheduled'
+  description    String?
+  targetAudience String?         @map("target_audience")
+  startDate      DateTime        @map("start_date") @db.Timestamptz(6)
+  endDate        DateTime?       @map("end_date") @db.Timestamptz(6)
+  budgetCents    Int             @default(0) @map("budget_cents")
+  spentCents     Int             @default(0) @map("spent_cents")
+  reach          Int             @default(0)
+  engagement     Float           @default(0) // percentage
+  conversions    Int             @default(0)
+  roi            Float           @default(0) // return on investment multiplier
+  channels       String? // JSON array of channels
+  campaignConfig Json?           @map("campaign_config") // Type-specific configuration (percentage, buyXGetY, etc.)
+  qrPrefix       String?         @map("qr_prefix") // For QR code tracking
+  isActive       Boolean         @default(true) @map("is_active")
+  createdBy      String?         @map("created_by")
+  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+  tenant         Tenant?         @relation(fields: [tenantId], references: [id], onUpdate: NoAction)
+  campaignUsages CampaignUsage[]
+
+  @@index([loungeId, status, startDate])
+  @@index([loungeId, isActive])
+  @@index([tenantId])
+  @@index([status, startDate, endDate])
+  @@map("campaigns")
+}
+
+model CampaignUsage {
+  id            String   @id @default(cuid())
+  campaignId    String   @map("campaign_id")
+  sessionId     String?  @map("session_id")
+  customerRef   String?  @map("customer_ref")
+  discountCents Int?     @map("discount_cents")
+  appliedAt     DateTime @default(now()) @map("applied_at") @db.Timestamptz(6)
+  metadata      Json?
+  campaign      Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId, appliedAt])
+  @@index([sessionId])
+  @@index([customerRef])
+  @@map("campaign_usages")
+}
+
+model LoungeConfig {
+  id          String   @id @default(cuid())
+  loungeId    String   @unique @map("lounge_id")
+  configData  String   @map("config_data")
+  version     Int      @default(1)
+  effectiveAt DateTime @default(now()) @map("effective_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([loungeId, version])
+  @@map("lounge_configs")
+}
+
+model OrgSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique @map("key")
+  value       String   @map("value")
+  description String?  @map("description")
+  category    String   @default("general") @map("category")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([key], map: "idx_org_setting_key")
+  @@index([category], map: "idx_org_setting_category")
+  @@index([isActive], map: "idx_org_setting_is_active")
+  @@map("org_settings")
+}
+
+model SyncBacklog {
+  id          String    @id @default(cuid())
+  deviceId    String    @map("device_id")
+  loungeId    String    @map("lounge_id")
+  operation   String
+  payload     String
+  status      String    @default("PENDING")
+  retryCount  Int       @default(0) @map("retry_count")
+  lastAttempt DateTime? @map("last_attempt")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  syncedAt    DateTime? @map("synced_at")
+
+  @@index([deviceId, status])
+  @@index([loungeId, status, createdAt])
+  @@map("sync_backlog")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  loungeId   String?  @map("lounge_id")
+  userId     String?  @map("user_id")
+  action     String
+  entityType String?  @map("entity_type")
+  entityId   String?  @map("entity_id")
+  changes    String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([loungeId, createdAt])
+  @@index([userId, createdAt])
+  @@map("audit_logs")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Award {
+  id        String   @id
+  profileId String
+  badgeId   String
+  venueId   String?
+  progress  Int      @default(100)
+  awardedAt DateTime @default(now())
+  awardedBy String?
+  revoked   Boolean  @default(false)
+  Badge     Badge    @relation(fields: [badgeId], references: [id])
+
+  @@index([badgeId], map: "idx_award_badge_id")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Badge {
+  id     String  @id
+  label  String
+  scope  String
+  rule   Json
+  active Boolean @default(true)
+  Award  Award[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Event {
+  id        String   @id
+  ts        DateTime @default(now())
+  type      String
+  profileId String
+  venueId   String?
+  comboHash String?
+  staffId   String?
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model SessionEvent {
+  id          String   @id
+  sessionId   String
+  type        String
+  payloadSeal String
+  data        Json
+  createdAt   DateTime @default(now())
+  Session     Session  @relation(fields: [sessionId], references: [id])
+
+  @@index([sessionId])
+}
+
+model SettlementReconciliation {
+  id             String    @id @default(cuid())
+  stripeChargeId String?   @map("stripe_charge_id")
+  posTicketId    String?   @map("pos_ticket_id")
+  sessionId      String?   @map("session_id")
+  amount         Int?      @map("amount")
+  currency       String?   @map("currency")
+  status         String    @default("pending") @map("status")
+  matchedAt      DateTime? @map("matched_at") @db.Timestamptz(6)
+  reconciledAt   DateTime? @map("reconciled_at") @db.Timestamptz(6)
+  repairRunId    String?   @map("repair_run_id")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([status], map: "idx_settlement_reconciliation_status")
+  @@index([stripeChargeId], map: "idx_settlement_reconciliation_stripe_charge_id")
+  @@index([posTicketId], map: "idx_settlement_reconciliation_pos_ticket_id")
+  @@index([sessionId], map: "idx_settlement_reconciliation_session_id")
+  @@map("settlement_reconciliation")
+}
+
+model PosTicket {
+  id             String   @id @default(cuid())
+  ticketId       String   @unique @map("ticket_id")
+  stripeChargeId String?  @map("stripe_charge_id")
+  sessionId      String?  @map("session_id")
+  amountCents    Int?     @map("amount_cents")
+  currency       String?  @map("currency")
+  status         String   @default("pending") @map("status")
+  posSystem      String?  @map("pos_system")
+  items          String?  @map("items")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([ticketId], map: "idx_pos_ticket_ticket_id")
+  @@index([stripeChargeId], map: "idx_pos_ticket_stripe_charge_id")
+  @@index([sessionId], map: "idx_pos_ticket_session_id")
+  @@index([status], map: "idx_pos_ticket_status")
+  @@map("pos_tickets")
+}
+
+model SquareMerchant {
+  id           String    @id @default(cuid())
+  loungeId     String    @unique @map("lounge_id")
+  tenantId     String?   @map("tenant_id") @db.Uuid
+  merchantId   String    @unique @map("merchant_id")
+  accessToken  String    @map("access_token") // Encrypted
+  refreshToken String?   @map("refresh_token") // Encrypted
+  locationIds  String[]  @map("location_ids") // Multiple locations
+  expiresAt    DateTime? @map("expires_at") @db.Timestamptz(6)
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  tenant       Tenant?   @relation(fields: [tenantId], references: [id], onUpdate: NoAction)
+
+  @@index([loungeId], map: "idx_square_merchant_lounge_id")
+  @@index([merchantId], map: "idx_square_merchant_merchant_id")
+  @@map("square_merchants")
+}
+
+model SquareEventRaw {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  eventId     String   @unique @map("event_id")
+  eventType   String   @map("event_type")
+  merchantId  String?  @map("merchant_id")
+  locationId  String?  @map("location_id")
+  payload     Json
+  receivedAt  DateTime @default(now()) @map("received_at") @db.Timestamptz(6)
+  processedAt DateTime? @map("processed_at") @db.Timestamptz(6)
+  errorMessage String? @map("error_message")
+  status       String   @default("new")
+  attemptCount Int      @default(0) @map("attempt_count")
+  claimedAt    DateTime? @map("claimed_at") @db.Timestamptz(6)
+  nextRetryAt  DateTime? @map("next_retry_at") @db.Timestamptz(6)
+  lastErrorAt  DateTime? @map("last_error_at") @db.Timestamptz(6)
+  aiEnrichments AiEnrichment[]
+  alerts        Alert[]
+
+  @@index([merchantId], map: "idx_square_events_raw_merchant_id")
+  @@index([eventType], map: "idx_square_events_raw_event_type")
+  @@index([processedAt], map: "idx_square_events_raw_processed_at")
+  @@map("square_events_raw")
+}
+
+model AiEnrichment {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  source    String   @default("square")
+  kind      String
+  rawEventId String?  @map("raw_event_id") @db.Uuid
+  loungeId  String?  @map("lounge_id")
+  sessionId String?  @map("session_id")
+  model     String
+  output    Json
+  latencyMs Int?     @map("latency_ms")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  rawEvent SquareEventRaw? @relation(fields: [rawEventId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([loungeId, kind, createdAt(sort: Desc)], map: "ai_enrichment_lounge_kind_created_idx")
+  @@unique([rawEventId, kind], map: "ai_enrichment_raw_kind_uq")
+  @@map("ai_enrichment")
+}
+
+model Alert {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  source    String   @default("square")
+  type      String
+  severity  String
+  message   String
+  rawEventId String? @map("raw_event_id") @db.Uuid
+  loungeId  String?  @map("lounge_id")
+  sessionId String?  @map("session_id")
+  meta      Json?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  resolvedAt DateTime? @map("resolved_at") @db.Timestamptz(6)
+
+  rawEvent SquareEventRaw? @relation(fields: [rawEventId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([createdAt(sort: Desc)], map: "alerts_created_at_idx")
+  @@index([loungeId, createdAt(sort: Desc)], map: "alerts_lounge_created_at_idx")
+  @@map("alerts")
+}
+
+model SquareOrder {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId       String   @unique @map("order_id")
+  merchantId    String?  @map("merchant_id")
+  locationId    String?  @map("location_id")
+  status        String?
+  totalCents    Int?     @map("total_cents")
+  currency      String?
+  lineItems     Json?    @map("line_items")
+  raw           Json
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([merchantId], map: "idx_square_orders_merchant_id")
+  @@index([locationId], map: "idx_square_orders_location_id")
+  @@index([status], map: "idx_square_orders_status")
+  @@map("square_orders")
+}
+
+model SquarePayment {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  paymentId    String   @unique @map("payment_id")
+  orderId      String?  @map("order_id")
+  merchantId   String?  @map("merchant_id")
+  locationId   String?  @map("location_id")
+  status       String?
+  amountCents  Int?     @map("amount_cents")
+  currency     String?
+  cardBrand    String?  @map("card_brand")
+  cardLast4    String?  @map("card_last4")
+  raw          Json
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([merchantId], map: "idx_square_payments_merchant_id")
+  @@index([locationId], map: "idx_square_payments_location_id")
+  @@index([status], map: "idx_square_payments_status")
+  @@map("square_payments")
+}
+
+model SquareCustomer {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customerId String   @unique @map("customer_id")
+  merchantId String?  @map("merchant_id")
+  locationId String?  @map("location_id")
+  phoneHash  String?  @map("phone_hash")
+  emailHash  String?  @map("email_hash")
+  raw        Json
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([merchantId], map: "idx_square_customers_merchant_id")
+  @@index([locationId], map: "idx_square_customers_location_id")
+  @@map("square_customers")
+}
+
+model LoyaltyAccount {
+  id                  String               @id @default(cuid())
+  loungeId            String?              @map("lounge_id")
+  tenantId            String?              @map("tenant_id") @db.Uuid
+  customerId          String?              @map("customer_id")
+  customerPhone       String?              @map("customer_phone")
+  balanceCents        Int                  @default(0) @map("balance_cents")
+  totalEarnedCents    Int                  @default(0) @map("total_earned_cents")
+  totalRedeemedCents  Int                  @default(0) @map("total_redeemed_cents")
+  pointsBalance       Int                  @default(0) @map("points_balance")
+  totalPointsEarned   Int                  @default(0) @map("total_points_earned")
+  totalPointsRedeemed Int                  @default(0) @map("total_points_redeemed")
+  currentTier         String               @default("bronze") @map("current_tier") // bronze | silver | gold | platinum
+  visitCount          Int                  @default(0) @map("visit_count")
+  lastVisitAt         DateTime?            @map("last_visit_at") @db.Timestamptz(6)
+  isActive            Boolean              @default(true) @map("is_active")
+  createdAt           DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+  transactions        LoyaltyTransaction[]
+  wallet              LoyaltyWallet?
+  redemptions         LoyaltyRedemption[]
+  tenant              Tenant?              @relation(fields: [tenantId], references: [id], onUpdate: NoAction)
+
+  @@index([customerId], map: "idx_loyalty_account_customer_id")
+  @@index([customerPhone], map: "idx_loyalty_account_customer_phone")
+  @@index([loungeId, isActive], map: "idx_loyalty_account_lounge_active")
+  @@index([tenantId], map: "idx_loyalty_account_tenant_id")
+  @@index([isActive, updatedAt], map: "idx_loyalty_account_is_active_updated_at")
+  @@map("loyalty_accounts")
+}
+
+model LoyaltyTransaction {
+  id                 String         @id @default(cuid())
+  accountId          String         @map("account_id")
+  type               String         @map("type")
+  amountCents        Int            @map("amount_cents")
+  balanceBeforeCents Int            @map("balance_before_cents")
+  balanceAfterCents  Int            @map("balance_after_cents")
+  source             String         @map("source")
+  sessionId          String?        @map("session_id")
+  posTicketId        String?        @map("pos_ticket_id")
+  stripeChargeId     String?        @map("stripe_charge_id")
+  metadata           String?        @map("metadata")
+  version            Int            @default(1) @map("version")
+  createdAt          DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  account            LoyaltyAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, createdAt], map: "idx_loyalty_transaction_account_created")
+  @@index([sessionId], map: "idx_loyalty_transaction_session_id")
+  @@index([posTicketId], map: "idx_loyalty_transaction_pos_ticket_id")
+  @@index([type, createdAt], map: "idx_loyalty_transaction_type_created")
+  @@index([source, createdAt], map: "idx_loyalty_transaction_source_created")
+  @@map("loyalty_transactions")
+}
+
+model LoyaltyWallet {
+  id                String         @id @default(cuid())
+  accountId         String         @unique @map("account_id")
+  balanceCents      Int            @default(0) @map("balance_cents")
+  lastTransactionId String?        @map("last_transaction_id")
+  updatedAt         DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  account           LoyaltyAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId], map: "idx_loyalty_wallet_account_id")
+  @@map("loyalty_wallets")
+}
+
+model LoyaltyTier {
+  id              String          @id @default(cuid())
+  loungeId        String?         @map("lounge_id")
+  tenantId        String?         @map("tenant_id") @db.Uuid
+  tierName        String          @map("tier_name") // bronze | silver | gold | platinum
+  minPoints       Int             @default(0) @map("min_points")
+  maxPoints       Int?            @map("max_points")
+  discountPercent Float           @default(0) @map("discount_percent")
+  benefits        Json? // Array of benefit strings
+  pointsPerDollar Float           @default(1) @map("points_per_dollar") // Points earned per dollar spent
+  isActive        Boolean         @default(true) @map("is_active")
+  displayOrder    Int             @default(0) @map("display_order")
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+  tenant          Tenant?         @relation(fields: [tenantId], references: [id], onUpdate: NoAction)
+  rewards         LoyaltyReward[]
+
+  @@unique([loungeId, tierName])
+  @@index([loungeId, isActive])
+  @@index([tenantId])
+  @@index([minPoints, maxPoints])
+  @@map("loyalty_tiers")
+}
+
+model LoyaltyReward {
+  id                  String              @id @default(cuid())
+  loungeId            String?             @map("lounge_id")
+  tenantId            String?             @map("tenant_id") @db.Uuid
+  tierId              String?             @map("tier_id")
+  name                String
+  description         String?
+  pointsCost          Int                 @map("points_cost")
+  discountPercent     Float?              @map("discount_percent")
+  discountAmountCents Int?                @map("discount_amount_cents")
+  rewardType          String              @map("reward_type") // discount | free_item | upgrade | perk
+  isActive            Boolean             @default(true) @map("is_active")
+  maxRedemptions      Int?                @map("max_redemptions")
+  redemptionCount     Int                 @default(0) @map("redemption_count")
+  validFrom           DateTime?           @map("valid_from") @db.Timestamptz(6)
+  validUntil          DateTime?           @map("valid_until") @db.Timestamptz(6)
+  displayOrder        Int                 @default(0) @map("display_order")
+  createdAt           DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+  tier                LoyaltyTier?        @relation(fields: [tierId], references: [id], onDelete: SetNull)
+  tenant              Tenant?             @relation(fields: [tenantId], references: [id], onUpdate: NoAction)
+  redemptions         LoyaltyRedemption[]
+
+  @@index([loungeId, isActive])
+  @@index([tierId])
+  @@index([tenantId])
+  @@index([pointsCost])
+  @@map("loyalty_rewards")
+}
+
+model LoyaltyRedemption {
+  id            String         @id @default(cuid())
+  accountId     String         @map("account_id")
+  rewardId      String         @map("reward_id")
+  sessionId     String?        @map("session_id")
+  pointsSpent   Int            @map("points_spent")
+  discountCents Int?           @map("discount_cents")
+  status        String         @default("pending") // pending | applied | expired | cancelled
+  appliedAt     DateTime?      @map("applied_at") @db.Timestamptz(6)
+  expiresAt     DateTime?      @map("expires_at") @db.Timestamptz(6)
+  metadata      Json?
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  account       LoyaltyAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  reward        LoyaltyReward  @relation(fields: [rewardId], references: [id], onDelete: Restrict)
+
+  @@index([accountId, createdAt])
+  @@index([rewardId])
+  @@index([sessionId])
+  @@index([status, expiresAt])
+  @@map("loyalty_redemptions")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ghostlog {
+  id         BigInt    @id @default(autoincrement())
+  venue_id   String?   @db.Uuid
+  session_id String?   @db.Uuid
+  actor      String?
+  event      String
+  meta       Json?
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model refills {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  session_id   String    @db.Uuid
+  venue_id     String    @db.Uuid
+  requested_at DateTime? @default(now()) @db.Timestamptz(6)
+  completed_at DateTime? @db.Timestamptz(6)
+  sessions     sessions  @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  venues       venues    @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model reservations {
+  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  venue_id          String              @db.Uuid
+  table_id          String
+  status            reservation_status? @default(HOLD)
+  payment_intent_id String?
+  hold_amount_cents Int?                @default(1000)
+  window_minutes    Int?                @default(15)
+  created_at        DateTime?           @default(now()) @db.Timestamptz(6)
+  venues            venues              @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model sessions {
+  id                  String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  venue_id            String          @db.Uuid
+  table_id            String
+  tier                String
+  flavors             String[]        @default([])
+  status              session_status? @default(PENDING)
+  started_at          DateTime?       @db.Timestamptz(6)
+  ends_at             DateTime?       @db.Timestamptz(6)
+  price_lookup_key    String?
+  payment_intent_id   String?
+  checkout_session_id String?
+  created_by          String?         @db.Uuid
+  created_at          DateTime?       @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime?       @db.Timestamptz(6)
+  refills             refills[]
+  staff               staff?          @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  venues              venues          @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([created_by], map: "idx_sessions_created_by")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model staff {
+  id         String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String     @db.Uuid
+  venue_id   String     @db.Uuid
+  role       String
+  email      String?
+  phone      String?
+  metadata   Json?
+  created_at DateTime?  @default(now()) @db.Timestamptz(6)
+  updated_at DateTime?  @db.Timestamptz(6)
+  sessions   sessions[]
+  venues     venues     @relation(fields: [venue_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model stripe_webhook_events {
+  id          String   @id
+  type        String
+  received_at DateTime @default(now()) @db.Timestamptz(6)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model venues {
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String
+  address      String?
+  metadata     Json?
+  created_at   DateTime?      @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime?      @db.Timestamptz(6)
+  refills      refills[]
+  reservations reservations[]
+  sessions     sessions[]
+  staff        staff[]
+}
+
+enum SessionSource {
+  QR
+  RESERVE
+  WALK_IN
+  LEGACY_POS
+}
+
+enum SessionState {
+  PENDING
+  ACTIVE
+  PAUSED
+  CLOSED
+  CANCELED
+}
+
+enum reservation_status {
+  HOLD
+  ARRIVED
+  NO_SHOW
+  CANCELLED
+}
+
+/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+enum role {
+  owner
+  admin
+  staff
+  viewer
+}
+
+enum session_status {
+  PENDING
+  ACTIVE
+  PAUSED
+  COMPLETE
+  STAFF_HOLD
+  STOCK_BLOCKED
+}
+
+// Network-wide customer profiles (Hookah+ Network Identity Layer)
+model NetworkProfile {
+  id           String   @id @default(cuid())
+  hid          String   @unique // Hookah+ ID (portable identifier)
+  phoneHash    String?  @map("phone_hash") // SHA256 hash of phone
+  emailHash    String?  @map("email_hash") // SHA256 hash of email
+  consentLevel String   @default("shadow") @map("consent_level") // shadow | claimed | network_shared
+  tier         String? // Current loyalty tier
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  preferences NetworkPreference?
+  badges      NetworkBadge[]
+  sessions    NetworkSession[]
+  notes       NetworkSessionNote[]
+  piiLinks    NetworkPIILink[]
+  sessionsRef Session[] // Sessions linked to this profile
+
+  @@index([hid], map: "idx_network_profile_hid")
+  @@index([phoneHash], map: "idx_network_profile_phone_hash")
+  @@index([emailHash], map: "idx_network_profile_email_hash")
+  @@index([consentLevel], map: "idx_network_profile_consent")
+  @@map("network_profiles")
+}
+
+model NetworkPreference {
+  id           String   @id @default(cuid())
+  hid          String   @unique
+  topFlavors   Json?    @map("top_flavors") // Array of favorite flavors
+  flavorVector String?  @map("flavor_vector") // ML embedding (JSON string)
+  devicePrefs  Json?    @map("device_prefs") // Device preferences
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  profile NetworkProfile @relation(fields: [hid], references: [hid], onDelete: Cascade)
+
+  @@index([hid], map: "idx_network_preference_hid")
+  @@map("network_preferences")
+}
+
+model NetworkBadge {
+  id        String   @id @default(cuid())
+  hid       String
+  badgeCode String   @map("badge_code")
+  awardedAt DateTime @default(now()) @map("awarded_at") @db.Timestamptz(6)
+  meta      Json? // Additional metadata
+
+  profile NetworkProfile @relation(fields: [hid], references: [hid], onDelete: Cascade)
+
+  @@unique([hid, badgeCode], map: "idx_network_badge_unique")
+  @@index([hid], map: "idx_network_badge_hid")
+  @@index([badgeCode], map: "idx_network_badge_code")
+  @@map("network_badges")
+}
+
+model NetworkSession {
+  id         String    @id // Use sessionId-based ID (NS-{sessionId})
+  hid        String
+  sessionId  String    @unique @map("session_id") // Link to Session.id (unique)
+  loungeId   String    @map("lounge_id")
+  startTs    DateTime? @map("start_ts") @db.Timestamptz(6)
+  endTs      DateTime? @map("end_ts") @db.Timestamptz(6)
+  items      Json? // Order items
+  spendCents Int?      @map("spend_cents")
+  posRef     String?   @map("pos_ref")
+  rating     Int? // Customer rating (1-5)
+
+  profile NetworkProfile @relation(fields: [hid], references: [hid], onDelete: Cascade)
+
+  @@index([hid], map: "idx_network_session_hid")
+  @@index([sessionId], map: "idx_network_session_session_id")
+  @@index([loungeId], map: "idx_network_session_lounge_id")
+  @@map("network_sessions")
+}
+
+model NetworkSessionNote {
+  id         String   @id @default(cuid())
+  hid        String
+  noteId     String   @unique @map("note_id") // Link to SessionNote.id
+  loungeId   String   @map("lounge_id")
+  staffId    String?  @map("staff_id")
+  noteText   String   @map("note_text")
+  shareScope String   @default("lounge") @map("share_scope") // lounge | network
+  tags       Json? // Behavioral tags
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  profile NetworkProfile @relation(fields: [hid], references: [hid], onDelete: Cascade)
+
+  @@index([hid], map: "idx_network_session_note_hid")
+  @@index([loungeId], map: "idx_network_session_note_lounge_id")
+  @@index([shareScope], map: "idx_network_session_note_scope")
+  @@map("network_session_notes")
+}
+
+model NetworkPIILink {
+  id         String    @id @default(cuid())
+  hid        String
+  piiType    String    @map("pii_type") // phone | email | qr_token
+  piiHash    String    @map("pii_hash") // Hashed identifier
+  verified   Boolean   @default(false)
+  verifiedAt DateTime? @map("verified_at") @db.Timestamptz(6)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  profile NetworkProfile @relation(fields: [hid], references: [hid], onDelete: Cascade)
+
+  @@unique([piiType, piiHash], map: "idx_network_pii_unique")
+  @@index([hid], map: "idx_network_pii_hid")
+  @@index([piiHash], map: "idx_network_pii_hash")
+  @@map("network_pii_links")
+}
+
+// LaunchPad SetupSession - Anonymous onboarding sessions
+model SetupSession {
+  id              String    @id @default(cuid())
+  token           String    @unique
+  setupLink       String?   @map("setup_link") // Auto-generated: /launchpad?token={token}
+  status          String    @default("draft") // draft | in_progress | completed | activated | expired | abandoned
+  progress        Json // LaunchPadProgress type
+  loungeId        String?   @unique @map("lounge_id")
+  organizationId  String?   @map("organization_id") @db.Uuid
+  organizationSlug String?  @map("organization_slug")
+  multiLocationEnabled Boolean @default(false) @map("multi_location_enabled")
+  locationDrafts  Json?     @map("location_drafts")
+  activatedLoungeIds String[] @default([]) @map("activated_lounge_ids")
+  source          String? // "manychat" | "web" | "direct"
+  manychatUserId  String?   @map("manychat_user_id")
+  instagramHandle String?   @map("instagram_handle")
+  prefillData     Json?     @map("prefill_data") // ManyChat collected data
+  userId          String?   @map("user_id") // Set at Go Live
+  leadId          String?   @map("lead_id") // Link to Soft Lead (auto-created)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt       DateTime  @map("expires_at") @db.Timestamptz(6)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  lastActivityAt  DateTime? @map("last_activity_at") @db.Timestamptz(6) // Track for abandonment detection
+
+  @@index([token], map: "idx_setup_session_token")
+  @@index([expiresAt], map: "idx_setup_session_expires")
+  @@index([loungeId], map: "idx_setup_session_lounge_id")
+  @@index([organizationId], map: "idx_setup_session_organization_id")
+  @@index([organizationSlug], map: "idx_setup_session_organization_slug")
+  @@index([source], map: "idx_setup_session_source")
+  @@index([status], map: "idx_setup_session_status")
+  @@index([lastActivityAt], map: "idx_setup_session_last_activity")
+  @@map("setup_sessions")
+}

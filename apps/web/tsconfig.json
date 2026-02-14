@@ -1,0 +1,57 @@
+{
+  "compilerOptions": {
+    "target": "es2015",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "es6"
+    ],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "../../*"
+      ]
+    },
+    "types": [
+      "node",
+      "react",
+      "next"
+    ],
+    "typeRoots": [
+      "./node_modules/@types",
+      "../../node_modules/@types"
+    ],
+    "strictNullChecks": false
+  },
+  "include": [
+    "next-env.d.ts",
+    ".next/types/**/*.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "../../lib/cmd.ts",
+    "../../lib/sessionState.ts",
+    "../../lib/eventBus.ts",
+    "../../lib/aliethiaIdentity.ts",
+    "../../components/BOHPrepRoom.tsx",
+    "../../components/FOHFloorDashboard.tsx"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

@@ -1,0 +1,231 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '../../../../lib/db';
+
+/**
+ * GET /api/analytics/sessions
+ * 
+ * Get session analytics and metrics
+ */
+export async function GET(request: NextRequest) {
+  try {
+    const searchParams = request.nextUrl.searchParams;
+    // P0: Cap windowDays to max 31 days to prevent slow queries
+    const windowDays = Math.min(parseInt(searchParams.get('windowDays') || '7', 10), 31);
+    const loungeId = searchParams.get('loungeId');
+
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - windowDays);
+
+    // Build where clause
+    const whereClause: any = {
+      createdAt: {
+        gte: cutoffDate
+      },
+      // Exclude voided/canceled sessions - they are not viable transactions
+      state: { notIn: ['CANCELED'] as any }
+    };
+
+    if (loungeId) {
+      whereClause.loungeId = loungeId;
+    }
+
+    // Run all queries in parallel for better performance
+    const [
+      sessionsByState,
+      totalSessions,
+      activeSessions,
+      completedSessions,
+      revenueResult,
+      extensionEvents,
+      refillEvents,
+      avgDurationResult,
+      sessionsBySource,
+      sessionsForZoneMetrics
+    ] = await Promise.all([
+      // Get session counts by state
+      prisma.session.groupBy({
+        by: ['state'],
+        where: whereClause,
+        _count: {
+          id: true
+        }
+      }),
+
+      // Get total sessions
+      prisma.session.count({
+        where: whereClause
+      }),
+
+      // Get active sessions
+      // NOTE: The underlying SessionState enum only includes high-level states (PENDING, ACTIVE, PAUSED, CLOSED, CANCELED).
+      // Workflow sub-states (PREP_IN_PROGRESS, READY_FOR_DELIVERY, DELIVERED) are all stored as ACTIVE in the database.
+      // For analytics, we therefore treat all ACTIVE sessions as \"active\".
+      prisma.session.count({
+        where: {
+          ...whereClause,
+          state: 'ACTIVE'
+        }
+      }),
+
+      // Get completed sessions
+      prisma.session.count({
+        where: {
+          ...whereClause,
+          state: 'CLOSED'
+        }
+      }),
+
+      // Get revenue (sum of priceCents)
+      prisma.session.aggregate({
+        where: {
+          ...whereClause,
+          paymentStatus: 'succeeded'
+        },
+        _sum: {
+          priceCents: true
+        }
+      }),
+
+      // Get extension events
+      prisma.reflexEvent.count({
+        where: {
+          type: 'session.extended',
+          createdAt: {
+            gte: cutoffDate
+          }
+        }
+      }),
+
+      // Get refill events
+      prisma.reflexEvent.count({
+        where: {
+          type: {
+            in: ['session.refill_requested', 'session.refill_completed']
+          },
+          createdAt: {
+            gte: cutoffDate
+          }
+        }
+      }),
+
+      // Calculate average session duration (only for closed sessions with duration)
+      prisma.session.aggregate({
+        where: {
+          ...whereClause,
+          state: 'CLOSED',
+          durationSecs: {
+            not: null
+          }
+        },
+        _avg: {
+          durationSecs: true
+        },
+        _count: {
+          id: true
+        }
+      }),
+
+      // Get sessions by source
+      prisma.session.groupBy({
+        by: ['source'],
+        where: whereClause,
+        _count: {
+          id: true
+        }
+      }),
+      
+      // Lightweight dataset for zone-level metrics (refill data not yet tracked per session)
+      prisma.session.findMany({
+        where: whereClause,
+        select: {
+          zone: true,
+        }
+      })
+    ]);
+
+    const revenue = (revenueResult._sum.priceCents || 0) / 100; // Convert cents to dollars
+    const avgDurationMinutes = avgDurationResult._avg.durationSecs 
+      ? Math.round((avgDurationResult._avg.durationSecs / 60) * 10) / 10 
+      : 0;
+
+    // Time-based vs flat share
+    // NOTE: The current Session schema does not include a dedicated pricing/sessionType field.
+    // Until that is added, these metrics are reported as zero and the breakdown is empty.
+    const sessionsByPricingType: any[] = [];
+    const timeBasedSessions = 0;
+    const timeBasedShare = 0;
+    const timeBasedAvgDurationMinutes = 0;
+
+    // Global refill rate & per-zone refill rates
+    // NOTE: Per-session refill flags are not yet tracked in the Session schema.
+    // For now, report zero-based refill metrics while still exposing per-zone session counts.
+    const refillSessionCount = 0;
+    const globalRefillRate = 0;
+
+    const zoneStats: Record<string, { total: number; refills: number }> = {};
+    sessionsForZoneMetrics.forEach((s: any) => {
+      const zoneKey = s.zone || 'UNASSIGNED';
+      if (!zoneStats[zoneKey]) {
+        zoneStats[zoneKey] = { total: 0, refills: 0 };
+      }
+      zoneStats[zoneKey].total += 1;
+    });
+
+    const refillByZone = Object.entries(zoneStats).map(
+      ([zone, stats]) => ({
+        zone,
+        totalSessions: stats.total,
+        refilledSessions: stats.refills,
+        refillRate:
+          stats.total > 0 ? stats.refills / stats.total : 0
+      })
+    );
+
+    return NextResponse.json({
+      success: true,
+      metrics: {
+        totalSessions,
+        activeSessions,
+        completedSessions,
+        revenue,
+        extensionCount: extensionEvents,
+        refillCount: refillEvents,
+        avgDurationMinutes,
+        windowDays,
+        timeBasedSessions,
+        timeBasedShare,
+        timeBasedAvgDurationMinutes,
+        refillSessionCount,
+        globalRefillRate
+      },
+      breakdown: {
+        byState: sessionsByState.map(s => ({
+          state: s.state,
+          count: s._count.id
+        })),
+        bySource: sessionsBySource.map(s => ({
+          source: s.source,
+          count: s._count.id
+        })),
+        byPricingType: sessionsByPricingType.map(s => ({
+          sessionType: s.sessionType || 'UNKNOWN',
+          count: s._count.id
+        })),
+        refillByZone
+      }
+    });
+
+  } catch (error: any) {
+    console.error('[Analytics API] Error:', error);
+    
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to get analytics',
+        details: error?.message || 'Unknown error'
+      },
+      { status: 500 }
+    );
+  }
+}
+

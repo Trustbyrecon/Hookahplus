@@ -1,0 +1,2 @@
+ALTER TABLE "Session" ADD COLUMN IF NOT EXISTS "nan_stage" TEXT;
+ALTER TABLE "Session" ADD COLUMN IF NOT EXISTS "nan_action" TEXT;
