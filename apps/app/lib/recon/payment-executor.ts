@@ -4,7 +4,7 @@
  * Idempotent: same idempotency_key returns existing result.
  */
 
-import type { ActionIntent } from "./contract";
+import type { ActionIntent, RefundActionIntent } from "./contract";
 import type { ExecutionMetadata } from "./contract";
 import { kvGet, kvSet } from "../kv-client";
 
@@ -24,6 +24,14 @@ export async function executeRefund(
   params: ExecuteRefundParams
 ): Promise<ExecutionMetadata> {
   const { intent, adjusted_amount } = params;
+  if (intent.action_type !== "refund.request") {
+    return {
+      execution_status: "failed",
+      error: `Unsupported action_type for refund executor: ${intent.action_type}`,
+    };
+  }
+
+  const refundIntent: RefundActionIntent = intent;
   const idempotencyKey = intent.idempotency_key;
   const cacheKey = IDEMPOTENCY_PREFIX + idempotencyKey;
 
@@ -32,8 +40,8 @@ export async function executeRefund(
     return cached;
   }
 
-  const amountToRefund = adjusted_amount ?? intent.amount;
-  const paymentIntentId = intent.payment_intent_id;
+  const amountToRefund = adjusted_amount ?? refundIntent.amount;
+  const paymentIntentId = refundIntent.payment_intent_id;
 
   if (!paymentIntentId) {
     const result: ExecutionMetadata = {

@@ -6,6 +6,7 @@
 import type {
   ActionIntent,
   Decision,
+  RefundActionIntent,
   ReconDecisionResponse,
   ReconMode,
 } from "./contract";
@@ -23,7 +24,7 @@ function getMode(): ReconMode {
 /**
  * Deterministic refund rules (v1). Returns decision and optional adjusted amount.
  */
-function evaluateRefundRequest(intent: ActionIntent): {
+function evaluateRefundRequest(intent: RefundActionIntent): {
   decision: Decision;
   adjusted_amount?: number;
 } {
@@ -103,11 +104,12 @@ export async function runPolicyCore(
   const isRefund = intent.action_type === "refund.request";
   const isSquareDrift = intent.action_type.startsWith("recon.square.");
 
-  const { decision, adjusted_amount } = isRefund
-    ? evaluateRefundRequest(intent)
+  const evaluation: { decision: Decision; adjusted_amount?: number } = isRefund
+    ? evaluateRefundRequest(intent as RefundActionIntent)
     : isSquareDrift
       ? evaluateSquareDrift(intent)
       : { decision: "BLOCK" as const };
+  const { decision, adjusted_amount } = evaluation;
 
   // Mode 1 (DEGRADED): medium+ → escalate (we already escalate in rules; no supervisor)
   // So in mode 1 we could tighten: e.g. any non-trivial refund → ESCALATE. For now keep same rules.
