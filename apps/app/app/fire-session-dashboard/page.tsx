@@ -1125,7 +1125,7 @@ function FireSessionDashboardContent() {
                 {reconcilePolicyDefaults ? (
                   <p className="text-[11px] text-zinc-500 mb-2">
                     Org policy defaults: {reconcilePolicyDefaults.cadenceMinutes}m cadence, {reconcilePolicyDefaults.graceWindowMinutes}m grace,
-                    {` `}alert on delta >= {reconcilePolicyDefaults.reconcileDeltaAlertMin}
+                    {` `}alert on delta {">="} {reconcilePolicyDefaults.reconcileDeltaAlertMin}
                     {` `}or {reconcilePolicyDefaults.reconcileDeltaPctAlertMin}%.
                   </p>
                 ) : null}
