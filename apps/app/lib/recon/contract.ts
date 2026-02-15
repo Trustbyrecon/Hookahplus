@@ -10,6 +10,8 @@ export const ACTION_TYPES = [
   "recon.square.reconciliation_drop",
   "recon.square.payment_mismatch",
   "recon.square.refund_mismatch",
+  // Drift intents (Session operational mapping)
+  "recon.session.multi_active",
 ] as const;
 export type ActionType = (typeof ACTION_TYPES)[number];
 
@@ -40,7 +42,8 @@ export interface SquareDriftActionIntent {
     | "recon.square.unassigned_ticket"
     | "recon.square.reconciliation_drop"
     | "recon.square.payment_mismatch"
-    | "recon.square.refund_mismatch";
+    | "recon.square.refund_mismatch"
+    | "recon.session.multi_active";
   lounge_id: string;
   tenant_id?: string | null;
   location_id?: string | null;

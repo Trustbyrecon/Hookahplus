@@ -42,6 +42,7 @@ export async function POST(req: Request) {
     // Action type allowlist: refund + Square drift (sandbox-only for now)
     const isRefund = intent.action_type === "refund.request";
     const isSquareDrift = intent.action_type.startsWith("recon.square.");
+    const isSessionDrift = intent.action_type.startsWith("recon.session.");
     if (isSquareDrift) {
       const squareEnv = (process.env.SQUARE_ENV || "").toLowerCase();
       const allow = squareEnv === "sandbox";
@@ -51,7 +52,7 @@ export async function POST(req: Request) {
           { status: 400 }
         );
       }
-    } else if (!isRefund) {
+    } else if (!isRefund && !isSessionDrift) {
       return NextResponse.json(
         { error: "Unsupported action_type", action_type: intent.action_type },
         { status: 400 }

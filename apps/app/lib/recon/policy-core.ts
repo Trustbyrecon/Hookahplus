@@ -69,10 +69,9 @@ function evaluateRefundRequest(intent: RefundActionIntent): {
 }
 
 function evaluateSquareDrift(intent: ActionIntent): { decision: Decision } {
-  // Sandbox-first: drift intents are never money-moving. We treat them as policy artifacts
-  // to drive a Recon review loop. For now, default to ESCALATE for any drift surface.
-  // (Heals are executed separately in the reconcile loop, and are idempotent.)
-  if (intent.action_type.startsWith("recon.square.")) {
+  // Drift intents are operational policy artifacts. They are never directly money-moving.
+  // Keep default behavior conservative and always escalate for operator review.
+  if (intent.action_type.startsWith("recon.square.") || intent.action_type.startsWith("recon.session.")) {
     return { decision: "ESCALATE" };
   }
   return { decision: "ESCALATE" };
@@ -103,10 +102,11 @@ export async function runPolicyCore(
 
   const isRefund = intent.action_type === "refund.request";
   const isSquareDrift = intent.action_type.startsWith("recon.square.");
+  const isSessionDrift = intent.action_type.startsWith("recon.session.");
 
   const evaluation: { decision: Decision; adjusted_amount?: number } = isRefund
     ? evaluateRefundRequest(intent as RefundActionIntent)
-    : isSquareDrift
+    : (isSquareDrift || isSessionDrift)
       ? evaluateSquareDrift(intent)
       : { decision: "BLOCK" as const };
   const { decision, adjusted_amount } = evaluation;

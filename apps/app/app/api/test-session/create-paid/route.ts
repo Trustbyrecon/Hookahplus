@@ -22,6 +22,11 @@ const seal = (o: unknown) =>
  */
 export async function POST(req: NextRequest) {
   try {
+    // Test-only route. Block in production unless explicitly enabled.
+    if (process.env.NODE_ENV === 'production' && process.env.ALLOW_TEST_SESSION !== 'true') {
+      return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });
+    }
+
     const body = await req.json().catch(() => ({}));
     
     const tableId = body.tableId || `table-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;

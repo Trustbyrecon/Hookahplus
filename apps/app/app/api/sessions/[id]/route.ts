@@ -160,6 +160,17 @@ export async function GET(
           tenantId: true,
           stage: true,
           action: true,
+          participants: {
+            where: { status: 'ACTIVE' },
+            select: {
+              id: true,
+              displayName: true,
+              identityKey: true,
+              status: true,
+              createdAt: true,
+            },
+            orderBy: { createdAt: 'asc' },
+          },
         },
       });
     } catch (dbError: any) {
@@ -192,6 +203,17 @@ export async function GET(
               createdAt: true,
               updatedAt: true,
               tenantId: true,
+              participants: {
+                where: { status: 'ACTIVE' },
+                select: {
+                  id: true,
+                  displayName: true,
+                  identityKey: true,
+                  status: true,
+                  createdAt: true,
+                },
+                orderBy: { createdAt: 'asc' },
+              },
             },
           });
         } catch (fallbackError: any) {
@@ -228,6 +250,13 @@ export async function GET(
         customer_name: session.customerRef,
         price_cents: session.priceCents,
         status: fireSession.status,
+        participants: (session.participants || []).map((p: any) => ({
+          id: p.id,
+          displayName: p.displayName,
+          status: p.status,
+          createdAt: p.createdAt,
+          identityPreview: typeof p.identityKey === 'string' ? p.identityKey.slice(0, 10) : null,
+        })),
       }, {
         headers: getCorsHeaders(request),
       });

@@ -10,6 +10,7 @@ const actionTypeSchema = z.enum([
   "recon.square.reconciliation_drop",
   "recon.square.payment_mismatch",
   "recon.square.refund_mismatch",
+  "recon.session.multi_active",
 ]);
 const initiatorTypeSchema = z.enum(["human", "ai"]);
 
@@ -70,6 +71,7 @@ export const actionIntentSchema = z.discriminatedUnion("action_type", [
   driftIntentSchema.extend({ action_type: z.literal("recon.square.reconciliation_drop") }),
   driftIntentSchema.extend({ action_type: z.literal("recon.square.payment_mismatch") }),
   driftIntentSchema.extend({ action_type: z.literal("recon.square.refund_mismatch") }),
+  driftIntentSchema.extend({ action_type: z.literal("recon.session.multi_active") }),
 ]);
 
 export type ActionIntentParsed = z.infer<typeof actionIntentSchema>;
