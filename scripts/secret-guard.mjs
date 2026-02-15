@@ -5,6 +5,8 @@ import { readFileSync } from "node:fs";
 
 const MODE = parseMode(process.argv.slice(2));
 
+const BASE_REF = process.env.SECRET_GUARD_BASE_REF || "origin/main";
+
 const BLOCKED_FILE_PATTERNS = [
   /(^|\/)\.env$/i,
   /(^|\/)\.env\.(?:local|development|production|test)$/i,
@@ -12,6 +14,19 @@ const BLOCKED_FILE_PATTERNS = [
   /(^|\/).*\.pem$/i,
   /(^|\/)credentials\.json$/i,
   /(^|\/)secrets?\.json$/i,
+];
+
+// Allowlist is evaluated before secret patterns. Use this to avoid blocking known-safe
+// public keys, placeholders, fixtures, or docs containing illustrative strings.
+const ALLOWLIST_PATH_PATTERNS = [
+  /(^|\/)\.env\.example$/i,
+  /(^|\/)LAUNCH_CHECKLIST\.md$/i,
+  /(^|\/)hookahplus-v2-\/LAUNCH_CHECKLIST\.md$/i,
+];
+
+const ALLOWLIST_LINE_PATTERNS = [
+  /\bSUPABASE_ANON_KEY\b/i, // public (anon) key is expected in docs/tests
+  /\bpk_(?:live|test)_[0-9A-Za-z]{10,}\b/, // publishable keys are not secrets
 ];
 
 const SECRET_PATTERNS = [
@@ -66,14 +81,33 @@ function ensureGitRepo() {
 
 function getDiffPatch(mode) {
   if (mode === "range") {
-    const upstream = tryRun("git rev-parse --abbrev-ref --symbolic-full-name @{u}");
-    if (upstream) {
-      return run(`git diff --no-color --unified=0 ${upstream}...HEAD`);
+    // Default: scan what differs from mainline to avoid missing local-only commits.
+    // Uses merge-base(HEAD, origin/main) when available.
+    const base = tryMergeBase(BASEREF());
+    if (base) {
+      return run(`git diff --no-color --unified=0 ${base}..HEAD`);
     }
+
+    // Fallback: upstream tracking branch if configured.
+    const upstream = tryRun("git rev-parse --abbrev-ref --symbolic-full-name @{u}");
+    if (upstream) return run(`git diff --no-color --unified=0 ${upstream}...HEAD`);
+
     const root = run("git rev-list --max-parents=0 HEAD | tail -n 1");
     return run(`git diff --no-color --unified=0 ${root}...HEAD`);
   }
   return run("git diff --cached --no-color --unified=0");
+}
+
+function BASEREF() {
+  // Allow override like "origin/master" or a SHA via env var.
+  return BASE_REF;
+}
+
+function tryMergeBase(ref) {
+  if (!ref) return "";
+  const exists = tryRun(`git rev-parse --verify ${ref}`);
+  if (!exists) return "";
+  return tryRun(`git merge-base HEAD ${ref}`) || "";
 }
 
 function scanPatch(patch) {
@@ -155,6 +189,8 @@ function scanAllTrackedFiles() {
 function evaluateLine(findings, file, line, content) {
   if (!content || content.trim().length === 0) return;
   if (content.trimStart().startsWith("#")) return;
+  if (isAllowlistedPath(file)) return;
+  if (isAllowlistedLine(content)) return;
   if (isPlaceholderLike(content)) return;
 
   if (isBlockedFile(file)) {
@@ -168,11 +204,12 @@ function evaluateLine(findings, file, line, content) {
   }
 
   for (const pattern of SECRET_PATTERNS) {
-    if (
-      pattern.name === "JWT token" &&
-      /(?:ANON_KEY|NEXT_PUBLIC|PUBLIC)/i.test(content)
-    ) {
-      continue;
+    if (pattern.name === "JWT token") {
+      // Skip known-public JWT-like values (anon/public keys) but keep catching private ones
+      // like service-role keys.
+      const isPublicish = /(?:ANON_KEY|NEXT_PUBLIC|PUBLIC)/i.test(content);
+      const isServiceRole = /SERVICE[_-]?ROLE/i.test(content);
+      if (isPublicish && !isServiceRole) continue;
     }
 
     if (pattern.regex.test(content)) {
@@ -189,6 +226,15 @@ function evaluateLine(findings, file, line, content) {
 function isBlockedFile(file) {
   const normalized = file.replace(/\\/g, "/");
   return BLOCKED_FILE_PATTERNS.some((regex) => regex.test(normalized));
+}
+
+function isAllowlistedPath(file) {
+  const normalized = file.replace(/\\/g, "/");
+  return ALLOWLIST_PATH_PATTERNS.some((regex) => regex.test(normalized));
+}
+
+function isAllowlistedLine(content) {
+  return ALLOWLIST_LINE_PATTERNS.some((regex) => regex.test(content));
 }
 
 function trimForLog(line) {
