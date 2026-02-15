@@ -50,7 +50,10 @@
     "test:pos": "cd apps/app && npm run test:pos",
     "check:env-parity": "node scripts/check-env-parity.js",
     "reflex:gate": "node scripts/reflex-gate.js",
-    "reflex:score": "node scripts/reflex-score.js"
+    "reflex:score": "node scripts/reflex-score.js",
+    "security:scan:staged": "node scripts/secret-guard.mjs --staged",
+    "security:scan:range": "node scripts/secret-guard.mjs --range",
+    "security:scan:all": "node scripts/secret-guard.mjs --all"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
