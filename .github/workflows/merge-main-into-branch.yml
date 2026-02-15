@@ -1,0 +1,37 @@
+# One-time workflow to merge origin/main into fix/phased-clean-pr
+# (origin/main has paths invalid on Windows; this runs on Linux)
+# Trigger: Actions tab -> Merge main into branch -> Run workflow
+name: Merge main into branch
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: "Branch to merge main into (e.g. fix/phased-clean-pr)"
+        required: true
+        default: "fix/phased-clean-pr"
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.target_branch }}
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Merge origin/main
+        run: |
+          git fetch origin main
+          git merge origin/main --allow-unrelated-histories -m "Merge origin/main: establish common base for PR"
+
+      - name: Push
+        run: git push origin ${{ github.event.inputs.target_branch }}
