@@ -66,6 +66,7 @@ model Session {
   payments            Payment[]
   webhookEvents       WebhookEvent[]
   notes               SessionNote[]
+  participants        Participant[]
 
   @@unique([loungeId, externalRef])
   @@index([preorderId])
@@ -73,6 +74,7 @@ model Session {
   @@index([zoneId])
   @@index([loungeConfigVersion])
   @@index([loungeId, state])
+  @@index([loungeId, tableId, state], map: "idx_session_lounge_table_state")
   @@index([createdAt], map: "idx_session_created_at")
   @@index([createdAt, source], map: "idx_session_created_at_source")
   @@index([createdAt, state], map: "idx_session_created_at_state")
@@ -84,6 +86,36 @@ model Session {
   @@index([sessionStateV1], map: "idx_session_state_v1")
   @@index([tableId], map: "idx_session_table_id")
   @@map("Session")
+}
+
+model Participant {
+  id           String            @id @default(cuid())
+  sessionId    String            @map("session_id")
+  identityKey  String            @map("identity_key")
+  displayName  String            @default("Guest") @map("display_name")
+  status       ParticipantStatus @default(ACTIVE)
+  createdAt    DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+  session      Session           @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  prefs        ParticipantPrefs?
+
+  @@index([sessionId], map: "idx_participants_session_id")
+  @@index([identityKey], map: "idx_participants_identity_key")
+  @@index([sessionId, identityKey, status], map: "idx_participants_session_identity_status")
+  @@map("participants")
+}
+
+model ParticipantPrefs {
+  id             String      @id @default(cuid())
+  participantId  String      @unique @map("participant_id")
+  flavorProfile  Json?       @map("flavor_profile")
+  notes          String?
+  createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+  participant    Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@index([participantId], map: "idx_participant_prefs_participant_id")
+  @@map("participant_prefs")
 }
 
 model Tenant {
@@ -1149,6 +1181,12 @@ enum SessionState {
   PAUSED
   CLOSED
   CANCELED
+  REFUNDED
+}
+
+enum ParticipantStatus {
+  ACTIVE
+  LEFT
 }
 
 enum reservation_status {
