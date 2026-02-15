@@ -1,13 +1,14 @@
-# One-time workflow to merge origin/main into fix/phased-clean-pr
-# (origin/main has paths invalid on Windows; this runs on Linux)
-# Trigger: Actions tab -> Merge main into branch -> Run workflow
+# Merge origin/main into this branch (origin/main has paths invalid on Windows)
+# Runs automatically on push to fix/phased-clean-pr; also available as manual trigger
 name: Merge main into branch
 
 on:
+  push:
+    branches: [fix/phased-clean-pr]
   workflow_dispatch:
     inputs:
       target_branch:
-        description: "Branch to merge main into (e.g. fix/phased-clean-pr)"
+        description: "Branch to merge main into"
         required: true
         default: "fix/phased-clean-pr"
 
