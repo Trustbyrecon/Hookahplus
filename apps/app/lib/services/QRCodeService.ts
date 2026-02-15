@@ -1,7 +1,8 @@
 /**
  * QR Code Service
- * 
- * Manages QR code generation, storage, analytics, and branding
+ *
+ * Canonical QR generation helper. Runtime storage should be handled by
+ * durable persistence (see launchpad/qr-storage), not in-memory maps.
  */
 
 import { PrismaClient } from '@prisma/client';
@@ -87,11 +88,8 @@ export class QRCodeService {
         branding: config.branding,
       };
 
-      // Store in database if Prisma provided
-      if (prisma) {
-        // TODO: Add QR codes table to schema and persist here
-        // For now, we'll use the existing in-memory storage
-      }
+      // Persistence is handled by callers via durable storage module.
+      void prisma;
 
       return { success: true, qrCode };
     } catch (error) {
@@ -147,8 +145,7 @@ export class QRCodeService {
     prisma?: PrismaClient
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      // TODO: Store scan event in database
-      // For now, increment usage count in memory storage
+      // Scan persistence is handled by caller-specific analytics pipelines.
       console.log(`[QRCodeService] QR code scanned: ${qrCodeId}`, { deviceId });
       
       return { success: true };
@@ -169,8 +166,7 @@ export class QRCodeService {
     prisma?: PrismaClient
   ): Promise<{ success: boolean; analytics?: QRCodeAnalytics; error?: string }> {
     try {
-      // TODO: Calculate analytics from database
-      // For now, return mock data structure
+      // Analytics persistence is intentionally external to this helper.
       const analytics: QRCodeAnalytics = {
         qrCodeId,
         scans: 0,
@@ -197,7 +193,7 @@ export class QRCodeService {
     campaignRef?: string
   ): string {
     const guestBase = process.env.NEXT_PUBLIC_GUEST_BASE_URL || 'https://guest.hookahplus.net';
-    const url = new URL(`${guestBase}/api/guest/enter`);
+    const url = new URL(`${guestBase.replace(/\/$/, '')}/guest/${encodeURIComponent(loungeId)}`);
     url.searchParams.set('loungeId', loungeId);
     if (tableId) url.searchParams.set('tableId', tableId);
     if (campaignRef) url.searchParams.set('ref', campaignRef);

@@ -9,6 +9,11 @@ const createIdempotencyKey = () => crypto.randomUUID();
 
 export async function POST(req: Request) {
   try {
+    // Demo-only surface (layout-preview). Do not allow in production.
+    if (process.env.NODE_ENV === "production") {
+      return Response.json({ success: false, error: "Not found" }, { status: 404 });
+    }
+
     const { action, data } = await req.json();
 
     switch (action) {

@@ -1,33 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import QRCode from 'qrcode';
-import { QRCodeService } from '../../../lib/services/QRCodeService';
-
-interface QRCodeData {
-  id: string;
-  loungeId: string;
-  tableId?: string;
-  campaignRef?: string;
-  url: string;
-  qrCodeData: string;
-  createdAt: string;
-  usageCount: number;
-  lastUsed?: string;
-  status: 'active' | 'inactive' | 'expired';
-  branding?: {
-    logoUrl?: string;
-    primaryColor?: string;
-    secondaryColor?: string;
-    logoSize?: number;
-  };
-}
-
-// In-memory storage for demo (in production, use database)
-const qrCodes = new Map<string, QRCodeData>();
+import { storeQRCodes, getQRCodesForLounge } from '../../../lib/launchpad/qr-storage';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { loungeId, tableId, campaignRef, branding, bulkTables } = body;
+    const { loungeId, tableId, campaignRef, bulkTables, baseUrl, size = 512, format = 'png' } = body;
 
     if (!loungeId) {
       return NextResponse.json({ 
@@ -35,61 +12,63 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Handle bulk QR code generation
-    if (bulkTables && Array.isArray(bulkTables) && bulkTables.length > 0) {
-      const result = await QRCodeService.generateBulkQRCodes(
-        loungeId,
-        bulkTables,
-        campaignRef,
-        branding
-      );
+    const adminBase = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
+    const tables = Array.isArray(bulkTables) && bulkTables.length > 0
+      ? bulkTables
+      : [tableId].filter(Boolean);
 
-      if (result.success && result.qrCodes) {
-        // Store in memory
-        result.qrCodes.forEach(qr => {
-          qrCodes.set(qr.id, qr);
-        });
+    if (!tables.length) {
+      return NextResponse.json({ error: 'tableId or bulkTables is required' }, { status: 400 });
+    }
 
-        return NextResponse.json({
-          success: true,
-          qrCodes: result.qrCodes,
-          total: result.qrCodes.length,
-          errors: result.errors,
-          message: `Generated ${result.qrCodes.length} QR code(s)`
-        });
-      } else {
+    const generated: Array<{
+      tableId: string | null;
+      type: 'table' | 'kiosk';
+      url: string;
+      qrCodeDataUrl: string;
+    }> = [];
+
+    for (const t of tables) {
+      const url = new URL('/api/admin/qr', adminBase);
+      url.searchParams.set('loungeId', loungeId);
+      url.searchParams.set('size', String(size));
+      url.searchParams.set('format', String(format));
+      if (baseUrl) url.searchParams.set('baseUrl', baseUrl);
+      if (campaignRef) url.searchParams.set('ref', campaignRef);
+      // Canonical mapping target includes lounge + table.
+      url.searchParams.set('tableId', String(t));
+      const response = await fetch(url.toString(), { method: 'GET' });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.ok) {
         return NextResponse.json({
           success: false,
-          error: 'Failed to generate bulk QR codes',
-          errors: result.errors
+          error: `Failed generating QR for table ${t}`,
+          details: data?.error || 'unknown_error',
         }, { status: 500 });
       }
+      generated.push({
+        tableId: String(t),
+        type: 'table',
+        url: data.url,
+        qrCodeDataUrl: data.qrDataUrl || '',
+      });
     }
 
-    // Single QR code generation
-    const result = await QRCodeService.generateQRCode({
-      loungeId,
-      tableId,
-      campaignRef,
-      branding,
-    });
-
-    if (!result.success || !result.qrCode) {
-      return NextResponse.json({
-        success: false,
-        error: result.error || 'Failed to generate QR code'
-      }, { status: 500 });
-    }
-
-    const qrCode = result.qrCode;
-    qrCodes.set(qrCode.id, qrCode);
-
-    console.log(`[QR Generator] New QR code created: ${qrCode.id} - ${loungeId}${tableId ? `-${tableId}` : ''} -> ${qrCode.url}`);
+    await storeQRCodes(loungeId, generated);
 
     return NextResponse.json({
       success: true,
-      qrCode,
-      message: 'QR code generated successfully'
+      total: generated.length,
+      qrCodes: generated.map((q) => ({
+        loungeId,
+        tableId: q.tableId || undefined,
+        url: q.url,
+        qrCodeData: q.qrCodeDataUrl,
+        status: 'active',
+        usageCount: 0,
+        createdAt: new Date().toISOString(),
+      })),
+      message: `Generated ${generated.length} durable QR code(s)`,
     });
 
   } catch (error) {
@@ -105,27 +84,25 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const loungeId = searchParams.get('loungeId');
-    const status = searchParams.get('status');
-
-    let filteredQRCodes = Array.from(qrCodes.values());
-
-    // Apply filters
-    if (loungeId) {
-      filteredQRCodes = filteredQRCodes.filter(qr => qr.loungeId === loungeId);
-    }
-    if (status) {
-      filteredQRCodes = filteredQRCodes.filter(qr => qr.status === status);
+    if (!loungeId) {
+      return NextResponse.json({ error: 'loungeId is required' }, { status: 400 });
     }
 
-    // Sort by creation date (newest first)
-    filteredQRCodes.sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    let stored = await getQRCodesForLounge(loungeId);
 
     return NextResponse.json({
       success: true,
-      qrCodes: filteredQRCodes,
-      total: filteredQRCodes.length
+      qrCodes: stored.map((q) => ({
+        id: q.id,
+        loungeId: q.loungeId,
+        tableId: q.tableId || undefined,
+        url: q.url,
+        qrCodeData: q.qrCodeDataUrl,
+        createdAt: q.createdAt.toISOString(),
+        usageCount: 0,
+        status: 'active',
+      })),
+      total: stored.length,
     });
 
   } catch (error) {

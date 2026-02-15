@@ -1,8 +1,7 @@
 /**
  * QR Code Storage Service
- * 
- * Stores and retrieves QR codes from database
- * TODO: Add QRCode model to Prisma schema
+ *
+ * Stores and retrieves QR codes via durable org settings persistence.
  */
 
 import { prisma } from '../db';
@@ -20,7 +19,6 @@ export interface StoredQRCode {
 
 /**
  * Store QR codes in database
- * TODO: Implement when QRCode model is added to schema
  */
 export async function storeQRCodes(
   loungeId: string,
@@ -32,21 +30,44 @@ export async function storeQRCodes(
   }>
 ): Promise<boolean> {
   try {
-    // TODO: Uncomment when QRCode model is added to Prisma schema
-    /*
-    await prisma.qRCode.createMany({
-      data: qrCodes.map(qr => ({
+    const key = `qr_codes:${loungeId}`;
+    const existing = await prisma.orgSetting.findUnique({ where: { key } });
+    const parsed: StoredQRCode[] = existing?.value ? JSON.parse(existing.value) : [];
+    const now = new Date();
+
+    for (const qr of qrCodes) {
+      const id = `${loungeId}:${qr.tableId || 'kiosk'}:${qr.type}`;
+      const currentIdx = parsed.findIndex((p) => p.id === id);
+      const next: StoredQRCode = {
+        id,
         loungeId,
         tableId: qr.tableId,
         type: qr.type,
         url: qr.url,
         qrCodeDataUrl: qr.qrCodeDataUrl,
-      })),
-    });
-    */
+        createdAt: currentIdx >= 0 ? new Date(parsed[currentIdx].createdAt) : now,
+        updatedAt: now,
+      };
+      if (currentIdx >= 0) parsed[currentIdx] = next;
+      else parsed.push(next);
+    }
 
-    // For now, just log that we would store them
-    console.log(`[QR Storage] Would store ${qrCodes.length} QR codes for lounge ${loungeId}`);
+    await prisma.orgSetting.upsert({
+      where: { key },
+      create: {
+        key,
+        value: JSON.stringify(parsed),
+        description: `Durable QR storage for lounge ${loungeId}`,
+        category: 'qr',
+        isActive: true,
+      },
+      update: {
+        value: JSON.stringify(parsed),
+        isActive: true,
+      },
+    });
+
+    console.log(`[QR Storage] Stored ${qrCodes.length} QR codes for lounge ${loungeId}`);
     return true;
   } catch (error) {
     console.error('[QR Storage] Error:', error);
@@ -56,33 +77,20 @@ export async function storeQRCodes(
 
 /**
  * Retrieve QR codes for a lounge
- * TODO: Implement when QRCode model is added to schema
  */
 export async function getQRCodesForLounge(
   loungeId: string
 ): Promise<StoredQRCode[]> {
   try {
-    // TODO: Uncomment when QRCode model is added to Prisma schema
-    /*
-    const qrCodes = await prisma.qRCode.findMany({
-      where: { loungeId },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    return qrCodes.map(qr => ({
-      id: qr.id,
-      loungeId: qr.loungeId,
-      tableId: qr.tableId,
-      type: qr.type as 'table' | 'kiosk',
-      url: qr.url,
-      qrCodeDataUrl: qr.qrCodeDataUrl,
-      createdAt: qr.createdAt,
-      updatedAt: qr.updatedAt,
+    const key = `qr_codes:${loungeId}`;
+    const row = await prisma.orgSetting.findUnique({ where: { key } });
+    if (!row?.value) return [];
+    const parsed = JSON.parse(row.value) as StoredQRCode[];
+    return parsed.map((p) => ({
+      ...p,
+      createdAt: new Date(p.createdAt),
+      updatedAt: new Date(p.updatedAt),
     }));
-    */
-
-    // For now, return empty array
-    return [];
   } catch (error) {
     console.error('[QR Storage] Error:', error);
     return [];

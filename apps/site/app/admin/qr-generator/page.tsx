@@ -263,7 +263,7 @@ export default function QRGeneratorAdmin() {
       loungeId: 'CLOUD_DEMO',
       tableId: 'T-001',
       campaignRef: 'WELCOME',
-      url: 'https://guest.hookahplus.net?loungeId=CLOUD_DEMO&tableId=T-001&ref=WELCOME',
+      url: 'https://guest.hookahplus.net/guest/CLOUD_DEMO?loungeId=CLOUD_DEMO&tableId=T-001&ref=WELCOME',
       qrCodeData: `data:image/svg+xml;base64,${btoa(`
         <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
           <rect width="200" height="200" fill="white"/>
@@ -378,7 +378,7 @@ export default function QRGeneratorAdmin() {
 
   const loadQRHistory = async () => {
     try {
-      const response = await fetch('/api/qr-generator');
+      const response = await fetch(`/api/qr-generator?loungeId=${encodeURIComponent(loungeId)}`);
       if (response.ok) {
         const data = await response.json();
         setQrHistory(data.qrCodes || []);
@@ -397,55 +397,25 @@ export default function QRGeneratorAdmin() {
     setIsGenerating(true);
     
     try {
-      const qrData = {
-        loungeId: loungeId.trim(),
-        tableId: tableId.trim() || undefined,
-        campaignRef: campaignRef.trim() || undefined,
-        timestamp: new Date().toISOString()
-      };
-
-      // Generate URL with parameters
-      const baseUrl = process.env.NEXT_PUBLIC_GUEST_URL || 'https://guest.hookahplus.net';
-      const params = new URLSearchParams();
-      params.set('loungeId', qrData.loungeId);
-      if (qrData.tableId) params.set('tableId', qrData.tableId);
-      if (qrData.campaignRef) params.set('ref', qrData.campaignRef);
-      
-      const qrUrl = `${baseUrl}?${params.toString()}`;
-
-      // Generate QR code using a simple API (in production, use a proper QR library)
-      const qrCodeData = `data:image/svg+xml;base64,${btoa(`
-        <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
-          <rect width="200" height="200" fill="white"/>
-          <text x="100" y="100" text-anchor="middle" font-family="monospace" font-size="12" fill="black">
-            QR: ${qrData.loungeId}${qrData.tableId ? `-${qrData.tableId}` : ''}
-          </text>
-        </svg>
-      `)}`;
-
-      const newQR: QRCodeData = {
-        id: `qr_${Date.now()}`,
-        loungeId: qrData.loungeId,
-        tableId: qrData.tableId,
-        campaignRef: qrData.campaignRef,
-        url: qrUrl,
-        qrCodeData,
-        createdAt: new Date().toISOString(),
-        usageCount: 0,
-        status: 'active'
-      };
-
-      // Save to backend
       const response = await fetch('/api/qr-generator', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newQR)
+        body: JSON.stringify({
+          loungeId: loungeId.trim(),
+          tableId: tableId.trim() || undefined,
+          campaignRef: campaignRef.trim() || undefined,
+          bulkTables: bulkMode ? selectedTablesForBulk : undefined,
+        })
       });
 
       if (response.ok) {
-        setGeneratedQR(newQR);
-        setQrHistory(prev => [newQR, ...prev]);
-        setShowPreview(true);
+        const data = await response.json().catch(() => ({}));
+        const first = Array.isArray(data?.qrCodes) ? data.qrCodes[0] : data?.qrCode;
+        if (first) {
+          setGeneratedQR(first);
+          setQrHistory(prev => [first, ...prev]);
+          setShowPreview(true);
+        }
       } else {
         throw new Error('Failed to save QR code');
       }

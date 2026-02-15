@@ -3,7 +3,7 @@ import QRCode from 'qrcode'
 
 /**
  * POST /api/admin/qr
- * Body: { loungeId: string; ref?: string; u?: string; size?: number; format?: 'png' | 'svg'; baseUrl?: string }
+ * Body: { loungeId: string; tableId?: string; ref?: string; u?: string; size?: number; format?: 'png' | 'svg'; baseUrl?: string }
  * Returns: { ok: true, url: string, qrDataUrl?: string, svg?: string }
  *
  * Generates a QR for the canonical Guest Enter URL with campaign/user params.
@@ -13,6 +13,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}))
     const {
       loungeId,
+      tableId,
       ref,
       u,
       size = 512,
@@ -20,6 +21,7 @@ export async function POST(req: NextRequest) {
       baseUrl,
     }: {
       loungeId?: string
+      tableId?: string
       ref?: string
       u?: string
       size?: number
@@ -35,8 +37,9 @@ export async function POST(req: NextRequest) {
     const defaultGuestBase = process.env.NEXT_PUBLIC_GUEST_BASE_URL || 'http://localhost:3001'
     const guestBase = (baseUrl || defaultGuestBase).replace(/\/$/, '')
 
-    const url = new URL(`${guestBase}/api/guest/enter`)
+    const url = new URL(`${guestBase}/guest/${encodeURIComponent(loungeId)}`)
     url.searchParams.set('loungeId', loungeId)
+    if (tableId) url.searchParams.set('tableId', tableId)
     if (ref) url.searchParams.set('ref', ref)
     if (u) url.searchParams.set('u', u)
 
@@ -60,13 +63,14 @@ export async function POST(req: NextRequest) {
 }
 
 /**
- * GET /api/admin/qr?loungeId=...&ref=...&u=...&size=...&format=png|svg&baseUrl=...
+ * GET /api/admin/qr?loungeId=...&tableId=...&ref=...&u=...&size=...&format=png|svg&baseUrl=...
  * Quick link generation without body
  */
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
     const loungeId = searchParams.get('loungeId') || undefined
+    const tableId = searchParams.get('tableId') || undefined
     const ref = searchParams.get('ref') || undefined
     const u = searchParams.get('u') || undefined
     const size = Number(searchParams.get('size') || '512')
@@ -80,8 +84,9 @@ export async function GET(req: NextRequest) {
     const defaultGuestBase = process.env.NEXT_PUBLIC_GUEST_BASE_URL || 'http://localhost:3001'
     const guestBase = (baseUrl || defaultGuestBase).replace(/\/$/, '')
 
-    const url = new URL(`${guestBase}/api/guest/enter`)
+    const url = new URL(`${guestBase}/guest/${encodeURIComponent(loungeId)}`)
     url.searchParams.set('loungeId', loungeId)
+    if (tableId) url.searchParams.set('tableId', tableId)
     if (ref) url.searchParams.set('ref', ref)
     if (u) url.searchParams.set('u', u)
 

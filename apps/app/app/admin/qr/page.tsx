@@ -2,7 +2,6 @@
 
 import React, { useMemo, useState, useEffect } from 'react'
 import GlobalNavigation from '../../../components/GlobalNavigation'
-import QRCode from 'qrcode'
 import Card from '../../../components/Card'
 import Button from '../../../components/Button'
 import { QrCode, Download, Printer, Copy, CheckCircle, RefreshCw } from 'lucide-react'
@@ -37,33 +36,23 @@ export default function AdminQRPage() {
     setSvg('')
     
     try {
-      const urlBase = baseUrl || (typeof window !== 'undefined' ? window.location.origin : 'https://hookahplus.net')
-      const qrUrl = `${urlBase}/preorder/${tableId}${campaign ? `?campaign=${campaign}` : ''}`
-      
-      setTargetUrl(qrUrl)
+      const params = new URLSearchParams()
+      params.set('loungeId', loungeId)
+      params.set('tableId', tableId)
+      params.set('size', String(size))
+      params.set('format', format)
+      if (campaign) params.set('ref', campaign)
+      if (baseUrl) params.set('baseUrl', baseUrl)
 
-      if (format === 'png') {
-        const qrDataURL = await QRCode.toDataURL(qrUrl, {
-          width: size,
-          margin: 2,
-          color: {
-            dark: '#000000',
-            light: '#FFFFFF'
-          }
-        })
-        setQrDataUrl(qrDataURL)
-      } else {
-        const qrSvg = await QRCode.toString(qrUrl, {
-          type: 'svg',
-          width: size,
-          margin: 2,
-          color: {
-            dark: '#000000',
-            light: '#FFFFFF'
-          }
-        })
-        setSvg(qrSvg)
+      const response = await fetch(`/api/admin/qr?${params.toString()}`)
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok || !data?.ok) {
+        throw new Error(data?.error || 'Failed to generate QR')
       }
+
+      setTargetUrl(data.url || '')
+      if (format === 'png') setQrDataUrl(data.qrDataUrl || '')
+      if (format === 'svg') setSvg(data.svg || '')
     } catch (e: any) {
       setError(e.message)
     } finally {
@@ -171,6 +160,18 @@ export default function AdminQRPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-zinc-300 mb-2">
+                  Lounge ID
+                </label>
+                <input
+                  type="text"
+                  value={loungeId}
+                  onChange={(e) => setLoungeId(e.target.value)}
+                  className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
                   Select Table
                 </label>
                 <select
@@ -243,7 +244,7 @@ export default function AdminQRPage() {
 
               <Button
                 onClick={generateQRCode}
-                disabled={loading || !tableId}
+                disabled={loading || !tableId || !loungeId}
                 className="w-full bg-teal-600 hover:bg-teal-500"
               >
                 <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />

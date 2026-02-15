@@ -44,82 +44,76 @@ class TableDataSyncService {
     return TableDataSyncService.instance;
   }
 
-  // Simulate fetching table data from App build
-  async fetchTableData(loungeId: string, tableId?: string): Promise<TableData[]> {
-    // In a real implementation, this would make an API call to the App build
-    // For now, we'll simulate the data
-    
-    const mockTables: TableData[] = [
-      {
-        tableId: 'T-001',
-        loungeId: 'lounge_001',
-        loungeName: 'Hookah Paradise Downtown',
-        zone: 'VIP',
-        capacity: 4,
-        status: 'available',
-        qrCode: `hookahplus://table/T-001/lounge_001`,
-        lastUpdated: new Date()
-      },
-      {
-        tableId: 'T-002',
-        loungeId: 'lounge_001',
-        loungeName: 'Hookah Paradise Downtown',
-        zone: 'Standard',
-        capacity: 6,
-        status: 'occupied',
-        currentSession: {
-          sessionId: 'session_002',
-          startTime: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
-          duration: 60,
-          customerId: 'customer_002',
-          items: [
-            { id: '1', name: 'Blue Mist Hookah', quantity: 1, price: 3200 }
-          ],
-          totalAmount: 3200
-        },
-        qrCode: `hookahplus://table/T-002/lounge_001`,
-        lastUpdated: new Date()
-      },
-      {
-        tableId: 'T-003',
-        loungeId: 'lounge_001',
-        loungeName: 'Hookah Paradise Downtown',
-        zone: 'Patio',
-        capacity: 8,
-        status: 'available',
-        qrCode: `hookahplus://table/T-003/lounge_001`,
-        lastUpdated: new Date()
-      }
-    ];
-
-    // Store tables in memory
-    mockTables.forEach(table => {
-      this.tables.set(table.tableId, table);
-    });
-
-    // Return filtered results
-    if (tableId) {
-      return mockTables.filter(table => table.tableId === tableId);
-    }
-    return mockTables.filter(table => table.loungeId === loungeId);
+  private appBaseUrl(): string {
+    return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
   }
 
-  // Simulate fetching lounge data
-  async fetchLoungeData(loungeId: string): Promise<LoungeData | null> {
-    const mockLounge: LoungeData = {
-      loungeId: 'lounge_001',
-      name: 'Hookah Paradise Downtown',
-      address: '123 Main St, Downtown, NY 10001',
-      phone: '(555) 123-4567',
-      hours: 'Mon-Sun: 6PM-2AM',
-      features: ['VIP Lounge', 'Outdoor Patio', 'Live Music', 'Full Bar', 'Private Rooms'],
-      timezone: 'America/New_York',
-      currency: 'USD',
-      taxRate: 0.0875 // 8.75%
-    };
+  // Fetch table/session data from app build (DB truth).
+  async fetchTableData(loungeId: string, tableId?: string): Promise<TableData[]> {
+    try {
+      const url = new URL('/api/sessions', this.appBaseUrl());
+      url.searchParams.set('loungeId', loungeId);
+      if (tableId) url.searchParams.set('tableId', tableId);
+      const response = await fetch(url.toString(), { cache: 'no-store' });
+      const data = await response.json().catch(() => ({}));
 
-    this.lounges.set(loungeId, mockLounge);
-    return mockLounge;
+      const sessions = Array.isArray(data?.sessions) ? data.sessions : [];
+      const mapped: TableData[] = sessions.map((s: any) => ({
+        tableId: s.table_id || s.tableId || tableId || 'UNKNOWN',
+        loungeId: s.loungeId || loungeId,
+        loungeName: s.loungeName || loungeId,
+        zone: s.zone || 'Main',
+        capacity: Number(s.capacity || 4),
+        status: (String(s.status || '').toUpperCase() === 'ACTIVE' ? 'occupied' : 'available'),
+        currentSession: String(s.status || '').toUpperCase() === 'ACTIVE' ? {
+          sessionId: s.id || s.session_id || 'unknown',
+          startTime: new Date(s.startedAt || s.createdAt || Date.now()),
+          duration: 0,
+          customerId: s.customer_name || s.customerRef || 'guest',
+          items: [],
+          totalAmount: Number(s.price_cents || s.priceCents || 0),
+        } : undefined,
+        qrCode: `hookahplus://table/${s.table_id || s.tableId || tableId || 'UNKNOWN'}/${loungeId}`,
+        lastUpdated: new Date(),
+      }));
+
+      mapped.forEach((table) => this.tables.set(table.tableId, table));
+      return mapped;
+    } catch (error) {
+      console.warn('[TableDataSync] Falling back to cached table data:', error);
+      const cached = Array.from(this.tables.values()).filter((t) =>
+        t.loungeId === loungeId && (!tableId || t.tableId === tableId)
+      );
+      return cached;
+    }
+  }
+
+  // Fetch lounge details from app build (DB truth when available).
+  async fetchLoungeData(loungeId: string): Promise<LoungeData | null> {
+    try {
+      const response = await fetch(`${this.appBaseUrl()}/api/lounges/${encodeURIComponent(loungeId)}`, {
+        cache: 'no-store',
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data?.error || 'Failed to fetch lounge');
+      const lounge = data?.lounge || data;
+      const mapped: LoungeData = {
+        loungeId,
+        name: lounge?.name || loungeId,
+        address: lounge?.address || '',
+        phone: lounge?.phone || '',
+        hours: lounge?.hours || '',
+        features: Array.isArray(lounge?.features) ? lounge.features : [],
+        timezone: lounge?.timezone || 'UTC',
+        currency: lounge?.currency || 'USD',
+        taxRate: Number(lounge?.taxRate || 0),
+      };
+      this.lounges.set(loungeId, mapped);
+      return mapped;
+    } catch (error) {
+      console.warn('[TableDataSync] Could not fetch lounge details:', error);
+      return this.lounges.get(loungeId) || null;
+    }
   }
 
   // Subscribe to table data updates
@@ -158,26 +152,10 @@ class TableDataSyncService {
     return this.lounges.get(loungeId) || null;
   }
 
-  // Simulate real-time updates from App build
+  // DB-truth refresh hook (no synthetic random state changes).
   startRealTimeSync(): void {
-    // In a real implementation, this would establish a WebSocket connection
-    // to the App build for real-time updates
-    setInterval(() => {
-      // Simulate occasional updates
-      if (Math.random() > 0.8) {
-        const tableIds = Array.from(this.tables.keys());
-        const randomTableId = tableIds[Math.floor(Math.random() * tableIds.length)];
-        const table = this.tables.get(randomTableId);
-        
-        if (table) {
-          // Simulate status change
-          const statuses: TableData['status'][] = ['available', 'occupied', 'reserved'];
-          const newStatus = statuses[Math.floor(Math.random() * statuses.length)];
-          
-          this.updateTableData(randomTableId, { status: newStatus });
-        }
-      }
-    }, 10000); // Check every 10 seconds
+    // Intentionally no-op here. Consumers should call fetchTableData/fetchLoungeData
+    // or use server-driven realtime channels where available.
   }
 }
 

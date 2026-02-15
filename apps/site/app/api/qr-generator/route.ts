@@ -1,210 +1,80 @@
 import { NextRequest, NextResponse } from 'next/server';
-import QRCode from 'qrcode';
 
-interface QRCodeData {
-  id: string;
-  loungeId: string;
-  tableId?: string;
-  campaignRef?: string;
-  url: string;
-  qrCodeData: string;
-  createdAt: string;
-  usageCount: number;
-  lastUsed?: string;
-  status: 'active' | 'inactive' | 'expired';
+function getAppUrl() {
+  return process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.NODE_ENV === 'production'
+      ? 'https://app.hookahplus.net'
+      : 'http://localhost:3002');
 }
 
-// In-memory storage for demo (in production, use database)
-const qrCodes = new Map<string, QRCodeData>();
+async function forward(method: string, req: NextRequest, body?: any) {
+  const appUrl = getAppUrl();
+  const url = new URL(req.url);
+  const path = url.pathname.replace('/api/qr-generator', '/api/qr-generator');
+  const targetUrl = `${appUrl}${path}${url.search}`;
 
-export async function POST(req: NextRequest) {
+  const resp = await fetch(targetUrl, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  const text = await resp.text();
+  let data: any;
   try {
-    const body = await req.json();
-    const { loungeId, tableId, campaignRef, targetUrl, url } = body;
-
-    // Use targetUrl if provided, otherwise use url
-    const finalUrl = targetUrl || url;
-
-    if (!loungeId || !finalUrl) {
-      return NextResponse.json({ 
-        error: 'Missing required fields: loungeId and url (or targetUrl)' 
-      }, { status: 400 });
-    }
-
-    // Special handling for World Shisha 2026
-    let qrUrl = finalUrl;
-    if (loungeId === 'WORLD_SHISHA_2026' || loungeId === 'world_shisha_2026') {
-      // URL is already constructed with referral params
-      qrUrl = finalUrl;
-    }
-
-    // Generate QR code
-    const qrOptions = {
-      width: 512,
-      margin: 2,
-      color: { dark: '#000000', light: '#ffffff' },
-      errorCorrectionLevel: 'M' as const,
-    };
-
-    const qrCodeData = await QRCode.toDataURL(qrUrl, qrOptions);
-
-    const qrId = body.id || `qr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const now = new Date().toISOString();
-
-    const qrCode: QRCodeData = {
-      id: qrId,
-      loungeId,
-      tableId,
-      campaignRef,
-      url: qrUrl,
-      qrCodeData,
-      createdAt: now,
-      usageCount: 0,
-      status: 'active'
-    };
-
-    qrCodes.set(qrId, qrCode);
-
-    console.log(`[QR Generator] New QR code created: ${qrId} - ${loungeId}${tableId ? `-${tableId}` : ''}`);
-
-    return NextResponse.json({
-      success: true,
-      qrCode,
-      message: 'QR code generated successfully'
-    });
-
-  } catch (error) {
-    console.error('QR Generator error:', error);
-    return NextResponse.json({ 
-      error: 'Failed to generate QR code',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = { success: resp.ok, message: text || `HTTP ${resp.status}` };
   }
+
+  return NextResponse.json(data, { status: resp.status });
+}
+
+/**
+ * Canonical enforcement for site build:
+ * - This endpoint must NOT mint arbitrary URLs or store QR codes in-memory.
+ * - It proxies to the app build `/api/qr-generator`, which itself calls `/api/admin/qr`.
+ */
+export async function POST(req: NextRequest) {
+  const body = await req.json().catch(() => ({}));
+
+  // Normalize to canonical input shape used by app build
+  const loungeId = body?.loungeId;
+  const tableId = body?.tableId;
+  const bulkTables = body?.bulkTables;
+
+  if (!loungeId) {
+    return NextResponse.json({ success: false, error: 'Missing required field: loungeId' }, { status: 400 });
+  }
+  const tables = Array.isArray(bulkTables) && bulkTables.length > 0 ? bulkTables : [tableId].filter(Boolean);
+  if (!tables.length) {
+    return NextResponse.json({ success: false, error: 'tableId or bulkTables is required' }, { status: 400 });
+  }
+
+  return forward('POST', req, {
+    loungeId,
+    tableId,
+    bulkTables,
+    campaignRef: body?.campaignRef,
+    baseUrl: body?.baseUrl,
+    size: body?.size,
+    format: body?.format,
+  });
 }
 
 export async function GET(req: NextRequest) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const loungeId = searchParams.get('loungeId');
-    const status = searchParams.get('status');
-
-    let filteredQRCodes = Array.from(qrCodes.values());
-
-    // Apply filters
-    if (loungeId) {
-      filteredQRCodes = filteredQRCodes.filter(qr => qr.loungeId === loungeId);
-    }
-    if (status) {
-      filteredQRCodes = filteredQRCodes.filter(qr => qr.status === status);
-    }
-
-    // Sort by creation date (newest first)
-    filteredQRCodes.sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
-
-    return NextResponse.json({
-      success: true,
-      qrCodes: filteredQRCodes,
-      total: filteredQRCodes.length
-    });
-
-  } catch (error) {
-    console.error('QR Generator fetch error:', error);
-    return NextResponse.json({ 
-      error: 'Failed to fetch QR codes',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+  const { searchParams } = new URL(req.url);
+  const loungeId = searchParams.get('loungeId');
+  if (!loungeId) {
+    return NextResponse.json({ success: false, error: 'loungeId is required' }, { status: 400 });
   }
+  return forward('GET', req);
 }
 
-export async function PUT(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const { qrId, action, updates } = body;
-
-    if (!qrId) {
-      return NextResponse.json({ error: 'Missing qrId' }, { status: 400 });
-    }
-
-    const qrCode = qrCodes.get(qrId);
-    if (!qrCode) {
-      return NextResponse.json({ error: 'QR code not found' }, { status: 404 });
-    }
-
-    const now = new Date().toISOString();
-
-    switch (action) {
-      case 'update_status':
-        const { status } = updates;
-        if (!status) {
-          return NextResponse.json({ error: 'Missing status' }, { status: 400 });
-        }
-        
-        qrCode.status = status;
-        break;
-
-      case 'increment_usage':
-        qrCode.usageCount += 1;
-        qrCode.lastUsed = now;
-        break;
-
-      case 'update':
-        const { loungeId, tableId, campaignRef } = updates;
-        if (loungeId) qrCode.loungeId = loungeId;
-        if (tableId !== undefined) qrCode.tableId = tableId;
-        if (campaignRef !== undefined) qrCode.campaignRef = campaignRef;
-        break;
-
-      default:
-        return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
-    }
-
-    qrCodes.set(qrId, qrCode);
-
-    return NextResponse.json({
-      success: true,
-      message: 'QR code updated successfully',
-      qrCode
-    });
-
-  } catch (error) {
-    console.error('QR Generator update error:', error);
-    return NextResponse.json({ 
-      error: 'Failed to update QR code',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
-  }
+export async function PUT() {
+  return NextResponse.json({ success: false, error: 'Method not allowed' }, { status: 405 });
 }
 
-export async function DELETE(req: NextRequest) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const qrId = searchParams.get('qrId');
-
-    if (!qrId) {
-      return NextResponse.json({ error: 'Missing qrId' }, { status: 400 });
-    }
-
-    const qrCode = qrCodes.get(qrId);
-    if (!qrCode) {
-      return NextResponse.json({ error: 'QR code not found' }, { status: 404 });
-    }
-
-    qrCodes.delete(qrId);
-
-    console.log(`[QR Generator] QR code deleted: ${qrId}`);
-
-    return NextResponse.json({
-      success: true,
-      message: 'QR code deleted successfully'
-    });
-
-  } catch (error) {
-    console.error('QR Generator delete error:', error);
-    return NextResponse.json({ 
-      error: 'Failed to delete QR code',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
-  }
+export async function DELETE() {
+  return NextResponse.json({ success: false, error: 'Method not allowed' }, { status: 405 });
 }

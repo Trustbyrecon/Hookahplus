@@ -13,6 +13,11 @@ import {
 
 export async function POST(req: NextRequest) {
   try {
+    // Demo-only endpoint (in-memory). Do not allow in production.
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
     const body = await req.json();
     const { sessionId, tableId, state, meta } = body || {};
     if (!sessionId) return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
@@ -46,6 +51,11 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
+    // Demo-only endpoint (in-memory). Do not allow in production.
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
     const { searchParams } = new URL(req.url);
     const sessionId = searchParams.get("sessionId");
     const state = searchParams.get("state") as SessionState | null;

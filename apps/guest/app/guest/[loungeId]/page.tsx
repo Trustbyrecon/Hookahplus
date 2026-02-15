@@ -114,6 +114,34 @@ export default function GuestLoungePage() {
         return;
       }
 
+      // Canonical enforcement: do not call /api/guest/enter without tableId.
+      // Guests can browse the lounge surface, but session join/create requires a table QR.
+      if (!tableId) {
+        const existingDeviceId = localStorage.getItem('deviceId');
+        const deviceId = existingDeviceId || `device_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        if (!existingDeviceId) localStorage.setItem('deviceId', deviceId);
+
+        const guestId = `anon_${deviceId}`;
+        setGuestProfile({
+          guestId,
+          anon: true,
+          badges: [],
+          sessions: [],
+          points: 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          preferences: {
+            favoriteFlavors: [],
+            savedMixes: [],
+            notifications: false,
+          },
+          lastLoungeId: loungeId as any,
+          deviceId,
+        } as any);
+
+        return;
+      }
+
       // Get guest info from localStorage (if registered)
       const guestInfoStr = localStorage.getItem('guestInfo');
       let guestInfo: { guestId?: string; deviceId?: string } | null = null;
@@ -135,6 +163,7 @@ export default function GuestLoungePage() {
           loungeId,
           ref,
           u,
+          tableId: tableId || undefined,
           guestId: guestInfo?.guestId || undefined, // Send guestId if registered
           deviceId: guestInfo?.deviceId || localStorage.getItem('deviceId') || undefined
         })

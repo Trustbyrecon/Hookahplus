@@ -27,6 +27,13 @@ interface Session {
   qrCodeUrl?: string;
   paymentStatus?: string;
   paymentIntent?: string;
+  participants?: Array<{
+    id: string;
+    displayName: string;
+    status: string;
+    createdAt?: string | Date;
+    identityPreview?: string | null;
+  }>;
 }
 
 export default function StaffScanPage() {
@@ -201,6 +208,37 @@ export default function StaffScanPage() {
             </div>
           </Card>
         </div>
+
+        <Card className="p-6 mt-6">
+          <h3 className="text-lg font-semibold mb-4">Participants</h3>
+          {session.participants?.length ? (
+            <div className="space-y-3">
+              {session.participants.map((participant) => (
+                <div
+                  key={participant.id}
+                  className="flex items-center justify-between p-3 bg-zinc-800 rounded-lg border border-zinc-700"
+                >
+                  <div>
+                    <p className="text-white font-medium">{participant.displayName || 'Guest'}</p>
+                    <p className="text-xs text-zinc-400">
+                      {participant.identityPreview ? `Identity ${participant.identityPreview}...` : 'Identity unavailable'}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs px-2 py-1 rounded bg-green-500/20 text-green-300">
+                      {participant.status}
+                    </span>
+                    <Button className="bg-zinc-700 hover:bg-zinc-600" size="sm">
+                      Take action
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-zinc-400 text-sm">No active participants found for this session.</p>
+          )}
+        </Card>
       </div>
     </div>
   );

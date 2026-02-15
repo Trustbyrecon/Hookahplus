@@ -17,6 +17,8 @@ export default function QRGate({ qrData, guestProfile, flags, onProfileUpdate }:
   const [isStarting, setIsStarting] = useState(false);
   const [sessionStarted, setSessionStarted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [participantId, setParticipantId] = useState<string | null>(null);
+  const [joinMode, setJoinMode] = useState<string | null>(null);
 
   const handleStartSession = async () => {
     try {
@@ -42,6 +44,8 @@ export default function QRGate({ qrData, guestProfile, flags, onProfileUpdate }:
       }
 
       const sessionData = await response.json();
+      if (sessionData?.participantId) setParticipantId(sessionData.participantId);
+      if (sessionData?.mode) setJoinMode(sessionData.mode);
       setSessionStarted(true);
 
       // Log session start event
@@ -61,6 +65,38 @@ export default function QRGate({ qrData, guestProfile, flags, onProfileUpdate }:
     } catch (err) {
       console.error('Start session error:', err);
       setError(err instanceof Error ? err.message : 'Failed to start session');
+    } finally {
+      setIsStarting(false);
+    }
+  };
+
+  const handleNotMe = async () => {
+    if (!qrData.tableId) return;
+    setIsStarting(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/session/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          loungeId: qrData.loungeId,
+          tableId: qrData.tableId,
+          guestId: guestProfile.guestId,
+          customerName: 'Guest',
+          notMe: true,
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.message || data?.error || 'Unable to create a new guest slot');
+      }
+
+      setParticipantId(data?.session?.participantId || null);
+      setJoinMode(data?.session?.mode || 'join');
+      setSessionStarted(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to switch guest');
     } finally {
       setIsStarting(false);
     }
@@ -187,15 +223,15 @@ export default function QRGate({ qrData, guestProfile, flags, onProfileUpdate }:
         )}
       </div>
 
-      {/* Session Start - Only show if tableId is missing */}
+      {/* Canonical enforcement: no tableId means no session creation/join */}
       {!qrData.tableId && !sessionStarted ? (
         <div className="space-y-4">
           <div className="text-center">
             <h3 className="text-lg font-semibold text-white mb-2">
               Scan Your Table QR Code
             </h3>
-            <p className="text-sm text-zinc-400 mb-4">
-              Scan the QR code on your table to start your session
+            <p className="text-sm text-zinc-400">
+              This link doesn’t include a table. Scan the QR code on your table to continue.
             </p>
           </div>
 
@@ -205,33 +241,33 @@ export default function QRGate({ qrData, guestProfile, flags, onProfileUpdate }:
             </div>
           )}
 
-          <button
-            onClick={handleStartSession}
-            disabled={isStarting}
-            className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {isStarting ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>Starting Session...</span>
-              </>
-            ) : (
-              <>
-                <Clock className="w-5 h-5" />
-                <span>Start Session</span>
-              </>
-            )}
-          </button>
+          <div className="p-3 bg-zinc-900/40 border border-zinc-700 rounded-lg text-xs text-zinc-400">
+            Tip: Ask staff for the correct table QR if you don’t see one.
+          </div>
         </div>
       ) : qrData.tableId && !sessionStarted ? (
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center space-x-2 text-green-400">
             <CheckCircle className="w-6 h-6" />
-            <span className="text-lg font-semibold">Ready to Order!</span>
+            <span className="text-lg font-semibold">You are joining Table {qrData.tableId}</span>
           </div>
-          <p className="text-sm text-zinc-400">
-            Table {qrData.tableId} • Choose your flavors below
-          </p>
+          <p className="text-sm text-zinc-400">Is this you?</p>
+          <div className="flex items-center justify-center gap-3">
+            <button
+              onClick={handleStartSession}
+              disabled={isStarting}
+              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
+            >
+              Yes, continue
+            </button>
+            <button
+              onClick={handleNotMe}
+              disabled={isStarting}
+              className="px-4 py-2 bg-zinc-700 text-white rounded-lg hover:bg-zinc-600 disabled:opacity-50"
+            >
+              Not me
+            </button>
+          </div>
         </div>
       ) : sessionStarted ? (
         <div className="text-center space-y-4">
@@ -242,6 +278,11 @@ export default function QRGate({ qrData, guestProfile, flags, onProfileUpdate }:
           <p className="text-sm text-zinc-400">
             Your session is now active. Choose your flavors and customize your experience.
           </p>
+          {joinMode ? (
+            <p className="text-xs text-zinc-500">
+              Join mode: {joinMode}{participantId ? ` • Participant ${participantId.slice(0, 8)}` : ''}
+            </p>
+          ) : null}
         </div>
       ) : null}
 
