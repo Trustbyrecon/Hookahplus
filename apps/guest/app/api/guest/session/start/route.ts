@@ -16,7 +16,8 @@ const guestProfiles = new Map<string, any>();
 export async function POST(req: NextRequest) {
   try {
     const body: SessionStartRequest = await req.json();
-    const { loungeId, guestId, tableId } = body;
+    const { loungeId, guestId, tableId } = body as any;
+    const notMe = Boolean((body as any).notMe);
 
     // Validate required fields
     if (!loungeId || !guestId) {
@@ -37,46 +38,37 @@ export async function POST(req: NextRequest) {
       }, { status: 403 });
     }
 
-    // Generate session ID
-    const sessionId = `session_${uuidv4()}`;
+    if (!tableId) {
+      return NextResponse.json({
+        ok: false,
+        error: 'Missing required field: tableId'
+      }, { status: 400 });
+    }
 
-    // Create trust stamp
-    const trustStamp = hashSessionEvent({
-      sessionId,
-      eventType: 'session.started',
-      loungeId,
-      guestId,
-      tableId
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
+    const resolveResp = await fetch(`${appUrl}/api/session/resolve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        loungeId,
+        tableId,
+        identityToken: guestId,
+        displayName: 'Guest',
+        notMe,
+      }),
     });
+    const resolveData = await resolveResp.json().catch(() => ({}));
 
-    // Create session
-    const session: Session = {
-      sessionId,
-      loungeId,
-      guestId,
-      mix: {
-        flavors: [],
-        notes: ''
-      },
-      price: {
-        base: 0,
-        addons: 0,
-        total: 0,
-        currency: 'USD'
-      },
-      status: 'started',
-      ts: {
-        startedAt: new Date().toISOString()
-      },
-      trust: {
-        ghostHash: trustStamp,
-        signature: trustStamp
-      },
-      tableId
-    };
+    if (!resolveResp.ok || resolveData?.blocked) {
+      return NextResponse.json({
+        ok: false,
+        blocked: true,
+        error: resolveData?.message || 'We need staff to confirm your table before continuing.',
+        conflictSessionIds: resolveData?.conflictSessionIds || [],
+      }, { status: 409 });
+    }
 
-    // Store session
-    sessions.set(sessionId, session);
+    const sessionId = resolveData.session_id as string;
 
     // Update guest profile
     const guestProfile = guestProfiles.get(guestId);
@@ -93,7 +85,7 @@ export async function POST(req: NextRequest) {
         loungeId,
         guestId,
         tableId,
-        timestamp: session.ts.startedAt
+        timestamp: new Date().toISOString()
       };
 
       const ghostLogEntry = createGhostLogEntry({
@@ -114,6 +106,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       ok: true,
+      participantId: resolveData.participant_id,
+      mode: resolveData.mode,
       ...response
     });
 

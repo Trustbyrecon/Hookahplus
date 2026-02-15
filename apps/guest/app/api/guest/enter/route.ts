@@ -3,7 +3,7 @@ import { GuestEnterRequest, GuestEnterResponse, GuestProfile, QRData } from "@gu
 import { featureFlags } from './flags';
 import { createGhostLogEntry, hashGuestEvent } from './hash';
 import { v4 as uuidv4 } from 'uuid';
-import { getGuestProfile, setGuestProfile, sharedSessions } from '../shared-storage';
+import { getGuestProfile, setGuestProfile } from '../shared-storage';
 
 /**
  * POST /api/guest/enter
@@ -15,7 +15,9 @@ import { getGuestProfile, setGuestProfile, sharedSessions } from '../shared-stor
 export async function POST(req: NextRequest) {
   try {
     const body: GuestEnterRequest = await req.json();
-    const { loungeId, ref, u, deviceId, guestId: providedGuestId } = body;
+    const { loungeId, ref, u, deviceId, guestId: providedGuestId } = body as any;
+    const tableId = typeof (body as any).tableId === 'string' ? (body as any).tableId : undefined;
+    const notMe = Boolean((body as any).notMe);
 
     // Validate required fields
     if (!loungeId) {
@@ -88,17 +90,48 @@ export async function POST(req: NextRequest) {
       setGuestProfile(guestId, existingProfile);
     }
 
-    // Create session if not pre-seeded
+    // Resolve session/participant deterministically when table context exists.
     let sessionId: string | undefined;
-    if (!body.u) {
-      sessionId = `session_${uuidv4()}`;
-      sharedSessions.set(sessionId, {
-        sessionId,
-        loungeId,
-        guestId,
-        status: 'started',
-        startedAt: new Date().toISOString()
+    let participantId: string | undefined;
+    let resolveMode: 'create' | 'join' | 'rejoin' | 'blocked_multi_active' | undefined;
+    if (tableId) {
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
+      const resolveResp = await fetch(`${appUrl}/api/session/resolve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          loungeId,
+          tableId,
+          identityToken: deviceId || guestId || u || `anon-${uuidv4()}`,
+          displayName: existingProfile?.anon ? 'Guest' : (existingProfile as any)?.displayName || 'Guest',
+          notMe,
+        }),
       });
+
+      const resolveData = await resolveResp.json().catch(() => ({}));
+      if (!resolveResp.ok || resolveData?.blocked) {
+        return NextResponse.json({
+          ok: false,
+          blocked: true,
+          error: resolveData?.message || 'We need staff to confirm your table before continuing.',
+          conflictSessionIds: resolveData?.conflictSessionIds || [],
+        }, { status: 409 });
+      }
+
+      sessionId = resolveData.session_id;
+      participantId = resolveData.participant_id;
+      resolveMode = resolveData.mode;
+    } else {
+      // Canonical enforcement: do not create any session without explicit table context.
+      return NextResponse.json(
+        {
+          ok: false,
+          error: 'MISSING_TABLE_CONTEXT',
+          message: 'This link does not include a table. Scan the QR code on your table to continue.',
+          next: 'ASK_STAFF_FOR_TABLE_QR',
+        },
+        { status: 400 }
+      );
     }
 
     // Log guest entry event
@@ -153,6 +186,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       ok: true,
+      participantId,
+      mode: resolveMode,
       ...response
     });
 

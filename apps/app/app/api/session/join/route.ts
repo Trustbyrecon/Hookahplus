@@ -1,62 +1,63 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createGhostLogEntry } from '../../../../lib/ghost-log';
-
-// Import sessions from the sessions route (in production, this would be a shared database)
-let sessions: Array<{
-  id: string;
-  session_id: string;
-  lounge_id: string;
-  table_id?: string;
-  flavor_mix: string[];
-  status: 'pending_guest_arrival' | 'ready_to_start' | 'arrived' | 'active' | 'completed';
-  created_at: string;
-  started_at?: string;
-  completed_at?: string;
-}> = [];
+import { prisma } from '@/lib/db';
+import { buildIdentityKey, resolveSessionParticipant } from '@/lib/session/participant-resolver';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { session_id } = body;
+    const {
+      loungeId,
+      tableId,
+      identityToken,
+      displayName,
+      notMe,
+    } = body as {
+      loungeId?: string;
+      tableId?: string;
+      identityToken?: string;
+      displayName?: string;
+      notMe?: boolean;
+    };
 
-    // Validate required fields
-    if (!session_id) {
-      return NextResponse.json({ error: 'Session ID is required' }, { status: 400 });
+    if (!loungeId || !tableId) {
+      return NextResponse.json({ error: 'loungeId and tableId are required' }, { status: 400 });
     }
 
-    // Find the session
-    let session = sessions.find(s => s.session_id === session_id);
-    
-    if (!session) {
-      // Create a new session if it doesn't exist
-      session = {
-        id: `session_${Date.now()}`,
-        session_id,
-        lounge_id: 'L-TEST-001', // Default test lounge
-        flavor_mix: [],
-        status: 'arrived' as const,
-        created_at: new Date().toISOString(),
-        started_at: new Date().toISOString()
-      };
-      sessions.push(session);
-    } else {
-      // Update existing session status
-      session.status = 'arrived';
-      session.started_at = new Date().toISOString();
-    }
-
-    // Log QR join event
-    await createGhostLogEntry({
-      kind: 'qr.session.joined',
-      session_id,
-      status: session.status,
-      timestamp: new Date().toISOString()
+    const identityKey = buildIdentityKey({
+      loungeId,
+      rawIdentity: identityToken || 'anonymous-device',
+      forceNew: Boolean(notMe),
     });
+
+    const result = await resolveSessionParticipant(prisma as any, {
+      loungeId,
+      tableId,
+      identityKey,
+      displayName: displayName || 'Guest',
+      notMe: Boolean(notMe),
+    });
+
+    if (result.mode === 'blocked_multi_active') {
+      return NextResponse.json({
+        success: false,
+        blocked: true,
+        mode: result.mode,
+        message: 'We need staff to confirm your table before continuing.',
+        conflictSessionIds: result.conflictSessionIds || [],
+        staffResolution: {
+          tableId,
+          loungeId,
+          path: `/admin/pos-ops?loungeId=${encodeURIComponent(loungeId)}&tableId=${encodeURIComponent(tableId)}`,
+        },
+      }, { status: 409 });
+    }
 
     return NextResponse.json({ 
       success: true, 
-      session,
-      message: 'Session joined successfully'
+      mode: result.mode,
+      session_id: result.sessionId,
+      participant_id: result.participantId,
+      message: result.mode === 'create' ? 'Session created successfully' : 'Session joined successfully',
     });
 
   } catch (error) {
