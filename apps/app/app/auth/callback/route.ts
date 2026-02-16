@@ -1,6 +1,9 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { prisma } from '../../../lib/db';
+
+export const runtime = 'nodejs';
 
 /**
  * Auth callback handler for Supabase Auth
@@ -52,6 +55,27 @@ export async function GET(req: NextRequest) {
 
         membership = membershipData;
 
+        // Canonical hardening: if the user has no membership yet but has a pending tenant name
+        // (common when email confirmation/magic-link completes before DB binding), auto-provision.
+        if (!membership) {
+          const pendingName = String((user.user_metadata as any)?.pending_tenant_name || '').trim();
+          if (pendingName) {
+            try {
+              const tenant = await prisma.tenant.create({ data: { name: pendingName } as any });
+              await prisma.membership.create({
+                data: {
+                  userId: user.id,
+                  tenantId: tenant.id,
+                  role: 'owner' as any,
+                },
+              });
+              membership = { tenant_id: tenant.id, role: 'owner' };
+            } catch (e) {
+              console.error('[Auth Callback] Failed to auto-provision tenant/membership:', e);
+            }
+          }
+        }
+
         if (membership) {
           // Set tenant_id and role in user metadata (will be in JWT)
           const userMetadata: any = {
@@ -78,7 +102,11 @@ export async function GET(req: NextRequest) {
           }
 
           await supabase.auth.updateUser({
-            data: userMetadata,
+            data: {
+              ...userMetadata,
+              // Clear pending metadata so we don't re-run provisioning.
+              pending_tenant_name: null,
+            },
           });
 
           // If user has admin/owner role, redirect to admin dashboard
