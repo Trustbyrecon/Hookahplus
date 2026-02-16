@@ -3,6 +3,8 @@
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 
+const MAX_BUFFER = 50 * 1024 * 1024; // 50MB - avoid ENOBUFS on large diffs (e.g. pre-push range scan)
+
 const MODE = parseMode(process.argv.slice(2));
 
 const BASE_REF = process.env.SECRET_GUARD_BASE_REF || "origin/main";
@@ -252,7 +254,11 @@ function isPlaceholderLike(content) {
 }
 
 function run(command) {
-  return execSync(command, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trimEnd();
+  return execSync(command, {
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+    maxBuffer: MAX_BUFFER,
+  }).trimEnd();
 }
 
 function tryRun(command) {
