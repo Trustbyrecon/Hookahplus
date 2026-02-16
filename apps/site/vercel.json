@@ -4,7 +4,7 @@
   "outputDirectory": ".next",
   "framework": "nextjs",
   "installCommand": "npm install --omit=optional",
-  "ignoreCommand": "bash ../../scripts/vercel-build-site.sh",
+  "ignoreCommand": "bash scripts/vercel-build-site.sh",
   "redirects": [
     {
       "source": "/app/:path*",
