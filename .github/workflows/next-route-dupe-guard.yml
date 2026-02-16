@@ -1,0 +1,20 @@
+name: Next Route Duplicate Guard
+on: [pull_request]
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fail if app/ routes have pages/ twins
+        run: |
+          err=0
+          for f in app/*/page.tsx; do
+            r="$(basename "$(dirname "$f")")"
+            if [ -f "pages/$r.tsx" ]; then
+              echo "Duplicate route: pages/$r.tsx vs $f"; err=1
+            fi
+          done
+          if [ -f app/page.tsx ] && [ -f pages/index.tsx ]; then
+            echo "Duplicate route: pages/index.tsx vs app/page.tsx"; err=1
+          fi
+          exit $err

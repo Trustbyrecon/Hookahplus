@@ -1,0 +1,7 @@
+[
+  {
+    "title": "Let’s set up your lounge flow.",
+    "message": "We’ve detected your lounge layout. Would you like to auto-generate zones from your layout photo, or begin manually?",
+    "options": ["Auto-generate from photo", "Build zones manually", "Upload layout.yaml first"]
+  }
+]

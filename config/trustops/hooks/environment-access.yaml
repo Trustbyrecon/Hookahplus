@@ -1,0 +1,8 @@
+environment:
+  - repo_access: true
+  - netlify_sync: true
+  - image_scrape: allowed
+  - api_post: flavor_session_ingest, loyalty_log_submit
+agents:
+  - DesignFlare_Δ04: [ repo_access, image_scrape ]
+  - Alie: [ netlify_sync, api_post ]
