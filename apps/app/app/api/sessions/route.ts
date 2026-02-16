@@ -1020,7 +1020,7 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
         const { TableLayoutService } = await import('../../../lib/services/TableLayoutService');
         
         // Get table zone
-        const tableZone = await ZoneRoutingService.getTableZone(data.tableId) || 'Main';
+        const tableZone = await ZoneRoutingService.getTableZone(data.tableId, finalLoungeId) || 'Main';
         
         // Get active sessions to calculate staff load
         const activeSessionsForRouting = await prisma.session.findMany({
@@ -1149,25 +1149,40 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
 
       // Fallback to orgSetting if no seats found
       if (!tableExists && tables.length === 0) {
-      const layoutSetting = await prisma.orgSetting.findUnique({
-        where: { key: 'lounge_layout' }
-      });
+        const scopedKey = finalLoungeId ? `lounge_layout:${finalLoungeId}` : null;
+        const layoutSetting =
+          (scopedKey ? await prisma.orgSetting.findUnique({ where: { key: scopedKey } }).catch(() => null) : null) ||
+          (await prisma.orgSetting.findUnique({ where: { key: 'lounge_layout' } }).catch(() => null));
 
-      if (layoutSetting) {
-        const layoutData = JSON.parse(layoutSetting.value);
+        if (layoutSetting) {
+          const layoutData = JSON.parse(layoutSetting.value);
           tables = layoutData.tables || [];
-        
-          tableExists = tables.some((t: any) => 
-          t.id === data.tableId || 
-          t.name === data.tableId ||
-          t.name?.toLowerCase() === data.tableId.toLowerCase()
-        );
+
+          tableExists = tables.some((t: any) =>
+            t.id === data.tableId ||
+            t.name === data.tableId ||
+            t.name?.toLowerCase() === data.tableId.toLowerCase()
+          );
         }
       }
 
-        if (!tableExists) {
-          // Graceful fallback: Use demo table data for demo/onboarding flows
-          const demoTables = [
+      if (!tableExists) {
+        // Canonical enforcement: in production, do not create sessions for unknown tables.
+        if (process.env.NODE_ENV === 'production') {
+          return NextResponse.json(
+            {
+              error: `Table "${data.tableId}" not found for lounge "${finalLoungeId}".`,
+              code: 'TABLE_NOT_CONFIGURED',
+              next: 'CONFIGURE_LOUNGE_LAYOUT',
+              message:
+                'This lounge has no canonical table layout for the provided tableId. Configure your lounge layout, then retry.',
+            },
+            { status: 400, headers: getCorsHeaders(req) }
+          );
+        }
+
+        // Non-production/demo fallback: Use demo table data for demo/onboarding flows
+        const demoTables = [
             { id: 'table-001', name: 'T-001', capacity: 4, seatingType: 'Booth', zone: 'Main Floor' },
             { id: 'table-002', name: 'T-002', capacity: 4, seatingType: 'Booth', zone: 'Main Floor' },
             { id: 'table-003', name: 'T-003', capacity: 6, seatingType: 'Couch', zone: 'Main Floor' },
@@ -1178,30 +1193,27 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
             { id: 'table-008', name: 'T-008', capacity: 10, seatingType: 'VIP', zone: 'VIP Section' },
             { id: 'table-009', name: 'T-009', capacity: 6, seatingType: 'Couch', zone: 'Main Floor' },
             { id: 'table-010', name: 'T-010', capacity: 8, seatingType: 'Private Room', zone: 'Private Section' }
-          ];
+        ];
 
-          // Try to find in demo tables
-          const demoTable = demoTables.find(t => 
-            t.id === data.tableId || 
-            t.name === data.tableId ||
-            t.id.toLowerCase() === data.tableId.toLowerCase() ||
-            t.name.toLowerCase() === data.tableId.toLowerCase()
+        // Try to find in demo tables
+        const demoTable = demoTables.find(t =>
+          t.id === data.tableId ||
+          t.name === data.tableId ||
+          t.id.toLowerCase() === data.tableId.toLowerCase() ||
+          t.name.toLowerCase() === data.tableId.toLowerCase()
+        );
+
+        if (demoTable) {
+          console.log(`[Sessions API] Using demo table fallback for: ${data.tableId}`);
+          tableExists = true;
+        } else {
+          console.log(`[Sessions API] Table "${data.tableId}" not found, but allowing in demo mode - session will be created`);
+          tableExists = true;
+          console.warn(
+            `[Sessions API] Demo mode: Creating session with non-existent table "${data.tableId}". For production, configure tables in Lounge Layout Manager.`
           );
-
-          if (demoTable) {
-            // Use demo table (graceful fallback for demo/onboarding)
-            console.log(`[Sessions API] Using demo table fallback for: ${data.tableId}`);
-            tableExists = true;
-            // Continue with session creation using demo table
-          } else {
-            // In demo/onboarding mode, allow any table ID and create session anyway
-            // This enables guest sync and demo flows to work without pre-configured tables
-            console.log(`[Sessions API] Table "${data.tableId}" not found, but allowing in demo mode - session will be created`);
-            tableExists = true; // Allow session creation even if table doesn't exist
-            // Log warning but don't block
-            console.warn(`[Sessions API] Demo mode: Creating session with non-existent table "${data.tableId}". For production, configure tables in Lounge Layout Manager.`);
-          }
         }
+      }
 
         // Validate capacity if party size provided (could be in metadata or calculated)
         // For now, we'll validate basic capacity - can be enhanced later

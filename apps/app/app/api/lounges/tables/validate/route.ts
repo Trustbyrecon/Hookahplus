@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../../../../lib/db';
 
-const prisma = new PrismaClient();
+function layoutKey(loungeId: string) {
+  return `lounge_layout:${loungeId}`;
+}
 
 /**
  * POST /api/lounges/tables/validate
@@ -20,6 +22,7 @@ export async function POST(request: NextRequest) {
     }
     
     const { tableId, partySize, checkAvailability = true, loungeId } = body || {};
+    const effectiveLoungeId = typeof loungeId === 'string' ? loungeId.trim() : '';
 
     if (!tableId) {
       return NextResponse.json(
@@ -33,11 +36,11 @@ export async function POST(request: NextRequest) {
     let table: any = null;
 
     // Check Seat table first (new system) if loungeId provided
-    if (loungeId) {
+    if (effectiveLoungeId) {
       try {
         const seats = await prisma.seat.findMany({
           where: { 
-            loungeId: loungeId,
+            loungeId: effectiveLoungeId,
             status: 'ACTIVE'
           },
           include: {
@@ -83,9 +86,10 @@ export async function POST(request: NextRequest) {
     if (!tableExists) {
       let layoutSetting;
       try {
-        layoutSetting = await prisma.orgSetting.findUnique({
-          where: { key: 'lounge_layout' }
-        });
+        // Backward compatible read: try scoped key first (if loungeId present), then legacy global key.
+        layoutSetting =
+          (effectiveLoungeId ? await prisma.orgSetting.findUnique({ where: { key: layoutKey(effectiveLoungeId) } }) : null) ||
+          (await prisma.orgSetting.findUnique({ where: { key: 'lounge_layout' } }).catch(() => null));
       } catch (error) {
         console.error('[Table Validation API] Error loading layout:', error);
         return NextResponse.json({
@@ -123,6 +127,18 @@ export async function POST(request: NextRequest) {
     if (!tableExists || !table) {
       // Graceful fallback: Use demo table data for demo/onboarding flows
       // This reduces friction and allows sessions to be created without lounge layout setup
+      if (process.env.NODE_ENV === 'production') {
+        return NextResponse.json(
+          {
+            valid: false,
+            error: `Table "${tableId}" not found and no canonical lounge layout is configured.`,
+            next: 'CONFIGURE_LOUNGE_LAYOUT',
+            suggestion: 'Visit /lounge-layout to configure your tables, then retry the QR/table selection.',
+          },
+          { status: 404 }
+        );
+      }
+
       const demoTables = [
         { id: 'table-001', name: 'T-001', capacity: 4, seatingType: 'Booth', zone: 'Main Floor' },
         { id: 'table-002', name: 'T-002', capacity: 4, seatingType: 'Booth', zone: 'Main Floor' },
@@ -206,7 +222,11 @@ export async function POST(request: NextRequest) {
       try {
         const activeSession = await prisma.session.findFirst({
           where: {
-            tableId: table.id,
+            OR: [
+              { tableId: table.id },
+              { tableId: table.name },
+              { tableId: String(tableId).trim() },
+            ],
             state: { notIn: ['CLOSED', 'CANCELED'] as any }
           },
           select: {

@@ -26,7 +26,7 @@ export interface TableAvailability {
 }
 
 export class TableLayoutService {
-  private static layoutCache: { layout: any; timestamp: number } | null = null;
+  private static layoutCacheByLounge = new Map<string, { layout: any; timestamp: number }>();
   private static CACHE_TTL = 30000; // 30 seconds
 
   /**
@@ -117,14 +117,19 @@ export class TableLayoutService {
   /**
    * Load tables from saved layout
    */
-  static async loadTables(): Promise<LayoutTable[]> {
+  static async loadTables(loungeId?: string): Promise<LayoutTable[]> {
     try {
+      const cacheKey = (loungeId || '').trim() || 'HOPE_GLOBAL_FORUM';
       // Check cache first
-      if (this.layoutCache && Date.now() - this.layoutCache.timestamp < this.CACHE_TTL) {
-        return this.layoutCache.layout?.tables || [];
+      const cached = this.layoutCacheByLounge.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+        return cached.layout?.tables || [];
       }
 
-      const response = await fetch('/api/lounges?layout=true');
+      const url = loungeId
+        ? `/api/lounges?layout=true&loungeId=${encodeURIComponent(loungeId)}`
+        : '/api/lounges?layout=true';
+      const response = await fetch(url);
       if (!response.ok) {
         console.warn('[TableLayoutService] Failed to load layout, returning empty array');
         return [];
@@ -134,10 +139,10 @@ export class TableLayoutService {
       const tables = data.layout?.tables || [];
 
       // Cache the result
-      this.layoutCache = {
+      this.layoutCacheByLounge.set(cacheKey, {
         layout: data.layout,
         timestamp: Date.now()
-      };
+      });
 
       return tables;
     } catch (error) {
@@ -149,8 +154,11 @@ export class TableLayoutService {
   /**
    * Validate tableId exists in saved layout
    */
-  static async validateTableId(tableId: string): Promise<{ valid: boolean; table?: LayoutTable; error?: string }> {
-    const tables = await this.loadTables();
+  static async validateTableId(
+    tableId: string,
+    loungeId?: string
+  ): Promise<{ valid: boolean; table?: LayoutTable; error?: string }> {
+    const tables = await this.loadTables(loungeId);
 
     const candidates = this.tableIdCandidates(tableId);
     const candidateLower = new Set(candidates.map(c => c.toLowerCase()));
@@ -162,9 +170,12 @@ export class TableLayoutService {
 
     // Graceful fallback: if layout isn't configured or doesn't include this table, infer a default.
     if (!table) {
-      const inferred = this.inferTableFromToken(tableId);
-      if (inferred) {
-        return { valid: true, table: inferred };
+      const allowInference = process.env.NODE_ENV !== 'production' || process.env.ALLOW_DEMO_TABLES === 'true';
+      if (allowInference) {
+        const inferred = this.inferTableFromToken(tableId);
+        if (inferred) {
+          return { valid: true, table: inferred };
+        }
       }
 
       return {
@@ -200,9 +211,10 @@ export class TableLayoutService {
   static async checkAvailability(
     tableId: string,
     activeSessions: Array<{ tableId: string; status: string }>
+    loungeId?: string
   ): Promise<{ available: boolean; hasActiveSession: boolean; activeSessionId?: string; error?: string }> {
     // First validate table exists
-    const validation = await this.validateTableId(tableId);
+    const validation = await this.validateTableId(tableId, loungeId);
     if (!validation.valid || !validation.table) {
       return {
         available: false,
@@ -243,8 +255,9 @@ export class TableLayoutService {
    */
   static async getTablesWithAvailability(
     activeSessions: Array<{ tableId: string; status: string }>
+    loungeId?: string
   ): Promise<TableAvailability[]> {
-    const tables = await this.loadTables();
+    const tables = await this.loadTables(loungeId);
     
     return tables.map(table => {
       const activeSession = activeSessions.find(s => {
@@ -284,7 +297,7 @@ export class TableLayoutService {
    * Clear cache (useful after layout updates)
    */
   static clearCache() {
-    this.layoutCache = null;
+    this.layoutCacheByLounge.clear();
   }
 }
 

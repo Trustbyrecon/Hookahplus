@@ -96,7 +96,7 @@ export function TableSelector({
           // Fallback to general layout endpoint
           if (loadedTables.length === 0) {
             try {
-              const layoutResponse = await fetch('/api/lounges?layout=true');
+              const layoutResponse = await fetch(`/api/lounges?layout=true&loungeId=${encodeURIComponent(loungeId)}`);
               if (layoutResponse.ok) {
                 const layoutData = await layoutResponse.json();
                 loadedTables = layoutData.layout?.tables || layoutData.layout?.seats || [];

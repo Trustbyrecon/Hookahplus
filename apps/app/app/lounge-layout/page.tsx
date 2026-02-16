@@ -68,6 +68,15 @@ function LoungeLayoutPageContent() {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [viewMode, setViewMode] = useState<ViewMode>('live');
   const [showWizard, setShowWizard] = useState(false);
+  const [loungeId, setLoungeId] = useState<string>('HOPE_GLOBAL_FORUM');
+  const [layoutMeta, setLayoutMeta] = useState<{
+    loungeId?: string | null;
+    layoutVersion?: number | null;
+    updatedAt?: string | null;
+    source?: string | null;
+    sourceRef?: string | null;
+  } | null>(null);
+  const [pendingProvenance, setPendingProvenance] = useState<any>(null);
   
   // Analytics state
   const [analyticsData, setAnalyticsData] = useState<any>(null);
@@ -84,11 +93,25 @@ function LoungeLayoutPageContent() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Determine lounge scope (query param > localStorage > default)
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const fromQuery = (params.get('loungeId') || '').trim();
+      const fromStorage = (localStorage.getItem('hp_active_lounge_id_v1') || '').trim();
+      const next = fromQuery || fromStorage || 'HOPE_GLOBAL_FORUM';
+      setLoungeId(next);
+      localStorage.setItem('hp_active_lounge_id_v1', next);
+    } catch {
+      // ignore
+    }
+  }, []);
+
   // Load existing layout on mount
   useEffect(() => {
     const loadLayout = async () => {
       try {
-        const response = await fetch('/api/lounges?layout=true');
+        const response = await fetch(`/api/lounges?layout=true&loungeId=${encodeURIComponent(loungeId)}`);
         if (response.ok) {
           const data = await response.json();
           if (data.layout && data.layout.tables) {
@@ -101,6 +124,13 @@ function LoungeLayoutPageContent() {
               seatingType: table.seatingType || 'Booth'
             }));
             setTables(loadedTables);
+            setLayoutMeta({
+              loungeId: data.layout?.loungeId || data.loungeId || loungeId,
+              layoutVersion: data.layout?.layoutVersion || data.layout?.meta?.layoutVersion || data.layoutVersion || null,
+              updatedAt: data.layout?.updatedAt || null,
+              source: data.layout?.meta?.source || null,
+              sourceRef: data.layout?.meta?.sourceRef || null,
+            });
           }
         }
       } catch (error) {
@@ -111,7 +141,7 @@ function LoungeLayoutPageContent() {
     };
 
     loadLayout();
-  }, []);
+  }, [loungeId]);
 
   // Real-time updates for sessions (WebSocket with polling fallback)
   const { isConnected: sessionsConnected, usePolling } = useUnifiedRealtimeUpdates({
@@ -134,7 +164,9 @@ function LoungeLayoutPageContent() {
       const loadAnalytics = async () => {
         setAnalyticsLoading(true);
         try {
-          const response = await fetch(`/api/lounges/analytics?timeRange=${timeRange}&metric=${heatMapMetric}`);
+          const response = await fetch(
+            `/api/lounges/analytics?loungeId=${encodeURIComponent(loungeId)}&timeRange=${timeRange}&metric=${heatMapMetric}`
+          );
           if (response.ok) {
             const data = await response.json();
             setAnalyticsData(data);
@@ -147,7 +179,7 @@ function LoungeLayoutPageContent() {
       };
       loadAnalytics();
     }
-  }, [viewMode, timeRange, heatMapMetric]);
+  }, [viewMode, timeRange, heatMapMetric, loungeId]);
 
   // Match sessions to tables
   // Filter: Only show sessions with payment confirmed (exclude unconfirmed pre-orders)
@@ -429,21 +461,21 @@ function LoungeLayoutPageContent() {
         },
         body: JSON.stringify({
           action: 'save_layout',
-          tables: tables
+          loungeId,
+          tables: tables,
+          provenance: pendingProvenance || { source: 'manual' },
         }),
       });
 
       if (response.ok) {
         const result = await response.json();
-        // If using localStorage fallback, save to localStorage
-        if (result.storageMethod === 'localStorage' && result.layoutData) {
-          try {
-            localStorage.setItem('lounge_layout', JSON.stringify(result.layoutData));
-            console.log('[Layout] Saved to localStorage as fallback');
-          } catch (storageError) {
-            console.error('[Layout] Failed to save to localStorage:', storageError);
-          }
-        }
+        setLayoutMeta({
+          loungeId: result?.loungeId || loungeId,
+          layoutVersion: result?.layoutVersion ?? layoutMeta?.layoutVersion ?? null,
+          updatedAt: result?.updatedAt ?? new Date().toISOString(),
+          source: (pendingProvenance?.source as any) || layoutMeta?.source || 'manual',
+          sourceRef: pendingProvenance?.sourceRef || layoutMeta?.sourceRef || null,
+        });
         setSaveStatus('saved');
         setTimeout(() => setSaveStatus('idle'), 3000);
       } else {
@@ -635,6 +667,26 @@ function LoungeLayoutPageContent() {
                   />
                 )}
               </div>
+              {!isMobile && (
+                <div className="text-xs text-zinc-400">
+                  Lounge: <span className="text-zinc-200">{loungeId}</span>
+                  {layoutMeta?.layoutVersion ? (
+                    <>
+                      {' '}• v<span className="text-zinc-200">{layoutMeta.layoutVersion}</span>
+                    </>
+                  ) : null}
+                  {layoutMeta?.updatedAt ? (
+                    <>
+                      {' '}• Updated <span className="text-zinc-200">{new Date(layoutMeta.updatedAt).toLocaleString()}</span>
+                    </>
+                  ) : null}
+                  {layoutMeta?.source ? (
+                    <>
+                      {' '}• Source <span className="text-zinc-200">{layoutMeta.source}</span>
+                    </>
+                  ) : null}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -644,8 +696,10 @@ function LoungeLayoutPageContent() {
       <LoungeLayoutWizard
         isOpen={showWizard}
         onClose={() => setShowWizard(false)}
-        onComplete={(wizardTables) => {
-          setTables(wizardTables);
+        loungeId={loungeId}
+        onComplete={(payload) => {
+          setTables(payload.tables);
+          setPendingProvenance(payload.provenance || { source: 'manual' });
           setShowWizard(false);
           // Auto-save after wizard completion
           setTimeout(() => {

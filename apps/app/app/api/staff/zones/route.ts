@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const tableId = searchParams.get('tableId');
     const zone = searchParams.get('zone');
+    const loungeId = (searchParams.get('loungeId') || '').trim() || undefined;
 
     // Get active sessions
     const activeSessions = await prisma.session.findMany({
@@ -33,7 +34,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Get tables from layout
-    const tables = await TableLayoutService.loadTables();
+    const tables = await TableLayoutService.loadTables(loungeId);
 
     // Get staff members (simplified - in production would come from staff table)
     // For now, extract from sessions
@@ -75,7 +76,7 @@ export async function GET(request: NextRequest) {
 
     // If specific table requested, get routing decision
     if (tableId) {
-      const tableZone = await ZoneRoutingService.getTableZone(tableId) || 'Main';
+      const tableZone = await ZoneRoutingService.getTableZone(tableId, loungeId) || 'Main';
       const routing = ZoneRoutingService.routeSessionToStaff(
         tableId,
         tableZone,
@@ -166,7 +167,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { tableId } = body;
+    const { tableId, loungeId } = body;
 
     if (!tableId) {
       return NextResponse.json(
@@ -176,7 +177,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get table zone
-    const tableZone = await ZoneRoutingService.getTableZone(tableId);
+    const tableZone = await ZoneRoutingService.getTableZone(tableId, typeof loungeId === 'string' ? loungeId.trim() : undefined);
     
     if (!tableZone) {
       return NextResponse.json(

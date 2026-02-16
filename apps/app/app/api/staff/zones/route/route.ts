@@ -11,7 +11,7 @@ const prisma = new PrismaClient();
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { tableId } = body;
+    const { tableId, loungeId } = body;
 
     if (!tableId) {
       return NextResponse.json(
@@ -23,7 +23,10 @@ export async function POST(request: NextRequest) {
     // Get table zone
     let tableZone;
     try {
-      tableZone = await ZoneRoutingService.getTableZone(tableId);
+      tableZone = await ZoneRoutingService.getTableZone(
+        tableId,
+        typeof loungeId === 'string' ? loungeId.trim() : undefined
+      );
     } catch (error) {
       console.error('[Zone Routing POST API] Error getting table zone:', error);
       return NextResponse.json({

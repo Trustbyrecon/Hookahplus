@@ -26,11 +26,19 @@ interface Table {
   seatingType: string;
 }
 
+export type LayoutProvenance = {
+  source: 'manual' | 'ai_photos';
+  sourceRef?: string;
+  confidence?: number;
+  confidenceSummary?: 'low' | 'medium' | 'high';
+};
+
 interface LoungeLayoutWizardProps {
   isOpen: boolean;
   onClose: () => void;
-  onComplete: (tables: Table[]) => void;
+  onComplete: (payload: { tables: Table[]; provenance?: LayoutProvenance }) => void;
   existingTables?: Table[];
+  loungeId?: string;
 }
 
 const seatingTypes = ['Booth', 'Couch', 'Bar', 'Outdoor', 'VIP', 'Private Room'];
@@ -39,7 +47,8 @@ export function LoungeLayoutWizard({
   isOpen, 
   onClose, 
   onComplete,
-  existingTables = []
+  existingTables = [],
+  loungeId
 }: LoungeLayoutWizardProps) {
   const [currentStep, setCurrentStep] = useState(0); // Start at Step 0 (Quick Setup)
   const [tables, setTables] = useState<Table[]>(existingTables);
@@ -56,6 +65,7 @@ export function LoungeLayoutWizard({
   const [yamlMetadata, setYamlMetadata] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [aiGeneratedTables, setAiGeneratedTables] = useState<Table[]>([]);
+  const [provenance, setProvenance] = useState<LayoutProvenance>({ source: 'manual' });
   const photoInputRef = useRef<HTMLInputElement>(null);
   const yamlInputRef = useRef<HTMLInputElement>(null);
 
@@ -126,7 +136,7 @@ export function LoungeLayoutWizard({
         body: JSON.stringify({
           photos: uploadedPhotos.map(file => ({ name: file.name, size: file.size })),
           loungeInfo: {
-            name: 'Lounge',
+            name: loungeId || 'Lounge',
             yamlMetadata: yamlMetadata || undefined
           }
         }),
@@ -149,15 +159,37 @@ export function LoungeLayoutWizard({
       }));
 
       setAiGeneratedTables(generatedTables);
-      setTables([...tables, ...generatedTables]);
-      setCurrentStep(1); // Move to manual review/edit step
+      // Do NOT merge into canonical tables yet. Force a verification gate.
+      // Staff must explicitly accept AI suggestions before moving on.
+      const confidence = typeof data?.layout?.confidence === 'number' ? data.layout.confidence : undefined;
+      const confidenceSummary =
+        typeof confidence === 'number' ? (confidence >= 0.8 ? 'high' : confidence >= 0.55 ? 'medium' : 'low') : undefined;
+      setProvenance({
+        source: 'ai_photos',
+        sourceRef: String(data?.layout?.version || 'visual-grounder-v1'),
+        confidence,
+        confidenceSummary,
+      });
     } catch (error) {
       console.error('Error generating layout:', error);
       alert('Failed to generate layout from photos. You can continue with manual setup.');
+      setProvenance({ source: 'manual' });
       setCurrentStep(1);
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleAcceptAi = () => {
+    if (aiGeneratedTables.length === 0) return;
+    setTables([...tables, ...aiGeneratedTables]);
+    setAiGeneratedTables([]);
+    setCurrentStep(1);
+  };
+
+  const handleDiscardAi = () => {
+    setAiGeneratedTables([]);
+    setProvenance({ source: 'manual' });
   };
 
   const handleSkipQuickSetup = () => {
@@ -170,7 +202,7 @@ export function LoungeLayoutWizard({
       alert('Please add at least one table to continue.');
       return;
     }
-    onComplete(tables);
+    onComplete({ tables, provenance });
     onClose();
   };
 
@@ -345,8 +377,29 @@ export function LoungeLayoutWizard({
                     <div>
                       <h3 className="font-semibold text-white mb-1">AI Generated {aiGeneratedTables.length} Tables!</h3>
                       <p className="text-sm text-zinc-300">
-                        Review and edit the generated tables in the next step, or continue to add more manually.
+                        AI is a suggestion, not truth. Accept these suggestions to begin editing, or discard and set up manually.
                       </p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button
+                          onClick={handleAcceptAi}
+                          className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-medium transition-colors"
+                        >
+                          Use AI suggestions
+                        </button>
+                        <button
+                          onClick={handleDiscardAi}
+                          className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg text-sm font-medium transition-colors"
+                        >
+                          Discard
+                        </button>
+                        {provenance?.source === 'ai_photos' ? (
+                          <div className="text-xs text-zinc-400 flex items-center">
+                            {typeof provenance.confidence === 'number'
+                              ? `Confidence: ${Math.round(provenance.confidence * 100)}% (${provenance.confidenceSummary})`
+                              : 'Confidence: unknown'}
+                          </div>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -361,7 +414,7 @@ export function LoungeLayoutWizard({
                 </button>
                 <button
                   onClick={handleQuickSetup}
-                  disabled={uploadedPhotos.length < 3 || isProcessing}
+                  disabled={uploadedPhotos.length < 3 || isProcessing || aiGeneratedTables.length > 0}
                   className="px-6 py-2 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   <Zap className="w-4 h-4" />

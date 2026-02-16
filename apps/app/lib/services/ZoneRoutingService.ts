@@ -50,8 +50,8 @@ export class ZoneRoutingService {
   /**
    * Get zone for a table
    */
-  static async getTableZone(tableId: string): Promise<string | null> {
-    const tables = await TableLayoutService.loadTables();
+  static async getTableZone(tableId: string, loungeId?: string): Promise<string | null> {
+    const tables = await TableLayoutService.loadTables(loungeId);
     const table = tables.find(t => 
       t.id === tableId ||
       t.name === tableId ||

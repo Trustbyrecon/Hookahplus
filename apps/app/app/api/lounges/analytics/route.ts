@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../../../lib/db';
 import { TableAnalyticsService } from '../../../../lib/services/TableAnalyticsService';
 import { HistoricalTrendsService } from '../../../../lib/services/TableAnalyticsService';
 import { cache, CacheService } from '../../../../lib/cache';
 
-const prisma = new PrismaClient();
+function layoutKey(loungeId: string) {
+  return `lounge_layout:${loungeId}`;
+}
 
 // Cache TTLs
 const ANALYTICS_CACHE_TTL = 45; // 45 seconds - analytics can be slightly stale
@@ -18,11 +20,13 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const timeRange = searchParams.get('timeRange') || '7d';
     const metric = searchParams.get('metric') || 'revenue'; // revenue | utilization | sessions
+    const loungeId = (searchParams.get('loungeId') || '').trim() || 'HOPE_GLOBAL_FORUM';
 
     // Generate cache key
     const cacheKey = CacheService.generateKey('lounge-analytics', {
       timeRange,
-      metric
+      metric,
+      loungeId
     });
 
     // Check cache
@@ -58,9 +62,10 @@ export async function GET(request: NextRequest) {
     // Load layout
     let layoutSetting;
     try {
-      layoutSetting = await prisma.orgSetting.findUnique({
-        where: { key: 'lounge_layout' }
-      });
+      // Backward compatible read: try scoped key first, then legacy global key.
+      layoutSetting =
+        (await prisma.orgSetting.findUnique({ where: { key: layoutKey(loungeId) } })) ||
+        (await prisma.orgSetting.findUnique({ where: { key: 'lounge_layout' } }).catch(() => null));
     } catch (error) {
       console.error('[Analytics API] Error loading layout:', error);
       // Return 200 with empty data for missing layout (not a server error)
