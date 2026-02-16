@@ -40,6 +40,7 @@ export default function GuestLoungePage() {
   const [sessionStarted, setSessionStarted] = useState<boolean>(false); // Track if session started after payment
   const [showIntelligenceDashboard, setShowIntelligenceDashboard] = useState(false);
   const [campaignId, setCampaignId] = useState<string | undefined>(undefined);
+  const [staffResolutionUrl, setStaffResolutionUrl] = useState<string | null>(null);
 
   useEffect(() => {
     initializeGuest();
@@ -52,7 +53,7 @@ export default function GuestLoungePage() {
     
     const timeoutId = setTimeout(() => {
       console.error('Guest initialization timeout');
-      setError('Loading is taking longer than expected. Please refresh the page.');
+      setError('Connection slow. Ask staff to check WiFi, or try again in a moment.');
       setIsLoading(false);
     }, 10000); // 10 second timeout
     
@@ -171,7 +172,9 @@ export default function GuestLoungePage() {
 
       if (!enterResponse.ok) {
         const errorData = await enterResponse.json();
-        throw new Error(errorData.error || 'Failed to enter guest');
+        const err = new Error(errorData.error || errorData.message || 'Failed to enter guest') as Error & { staffResolution?: { path?: string } };
+        if (errorData.staffResolution?.path) err.staffResolution = errorData.staffResolution;
+        throw err;
       }
 
       const enterData = await enterResponse.json();
@@ -206,6 +209,11 @@ export default function GuestLoungePage() {
         throw new Error('Failed to initialize guest profile');
       }
 
+      // Auto-start: enter already resolved session via canonical resolver; skip "Start Session" tap
+      if (enterData.sessionId && tableId) {
+        setSessionStarted(true);
+      }
+
       // Log guest entry event (client-side logging only - server-side logging happens in API)
       if (loungeFlags.ghostlog.lite) {
         const eventPayload = {
@@ -222,7 +230,10 @@ export default function GuestLoungePage() {
 
     } catch (err) {
       console.error('Guest initialization error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to initialize guest');
+      const e = err as Error & { staffResolution?: { path?: string } };
+      setError(e instanceof Error ? e.message : 'Failed to initialize guest');
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
+      if (e?.staffResolution?.path) setStaffResolutionUrl(`${appUrl}${e.staffResolution.path}`);
     } finally {
       setIsLoading(false);
     }
@@ -276,6 +287,7 @@ export default function GuestLoungePage() {
   }
 
   if (error) {
+    const staffUrl = staffResolutionUrl;
     return (
       <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
@@ -286,6 +298,11 @@ export default function GuestLoungePage() {
           </div>
           <h2 className="text-xl font-semibold mb-2 text-red-400">Access Denied</h2>
           <p className="text-zinc-400 mb-4">{error}</p>
+          {staffUrl && (
+            <p className="text-sm text-teal-400 mb-4">
+              Staff: <a href={staffUrl} className="underline" target="_blank" rel="noopener noreferrer">Resolve table conflict</a>
+            </p>
+          )}
           <button
             onClick={() => window.location.reload()}
             className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
@@ -488,6 +505,7 @@ export default function GuestLoungePage() {
               guestProfile={guestProfile}
               flags={flags}
               onProfileUpdate={setGuestProfile}
+              initialSessionStarted={sessionStarted}
             />
             </div>
 

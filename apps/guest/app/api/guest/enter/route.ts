@@ -115,6 +115,7 @@ export async function POST(req: NextRequest) {
           blocked: true,
           error: resolveData?.message || 'We need staff to confirm your table before continuing.',
           conflictSessionIds: resolveData?.conflictSessionIds || [],
+          staffResolution: resolveData?.staffResolution,
         }, { status: 409 });
       }
 

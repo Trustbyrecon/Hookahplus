@@ -4,7 +4,19 @@ import React, { useMemo, useState, useEffect } from 'react'
 import GlobalNavigation from '../../../components/GlobalNavigation'
 import Card from '../../../components/Card'
 import Button from '../../../components/Button'
-import { QrCode, Download, Printer, Copy, CheckCircle, RefreshCw } from 'lucide-react'
+import { QrCode, Download, Printer, Copy, CheckCircle, RefreshCw, Trash2, List } from 'lucide-react'
+
+interface StoredQR {
+  id: string
+  loungeId: string
+  tableId?: string
+  url: string
+  qrCodeData?: string
+  status: string
+  retiredAt?: string | null
+  createdAt: string
+  updatedAt: string
+}
 
 export default function AdminQRPage() {
   const [loungeId, setLoungeId] = useState('default-lounge')
@@ -19,6 +31,8 @@ export default function AdminQRPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string>('')
   const [copied, setCopied] = useState(false)
+  const [storedQRs, setStoredQRs] = useState<StoredQR[]>([])
+  const [storedLoading, setStoredLoading] = useState(false)
 
   // Table options
   const tables = [
@@ -136,6 +150,52 @@ export default function AdminQRPage() {
       generateQRCode()
     }
   }, [tableId, campaign])
+
+  const fetchStoredQRs = async () => {
+    if (!loungeId) return
+    setStoredLoading(true)
+    try {
+      const res = await fetch(`/api/qr-generator?loungeId=${encodeURIComponent(loungeId)}`)
+      const data = await res.json().catch(() => ({}))
+      setStoredQRs(data?.qrCodes ?? [])
+    } finally {
+      setStoredLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchStoredQRs()
+  }, [loungeId])
+
+  const handleRetire = async (tId: string) => {
+    try {
+      const res = await fetch('/api/qr-generator', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ loungeId, tableId: tId, action: 'retire' }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (data?.success) fetchStoredQRs()
+    } catch (e) {
+      console.error('Retire failed:', e)
+    }
+  }
+
+  const handleReprint = (qr: StoredQR) => {
+    if (qr.qrCodeData) {
+      const w = window.open('', '_blank')
+      if (w) {
+        w.document.write(`
+          <html><head><title>QR - ${qr.tableId || 'kiosk'}</title>
+          <style>body{font-family:Arial;text-align:center;padding:20px;background:white}</style></head>
+          <body><div><h3>Table: ${qr.tableId || 'Kiosk'}</h3>
+          <img src="${qr.qrCodeData}" alt="QR" style="width:256px;height:256px" />
+          <p style="font-size:12px;color:#666">Scan to start session</p></div></body></html>`)
+        w.document.close()
+        w.print()
+      }
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
@@ -360,6 +420,57 @@ export default function AdminQRPage() {
             )}
           </Card>
         </div>
+
+        {/* Stored QRs - List, Reprint, Retire */}
+        <Card className="p-6 mt-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold flex items-center gap-2">
+              <List className="w-5 h-5 text-teal-400" />
+              Stored QR Codes (Audit)
+            </h2>
+            <Button onClick={fetchStoredQRs} disabled={storedLoading} size="sm" className="bg-zinc-700 hover:bg-zinc-600">
+              <RefreshCw className={`w-4 h-4 mr-1 ${storedLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
+          {storedLoading ? (
+            <div className="py-8 text-center text-zinc-400">Loading...</div>
+          ) : storedQRs.length === 0 ? (
+            <p className="text-zinc-400 text-sm">No stored QR codes for this lounge. Generate some above.</p>
+          ) : (
+            <div className="space-y-3">
+              {storedQRs.map((qr) => (
+                <div
+                  key={qr.id}
+                  className="flex items-center justify-between p-3 bg-zinc-800 rounded-lg border border-zinc-700"
+                >
+                  <div>
+                    <span className="font-medium text-white">Table: {qr.tableId || 'Kiosk'}</span>
+                    <span className={`ml-2 text-xs px-2 py-0.5 rounded ${qr.status === 'inactive' ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
+                      {qr.status}
+                    </span>
+                    <p className="text-xs text-zinc-500 mt-1">
+                      Created: {new Date(qr.createdAt).toLocaleString()}
+                      {qr.retiredAt && ` • Retired: ${new Date(qr.retiredAt).toLocaleString()}`}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={() => handleReprint(qr)} size="sm" className="bg-teal-600 hover:bg-teal-500" disabled={!qr.qrCodeData || qr.status === 'inactive'}>
+                      <Printer className="w-4 h-4 mr-1" />
+                      Reprint
+                    </Button>
+                    {qr.status === 'active' && (
+                      <Button onClick={() => handleRetire(qr.tableId ?? 'kiosk')} size="sm" className="bg-red-600/80 hover:bg-red-600">
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Retire
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
       </div>
     </div>
   )

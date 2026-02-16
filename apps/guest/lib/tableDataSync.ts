@@ -80,11 +80,8 @@ class TableDataSyncService {
       mapped.forEach((table) => this.tables.set(table.tableId, table));
       return mapped;
     } catch (error) {
-      console.warn('[TableDataSync] Falling back to cached table data:', error);
-      const cached = Array.from(this.tables.values()).filter((t) =>
-        t.loungeId === loungeId && (!tableId || t.tableId === tableId)
-      );
-      return cached;
+      console.warn('[TableDataSync] Unable to load tables from server:', error);
+      return [];
     }
   }
 

@@ -11,12 +11,18 @@ interface QRGateProps {
   guestProfile: GuestProfile;
   flags: FeatureFlags;
   onProfileUpdate: (profile: GuestProfile) => void;
+  /** When true, session was already resolved by enter (canonical resolver); skip Start Session tap */
+  initialSessionStarted?: boolean;
 }
 
-export default function QRGate({ qrData, guestProfile, flags, onProfileUpdate }: QRGateProps) {
+export default function QRGate({ qrData, guestProfile, flags, onProfileUpdate, initialSessionStarted }: QRGateProps) {
   const [isStarting, setIsStarting] = useState(false);
-  const [sessionStarted, setSessionStarted] = useState(false);
+  const [sessionStarted, setSessionStarted] = useState(!!initialSessionStarted);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (initialSessionStarted) setSessionStarted(true);
+  }, [initialSessionStarted]);
   const [participantId, setParticipantId] = useState<string | null>(null);
   const [joinMode, setJoinMode] = useState<string | null>(null);
 

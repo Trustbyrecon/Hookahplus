@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { storeQRCodes, getQRCodesForLounge } from '../../../lib/launchpad/qr-storage';
+import { storeQRCodes, getQRCodesForLounge, retireQRCode } from '../../../lib/launchpad/qr-storage';
 
 export async function POST(req: NextRequest) {
   try {
@@ -98,9 +98,11 @@ export async function GET(req: NextRequest) {
         tableId: q.tableId || undefined,
         url: q.url,
         qrCodeData: q.qrCodeDataUrl,
+        status: q.status || 'active',
+        retiredAt: q.retiredAt?.toISOString() ?? null,
         createdAt: q.createdAt.toISOString(),
+        updatedAt: q.updatedAt.toISOString(),
         usageCount: 0,
-        status: 'active',
       })),
       total: stored.length,
     });
@@ -111,6 +113,21 @@ export async function GET(req: NextRequest) {
       error: 'Failed to fetch QR codes',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const body = await req.json().catch(() => ({}));
+    const { loungeId, tableId, action } = body;
+    if (!loungeId || !tableId || action !== 'retire') {
+      return NextResponse.json({ error: 'loungeId, tableId, and action: "retire" required' }, { status: 400 });
+    }
+    const ok = await retireQRCode(loungeId, tableId);
+    return NextResponse.json({ success: ok, message: ok ? 'QR retired' : 'QR not found' });
+  } catch (error) {
+    console.error('QR Generator retire error:', error);
+    return NextResponse.json({ error: 'Failed to retire QR', details: error instanceof Error ? error.message : 'Unknown' }, { status: 500 });
   }
 }
 

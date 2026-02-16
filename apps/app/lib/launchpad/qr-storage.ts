@@ -13,6 +13,8 @@ export interface StoredQRCode {
   type: 'table' | 'kiosk';
   url: string;
   qrCodeDataUrl: string;
+  status: 'active' | 'inactive';
+  retiredAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -38,6 +40,7 @@ export async function storeQRCodes(
     for (const qr of qrCodes) {
       const id = `${loungeId}:${qr.tableId || 'kiosk'}:${qr.type}`;
       const currentIdx = parsed.findIndex((p) => p.id === id);
+      const existingItem = currentIdx >= 0 ? parsed[currentIdx] : null;
       const next: StoredQRCode = {
         id,
         loungeId,
@@ -45,6 +48,8 @@ export async function storeQRCodes(
         type: qr.type,
         url: qr.url,
         qrCodeDataUrl: qr.qrCodeDataUrl,
+        status: (existingItem as StoredQRCode)?.status === 'inactive' ? 'inactive' : 'active',
+        retiredAt: (existingItem as StoredQRCode)?.retiredAt ?? null,
         createdAt: currentIdx >= 0 ? new Date(parsed[currentIdx].createdAt) : now,
         updatedAt: now,
       };
@@ -88,6 +93,8 @@ export async function getQRCodesForLounge(
     const parsed = JSON.parse(row.value) as StoredQRCode[];
     return parsed.map((p) => ({
       ...p,
+      status: (p as StoredQRCode).status ?? 'active',
+      retiredAt: (p as StoredQRCode).retiredAt ? new Date((p as StoredQRCode).retiredAt!) : null,
       createdAt: new Date(p.createdAt),
       updatedAt: new Date(p.updatedAt),
     }));
@@ -110,6 +117,40 @@ export async function getQRCodeByTableId(
   } catch (error) {
     console.error('[QR Storage] Error:', error);
     return null;
+  }
+}
+
+/**
+ * Retire (deactivate) a QR code by table ID
+ */
+export async function retireQRCode(
+  loungeId: string,
+  tableId: string
+): Promise<boolean> {
+  try {
+    const qrCodes = await getQRCodesForLounge(loungeId);
+    const idx = qrCodes.findIndex((q) => q.tableId === tableId);
+    if (idx < 0) return false;
+    const key = `qr_codes:${loungeId}`;
+    const existing = await prisma.orgSetting.findUnique({ where: { key } });
+    const parsed: StoredQRCode[] = existing?.value ? JSON.parse(existing.value) : [];
+    const target = parsed.find((p) => (tableId === 'kiosk' ? p.tableId === null : p.tableId === tableId));
+    if (!target) return false;
+    const now = new Date();
+    const updated = parsed.map((p) =>
+      (tableId === 'kiosk' ? p.tableId === null : p.tableId === tableId)
+        ? { ...p, status: 'inactive' as const, retiredAt: now, updatedAt: now }
+        : p
+    );
+    await prisma.orgSetting.upsert({
+      where: { key },
+      create: { key, value: JSON.stringify(updated), description: `QR storage ${loungeId}`, category: 'qr', isActive: true },
+      update: { value: JSON.stringify(updated) },
+    });
+    return true;
+  } catch (error) {
+    console.error('[QR Storage] Retire error:', error);
+    return false;
   }
 }
 

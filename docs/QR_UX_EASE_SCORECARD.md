@@ -20,14 +20,14 @@ Scoring scale: 0 (missing) to 5 (best-in-class).
 ## Score Summary
 | Dimension | Weight | H+ Score (0-5) | Weighted |
 |---|---:|---:|---:|
-| Entry Simplicity | 25% | 2.0 | 0.50 |
-| Operational Mapping | 20% | 2.2 | 0.44 |
-| Recovery and Error Clarity | 15% | 2.4 | 0.36 |
-| Staff Action Continuity | 20% | 2.1 | 0.42 |
-| Lifecycle Operations | 20% | 1.9 | 0.38 |
-| **Total** | **100%** |  | **2.10 / 5.00** |
+| Entry Simplicity | 25% | 2.0 → **3.0** | 0.50 → **0.75** |
+| Operational Mapping | 20% | 2.2 → **3.0** | 0.44 → **0.60** |
+| Recovery and Error Clarity | 15% | 2.4 → **3.2** | 0.36 → **0.48** |
+| Staff Action Continuity | 20% | 2.1 → **3.0** | 0.42 → **0.60** |
+| Lifecycle Operations | 20% | 1.9 → **3.0** | 0.38 → **0.60** |
+| **Total** | **100%** |  | **2.10 → 3.03 / 5.00** |
 
-Overall normalized score: **42/100**.
+Overall normalized score: **42 → ~61/100** (post-PR #191 + UX iteration).
 
 ## Overall Rank vs Toast/Clover-Like Baseline
 - **Current rank: Behind on operational polish and continuity**.

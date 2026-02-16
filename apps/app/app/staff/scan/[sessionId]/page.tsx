@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { QrCode, Clock, MapPin, Sparkles, DollarSign, User, Calendar, AlertCircle, ArrowLeft } from 'lucide-react';
+import { QrCode, Clock, MapPin, Sparkles, DollarSign, User, Calendar, AlertCircle, ArrowLeft, Wrench, Printer } from 'lucide-react';
 import GlobalNavigation from '../../../../components/GlobalNavigation';
 import Card from '../../../../components/Card';
 import Button from '../../../../components/Button';
@@ -10,6 +10,7 @@ import Link from 'next/link';
 
 interface Session {
   id: string;
+  loungeId?: string;
   tableId?: string;
   table_id?: string;
   customerName?: string;
@@ -89,7 +90,12 @@ export default function StaffScanPage() {
               <AlertCircle className="w-6 h-6" />
               <h2 className="text-xl font-bold">Session Not Found</h2>
             </div>
-            <p className="text-zinc-400 mt-2">{error || 'The session you are looking for does not exist.'}</p>
+            <p className="text-zinc-400 mt-2">
+              Check the QR link or ask the guest to scan again. The session may have been closed or the ID is incorrect.
+            </p>
+            <Link href="/staff-dashboard" className="mt-4 inline-block">
+              <Button className="bg-teal-600 hover:bg-teal-500">Back to Staff Dashboard</Button>
+            </Link>
           </Card>
         </div>
       </div>
@@ -181,6 +187,23 @@ export default function StaffScanPage() {
               <Link href={`/sessions`} className="block">
                 <Button className="w-full bg-teal-600 hover:bg-teal-500">
                   View in Dashboard
+                </Button>
+              </Link>
+              {(session.loungeId || session.tableId || session.table_id) && (
+                <Link
+                  href={`/admin/pos-ops?loungeId=${encodeURIComponent(session.loungeId || '')}&tableId=${encodeURIComponent(session.tableId || session.table_id || '')}`}
+                  className="block"
+                >
+                  <Button className="w-full bg-amber-600 hover:bg-amber-500 flex items-center justify-center gap-2">
+                    <Wrench className="w-4 h-4" />
+                    Resolve Table Conflict
+                  </Button>
+                </Link>
+              )}
+              <Link href="/admin/qr" className="block">
+                <Button className="w-full bg-zinc-700 hover:bg-zinc-600 flex items-center justify-center gap-2">
+                  <Printer className="w-4 h-4" />
+                  Generate / Reprint QR
                 </Button>
               </Link>
               <Button className="w-full bg-zinc-700 hover:bg-zinc-600">
