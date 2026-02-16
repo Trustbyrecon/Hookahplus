@@ -33,7 +33,11 @@ import {
   MessageSquare,
   Bell,
   BarChart3,
-  Lightbulb
+  Lightbulb,
+  QrCode,
+  Activity,
+  ExternalLink,
+  AlertTriangle
 } from 'lucide-react';
 
 interface StaffMember {
@@ -98,6 +102,14 @@ function StaffPanelPageContent() {
     phone: '',
     role: 'FOH' as 'BOH' | 'FOH' | 'MANAGER' | 'ADMIN'
   });
+
+  // Staff cockpit helpers (overview only)
+  const [scanSessionId, setScanSessionId] = useState('');
+  const [recentScans, setRecentScans] = useState<Array<{ sessionId: string; ts: number }>>([]);
+  const [recentScanDetails, setRecentScanDetails] = useState<Record<string, any>>({});
+  const [liveParticipantCounts, setLiveParticipantCounts] = useState<Record<string, number>>({});
+  const [driftSummary, setDriftSummary] = useState<{ count: number; items: any[] } | null>(null);
+  const [health, setHealth] = useState<any>(null);
   
   // Fetch zone data when zone tab is active
   useEffect(() => {
@@ -117,6 +129,106 @@ function StaffPanelPageContent() {
         });
     }
   }, [activeTab]);
+
+  // Load recent scans (client-only)
+  useEffect(() => {
+    if (activeTab !== 'overview') return;
+    try {
+      const key = 'hp_staff_recent_scans_v1';
+      const raw = localStorage.getItem(key);
+      const parsed = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(parsed)) setRecentScans(parsed.slice(0, 10));
+    } catch {
+      setRecentScans([]);
+    }
+  }, [activeTab]);
+
+  // Fetch details for recent scans (best-effort)
+  useEffect(() => {
+    if (activeTab !== 'overview') return;
+    const ids = recentScans.map((r) => r.sessionId).filter(Boolean).slice(0, 5);
+    if (!ids.length) return;
+    let cancelled = false;
+    (async () => {
+      const entries = await Promise.all(
+        ids.map(async (id) => {
+          try {
+            const resp = await fetch(`/api/sessions/${encodeURIComponent(id)}`);
+            const data = await resp.json().catch(() => null);
+            if (!resp.ok) return [id, null] as const;
+            return [id, data] as const;
+          } catch {
+            return [id, null] as const;
+          }
+        })
+      );
+      if (cancelled) return;
+      const next: Record<string, any> = {};
+      for (const [id, data] of entries) next[id] = data;
+      setRecentScanDetails(next);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, recentScans]);
+
+  // Fetch drift summary + health (overview only)
+  useEffect(() => {
+    if (activeTab !== 'overview') return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [driftResp, healthResp] = await Promise.all([
+          fetch('/api/recon/drift-summary?action_type=recon.session.multi_active&hours=24'),
+          fetch('/api/staff-panel/health'),
+        ]);
+        const driftData = await driftResp.json().catch(() => null);
+        const healthData = await healthResp.json().catch(() => null);
+        if (cancelled) return;
+        if (driftResp.ok && driftData?.ok) setDriftSummary({ count: driftData.count || 0, items: driftData.items || [] });
+        else setDriftSummary({ count: 0, items: [] });
+        if (healthResp.ok && healthData?.ok) setHealth(healthData);
+        else setHealth(null);
+      } catch {
+        if (!cancelled) {
+          setDriftSummary({ count: 0, items: [] });
+          setHealth(null);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab]);
+
+  // Fetch participant counts for ACTIVE sessions (best-effort; small N)
+  useEffect(() => {
+    if (activeTab !== 'overview') return;
+    const activeIds = sessions.filter((s) => s.status === 'ACTIVE').map((s) => s.id).slice(0, 5);
+    if (!activeIds.length) return;
+    let cancelled = false;
+    (async () => {
+      const entries = await Promise.all(
+        activeIds.map(async (id) => {
+          try {
+            const resp = await fetch(`/api/sessions/${encodeURIComponent(id)}`);
+            const data = await resp.json().catch(() => null);
+            const count = Array.isArray(data?.participants) ? data.participants.length : 0;
+            return [id, count] as const;
+          } catch {
+            return [id, 0] as const;
+          }
+        })
+      );
+      if (cancelled) return;
+      const next: Record<string, number> = {};
+      for (const [id, count] of entries) next[id] = count;
+      setLiveParticipantCounts(next);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, sessions]);
   
   // Derive staff members from sessions
   const staffMembers = useMemo(() => {
@@ -590,6 +702,167 @@ function StaffPanelPageContent() {
                     : '0.0'}
                 </div>
                 <div className="text-sm text-zinc-400">Out of 5.0</div>
+              </Card>
+            </div>
+
+            {/* Scan-to-act + ops continuity */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+              <Card className="card-tablet lg:col-span-1">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-white">Scan-to-act</h3>
+                  <QrCode className="w-6 h-6 text-teal-400" />
+                </div>
+                <p className="text-sm text-zinc-400 mb-4">
+                  Open the session cockpit from a scanned ID.
+                </p>
+                <div className="space-y-3">
+                  <input
+                    value={scanSessionId}
+                    onChange={(e) => setScanSessionId(e.target.value)}
+                    placeholder="Paste session ID…"
+                    className="w-full px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-700 text-white placeholder:text-zinc-500"
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      className="btn-pretty-primary btn-tablet flex-1"
+                      onClick={() => {
+                        const id = scanSessionId.trim();
+                        if (!id) return;
+                        window.location.href = `/staff/scan/${encodeURIComponent(id)}`;
+                      }}
+                    >
+                      Open cockpit
+                    </Button>
+                    <Button
+                      className="btn-pretty-outline btn-tablet"
+                      onClick={() => setScanSessionId('')}
+                    >
+                      Clear
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="card-tablet lg:col-span-2">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-white">Recent scans</h3>
+                  <Activity className="w-6 h-6 text-blue-400" />
+                </div>
+                {recentScans.length === 0 ? (
+                  <p className="text-sm text-zinc-400">No recent scans yet.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {recentScans.slice(0, 5).map((r) => {
+                      const detail = recentScanDetails[r.sessionId];
+                      const tableId = detail?.table_id || detail?.tableId || detail?.table_id;
+                      const participants = Array.isArray(detail?.participants) ? detail.participants.length : null;
+                      return (
+                        <div key={r.sessionId} className="flex items-center justify-between p-3 rounded-lg bg-zinc-900/50 border border-zinc-800">
+                          <div className="min-w-0">
+                            <div className="text-white font-medium truncate">
+                              {tableId ? `Table ${tableId}` : 'Session'} <span className="text-zinc-500">•</span>{' '}
+                              <span className="font-mono text-sm text-zinc-300">{r.sessionId.slice(0, 10)}</span>
+                            </div>
+                            <div className="text-xs text-zinc-500">
+                              {new Date(r.ts).toLocaleString()}
+                              {participants != null ? ` • ${participants} participant(s)` : ''}
+                            </div>
+                          </div>
+                          <a
+                            href={`/staff/scan/${encodeURIComponent(r.sessionId)}`}
+                            className="inline-flex items-center gap-2 text-sm text-teal-300 hover:text-teal-200"
+                          >
+                            Open <ExternalLink className="w-4 h-4" />
+                          </a>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </Card>
+            </div>
+
+            {/* Operational alerts + live sessions */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+              <Card className="card-tablet lg:col-span-1">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-white">Operational alerts</h3>
+                  <AlertTriangle className="w-6 h-6 text-yellow-400" />
+                </div>
+                <div className="text-3xl font-bold text-white mb-1">
+                  {driftSummary?.count ?? 0}
+                </div>
+                <div className="text-sm text-zinc-400 mb-3">
+                  Multi-active table conflicts (last 24h)
+                </div>
+                {(driftSummary?.items || []).slice(0, 2).map((it: any) => (
+                  <div key={it.id} className="p-3 rounded-lg bg-zinc-900/50 border border-zinc-800 mb-2">
+                    <div className="text-sm text-white">
+                      {it.tableId ? `Table ${it.tableId}` : 'Table conflict'}
+                    </div>
+                    <a href={it.resolutionPath || '#'} className="text-xs text-teal-300 hover:text-teal-200">
+                      Resolve in POS Ops
+                    </a>
+                  </div>
+                ))}
+              </Card>
+
+              <Card className="card-tablet lg:col-span-2">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-white">Live sessions</h3>
+                  <TrendingUp className="w-6 h-6 text-green-400" />
+                </div>
+                {sessions.filter((s) => s.status === 'ACTIVE').length === 0 ? (
+                  <p className="text-sm text-zinc-400">No ACTIVE sessions right now.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {sessions
+                      .filter((s) => s.status === 'ACTIVE')
+                      .slice(0, 5)
+                      .map((s) => (
+                        <div key={s.id} className="flex items-center justify-between p-3 rounded-lg bg-zinc-900/50 border border-zinc-800">
+                          <div className="min-w-0">
+                            <div className="text-white font-medium truncate">
+                              Table {s.tableId} <span className="text-zinc-500">•</span>{' '}
+                              <span className="font-mono text-sm text-zinc-300">{s.id.slice(0, 10)}</span>
+                            </div>
+                            <div className="text-xs text-zinc-500">
+                              {new Date(s.createdAt).toLocaleString()}
+                              {typeof liveParticipantCounts[s.id] === 'number' ? ` • ${liveParticipantCounts[s.id]} participant(s)` : ''}
+                            </div>
+                          </div>
+                          <a
+                            href={`/staff/scan/${encodeURIComponent(s.id)}`}
+                            className="inline-flex items-center gap-2 text-sm text-teal-300 hover:text-teal-200"
+                          >
+                            Open <ExternalLink className="w-4 h-4" />
+                          </a>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </Card>
+            </div>
+
+            {/* QR health */}
+            <div className="mb-8">
+              <Card className="card-tablet">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-lg font-semibold text-white">QR lifecycle health</h3>
+                  <CheckCircle className="w-6 h-6 text-green-400" />
+                </div>
+                <div className="text-sm text-zinc-400">
+                  Resolver: <span className={health?.resolver?.ok ? 'text-green-300' : 'text-red-300'}>{health?.resolver?.ok ? 'OK' : 'Fail'}</span>
+                  {' • '}
+                  Minting: <span className={health?.qrMinting?.ok ? 'text-green-300' : 'text-red-300'}>{health?.qrMinting?.ok ? 'OK' : 'Fail'}</span>
+                  {' • '}
+                  DB: <span className={health?.db?.ok ? 'text-green-300' : 'text-red-300'}>{health?.db?.ok ? 'OK' : 'Fail'}</span>
+                  {health?.qrStorage?.ok && health?.qrStorage?.updatedAt ? (
+                    <>
+                      {' • '}Last QR pack update: <span className="text-zinc-200">{new Date(health.qrStorage.updatedAt).toLocaleString()}</span>
+                    </>
+                  ) : null}
+                </div>
               </Card>
             </div>
 

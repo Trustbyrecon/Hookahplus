@@ -44,6 +44,20 @@ export default function StaffScanPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Track recent scans for staff continuity (client-only).
+  useEffect(() => {
+    if (!sessionId) return;
+    try {
+      const key = "hp_staff_recent_scans_v1";
+      const raw = localStorage.getItem(key);
+      const parsed: Array<{ sessionId: string; ts: number }> = raw ? JSON.parse(raw) : [];
+      const next = [{ sessionId, ts: Date.now() }, ...parsed.filter((r) => r?.sessionId && r.sessionId !== sessionId)];
+      localStorage.setItem(key, JSON.stringify(next.slice(0, 10)));
+    } catch {
+      // ignore
+    }
+  }, [sessionId]);
+
   useEffect(() => {
     const fetchSession = async () => {
       try {
