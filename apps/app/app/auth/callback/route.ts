@@ -16,6 +16,7 @@ export async function GET(req: NextRequest) {
   const verifyRole = searchParams.get('verify_role'); // For role change verification
   const adminLogin = searchParams.get('admin_login') === 'true'; // Flag for admin login flow
   const onboardingFlow = searchParams.get('onboarding_flow') === 'true'; // Flag for onboarding flow
+  const sid = (searchParams.get('sid') || '').trim(); // Stripe checkout session id (paid-tier handoff)
 
   if (code) {
     const cookieStore = cookies();
@@ -54,6 +55,35 @@ export async function GET(req: NextRequest) {
           .single();
 
         membership = membershipData;
+
+        // Paid-tier canonical hardening: when `sid` is present, bind membership to the lounge created from that setup session.
+        if (!membership && sid) {
+          try {
+            const setup = await (prisma as any).setupSession.findFirst({
+              where: { stripeCheckoutSessionId: sid },
+              select: { loungeId: true, activatedLoungeIds: true },
+            });
+
+            const loungeIds: string[] = Array.isArray(setup?.activatedLoungeIds) && setup.activatedLoungeIds.length > 0
+              ? setup.activatedLoungeIds
+              : setup?.loungeId
+                ? [setup.loungeId]
+                : [];
+
+            if (loungeIds.length > 0) {
+              for (const tenantId of loungeIds) {
+                await prisma.membership.upsert({
+                  where: { userId_tenantId: { userId: user.id, tenantId } },
+                  update: { role: 'owner' as any },
+                  create: { userId: user.id, tenantId, role: 'owner' as any },
+                });
+              }
+              membership = { tenant_id: loungeIds[0], role: 'owner' };
+            }
+          } catch (e) {
+            console.error('[Auth Callback] Failed to bind membership from sid:', e);
+          }
+        }
 
         // Canonical hardening: if the user has no membership yet but has a pending tenant name
         // (common when email confirmation/magic-link completes before DB binding), auto-provision.

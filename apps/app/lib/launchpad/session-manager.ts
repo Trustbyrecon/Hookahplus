@@ -87,7 +87,7 @@ async function createSoftLead(
  * Create a new anonymous setup session (auto-created on LaunchPad entry)
  */
 export async function createSetupSession(
-  source: 'manychat' | 'web' | 'direct' = 'web',
+  source: 'manychat' | 'web' | 'direct' | 'stripe' = 'web',
   prefillData?: any
 ): Promise<SetupSessionResponse> {
   const token = generateToken();
@@ -123,6 +123,16 @@ export async function createSetupSession(
       }));
       initialProgress.data.step2 = {
         topFlavors: flavors,
+      };
+    }
+
+    // Stripe provisioning marker (kept separate from step payloads)
+    if (prefillData.tier || prefillData.stripe_checkout_session_id) {
+      initialProgress.data.billing = {
+        tier: prefillData.tier,
+        stripeCheckoutSessionId: prefillData.stripe_checkout_session_id,
+        stripeCustomerId: prefillData.stripe_customer_id,
+        stripeSubscriptionId: prefillData.stripe_subscription_id,
       };
     }
   }

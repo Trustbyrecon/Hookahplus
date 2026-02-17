@@ -65,6 +65,12 @@ export interface LaunchPadProgress {
     step3?: SessionRulesData;
     step4?: StaffRolesData;
     step5?: POSBridgeData;
+    billing?: {
+      tier?: 'starter' | 'pro' | 'trust_plus';
+      stripeCheckoutSessionId?: string;
+      stripeCustomerId?: string;
+      stripeSubscriptionId?: string;
+    };
   };
   sessionToken: string;
   createdAt: string;

@@ -6,10 +6,32 @@ import { generateQRCodePack } from '../../../../lib/launchpad/qr-generator';
 import { generateStaffPlaybook } from '../../../../lib/launchpad/staff-playbook-generator';
 import { storeQRCodes } from '../../../../lib/launchpad/qr-storage';
 import { LaunchPadProgress } from '../../../../types/launchpad';
-import { randomBytes } from 'crypto';
+import { createClient } from '@supabase/supabase-js';
+
+export const runtime = 'nodejs';
 
 function slugify(input: string): string {
   return input.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+function buildAppUrl(req: NextRequest): string {
+  const env = (process.env.NEXT_PUBLIC_APP_URL || '').trim();
+  if (env) return env.replace(/\/$/, '');
+  const proto = (req.headers.get('x-forwarded-proto') || 'https').split(',')[0].trim();
+  const host = (req.headers.get('x-forwarded-host') || req.headers.get('host') || '').split(',')[0].trim();
+  if (host) return `${proto}://${host}`;
+  return 'https://app.hookahplus.net';
+}
+
+function supabaseAdminOrThrow() {
+  const url = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim();
+  const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+  if (!url || !serviceKey) {
+    throw new Error('Supabase admin env not configured (NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY).');
+  }
+  return createClient(url, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });
 }
 
 async function ensureDefaultTables(loungeId: string, tablesCount: number) {
@@ -108,10 +130,52 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // TODO: Create user account
-    // This will need to integrate with your auth system (NextAuth, Supabase, etc.)
-    // For now, we'll create a placeholder user ID
-    const userId = `user_${randomBytes(16).toString('hex')}`;
+    // Create (or invite) Supabase auth user canonically so we can bind memberships.
+    const appUrl = buildAppUrl(req);
+    const stripeSid = (progress as any)?.data?.billing?.stripeCheckoutSessionId || undefined;
+    const redirectTo = `${appUrl}/auth/callback?redirect=/admin&admin_login=true${stripeSid ? `&sid=${encodeURIComponent(String(stripeSid))}` : ''}`;
+
+    let userId: string | null = null;
+    try {
+      const supabaseAdmin = supabaseAdminOrThrow();
+      if (useMagicLink) {
+        const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(String(email).trim(), {
+          redirectTo,
+        } as any);
+        if (error || !data?.user?.id) {
+          throw new Error(error?.message || 'Failed to send magic link invite');
+        }
+        userId = data.user.id;
+      } else {
+        if (!password) {
+          return NextResponse.json(
+            { success: false, error: 'Password is required unless using magic link' },
+            { status: 400 }
+          );
+        }
+        const { data, error } = await supabaseAdmin.auth.admin.createUser({
+          email: String(email).trim(),
+          password: String(password),
+          phone: phone ? String(phone).trim() : undefined,
+          email_confirm: true,
+        } as any);
+        if (error || !data?.user?.id) {
+          throw new Error(error?.message || 'Failed to create user');
+        }
+        userId = data.user.id;
+      }
+    } catch (e: any) {
+      console.error('[LaunchPad Create Lounge] Supabase user creation failed:', e);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Failed to create user account',
+          details: e?.message || 'Supabase user provisioning failed',
+          next: 'CHECK_SUPABASE_AUTH_CONFIG',
+        },
+        { status: 500 }
+      );
+    }
 
     const step1: any = progress.data.step1 || {};
     const primaryLoungeName = step1.loungeName || 'My Lounge';
@@ -136,7 +200,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://hookahplus.net';
+    const baseUrl = appUrl;
     const locationsToProvision = multiLocationEnabled
       ? candidateLocations
       : [{
@@ -168,6 +232,19 @@ export async function POST(req: NextRequest) {
           ...(organizationId ? { organizationId } : {}),
         } as any,
       });
+
+      // Bind operator membership (owner) to each provisioned lounge.
+      if (userId) {
+        try {
+          await prisma.membership.upsert({
+            where: { userId_tenantId: { userId, tenantId: lounge.id } },
+            update: { role: 'owner' as any },
+            create: { userId, tenantId: lounge.id, role: 'owner' as any },
+          });
+        } catch (membershipError) {
+          console.warn('[LaunchPad Create Lounge] Could not create membership (non-critical):', membershipError);
+        }
+      }
 
       const config = generateLoungeOpsConfig(progress, {
         loungeName: locationName,
@@ -235,9 +312,29 @@ export async function POST(req: NextRequest) {
     }
 
     const primaryLounge = provisioned[0];
+
+    // Set canonical active tenant + admin metadata in Supabase so /admin is unlocked on first login.
+    if (userId) {
+      try {
+        const supabaseAdmin = supabaseAdminOrThrow();
+        await supabaseAdmin.auth.admin.updateUserById(userId, {
+          user_metadata: {
+            tenant_id: primaryLounge.loungeId,
+            role: 'owner',
+            admin_verified: true,
+            active_role: 'admin',
+            role_verified_at: new Date().toISOString(),
+            pending_tenant_name: null,
+          },
+        } as any);
+      } catch (metaError) {
+        console.warn('[LaunchPad Create Lounge] Failed to set Supabase user metadata (non-critical):', metaError);
+      }
+    }
+
     await linkSetupSessionToLounge(
       token,
-      userId,
+      userId || '',
       primaryLounge.loungeId,
       provisioned.map((p) => p.loungeId),
       organizationId
@@ -257,6 +354,10 @@ export async function POST(req: NextRequest) {
       userId,
       mode: 'preview', // Will be 'live' once subscription is active
       message: 'Lounge created successfully',
+      auth: {
+        method: useMagicLink ? 'magic_link' : 'password',
+        redirectTo,
+      },
       assetsByLocation: provisioned.map((p) => ({
         loungeId: p.loungeId,
         loungeName: p.loungeName,

@@ -31,8 +31,23 @@ function LaunchPadPageContent() {
         
         // Check for token in URL (from ManyChat or direct link)
         const tokenFromUrl = searchParams.get('token');
+        const sidFromUrl = searchParams.get('sid');
         const urlSource = searchParams.get('source') || 'web';
         setSource(urlSource);
+
+        // Stripe paid-tier handoff: provision a canonical SetupSession from Stripe checkout session id
+        if (!tokenFromUrl && sidFromUrl && urlSource === 'stripe') {
+          const resp = await fetch(`/api/launchpad/provision?sid=${encodeURIComponent(sidFromUrl)}`);
+          const prov = await resp.json().catch(() => ({}));
+          if (resp.ok && prov?.success && prov?.token && prov?.progress) {
+            setSessionToken(prov.token);
+            setProgress(prov.progress);
+            setCurrentStep(prov.progress.currentStep);
+            saveProgressLocal(prov.progress);
+            setIsLoading(false);
+            return;
+          }
+        }
 
         if (tokenFromUrl) {
           // Load existing session

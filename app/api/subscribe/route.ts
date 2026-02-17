@@ -5,7 +5,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2023-10
 
 export async function POST(req: Request) {
   try {
-    const { tier = "pro", email } = await req.json().catch(() => ({}));
+    const { tier = "pro", email, businessName } = await req.json().catch(() => ({}));
     
     // Map tier names to price IDs
     const priceMap: Record<string, string | undefined> = {
@@ -20,19 +20,24 @@ export async function POST(req: Request) {
     }
 
     // Create checkout session for subscription
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.hookahplus.net";
+    const normalizedBusinessName = String(businessName || "").trim();
+
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer_email: email,
       line_items: [{ price, quantity: 1 }],
-      success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/welcome?sid={CHECKOUT_SESSION_ID}`,
+      success_url: `${appUrl}/launchpad?source=stripe&sid={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/pricing`,
       metadata: {
         tier,
+        businessName: normalizedBusinessName || undefined,
         subscription_type: "saas_tier"
       },
       subscription_data: {
         metadata: {
           tier,
+          businessName: normalizedBusinessName || undefined,
           subscription_type: "saas_tier"
         }
       }

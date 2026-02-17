@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ArrowRight, ArrowLeft, CheckCircle, Mail, Phone, Lock, Link as LinkIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -19,6 +19,9 @@ export function GoLiveStep({ sessionToken, onBack }: GoLiveStepProps) {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [result, setResult] = useState<any>(null);
+  const [readiness, setReadiness] = useState<any>(null);
+  const [readinessLoading, setReadinessLoading] = useState(false);
 
   const validateEmail = (email: string): boolean => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -75,18 +78,25 @@ export function GoLiveStep({ sessionToken, onBack }: GoLiveStepProps) {
         throw new Error(errorMsg);
       }
 
-      // Redirect to dashboard
-      if (result.loungeId) {
-        router.push(`/dashboard?lounge=${result.loungeId}&welcome=true`);
-      } else {
-        router.push('/dashboard?welcome=true');
-      }
+      setResult(result);
     } catch (error: any) {
       console.error('[Go Live] Error:', error);
       setErrors({ submit: error.message || 'Failed to complete setup' });
       setIsSubmitting(false);
     }
   };
+
+  // Fetch readiness after successful provisioning
+  useEffect(() => {
+    const loungeId = result?.loungeId;
+    if (!loungeId) return;
+    setReadinessLoading(true);
+    fetch(`/api/launchpad/readiness?loungeId=${encodeURIComponent(loungeId)}&token=${encodeURIComponent(sessionToken)}`)
+      .then((r) => r.json())
+      .then((data) => setReadiness(data))
+      .catch(() => setReadiness(null))
+      .finally(() => setReadinessLoading(false));
+  }, [result?.loungeId, sessionToken]);
 
   return (
     <div className="bg-zinc-900/60 border border-zinc-800 rounded-lg p-8">
@@ -97,6 +107,65 @@ export function GoLiveStep({ sessionToken, onBack }: GoLiveStepProps) {
         </p>
       </div>
 
+      {result?.success && result?.loungeId ? (
+        <div className="space-y-4">
+          <div className="p-4 bg-green-900/20 border border-green-600/40 rounded-lg">
+            <div className="flex items-start gap-3">
+              <CheckCircle className="w-5 h-5 text-green-400 mt-0.5" />
+              <div className="flex-1">
+                <div className="font-semibold text-white">Lounge created successfully</div>
+                <div className="text-sm text-zinc-300 mt-1">
+                  {formData.useMagicLink
+                    ? 'We sent you a magic link to finish signing in and open admin.'
+                    : 'Your account is created. Continue to your dashboard.'}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 bg-zinc-800/60 border border-zinc-700 rounded-lg">
+            <div className="font-semibold text-white mb-2">GMV Readiness</div>
+            {readinessLoading ? (
+              <div className="text-sm text-zinc-400">Checking setup…</div>
+            ) : readiness?.success ? (
+              <div className="space-y-2">
+                <div className="text-xs text-zinc-400">
+                  {readiness.score.ok}/{readiness.score.total} checks complete
+                </div>
+                <ul className="space-y-2 text-sm">
+                  {readiness.checklist?.map((c: any) => (
+                    <li key={c.id} className="flex items-start gap-2">
+                      <span className="mt-0.5">{c.ok ? '✅' : '⬜'}</span>
+                      <div>
+                        <div className="text-white">{c.label}</div>
+                        <div className="text-xs text-zinc-400">{c.detail}</div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <div className="text-sm text-zinc-400">Readiness checks unavailable.</div>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => router.push(`/dashboard?lounge=${result.loungeId}&welcome=true`)}
+              className="px-6 py-3 bg-teal-600 hover:bg-teal-700 rounded-lg text-white font-semibold transition-colors"
+            >
+              Open Dashboard
+            </button>
+            <a
+              href={`/api/launchpad/download/playbook/${result.loungeId}`}
+              className="px-6 py-3 bg-zinc-800 border border-zinc-600 rounded-lg text-white hover:border-teal-500 transition-colors"
+            >
+              Download Staff Playbook
+            </a>
+          </div>
+        </div>
+      ) : (
       {/* What You'll Get */}
       <div className="mb-6 p-4 bg-teal-900/20 border border-teal-600/50 rounded-lg">
         <h3 className="font-semibold text-white mb-3">You now have:</h3>
@@ -249,6 +318,7 @@ export function GoLiveStep({ sessionToken, onBack }: GoLiveStepProps) {
           </button>
         </div>
       </form>
+      )}
     </div>
   );
 }
