@@ -9,6 +9,7 @@ import { StaffRolesStep } from '../../components/launchpad/StaffRolesStep';
 import { POSBridgeStep } from '../../components/launchpad/POSBridgeStep';
 import { GoLiveStep } from '../../components/launchpad/GoLiveStep';
 import { ProgressIndicator } from '../../components/launchpad/ProgressIndicator';
+import { OrganizationLocationsBar } from '../../components/launchpad/OrganizationLocationsBar';
 import { saveProgressLocal, loadProgressLocal, syncProgressToServer } from '../../lib/launchpad/progress-persistence';
 import { LaunchPadProgress } from '../../types/launchpad';
 
@@ -22,6 +23,8 @@ function LaunchPadPageContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [source, setSource] = useState<string>('web');
+  const [orgLocations, setOrgLocations] = useState<any>(null);
+  const [orgLocationsLoading, setOrgLocationsLoading] = useState(false);
 
   // Initialize session
   useEffect(() => {
@@ -139,6 +142,19 @@ function LaunchPadPageContent() {
     initializeSession();
   }, [searchParams]);
 
+  const debugMode = searchParams.get('debug') === '1';
+
+  // Load organization/location rollup for transparency + troubleshooting
+  useEffect(() => {
+    if (!sessionToken) return;
+    setOrgLocationsLoading(true);
+    fetch(`/api/launchpad/locations?token=${encodeURIComponent(sessionToken)}`)
+      .then((r) => r.json())
+      .then((data) => setOrgLocations(data))
+      .catch(() => setOrgLocations(null))
+      .finally(() => setOrgLocationsLoading(false));
+  }, [sessionToken, progress?.data?.step1?.multiLocationEnabled]);
+
   const handleStepComplete = async (step: number, data: any) => {
     if (!sessionToken || !progress) return;
 
@@ -243,6 +259,25 @@ function LaunchPadPageContent() {
             </p>
           )}
         </div>
+
+        {/* Organization + Locations bar (multi-location transparency + troubleshooting) */}
+        {(debugMode || progress?.data?.step1?.multiLocationEnabled) && (
+          <div>
+            {orgLocationsLoading && (
+              <div className="mb-6 text-xs text-zinc-500">Loading locations…</div>
+            )}
+            {orgLocations?.success && Array.isArray(orgLocations.locations) && (
+              <OrganizationLocationsBar
+                organizationName={orgLocations.organization?.name || null}
+                organizationSlug={orgLocations.organization?.slug || null}
+                multiLocationEnabled={Boolean(orgLocations.session?.multiLocationEnabled)}
+                locations={orgLocations.locations}
+                showDebug={debugMode}
+                sessionDebug={debugMode ? orgLocations.session : null}
+              />
+            )}
+          </div>
+        )}
 
         {/* Progress Indicator */}
         <ProgressIndicator currentStep={currentStep} totalSteps={TOTAL_STEPS} />

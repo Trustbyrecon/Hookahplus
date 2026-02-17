@@ -22,10 +22,25 @@ export function GoLiveStep({ sessionToken, onBack }: GoLiveStepProps) {
   const [result, setResult] = useState<any>(null);
   const [readiness, setReadiness] = useState<any>(null);
   const [readinessLoading, setReadinessLoading] = useState(false);
+  const [locationsMeta, setLocationsMeta] = useState<any>(null);
+  const [locationsLoading, setLocationsLoading] = useState(false);
 
   const validateEmail = (email: string): boolean => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
+
+  // Load location draft/provision state for preflight summary.
+  useEffect(() => {
+    if (!sessionToken) return;
+    setLocationsLoading(true);
+    fetch(`/api/launchpad/locations?token=${encodeURIComponent(sessionToken)}&includeChecklist=1`)
+      .then((r) => r.json())
+      .then((data) => setLocationsMeta(data))
+      .catch(() => setLocationsMeta(null))
+      .finally(() => setLocationsLoading(false));
+  }, [sessionToken]);
+
+  const isMultiLocation = Boolean(locationsMeta?.session?.multiLocationEnabled) && Array.isArray(locationsMeta?.locations) && locationsMeta.locations.length > 1;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -164,10 +179,41 @@ export function GoLiveStep({ sessionToken, onBack }: GoLiveStepProps) {
               Download Staff Playbook
             </a>
           </div>
+
+          {Array.isArray(result.assetsByLocation) && result.assetsByLocation.length > 1 && (
+            <div className="p-4 bg-zinc-800/60 border border-zinc-700 rounded-lg">
+              <div className="font-semibold text-white mb-2">Locations provisioned</div>
+              <div className="space-y-2">
+                {result.assetsByLocation.map((loc: any) => (
+                  <div key={loc.loungeId} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-zinc-950/30 border border-zinc-800 rounded px-3 py-2">
+                    <div className="min-w-0">
+                      <div className="text-sm text-white font-medium truncate">{loc.loungeName || loc.loungeId}</div>
+                      <div className="text-xs text-zinc-400">{loc.loungeId}</div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <a
+                        href={loc.dashboardUrl || `/dashboard/${encodeURIComponent(loc.loungeId)}`}
+                        className="text-xs px-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded hover:border-teal-500 transition-colors"
+                      >
+                        Dashboard
+                      </a>
+                      <a
+                        href={`/api/launchpad/download/playbook/${encodeURIComponent(loc.loungeId)}`}
+                        className="text-xs px-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded hover:border-teal-500 transition-colors"
+                      >
+                        Playbook
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       ) : (
+      <div className="space-y-6">
       {/* What You'll Get */}
-      <div className="mb-6 p-4 bg-teal-900/20 border border-teal-600/50 rounded-lg">
+      <div className="p-4 bg-teal-900/20 border border-teal-600/50 rounded-lg">
         <h3 className="font-semibold text-white mb-3">You now have:</h3>
         <ul className="space-y-2 text-sm text-teal-200">
           <li className="flex items-center gap-2">
@@ -192,6 +238,37 @@ export function GoLiveStep({ sessionToken, onBack }: GoLiveStepProps) {
           </li>
         </ul>
       </div>
+
+      {/* Multi-location preflight summary */}
+      {isMultiLocation && (
+        <div className="p-4 bg-zinc-800/60 border border-zinc-700 rounded-lg">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="font-semibold text-white">You’re about to create multiple locations</div>
+              <div className="text-xs text-zinc-400 mt-1">
+                Per-location: name, tables/sections, hours. Shared: flavors, rules, staff roles, POS.
+              </div>
+            </div>
+            {locationsLoading && <div className="text-xs text-zinc-500">Loading…</div>}
+          </div>
+          <div className="mt-3 space-y-2">
+            {Array.isArray(locationsMeta?.locations) && locationsMeta.locations.map((loc: any, idx: number) => (
+              <div key={`${idx}-${loc.loungeId || loc.name}`} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-zinc-950/30 border border-zinc-800 rounded px-3 py-2">
+                <div className="min-w-0">
+                  <div className="text-sm text-white font-medium truncate">{loc.name}</div>
+                  <div className="text-xs text-zinc-400">
+                    {loc.tablesCount ? `${loc.tablesCount} tables` : 'Tables: —'}
+                    {typeof loc.sectionsCount === 'number' ? ` • ${loc.sectionsCount} sections` : ''}
+                  </div>
+                </div>
+                <div className="text-xs text-zinc-500">
+                  {loc.provisioned ? 'Provisioned' : 'Draft'}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Email */}
@@ -318,6 +395,7 @@ export function GoLiveStep({ sessionToken, onBack }: GoLiveStepProps) {
           </button>
         </div>
       </form>
+      </div>
       )}
     </div>
   );

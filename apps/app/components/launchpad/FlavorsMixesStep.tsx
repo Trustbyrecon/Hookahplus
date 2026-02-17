@@ -118,7 +118,12 @@ export function FlavorsMixesStep({ initialData, onComplete, onBack }: FlavorsMix
   return (
     <div className="bg-zinc-900/60 border border-zinc-800 rounded-lg p-8">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-2">Flavors & Mixes</h2>
+        <div className="flex flex-wrap items-center gap-2 mb-2">
+          <h2 className="text-2xl font-bold">Flavors & Mixes</h2>
+          <span className="text-[11px] px-2 py-0.5 rounded border bg-teal-900/20 border-teal-600/40 text-teal-200">
+            Shared
+          </span>
+        </div>
         <p className="text-zinc-400 text-sm">
           Memory starts here.
         </p>

@@ -853,6 +853,16 @@ export default function OperatorOnboardingPage() {
             </div>
           </div>
           <button
+            onClick={() => {
+              window.location.href = '/admin/onboarding-inspector';
+            }}
+            className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm border border-zinc-700"
+            title="Open Onboarding Inspector (SetupSession token/sid lookup)"
+          >
+            <Eye className="w-4 h-4" />
+            <span>Onboarding Inspector</span>
+          </button>
+          <button
             onClick={async () => {
               try {
                 setIsLoading(true);

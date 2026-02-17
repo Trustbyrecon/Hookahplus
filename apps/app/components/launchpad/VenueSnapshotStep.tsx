@@ -165,7 +165,12 @@ export function VenueSnapshotStep({ initialData, onComplete, onBack }: VenueSnap
   return (
     <div className="bg-zinc-900/60 border border-zinc-800 rounded-lg p-8">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-2">Venue Snapshot</h2>
+        <div className="flex flex-wrap items-center gap-2 mb-2">
+          <h2 className="text-2xl font-bold">Venue Snapshot</h2>
+          <span className="text-[11px] px-2 py-0.5 rounded border bg-zinc-800/60 border-zinc-600/50 text-zinc-300">
+            Per-location
+          </span>
+        </div>
         <p className="text-zinc-400 text-sm">
           Set the rules once. We'll run them every night.
         </p>

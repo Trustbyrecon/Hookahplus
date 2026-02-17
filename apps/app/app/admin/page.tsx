@@ -377,6 +377,15 @@ export default function AdminPage() {
       color: 'text-teal-400',
       href: '/admin/operator-onboarding',
       status: 'active'
+    },
+    {
+      id: 'onboarding-inspector',
+      title: 'Onboarding Inspector',
+      description: 'Inspect a SetupSession token/sid and multi-location readiness',
+      icon: <Eye className="w-6 h-6" />,
+      color: 'text-cyan-400',
+      href: '/admin/onboarding-inspector',
+      status: 'active'
     }
   ];
 
