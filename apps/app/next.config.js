@@ -36,7 +36,9 @@ const sentryWebpackConfigured =
   !!process.env.SENTRY_AUTH_TOKEN && !!process.env.SENTRY_ORG && !!process.env.SENTRY_PROJECT;
 
 const configWithSentry =
-  process.env.NEXT_PUBLIC_SENTRY_DSN && sentryWebpackConfigured
+  process.env.NODE_ENV === 'production' &&
+  process.env.NEXT_PUBLIC_SENTRY_DSN &&
+  sentryWebpackConfigured
     ? withSentryConfig(nextConfig, {
         // Sentry webpack plugin options
         silent: true,

@@ -5,7 +5,7 @@ import { instrumentUIAction, instrumentAPICall, instrumentDatabaseOperation } fr
 // Conditionally import Sentry only if DSN is configured
 let Sentry: typeof import('@sentry/nextjs') | null = null;
 try {
-  if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
+  if (process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_SENTRY_DSN) {
     Sentry = require('@sentry/nextjs');
   }
 } catch (e) {

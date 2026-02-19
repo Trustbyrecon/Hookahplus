@@ -9,6 +9,8 @@
 
 import * as Sentry from '@sentry/nextjs';
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 /**
  * Instrument UI actions with Sentry spans
  * Use this in React components for button clicks, form submissions, etc.
@@ -41,7 +43,7 @@ export function instrumentUIAction<T>(
   context?: Record<string, any>
 ): T | Promise<T> {
   // If Sentry is not available, just execute the callback
-  if (!Sentry) {
+  if (!isProduction || !Sentry) {
     return callback(null);
   }
 
@@ -98,7 +100,7 @@ export async function instrumentAPICall<T extends Response>(
   context?: Record<string, any>
 ): Promise<T> {
   // If Sentry is not available, just execute the fetch
-  if (!Sentry) {
+  if (!isProduction || !Sentry) {
     return fetchFn();
   }
 
@@ -191,7 +193,7 @@ export async function instrumentDatabaseOperation<T>(
   context?: Record<string, any>
 ): Promise<T> {
   // If Sentry is not available, just execute the callback
-  if (!Sentry) {
+  if (!isProduction || !Sentry) {
     return callback(null);
   }
 

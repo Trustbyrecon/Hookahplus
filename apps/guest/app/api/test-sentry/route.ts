@@ -4,13 +4,14 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
   const dsnConfigured = !!dsn;
+  const isProduction = process.env.NODE_ENV === 'production';
   
   try {
     // Intentionally throw an error to test Sentry
     throw new Error('Sentry test error from guest app - this is intentional');
   } catch (error) {
     // Capture the error in Sentry
-    if (dsnConfigured) {
+    if (isProduction && dsnConfigured) {
       Sentry.captureException(error, {
         tags: {
           component: 'test',
@@ -29,9 +30,13 @@ export async function GET() {
     }
     
     return NextResponse.json({ 
-      message: '✅ Test error sent to Sentry! Check your Sentry dashboard.',
+      message: isProduction
+        ? '✅ Test error sent to Sentry! Check your Sentry dashboard.'
+        : 'Sentry is disabled outside production. No event was sent.',
       error: error instanceof Error ? error.message : 'Unknown error',
-      sentry: dsnConfigured ? 'Error captured successfully' : 'DSN not configured',
+      sentry: isProduction
+        ? (dsnConfigured ? 'Error captured successfully' : 'DSN not configured')
+        : 'disabled (non-production)',
       project: 'javascript-nextjs-guest',
       dsn_configured: dsnConfigured,
       dsn_preview: dsn ? `${dsn.substring(0, 20)}...` : 'not set',

@@ -14,6 +14,8 @@ import * as Sentry from '@sentry/nextjs';
 import pino from 'pino';
 import type { LogContext } from './logger-pino';
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 interface PinoLog {
   level: number;
   time: number;
@@ -141,8 +143,8 @@ class SentryPinoStream {
  * ```
  */
 export const createSentryPinoStream = () => {
-  // Only create stream if Sentry is configured
-  if (!process.env.NEXT_PUBLIC_SENTRY_DSN) {
+  // Production-only: only create stream if Sentry is configured
+  if (!isProduction || !process.env.NEXT_PUBLIC_SENTRY_DSN) {
     return null;
   }
   
@@ -158,7 +160,7 @@ export function sendPinoLogToSentry(
   context?: LogContext,
   error?: Error
 ) {
-  if (!process.env.NEXT_PUBLIC_SENTRY_DSN) {
+  if (!isProduction || !process.env.NEXT_PUBLIC_SENTRY_DSN) {
     return;
   }
 

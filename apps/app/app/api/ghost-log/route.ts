@@ -1,28 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ghostLog } from '../../../lib/ghost-log';
+import {
+  appendGhostLogEntry,
+  getGhostLogEntriesFromMemory,
+  isGhostLogPersistenceEnabled,
+  readGhostLogEntriesFromDisk,
+} from '../../../lib/ghost-log';
 
 export async function POST(req: NextRequest) {
   try {
     const logEntry = await req.json();
     
-    // Add timestamp if not provided
-    if (!logEntry.timestamp) {
-      logEntry.timestamp = new Date().toISOString();
-    }
-
-    // Store log entry
-    ghostLog.push({
-      timestamp: logEntry.timestamp,
-      kind: logEntry.kind || 'unknown',
-      data: logEntry
-    });
-
-    // Keep only last 1000 entries to prevent memory issues
-    if (ghostLog.length > 1000) {
-      ghostLog.splice(0, ghostLog.length - 1000);
-    }
-
-    console.log(`[GhostLog] 📝 Logged: ${logEntry.kind} at ${logEntry.timestamp}`);
+    const stored = await appendGhostLogEntry(logEntry);
+    console.log(`[GhostLog] 📝 Logged: ${stored.kind} at ${stored.timestamp}`);
     
     return NextResponse.json({ ok: true, logged: true });
   } catch (error) {
@@ -36,23 +25,35 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const kind = searchParams.get('kind');
     const limit = parseInt(searchParams.get('limit') || '50');
+    const since = searchParams.get('since');
+    const until = searchParams.get('until');
 
-    let filteredLogs = ghostLog;
+    // Merge disk + memory (memory helps if disk is disabled or write failed)
+    const [disk, mem] = await Promise.all([
+      readGhostLogEntriesFromDisk({ kind, limit: Math.max(0, limit), since, until }),
+      Promise.resolve(getGhostLogEntriesFromMemory({ kind })),
+    ]);
 
-    if (kind) {
-      filteredLogs = ghostLog.filter(entry => entry.kind === kind);
-    }
+    const merged = [...disk, ...mem];
 
-    // Return most recent entries first
-    const recentLogs = filteredLogs
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-      .slice(0, limit);
+    // De-dupe by exact tuple (timestamp+kind+data JSON)
+    const seen = new Set<string>();
+    const deduped = merged.filter(e => {
+      const key = `${e.timestamp}|${e.kind}|${JSON.stringify(e.data)}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    deduped.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    const recentLogs = deduped.slice(0, Math.max(0, limit));
 
     return NextResponse.json({
       success: true,
       entries: recentLogs,
-      total: ghostLog.length,
-      filtered: filteredLogs.length
+      total: deduped.length,
+      filtered: recentLogs.length,
+      persisted: isGhostLogPersistenceEnabled(),
     });
   } catch (error) {
     console.error('[GhostLog] ❌ Failed to retrieve logs:', error);

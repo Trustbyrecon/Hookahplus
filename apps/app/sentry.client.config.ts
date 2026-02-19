@@ -1,18 +1,21 @@
 import * as Sentry from '@sentry/nextjs';
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  enabled: isProduction && !!process.env.NEXT_PUBLIC_SENTRY_DSN,
   
   // Performance monitoring
   // Sample 10% of transactions in production, 100% in development
-  tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+  tracesSampleRate: isProduction ? 0.1 : 0,
   
   // Session Replay - capture all error sessions, sample 10% of normal sessions
-  replaysOnErrorSampleRate: 1.0,
-  replaysSessionSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+  replaysOnErrorSampleRate: isProduction ? 1.0 : 0,
+  replaysSessionSampleRate: isProduction ? 0.1 : 0,
   
-  // Debug mode only in development
-  debug: process.env.NODE_ENV === 'development',
+  // Debug mode is intentionally off (production-only sending)
+  debug: false,
   
   // Environment tracking
   environment: process.env.NODE_ENV || 'development',
@@ -34,6 +37,11 @@ Sentry.init({
   
   // Filter out noise and health checks
   beforeSend(event, hint) {
+    // Production-only: never send events from local dev/staging unless you explicitly opt-in.
+    if (!isProduction) {
+      return null;
+    }
+
     // Don't send events if DSN is not configured
     if (!process.env.NEXT_PUBLIC_SENTRY_DSN) {
       return null;

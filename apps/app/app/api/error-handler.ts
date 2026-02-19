@@ -42,7 +42,7 @@ export function withErrorHandler<T>(
       if (opts.captureToSentry) {
         try {
           const Sentry = require('@sentry/nextjs');
-          if (Sentry && process.env.NEXT_PUBLIC_SENTRY_DSN) {
+          if (Sentry && process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_SENTRY_DSN) {
             Sentry.captureException(error, {
               tags: {
                 method: req.method,

@@ -4,13 +4,14 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
   const dsnConfigured = !!dsn;
+  const isProduction = process.env.NODE_ENV === 'production';
   
   // Check if Sentry is available (simplified check for v10+)
   const isAvailable = typeof Sentry !== 'undefined' && typeof Sentry.captureException === 'function';
   
   // Try to capture a test event
   let captureResult = null;
-  if (dsnConfigured && isAvailable) {
+  if (isProduction && dsnConfigured && isAvailable) {
     try {
       const eventId = Sentry.captureException(
         new Error('Sentry debug test - explicit capture'),
@@ -54,6 +55,7 @@ export async function GET() {
     sentry_available: isAvailable,
     capture_result: captureResult,
     environment: process.env.NODE_ENV || 'development',
+    sending: isProduction ? 'enabled (production)' : 'disabled (non-production)',
     node_version: process.version,
     timestamp: new Date().toISOString(),
   });
