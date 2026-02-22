@@ -56,10 +56,10 @@ export async function OPTIONS(req: NextRequest) {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const sessionId = params.id;
+    const { id: sessionId } = await params;
     
     // Check for demo mode from query params or session ID pattern
     const { searchParams } = new URL(request.url);

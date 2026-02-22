@@ -4,9 +4,9 @@ import { calculateTrustScore, calculateSingleSessionTrustScore } from '../../../
 import { maskSessionData, detectPiiLevel, createPiiSafeSummary } from '../../../../lib/piiMasking';
 
 // GET /api/guest-intelligence/[sessionId] - Get customer intelligence
-export async function GET(req: NextRequest, { params }: { params: { sessionId: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ sessionId: string }> }) {
   try {
-    const sessionId = params.sessionId;
+    const { sessionId } = await params;
     const url = new URL(req.url);
     const piiMasking = url.searchParams.get('piiMasking') !== 'false'; // Default to true
     const piiLevel = url.searchParams.get('piiLevel') as 'none' | 'low' | 'medium' | 'high' || 'medium';
@@ -211,9 +211,9 @@ function calculateRemainingTimeFromPrisma(session: any): number {
 }
 
 // POST /api/guest-intelligence/[sessionId]/notes - Add operational notes
-export async function POST(req: NextRequest, { params }: { params: { sessionId: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ sessionId: string }> }) {
   try {
-    const sessionId = params.sessionId;
+    const { sessionId } = await params;
     const body = await req.json();
     const { content, author, category } = body;
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { 
   Users, 
   Clock, 
@@ -27,6 +27,7 @@ import {
   Activity
 } from 'lucide-react';
 import Button from './Button';
+import type { AliethiaPolicy } from '../lib/aliethia/types';
 
 interface StaffWorkflowAssistantProps {
   sessions: any[];
@@ -34,6 +35,7 @@ interface StaffWorkflowAssistantProps {
   staffMembers: any[];
   onAssignStaff?: (sessionId: string, staffId: string, role: 'BOH' | 'FOH') => void;
   onBulkAction?: (action: string, sessionIds: string[]) => void;
+  loungeId?: string;
 }
 
 export function StaffWorkflowAssistant({ 
@@ -41,12 +43,53 @@ export function StaffWorkflowAssistant({
   userRole, 
   staffMembers, 
   onAssignStaff, 
-  onBulkAction 
+  onBulkAction,
+  loungeId: loungeIdProp
 }: StaffWorkflowAssistantProps) {
   const [showNotifications, setShowNotifications] = useState(true);
   const [autoAssign, setAutoAssign] = useState(true);
   const [workflowMode, setWorkflowMode] = useState<'balanced' | 'speed' | 'quality'>('balanced');
   const [showStaffStatus, setShowStaffStatus] = useState(true);
+  const [aliethiaPolicy, setAliethiaPolicy] = useState<AliethiaPolicy | null>(null);
+
+  const loungeId = useMemo(() => {
+    if (loungeIdProp) return loungeIdProp;
+    const ids = Array.from(
+      new Set(
+        (sessions || [])
+          .map((s: any) => s?.loungeId)
+          .filter(Boolean)
+          .map(String)
+      )
+    );
+    // Only apply policy when this view is clearly scoped to a single lounge.
+    return ids.length === 1 ? ids[0] : null;
+  }, [loungeIdProp, sessions]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadPolicy() {
+      if (!loungeId) {
+        setAliethiaPolicy(null);
+        return;
+      }
+      try {
+        const res = await fetch(`/api/lounges/${encodeURIComponent(loungeId)}/aliethia/policy`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled) setAliethiaPolicy(data?.policy || null);
+      } catch {
+        if (!cancelled) setAliethiaPolicy(null);
+      }
+    }
+    loadPolicy();
+    return () => {
+      cancelled = true;
+    };
+  }, [loungeId]);
 
   // Staff workload analysis
   const staffWorkload = useMemo(() => {
@@ -102,6 +145,10 @@ export function StaffWorkflowAssistant({
 
   // Workflow recommendations
   const workflowRecommendations = useMemo(() => {
+    const promptsEnabled = aliethiaPolicy?.surfacesEnabled?.timed_assist_prompts ?? true;
+    const throttleBack = aliethiaPolicy?.throttleBackRecommended ?? false;
+    if (!promptsEnabled) return [];
+
     const recommendations = [];
     const now = new Date();
 
@@ -163,11 +210,13 @@ export function StaffWorkflowAssistant({
       });
     }
 
-    return recommendations.sort((a, b) => {
+    const sorted = recommendations.sort((a, b) => {
       const priorityOrder: { [key: string]: number } = { 'urgent': 3, 'high': 2, 'medium': 1, 'low': 0 };
       return (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0);
     });
-  }, [sessions, staffWorkload]);
+    // Passive throttle-back: keep only urgent items when guardrails recommend suppression.
+    return throttleBack ? sorted.filter((r: any) => r.priority === 'urgent') : sorted;
+  }, [sessions, staffWorkload, aliethiaPolicy]);
 
   // Auto-assignment logic
   const autoAssignSessions = () => {

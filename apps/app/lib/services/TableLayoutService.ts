@@ -210,7 +210,7 @@ export class TableLayoutService {
    */
   static async checkAvailability(
     tableId: string,
-    activeSessions: Array<{ tableId: string; status: string }>
+    activeSessions: Array<{ tableId: string; status: string }>,
     loungeId?: string
   ): Promise<{ available: boolean; hasActiveSession: boolean; activeSessionId?: string; error?: string }> {
     // First validate table exists
@@ -254,7 +254,7 @@ export class TableLayoutService {
    * Get all tables with availability status
    */
   static async getTablesWithAvailability(
-    activeSessions: Array<{ tableId: string; status: string }>
+    activeSessions: Array<{ tableId: string; status: string }>,
     loungeId?: string
   ): Promise<TableAvailability[]> {
     const tables = await this.loadTables(loungeId);

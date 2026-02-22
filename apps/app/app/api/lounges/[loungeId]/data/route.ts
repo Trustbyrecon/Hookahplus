@@ -9,10 +9,10 @@ import { hasRole, getCurrentTenant } from '../../../../../lib/auth';
  */
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { loungeId: string } }
+  { params }: { params: Promise<{ loungeId: string }> }
 ) {
   try {
-    const { loungeId } = params;
+    const { loungeId } = await params;
     const body = await req.json();
     const { confirm, deleteBefore, retainAuditLogs = true } = body;
 
@@ -76,10 +76,10 @@ export async function DELETE(
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { loungeId: string } }
+  { params }: { params: Promise<{ loungeId: string }> }
 ) {
   try {
-    const { loungeId } = params;
+    const { loungeId } = await params;
 
     // Check admin permissions
     const isAdmin = await hasRole(req, ['admin', 'owner']);

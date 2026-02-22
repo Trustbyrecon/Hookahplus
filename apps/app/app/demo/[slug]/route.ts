@@ -12,9 +12,9 @@ import { NextRequest, NextResponse } from 'next/server';
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
-  const { slug } = params;
+  const { slug } = await params;
 
   // Build URL relative to current origin
   const url = new URL('/fire-session-dashboard', req.url);

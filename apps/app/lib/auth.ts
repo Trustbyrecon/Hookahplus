@@ -8,7 +8,7 @@ import { prisma } from './db';
  */
 export async function getCurrentUser(req?: NextRequest) {
   try {
-    const supabase = serverClient();
+    const supabase = await serverClient();
     const { data: { user }, error } = await supabase.auth.getUser();
 
     if (error || !user) {
@@ -28,7 +28,7 @@ export async function getCurrentUser(req?: NextRequest) {
  */
 export async function getCurrentTenant(req?: NextRequest): Promise<string | null> {
   try {
-    const supabase = serverClient();
+    const supabase = await serverClient();
     const { data: { session } } = await supabase.auth.getSession();
 
     if (!session) {
@@ -150,7 +150,7 @@ export async function hasRole(
  */
 export async function setActiveTenant(userId: string, tenantId: string) {
   try {
-    const supabase = serverClient();
+    const supabase = await serverClient();
     
     // Update user metadata with active tenant
     const { error } = await supabase.auth.updateUser({

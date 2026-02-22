@@ -10,10 +10,10 @@ const prisma = new PrismaClient();
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: tenantId } = params;
+    const { id: tenantId } = await params;
 
     const result = await TenantService.getTenantConfig(tenantId, prisma);
 
@@ -44,10 +44,10 @@ export async function GET(
  */
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: tenantId } = params;
+    const { id: tenantId } = await params;
     const body = await req.json();
     const { config } = body;
 

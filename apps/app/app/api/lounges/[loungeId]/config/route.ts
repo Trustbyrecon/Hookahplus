@@ -20,10 +20,10 @@ const prisma = new PrismaClient();
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { loungeId: string } }
+  { params }: { params: Promise<{ loungeId: string }> }
 ) {
   try {
-    const { loungeId } = params;
+    const { loungeId } = await params;
 
     // Get current lounge config
     const loungeConfig = await prisma.loungeConfig.findFirst({
@@ -69,6 +69,7 @@ export async function GET(
         version: loungeConfig?.version || 1,
         effectiveAt: loungeConfig?.effectiveAt.toISOString() || new Date().toISOString(),
         configData: configData || {},
+        venueIdentity: (configData as any)?.venue_identity || null,
         pricingRules: pricingRules.map(rule => ({
           id: rule.id,
           ruleType: rule.ruleType,
@@ -105,10 +106,10 @@ export async function GET(
  */
 export async function POST(
   req: NextRequest,
-  { params }: { params: { loungeId: string } }
+  { params }: { params: Promise<{ loungeId: string }> }
 ) {
   try {
-    const { loungeId } = params;
+    const { loungeId } = await params;
     const body = await req.json();
     const { configData } = body;
 

@@ -8,10 +8,10 @@ import { generateQRCodePNG } from '@/lib/launchpad/qr-generator';
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { loungeId: string; tableId: string } }
+  { params }: { params: Promise<{ loungeId: string; tableId: string }> }
 ) {
   try {
-    const { loungeId, tableId } = params;
+    const { loungeId, tableId } = await params;
 
     // Verify lounge exists
     const lounge = await prisma.tenant.findUnique({

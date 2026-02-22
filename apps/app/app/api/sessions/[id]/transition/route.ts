@@ -167,7 +167,7 @@ let sessions: Array<{
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const body = await req.json();
@@ -179,7 +179,7 @@ export async function POST(
       timestamp 
     } = body;
 
-    const sessionId = params.id;
+    const { id: sessionId } = await params;
 
     // Find the session
     const sessionIndex = sessions.findIndex(s => s.session_id === sessionId || s.id === sessionId);
@@ -225,10 +225,10 @@ export async function POST(
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const sessionId = params.id;
+    const { id: sessionId } = await params;
 
     // Find the session
     const session = sessions.find(s => s.session_id === sessionId || s.id === sessionId);

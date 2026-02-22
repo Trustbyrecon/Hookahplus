@@ -15,10 +15,10 @@ const prisma = new PrismaClient();
  */
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: orderId } = params;
+    const { id: orderId } = await params;
     const body = await req.json();
     const { eventType, staffId, metadata } = body;
 

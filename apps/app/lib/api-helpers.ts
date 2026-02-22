@@ -30,10 +30,12 @@ export function initRequestContext(req: NextRequest): void {
  * Wrap an API route handler with request context
  * Automatically extracts request ID and sets up context for telemetry
  */
+export type AppRouteContext = { params: Promise<any> };
+
 export function withRequestContext<T>(
-  handler: (req: NextRequest, context?: { params?: any }) => Promise<NextResponse<T>>
+  handler: (req: NextRequest, context: AppRouteContext) => Promise<NextResponse<T>>
 ) {
-  return async (req: NextRequest, context?: { params?: any }): Promise<NextResponse<T>> => {
+  return async (req: NextRequest, context: AppRouteContext): Promise<NextResponse<T>> => {
     // Get or generate request ID from headers
     const requestId = req.headers.get('X-Request-ID') || randomUUID();
     
@@ -96,9 +98,9 @@ export function filterStaffNotesFromResponse<T extends Record<string, any>>(
  * Use this to wrap customer-facing API route handlers
  */
 export function withStaffNoteFilter<T>(
-  handler: (req: NextRequest, context?: { params?: any }) => Promise<NextResponse<T>>
+  handler: (req: NextRequest, context: AppRouteContext) => Promise<NextResponse<T>>
 ) {
-  return async (req: NextRequest, context?: { params?: any }): Promise<NextResponse<T>> => {
+  return async (req: NextRequest, context: AppRouteContext): Promise<NextResponse<T>> => {
     const response = await handler(req, context);
     
     // Only filter if response is JSON

@@ -3,14 +3,15 @@ import { getNetworkProfile } from '../../../../lib/profiles/network';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { hid: string } }
+  { params }: { params: Promise<{ hid: string }> }
 ) {
   try {
+    const { hid } = await params;
     const { searchParams } = new URL(req.url);
     const loungeId = searchParams.get('loungeId') || undefined;
     const scope = (searchParams.get('scope') as 'lounge' | 'network') || 'network';
 
-    const profile = await getNetworkProfile(params.hid, loungeId);
+    const profile = await getNetworkProfile(hid, loungeId);
 
     if (!profile) {
       return NextResponse.json(

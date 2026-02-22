@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { 
   CheckCircle, 
   XCircle, 
@@ -211,20 +212,20 @@ export default function StatusPage() {
 
         {/* Quick Links */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <a
+          <Link
             href="/"
             className="block p-4 bg-zinc-800/50 hover:bg-zinc-800 rounded-lg transition-colors"
           >
             <div className="text-sm text-zinc-400 mb-1">Home</div>
             <div className="text-white font-semibold">Landing Page</div>
-          </a>
-          <a
+          </Link>
+          <Link
             href="/fire-session-dashboard"
             className="block p-4 bg-zinc-800/50 hover:bg-zinc-800 rounded-lg transition-colors"
           >
             <div className="text-sm text-zinc-400 mb-1">Dashboard</div>
             <div className="text-white font-semibold">Fire Session Dashboard</div>
-          </a>
+          </Link>
           <a
             href="/api/health"
             className="block p-4 bg-zinc-800/50 hover:bg-zinc-800 rounded-lg transition-colors"

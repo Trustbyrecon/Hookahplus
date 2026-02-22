@@ -27,6 +27,7 @@ import {
   ChevronRight,
   AlertCircle,
   Star,
+  Eye,
   Link as LinkIcon,
   Image as ImageIcon,
   Sparkles

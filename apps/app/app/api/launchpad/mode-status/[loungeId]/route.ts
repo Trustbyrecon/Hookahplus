@@ -7,10 +7,10 @@ import { getLoungeModeStatus } from '../../../../../lib/launchpad/preview-mode';
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { loungeId: string } }
+  { params }: { params: Promise<{ loungeId: string }> }
 ) {
   try {
-    const { loungeId } = params;
+    const { loungeId } = await params;
 
     const status = await getLoungeModeStatus(loungeId);
 

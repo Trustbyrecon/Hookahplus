@@ -2,13 +2,14 @@ import { NextResponse } from "next/server";
 
 export async function GET(
   _: Request, 
-  { params }: { params: { partnerId: string } }
+  { params }: { params: Promise<{ partnerId: string }> }
 ) {
   try {
+    const { partnerId } = await params;
     // TODO: Replace with real database queries
     // This is a safe stub that returns realistic demo data
     const demo = {
-      partnerId: params.partnerId,
+      partnerId,
       totalReferrals: 17,
       activeLounges: 12,
       referralsLast30d: 6,

@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
   const sid = (searchParams.get('sid') || '').trim(); // Stripe checkout session id (paid-tier handoff)
 
   if (code) {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

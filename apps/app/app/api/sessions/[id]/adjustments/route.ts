@@ -14,10 +14,10 @@ import { hasRole, getCurrentUser } from '../../../../../lib/auth';
  */
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: sessionId } = params;
+    const { id: sessionId } = await params;
     const body = await req.json();
     const { adjustmentType, amountCents, reason, requiresApproval } = body;
 
@@ -92,10 +92,10 @@ export async function POST(
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: sessionId } = params;
+    const { id: sessionId } = await params;
     const { searchParams } = new URL(req.url);
     const ledger = searchParams.get('ledger') === 'true';
 

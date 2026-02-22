@@ -9,7 +9,7 @@ const stripe = process.env.STRIPE_SECRET_KEY
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { sessionId: string } }
+  { params }: { params: Promise<{ sessionId: string }> }
 ) {
   try {
     if (!stripe) {
@@ -22,7 +22,8 @@ export async function GET(
     // Get session ID from path parameter (route: /api/checkout-session/[sessionId])
     // Also support query parameter for backwards compatibility
     const { searchParams } = new URL(request.url);
-    const sessionId = params?.sessionId || searchParams.get('session_id');
+    const { sessionId: sessionIdFromPath } = await params;
+    const sessionId = sessionIdFromPath || searchParams.get('session_id');
 
     if (!sessionId) {
       return NextResponse.json(

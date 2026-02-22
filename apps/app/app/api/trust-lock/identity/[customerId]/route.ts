@@ -7,9 +7,9 @@ import { sessionNotesLoyaltyBinding } from '../../../../../lib/sessionNotesLoyal
 import { ghostLogLite } from '../../../../../lib/ghostLogLite';
 import { reflexiveBadgeEngine } from '../../../../../lib/reflexiveBadgeEngine';
 
-export async function GET(req: NextRequest, { params }: { params: { customerId: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ customerId: string }> }) {
   try {
-    const { customerId } = params;
+    const { customerId } = await params;
     const venueId = req.nextUrl.searchParams.get('venueId') || 'default';
     
     const identity = await trustLockService.getOrCreateIdentity(customerId, venueId);

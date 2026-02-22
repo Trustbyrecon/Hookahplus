@@ -11,10 +11,10 @@ import { generatePDFFromHTML } from '@/lib/launchpad/pdf-generator';
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { loungeId: string } }
+  { params }: { params: Promise<{ loungeId: string }> }
 ) {
   try {
-    const { loungeId } = params;
+    const { loungeId } = await params;
     const searchParams = req.nextUrl.searchParams;
     const format = searchParams.get('format') || 'html'; // 'html' | 'pdf'
 

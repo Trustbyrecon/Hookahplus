@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { partnerId: string } }
+  { params }: { params: Promise<{ partnerId: string }> }
 ) {
   try {
-    const { partnerId } = params;
+    const { partnerId } = await params;
     const { searchParams } = new URL(req.url);
     const year = searchParams.get('year') || new Date().getFullYear().toString();
 
@@ -74,10 +74,10 @@ export async function GET(
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { partnerId: string } }
+  { params }: { params: Promise<{ partnerId: string }> }
 ) {
   try {
-    const { partnerId } = params;
+    const { partnerId } = await params;
     const { action } = await req.json();
 
     if (action === 'export_csv') {

@@ -16,10 +16,10 @@ import { canRefillSession } from '../../../../../lib/session-utils';
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: sessionId } = params;
+    const { id: sessionId } = await params;
     const body = await request.json().catch(() => ({}));
     const { userRole = 'FOH', operatorId, refillType = 'coal', flavorName, costCents } = body;
 
@@ -124,10 +124,10 @@ export async function POST(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: sessionId } = params;
+    const { id: sessionId } = await params;
     const body = await request.json();
     const { userRole = 'BOH', operatorId } = body;
 

@@ -8,10 +8,10 @@ import { exportConfigAsYAML, exportConfigAsJSON } from '@/lib/launchpad/config-g
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { loungeId: string } }
+  { params }: { params: Promise<{ loungeId: string }> }
 ) {
   try {
-    const { loungeId } = params;
+    const { loungeId } = await params;
     const searchParams = req.nextUrl.searchParams;
     const format = searchParams.get('format') || 'yaml'; // 'yaml' | 'json'
 

@@ -6,10 +6,10 @@ let scheduledNotifications: any[] = [];
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const notificationId = params.id;
+    const { id: notificationId } = await params;
 
     // In production, this would:
     // 1. Find the scheduled notification in the database

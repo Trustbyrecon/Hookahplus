@@ -8,10 +8,10 @@ import { prisma } from '../../../../../lib/db';
  */
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: campaignId } = params;
+    const { id: campaignId } = await params;
     const body = await req.json();
     const { sessionId, customerRef, subtotalCents } = body;
 

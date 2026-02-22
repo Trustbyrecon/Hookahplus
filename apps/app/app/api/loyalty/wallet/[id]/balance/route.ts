@@ -15,11 +15,11 @@ import { prisma } from '../../../../../../lib/db';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id?: string } }
+  { params }: { params: Promise<{ id?: string }> }
 ) {
   try {
     const { searchParams } = new URL(request.url);
-    const accountId = params.id; // Route parameter (account ID)
+    const { id: accountId } = await params; // Route parameter (account ID)
     const customerId = searchParams.get('customerId'); // Query parameter
     const customerPhone = searchParams.get('customerPhone'); // Query parameter
 

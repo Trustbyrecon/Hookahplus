@@ -9,10 +9,10 @@ import { MultiLocationService } from '../../../../../lib/services/MultiLocationS
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { loungeId: string } }
+  { params }: { params: Promise<{ loungeId: string }> }
 ) {
   try {
-    const { loungeId } = params;
+    const { loungeId } = await params;
     const searchParams = req.nextUrl.searchParams;
     const startDateParam = searchParams.get('startDate');
     const organizationId = searchParams.get('organizationId');

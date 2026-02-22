@@ -13,6 +13,7 @@ export function generateLoungeOpsConfig(
     operatingHours?: { [key: string]: { open: string; close: string } | null };
     tablesCount?: number;
     sectionsCount?: number;
+    venueIdentity?: 'casino_velocity' | 'sports_momentum' | 'luxury_memory';
   }
 ): LoungeOpsConfig {
   const step1 = progress.data.step1;
@@ -52,6 +53,7 @@ export function generateLoungeOpsConfig(
   const config: LoungeOpsConfig = {
     lounge_name: effectiveLoungeName,
     slug,
+    venue_identity: overrides?.venueIdentity,
     session_type: step3?.sessionType || 'flat',
     base_session_price: step1.baseSessionPrice / 100, // Convert cents to dollars
     grace_period_minutes: step3?.gracePeriodMinutes || 0,

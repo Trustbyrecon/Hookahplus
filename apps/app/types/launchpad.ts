@@ -113,6 +113,11 @@ export interface ManyChatSetupResponse {
 export interface LoungeOpsConfig {
   lounge_name: string;
   slug: string;
+  /**
+   * Stable, manually-defined venue identity profile.
+   * This must never auto-switch; behavior can adapt only within the identity.
+   */
+  venue_identity?: 'casino_velocity' | 'sports_momentum' | 'luxury_memory';
   session_type: 'flat' | 'timed';
   base_session_price: number;
   grace_period_minutes: number;

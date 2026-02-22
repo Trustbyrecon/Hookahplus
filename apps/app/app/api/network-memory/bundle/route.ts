@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const supabase = serverClient();
+    const supabase = await serverClient();
     const {
       data: { user },
       error: userError,

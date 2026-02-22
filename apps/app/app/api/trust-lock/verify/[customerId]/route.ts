@@ -4,9 +4,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ghostLogLite } from '../../../../../lib/ghostLogLite';
 
-export async function GET(req: NextRequest, { params }: { params: { customerId: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ customerId: string }> }) {
   try {
-    const { customerId } = params;
+    const { customerId } = await params;
     
     const verification = await ghostLogLite.verifyTrustChain(customerId);
     const statistics = ghostLogLite.getTrustStatistics();

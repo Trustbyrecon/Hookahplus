@@ -8,10 +8,10 @@ import { hasRole, getCurrentUser } from '../../../../../../../lib/auth';
  */
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string; adjustmentId: string } }
+  { params }: { params: Promise<{ id: string; adjustmentId: string }> }
 ) {
   try {
-    const { adjustmentId } = params;
+    const { adjustmentId } = await params;
 
     // Check manager permissions
     const isManager = await hasRole(req, ['admin', 'owner']);

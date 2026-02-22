@@ -7,10 +7,10 @@ import { activateLounge } from '../../../../../lib/launchpad/preview-mode';
  */
 export async function POST(
   req: NextRequest,
-  { params }: { params: { loungeId: string } }
+  { params }: { params: Promise<{ loungeId: string }> }
 ) {
   try {
-    const { loungeId } = params;
+    const { loungeId } = await params;
     const body = await req.json();
     const { subscriptionId } = body;
 

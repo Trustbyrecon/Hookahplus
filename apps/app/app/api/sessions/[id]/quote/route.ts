@@ -9,10 +9,10 @@ import { getPricingSnapshot, createPricingSnapshot } from '@/lib/pricing-snapsho
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: sessionId } = params;
+    const { id: sessionId } = await params;
 
     // Check if snapshot already exists
     const existingSnapshot = await getPricingSnapshot(sessionId);

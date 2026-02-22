@@ -18,7 +18,7 @@ type Body = {
  */
 export async function POST(req: NextRequest) {
   try {
-    const supabase = serverClient();
+    const supabase = await serverClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });

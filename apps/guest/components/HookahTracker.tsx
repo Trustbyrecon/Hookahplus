@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   QrCode,
@@ -20,6 +20,7 @@ import {
   Heart
 } from 'lucide-react';
 import { cn } from '../utils/cn';
+import { getLastPromptAtMs, promptKey, setLastPromptAtMs, shouldFirePrompt } from '../lib/aliethia/promptGate';
 
 interface TrackingStep {
   id: string;
@@ -71,6 +72,58 @@ export const HookahTracker: React.FC<HookahTrackerProps> = ({
   const [sessionData, setSessionData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [useDemo, setUseDemo] = useState(false);
+  const [aliethiaPolicy, setAliethiaPolicy] = useState<any>(null);
+
+  const effectiveLoungeId = useMemo(() => {
+    if (loungeId) return String(loungeId).trim();
+    if (typeof window === 'undefined') return '';
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      return String(urlParams.get('loungeId') || '').trim();
+    } catch {
+      return '';
+    }
+  }, [loungeId]);
+
+  // Fetch Aliethia policy (best-effort) to gate assist prompts.
+  useEffect(() => {
+    let cancelled = false;
+    async function loadPolicy() {
+      if (!effectiveLoungeId) {
+        setAliethiaPolicy(null);
+        return;
+      }
+      try {
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
+        const res = await fetch(`${appUrl}/api/lounges/${encodeURIComponent(effectiveLoungeId)}/aliethia/policy`);
+        if (!res.ok) return;
+        const json = await res.json();
+        if (cancelled) return;
+        const p = json?.policy || null;
+        setAliethiaPolicy(p);
+
+        // Notification permission is an OS-level prompt; keep it passive and identity-bound.
+        if (typeof window !== 'undefined' && !window.localStorage.getItem('notification-permission-requested')) {
+          const timedAssistEnabled = Boolean(p?.surfacesEnabled?.timed_assist_prompts);
+          const isLuxuryMemory = p?.venueIdentity === 'luxury_memory';
+          if (timedAssistEnabled && !isLuxuryMemory) {
+            import('../lib/notifications').then(({ notificationManager }) => {
+              notificationManager.requestPermission().catch(err => {
+                console.log('[HookahTracker] Notification permission request failed:', err);
+              });
+            });
+            window.localStorage.setItem('notification-permission-requested', 'true');
+          }
+        }
+      } catch {
+        if (!cancelled) setAliethiaPolicy(null);
+      }
+    }
+    loadPolicy();
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveLoungeId]);
 
   const trackingSteps: TrackingStep[] = [
     {
@@ -159,16 +212,6 @@ export const HookahTracker: React.FC<HookahTrackerProps> = ({
       try {
         // Import retry utility dynamically
         const { fetchWithRetry } = await import('../lib/apiRetry');
-        
-        // Request notification permission on first load (non-blocking)
-        if (typeof window !== 'undefined' && !window.localStorage.getItem('notification-permission-requested')) {
-          import('../lib/notifications').then(({ notificationManager }) => {
-            notificationManager.requestPermission().catch(err => {
-              console.log('[HookahTracker] Notification permission request failed:', err);
-            });
-          });
-          window.localStorage.setItem('notification-permission-requested', 'true');
-        }
 
         // Try session status API first (better format for tracker) with retry logic
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
@@ -275,12 +318,23 @@ export const HookahTracker: React.FC<HookahTrackerProps> = ({
             if (status === 'ACTIVE' && session.timeRemaining !== undefined) {
               const minutesRemaining = Math.floor(session.timeRemaining / 60);
               if (minutesRemaining <= 5 && minutesRemaining > 0) {
+                // Time warnings are assist prompts; throttle by Aliethia cadence and venue rules.
                 if (typeof window !== 'undefined') {
-                  import('../lib/notifications').then(({ notificationManager }) => {
-                    notificationManager.notifyTimeWarning(sessionId, minutesRemaining).catch(err => {
-                      console.log('[HookahTracker] Time warning notification failed:', err);
+                  const timedAssistEnabled = aliethiaPolicy ? Boolean(aliethiaPolicy?.surfacesEnabled?.timed_assist_prompts) : true;
+                  const minMinutes = aliethiaPolicy?.upsell?.minMinutesBetweenPrompts ?? 7;
+                  const loungeKey = String(effectiveLoungeId || session?.loungeId || '').trim();
+                  const key = loungeKey ? promptKey({ loungeId: loungeKey, surface: 'timed_assist_prompts', scope: 'time_warning' }) : null;
+                  const nowMs = Date.now();
+                  const last = key ? getLastPromptAtMs(key) : null;
+                  const ok = timedAssistEnabled && (!key || shouldFirePrompt({ nowMs, lastFiredAtMs: last, minMinutesBetweenPrompts: minMinutes }));
+                  if (ok) {
+                    if (key) setLastPromptAtMs(key, nowMs);
+                    import('../lib/notifications').then(({ notificationManager }) => {
+                      notificationManager.notifyTimeWarning(sessionId, minutesRemaining).catch(err => {
+                        console.log('[HookahTracker] Time warning notification failed:', err);
+                      });
                     });
-                  });
+                  }
                 }
               }
             }
@@ -314,7 +368,7 @@ export const HookahTracker: React.FC<HookahTrackerProps> = ({
     return () => {
       if (pollInterval) clearInterval(pollInterval);
     };
-  }, [sessionId]);
+  }, [sessionId, loungeId, aliethiaPolicy]);
 
   // Demo mode: Simulate the tracking progression
   useEffect(() => {
@@ -405,7 +459,20 @@ export const HookahTracker: React.FC<HookahTrackerProps> = ({
     };
   }, [useDemo, isLoading, onComplete]);
 
-  const addNotification = (message: string) => {
+  const addNotification = (message: string, kind: 'status' | 'assist' = 'status') => {
+    // Assist prompts are throttled and can be disabled per venue identity.
+    if (kind === 'assist') {
+      const timedAssistEnabled = aliethiaPolicy ? Boolean(aliethiaPolicy?.surfacesEnabled?.timed_assist_prompts) : true;
+      const minMinutes = aliethiaPolicy?.upsell?.minMinutesBetweenPrompts ?? 7;
+      const loungeKey = String(effectiveLoungeId || sessionData?.loungeId || '').trim();
+      const key = loungeKey ? promptKey({ loungeId: loungeKey, surface: 'timed_assist_prompts', scope: 'live_updates' }) : null;
+      const nowMs = Date.now();
+      const last = key ? getLastPromptAtMs(key) : null;
+      const ok = timedAssistEnabled && (!key || shouldFirePrompt({ nowMs, lastFiredAtMs: last, minMinutesBetweenPrompts: minMinutes }));
+      if (!ok) return;
+      if (key) setLastPromptAtMs(key, nowMs);
+    }
+
     setNotifications(prev => [message, ...prev.slice(0, 4)]);
     
     // Track notification event

@@ -24,3 +24,28 @@ export function getOpenAIModel(): string {
   return v || DEFAULT_OPENAI_MODEL;
 }
 
+export function getAppUrl(): string {
+  const explicit = (process.env.NEXT_PUBLIC_APP_URL ?? '').trim();
+  if (explicit) return explicit.replace(/\/$/, '');
+
+  // Vercel provides VERCEL_URL without protocol.
+  const vercelUrl = (process.env.VERCEL_URL ?? '').trim();
+  if (vercelUrl) return `https://${vercelUrl}`.replace(/\/$/, '');
+
+  return 'http://localhost:3002';
+}
+
+export function getStripeSecretKey(): string {
+  const v = (process.env.STRIPE_SECRET_KEY ?? '').trim();
+  if (!v) throw new Error('STRIPE_SECRET_KEY missing at runtime');
+  return v;
+}
+
+export function getStripeWebhookSecret(): string {
+  const v =
+    (process.env.STRIPE_WEBHOOK_SECRET ?? '').trim() ||
+    (process.env.STRIPE_WEBHOOK_SIGNING_SECRET ?? '').trim();
+  if (!v) throw new Error('Stripe webhook secret missing (STRIPE_WEBHOOK_SECRET)');
+  return v;
+}
+

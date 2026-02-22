@@ -3,10 +3,10 @@ import { v4 as uuidv4 } from "uuid";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { partnerId: string } }
+  { params }: { params: Promise<{ partnerId: string }> }
 ) {
   try {
-    const { partnerId } = params;
+    const { partnerId } = await params;
     const body = await req.json();
     const { customCode, expiresAt, maxUses } = body;
 
@@ -53,10 +53,10 @@ export async function POST(
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { partnerId: string } }
+  { params }: { params: Promise<{ partnerId: string }> }
 ) {
   try {
-    const { partnerId } = params;
+    const { partnerId } = await params;
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status') || 'active';
 

@@ -19,10 +19,10 @@ import Stripe from 'stripe';
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: sessionId } = params;
+    const { id: sessionId } = await params;
     const body = await request.json();
     const { 
       extensionMinutes, 
@@ -252,10 +252,10 @@ async function extendSessionImmediately(
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: sessionId } = params;
+    const { id: sessionId } = await params;
     const searchParams = request.nextUrl.searchParams;
     const extensionMinutes = parseInt(searchParams.get('minutes') || '30', 10);
     const pricingModel = (searchParams.get('pricingModel') || 'time-based') as 'flat' | 'time-based';

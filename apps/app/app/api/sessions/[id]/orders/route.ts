@@ -14,10 +14,10 @@ import { prisma } from '@/lib/db';
  */
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: sessionId } = params;
+    const { id: sessionId } = await params;
     const body = await req.json();
     const { type, flavorMix, items, specialInstructions } = body;
 

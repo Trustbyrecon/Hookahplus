@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
     // This is what unlocks admin settings: membership + JWT metadata.
     let userId: string | null = null;
     try {
-      const supabase = serverClient();
+      const supabase = await serverClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (user) userId = user.id;
 

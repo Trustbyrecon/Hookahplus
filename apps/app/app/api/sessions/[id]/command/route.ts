@@ -47,8 +47,8 @@ function appendNote(existing: string | null | undefined, line: string) {
   return `${base}\n${line}`;
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  const sessionKey = params.id;
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id: sessionKey } = await params;
 
   let body: any = {};
   try {
