@@ -1,5 +1,5 @@
 import { createReflexLayer, quickReflexCheck } from '../../../lib/reflex';
-import type { ReflexContext } from '../../../lib/reflex/useReflex';
+import type { ReflexContext } from '../../../lib/reflex';
 
 /**
  * Integration layer for the guests app to use the Reflex Layer

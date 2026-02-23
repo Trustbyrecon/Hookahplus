@@ -100,10 +100,10 @@ const saveLoungeConfig = (config: LoungeConfig): boolean => {
 // GET /api/lounges/[loungeId]/tables - Get lounge tables
 export async function GET(
   req: NextRequest,
-  { params }: { params: { loungeId: string } }
+  { params }: { params: Promise<{ loungeId: string }> }
 ) {
   try {
-    const { loungeId } = params;
+    const { loungeId } = await params;
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status');
     const qrEnabled = searchParams.get('qrEnabled');
@@ -144,7 +144,7 @@ export async function GET(
     });
     
   } catch (error) {
-    console.error(`Error fetching tables for lounge ${params.loungeId}:`, error);
+    console.error(`Error fetching tables for lounge:`, error);
     return NextResponse.json({ 
       error: 'Failed to fetch tables',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -155,10 +155,10 @@ export async function GET(
 // POST /api/lounges/[loungeId]/tables - Add new table
 export async function POST(
   req: NextRequest,
-  { params }: { params: { loungeId: string } }
+  { params }: { params: Promise<{ loungeId: string }> }
 ) {
   try {
-    const { loungeId } = params;
+    const { loungeId } = await params;
     const body = await req.json();
     const { table } = body;
     
@@ -223,7 +223,7 @@ export async function POST(
     }
     
   } catch (error) {
-    console.error(`Error adding table to lounge ${params.loungeId}:`, error);
+    console.error(`Error adding table to lounge:`, error);
     return NextResponse.json({ 
       error: 'Failed to add table',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -234,10 +234,10 @@ export async function POST(
 // PUT /api/lounges/[loungeId]/tables - Update table
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { loungeId: string } }
+  { params }: { params: Promise<{ loungeId: string }> }
 ) {
   try {
-    const { loungeId } = params;
+    const { loungeId } = await params;
     const body = await req.json();
     const { tableId, updates } = body;
     
@@ -273,7 +273,7 @@ export async function PUT(
     }
     
   } catch (error) {
-    console.error(`Error updating table in lounge ${params.loungeId}:`, error);
+    console.error(`Error updating table in lounge:`, error);
     return NextResponse.json({ 
       error: 'Failed to update table',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -284,10 +284,10 @@ export async function PUT(
 // DELETE /api/lounges/[loungeId]/tables - Delete table
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { loungeId: string } }
+  { params }: { params: Promise<{ loungeId: string }> }
 ) {
   try {
-    const { loungeId } = params;
+    const { loungeId } = await params;
     const { searchParams } = new URL(req.url);
     const tableId = searchParams.get('tableId');
     
@@ -323,7 +323,7 @@ export async function DELETE(
     }
     
   } catch (error) {
-    console.error(`Error deleting table from lounge ${params.loungeId}:`, error);
+    console.error(`Error deleting table from lounge:`, error);
     return NextResponse.json({ 
       error: 'Failed to delete table',
       details: error instanceof Error ? error.message : 'Unknown error'

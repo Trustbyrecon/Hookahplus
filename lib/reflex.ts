@@ -3,6 +3,41 @@ export type Reflex = {
   doSomething?: () => void;
 };
 
+export type ReflexContext = {
+  route: string;
+  action: string;
+  domain: string;
+};
+
+export async function quickReflexCheck(
+  output: string | object | null,
+  _route: string,
+  _action: string,
+  _domain: string
+): Promise<boolean> {
+  if (output == null) return false;
+  if (typeof output === 'string') return output.trim().length > 0;
+  if (typeof output === 'object') return true;
+  return false;
+}
+
+export function createReflexLayer(context: ReflexContext) {
+  return {
+    context,
+    getSystemHealth() {
+      return {
+        healthy: true,
+        route: context.route,
+        domain: context.domain,
+        action: context.action,
+      };
+    },
+    getNodesNeedingAttention() {
+      return [] as Array<{ nodeId: string; reason: string }>;
+    },
+  };
+}
+
 // Attempt to use existing global reflex if present
 const existing: Reflex | undefined =
   typeof globalThis !== 'undefined' ? (globalThis as any).reflex : undefined;
