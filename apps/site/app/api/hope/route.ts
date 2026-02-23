@@ -162,22 +162,39 @@ export async function POST(req: NextRequest) {
           throw new Error('Raw SQL insert returned no rows');
         }
       } catch (sqlError: any) {
-        // Fallback: try basic Prisma create without extended fields
-        console.warn('[Hope Landing] Raw SQL failed, trying basic Prisma create:', sqlError?.message);
+        // Fallback: try a minimal raw SQL insert without extended fields
+        console.warn('[Hope Landing] Raw SQL failed, trying minimal insert:', sqlError?.message);
         try {
-          const newEvent = await prisma.reflexEvent.create({
-            data: {
-              type: 'onboarding.signup',
-              source: 'ui',
-              payload: JSON.stringify(remPayload),
-              userAgent: userAgent,
-              ip: ip,
-            }
-          });
-          createdEventId = newEvent.id;
-          console.log('[Hope Landing] ✅ Lead created via Prisma fallback:', createdEventId);
-        } catch (prismaError: any) {
-          throw new Error(`Failed to create lead: ${prismaError?.message || 'Unknown error'}`);
+          const insertResult = await prisma.$queryRawUnsafe(`
+            INSERT INTO reflex_events (
+              id, type, source, payload, "userAgent", ip, "createdAt"
+            )
+            VALUES (
+              gen_random_uuid()::text,
+              $1,
+              $2,
+              $3,
+              $4,
+              $5,
+              NOW()
+            )
+            RETURNING id
+          `,
+            'onboarding.signup',
+            'ui',
+            JSON.stringify(remPayload),
+            userAgent,
+            ip
+          ) as any[];
+
+          if (insertResult && insertResult.length > 0) {
+            createdEventId = insertResult[0].id;
+            console.log('[Hope Landing] ✅ Lead created via minimal insert:', createdEventId);
+          } else {
+            throw new Error('Minimal insert returned no rows');
+          }
+        } catch (fallbackError: any) {
+          throw new Error(`Failed to create lead: ${fallbackError?.message || 'Unknown error'}`);
         }
       }
     } catch (leadError) {

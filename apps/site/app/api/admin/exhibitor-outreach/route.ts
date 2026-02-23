@@ -2,18 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/db';
 import { worldShisha2026Campaign } from '../../../../lib/campaigns/worldShisha2026';
 
+type ReflexEventRow = {
+  id: string;
+  payload: string | null;
+  createdAt: Date;
+};
+
 export async function GET(req: NextRequest) {
   try {
     // Fetch exhibitor contacts from reflex_events
-    const exhibitors = await prisma.reflexEvent.findMany({
-      where: {
-        type: 'world_shisha_2026_exhibitor_contact',
-      },
-      orderBy: {
-        createdAt: 'desc'
-      },
-      take: 100
-    });
+    const exhibitors = await prisma.$queryRawUnsafe(`
+      SELECT id, payload, "createdAt"
+      FROM reflex_events
+      WHERE type = $1
+      ORDER BY "createdAt" DESC
+      LIMIT 100
+    `, 'world_shisha_2026_exhibitor_contact') as ReflexEventRow[];
 
     // Transform to exhibitor format
     const exhibitorList = exhibitors.map(event => {
@@ -60,30 +64,53 @@ export async function POST(req: NextRequest) {
     }
 
     // Create new exhibitor contact
-    const newExhibitor = await prisma.reflexEvent.create({
-      data: {
-        type: 'world_shisha_2026_exhibitor_contact',
-        source: 'ui', // Admin panel is UI action
-        payload: JSON.stringify({
-          name,
-          company,
-          boothNumber,
-          category,
-          email,
-          linkedinUrl,
-          website,
-          contactStatus: 'new',
-          campaign: worldShisha2026Campaign.id,
-        }),
-        userAgent: req.headers.get('user-agent') || 'admin-exhibitor-outreach',
-        ip: req.headers.get('x-forwarded-for')?.split(',')[0] || '0.0.0.0',
-      },
+    const ip =
+      req.headers.get('x-forwarded-for')?.split(',')[0] ||
+      req.headers.get('x-real-ip') ||
+      '0.0.0.0';
+    const userAgent = req.headers.get('user-agent') || 'admin-exhibitor-outreach';
+
+    const payload = JSON.stringify({
+      name,
+      company,
+      boothNumber,
+      category,
+      email,
+      linkedinUrl,
+      website,
+      contactStatus: 'new',
+      campaign: worldShisha2026Campaign.id,
     });
+
+    const insertResult = await prisma.$queryRawUnsafe(`
+      INSERT INTO reflex_events (
+        id, type, source, payload, "userAgent", ip, "createdAt"
+      )
+      VALUES (
+        gen_random_uuid()::text,
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        NOW()
+      )
+      RETURNING id
+    `,
+      'world_shisha_2026_exhibitor_contact',
+      'ui',
+      payload,
+      userAgent,
+      ip
+    ) as Array<{ id: string }>;
+
+    const exhibitorId = insertResult?.[0]?.id;
+    if (!exhibitorId) throw new Error('Failed to create exhibitor contact');
 
     return NextResponse.json({
       success: true,
       message: 'Exhibitor added successfully',
-      exhibitorId: newExhibitor.id
+      exhibitorId
     });
   } catch (error: any) {
     console.error('[Exhibitor Outreach] Error:', error);
@@ -106,9 +133,13 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    const existingEvent = await prisma.reflexEvent.findUnique({
-      where: { id },
-    });
+    const existingRows = await prisma.$queryRawUnsafe(`
+      SELECT id, payload
+      FROM reflex_events
+      WHERE id = $1
+      LIMIT 1
+    `, id) as Array<{ id: string; payload: string | null }>;
+    const existingEvent = existingRows?.[0];
 
     if (!existingEvent) {
       return NextResponse.json(
@@ -120,12 +151,11 @@ export async function PATCH(req: NextRequest) {
     const currentPayload = JSON.parse(existingEvent.payload || '{}');
     const updatedPayload = { ...currentPayload, ...updates };
 
-    await prisma.reflexEvent.update({
-      where: { id },
-      data: {
-        payload: JSON.stringify(updatedPayload),
-      },
-    });
+    await prisma.$queryRawUnsafe(`
+      UPDATE reflex_events
+      SET payload = $2
+      WHERE id = $1
+    `, id, JSON.stringify(updatedPayload));
 
     return NextResponse.json({
       success: true,
