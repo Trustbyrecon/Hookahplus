@@ -128,10 +128,10 @@ const saveLoungeConfig = (config: LoungeConfig): boolean => {
 // GET /api/lounges/[loungeId] - Get specific lounge
 export async function GET(
   req: NextRequest,
-  { params }: { params: { loungeId: string } }
+  { params }: { params: Promise<{ loungeId: string }> }
 ) {
   try {
-    const { loungeId } = params;
+    const { loungeId } = await params;
     const { searchParams } = new URL(req.url);
     const includeTables = searchParams.get('includeTables') !== 'false';
     const includeCampaigns = searchParams.get('includeCampaigns') !== 'false';
@@ -173,7 +173,7 @@ export async function GET(
     });
     
   } catch (error) {
-    console.error(`Error fetching lounge ${params.loungeId}:`, error);
+    console.error(`Error fetching lounge:`, error);
     return NextResponse.json({ 
       error: 'Failed to fetch lounge',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -184,10 +184,10 @@ export async function GET(
 // PUT /api/lounges/[loungeId] - Update specific lounge
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { loungeId: string } }
+  { params }: { params: Promise<{ loungeId: string }> }
 ) {
   try {
-    const { loungeId } = params;
+    const { loungeId } = await params;
     const body = await req.json();
     const { updates } = body;
     
@@ -216,7 +216,7 @@ export async function PUT(
     }
     
   } catch (error) {
-    console.error(`Error updating lounge ${params.loungeId}:`, error);
+    console.error(`Error updating lounge:`, error);
     return NextResponse.json({ 
       error: 'Failed to update lounge',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -227,10 +227,10 @@ export async function PUT(
 // DELETE /api/lounges/[loungeId] - Delete specific lounge
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { loungeId: string } }
+  { params }: { params: Promise<{ loungeId: string }> }
 ) {
   try {
-    const { loungeId } = params;
+    const { loungeId } = await params;
     
     const config = loadLoungeConfig(loungeId);
     if (!config) {
@@ -252,7 +252,7 @@ export async function DELETE(
     });
     
   } catch (error) {
-    console.error(`Error deleting lounge ${params.loungeId}:`, error);
+    console.error(`Error deleting lounge:`, error);
     return NextResponse.json({ 
       error: 'Failed to delete lounge',
       details: error instanceof Error ? error.message : 'Unknown error'
