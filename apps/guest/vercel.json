@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "cd ../.. && npm -w @hookahplus/guest run build",
+  "buildCommand": "cd ../.. && cd apps/guest && npm run build",
   "outputDirectory": ".next",
   "framework": "nextjs",
   "installCommand": "cd ../.. && npm ci --include=dev --omit=optional",
