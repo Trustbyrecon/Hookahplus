@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "cd ../.. && cd apps/site && npm run build",
+  "buildCommand": "cd ../.. && cd apps/site && unset npm_config_workspace npm_config_workspaces npm_config_workspaces_enabled npm_config_user_agent && npx prisma generate --schema=../../prisma/schema.prisma && npx next build && node scripts/generate-sitemap.js",
   "outputDirectory": ".next",
   "framework": "nextjs",
   "installCommand": "cd ../.. && npm ci --include=dev --omit=optional",
