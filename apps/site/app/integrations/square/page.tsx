@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Script from 'next/script';
+import Link from 'next/link';
 import Card from '../../../components/Card';
 import Button from '../../../components/Button';
 import { FAQSchema } from '../../../components/SchemaMarkup';
@@ -238,18 +239,18 @@ export default function SquareIntegrationPage() {
                 <p className="text-zinc-300 text-sm mb-4">
                   Learn how Hookah+ completes your Square setup with session management, customer memory, and loyalty.
                 </p>
-                <a href="/works-with-square" className="text-teal-400 hover:text-teal-300 text-sm font-medium inline-flex items-center gap-1">
+                <Link href="/works-with-square" className="text-teal-400 hover:text-teal-300 text-sm font-medium inline-flex items-center gap-1">
                   Read more <ArrowRight className="w-3 h-3" />
-                </a>
+                </Link>
               </Card>
               <Card className="p-6 bg-zinc-800/50 border-zinc-700 hover:border-teal-500/50 transition-colors">
                 <h3 className="font-semibold text-white mb-2">Blog: Square & Operations</h3>
                 <p className="text-zinc-300 text-sm mb-4">
                   Why hookah lounges still struggle after checkout, even with Square handling payments perfectly.
                 </p>
-                <a href="/blog/square-great-payments-hookah-lounges-struggle" className="text-teal-400 hover:text-teal-300 text-sm font-medium inline-flex items-center gap-1">
+                <Link href="/blog/square-great-payments-hookah-lounges-struggle" className="text-teal-400 hover:text-teal-300 text-sm font-medium inline-flex items-center gap-1">
                   Read article <ArrowRight className="w-3 h-3" />
-                </a>
+                </Link>
               </Card>
             </div>
           </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { SoftwareApplicationSchema } from '../../components/SchemaMarkup';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
@@ -143,9 +144,27 @@ export default function SessionTimerPOSPage() {
                 Hookah+ produces receipt-ready line items that sync to your main POS system:
               </p>
               <ul className="space-y-2 text-zinc-300 mb-6">
-                <li>• <a href="/integrations/square" className="text-teal-400 hover:text-teal-300">Square POS integration</a> (live)</li>
-                <li>• <a href="/integrations/clover" className="text-teal-400 hover:text-teal-300">Clover POS integration</a> (Q2 2026)</li>
-                <li>• <a href="/integrations/toast" className="text-teal-400 hover:text-teal-300">Toast POS integration</a> (Q2 2026)</li>
+                <li>
+                  •{' '}
+                  <Link href="/integrations/square" className="text-teal-400 hover:text-teal-300">
+                    Square POS integration
+                  </Link>{' '}
+                  (live)
+                </li>
+                <li>
+                  •{' '}
+                  <Link href="/integrations/clover" className="text-teal-400 hover:text-teal-300">
+                    Clover POS integration
+                  </Link>{' '}
+                  (Q2 2026)
+                </li>
+                <li>
+                  •{' '}
+                  <Link href="/integrations/toast" className="text-teal-400 hover:text-teal-300">
+                    Toast POS integration
+                  </Link>{' '}
+                  (Q2 2026)
+                </li>
                 <li>• Session history and analytics dashboard</li>
                 <li>• Loyalty program hooks</li>
               </ul>
@@ -153,9 +172,9 @@ export default function SessionTimerPOSPage() {
                 <p className="text-sm text-zinc-300 mb-2">
                   <strong className="text-teal-400">Using Square?</strong> Learn how Hookah+ works with Square to add session management, customer memory, and loyalty—without replacing your POS.
                 </p>
-                <a href="/works-with-square" className="text-teal-400 hover:text-teal-300 text-sm font-medium inline-flex items-center gap-1">
+                <Link href="/works-with-square" className="text-teal-400 hover:text-teal-300 text-sm font-medium inline-flex items-center gap-1">
                   See How It Works With Square →
-                </a>
+                </Link>
               </div>
             </Card>
           </div>

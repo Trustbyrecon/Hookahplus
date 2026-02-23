@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import PageHero from '../../../components/PageHero';
 import NewsletterSignup from '../../../components/NewsletterSignup';
 import { 
@@ -607,22 +608,22 @@ const TechnicalDocsPage = () => {
               <div>
                 <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-wider mb-3">Quick Links</h3>
                 <div className="space-y-2">
-                  <a href="/docs/api" className="flex items-center text-sm text-zinc-400 hover:text-white transition-colors">
+                  <Link href="/docs/api" className="flex items-center text-sm text-zinc-400 hover:text-white transition-colors">
                     <Code className="w-4 h-4 mr-2" />
                     API Reference
-                  </a>
-                  <a href="/docs/tutorials" className="flex items-center text-sm text-zinc-400 hover:text-white transition-colors">
+                  </Link>
+                  <Link href="/docs/tutorials" className="flex items-center text-sm text-zinc-400 hover:text-white transition-colors">
                     <Play className="w-4 h-4 mr-2" />
                     Video Tutorials
-                  </a>
-                  <a href="/docs/examples" className="flex items-center text-sm text-zinc-400 hover:text-white transition-colors">
+                  </Link>
+                  <Link href="/docs/examples" className="flex items-center text-sm text-zinc-400 hover:text-white transition-colors">
                     <FileText className="w-4 h-4 mr-2" />
                     Code Examples
-                  </a>
-                  <a href="/community" className="flex items-center text-sm text-zinc-400 hover:text-white transition-colors">
+                  </Link>
+                  <Link href="/community" className="flex items-center text-sm text-zinc-400 hover:text-white transition-colors">
                     <Users className="w-4 h-4 mr-2" />
                     Community
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -800,8 +801,8 @@ const TechnicalDocsPage = () => {
                     Hookah+ is built with security and compliance as core principles. Learn about our security measures, data protection, and compliance certifications.
                   </p>
                   <div className="space-y-3">
-                    <a 
-                      href="/privacy" 
+                    <Link
+                      href="/privacy"
                       className="flex items-center justify-between p-3 bg-zinc-800/50 border border-zinc-700 rounded-lg hover:border-zinc-600 transition-colors group"
                     >
                       <div className="flex items-center">
@@ -812,10 +813,10 @@ const TechnicalDocsPage = () => {
                         </div>
                       </div>
                       <ExternalLink className="w-4 h-4 text-zinc-400 group-hover:text-primary-400 transition-colors" />
-                    </a>
+                    </Link>
 
-                    <a 
-                      href="/privacy" 
+                    <Link
+                      href="/privacy"
                       className="flex items-center justify-between p-3 bg-zinc-800/50 border border-zinc-700 rounded-lg hover:border-zinc-600 transition-colors group"
                     >
                       <div className="flex items-center">
@@ -826,7 +827,7 @@ const TechnicalDocsPage = () => {
                         </div>
                       </div>
                       <ExternalLink className="w-4 h-4 text-zinc-400 group-hover:text-primary-400 transition-colors" />
-                    </a>
+                    </Link>
 
                     <div className="p-3 bg-zinc-800/50 border border-zinc-700 rounded-lg">
                       <div className="flex items-center mb-2">

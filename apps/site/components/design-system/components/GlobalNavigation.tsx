@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import StatusIndicator from './StatusIndicator';
 import TrustLock from './TrustLock';
 
@@ -120,17 +121,16 @@ const GlobalNavigation: React.FC<GlobalNavigationProps> = ({
         <div className="flex items-center justify-between h-16">
           {/* Logo and Brand */}
           <div className="flex items-center space-x-3">
-            <a 
+            <Link 
               href="/" 
               className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
-              onClick={(e) => {
-                e.preventDefault();
+              onClick={() => {
                 onNavigate?.('/');
               }}
             >
               <div className="text-teal-400 text-2xl animate-pulse">🍃</div>
               <div className="text-teal-400 font-bold text-xl">HOOKAH+</div>
-            </a>
+            </Link>
             {activeGroup && (
               <div className={`${activeGroup.bgColor} text-zinc-300 text-sm font-medium px-3 py-1 rounded-lg border transition-all duration-300`}>
                 {activeGroup.label.toUpperCase()}
@@ -167,113 +167,106 @@ const GlobalNavigation: React.FC<GlobalNavigationProps> = ({
         {/* Navigation Links */}
         <div className="flex items-center justify-between py-3 border-t border-zinc-800/50">
           <div className="flex items-center space-x-6">
-            <a 
+            <Link 
               href="/dashboard" 
               className={`px-3 py-2 rounded-lg transition-all duration-200 ${
                 currentPage === '/dashboard' 
                   ? 'bg-teal-600 text-white' 
                   : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
               }`}
-              onClick={(e) => {
-                e.preventDefault();
+              onClick={() => {
                 onNavigate?.('/dashboard');
               }}
             >
               📊 Dashboard
-            </a>
+            </Link>
             
-            <a 
+            <Link 
               href="/sessions" 
               className={`px-3 py-2 rounded-lg transition-all duration-200 ${
                 currentPage.startsWith('/sessions') 
                   ? 'bg-green-600 text-white' 
                   : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
               }`}
-              onClick={(e) => {
-                e.preventDefault();
+              onClick={() => {
                 onNavigate?.('/sessions');
               }}
             >
               🔥 Sessions
-            </a>
+            </Link>
             
-            <a 
+            <Link 
               href="/staff" 
               className={`px-3 py-2 rounded-lg transition-all duration-200 ${
                 currentPage === '/staff' 
                   ? 'bg-purple-600 text-white' 
                   : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
               }`}
-              onClick={(e) => {
-                e.preventDefault();
+              onClick={() => {
                 onNavigate?.('/staff');
               }}
             >
               👥 Staff Ops
-            </a>
+            </Link>
             
-            <a 
+            <Link 
               href="/staff-panel" 
               className={`px-3 py-2 rounded-lg transition-all duration-200 ${
                 currentPage === '/staff-panel' 
                   ? 'bg-purple-600 text-white' 
                   : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
               }`}
-              onClick={(e) => {
-                e.preventDefault();
+              onClick={() => {
                 onNavigate?.('/staff-panel');
               }}
             >
               🧠 Staff Panel
-            </a>
+            </Link>
             
-            <a 
+            <Link 
               href="/admin" 
               className={`px-3 py-2 rounded-lg transition-all duration-200 ${
                 currentPage.startsWith('/admin') 
                   ? 'bg-blue-600 text-white' 
                   : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
               }`}
-              onClick={(e) => {
-                e.preventDefault();
+              onClick={() => {
                 onNavigate?.('/admin');
               }}
             >
               ⚙️ Admin
-            </a>
+            </Link>
           </div>
 
           {/* Support and Help Links */}
           <div className="flex items-center space-x-3">
-            <a 
+            <Link 
               href="/support" 
               className={`px-3 py-2 rounded-lg transition-all duration-200 ${
                 currentPage.startsWith('/support') 
                   ? 'bg-green-600 text-white' 
                   : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
               }`}
-              onClick={(e) => {
-                e.preventDefault();
+              onClick={() => {
                 onNavigate?.('/support');
               }}
             >
               🎫 Support
-            </a>
+            </Link>
             
-            <a 
+            <Link 
               href="/docs" 
               className={`px-3 py-2 rounded-lg transition-all duration-200 ${
                 currentPage.startsWith('/docs') 
                   ? 'bg-blue-600 text-white' 
                   : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
               }`}
-              onClick={(e) => {
-                e.preventDefault();
+              onClick={() => {
                 onNavigate?.('/docs');
               }}
             >
               📚 Docs
-            </a>
+            </Link>
           </div>
         </div>
 

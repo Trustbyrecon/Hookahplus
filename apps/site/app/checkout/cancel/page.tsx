@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
 function CheckoutCancelContent() {
@@ -27,18 +28,18 @@ function CheckoutCancelContent() {
           Your payment was cancelled. Order ID: {orderId || 'N/A'}
         </p>
         <div className="space-y-4">
-          <a
+          <Link
             href="/checkout"
             className="inline-block bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors"
           >
             Try Again
-          </a>
-          <a
+          </Link>
+          <Link
             href="/"
             className="inline-block border border-zinc-600 text-zinc-300 px-6 py-3 rounded-lg hover:bg-zinc-800 transition-colors ml-4"
           >
             Return to Dashboard
-          </a>
+          </Link>
         </div>
       </div>
     </div>

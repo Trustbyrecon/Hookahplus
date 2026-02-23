@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
 function CheckoutSuccessContent() {
@@ -27,18 +28,18 @@ function CheckoutSuccessContent() {
           Your hookah session has been confirmed. Order ID: {orderId || 'N/A'}
         </p>
         <div className="space-y-4">
-          <a
+          <Link
             href="/"
             className="inline-block bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors"
           >
             Return to Dashboard
-          </a>
-          <a
+          </Link>
+          <Link
             href="/sessions"
             className="inline-block border border-zinc-600 text-zinc-300 px-6 py-3 rounded-lg hover:bg-zinc-800 transition-colors ml-4"
           >
             View Sessions
-          </a>
+          </Link>
         </div>
       </div>
     </div>
