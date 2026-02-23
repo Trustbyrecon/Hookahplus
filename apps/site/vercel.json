@@ -1,10 +1,10 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
+  "buildCommand": "cd ../.. && npm -w @hookahplus/site run build",
   "outputDirectory": ".next",
   "framework": "nextjs",
-  "installCommand": "npm install --omit=optional",
-  "ignoreCommand": "bash scripts/vercel-build-site.sh",
+  "installCommand": "cd ../.. && npm ci --include=dev --omit=optional",
+  "ignoreCommand": "exit 1",
   "redirects": [
     {
       "source": "/app/:path*",

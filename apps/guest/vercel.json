@@ -1,10 +1,10 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
+  "buildCommand": "cd ../.. && npm -w @hookahplus/guest run build",
   "outputDirectory": ".next",
   "framework": "nextjs",
-  "installCommand": "npm install",
-  "ignoreCommand": "bash scripts/vercel-build-guest.sh",
+  "installCommand": "cd ../.. && npm ci --include=dev --omit=optional",
+  "ignoreCommand": "exit 1",
   "env": {
     "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
     "NEXT_PUBLIC_CLARITY_THRESHOLD": "0.98",
