@@ -379,6 +379,15 @@ export default function AdminPage() {
       status: 'active'
     },
     {
+      id: 'venue-identity',
+      title: 'Venue Identity',
+      description: 'Set stable venue identity (velocity / momentum / memory) per location',
+      icon: <Building2 className="w-6 h-6" />,
+      color: 'text-emerald-400',
+      href: '/admin/venue-identity',
+      status: 'active'
+    },
+    {
       id: 'onboarding-inspector',
       title: 'Onboarding Inspector',
       description: 'Inspect a SetupSession token/sid and multi-location readiness',
