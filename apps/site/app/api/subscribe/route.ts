@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { 
-  apiVersion: '2023-10-16' 
-});
+import { getStripe } from '../../../lib/stripeServer';
 
 /**
  * POST /api/subscribe
@@ -19,7 +16,10 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { tier = 'pro', billingCycle = 'monthly', email, addons = [] } = body;
+    const { tier, billingCycle, email, addons = [] } = body ?? {};
+
+    const normalizedTier = tier === 'starter' || tier === 'pro' || tier === 'trust_plus' ? tier : 'pro';
+    const normalizedBillingCycle = billingCycle === 'annual' ? 'annual' : 'monthly';
 
     // Require email for subscription
     if (!email || !email.includes('@')) {
@@ -28,6 +28,9 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Stripe client (supports STRIPE_SECRET_KEY or STRIPE_TEST_SECRET_KEY)
+    const stripe = getStripe();
 
     // Map tier names to price IDs
     const priceMap: Record<string, Record<string, string | undefined>> = {
@@ -45,21 +48,37 @@ export async function POST(req: NextRequest) {
       },
     };
 
-    const priceId = priceMap[tier]?.[billingCycle];
+    const priceId = priceMap[normalizedTier]?.[normalizedBillingCycle];
     
     if (!priceId) {
       // Fallback: try to use monthly price if annual not configured
-      const fallbackPrice = priceMap[tier]?.monthly;
+      const fallbackPrice = priceMap[normalizedTier]?.monthly;
       if (!fallbackPrice) {
+        const missingVars: string[] = [];
+        if (normalizedTier === 'starter') {
+          if (!process.env.PRICE_TIER_STARTER) missingVars.push('PRICE_TIER_STARTER');
+          if (normalizedBillingCycle === 'annual' && !process.env.PRICE_TIER_STARTER_ANNUAL) missingVars.push('PRICE_TIER_STARTER_ANNUAL');
+        } else if (normalizedTier === 'pro') {
+          if (!process.env.PRICE_TIER_PRO) missingVars.push('PRICE_TIER_PRO');
+          if (normalizedBillingCycle === 'annual' && !process.env.PRICE_TIER_PRO_ANNUAL) missingVars.push('PRICE_TIER_PRO_ANNUAL');
+        } else if (normalizedTier === 'trust_plus') {
+          if (!process.env.PRICE_TIER_TRUST_PLUS) missingVars.push('PRICE_TIER_TRUST_PLUS');
+          if (normalizedBillingCycle === 'annual' && !process.env.PRICE_TIER_TRUST_PLUS_ANNUAL) missingVars.push('PRICE_TIER_TRUST_PLUS_ANNUAL');
+        }
+
         return NextResponse.json(
-          { error: `Price not configured for tier: ${tier} (${billingCycle})` },
-          { status: 400 }
+          {
+            error: 'Stripe pricing is not configured for this tier',
+            details: `Missing price env var(s) for tier=${normalizedTier} billingCycle=${normalizedBillingCycle}`,
+            missing: missingVars,
+          },
+          { status: 500 }
         );
       }
-      console.warn(`[Subscribe] Annual price not configured for ${tier}, using monthly price`);
+      console.warn(`[Subscribe] Annual price not configured for ${normalizedTier}, using monthly price`);
     }
 
-    const finalPriceId = priceId || priceMap[tier]?.monthly!;
+    const finalPriceId = priceId || priceMap[normalizedTier]?.monthly!;
 
     // Get site URL for redirects
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 
@@ -114,8 +133,8 @@ export async function POST(req: NextRequest) {
       const addonKey = addon.key; // e.g., 'flavor_intelligence'
       // Special case: Agentic Commerce bundles a base add-on + metered usage item
       if (addonKey === 'agentic_commerce') {
-        const basePriceId = addonPriceMap.agentic_commerce?.[billingCycle];
-        const usagePriceId = addonPriceMap.agentic_commerce_usage?.[billingCycle];
+        const basePriceId = addonPriceMap.agentic_commerce?.[normalizedBillingCycle];
+        const usagePriceId = addonPriceMap.agentic_commerce_usage?.[normalizedBillingCycle];
 
         if (basePriceId) {
           lineItems.push({ price: basePriceId, quantity: 1 });
@@ -136,12 +155,12 @@ export async function POST(req: NextRequest) {
         return;
       }
 
-      const addonPriceId = addonPriceMap[addonKey]?.[billingCycle];
+      const addonPriceId = addonPriceMap[addonKey]?.[normalizedBillingCycle];
       if (addonPriceId) {
         lineItems.push({ price: addonPriceId, quantity: 1 });
         addonMetadata.push(addonKey);
       } else {
-        console.warn(`[Subscribe] Add-on price not found for: ${addonKey} (${billingCycle})`);
+        console.warn(`[Subscribe] Add-on price not found for: ${addonKey} (${normalizedBillingCycle})`);
       }
     });
 
@@ -150,11 +169,11 @@ export async function POST(req: NextRequest) {
       mode: 'subscription',
       customer_email: email,
       line_items: lineItems,
-      success_url: `${siteUrl}/thank-you/subscription?session_id={CHECKOUT_SESSION_ID}&tier=${tier}`,
+      success_url: `${siteUrl}/thank-you/subscription?session_id={CHECKOUT_SESSION_ID}&tier=${normalizedTier}`,
       cancel_url: `${siteUrl}/pricing?canceled=true`,
       metadata: {
-        tier,
-        billing_cycle: billingCycle,
+        tier: normalizedTier,
+        billing_cycle: normalizedBillingCycle,
         subscription_type: 'saas_tier',
         source: 'pricing_page',
         customer_email: email,
@@ -162,8 +181,8 @@ export async function POST(req: NextRequest) {
       },
       subscription_data: {
         metadata: {
-          tier,
-          billing_cycle: billingCycle,
+          tier: normalizedTier,
+          billing_cycle: normalizedBillingCycle,
           subscription_type: 'saas_tier'
         }
       },

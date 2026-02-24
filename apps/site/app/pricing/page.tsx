@@ -694,8 +694,14 @@ export default function PricingPage() {
                       });
 
                       if (!response.ok) {
-                        const errorData = await response.json().catch(() => ({ error: 'Failed to create checkout' }));
-                        throw new Error(errorData.error || 'Failed to create checkout session');
+                        const errorData = await response.json().catch(() => ({ error: 'Failed to create checkout' })) as any;
+                        const missing = Array.isArray(errorData?.missing) ? errorData.missing.join(', ') : '';
+                        const details = errorData?.details ? String(errorData.details) : '';
+                        const base = errorData?.error ? String(errorData.error) : 'Failed to create checkout session';
+                        const msg = [base, details && `Details: ${details}`, missing && `Missing: ${missing}`]
+                          .filter(Boolean)
+                          .join(' — ');
+                        throw new Error(msg);
                       }
 
                       const data = await response.json();
