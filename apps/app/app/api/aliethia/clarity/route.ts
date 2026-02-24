@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { aliethiaValidator } from '../../../../lib/aliethia/clarity-validator';
+import { isAliethiaEnabled } from '../../../../lib/env';
 
 /**
  * Aliethia Clarity Validation API Endpoint
@@ -10,6 +11,12 @@ import { aliethiaValidator } from '../../../../lib/aliethia/clarity-validator';
 
 export async function GET(request: NextRequest) {
   try {
+    if (!isAliethiaEnabled()) {
+      return NextResponse.json(
+        { status: 'disabled', message: 'Aliethia is currently phased off (baseline mode).' },
+        { status: 200 }
+      );
+    }
     console.log('🜂 Aliethia Clarity Validation Request');
     
     // Validate system clarity
@@ -58,6 +65,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    if (!isAliethiaEnabled()) {
+      return NextResponse.json(
+        { status: 'disabled', message: 'Aliethia is currently phased off (baseline mode).' },
+        { status: 200 }
+      );
+    }
     const body = await request.json();
     const { type, userJourney, communitySignal } = body;
     

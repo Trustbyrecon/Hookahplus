@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import type { AliethiaPolicy, AliethiaPolicyContext, VenueIdentity } from './types';
+import { isAliethiaEnabledForLounge } from '../env';
 
 const prisma = new PrismaClient();
 
@@ -46,6 +47,36 @@ async function resolveDemandSignal(ctx: AliethiaPolicyContext): Promise<{ active
 }
 
 export async function getAliethiaPolicy(ctx: AliethiaPolicyContext): Promise<AliethiaPolicy> {
+  // Cost/rollout control: default to baseline/manual mode unless explicitly enabled for this lounge.
+  if (!isAliethiaEnabledForLounge(ctx.loungeId)) {
+    return {
+      venueIdentity: 'sports_momentum',
+      tone: 'timely_minimal',
+      surfacesEnabled: {
+        upsell_strip: false,
+        vip_banner: false,
+        soft_confirm: false,
+        one_tap_confirm: false,
+        timed_assist_prompts: false,
+        batch_session_view: true,
+        memory_confidence_score: false,
+      },
+      upsell: {
+        enabled: false,
+        minMinutesBetweenPrompts: 999,
+        eligibility: {},
+      },
+      vip: { enabled: false },
+      kpis: {
+        primaryKpi: 'Baseline Validation',
+        guardrailKpis: ['Order accuracy', 'Staff friction'],
+        failureMode: 'Over-automation increases confusion or errors.',
+        throttleBackRule: 'Keep prompts suppressed until baseline + lift are validated for rollout.',
+      },
+      throttleBackRecommended: true,
+    };
+  }
+
   const venueIdentity = await resolveVenueIdentity(ctx.loungeId);
   const { demandLevel } = await resolveDemandSignal(ctx);
 

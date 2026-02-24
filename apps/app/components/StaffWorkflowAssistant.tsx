@@ -145,7 +145,8 @@ export function StaffWorkflowAssistant({
 
   // Workflow recommendations
   const workflowRecommendations = useMemo(() => {
-    const promptsEnabled = aliethiaPolicy?.surfacesEnabled?.timed_assist_prompts ?? true;
+    // Default to suppressing prompts unless policy explicitly enables them.
+    const promptsEnabled = aliethiaPolicy?.surfacesEnabled?.timed_assist_prompts ?? false;
     const throttleBack = aliethiaPolicy?.throttleBackRecommended ?? false;
     if (!promptsEnabled) return [];
 

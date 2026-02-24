@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { aliethiaBelongingValidator } from '../../../../lib/aliethia/belonging-validator';
+import { isAliethiaEnabled } from '../../../../lib/env';
 
 /**
  * Aliethia Belonging Signals Validation API Endpoint
@@ -10,6 +11,12 @@ import { aliethiaBelongingValidator } from '../../../../lib/aliethia/belonging-v
 
 export async function GET(request: NextRequest) {
   try {
+    if (!isAliethiaEnabled()) {
+      return NextResponse.json(
+        { status: 'disabled', message: 'Aliethia is currently phased off (baseline mode).' },
+        { status: 200 }
+      );
+    }
     console.log('🜂 Aliethia Belonging Signals Validation Request');
     
     // Validate belonging signals
@@ -51,6 +58,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    if (!isAliethiaEnabled()) {
+      return NextResponse.json(
+        { status: 'disabled', message: 'Aliethia is currently phased off (baseline mode).' },
+        { status: 200 }
+      );
+    }
     const body = await request.json();
     const { touchpointType, userJourney, communitySignal } = body;
     

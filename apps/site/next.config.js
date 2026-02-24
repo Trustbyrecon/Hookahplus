@@ -59,6 +59,39 @@ const nextConfig = {
       "https://hookahplus-app-prod.vercel.app";
 
     return [
+      // --- App UI surfaces live in the app deployment, not the marketing site ---
+      // These redirects prevent 404 confusion when people type app URLs on hookahplus.net.
+      {
+        source: "/launchpad",
+        destination: `${appBase}/launchpad`,
+        permanent: false,
+      },
+      {
+        source: "/staff-panel",
+        destination: `${appBase}/staff-panel`,
+        permanent: false,
+      },
+      {
+        source: "/fire-session-dashboard",
+        destination: `${appBase}/fire-session-dashboard`,
+        permanent: false,
+      },
+      {
+        source: "/analytics",
+        destination: `${appBase}/analytics`,
+        permanent: false,
+      },
+      {
+        source: "/demo/:path*",
+        destination: `${appBase}/demo/:path*`,
+        permanent: false,
+      },
+      {
+        source: "/admin/:path*",
+        destination: `${appBase}/admin/:path*`,
+        permanent: false,
+      },
+
       // Legacy "connected/error" pages used by older Square docs/scripts.
       // Keep these as redirects (GET only) to avoid 404 confusion.
       {

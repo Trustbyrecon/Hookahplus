@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { aliethiaResonanceActivator } from '../../../../lib/aliethia/resonance-activator';
+import { isAliethiaEnabled } from '../../../../lib/env';
 
 /**
  * Aliethia Resonance Activation API Endpoint
@@ -10,6 +11,12 @@ import { aliethiaResonanceActivator } from '../../../../lib/aliethia/resonance-a
 
 export async function GET(request: NextRequest) {
   try {
+    if (!isAliethiaEnabled()) {
+      return NextResponse.json(
+        { status: 'disabled', message: 'Aliethia is currently phased off (baseline mode).' },
+        { status: 200 }
+      );
+    }
     console.log('🜂 Aliethia Resonance Activation Request');
     
     // Activate system resonance
@@ -51,6 +58,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    if (!isAliethiaEnabled()) {
+      return NextResponse.json(
+        { status: 'disabled', message: 'Aliethia is currently phased off (baseline mode).' },
+        { status: 200 }
+      );
+    }
     const body = await request.json();
     const { journeyType, userJourney, communitySignal } = body;
     
