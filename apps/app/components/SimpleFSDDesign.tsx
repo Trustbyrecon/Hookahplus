@@ -1413,13 +1413,15 @@ export default function SimpleFSDDesign({
           </div>
         </div>
         
-        <button
-          onClick={handleCreateSession}
-          className="flex items-center space-x-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Start New Order</span>
-        </button>
+        {sessions.length > 0 && (
+          <button
+            onClick={handleCreateSession}
+            className="flex items-center space-x-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Start New Order</span>
+          </button>
+        )}
         {/* Test Session Button - Show only in development mode based on feature flags */}
         {!isDemoMode && featureFlags.showTestSessionButton && (
           <button
@@ -1541,15 +1543,6 @@ export default function SimpleFSDDesign({
               <span className="text-xs text-zinc-500 bg-zinc-800/50 px-3 py-1 rounded-full">{sessions.length} total</span>
             </div>
             <div className="flex flex-wrap gap-3">
-              {/* Start New Order - Always available */}
-              <button
-                onClick={() => window.dispatchEvent(new CustomEvent('openCreateSessionModal'))}
-                className="px-5 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm font-semibold shadow-lg"
-              >
-                <Plus className="w-5 h-5" />
-                <span>Start New Order</span>
-              </button>
-
               {/* Context-Aware Actions - Only show when sessions are available */}
               {(() => {
                 // Find first unpaid session
@@ -1781,9 +1774,10 @@ export default function SimpleFSDDesign({
               <p className="text-zinc-500 mb-4">Create your first session to get started</p>
               <button
                 onClick={handleCreateSession}
-                className="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
+                className="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors inline-flex items-center gap-2 font-medium"
               >
-                Start New Order
+                <Plus className="w-4 h-4" />
+                <span>Start New Order</span>
               </button>
             </div>
           ) : (

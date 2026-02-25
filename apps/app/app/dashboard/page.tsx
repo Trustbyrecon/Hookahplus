@@ -9,17 +9,36 @@ function DashboardRedirect() {
   const router = useRouter();
 
   useEffect(() => {
-    const lounge = searchParams.get('lounge');
+    // Accept legacy/alternate param names (some flows use loungeId).
+    const lounge =
+      searchParams.get('lounge') ||
+      searchParams.get('loungeId') ||
+      searchParams.get('lounge_id');
     const welcome = searchParams.get('welcome');
+    const loungeIds = searchParams.get('loungeIds');
+    const organizationId = searchParams.get('organizationId');
     
-    // Build redirect URL to fire-session-dashboard
-    const params = new URLSearchParams();
+    // Build redirect URL to fire-session-dashboard (preserve demo/workflow params)
+    const params = new URLSearchParams(searchParams.toString());
+    // Normalize lounge parameter naming
+    params.delete('loungeId');
+    params.delete('lounge_id');
     if (lounge) {
       params.set('lounge', lounge);
     }
-    if (welcome === 'true') {
-      params.set('welcome', 'true');
+    if (!lounge && loungeIds) {
+      // If we have a loungeIds list, pick the first one as the active lounge.
+      const first = loungeIds.split(',').map((s) => s.trim()).filter(Boolean)[0];
+      if (first) params.set('lounge', first);
+      params.set('loungeIds', loungeIds);
+    } else if (loungeIds) {
+      params.set('loungeIds', loungeIds);
     }
+    if (organizationId) {
+      params.set('organizationId', organizationId);
+    }
+    if (welcome === 'true') params.set('welcome', 'true');
+    else params.delete('welcome');
     
     const redirectUrl = `/fire-session-dashboard${params.toString() ? `?${params.toString()}` : ''}`;
     router.replace(redirectUrl);

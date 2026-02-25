@@ -20,7 +20,12 @@ export default function SyncIndicator({
   className = '',
   isDemoMode = false
 }: SyncIndicatorProps) {
+  const [hasMounted, setHasMounted] = useState(false);
   const [timeAgo, setTimeAgo] = useState<string>('');
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   useEffect(() => {
     const updateTimeAgo = () => {
@@ -70,14 +75,21 @@ export default function SyncIndicator({
     return <CheckCircle className="w-3 h-3" />;
   };
 
-  const isStale = lastUpdated && (new Date().getTime() - lastUpdated.getTime()) > (autoRefreshInterval * 1000);
+  // Avoid hydration mismatches from time-based and client-only loading transitions
+  const statusColor = hasMounted ? getStatusColor() : 'text-zinc-400';
+  const statusIcon = hasMounted ? getStatusIcon() : <Clock className="w-3 h-3" />;
+  const displayTimeAgo = hasMounted ? timeAgo : '—';
+  const isStale =
+    hasMounted &&
+    !!lastUpdated &&
+    new Date().getTime() - lastUpdated.getTime() > autoRefreshInterval * 1000;
 
   return (
     <div className={`flex items-center gap-2 text-xs ${className}`}>
       {!isDemoMode && (
-        <div className={`flex items-center gap-1.5 ${getStatusColor()}`}>
-          {getStatusIcon()}
-          <span>Last updated: {timeAgo}</span>
+        <div className={`flex items-center gap-1.5 ${statusColor}`}>
+          {statusIcon}
+          <span>Last updated: {displayTimeAgo}</span>
         </div>
       )}
       {isStale && !isDemoMode && (
