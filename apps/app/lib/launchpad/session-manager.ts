@@ -126,6 +126,26 @@ export async function createSetupSession(
       };
     }
 
+    // Optional prefill: POS + session rules when known (keeps onboarding short).
+    if (prefillData.pos_used) {
+      const pos = String(prefillData.pos_used).trim().toLowerCase();
+      const allowed = new Set(['square', 'clover', 'toast', 'stripe', 'none']);
+      initialProgress.data.step5 = {
+        posType: (allowed.has(pos) ? pos : 'none') as any,
+      };
+    }
+
+    if (prefillData.session_type) {
+      const raw = String(prefillData.session_type).toLowerCase();
+      const sessionType = raw.includes('tim') ? 'timed' : 'flat';
+      initialProgress.data.step3 = {
+        sessionType: sessionType as any,
+        gracePeriodMinutes: 5,
+        extensionPolicy: sessionType === 'flat' ? 'na' : 'manual',
+        compPolicyEnabled: false,
+      };
+    }
+
     // Stripe provisioning marker (kept separate from step payloads)
     if (prefillData.tier || prefillData.stripe_checkout_session_id) {
       initialProgress.data.billing = {

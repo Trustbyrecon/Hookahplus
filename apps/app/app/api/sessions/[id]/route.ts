@@ -2,6 +2,35 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { convertPrismaSessionToFireSession } from '@/lib/session-utils-prisma';
 
+async function getCodigoMemberDisplay(memberId: string): Promise<{
+  memberId: string;
+  firstName?: string;
+  nickname?: string | null;
+} | null> {
+  const hid = (memberId || '').trim();
+  if (!hid) return null;
+
+  try {
+    const prefs = await prisma.networkPreference.findUnique({
+      where: { hid },
+      select: { devicePrefs: true },
+    });
+    const codigo = (prefs?.devicePrefs as any)?.codigo;
+    if (!codigo || typeof codigo !== 'object') return { memberId: hid };
+
+    const firstName = typeof codigo.firstName === 'string' ? codigo.firstName : undefined;
+    const nickname = typeof codigo.nickname === 'string' ? codigo.nickname : null;
+
+    return {
+      memberId: hid,
+      ...(firstName ? { firstName } : {}),
+      nickname,
+    };
+  } catch {
+    return { memberId: hid };
+  }
+}
+
 // CORS headers helper - accepts request to get origin
 function getCorsHeaders(req?: NextRequest) {
   // Allow requests from site build, app build, or guest build
@@ -158,6 +187,7 @@ export async function GET(
           sessionStateV1: true,
           paused: true,
           tenantId: true,
+          hid: true,
           stage: true,
           action: true,
           participants: {
@@ -242,9 +272,15 @@ export async function GET(
       // The session query already excludes notes relation, but we double-check here
       const { notes, ...sessionWithoutNotes } = fireSession as any;
 
+      const member =
+        session?.loungeId === 'CODIGO' && typeof (session as any)?.hid === 'string' && (session as any).hid.trim()
+          ? await getCodigoMemberDisplay((session as any).hid)
+          : null;
+
       return NextResponse.json({
         success: true,
         ...sessionWithoutNotes, // fireSession already includes 'id', but excludes notes
+        member,
         // Also include raw fields for backward compatibility
         table_id: session.tableId,
         customer_name: session.customerRef,

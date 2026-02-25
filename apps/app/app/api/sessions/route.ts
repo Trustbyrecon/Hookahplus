@@ -39,6 +39,36 @@ import { resolveHID } from '../../../lib/hid/resolver';
 import { syncSessionToNetwork } from '../../../lib/profiles/network';
 import { buildIdentityKey, resolveSessionParticipant } from '../../../lib/session/participant-resolver';
 
+async function getCodigoMemberDisplay(memberId: string): Promise<{
+  memberId: string;
+  firstName?: string;
+  nickname?: string | null;
+} | null> {
+  const hid = (memberId || '').trim();
+  if (!hid) return null;
+
+  try {
+    const prefs = await prisma.networkPreference.findUnique({
+      where: { hid },
+      select: { devicePrefs: true },
+    });
+
+    const codigo = (prefs?.devicePrefs as any)?.codigo;
+    if (!codigo || typeof codigo !== 'object') return { memberId: hid };
+
+    const firstName = typeof codigo.firstName === 'string' ? codigo.firstName : undefined;
+    const nickname = typeof codigo.nickname === 'string' ? codigo.nickname : null;
+
+    return {
+      memberId: hid,
+      ...(firstName ? { firstName } : {}),
+      nickname,
+    };
+  } catch {
+    return { memberId: hid };
+  }
+}
+
 /**
  * Handle session settlement when closing
  * Calculates final charges, reconciles payments, and triggers post-close workflows
@@ -790,6 +820,7 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
     if (hasCanonicalResolverInputs) {
       const loungeId = String(body.loungeId).trim();
       const tableId = String(body.tableId).trim();
+      const memberId = typeof body.memberId === 'string' ? body.memberId.trim() : '';
       const rawIdentity =
         String(
           body.identityToken ||
@@ -840,13 +871,27 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
         );
       }
 
+      if (memberId) {
+        try {
+          await prisma.session.update({
+            where: { id: resolved.sessionId },
+            data: { hid: memberId },
+          });
+          (session as any).hid = memberId;
+        } catch {
+          // Non-blocking: HID link is best-effort
+        }
+      }
+
       const fireSession = convertPrismaSessionToFireSession(session as any);
+      const member = memberId ? await getCodigoMemberDisplay(memberId) : null;
       return NextResponse.json(
         {
           success: true,
           mode: resolved.mode,
           participantId: resolved.participantId,
           session: fireSession,
+          member,
           message:
             resolved.mode === 'create'
               ? 'Session created successfully'
@@ -906,6 +951,7 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
       tableId: normalizeString(body.tableId),
       customerName: normalizeString(body.customerName),
       customerPhone: body.customerPhone ? String(body.customerPhone).trim() : null,
+      memberId: normalizeString(body.memberId) || null,
       source: sourceValue,
       flavorMix: flavorArr,
       notes: body.notes ? String(body.notes).trim() : null,
@@ -1371,6 +1417,7 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
         flavor: finalFlavor,
         flavorMix: finalFlavorMix,
         loungeId: finalLoungeId,
+        hid: data.memberId || null,
         priceCents: finalPriceCents,
         // sessionType: sessionPricingType, // Commented out - column may not exist
         assignedBOHId: data.assignedBoh || null,
@@ -1407,7 +1454,7 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
               INSERT INTO "Session" (
                 id, "externalRef", source, "trustSignature", "tableId", 
                 "customerRef", "customerPhone", flavor, "flavorMix", 
-                "loungeId", "priceCents", state, 
+                "loungeId", "hid", "priceCents", state, 
                 "assignedBOHId", "assignedFOHId", "tableNotes", 
                 "durationSecs", "paymentStatus", 
                 "createdAt", "updatedAt"
@@ -1423,6 +1470,7 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
                 ${escapeSql(finalFlavor || 'Custom Mix')},
                 ${escapeSql(finalFlavorMix || null)},
                 ${escapeSql(finalLoungeId)},
+                ${escapeSql(data.memberId || null)},
                 ${escapeSql(finalPriceCents)},
                 ${escapeSql('PENDING')},
                 ${escapeSql(data.assignedBoh || null)},
@@ -1435,7 +1483,7 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
               )
               RETURNING id, "externalRef", source, state, "tableId", "customerRef", "customerPhone", 
                         flavor, "flavorMix", "loungeId", "priceCents", "assignedBOHId", "assignedFOHId", 
-                        "tableNotes", "durationSecs", "paymentStatus", "createdAt", "updatedAt"
+                        "tableNotes", "durationSecs", "paymentStatus", "createdAt", "updatedAt", "hid"
             `) as any[];
             
             if (insertResult && insertResult.length > 0) {
@@ -1525,7 +1573,7 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
 
         // Moat: best-effort HID resolution + network session sync (non-blocking)
         // Never log raw PII here. HID itself is safe; phone/email are not.
-        if (!isDemoMode && (data.customerPhone || body?.customerEmail)) {
+        if (!isDemoMode && !data.memberId && (data.customerPhone || body?.customerEmail)) {
           try {
             const customerEmail =
               body?.customerEmail && typeof body.customerEmail === 'string'
@@ -1588,11 +1636,13 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
 
         // Return with business logic metadata (preserve existing format)
         // Include session ID at top level for easier extraction by clients
+        const member = data.memberId ? await getCodigoMemberDisplay(data.memberId) : null;
         return NextResponse.json({ 
           success: true, 
           id: fireSession.id, // Top-level ID for easy extraction
           sessionId: fireSession.id, // Alternative key for compatibility
           session: fireSession,
+          member,
           message: 'Session created successfully',
           nextActions: ['CLAIM_PREP', 'PUT_ON_HOLD'],
           businessLogic: 'New session created - BOH can claim prep or put on hold'

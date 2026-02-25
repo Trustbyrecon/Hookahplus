@@ -84,7 +84,16 @@ function LaunchPadPageContent() {
         }
 
         // Create new session
-        const prefillData = urlSource === 'manychat' ? {
+        const context = (searchParams.get('context') || '').trim().toLowerCase();
+        const prefillData =
+          context === 'codigo'
+            ? {
+                lounge_name: 'CODIGO (Darvish Kitchen)',
+                pos_used: 'toast',
+                // Single-location pilot: keep multi-location OFF in LaunchPad for now.
+              }
+            : urlSource === 'manychat'
+              ? {
           subscriber_id: searchParams.get('subscriber_id'),
           instagram_username: searchParams.get('instagram_username'),
           custom_fields: {
@@ -96,7 +105,8 @@ function LaunchPadPageContent() {
             price_range: searchParams.get('price_range'),
             top_5_flavors: searchParams.get('top_5_flavors'),
           },
-        } : undefined;
+        }
+              : undefined;
 
         const response = await fetch('/api/launchpad/session', {
           method: 'POST',
