@@ -1323,6 +1323,23 @@ model NetworkPIILink {
   @@map("network_pii_links")
 }
 
+// Apple Wallet (PassKit) device registrations for pass updates.
+// Stored server-side so devices can poll for updated passes and receive push updates later.
+model PasskitRegistration {
+  id                    String   @id @default(cuid())
+  passTypeIdentifier    String   @map("pass_type_identifier")
+  serialNumber          String   @map("serial_number")
+  deviceLibraryIdentifier String @map("device_library_identifier")
+  pushToken             String   @map("push_token")
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([deviceLibraryIdentifier, passTypeIdentifier, serialNumber], map: "idx_passkit_reg_unique")
+  @@index([serialNumber], map: "idx_passkit_reg_serial")
+  @@index([deviceLibraryIdentifier], map: "idx_passkit_reg_device")
+  @@map("passkit_registrations")
+}
+
 // LaunchPad SetupSession - Anonymous onboarding sessions
 model SetupSession {
   id              String    @id @default(cuid())

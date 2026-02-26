@@ -88,7 +88,15 @@ export async function middleware(request: NextRequest) {
     // CODIGO guest flows must be public (used by `/codigo/*` pages)
     '/api/codigo/join',
     '/api/codigo/profile',
+    '/api/codigo/consent',
+    '/api/codigo/data/export',
+    '/api/codigo/data/delete',
     '/api/codigo/wallet-card',
+    '/api/codigo/wallet-pass',
+    // Apple Wallet web service endpoints (authenticated via ApplePass token, not Supabase)
+    '/api/pkpass',
+    // HID resolution is used by CODIGO privacy page
+    '/api/hid/resolve',
     '/api/preorder/calculate-price', // Pre-order price calculation (public for QR access)
     '/api/test-session', // Test endpoints for development
     '/api/test-sentry', // Sentry test endpoint (for testing error tracking)

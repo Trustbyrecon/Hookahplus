@@ -133,13 +133,20 @@ export default function CodigoJoinPage() {
                 </div>
                 <div className="text-xs text-zinc-500 break-all">memberId: {memberId}</div>
               </CardContent>
-              <CardFooter className="flex gap-3">
+              <CardFooter className="flex flex-col gap-3 sm:flex-row">
                 <Button asChild className="w-full">
+                  <a
+                    href={`/api/codigo/wallet-pass?memberId=${encodeURIComponent(memberId)}`}
+                  >
+                    Add to Wallet
+                  </a>
+                </Button>
+                <Button asChild variant="secondary" className="w-full">
                   <a
                     href={`/api/codigo/wallet-card?memberId=${encodeURIComponent(memberId)}`}
                     download
                   >
-                    Add to Wallet
+                    Download QR
                   </a>
                 </Button>
                 <Button asChild variant="secondary" className="w-full">
