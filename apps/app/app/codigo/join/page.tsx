@@ -129,26 +129,11 @@ export default function CodigoJoinPage() {
               <CardContent className="space-y-3">
                 <div className="text-lg font-semibold">You’re in.</div>
                 <div className="text-sm text-zinc-300">
-                  Your member ID is ready. Add your wallet card when available.
+                  Your member ID is ready.
                 </div>
                 <div className="text-xs text-zinc-500 break-all">memberId: {memberId}</div>
               </CardContent>
-              <CardFooter className="flex flex-col gap-3 sm:flex-row">
-                <Button asChild className="w-full">
-                  <a
-                    href={`/api/codigo/wallet-pass?memberId=${encodeURIComponent(memberId)}`}
-                  >
-                    Add to Wallet
-                  </a>
-                </Button>
-                <Button asChild variant="secondary" className="w-full">
-                  <a
-                    href={`/api/codigo/wallet-card?memberId=${encodeURIComponent(memberId)}`}
-                    download
-                  >
-                    Download QR
-                  </a>
-                </Button>
+              <CardFooter>
                 <Button asChild variant="secondary" className="w-full">
                   <a href="/codigo/privacy">Privacy</a>
                 </Button>
