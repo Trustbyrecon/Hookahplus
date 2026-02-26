@@ -85,6 +85,10 @@ export async function middleware(request: NextRequest) {
     '/api/memberships', // Allow membership creation during signup (uses service role internally)
     '/api/lounges', // Allow lounge list access for QR generator
     '/api/qr-generator', // Allow QR generator API access
+    // CODIGO guest flows must be public (used by `/codigo/*` pages)
+    '/api/codigo/join',
+    '/api/codigo/profile',
+    '/api/codigo/wallet-card',
     '/api/preorder/calculate-price', // Pre-order price calculation (public for QR access)
     '/api/test-session', // Test endpoints for development
     '/api/test-sentry', // Sentry test endpoint (for testing error tracking)
