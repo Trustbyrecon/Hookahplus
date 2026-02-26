@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../../../../../lib/db';
-import { computePassAuthToken, parseApplePassAuthorizationHeader } from '../../../../../../../../lib/passkit/auth';
-import { getCodigoPassLastUpdatedAt } from '../../../../../../../../lib/passkit/last-updated';
-import { getPasskitConfig, requirePassTypeIdentifierOrThrow } from '../../../../../../../../lib/passkit/webservice';
+import { prisma } from '@/lib/db';
+import { computePassAuthToken, parseApplePassAuthorizationHeader } from '@/lib/passkit/auth';
+import { getCodigoPassLastUpdatedAt } from '@/lib/passkit/last-updated';
+import { getPasskitConfig, requirePassTypeIdentifierOrThrow } from '@/lib/passkit/webservice';
 
 function parseUpdatedSince(value: string | null): Date | null {
   if (!value) return null;

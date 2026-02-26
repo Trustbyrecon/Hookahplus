@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateCodigoPkPass } from '../../../../../../../lib/passkit/codigo-pass';
-import { getCodigoPassLastUpdatedAt } from '../../../../../../../lib/passkit/last-updated';
-import { assertApplePassAuthOrThrow, requirePassTypeIdentifierOrThrow } from '../../../../../../../lib/passkit/webservice';
+import { generateCodigoPkPass } from '@/lib/passkit/codigo-pass';
+import { getCodigoPassLastUpdatedAt } from '@/lib/passkit/last-updated';
+import { assertApplePassAuthOrThrow, requirePassTypeIdentifierOrThrow } from '@/lib/passkit/webservice';
 
 function httpDate(d: Date): string {
   return d.toUTCString();

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateCodigoPkPass } from '../../../../../lib/passkit/codigo-pass';
+import { generateCodigoPkPass } from '@/lib/passkit/codigo-pass';
 
 export async function GET(req: NextRequest) {
   try {

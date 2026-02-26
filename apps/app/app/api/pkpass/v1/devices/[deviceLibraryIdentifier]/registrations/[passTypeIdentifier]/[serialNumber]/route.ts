@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../../../../../lib/db';
-import { assertApplePassAuthOrThrow, requirePassTypeIdentifierOrThrow } from '../../../../../../../../lib/passkit/webservice';
+import { prisma } from '@/lib/db';
+import { assertApplePassAuthOrThrow, requirePassTypeIdentifierOrThrow } from '@/lib/passkit/webservice';
 
 async function upsertRegistration(args: {
   deviceLibraryIdentifier: string;
