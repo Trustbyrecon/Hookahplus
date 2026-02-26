@@ -6,6 +6,7 @@ import { TableSelector } from './TableSelector';
 import { TableType } from '../lib/tableTypes';
 import FlavorWheelSelector from './FlavorWheelSelector';
 import type { FireSession } from '../types/enhancedSession';
+import { loadProgressLocal } from '../lib/launchpad/progress-persistence';
 
 interface CreateSessionModalProps {
   isOpen: boolean;
@@ -129,8 +130,37 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
 
   // Load LaunchPad flavors, presets, and base price from config
   useEffect(() => {
-    if (loungeId && !isDemoMode) {
-      const loadLaunchpadData = async () => {
+    const applyBasePrice = (basePriceDollars: number) => {
+      if (!Number.isFinite(basePriceDollars) || basePriceDollars <= 0) return;
+      setLaunchpadBasePrice(basePriceDollars);
+      setFormData((prev) => ({
+        ...prev,
+        basePrice: basePriceDollars,
+        amount: calculateTotalAmount(
+          prev.pricingModel,
+          prev.timerDuration,
+          prev.flavorMixPrice,
+          basePriceDollars,
+          selectedTable?.priceMultiplier || 1
+        ),
+      }));
+    };
+
+    const loadLaunchpadFromLocalProgress = () => {
+      try {
+        const local = loadProgressLocal();
+        const cents = (local as any)?.data?.step1?.baseSessionPrice;
+        const basePriceDollars =
+          typeof cents === 'number' && cents > 0 ? cents / 100 : null;
+        if (basePriceDollars != null) applyBasePrice(basePriceDollars);
+      } catch (e) {
+        // non-blocking
+      }
+    };
+
+    const loadLaunchpadData = async () => {
+      // First attempt: lounge config endpoint (if we have a loungeId)
+      if (loungeId) {
         try {
           const response = await fetch(`/api/lounges/${loungeId}/config`);
           if (response.ok) {
@@ -139,35 +169,10 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
               // Load base price (from pricing rules or config data)
               if (data.config.baseSessionPrice) {
                 // baseSessionPrice is in cents, convert to dollars
-                const basePriceDollars = data.config.baseSessionPrice / 100;
-                setLaunchpadBasePrice(basePriceDollars);
-                // Update form data with LaunchPad base price
-                setFormData(prev => ({
-                  ...prev,
-                  basePrice: basePriceDollars,
-                  amount: calculateTotalAmount(
-                    prev.pricingModel,
-                    prev.timerDuration,
-                    prev.flavorMixPrice,
-                    basePriceDollars,
-                    selectedTable?.priceMultiplier || 1
-                  )
-                }));
+                applyBasePrice(data.config.baseSessionPrice / 100);
               } else if (data.config.configData?.base_session_price) {
                 // Fallback to configData if pricing rules don't have it
-                const basePriceDollars = data.config.configData.base_session_price;
-                setLaunchpadBasePrice(basePriceDollars);
-                setFormData(prev => ({
-                  ...prev,
-                  basePrice: basePriceDollars,
-                  amount: calculateTotalAmount(
-                    prev.pricingModel,
-                    prev.timerDuration,
-                    prev.flavorMixPrice,
-                    basePriceDollars,
-                    selectedTable?.priceMultiplier || 1
-                  )
-                }));
+                applyBasePrice(data.config.configData.base_session_price);
               }
 
               const configData = data.config.configData;
@@ -176,7 +181,7 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
                 if (configData.flavors) {
                   const allFlavors = [
                     ...(configData.flavors.standard || []).map((f: any) => f.name),
-                    ...(configData.flavors.premium || []).map((f: any) => f.name)
+                    ...(configData.flavors.premium || []).map((f: any) => f.name),
                   ];
                   setLaunchpadFlavors(allFlavors);
                 }
@@ -185,26 +190,31 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
                 if (configData.common_mixes && configData.common_mixes.length > 0) {
                   const presets = configData.common_mixes.map((mix: string, idx: number) => {
                     // Parse mix string (e.g., "Double Apple + Mint" or "Mango, Strawberry")
-                    const flavors = mix.split(/[+,]/).map(f => f.trim()).filter(Boolean);
+                    const flavors = mix.split(/[+,]/).map((f) => f.trim()).filter(Boolean);
                     return {
                       id: `launchpad-preset-${idx}`,
                       name: mix,
                       flavors: flavors,
-                      description: `LaunchPad preset: ${mix}`
+                      description: `LaunchPad preset: ${mix}`,
                     };
                   });
                   setLaunchpadPresets(presets);
                 }
               }
             }
+            return;
           }
         } catch (error) {
-          console.error('Error loading LaunchPad data:', error);
+          console.error('Error loading LaunchPad lounge config:', error);
         }
-      };
-      loadLaunchpadData();
-    }
-  }, [loungeId, isDemoMode, selectedTable]);
+      }
+
+      // Second attempt: LaunchPad progress stored locally (works in demo/offline)
+      loadLaunchpadFromLocalProgress();
+    };
+
+    loadLaunchpadData();
+  }, [loungeId, selectedTable]);
 
 
   const handleInputChange = (field: keyof SessionData, value: string | number) => {
@@ -778,7 +788,7 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
                     }`}
                   >
                     <div className="font-medium">Flat Fee</div>
-                    <div className="text-sm text-zinc-400">$30.00 fixed</div>
+                    <div className="text-sm text-zinc-400">${formData.basePrice.toFixed(2)} fixed</div>
                   </button>
                   <button
                     type="button"
@@ -795,7 +805,7 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
                 </div>
                 <div className="mt-2 text-xs text-zinc-400">
                   {formData.pricingModel === 'flat' 
-                    ? 'Fixed $30.00 + flavor add-ons' 
+                    ? `Fixed $${formData.basePrice.toFixed(2)} + flavor add-ons`
                     : `$${(formData.timerDuration * 0.50).toFixed(2)} for ${formData.timerDuration}min + flavor add-ons`
                   }
                 </div>

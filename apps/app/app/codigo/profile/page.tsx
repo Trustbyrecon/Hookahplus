@@ -11,6 +11,7 @@ export default function CodigoProfilePage() {
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [instagramHandle, setInstagramHandle] = useState('');
+  const [portabilityOptIn, setPortabilityOptIn] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -42,6 +43,7 @@ export default function CodigoProfilePage() {
           phone: phone.trim() || null,
           email: email.trim() || null,
           instagramHandle: instagramHandle.trim() || null,
+          portabilityOptIn,
         }),
       });
       const data = await resp.json().catch(() => ({}));
@@ -111,6 +113,23 @@ export default function CodigoProfilePage() {
                 />
               </div>
 
+              <div className="rounded-md border border-zinc-700 bg-zinc-950/40 px-3 py-2">
+                <label className="flex items-start gap-3 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={portabilityOptIn}
+                    onChange={(e) => setPortabilityOptIn(e.target.checked)}
+                    className="mt-1 h-4 w-4 accent-teal-500"
+                  />
+                  <div>
+                    <div className="text-sm text-zinc-100">Enable cross-lounge recognition (opt-in)</div>
+                    <div className="text-xs text-zinc-400">
+                      If you opt in, Hookah+ venues can remember you where supported. You stay in control.
+                    </div>
+                  </div>
+                </label>
+              </div>
+
               {success && (
                 <div className="text-sm text-teal-200 bg-teal-950/30 border border-teal-800/50 rounded-md px-3 py-2">
                   Profile updated.
@@ -130,6 +149,12 @@ export default function CodigoProfilePage() {
               </Button>
             </CardFooter>
           </form>
+
+          <div className="px-6 pb-6">
+            <a href="/codigo/privacy" className="text-xs text-zinc-400 hover:text-zinc-200 underline">
+              Privacy & portability controls
+            </a>
+          </div>
         </Card>
       </div>
     </div>

@@ -10,6 +10,7 @@ const BodySchema = z
     phone: z.string().trim().max(80).optional().nullable(),
     email: z.string().trim().max(120).optional().nullable(),
     instagramHandle: z.string().trim().max(60).optional().nullable(),
+    portabilityOptIn: z.boolean().optional(),
   })
   .refine((v) => Boolean((v.phone || '').trim()) || Boolean((v.email || '').trim()), {
     message: 'phone or email is required',
@@ -67,11 +68,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { memberId, phone, email, instagramHandle } = parsed.data;
+    const { memberId, phone, email, instagramHandle, portabilityOptIn } = parsed.data;
 
     const profile = await prisma.networkProfile.findUnique({
       where: { hid: memberId },
-      select: { hid: true },
+      select: { hid: true, consentLevel: true },
     });
     if (!profile) {
       return NextResponse.json({ error: 'Member not found' }, { status: 404 });
@@ -112,6 +113,24 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Consent / portability:
+    // - shadow: default (unclaimed)
+    // - claimed: provided an auth anchor (phone/email) but did not opt into portability
+    // - network_shared: explicitly opted into portability across lounges
+    if (typeof portabilityOptIn === 'boolean') {
+      const nextConsentLevel = portabilityOptIn ? 'network_shared' : 'claimed';
+      await prisma.networkProfile.update({
+        where: { hid: memberId },
+        data: { consentLevel: nextConsentLevel },
+      });
+    } else if (profile.consentLevel === 'shadow') {
+      // If they completed profile, treat as "claimed" unless they explicitly opted in.
+      await prisma.networkProfile.update({
+        where: { hid: memberId },
+        data: { consentLevel: 'claimed' },
+      });
+    }
+
     if (instagramHandle && instagramHandle.trim()) {
       const existingPrefs = await prisma.networkPreference.findUnique({
         where: { hid: memberId },
@@ -145,6 +164,9 @@ export async function POST(req: NextRequest) {
           phone: Boolean(phoneHash),
           email: Boolean(emailHash),
           instagramHandle: Boolean(instagramHandle && instagramHandle.trim()),
+        },
+        portability: {
+          optedIn: portabilityOptIn === true,
         },
       },
       { status: 200 }

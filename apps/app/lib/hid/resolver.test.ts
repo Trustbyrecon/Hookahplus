@@ -39,6 +39,8 @@ import { resolveHID } from './resolver';
 describe('resolveHID', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Ensure transactional code paths execute in tests.
+    prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock as any));
   });
 
   it('returns existing profile when phone matches an existing PII link', async () => {

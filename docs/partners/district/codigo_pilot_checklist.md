@@ -27,9 +27,21 @@
 ## Verify profile completion (optional)
 - Open `/codigo/profile`
 - Submit phone OR email (one required), optional Instagram handle
+- Toggle **cross-lounge recognition (opt-in)** if offered (portability consent)
 - Confirm API returns success:
   - `POST /api/codigo/profile`
 - Confirm profile completion rate changes in KPI view after at least one completed profile exists.
+
+## Verify portability consent + scope (institutional memory)
+- Open `/codigo/privacy` to view/update portability, export, delete
+- After profile completion, resolve HID profile:
+  - `GET /api/hid/resolve?hid=<memberId>&scope=network`
+- Confirm `consentLevel` is:
+  - `claimed` when profile is completed without portability opt-in
+  - `network_shared` when portability opt-in is enabled
+- (If testing multi-lounge) Verify lounge isolation vs network scope:
+  - `GET /api/profiles/<memberId>?loungeId=<A>&scope=lounge` shows lounge A + network-scoped notes only
+  - `GET /api/profiles/<memberId>?loungeId=<B>&scope=lounge` does not leak lounge A–only notes
 
 ## Verify KPI endpoint + admin view
 - Call:

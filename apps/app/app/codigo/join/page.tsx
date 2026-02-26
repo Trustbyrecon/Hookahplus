@@ -142,6 +142,9 @@ export default function CodigoJoinPage() {
                     Add to Wallet
                   </a>
                 </Button>
+                <Button asChild variant="secondary" className="w-full">
+                  <a href="/codigo/privacy">Privacy</a>
+                </Button>
               </CardFooter>
             </>
           )}

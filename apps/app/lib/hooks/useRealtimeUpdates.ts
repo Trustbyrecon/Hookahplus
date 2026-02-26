@@ -149,18 +149,28 @@ export function useWebSocketUpdates<T = any>({
   useEffect(() => {
     if (typeof window === 'undefined') return; // Server-side rendering
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
-    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || `${protocol}//${host}/api/ws`;
-    
-    wsServiceRef.current = WebSocketService.getInstance(wsUrl);
+    const wsUrlRaw = (process.env.NEXT_PUBLIC_WS_URL || '').trim();
+    const wsEnabled = wsUrlRaw.startsWith('ws://') || wsUrlRaw.startsWith('wss://');
+
+    // Next.js route handlers don't provide true WS upgrades by default (our `/api/ws` is a JSON placeholder).
+    // Only enable WebSocket mode when explicitly configured to a real ws:// or wss:// endpoint.
+    if (!wsEnabled) {
+      wsServiceRef.current = null;
+      setIsConnected(false);
+      if (fallbackToPolling && pollingEndpoint) {
+        setUsePolling(true);
+      }
+      return;
+    }
+
+    wsServiceRef.current = WebSocketService.getInstance(wsUrlRaw);
 
     return () => {
       if (subscriptionIdRef.current && wsServiceRef.current) {
         wsServiceRef.current.unsubscribe(subscriptionIdRef.current);
       }
     };
-  }, []);
+  }, [fallbackToPolling, pollingEndpoint]);
 
   // Set up WebSocket connection and subscription
   useEffect(() => {
@@ -296,7 +306,9 @@ export function useUnifiedRealtimeUpdates<T = any>({
   onError?: (error: Error) => void;
   preferWebSocket?: boolean;
 }) {
-  const [useWebSocket, setUseWebSocket] = useState(preferWebSocket);
+  const wsUrlRaw = (process.env.NEXT_PUBLIC_WS_URL || '').trim();
+  const wsEnabled = wsUrlRaw.startsWith('ws://') || wsUrlRaw.startsWith('wss://');
+  const [useWebSocket, setUseWebSocket] = useState(preferWebSocket && wsEnabled);
   
   // Try WebSocket first if enabled and channel provided
   const wsResult = useWebSocketUpdates<T>({
@@ -315,11 +327,17 @@ export function useUnifiedRealtimeUpdates<T = any>({
     pollingInterval: interval,
   });
 
+  useEffect(() => {
+    if (wsResult.usePolling) {
+      setUseWebSocket(false);
+    }
+  }, [wsResult.usePolling]);
+
   // Fallback to polling
   const pollingResult = useRealtimeUpdates<T>({
     endpoint,
     interval,
-    enabled: enabled && !useWebSocket,
+    enabled: enabled && (!useWebSocket || wsResult.usePolling),
     onUpdate,
     onError,
   });

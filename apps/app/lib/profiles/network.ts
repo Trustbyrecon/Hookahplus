@@ -118,13 +118,12 @@ export async function getNetworkProfile(
       badges: {
         orderBy: { awardedAt: 'desc' },
       },
+      // Fetch both lounge-local and network notes; we enforce portability
+      // via post-filter based on `consentLevel` below.
       notes: loungeId
         ? {
             where: {
-              OR: [
-                { shareScope: 'network' },
-                { loungeId },
-              ],
+              OR: [{ loungeId }, { shareScope: 'network' }],
             },
           }
         : {
@@ -135,27 +134,39 @@ export async function getNetworkProfile(
 
   if (!profile) return null;
 
+  const canShareNetworkMemory = profile.consentLevel === 'network_shared';
+  const isNetworkScope = !loungeId;
+
   return {
     hid: profile.hid,
-    preferences: profile.preferences
-      ? {
-          topFlavors: (profile.preferences.topFlavors as any) || undefined,
-          devicePrefs: (profile.preferences.devicePrefs as any) || undefined,
-        }
+    preferences: !isNetworkScope || canShareNetworkMemory
+      ? profile.preferences
+        ? {
+            topFlavors: (profile.preferences.topFlavors as any) || undefined,
+            devicePrefs: (profile.preferences.devicePrefs as any) || undefined,
+          }
+        : undefined
       : undefined,
-    badges: profile.badges.map((b) => ({
-      badgeCode: b.badgeCode,
-      meta: (b.meta as any) || undefined,
-    })),
-    notes: profile.notes.map((n) => ({
-      noteId: n.noteId,
-      loungeId: n.loungeId,
-      shareScope: n.shareScope as 'lounge' | 'network',
-      noteText: n.noteText,
-      staffId: n.staffId || null,
-      tags: (n.tags as any) || undefined,
-      createdAt: n.createdAt?.toISOString?.() || undefined,
-    })),
+    badges: !isNetworkScope || canShareNetworkMemory
+      ? profile.badges.map((b) => ({
+          badgeCode: b.badgeCode,
+          meta: (b.meta as any) || undefined,
+        }))
+      : [],
+    notes: profile.notes
+      // Never leak network-scoped notes unless guest opted into portability.
+      .filter((n) => n.shareScope !== 'network' || canShareNetworkMemory)
+      // If no lounge context was provided and they're not opted in, return no notes at all.
+      .filter((n) => (loungeId ? true : canShareNetworkMemory))
+      .map((n) => ({
+        noteId: n.noteId,
+        loungeId: n.loungeId,
+        shareScope: n.shareScope as 'lounge' | 'network',
+        noteText: n.noteText,
+        staffId: n.staffId || null,
+        tags: (n.tags as any) || undefined,
+        createdAt: n.createdAt?.toISOString?.() || undefined,
+      })),
   };
 }
 

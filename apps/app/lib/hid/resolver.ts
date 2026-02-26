@@ -1,6 +1,6 @@
 import { prisma } from '../prisma';
 import { Prisma } from '@prisma/client';
-import { createHash, randomBytes } from 'crypto';
+import { createHash, randomBytes, randomUUID } from 'crypto';
 import { getHIDSalt } from '../env';
 
 // Salt for hashing (store in env in production)
@@ -64,24 +64,17 @@ function normalizeEmail(email: string): string {
 }
 
 /**
- * Generate deterministic HID from phone/email
+ * Generate a random HID (network root).
+ *
+ * IMPORTANT:
+ * - HID is the identity anchor, not an authentication method.
+ * - Resolution happens via hashed links (phone/email/qr/device), not by encoding PII into the HID.
  */
-function generateHID(params: { phone?: string; email?: string; qrToken?: string; deviceId?: string }): string {
-  const { phone, email, qrToken, deviceId } = params;
-  if (phone) {
-    return `HID-${hashPII(normalizePhone(phone)).substring(0, 16).toUpperCase()}`;
-  }
-  if (email) {
-    return `HID-${hashPII(normalizeEmail(email)).substring(0, 16).toUpperCase()}`;
-  }
-  if (qrToken) {
-    return `HID-${hashPII(String(qrToken).trim()).substring(0, 16).toUpperCase()}`;
-  }
-  if (deviceId) {
-    return `HID-${hashPII(String(deviceId).trim()).substring(0, 16).toUpperCase()}`;
-  }
-  // Guest/anonymous: use random bytes
-  return `HID-GUEST-${randomBytes(8).toString('hex').toUpperCase()}`;
+function generateRandomHID(): string {
+  // Prefer UUID for readability, but keep the legacy "HID-" prefix.
+  // Strip hyphens to keep a compact token.
+  const uuid = (typeof randomUUID === 'function' ? randomUUID() : randomBytes(16).toString('hex')).replace(/-/g, '');
+  return `HID-${uuid.toUpperCase()}`;
 }
 
 /**
@@ -209,50 +202,48 @@ export async function resolveHID(input: HIDResolveInput): Promise<HIDResolveResu
   const mergeCandidates = await findMergeCandidates(phone, email, deviceId);
 
   // Step 4: Create new profile
-  hid = generateHID({ phone: normalizedPhone, email: normalizedEmail, qrToken, deviceId });
-
-  // Check if HID already exists (collision handling)
-  const existingHID = await prisma.networkProfile.findUnique({
-    where: { hid },
-  });
-
-  if (existingHID) {
-    // Collision: append random suffix
-    hid = `${hid}-${randomBytes(4).toString('hex').toUpperCase()}`;
+  hid = generateRandomHID();
+  // Extremely defensive: in the unlikely event of a collision, retry a few times.
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const existing = await prisma.networkProfile.findUnique({ where: { hid } });
+    if (!existing) break;
+    hid = generateRandomHID();
   }
 
   let newProfile: any;
   try {
-    newProfile = await prisma.networkProfile.create({
-      data: {
-        hid,
-        phoneHash: normalizedPhone ? hashPII(normalizedPhone) : null,
-        emailHash: normalizedEmail ? hashPII(normalizedEmail) : null,
-        consentLevel: 'shadow', // Default: unclaimed
-      },
-      include: {
-        preferences: true,
-        badges: true,
-      },
-    });
-
-    // Create PII links (best effort, but must be idempotent under concurrency)
-    const linksToCreate: Array<{ piiType: string; piiHash: string }> = [];
-    if (normalizedPhone) linksToCreate.push({ piiType: 'phone', piiHash: hashPII(normalizedPhone) });
-    if (normalizedEmail) linksToCreate.push({ piiType: 'email', piiHash: hashPII(normalizedEmail) });
-    if (qrToken) linksToCreate.push({ piiType: 'qr_token', piiHash: hashPII(String(qrToken).trim()) });
-    if (deviceId) linksToCreate.push({ piiType: 'device_id', piiHash: hashPII(String(deviceId).trim()) });
-
-    for (const link of linksToCreate) {
-      await prisma.networkPIILink.create({
+    // Create profile + hashed resolution links atomically so a new HID is always resolvable.
+    await prisma.$transaction(async (tx) => {
+      newProfile = await tx.networkProfile.create({
         data: {
           hid,
-          piiType: link.piiType,
-          piiHash: link.piiHash,
-          verified: false,
+          phoneHash: normalizedPhone ? hashPII(normalizedPhone) : null,
+          emailHash: normalizedEmail ? hashPII(normalizedEmail) : null,
+          consentLevel: 'shadow', // Default: unclaimed
+        },
+        include: {
+          preferences: true,
+          badges: true,
         },
       });
-    }
+
+      const linksToCreate: Array<{ piiType: string; piiHash: string }> = [];
+      if (normalizedPhone) linksToCreate.push({ piiType: 'phone', piiHash: hashPII(normalizedPhone) });
+      if (normalizedEmail) linksToCreate.push({ piiType: 'email', piiHash: hashPII(normalizedEmail) });
+      if (qrToken) linksToCreate.push({ piiType: 'qr_token', piiHash: hashPII(String(qrToken).trim()) });
+      if (deviceId) linksToCreate.push({ piiType: 'device_id', piiHash: hashPII(String(deviceId).trim()) });
+
+      for (const link of linksToCreate) {
+        await tx.networkPIILink.create({
+          data: {
+            hid,
+            piiType: link.piiType,
+            piiHash: link.piiHash,
+            verified: false,
+          },
+        });
+      }
+    });
   } catch (error: any) {
     // Likely a concurrency race on (piiType, piiHash). Re-read and return the winning profile.
     const isUniqueViolation =
