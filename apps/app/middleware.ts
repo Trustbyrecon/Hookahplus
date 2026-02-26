@@ -93,6 +93,7 @@ export async function middleware(request: NextRequest) {
     '/api/codigo/data/delete',
     '/api/codigo/wallet-card',
     '/api/codigo/wallet-pass',
+    '/api/codigo/kpis/public-summary',
     // Apple Wallet web service endpoints (authenticated via ApplePass token, not Supabase)
     '/api/pkpass',
     // HID resolution is used by CODIGO privacy page
