@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { clientClient } from '../lib/supabase-client';
-import { Shield, Mail, Loader2 } from 'lucide-react';
+import { Shield, Mail, Loader2, Crown } from 'lucide-react';
 
 interface SecureRoleSelectorProps {
   currentRole: string;
@@ -16,6 +16,7 @@ export function SecureRoleSelector({ currentRole, onRoleChange }: SecureRoleSele
   const [email, setEmail] = useState('');
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const isFounder = (userEmail || '').toLowerCase() === 'clark.dwayne@gmail.com';
 
   useEffect(() => {
     // Get current user email
@@ -111,6 +112,15 @@ export function SecureRoleSelector({ currentRole, onRoleChange }: SecureRoleSele
         <span className="text-xs text-zinc-500">
           ({selectedRole === 'admin' ? 'ADMIN' : selectedRole === 'foh' ? 'FOH' : selectedRole === 'boh' ? 'BOH' : 'MANAGER'} View)
         </span>
+        {isFounder && (
+          <span
+            className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-200"
+            title="Founder checked into the H+ Network (this session)"
+          >
+            <Crown className="h-3.5 w-3.5" />
+            H+ Network: Founder
+          </span>
+        )}
       </div>
 
       {/* Magic Link Verification Modal */}
