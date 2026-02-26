@@ -23,7 +23,9 @@ export async function GET(req: NextRequest) {
 
     const safeMember = memberId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 40) || 'member';
 
-    return new NextResponse(png, {
+    // `NextResponse` expects a Web `BodyInit` type; wrap Buffer as Uint8Array for TS compatibility.
+    const body = new Uint8Array(png);
+    return new NextResponse(body, {
       status: 200,
       headers: {
         'Content-Type': 'image/png',

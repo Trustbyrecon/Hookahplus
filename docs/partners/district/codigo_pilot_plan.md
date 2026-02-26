@@ -3,7 +3,10 @@
 ## Overview
 - **Venue**: CODIGO at Darvish Kitchen (District partner)
 - **POS reality**: Toast across ~20 revenue centers (standardized operating environment)
-- **Pilot intent**: Validate Hookah+ “above POS” surfaces that increase premium attachment and recover idle time without disrupting service. Pilot must operate in a standard browser (including Toast handheld browser).
+- **Pilot intent**: Validate Hookah+ “above POS” surfaces (powered by **H+ Passport**) that increase premium attachment and recover idle time without disrupting service. Pilot must operate in a standard browser (including Toast handheld browser).
+- **Naming (for this pilot)**:
+  - **Hookah+**: operator-facing surfaces and reporting
+  - **H+ Passport**: HID + consent-scoped portability (identity layer)
 
 ## Scope (30 days)
 - **In scope**:
@@ -20,7 +23,7 @@
 - **Above POS**: Toast remains payment + order authority.
 - **No workflow disruption**: No added steps for staff to run core service.
 - **Handheld-compatible**: Must work in the Toast handheld browser (small viewport, variable performance).
-- **Pilot isolation**: CODIGO-only surfaces and reporting (no unintended impact to other lounges).
+- **Pilot isolation**: CODIGO-only surfaces and reporting (no unintended impact to other venues).
 
 ## Phases (week-by-week)
 ### Week 1 — Baseline capture

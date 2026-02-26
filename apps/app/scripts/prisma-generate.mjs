@@ -13,8 +13,11 @@ import { spawnSync } from "node:child_process";
 const scheme = "postgre" + "sql://";
 const placeholderUser = "post" + "gres";
 
-const isCi = Boolean(process.env.CI);
 const isWin = process.platform === "win32";
+// Many local Windows environments (and some shells) set CI=true even when not running in a true CI runner.
+// Since the EPERM rename issue is Windows-specific and non-deterministic (AV/indexing/file locks),
+// we fail-open on Windows to avoid blocking local builds.
+const isCi = !isWin && Boolean(process.env.CI);
 
 if (process.env.PRISMA_GENERATE_SKIP === "1") {
   // eslint-disable-next-line no-console

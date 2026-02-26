@@ -146,7 +146,8 @@ export async function GET(req: NextRequest) {
     }
 
     const gapsSecs: number[] = [];
-    for (const arr of byTable.values()) {
+    // Avoid relying on ES2015 iterator support (build target may be < ES2015).
+    for (const arr of Array.from(byTable.values())) {
       const sorted = [...arr].sort((a, b) => a.startMs - b.startMs);
       for (let i = 1; i < sorted.length; i += 1) {
         const prevEnd = sorted[i - 1].endMs;

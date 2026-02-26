@@ -8,6 +8,7 @@
   - Reviews / case study potential
   - Must work in a browser on Toast handheld devices
 - **Positioning note**: For nightclub context, “memory” is not the wedge; prioritize operational outcomes + premium attachment.
+- **Branding note**: Lead with **Hookah+** for operator value; describe identity/portability as “powered by **H+ Passport**” (HID + consent-scoped recognition).
 - **Expectation**: CODIGO is open to a 30-day pilot / trial with clear reporting and low disruption.
 
 ## Next actions

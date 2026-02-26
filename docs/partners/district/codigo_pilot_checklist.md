@@ -1,5 +1,9 @@
 # CODIGO Pilot Checklist (E2E)
 
+## Naming (for this pilot)
+- **Hookah+**: operator-facing surfaces and reporting
+- **H+ Passport**: identity + consent + portability layer (HID)
+
 ## Deploy
 - **App**: deploy `apps/app` (Next.js app) with `DATABASE_URL` set.
 - **DB**: ensure Prisma migrations are applied for the `Session.hid` + network profile tables used by the pilot.
@@ -11,7 +15,7 @@
 - Confirm success state shows “You’re in”
 - Confirm localStorage contains:
   - `hp_codigo_device_id_v1`
-  - `hp_codigo_member_id_v1` (HID)
+  - `hp_codigo_member_id_v1` (**HID** via H+ Passport)
 
 ## Verify session linking (memberId = HID)
 - Using the returned HID (memberId), create a session via `POST /api/sessions` with JSON containing `memberId`.
@@ -27,19 +31,19 @@
 ## Verify profile completion (optional)
 - Open `/codigo/profile`
 - Submit phone OR email (one required), optional Instagram handle
-- Toggle **cross-lounge recognition (opt-in)** if offered (portability consent)
+- Toggle **cross-venue recognition (opt-in)** if offered (H+ Passport portability consent)
 - Confirm API returns success:
   - `POST /api/codigo/profile`
 - Confirm profile completion rate changes in KPI view after at least one completed profile exists.
 
 ## Verify portability consent + scope (institutional memory)
-- Open `/codigo/privacy` to view/update portability, export, delete
+- Open `/codigo/privacy` to view/update H+ Passport portability, export, delete
 - After profile completion, resolve HID profile:
   - `GET /api/hid/resolve?hid=<memberId>&scope=network`
 - Confirm `consentLevel` is:
   - `claimed` when profile is completed without portability opt-in
   - `network_shared` when portability opt-in is enabled
-- (If testing multi-lounge) Verify lounge isolation vs network scope:
+- (If testing multi-venue) Verify venue isolation vs network scope:
   - `GET /api/profiles/<memberId>?loungeId=<A>&scope=lounge` shows lounge A + network-scoped notes only
   - `GET /api/profiles/<memberId>?loungeId=<B>&scope=lounge` does not leak lounge A–only notes
 

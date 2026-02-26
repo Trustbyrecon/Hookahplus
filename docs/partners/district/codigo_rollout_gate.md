@@ -14,7 +14,7 @@
 ## Guardrails (non-negotiable)
 - **No added friction**: No staff steps required to keep service moving.
 - **No payment disruption**: Toast stays payment authority; Hookah+ stays above POS.
-- **Privacy discipline**: Collect minimum necessary data; store hashed identifiers; no raw PII in logs.
+- **Privacy discipline**: Collect minimum necessary data; store hashed identifiers; no raw PII in logs. Portability is **H+ Passport** consent-scoped (opt-in) and enforced by scope.
 - **Operational reversibility**: Pilot can be disabled without affecting core session creation.
 
 ## Decision meeting checklist (review with Mohamed)

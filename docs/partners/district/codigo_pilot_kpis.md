@@ -27,9 +27,9 @@ This pilot uses conservative, measurable KPIs. When a metric depends on data tha
 - **“Good” (30-day pilot)**: Variance becomes explainable and actionable; no regression in service speed.
 
 ## Member Capture Rate (light enrollment)
-- **Definition**: Share of sessions linked to a member identity (pilot identity) during the window.
+- **Definition**: Share of sessions linked to a member identity (**HID via H+ Passport**) during the window.
 - **Formula**: \(\#\text{sessions with memberId} \div \#\text{sessions}\)
-- **Data source**: Session identity link field (pilot member identity).
+- **Data source**: Session identity link field (pilot member identity / HID).
 - **“Good” (30-day pilot)**: 20–40% for a low-friction join flow without staff enforcement; higher if join is embedded in QR pathway.
 
 ## Profile Completion Rate
