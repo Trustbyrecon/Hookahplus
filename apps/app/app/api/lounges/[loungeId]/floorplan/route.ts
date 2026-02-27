@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../../../lib/db';
-import { hasRole } from '../../../../../../lib/auth';
+import { prisma } from '../../../../../lib/db';
+import { hasRole } from '../../../../../lib/auth';
 
 /**
  * GET /api/lounges/[loungeId]/floorplan?floorId=F3
