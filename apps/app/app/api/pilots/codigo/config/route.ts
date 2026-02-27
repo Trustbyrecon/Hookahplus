@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../../../lib/db';
-import { hasRole } from '../../../../../../lib/auth';
+import { prisma } from '../../../../../lib/db';
+import { hasRole } from '../../../../../lib/auth';
 
 const LOUNGE_ID_CODIGO = 'CODIGO';
 

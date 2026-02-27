@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../../../lib/db';
-import { hasRole } from '../../../../../../lib/auth';
+import { prisma } from '../../../../../lib/db';
+import { hasRole } from '../../../../../lib/auth';
 
 function parseDateOrNull(value: string | null): Date | null {
   if (!value) return null;
