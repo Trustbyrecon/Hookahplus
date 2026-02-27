@@ -642,12 +642,13 @@ model CampaignUsage {
 }
 
 model LoungeConfig {
-  id          String   @id @default(cuid())
-  loungeId    String   @unique @map("lounge_id")
-  configData  String   @map("config_data")
-  version     Int      @default(1)
-  effectiveAt DateTime @default(now()) @map("effective_at")
-  createdAt   DateTime @default(now()) @map("created_at")
+  id                 String   @id @default(cuid())
+  loungeId            String   @unique @map("lounge_id")
+  configData          String   @map("config_data")
+  version             Int      @default(1)
+  effectiveAt        DateTime @default(now()) @map("effective_at")
+  createdAt           DateTime @default(now()) @map("created_at")
+  softLaunchEnabled   Boolean  @default(false) @map("soft_launch_enabled")
 
   @@index([loungeId, version])
   @@map("lounge_configs")
