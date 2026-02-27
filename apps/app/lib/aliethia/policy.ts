@@ -9,23 +9,32 @@ function parseVenueIdentity(value: unknown): VenueIdentity | null {
   return null;
 }
 
-async function resolveVenueIdentity(loungeId: string): Promise<VenueIdentity> {
-  // Identity is stable and manually defined per location.
-  // We store it in the LoungeConfig JSON as `venue_identity`.
+interface LoungeConfigResolved {
+  venueIdentity: VenueIdentity;
+  softLaunchEnabled: boolean;
+}
+
+async function resolveLoungeConfig(loungeId: string): Promise<LoungeConfigResolved> {
+  // Fetch venue identity and CODIGO soft launch flag in one query.
   try {
     const cfg = await prisma.loungeConfig.findFirst({
       where: { loungeId },
       orderBy: { version: 'desc' },
-      select: { configData: true },
+      select: { configData: true, softLaunchEnabled: true },
     });
     const parsed = cfg?.configData ? JSON.parse(cfg.configData) : null;
-    const vi = parseVenueIdentity(parsed?.venue_identity);
-    if (vi) return vi;
+    const venueIdentity = parseVenueIdentity(parsed?.venue_identity) ?? 'sports_momentum';
+    const softLaunchEnabled = cfg?.softLaunchEnabled ?? false;
+    return { venueIdentity, softLaunchEnabled };
   } catch {
-    // ignore and fall back
+    return { venueIdentity: 'sports_momentum', softLaunchEnabled: false };
   }
-  // Safe default when not yet manually set.
-  return 'sports_momentum';
+}
+
+/** Returns soft launch status for a lounge. Used by staff session console banner. */
+export async function getSoftLaunchEnabled(loungeId: string): Promise<boolean> {
+  const { softLaunchEnabled } = await resolveLoungeConfig(loungeId);
+  return softLaunchEnabled;
 }
 
 async function resolveDemandSignal(ctx: AliethiaPolicyContext): Promise<{ activeSessionsLast2h: number; demandLevel: 'low' | 'medium' | 'high' }> {
@@ -77,7 +86,40 @@ export async function getAliethiaPolicy(ctx: AliethiaPolicyContext): Promise<Ali
     };
   }
 
-  const venueIdentity = await resolveVenueIdentity(ctx.loungeId);
+  const { venueIdentity, softLaunchEnabled } = await resolveLoungeConfig(ctx.loungeId);
+
+  // CODIGO Week 1: Soft launch guard — when enabled, disable all optimization/automation surfaces
+  // but allow core tracking (session start/end, premium flag, floor tagging, member linking).
+  // Remove this block after week 1.
+  if (softLaunchEnabled) {
+    return {
+      venueIdentity,
+      tone: 'timely_minimal',
+      surfacesEnabled: {
+        upsell_strip: false,
+        vip_banner: false,
+        soft_confirm: false,
+        one_tap_confirm: false,
+        timed_assist_prompts: false,
+        batch_session_view: true,
+        memory_confidence_score: false,
+      },
+      upsell: {
+        enabled: false,
+        minMinutesBetweenPrompts: 999,
+        eligibility: {},
+      },
+      vip: { enabled: false },
+      kpis: {
+        primaryKpi: 'Baseline Validation',
+        guardrailKpis: ['Order accuracy', 'Staff friction'],
+        failureMode: 'Over-automation increases confusion or errors.',
+        throttleBackRule: 'Keep prompts suppressed until baseline + lift are validated for rollout.',
+      },
+      throttleBackRecommended: true,
+    };
+  }
+
   const { demandLevel } = await resolveDemandSignal(ctx);
 
   // Defaults are intentionally conservative; call sites must still respect guardrails.

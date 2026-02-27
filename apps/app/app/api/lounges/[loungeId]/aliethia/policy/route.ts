@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAliethiaPolicy } from '../../../../../../lib/aliethia/policy';
+import { getAliethiaPolicy, getSoftLaunchEnabled } from '../../../../../../lib/aliethia/policy';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -11,6 +11,7 @@ export const dynamic = 'force-dynamic';
  * - stable venue identity (manually set in LoungeConfig.configData.venue_identity)
  * - bounded UI surfaces enablement
  * - prompt cadence + eligibility knobs
+ * - softLaunchEnabled (for staff session console banner)
  */
 export async function GET(
   _req: NextRequest,
@@ -23,8 +24,11 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'loungeId is required' }, { status: 400 });
     }
 
-    const policy = await getAliethiaPolicy({ loungeId });
-    return NextResponse.json({ success: true, loungeId, policy });
+    const [policy, softLaunchEnabled] = await Promise.all([
+      getAliethiaPolicy({ loungeId }),
+      getSoftLaunchEnabled(loungeId),
+    ]);
+    return NextResponse.json({ success: true, loungeId, policy, softLaunchEnabled });
   } catch (error: any) {
     console.error('[Aliethia Policy] Error:', error);
     return NextResponse.json(

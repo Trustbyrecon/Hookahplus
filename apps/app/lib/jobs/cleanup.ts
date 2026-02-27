@@ -9,6 +9,72 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+/** CODIGO Week 1: Max hours a session can stay ACTIVE before flagged as dangling (soft-launch lounges only). */
+const DANGLING_SESSION_THRESHOLD_HOURS = 4;
+
+/**
+ * Close dangling sessions for soft-launch lounges (CODIGO Week 1 data quality).
+ * Sessions ACTIVE for > threshold hours in lounges with softLaunchEnabled are auto-closed
+ * with edgeCase=DANGLING_SESSION and edgeNote for reporting.
+ */
+export async function closeDanglingSessionsForSoftLaunch(): Promise<{
+  closed: number;
+  errors: number;
+}> {
+  let closed = 0;
+  let errors = 0;
+
+  try {
+    const softLaunchLoungeIds = await prisma.loungeConfig.findMany({
+      where: { softLaunchEnabled: true },
+      select: { loungeId: true },
+    });
+
+    const loungeIds = softLaunchLoungeIds.map((c) => c.loungeId);
+    if (loungeIds.length === 0) {
+      return { closed: 0, errors: 0 };
+    }
+
+    const now = new Date();
+    const threshold = new Date(now.getTime() - DANGLING_SESSION_THRESHOLD_HOURS * 60 * 60 * 1000);
+
+    const danglingSessions = await prisma.session.findMany({
+      where: {
+        state: 'ACTIVE',
+        loungeId: { in: loungeIds },
+        startedAt: { not: null, lt: threshold },
+      },
+    });
+
+    for (const session of danglingSessions) {
+      try {
+        await prisma.session.update({
+          where: { id: session.id },
+          data: {
+            state: 'CLOSED',
+            endedAt: now,
+            edgeCase: 'DANGLING_SESSION',
+            edgeNote: `Auto-closed: Session active >${DANGLING_SESSION_THRESHOLD_HOURS}h (CODIGO Week 1 data quality)`,
+          },
+        });
+        closed++;
+      } catch (error) {
+        console.error(`[cleanup] Error closing dangling session ${session.id}:`, error);
+        errors++;
+      }
+    }
+
+    if (closed > 0) {
+      console.log(`[cleanup] Closed ${closed} dangling sessions (soft-launch lounges), ${errors} errors`);
+    }
+  } catch (error) {
+    console.error('[cleanup] Error in closeDanglingSessionsForSoftLaunch:', error);
+    errors++;
+  }
+
+  return { closed, errors };
+}
+
 /**
  * Auto-close abandoned sessions
  * Closes sessions that are still ACTIVE but haven't been updated in 24+ hours
@@ -220,6 +286,7 @@ export async function expireOldPreOrders(): Promise<{
  */
 export async function runAllCleanupJobs(): Promise<{
   abandonedSessions: { closed: number; errors: number };
+  danglingSessionsSoftLaunch: { closed: number; errors: number };
   staleOrders: { expired: number; errors: number };
   stuckPayments: { resynced: number; errors: number };
   oldPreOrders: { expired: number; errors: number };
@@ -228,9 +295,10 @@ export async function runAllCleanupJobs(): Promise<{
 
   const results = {
     abandonedSessions: await closeAbandonedSessions(),
+    danglingSessionsSoftLaunch: await closeDanglingSessionsForSoftLaunch(),
     staleOrders: await expireStaleOrders(),
     stuckPayments: await resyncStuckPayments(),
-    oldPreOrders: await expireOldPreOrders()
+    oldPreOrders: await expireOldPreOrders(),
   };
 
   console.log('[cleanup] All cleanup jobs completed:', results);

@@ -6,7 +6,8 @@ import Breadcrumbs from "../../../components/Breadcrumbs";
 import PageHero from "../../../components/PageHero";
 import Button from "../../../components/Button";
 import { Badge } from "../../../components";
-import { Building2, CheckCircle, AlertTriangle, Copy, Target } from "lucide-react";
+import Link from "next/link";
+import { Building2, CheckCircle, AlertTriangle, Copy, Target, Settings } from "lucide-react";
 
 type VenueIdentity = "casino_velocity" | "sports_momentum" | "luxury_memory";
 
@@ -117,6 +118,15 @@ export default function VenueIdentityAdminPage() {
               <p className="mt-2 text-xs text-zinc-500">
                 This writes `LoungeConfig.configData.venue_identity` and increments config version.
               </p>
+              {trimmedLoungeId && (
+                <Link
+                  href={`/admin/lounges/${encodeURIComponent(trimmedLoungeId)}/settings`}
+                  className="mt-2 inline-flex items-center gap-1.5 text-xs text-teal-400 hover:text-teal-300"
+                >
+                  <Settings className="w-3.5 h-3.5" />
+                  Lounge Settings (Soft Launch)
+                </Link>
+              )}
             </div>
 
             <div>

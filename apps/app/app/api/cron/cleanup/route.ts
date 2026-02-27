@@ -54,10 +54,11 @@ export async function GET(req: NextRequest) {
     schedule: 'Recommended: Run every hour',
     jobs: [
       'closeAbandonedSessions',
+      'closeDanglingSessionsForSoftLaunch',
       'expireStaleOrders',
       'resyncStuckPayments',
-      'expireOldPreOrders'
-    ]
+      'expireOldPreOrders',
+    ],
   });
 }
 

@@ -29,6 +29,7 @@ import FirstLightHealthCard from '../../components/FirstLightHealthCard';
 import FirstLightChecklist from '../../components/FirstLightChecklist';
 import { WeekOneWinsCard } from '../../components/launchpad/WeekOneWinsCard';
 import { PreviewModeBanner } from '../../components/launchpad/PreviewModeBanner';
+import { SoftLaunchBanner } from '../../components/launchpad/SoftLaunchBanner';
 import ShiftGuide from '../../components/ShiftGuide';
 import { getFeatureFlags, markFirstLightCompleted, enableMetrics, activateAlphaStability } from '../../lib/feature-flags';
 
@@ -1030,6 +1031,11 @@ function FireSessionDashboardContent() {
               }}
             />
           </div>
+        )}
+
+        {/* Soft Launch Banner - Show when lounge has soft launch enabled */}
+        {!isDemoMode && selectedLoungeId && (
+          <SoftLaunchBanner loungeId={selectedLoungeId} />
         )}
 
         {/* Operator location context (multi-location wedge) */}
