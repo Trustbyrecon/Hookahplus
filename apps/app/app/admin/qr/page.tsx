@@ -19,7 +19,7 @@ interface StoredQR {
 }
 
 export default function AdminQRPage() {
-  const [loungeId, setLoungeId] = useState('default-lounge')
+  const [loungeId, setLoungeId] = useState('CODIGO')
   const [tableId, setTableId] = useState('T-001')
   const [campaign, setCampaign] = useState('')
   const [size, setSize] = useState(512)
@@ -36,11 +36,11 @@ export default function AdminQRPage() {
 
   // Table options
   const tables = [
-    { id: 'T-001', name: 'VIP Booth 1', zone: 'VIP', capacity: 6 },
-    { id: 'T-002', name: 'VIP Booth 2', zone: 'VIP', capacity: 6 },
-    { id: 'T-003', name: 'Main Floor 1', zone: 'Main', capacity: 4 },
-    { id: 'T-004', name: 'Main Floor 2', zone: 'Main', capacity: 4 },
-    { id: 'T-005', name: 'Patio Table', zone: 'Patio', capacity: 2 },
+    { id: 'T-001', name: 'Table 1', zone: 'Zone A', capacity: 4 },
+    { id: 'T-002', name: 'Table 2', zone: 'Zone A', capacity: 4 },
+    { id: 'T-003', name: 'Table 3', zone: 'Zone B', capacity: 4 },
+    { id: 'T-004', name: 'Table 4', zone: 'Zone B', capacity: 4 },
+    { id: 'T-005', name: 'Table 5', zone: 'Zone C', capacity: 4 },
   ]
 
   const generateQRCode = async () => {

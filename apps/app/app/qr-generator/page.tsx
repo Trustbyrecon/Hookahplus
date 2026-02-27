@@ -75,7 +75,7 @@ export default function QRGeneratorApp() {
 
 function QRGeneratorAppContent() {
   const { sessions } = useSessionContext();
-  const [loungeId, setLoungeId] = useState('');
+  const [loungeId, setLoungeId] = useState('CODIGO');
   const [tableId, setTableId] = useState('');
   const [campaignRef, setCampaignRef] = useState('');
   const [generatedQR, setGeneratedQR] = useState<QRCodeData | null>(null);
