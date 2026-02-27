@@ -654,6 +654,33 @@ model LoungeConfig {
   @@map("lounge_configs")
 }
 
+/// CODIGO pilot configuration: peak nights, hours, pricing, staff, menu presets.
+model PilotConfig {
+  id          String   @id @default(cuid())
+  loungeId    String   @unique @map("lounge_id")
+  configData  Json     @map("config_data")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([loungeId])
+  @@map("pilot_configs")
+}
+
+/// Floorplan layout per lounge/floor. Compatible with future Visual Layout Grounder output.
+model FloorplanLayout {
+  id        String   @id @default(cuid())
+  loungeId  String   @map("lounge_id")
+  floorId   String   @map("floor_id")
+  nodes     Json     @map("nodes")
+  metadata  Json?    @map("metadata")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([loungeId, floorId])
+  @@index([loungeId])
+  @@map("floorplan_layouts")
+}
+
 model OrgSetting {
   id          String   @id @default(cuid())
   key         String   @unique @map("key")
