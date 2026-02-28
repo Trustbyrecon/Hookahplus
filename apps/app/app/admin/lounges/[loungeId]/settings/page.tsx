@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import GlobalNavigation from "../../../../components/GlobalNavigation";
-import Breadcrumbs from "../../../../components/Breadcrumbs";
+import GlobalNavigation from "../../../../../../components/GlobalNavigation";
+import Breadcrumbs from "../../../../../../components/Breadcrumbs";
 import { Building2, RefreshCw } from "lucide-react";
 
 export default function LoungeSettingsPage() {
