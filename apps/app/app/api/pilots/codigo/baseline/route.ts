@@ -117,7 +117,7 @@ export async function GET(req: NextRequest) {
 
     // Sessions by floor (zoneId = floor tagging); empty if no zoneId on any session
     const sessions_by_floor: Record<string, number> = {};
-    const zoneIds = [...new Set(sessions.map((s) => s.zoneId).filter(Boolean))] as string[];
+    const zoneIds = Array.from(new Set(sessions.map((s) => s.zoneId).filter(Boolean))) as string[];
     if (zoneIds.length > 0) {
       const zones = await prisma.zone.findMany({
         where: { id: { in: zoneIds } },
