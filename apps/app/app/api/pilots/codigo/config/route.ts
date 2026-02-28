@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../../../../lib/db';
 import { hasRole } from '../../../../../lib/auth';
 
@@ -73,7 +74,7 @@ export async function POST(req: NextRequest) {
     if (body.menuPresets != null) updates.menuPresets = body.menuPresets;
     if (body.menuCatalogs != null) updates.menuCatalogs = body.menuCatalogs;
 
-    const merged = { ...current, ...updates };
+    const merged = { ...current, ...updates } as Prisma.InputJsonValue;
 
     const config = await prisma.pilotConfig.upsert({
       where: { loungeId },
