@@ -138,8 +138,9 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
   }, [isOpen, isCodigoMode, selectedTable?.priceMultiplier]);
 
   const [launchpadFlavors, setLaunchpadFlavors] = useState<string[]>([]);
-  const [launchpadPresets, setLaunchpadPresets] = useState<Array<{ id: string; name: string; flavors: string[]; description?: string }>>([]);
+  const [launchpadPresets, setLaunchpadPresets] = useState<Array<{ id: string; name: string; flavors: string[]; description?: string; price?: number }>>([]);
   const [launchpadBasePrice, setLaunchpadBasePrice] = useState<number | null>(null);
+  const [codigoStaff, setCodigoStaff] = useState<Array<{ name: string; role: string }>>([]);
 
   const [errors, setErrors] = useState<Partial<Record<keyof SessionData, string>>>({});
 
@@ -237,19 +238,35 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
                   setLaunchpadFlavors(allFlavors);
                 }
 
-                // Load common mixes as presets
-                if (configData.common_mixes && configData.common_mixes.length > 0) {
+                // Load presets: prefer menu_presets (CODIGO) over common_mixes
+                const menuPresets = configData.menu_presets as Array<{ id?: string; name?: string; flavors?: string[] }> | undefined;
+                if (Array.isArray(menuPresets) && menuPresets.length > 0) {
+                  const presets = menuPresets.map((p, idx) => ({
+                    id: p.id || `launchpad-preset-${idx}`,
+                    name: p.name || (Array.isArray(p.flavors) ? p.flavors.join(' + ') : ''),
+                    flavors: Array.isArray(p.flavors) ? p.flavors : [],
+                    description: p.name ? `LaunchPad preset: ${p.name}` : undefined,
+                    price: isCodigoMode ? 0 : undefined,
+                  }));
+                  setLaunchpadPresets(presets);
+                } else if (configData.common_mixes && configData.common_mixes.length > 0) {
                   const presets = configData.common_mixes.map((mix: string, idx: number) => {
-                    // Parse mix string (e.g., "Double Apple + Mint" or "Mango, Strawberry")
                     const flavors = mix.split(/[+,]/).map((f) => f.trim()).filter(Boolean);
                     return {
                       id: `launchpad-preset-${idx}`,
                       name: mix,
                       flavors: flavors,
                       description: `LaunchPad preset: ${mix}`,
+                      price: isCodigoMode ? 0 : undefined,
                     };
                   });
                   setLaunchpadPresets(presets);
+                }
+
+                // Load staff for CODIGO (BOH/FOH dropdowns)
+                const staff = configData.staff as Array<{ name?: string; role?: string }> | undefined;
+                if (isCodigoMode && Array.isArray(staff) && staff.length > 0) {
+                  setCodigoStaff(staff.map((s) => ({ name: s.name || '', role: s.role || '' })));
                 }
               }
             }
@@ -265,7 +282,7 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
     };
 
     loadLaunchpadData();
-  }, [loungeId, selectedTable]);
+  }, [loungeId, selectedTable, isCodigoMode]);
 
 
   const handleInputChange = (field: keyof SessionData, value: string | number) => {
@@ -316,8 +333,8 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
   // Handle flavor mix changes
   const handleFlavorMixChange = (flavors: string[], totalPrice: number) => {
     setFormData(prev => {
-      // Ensure flavor prices are properly calculated (not zeroed in non-demo mode)
-      const flavorPrice = isDemoMode ? 0 : totalPrice;
+      // CODIGO: flat $60 includes flavors; demo: free
+      const flavorPrice = isCodigoMode || isDemoMode ? 0 : totalPrice;
       const tableMultiplier = selectedTable?.priceMultiplier || 1;
       const newAmount = calculateTotalAmount(
         prev.pricingModel,
@@ -802,6 +819,7 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
                     }
                     customPresets={launchpadPresets}
                     isDemoMode={isDemoMode}
+                    flavorAddOnFree={isCodigoMode}
                   />
                 </div>
                 {/* Show flavor pricing breakdown - professional display even in demo */}
@@ -973,7 +991,10 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
                   className="w-full px-4 py-3 bg-zinc-800/80 border border-zinc-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <option value="">Select BOH Staff</option>
-                  {bohStaff.map((staff) => (
+                  {(isCodigoMode && codigoStaff.length > 0
+                    ? codigoStaff.filter((s) => /boh|coal|master/i.test(s.role)).map((s) => s.name)
+                    : bohStaff
+                  ).map((staff) => (
                     <option key={staff} value={staff}>
                       {staff}
                     </option>
@@ -993,7 +1014,10 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
                     className="w-full px-4 py-3 bg-zinc-800/80 border border-zinc-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
                   >
                     <option value="">Select FOH Staff</option>
-                    {fohStaff.map((staff) => (
+                    {(isCodigoMode && codigoStaff.length > 0
+                      ? codigoStaff.filter((s) => /foh|host|server/i.test(s.role)).map((s) => s.name)
+                      : fohStaff
+                    ).map((staff) => (
                       <option key={staff} value={staff}>
                         {staff}
                       </option>

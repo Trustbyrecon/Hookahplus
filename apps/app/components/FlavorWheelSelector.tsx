@@ -130,8 +130,9 @@ interface FlavorWheelSelectorProps {
   mode?: 'staff' | 'customer';
   className?: string;
   customFlavors?: string[]; // For demo mode: flavors from uploaded menu
-  customPresets?: Array<{ id: string; name: string; flavors: string[]; description?: string }>; // LaunchPad common mixes
+  customPresets?: Array<{ id: string; name: string; flavors: string[]; description?: string; price?: number }>; // LaunchPad common mixes
   isDemoMode?: boolean; // If true, flavors are free
+  flavorAddOnFree?: boolean; // CODIGO: flat price includes flavors, no add-on
   sortByPopularity?: boolean; // Sort flavors by popularity (default: true)
   loungeId?: string; // Optional lounge ID for popularity calculation
 }
@@ -145,22 +146,23 @@ export default function FlavorWheelSelector({
   customFlavors = [],
   customPresets = [],
   isDemoMode = false,
+  flavorAddOnFree = false,
   sortByPopularity = true,
   loungeId
 }: FlavorWheelSelectorProps) {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string[]>(selectedFlavors);
-  // Merge custom presets with default presets
+  // Merge custom presets with default presets (CODIGO: only custom presets, $0 add-on)
   const allPresets = useMemo(() => {
     const custom = customPresets.map(p => ({
       id: p.id,
       name: p.name,
       flavors: p.flavors,
       description: p.description || `LaunchPad preset: ${p.name}`,
-      price: p.flavors.length * (isDemoMode ? 0 : 2.00) // Calculate price
+      price: p.price !== undefined ? p.price : (isDemoMode || flavorAddOnFree ? 0 : p.flavors.length * 2.00)
     }));
-    return [...custom, ...STAFF_PRESETS];
-  }, [customPresets, isDemoMode]);
+    return flavorAddOnFree && custom.length > 0 ? custom : [...custom, ...STAFF_PRESETS];
+  }, [customPresets, isDemoMode, flavorAddOnFree]);
   // Show presets by default if LaunchPad presets exist, otherwise hide if custom flavors are loaded
   const [showPresets, setShowPresets] = useState(
     customPresets.length > 0 ? true : (customFlavors && customFlavors.length > 0 ? false : true)
@@ -200,22 +202,20 @@ export default function FlavorWheelSelector({
   // Build available flavors: use customFlavors if provided (demo mode), otherwise use FLAVOR_CATEGORIES
   const availableFlavors = useMemo(() => {
     if (customFlavors && customFlavors.length > 0) {
-      // Convert custom flavor names to flavor items (free in demo mode)
       return customFlavors.map((flavorName, idx) => ({
         id: `custom-${idx}`,
         label: flavorName,
-        price: isDemoMode ? 0 : 2.00, // Free in demo mode
+        price: isDemoMode || flavorAddOnFree ? 0 : 2.00,
         category: 'custom'
       }));
     }
     // Flatten FLAVOR_CATEGORIES into a single array
     return FLAVOR_CATEGORIES.flatMap(cat => cat.items);
-  }, [customFlavors, isDemoMode]);
+  }, [customFlavors, isDemoMode, flavorAddOnFree]);
 
   // Calculate total price for selected flavors
   const totalPrice = useMemo(() => {
-    if (isDemoMode) {
-      // In demo mode, flavors are free
+    if (isDemoMode || flavorAddOnFree) {
       return 0;
     }
     return selected.reduce((total, flavorId) => {
@@ -223,7 +223,7 @@ export default function FlavorWheelSelector({
       if (flavorId.startsWith('custom-')) {
         const idx = parseInt(flavorId.replace('custom-', ''));
         if (customFlavors && customFlavors[idx]) {
-          return total + (isDemoMode ? 0 : 2.00); // Free in demo, $2 otherwise
+          return total + (isDemoMode || flavorAddOnFree ? 0 : 2.00);
         }
       }
       // Then check standard categories
@@ -235,7 +235,7 @@ export default function FlavorWheelSelector({
       }
       return total;
     }, 0);
-  }, [selected, isDemoMode, customFlavors]);
+  }, [selected, isDemoMode, flavorAddOnFree, customFlavors]);
 
   // Filter and sort categories based on search and popularity
   const filteredCategories = useMemo(() => {
@@ -248,11 +248,11 @@ export default function FlavorWheelSelector({
           id: 'custom',
           label: 'Menu Flavors',
           hue: 200,
-          basePrice: isDemoMode ? 0 : 2.00,
+          basePrice: isDemoMode || flavorAddOnFree ? 0 : 2.00,
           items: filteredCustom.map((flavorName, idx) => ({
             id: `custom-${idx}`,
             label: flavorName,
-            price: isDemoMode ? 0 : 2.00
+            price: isDemoMode || flavorAddOnFree ? 0 : 2.00
           }))
         }];
       }
@@ -282,7 +282,7 @@ export default function FlavorWheelSelector({
     }
     
     return categories;
-  }, [query, customFlavors, isDemoMode, sortByPopularity, popularityData]);
+  }, [query, customFlavors, isDemoMode, flavorAddOnFree, sortByPopularity, popularityData]);
 
   // Handle flavor selection
   const toggleFlavor = (flavorId: string) => {
@@ -335,8 +335,7 @@ export default function FlavorWheelSelector({
       
       if (flavorIds.length > 0 && flavorIds.length <= maxSelections) {
         setSelected(flavorIds);
-        // Calculate price inline (same logic as calculatePrice function)
-        const totalPrice = isDemoMode ? 0 : flavorIds.reduce((total, flavorId) => {
+        const totalPrice = isDemoMode || flavorAddOnFree ? 0 : flavorIds.reduce((total, flavorId) => {
           if (flavorId.startsWith('custom-')) {
             const idx = parseInt(flavorId.replace('custom-', ''));
             if (customFlavors && customFlavors[idx]) {
@@ -361,10 +360,7 @@ export default function FlavorWheelSelector({
 
   // Calculate price for flavor array
   const calculatePrice = (flavors: string[]) => {
-    if (isDemoMode) {
-      // In demo mode, flavors are free
-      return 0;
-    }
+    if (isDemoMode || flavorAddOnFree) return 0;
     return flavors.reduce((total, flavorId) => {
       // Check custom flavors first
       const customFlavor = availableFlavors.find(f => f.id === flavorId);

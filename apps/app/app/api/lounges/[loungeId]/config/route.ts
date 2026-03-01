@@ -75,11 +75,20 @@ export async function GET(
         if (pricing?.hookah?.amountCents != null) {
           baseSessionPrice = pricing.hookah.amountCents;
         }
-        const menuPresets = pilot.menuPresets as Array<{ name?: string; flavors?: string[] }> | undefined;
+        const menuPresets = pilot.menuPresets as Array<{ id?: string; name?: string; flavors?: string[] }> | undefined;
         if (Array.isArray(menuPresets) && menuPresets.length > 0) {
           configData.common_mixes = menuPresets.map(
             (p) => (Array.isArray(p.flavors) ? p.flavors.join(' + ') : p.name || '')
           ).filter(Boolean);
+          configData.menu_presets = menuPresets.map((p, idx) => ({
+            id: (p as { id?: string }).id || `preset-${idx}`,
+            name: p.name || (Array.isArray(p.flavors) ? p.flavors.join(' + ') : ''),
+            flavors: Array.isArray(p.flavors) ? p.flavors : [],
+          }));
+        }
+        const staff = pilot.staff as Array<{ name?: string; role?: string }> | undefined;
+        if (Array.isArray(staff) && staff.length > 0) {
+          configData.staff = staff;
         }
         const menuCatalogs = pilot.menuCatalogs as Record<string, string[]> | undefined;
         if (menuCatalogs && typeof menuCatalogs === 'object') {

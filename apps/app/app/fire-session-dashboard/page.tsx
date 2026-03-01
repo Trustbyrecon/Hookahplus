@@ -1521,7 +1521,7 @@ function FireSessionDashboardContent() {
           demoMenuFlavors={demoMenuFlavors}
           isDemoSlug={isDemoSlug}
           demoSource={effectiveDemoSource}
-          loungeId={demoLounge || undefined}
+          loungeId={demoLounge || selectedLoungeId || undefined}
         />
     </div>
   );
