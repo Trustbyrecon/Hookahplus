@@ -104,18 +104,6 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
     }
   }, [isOpen, onClose]);
 
-  // CODIGO: enforce flat-only, fixed duration
-  React.useEffect(() => {
-    if (isOpen && isCodigoMode) {
-      setFormData((prev) => ({
-        ...prev,
-        pricingModel: 'flat',
-        timerDuration: 60,
-        amount: calculateTotalAmount('flat', 60, prev.flavorMixPrice, prev.basePrice, selectedTable?.priceMultiplier ?? 1),
-      }));
-    }
-  }, [isOpen, isCodigoMode, selectedTable?.priceMultiplier]);
-
   const [formData, setFormData] = useState<SessionData>({
     tableId: 'table-001',
     tableType: {} as TableType,
@@ -136,6 +124,19 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
 
   const [selectedTable, setSelectedTable] = useState<TableType | null>(null);
   const [showTableSelector, setShowTableSelector] = useState(false);
+
+  // CODIGO: enforce flat-only, fixed duration
+  React.useEffect(() => {
+    if (isOpen && isCodigoMode) {
+      setFormData((prev) => ({
+        ...prev,
+        pricingModel: 'flat',
+        timerDuration: 60,
+        amount: calculateTotalAmount('flat', 60, prev.flavorMixPrice, prev.basePrice, selectedTable?.priceMultiplier ?? 1),
+      }));
+    }
+  }, [isOpen, isCodigoMode, selectedTable?.priceMultiplier]);
+
   const [launchpadFlavors, setLaunchpadFlavors] = useState<string[]>([]);
   const [launchpadPresets, setLaunchpadPresets] = useState<Array<{ id: string; name: string; flavors: string[]; description?: string }>>([]);
   const [launchpadBasePrice, setLaunchpadBasePrice] = useState<number | null>(null);
