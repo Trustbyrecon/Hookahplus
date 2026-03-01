@@ -112,8 +112,25 @@ export async function GET(
       });
       if (floorplan?.nodes && Array.isArray(floorplan.nodes)) {
         const nodes = floorplan.nodes as Array<{ id?: string; label?: string; type?: string; x?: number; y?: number; capacity?: number }>;
-        const zoneTable = { id: 'f3-floor', name: 'Third Floor', zoneType: 'MAIN' as const };
-        const zoneKiosk = { id: 'f3-kiosk', name: 'Kiosk', zoneType: 'MAIN' as const };
+        const now = floorplan.updatedAt.toISOString();
+        const zoneTable = {
+          id: 'f3-floor',
+          name: 'Third Floor',
+          zoneType: 'MAIN' as const,
+          displayOrder: 0,
+          metadata: null,
+          createdAt: floorplan.createdAt.toISOString(),
+          updatedAt: now,
+        };
+        const zoneKiosk = {
+          id: 'f3-kiosk',
+          name: 'Kiosk',
+          zoneType: 'MAIN' as const,
+          displayOrder: 1,
+          metadata: null,
+          createdAt: floorplan.createdAt.toISOString(),
+          updatedAt: now,
+        };
         zonesWithMetadata = [zoneTable, zoneKiosk];
         seatsWithMetadata = nodes.map((node) => {
           const zone = node.type === 'kiosk' ? zoneKiosk : zoneTable;
