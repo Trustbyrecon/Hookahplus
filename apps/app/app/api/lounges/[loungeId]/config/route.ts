@@ -89,7 +89,7 @@ export async function GET(
           }
           configData.flavors = {
             ...(configData.flavors as object || {}),
-            standard: [...new Set(allFlavors)].map((name) => ({ name })),
+            standard: Array.from(new Set(allFlavors)).map((name) => ({ name })),
             premium: (configData.flavors as Record<string, unknown>)?.premium || [],
           };
         }
