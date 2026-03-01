@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { X, User, Phone, Clock, Flame, DollarSign, Users, FileText, MapPin } from 'lucide-react';
+import { X, User, Phone, Clock, Flame, DollarSign, Users, FileText, MapPin, ChevronDown, ChevronRight, Sparkles } from 'lucide-react';
 import { TableSelector } from './TableSelector';
 import { TableType } from '../lib/tableTypes';
 import FlavorWheelSelector from './FlavorWheelSelector';
@@ -76,6 +76,8 @@ const timerDurations = [
 ];
 
 export default function CreateSessionModal({ isOpen, onClose, onCreateSession, isDemoMode = false, demoMenuFlavors = null, isDemoSlug = false, demoSource = 'marketing', loungeId }: CreateSessionModalProps) {
+  const isCodigoMode = loungeId === 'CODIGO';
+
   // Calculate total amount function (defined before useState to be available in useEffect)
   const calculateTotalAmount = (pricingModel: 'flat' | 'time-based', timerDuration: number, flavorMixPrice: number, basePrice: number = 30, tableMultiplier: number = 1) => {
     if (pricingModel === 'flat') {
@@ -95,12 +97,24 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
         onClose();
       }
     };
-    
+
     if (isOpen) {
       document.addEventListener('keydown', handleEscape);
       return () => document.removeEventListener('keydown', handleEscape);
     }
   }, [isOpen, onClose]);
+
+  // CODIGO: enforce flat-only, fixed duration
+  React.useEffect(() => {
+    if (isOpen && isCodigoMode) {
+      setFormData((prev) => ({
+        ...prev,
+        pricingModel: 'flat',
+        timerDuration: 60,
+        amount: calculateTotalAmount('flat', 60, prev.flavorMixPrice, prev.basePrice, selectedTable?.priceMultiplier ?? 1),
+      }));
+    }
+  }, [isOpen, isCodigoMode, selectedTable?.priceMultiplier]);
 
   const [formData, setFormData] = useState<SessionData>({
     tableId: 'table-001',
@@ -127,6 +141,42 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
   const [launchpadBasePrice, setLaunchpadBasePrice] = useState<number | null>(null);
 
   const [errors, setErrors] = useState<Partial<Record<keyof SessionData, string>>>({});
+
+  // Shisha Master: eat/drink preferences and pairing recommendation
+  const [shishaEat, setShishaEat] = useState('');
+  const [shishaDrink, setShishaDrink] = useState('');
+  const [shishaMasterExpanded, setShishaMasterExpanded] = useState(false);
+
+  const shishaRecommendation = React.useMemo(() => {
+    const text = `${shishaEat} ${shishaDrink}`.toLowerCase();
+    if (!text.trim()) return null;
+    const presets = launchpadPresets;
+    if (presets.length === 0) return { preset: null, label: 'Ask Shisha Master' };
+    if (/\b(dessert|sweet|cake|chocolate|pastry|creamy)\b/.test(text)) {
+      const p = presets.find((x) => /honeydew|vanilla|pear/i.test(x.name || x.flavors?.join(' ') || ''));
+      return { preset: p || presets[2], label: p?.name || presets[2]?.name || 'Zarafshan Gold' };
+    }
+    if (/\b(citrus|lemon|lime|orange|refreshing|mint)\b/.test(text)) {
+      const p = presets.find((x) => /lemon|mint|blackberry|ice/i.test(x.name || x.flavors?.join(' ') || ''));
+      return { preset: p || presets[0], label: p?.name || presets[0]?.name || 'Noor Al Ein' };
+    }
+    if (/\b(coffee|espresso|bold)\b/.test(text)) {
+      const p = presets.find((x) => /grape|blueberry|eclipse/i.test(x.name || x.flavors?.join(' ') || ''));
+      return { preset: p || presets[1], label: p?.name || presets[1]?.name || "Shah's Eclipse" };
+    }
+    if (/\b(spicy|savory)\b/.test(text)) {
+      const p = presets.find((x) => /pomegranate|raspberry|blood orange/i.test(x.name || x.flavors?.join(' ') || ''));
+      return { preset: p || presets[3], label: p?.name || presets[3]?.name || 'Lailat Al Ward' };
+    }
+    return { preset: presets[0], label: presets[0]?.name || 'Noor Al Ein' };
+  }, [shishaEat, shishaDrink, launchpadPresets]);
+
+  const applyShishaRecommendation = () => {
+    const rec = shishaRecommendation;
+    if (rec?.preset?.flavors && rec.preset.flavors.length > 0) {
+      handleFlavorMixChange(rec.preset.flavors, 0);
+    }
+  };
 
   // Load LaunchPad flavors, presets, and base price from config
   useEffect(() => {
@@ -383,7 +433,7 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
     if (!formData.sessionType) newErrors.sessionType = 'Session type is required';
     if (formData.flavorMix.length === 0) newErrors.flavor = 'At least one flavor must be selected';
     if (!formData.amount || formData.amount <= 0) newErrors.amount = 'Amount must be greater than 0';
-    if (!formData.timerDuration || formData.timerDuration <= 0) newErrors.timerDuration = 'Session duration is required';
+    if (!isCodigoMode && (!formData.timerDuration || formData.timerDuration <= 0)) newErrors.timerDuration = 'Session duration is required';
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -396,18 +446,25 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
       // Format data for the API endpoint
       const apiData = {
         session_id: `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        lounge_id: 'fire-session-lounge',
+        lounge_id: loungeId || 'fire-session-lounge',
         table_id: formData.tableId || selectedTable?.id || 'table-001',
         flavor_mix: formData.flavorMix,
         customer_name: formData.customerName || 'Guest Customer',
         customer_phone: formData.customerPhone || '+1234567890',
         session_type: formData.sessionType || 'walk-in',
         amount: formData.amount,
-        pricing_model: formData.pricingModel,
-        timer_duration: formData.timerDuration,
+        pricing_model: isCodigoMode ? 'flat' : formData.pricingModel,
+        timer_duration: isCodigoMode ? 60 : formData.timerDuration,
         boh_staff: formData.bohStaff,
         foh_staff: formData.fohStaff,
-        notes: formData.notes,
+        notes: (() => {
+          let notes = formData.notes;
+          if (isCodigoMode && (shishaEat.trim() || shishaDrink.trim())) {
+            const rec = shishaRecommendation?.label || '—';
+            notes = [notes, `[ShishaMaster] eat: ${shishaEat.trim() || '—'} | drink: ${shishaDrink.trim() || '—'} | recommendation: ${rec}`].filter(Boolean).join('\n');
+          }
+          return notes;
+        })(),
         flavor_mix_price: formData.flavorMixPrice,
         base_price: formData.basePrice
       };
@@ -772,44 +829,46 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
                 )}
               </div>
 
-              {/* Pricing Model */}
-              <div>
-                <label className="block text-sm font-medium text-white mb-2 font-semibold">
-                  Pricing Model *
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleInputChange('pricingModel', 'flat')}
-                    className={`p-3 rounded-lg border text-left transition-colors ${
-                      formData.pricingModel === 'flat'
-                        ? 'border-teal-500 bg-teal-500/20 text-teal-300'
-                        : 'border-zinc-600 bg-zinc-800/80 text-zinc-300 hover:border-zinc-500'
-                    }`}
-                  >
-                    <div className="font-medium">Flat Fee</div>
-                    <div className="text-sm text-zinc-400">${formData.basePrice.toFixed(2)} fixed</div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleInputChange('pricingModel', 'time-based')}
-                    className={`p-3 rounded-lg border text-left transition-colors ${
-                      formData.pricingModel === 'time-based'
-                        ? 'border-teal-500 bg-teal-500/20 text-teal-300'
-                        : 'border-zinc-600 bg-zinc-800/80 text-zinc-300 hover:border-zinc-500'
-                    }`}
-                  >
-                    <div className="font-medium">Time-Based</div>
-                    <div className="text-sm text-zinc-400">$0.50/min</div>
-                  </button>
+              {/* Pricing Model - hidden for CODIGO (flat-only) */}
+              {!isCodigoMode && (
+                <div>
+                  <label className="block text-sm font-medium text-white mb-2 font-semibold">
+                    Pricing Model *
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleInputChange('pricingModel', 'flat')}
+                      className={`p-3 rounded-lg border text-left transition-colors ${
+                        formData.pricingModel === 'flat'
+                          ? 'border-teal-500 bg-teal-500/20 text-teal-300'
+                          : 'border-zinc-600 bg-zinc-800/80 text-zinc-300 hover:border-zinc-500'
+                      }`}
+                    >
+                      <div className="font-medium">Flat Fee</div>
+                      <div className="text-sm text-zinc-400">${formData.basePrice.toFixed(2)} fixed</div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleInputChange('pricingModel', 'time-based')}
+                      className={`p-3 rounded-lg border text-left transition-colors ${
+                        formData.pricingModel === 'time-based'
+                          ? 'border-teal-500 bg-teal-500/20 text-teal-300'
+                          : 'border-zinc-600 bg-zinc-800/80 text-zinc-300 hover:border-zinc-500'
+                      }`}
+                    >
+                      <div className="font-medium">Time-Based</div>
+                      <div className="text-sm text-zinc-400">$0.50/min</div>
+                    </button>
+                  </div>
+                  <div className="mt-2 text-xs text-zinc-400">
+                    {formData.pricingModel === 'flat'
+                      ? `Fixed $${formData.basePrice.toFixed(2)} + flavor add-ons`
+                      : `$${(formData.timerDuration * 0.50).toFixed(2)} for ${formData.timerDuration}min + flavor add-ons`
+                    }
+                  </div>
                 </div>
-                <div className="mt-2 text-xs text-zinc-400">
-                  {formData.pricingModel === 'flat' 
-                    ? `Fixed $${formData.basePrice.toFixed(2)} + flavor add-ons`
-                    : `$${(formData.timerDuration * 0.50).toFixed(2)} for ${formData.timerDuration}min + flavor add-ons`
-                  }
-                </div>
-              </div>
+              )}
 
               {/* Amount */}
               <div>
@@ -876,29 +935,31 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
                 )}
               </div>
 
-              {/* Timer Duration */}
-              <div>
-                <label className="block text-sm font-medium text-white mb-2 font-semibold">
-                  <Clock className="w-4 h-4 inline mr-2" />
-                  Session Duration *
-                </label>
-                <select
-                  value={formData.timerDuration}
-                  onChange={(e) => handleInputChange('timerDuration', parseInt(e.target.value))}
-                  className={`w-full px-4 py-3 bg-zinc-800/80 border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500 ${
-                    errors.timerDuration ? 'border-red-500' : 'border-zinc-500'
-                  }`}
-                >
-                  {timerDurations.map((duration) => (
-                    <option key={duration.value} value={duration.value}>
-                      {duration.label} - {duration.description}
-                    </option>
-                  ))}
-                </select>
-                {errors.timerDuration && (
-                  <p className="text-red-400 text-sm mt-1">{errors.timerDuration}</p>
-                )}
-              </div>
+              {/* Timer Duration - hidden for CODIGO (flat-only, duration not in play) */}
+              {!isCodigoMode && (
+                <div>
+                  <label className="block text-sm font-medium text-white mb-2 font-semibold">
+                    <Clock className="w-4 h-4 inline mr-2" />
+                    Session Duration *
+                  </label>
+                  <select
+                    value={formData.timerDuration}
+                    onChange={(e) => handleInputChange('timerDuration', parseInt(e.target.value))}
+                    className={`w-full px-4 py-3 bg-zinc-800/80 border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500 ${
+                      errors.timerDuration ? 'border-red-500' : 'border-zinc-500'
+                    }`}
+                  >
+                    {timerDurations.map((duration) => (
+                      <option key={duration.value} value={duration.value}>
+                        {duration.label} - {duration.description}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.timerDuration && (
+                    <p className="text-red-400 text-sm mt-1">{errors.timerDuration}</p>
+                  )}
+                </div>
+              )}
 
               {/* Assign BOH Staff */}
               <div>
@@ -941,6 +1002,62 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
               )}
             </div>
           </div>
+
+          {/* Shisha Master - eat/drink pairing (CODIGO) */}
+          {isCodigoMode && (
+            <div className="mb-6 rounded-lg border border-zinc-700 bg-zinc-800/30 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShishaMasterExpanded(!shishaMasterExpanded)}
+                className="w-full flex items-center gap-2 px-4 py-3 text-left text-white hover:bg-zinc-700/50 transition-colors"
+              >
+                {shishaMasterExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                <Sparkles className="w-4 h-4 text-amber-400" />
+                <span className="font-medium">Shisha Master</span>
+                <span className="text-xs text-zinc-400">What did they have to eat and drink?</span>
+              </button>
+              {shishaMasterExpanded && (
+                <div className="px-4 pb-4 space-y-3">
+                  <div>
+                    <label className="block text-xs text-zinc-400 mb-1">What did you have to eat?</label>
+                    <input
+                      type="text"
+                      value={shishaEat}
+                      onChange={(e) => setShishaEat(e.target.value)}
+                      placeholder="e.g. dessert, wings, salad"
+                      className="w-full px-3 py-2 bg-zinc-900/60 border border-zinc-600 rounded-lg text-white text-sm placeholder-zinc-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-zinc-400 mb-1">What did you have to drink?</label>
+                    <input
+                      type="text"
+                      value={shishaDrink}
+                      onChange={(e) => setShishaDrink(e.target.value)}
+                      placeholder="e.g. lemonade, coffee, cocktail"
+                      className="w-full px-3 py-2 bg-zinc-900/60 border border-zinc-600 rounded-lg text-white text-sm placeholder-zinc-500"
+                    />
+                  </div>
+                  {shishaRecommendation && (
+                    <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                      <span className="text-sm text-amber-200">
+                        Suggested: <strong>{shishaRecommendation.label}</strong>
+                      </span>
+                      {shishaRecommendation.preset?.flavors?.length ? (
+                        <button
+                          type="button"
+                          onClick={applyShishaRecommendation}
+                          className="px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-500/30 text-amber-200 hover:bg-amber-500/50 transition-colors"
+                        >
+                          Apply
+                        </button>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Session Notes - Full Width */}
           <div className="mb-6">

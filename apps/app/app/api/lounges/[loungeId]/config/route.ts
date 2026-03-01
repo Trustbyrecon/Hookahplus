@@ -49,17 +49,52 @@ export async function GET(
     const baseSessionRule = pricingRules.find(
       rule => rule.ruleType === 'BASE_SESSION'
     );
-    const baseSessionPrice = baseSessionRule
+    let baseSessionPrice = baseSessionRule
       ? JSON.parse(baseSessionRule.ruleConfig).priceCents || 2500
       : 2500; // Default fallback
 
     // Parse config data if exists
-    let configData = null;
+    let configData: Record<string, unknown> = {};
     if (loungeConfig?.configData) {
       try {
-        configData = JSON.parse(loungeConfig.configData);
+        const parsed = JSON.parse(loungeConfig.configData);
+        if (parsed && typeof parsed === 'object') configData = parsed;
       } catch (e) {
         console.warn('Failed to parse configData JSON:', e);
+      }
+    }
+
+    // CODIGO: merge PilotConfig (menu, $60/$30 pricing) into config
+    if (loungeId === 'CODIGO') {
+      const pilotConfig = await prisma.pilotConfig.findUnique({
+        where: { loungeId: 'CODIGO' },
+      });
+      if (pilotConfig?.configData && typeof pilotConfig.configData === 'object') {
+        const pilot = pilotConfig.configData as Record<string, unknown>;
+        const pricing = pilot.pricing as Record<string, { amountCents?: number }> | undefined;
+        if (pricing?.hookah?.amountCents != null) {
+          baseSessionPrice = pricing.hookah.amountCents;
+        }
+        const menuPresets = pilot.menuPresets as Array<{ name?: string; flavors?: string[] }> | undefined;
+        if (Array.isArray(menuPresets) && menuPresets.length > 0) {
+          configData.common_mixes = menuPresets.map(
+            (p) => (Array.isArray(p.flavors) ? p.flavors.join(' + ') : p.name || '')
+          ).filter(Boolean);
+        }
+        const menuCatalogs = pilot.menuCatalogs as Record<string, string[]> | undefined;
+        if (menuCatalogs && typeof menuCatalogs === 'object') {
+          const allFlavors: string[] = [];
+          for (const arr of Object.values(menuCatalogs)) {
+            if (Array.isArray(arr)) allFlavors.push(...arr.map(String));
+          }
+          configData.flavors = {
+            ...(configData.flavors as object || {}),
+            standard: [...new Set(allFlavors)].map((name) => ({ name })),
+            premium: (configData.flavors as Record<string, unknown>)?.premium || [],
+          };
+        }
+        const refill = pricing?.refill as { amountCents?: number } | undefined;
+        configData.refillPriceCents = refill?.amountCents ?? 3000;
       }
     }
 

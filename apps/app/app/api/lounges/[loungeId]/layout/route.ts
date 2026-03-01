@@ -59,8 +59,8 @@ export async function GET(
       orderBy: { name: 'asc' }
     });
 
-    // Parse metadata JSON fields
-    const zonesWithMetadata = zones.map(zone => ({
+    // When no Zone/Seat data exists, fall back to FloorplanLayout (e.g. CODIGO)
+    let zonesWithMetadata = zones.map(zone => ({
       id: zone.id,
       name: zone.name,
       zoneType: zone.zoneType,
@@ -70,7 +70,7 @@ export async function GET(
       updatedAt: zone.updatedAt.toISOString()
     }));
 
-    const seatsWithMetadata = seats.map(seat => {
+    let seatsWithMetadata = seats.map(seat => {
       // Parse coordinates which may contain seatingType metadata
       const coords = seat.coordinates ? JSON.parse(seat.coordinates) : null;
       // Extract seatingType from coordinates metadata, or derive from zoneType
@@ -104,6 +104,38 @@ export async function GET(
       };
     });
 
+    // Fallback: when no seats, use FloorplanLayout (CODIGO pilot)
+    if (seatsWithMetadata.length === 0) {
+      const floorplan = await prisma.floorplanLayout.findFirst({
+        where: { loungeId },
+        orderBy: { floorId: 'asc' },
+      });
+      if (floorplan?.nodes && Array.isArray(floorplan.nodes)) {
+        const nodes = floorplan.nodes as Array<{ id?: string; label?: string; type?: string; x?: number; y?: number; capacity?: number }>;
+        const zoneTable = { id: 'f3-floor', name: 'Third Floor', zoneType: 'MAIN' as const };
+        const zoneKiosk = { id: 'f3-kiosk', name: 'Kiosk', zoneType: 'MAIN' as const };
+        zonesWithMetadata = [zoneTable, zoneKiosk];
+        seatsWithMetadata = nodes.map((node) => {
+          const zone = node.type === 'kiosk' ? zoneKiosk : zoneTable;
+          const seatingType = node.type === 'kiosk' ? 'Kiosk' : 'Booth';
+          return {
+            id: node.id || '',
+            tableId: node.id || '',
+            name: node.label || node.id || '',
+            capacity: node.capacity ?? 4,
+            coordinates: { x: node.x ?? 0, y: node.y ?? 0 },
+            seatingType,
+            qrEnabled: true,
+            status: 'ACTIVE',
+            priceMultiplier: 1,
+            zone: { id: zone.id, name: zone.name, zoneType: zone.zoneType },
+            createdAt: floorplan.createdAt.toISOString(),
+            updatedAt: floorplan.updatedAt.toISOString(),
+          };
+        });
+      }
+    }
+
     return NextResponse.json({
       success: true,
       layout: {
@@ -118,10 +150,10 @@ export async function GET(
           createdAt: station.createdAt.toISOString()
         })),
         summary: {
-          totalZones: zones.length,
-          totalSeats: seats.length,
+          totalZones: zonesWithMetadata.length,
+          totalSeats: seatsWithMetadata.length,
           totalStations: stations.length,
-          activeSeats: seats.filter(s => s.status === 'ACTIVE').length
+          activeSeats: seatsWithMetadata.length
         }
       }
     });
