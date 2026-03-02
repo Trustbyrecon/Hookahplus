@@ -106,6 +106,7 @@ const PRODUCTION_FLAGS: FeatureFlags = {
 const PILOT_LOUNGES = [
   'lounge_001', // Hookah Paradise Downtown
   'lounge_002', // Second pilot lounge
+  'CODIGO', // District Hookah CODIGO pilot
 ];
 
 // Connector IDs for referral testing

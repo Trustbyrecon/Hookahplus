@@ -1789,6 +1789,33 @@ export default function SimpleFSDDesign({
       {/* BOH Tab */}
       {activeTab === 'boh' && (
         <div className="space-y-4">
+          {/* NAN Kitchen: Guest refill requests (coal / flavor) — notify BOH to process */}
+          {(() => {
+            const refillRequestSessions = sessions.filter(
+              (s) =>
+                (s.state === 'ACTIVE' || getSessionStatus(s) === 'ACTIVE') &&
+                (s.edgeCase === 'refill_requested' || s.refillStatus === 'requested')
+            );
+            if (refillRequestSessions.length === 0) return null;
+            return (
+              <div className="bg-amber-900/30 border border-amber-600/50 rounded-lg p-4">
+                <h3 className="text-base font-semibold text-amber-200 mb-3 flex items-center space-x-2">
+                  <Coffee className="w-4 h-4 text-amber-400" />
+                  <span>Guest Refill Requests — NAN Kitchen</span>
+                  <span className="ml-2 px-2 py-0.5 rounded-full bg-amber-500/30 text-amber-200 text-xs font-medium">
+                    {refillRequestSessions.length}
+                  </span>
+                </h3>
+                <p className="text-xs text-amber-200/80 mb-3">
+                  Guest requested coal refill or new bowl via app. Prepare and complete refill.
+                </p>
+                <div className="space-y-2">
+                  {refillRequestSessions.map((s) => renderSessionCard(s))}
+                </div>
+              </div>
+            );
+          })()}
+
           <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
               <Package className="w-5 h-5 text-orange-400" />

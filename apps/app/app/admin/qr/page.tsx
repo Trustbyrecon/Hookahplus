@@ -20,8 +20,9 @@ interface StoredQR {
 
 export default function AdminQRPage() {
   const [loungeId, setLoungeId] = useState('CODIGO')
-  const [tableId, setTableId] = useState('T-001')
+  const [tableId, setTableId] = useState('301')
   const [campaign, setCampaign] = useState('')
+  const [demoMode, setDemoMode] = useState(true) // Demo QR: adds ref=demo for CODIGO pilot
   const [size, setSize] = useState(512)
   const [format, setFormat] = useState<'png' | 'svg'>('png')
   const [baseUrl, setBaseUrl] = useState('')
@@ -34,14 +35,43 @@ export default function AdminQRPage() {
   const [storedQRs, setStoredQRs] = useState<StoredQR[]>([])
   const [storedLoading, setStoredLoading] = useState(false)
 
-  // Table options
-  const tables = [
+  // Table options: CODIGO floorplan (F3) when loungeId is CODIGO, else generic
+  const CODIGO_TABLES = [
+    { id: '301', name: 'Table 301', zone: 'F3', capacity: 4 },
+    { id: '302', name: 'Table 302', zone: 'F3', capacity: 4 },
+    { id: '303', name: 'Table 303', zone: 'F3', capacity: 4 },
+    { id: '304', name: 'Table 304', zone: 'F3', capacity: 4 },
+    { id: '305', name: 'Table 305', zone: 'F3', capacity: 4 },
+    { id: '306', name: 'Table 306', zone: 'F3', capacity: 4 },
+    { id: '307', name: 'Table 307', zone: 'F3', capacity: 4 },
+    { id: '308', name: 'Table 308', zone: 'F3', capacity: 4 },
+    { id: '309', name: 'Table 309', zone: 'F3', capacity: 4 },
+    { id: '310', name: 'Table 310', zone: 'F3', capacity: 4 },
+    { id: '311', name: 'Table 311', zone: 'F3', capacity: 4 },
+    { id: '312', name: 'Table 312', zone: 'F3', capacity: 4 },
+    { id: '313', name: 'Table 313', zone: 'F3', capacity: 4 },
+    { id: '401', name: 'Table 401', zone: 'F3', capacity: 4 },
+    { id: '402', name: 'Table 402', zone: 'F3', capacity: 4 },
+    { id: '403', name: 'Table 403', zone: 'F3', capacity: 4 },
+    { id: '501', name: 'Table 501', zone: 'F3', capacity: 4 },
+    { id: '502', name: 'Table 502', zone: 'F3', capacity: 4 },
+    { id: '601', name: 'Table 601', zone: 'F3', capacity: 4 },
+    { id: '602', name: 'Table 602', zone: 'F3', capacity: 4 },
+    { id: '603', name: 'Table 603', zone: 'F3', capacity: 4 },
+    { id: '701', name: 'Table 701', zone: 'F3', capacity: 4 },
+    { id: '702', name: 'Table 702', zone: 'F3', capacity: 4 },
+    { id: '703', name: 'Table 703', zone: 'F3', capacity: 4 },
+    { id: '704', name: 'Table 704', zone: 'F3', capacity: 4 },
+    { id: '705', name: 'Table 705', zone: 'F3', capacity: 4 },
+  ]
+  const GENERIC_TABLES = [
     { id: 'T-001', name: 'Table 1', zone: 'Zone A', capacity: 4 },
     { id: 'T-002', name: 'Table 2', zone: 'Zone A', capacity: 4 },
     { id: 'T-003', name: 'Table 3', zone: 'Zone B', capacity: 4 },
     { id: 'T-004', name: 'Table 4', zone: 'Zone B', capacity: 4 },
     { id: 'T-005', name: 'Table 5', zone: 'Zone C', capacity: 4 },
   ]
+  const tables = loungeId === 'CODIGO' ? CODIGO_TABLES : GENERIC_TABLES
 
   const generateQRCode = async () => {
     setLoading(true)
@@ -55,7 +85,8 @@ export default function AdminQRPage() {
       params.set('tableId', tableId)
       params.set('size', String(size))
       params.set('format', format)
-      if (campaign) params.set('ref', campaign)
+      if (demoMode && loungeId === 'CODIGO') params.set('ref', 'demo')
+      else if (campaign) params.set('ref', campaign)
       if (baseUrl) params.set('baseUrl', baseUrl)
 
       const response = await fetch(`/api/admin/qr?${params.toString()}`)
@@ -144,12 +175,23 @@ export default function AdminQRPage() {
     }
   }
 
+  // Reset tableId when loungeId changes and current tableId not in new tables list
+  useEffect(() => {
+    const validIds =
+      loungeId === 'CODIGO'
+        ? CODIGO_TABLES.map((t) => t.id)
+        : GENERIC_TABLES.map((t) => t.id)
+    if (!validIds.includes(tableId)) {
+      setTableId(validIds[0] ?? '301')
+    }
+  }, [loungeId])
+
   // Auto-generate on mount or when table changes
   useEffect(() => {
     if (tableId) {
       generateQRCode()
     }
-  }, [tableId, campaign])
+  }, [tableId, campaign, demoMode])
 
   const fetchStoredQRs = async () => {
     if (!loungeId) return
@@ -246,6 +288,21 @@ export default function AdminQRPage() {
                   ))}
                 </select>
               </div>
+
+              {loungeId === 'CODIGO' && (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="demoMode"
+                    checked={demoMode}
+                    onChange={(e) => setDemoMode(e.target.checked)}
+                    className="rounded border-zinc-600 bg-zinc-700 text-teal-500 focus:ring-teal-500"
+                  />
+                  <label htmlFor="demoMode" className="text-sm text-zinc-300">
+                    Demo QR (adds ref=demo — syncs guest to CODIGO instance)
+                  </label>
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-zinc-300 mb-2">
