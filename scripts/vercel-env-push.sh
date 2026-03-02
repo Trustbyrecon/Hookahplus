@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Push apps/site/.env.local to Vercel (production, preview, development)
-# Usage: ./scripts/vercel-env-push.sh
+# Push apps/site/.env.local to Vercel
+# Usage:
+#   ./scripts/vercel-env-push.sh           # Push to production, preview, development
+#   ./scripts/vercel-env-push.sh --prod   # Push to production only (for live Stripe deploy)
 set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV_FILE="$SCRIPT_DIR/../apps/site/.env.local"
@@ -23,9 +25,17 @@ while IFS= read -r line; do
   fi
 done < "$ENV_FILE"
 
+if [[ "$1" == "--prod" ]]; then
+  ENVS=(production)
+  echo "▶ Pushing to production only..."
+else
+  ENVS=(production preview development)
+  echo "▶ Pushing to production, preview, development..."
+fi
+
 SENSITIVE_KEYS="STRIPE_SECRET_KEY STRIPE_TEST_SECRET_KEY"
-for env in production preview development; do
-  echo "▶ Pushing to $env..."
+for env in "${ENVS[@]}"; do
+  echo "[$env]"
   for key in "${!VARS[@]}"; do
     value="${VARS[$key]}"
     [[ -z "$value" ]] && continue

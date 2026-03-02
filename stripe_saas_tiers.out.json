@@ -1,0 +1,51 @@
+{
+  "tiers": {
+    "starter": {
+      "productId": "prod_U4nCsGlKESmJ0T",
+      "monthlyId": "price_1T6dc7DuKNq0KFAAwE3WTUpf",
+      "annualId": "price_1T6dc8DuKNq0KFAAUvGNbehg"
+    },
+    "pro": {
+      "productId": "prod_U4nC5FUxZnAvQG",
+      "monthlyId": "price_1T6dc9DuKNq0KFAAImGsQv8U",
+      "annualId": "price_1T6dc9DuKNq0KFAAm1G5WTKd"
+    },
+    "trust_plus": {
+      "productId": "prod_U4nCiAIwOl5Ngd",
+      "monthlyId": "price_1T6dcADuKNq0KFAAuCCFH7F6",
+      "annualId": "price_1T6dcBDuKNq0KFAAxuOpgBR9"
+    }
+  },
+  "addons": {
+    "flavor_intelligence": {
+      "productId": "prod_U4nC53IvJJaWPs",
+      "monthlyId": "price_1T6dcBDuKNq0KFAAEJmP1m8O",
+      "annualId": "price_1T6dcCDuKNq0KFAA3ldmBrMB"
+    },
+    "advanced_analytics": {
+      "productId": "prod_U4nCupvMdGHNZc",
+      "monthlyId": "price_1T6dcDDuKNq0KFAAEo6C1K0T",
+      "annualId": "price_1T6dcDDuKNq0KFAA3BDirFmw"
+    },
+    "staff_performance": {
+      "productId": "prod_U4nCZov5ELzMIY",
+      "monthlyId": "price_1T6dcEDuKNq0KFAATMYX3MA5",
+      "annualId": "price_1T6dcFDuKNq0KFAA2XgxDESP"
+    },
+    "custom_integrations": {
+      "productId": "prod_U4nC6uUaHEURC3",
+      "monthlyId": "price_1T6dcGDuKNq0KFAADrjndvUu",
+      "annualId": "price_1T6dcGDuKNq0KFAABf9WzXfI"
+    },
+    "agentic_commerce": {
+      "productId": "prod_U4nCKonKfyLpqk",
+      "monthlyId": "price_1T6dcHDuKNq0KFAAcdkmyel2",
+      "annualId": "price_1T6dcHDuKNq0KFAAbQMxTQcC"
+    },
+    "priority_support": {
+      "productId": "prod_U4nCnXuCDImFJI",
+      "monthlyId": "price_1T6dcIDuKNq0KFAA0qG934sK",
+      "annualId": "price_1T6dcJDuKNq0KFAAPf3UTgLz"
+    }
+  }
+}

@@ -10,10 +10,10 @@
 const fs = require('fs');
 const path = require('path');
 
-// Load .env.local from repo root or apps/site
+// Load .env.local from apps/site (preferred) or repo root
 const envPaths = [
-  path.join(__dirname, '../.env.local'),
   path.join(__dirname, '../apps/site/.env.local'),
+  path.join(__dirname, '../.env.local'),
 ];
 for (const envPath of envPaths) {
   if (fs.existsSync(envPath)) {
@@ -42,6 +42,16 @@ const TIERS = [
   { key: 'starter', name: 'Hookah+ Starter', monthly: 7900, annual: 79000 },
   { key: 'pro', name: 'Hookah+ Pro', monthly: 24900, annual: 249000 },
   { key: 'trust_plus', name: 'Hookah+ Trust+', monthly: 49900, annual: 499000 },
+];
+
+// Add-ons (fixed pricing). agentic_commerce_usage is metered - create manually in Stripe.
+const ADDONS = [
+  { key: 'flavor_intelligence', name: 'Flavor Intelligence', monthly: 2900, annual: 29000 },
+  { key: 'advanced_analytics', name: 'Advanced Analytics', monthly: 4900, annual: 49000 },
+  { key: 'staff_performance', name: 'Staff Performance Suite', monthly: 3900, annual: 39000 },
+  { key: 'custom_integrations', name: 'Custom Integrations', monthly: 9900, annual: 99000 },
+  { key: 'agentic_commerce', name: 'Agentic Commerce', monthly: 4900, annual: 49000 },
+  { key: 'priority_support', name: 'Priority Support', monthly: 4900, annual: 49000 },
 ];
 
 async function ensureProduct(name, metadata = {}) {
@@ -73,8 +83,12 @@ async function ensurePrice(productId, amount, interval, nickname) {
   return created.id;
 }
 
+function toEnvKey(key) {
+  return key === 'trust_plus' ? 'TRUST_PLUS' : key.split('_').map((s) => s.toUpperCase()).join('_');
+}
+
 async function main() {
-  const out = { tiers: {}, env: [] };
+  const out = { tiers: {}, addons: {}, env: [] };
 
   for (const tier of TIERS) {
     console.log(`📦 ${tier.name}...`);
@@ -95,18 +109,44 @@ async function main() {
     console.log(`   Monthly: ${monthlyId}`);
     console.log(`   Annual:  ${annualId}`);
 
-    const envKey = tier.key === 'trust_plus' ? 'TRUST_PLUS' : tier.key.toUpperCase();
+    const envKey = toEnvKey(tier.key);
     out.env.push(`PRICE_TIER_${envKey}=${monthlyId}`);
     out.env.push(`PRICE_TIER_${envKey}_ANNUAL=${annualId}`);
   }
 
+  console.log('');
+  for (const addon of ADDONS) {
+    console.log(`📦 Add-on: ${addon.name}...`);
+    const productId = await ensureProduct(addon.name, { addon: addon.key });
+    const monthlyId = await ensurePrice(
+      productId,
+      addon.monthly,
+      'month',
+      `${addon.name} $${addon.monthly / 100}/mo`
+    );
+    const annualId = await ensurePrice(
+      productId,
+      addon.annual,
+      'year',
+      `${addon.name} $${addon.annual / 100}/yr`
+    );
+    out.addons[addon.key] = { productId, monthlyId, annualId };
+    console.log(`   Monthly: ${monthlyId}`);
+    console.log(`   Annual:  ${annualId}`);
+
+    const envKey = toEnvKey(addon.key);
+    out.env.push(`PRICE_ADDON_${envKey}=${monthlyId}`);
+    out.env.push(`PRICE_ADDON_${envKey}_ANNUAL=${annualId}`);
+  }
+
   const outputPath = path.join(__dirname, '../stripe_saas_tiers.out.json');
-  fs.writeFileSync(outputPath, JSON.stringify({ tiers: out.tiers }, null, 2));
+  fs.writeFileSync(outputPath, JSON.stringify({ tiers: out.tiers, addons: out.addons }, null, 2));
 
   console.log('\n✅ Done. Output:', outputPath);
   console.log('\n📋 Add these to apps/site .env.local or Vercel:\n');
   out.env.forEach((line) => console.log(line));
-  console.log('\n💡 Restart the site app and test checkout on /pricing');
+  console.log('\n💡 agentic_commerce_usage is metered - create manually in Stripe if needed');
+  console.log('💡 Restart the site app and test checkout on /pricing');
 }
 
 main().catch((err) => {

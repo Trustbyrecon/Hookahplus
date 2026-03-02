@@ -211,8 +211,11 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error('[Subscribe API] Error:', error);
-    const details = error?.message || String(error);
     const stripeCode = error?.code || error?.type;
+    let details = error?.message || String(error);
+    if (stripeCode === 'api_key_expired') {
+      details = 'Stripe API key has expired. Update STRIPE_SECRET_KEY in Vercel and redeploy.';
+    }
     return NextResponse.json(
       { 
         error: 'Failed to create subscription checkout',
