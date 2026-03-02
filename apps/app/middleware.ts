@@ -77,6 +77,7 @@ export async function middleware(request: NextRequest) {
     '/api/health/live',
     '/api/health/ready',
     '/api/sessions', // QR code access (POST only)
+    '/api/session/resolve', // Guest flow: guest app calls this when guest scans table QR (server-to-server, no auth)
     '/api/preorders', // Pre-order flow must be public (QR + E2E)
     '/api/reflex/track', // Reflex tracking is intentionally public (client + server events)
     '/api/checkout-session',
