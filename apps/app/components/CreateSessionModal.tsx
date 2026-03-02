@@ -284,6 +284,44 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
     loadLaunchpadData();
   }, [loungeId, selectedTable, isCodigoMode]);
 
+  // Refetch config when modal opens (ensures fresh CODIGO data when user opens Create Session)
+  useEffect(() => {
+    if (isOpen && loungeId) {
+      fetch(`/api/lounges/${loungeId}/config`)
+        .then((r) => r.ok ? r.json() : null)
+        .then((data) => {
+          if (!data?.config) return;
+          if (data.config.baseSessionPrice) {
+            const base = data.config.baseSessionPrice / 100;
+            setLaunchpadBasePrice(base);
+            setFormData((prev) => ({
+              ...prev,
+              basePrice: base,
+              amount: calculateTotalAmount(prev.pricingModel, prev.timerDuration, prev.flavorMixPrice, base, selectedTable?.priceMultiplier || 1),
+            }));
+          }
+          const cd = data.config.configData;
+          if (cd?.menu_presets?.length) {
+            setLaunchpadPresets(cd.menu_presets.map((p: any, idx: number) => ({
+              id: p.id || `preset-${idx}`,
+              name: p.name || (Array.isArray(p.flavors) ? p.flavors.join(' + ') : ''),
+              flavors: Array.isArray(p.flavors) ? p.flavors : [],
+              description: p.name ? `LaunchPad preset: ${p.name}` : undefined,
+              price: isCodigoMode ? 0 : undefined,
+            })));
+          }
+          if (isCodigoMode && cd?.staff?.length) {
+            setCodigoStaff(cd.staff.map((s: any) => ({ name: s.name || '', role: s.role || '' })));
+          }
+          if (cd?.flavors) {
+            const all = [...(cd.flavors.standard || []).map((f: any) => f.name), ...(cd.flavors.premium || []).map((f: any) => f.name)];
+            if (all.length) setLaunchpadFlavors(all);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isOpen, loungeId, isCodigoMode, selectedTable?.priceMultiplier]);
+
 
   const handleInputChange = (field: keyof SessionData, value: string | number) => {
     setFormData(prev => {
