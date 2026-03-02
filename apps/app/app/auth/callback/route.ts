@@ -141,9 +141,10 @@ export async function GET(req: NextRequest) {
 
           // If user has admin/owner role, redirect to admin dashboard
           if ((membership.role === 'admin' || membership.role === 'owner')) {
-            // Admin login flow - always go to /admin
+            // Admin login flow - honor redirect param if it's an admin path
             if (adminLogin) {
-              return NextResponse.redirect(new URL('/admin', req.url));
+              const target = redirect && redirect.startsWith('/admin') ? redirect : '/admin';
+              return NextResponse.redirect(new URL(target, req.url));
             }
             // If redirect is the default or user is coming from login, send to main admin page
             if (redirect === '/admin/operator-onboarding' || redirect === '/') {
