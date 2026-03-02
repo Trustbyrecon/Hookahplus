@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { clientClient } from '../../../lib/supabase-client';
 import { Shield, Mail, Loader2, Lock, ArrowLeft } from 'lucide-react';
 
-export default function AdminLoginPage() {
+function AdminLoginContent() {
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/admin';
   const errorParam = searchParams.get('error');
@@ -232,5 +232,17 @@ export default function AdminLoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AdminLoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-teal-400" />
+      </div>
+    }>
+      <AdminLoginContent />
+    </Suspense>
   );
 }

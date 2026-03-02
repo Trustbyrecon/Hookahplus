@@ -78,7 +78,20 @@ export async function POST(req: NextRequest) {
       console.warn(`[Subscribe] Annual price not configured for ${normalizedTier}, using monthly price`);
     }
 
-    const finalPriceId = priceId || priceMap[normalizedTier]?.monthly!;
+    const finalPriceId = priceId || priceMap[normalizedTier]?.monthly;
+    if (!finalPriceId || typeof finalPriceId !== 'string') {
+      return NextResponse.json(
+        {
+          error: 'Stripe pricing is not configured for this tier',
+          details: `PRICE_TIER_${normalizedTier.toUpperCase()} (and optionally _ANNUAL) must be set. Run: node scripts/seed-stripe-saas-tiers.js`,
+          missing: [
+            `PRICE_TIER_${normalizedTier === 'trust_plus' ? 'TRUST_PLUS' : normalizedTier.toUpperCase()}`,
+            normalizedBillingCycle === 'annual' ? `PRICE_TIER_${normalizedTier === 'trust_plus' ? 'TRUST_PLUS' : normalizedTier.toUpperCase()}_ANNUAL` : null,
+          ].filter(Boolean),
+        },
+        { status: 500 }
+      );
+    }
 
     // Get site URL for redirects
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 
@@ -198,10 +211,13 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error('[Subscribe API] Error:', error);
+    const details = error?.message || String(error);
+    const stripeCode = error?.code || error?.type;
     return NextResponse.json(
       { 
         error: 'Failed to create subscription checkout',
-        details: error.message 
+        details,
+        ...(stripeCode && { stripeCode }),
       },
       { status: 500 }
     );
