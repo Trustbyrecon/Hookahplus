@@ -121,6 +121,8 @@ export async function middleware(request: NextRequest) {
     ...(isDemoRequest ? ['/api/metrics', '/api/demo-session', '/api/lounges/tables'] : []),
     // First Light mode: allow metrics, trust-lock, pulse, and campaigns without auth (Aliethia-aligned)
     ...(firstLightMode ? ['/api/metrics', '/api/trust-lock', '/api/pulse', '/api/campaigns'] : []),
+    // Demo / First Light: allow admin QR generator without auth (CODIGO pilot, demo QR codes)
+    ...(isDemoRequest || firstLightMode ? ['/admin/qr', '/api/admin/qr'] : []),
     // Dev-only: allow direct access to admin routes without auth
     ...(process.env.NODE_ENV !== 'production'
       ? [
