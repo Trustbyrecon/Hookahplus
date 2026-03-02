@@ -1,5 +1,18 @@
 import crypto from 'crypto';
 
+/** Safe UUID: works in Node and browser (Web Crypto API or fallback) */
+function safeRandomUUID(): string {
+  if (typeof globalThis !== 'undefined' && globalThis.crypto?.randomUUID) {
+    return globalThis.crypto.randomUUID();
+  }
+  if (typeof crypto !== 'undefined' && typeof (crypto as any).randomUUID === 'function') {
+    return (crypto as any).randomUUID();
+  }
+  // Fallback: random hex
+  const hex = crypto.randomBytes(16).toString('hex');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
+}
+
 /**
  * GhostLog Lite - Immutable Trust Stamping System
  * 
@@ -76,7 +89,7 @@ export function createGhostLogEntry(
   payload: Record<string, any>,
   eventId?: string
 ): GhostLogEntry {
-  const eventIdGenerated = eventId || crypto.randomUUID();
+  const eventIdGenerated = eventId || safeRandomUUID();
   const timestamp = new Date().toISOString();
   const nonce = generateNonce();
   

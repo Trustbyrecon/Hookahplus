@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { GuestProfile, FeatureFlags, PriceQuoteResponse } from '@guest-types';
-import { createGhostLogEntry } from '../../libs/ghostlog/hash';
+import { createGhostLogEntry } from '../../libs/ghostlog/client-hash';
 import { DollarSign, Tag, CreditCard, Clock, AlertCircle } from 'lucide-react';
 
 interface PriceBreakdownProps {

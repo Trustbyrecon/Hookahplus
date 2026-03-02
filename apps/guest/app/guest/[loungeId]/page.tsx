@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { QRData, GuestProfile, FeatureFlags } from '@guest-types';
 import { featureFlags } from '../../../config/flags';
 import QRGate from '../../../components/guest/QRGate';
-import FlavorMixSelector from '../../../components/customer/FlavorMixSelector';
+import FlavorMixSelector, { CODIGO_PRESETS } from '../../../components/customer/FlavorMixSelector';
 import SessionCard from '../../../components/guest/SessionCard';
 import PriceBreakdown from '../../../components/guest/PriceBreakdown';
 import RewardsBadgeStrip from '../../../components/guest/RewardsBadgeStrip';
@@ -363,16 +363,20 @@ export default function GuestLoungePage() {
               selectedFlavors={selectedFlavors}
               onFlavorToggle={handleFlavorToggle}
               onClearAll={handleClearAllFlavors}
-              basePrice={3000} // $30.00 base price
+              basePrice={loungeId === 'CODIGO' ? 6000 : 3000}
+              presets={loungeId === 'CODIGO' ? CODIGO_PRESETS : undefined}
+              onPresetSelect={loungeId === 'CODIGO' ? (flavors) => setSelectedFlavors(flavors) : undefined}
             />
             )}
 
             {/* Session Pricing */}
             {qrData?.tableId && (
               <SessionPricing
-              sessionType={sessionType}
-              onSessionTypeChange={setSessionType}
-            />
+                sessionType={sessionType}
+                onSessionTypeChange={setSessionType}
+                loungeId={loungeId}
+                flatFeeCents={loungeId === 'CODIGO' ? 6000 : 3000}
+              />
             )}
 
             {/* Order Review & Checkout */}
@@ -614,6 +618,8 @@ export default function GuestLoungePage() {
                 <SessionPricing
                   sessionType={sessionType}
                   onSessionTypeChange={setSessionType}
+                  loungeId={loungeId}
+                  flatFeeCents={loungeId === 'CODIGO' ? 6000 : 3000}
                 />
               </div>
             )}
@@ -657,6 +663,8 @@ export default function GuestLoungePage() {
                     onSelectionChange={setSelectedFlavors}
                     maxSelections={4}
                     onPriceUpdate={setFlavorMixPrice}
+                    presets={loungeId === 'CODIGO' ? CODIGO_PRESETS : undefined}
+                    flavorAddOnFree={loungeId === 'CODIGO'}
                   />
                   
                   {/* Special Instructions */}

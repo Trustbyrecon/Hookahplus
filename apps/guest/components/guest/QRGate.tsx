@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { QRData, GuestProfile, FeatureFlags } from '@guest-types';
-import { createGhostLogEntry } from '../../libs/ghostlog/hash';
+import { createGhostLogEntry } from '../../libs/ghostlog/client-hash';
 import { Shield, User, Smartphone, Clock, CheckCircle, UserPlus } from 'lucide-react';
 import Link from 'next/link';
 

@@ -13,12 +13,21 @@ interface Flavor {
   color: string;
 }
 
+export interface CodigoPreset {
+  id: string;
+  name: string;
+  flavors: string[];
+}
+
 interface MobileFlavorSelectorProps {
   flavors: Flavor[];
   selectedFlavors: string[];
   onFlavorToggle: (flavorId: string) => void;
   onClearAll: () => void;
   basePrice: number;
+  /** CODIGO presets - when set, shows preset selector above flavors */
+  presets?: CodigoPreset[];
+  onPresetSelect?: (flavors: string[]) => void;
 }
 
 const FLAVOR_CATEGORIES = [
@@ -34,7 +43,9 @@ export default function MobileFlavorSelector({
   selectedFlavors, 
   onFlavorToggle, 
   onClearAll,
-  basePrice 
+  basePrice,
+  presets,
+  onPresetSelect,
 }: MobileFlavorSelectorProps) {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showCart, setShowCart] = useState(false);
@@ -43,15 +54,43 @@ export default function MobileFlavorSelector({
     selectedCategory === 'all' || flavor.category.toLowerCase() === selectedCategory
   );
 
-  const totalPrice = basePrice + selectedFlavors.reduce((total, flavorId) => {
+  const flavorAddOnFree = !!presets;
+  const totalPrice = basePrice + (flavorAddOnFree ? 0 : selectedFlavors.reduce((total, flavorId) => {
     const flavor = flavors.find(f => f.id === flavorId);
     return total + (flavor?.price || 0);
-  }, 0);
+  }, 0));
 
-  const selectedFlavorObjects = selectedFlavors.map(id => flavors.find(f => f.id === id)).filter(Boolean) as Flavor[];
+  const selectedFlavorObjects = selectedFlavors.map(id => {
+    const f = flavors.find(f => f.id === id);
+    return f || { id, name: id, category: 'specialty', popular: false, price: 0, color: 'bg-teal-400' };
+  }) as Flavor[];
 
   return (
     <div className="space-y-4">
+      {/* CODIGO Presets */}
+      {presets && presets.length > 0 && onPresetSelect && (
+        <div className="rounded-xl bg-amber-500/10 border border-amber-500/30 p-4">
+          <h3 className="font-semibold text-amber-200 mb-2">Signature Presets</h3>
+          <div className="grid grid-cols-1 gap-2">
+            {presets.map((preset) => {
+              const isActive = JSON.stringify([...selectedFlavors].sort()) === JSON.stringify([...preset.flavors].sort());
+              return (
+                <button
+                  key={preset.id}
+                  onClick={() => onPresetSelect(isActive ? [] : preset.flavors)}
+                  className={`rounded-lg p-3 border-2 text-left transition-all ${
+                    isActive ? 'border-amber-400 bg-amber-500/20' : 'border-zinc-600 bg-zinc-800/50 hover:border-amber-500/40'
+                  }`}
+                >
+                  <div className="font-medium text-sm text-white">{preset.name}</div>
+                  <div className="text-xs text-zinc-400 mt-0.5">{preset.flavors.join(' + ')}</div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -122,9 +161,11 @@ export default function MobileFlavorSelector({
               </div>
 
               {/* Price */}
-              <div className="text-xs text-zinc-400 text-center">
-                +${(flavor.price / 100).toFixed(2)}
-              </div>
+              {!flavorAddOnFree && (
+                <div className="text-xs text-zinc-400 text-center">
+                  +${(flavor.price / 100).toFixed(2)}
+                </div>
+              )}
 
               {/* Selection Indicator */}
               {isSelected && (
@@ -170,9 +211,11 @@ export default function MobileFlavorSelector({
                     <div className={`w-3 h-3 rounded-full ${flavor.color}`} />
                     <span className="text-zinc-300">{flavor.name}</span>
                   </div>
-                  <span className="text-teal-400 font-medium">
-                    +${(flavor.price / 100).toFixed(2)}
-                  </span>
+                  {!flavorAddOnFree && (
+                    <span className="text-teal-400 font-medium">
+                      +${(flavor.price / 100).toFixed(2)}
+                    </span>
+                  )}
                 </div>
               ))}
             </div>

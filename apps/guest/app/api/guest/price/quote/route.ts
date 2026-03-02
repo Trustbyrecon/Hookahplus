@@ -55,7 +55,8 @@ export async function POST(req: NextRequest) {
     // Calculate base price based on session type
     let basePrice = 0;
     const flavors = session.mix?.flavors || [];
-    
+    const isCodigo = session.loungeId === 'CODIGO';
+
     if (session.sessionType === 'time-based') {
       // Time-based: $0.50 per minute (default 60 min session)
       const sessionDuration = session.duration || 60; // Default 60 minutes
@@ -66,13 +67,17 @@ export async function POST(req: NextRequest) {
       const totalFlavorPrice = flavorPrices.reduce((sum: number, price: number) => sum + price, 0);
       basePrice += totalFlavorPrice;
     } else {
-      // Flat fee: Use highest flavor price, or $30.00 minimum
-      const flavorPrices = flavors.map((flavor: string) => FLAVOR_PRICES[flavor] || 0);
-      if (flavorPrices.length > 0) {
-        const highestFlavorPrice = Math.max(...flavorPrices);
-        basePrice = Math.max(3000, highestFlavorPrice); // $30.00 minimum, or highest flavor price
+      // Flat fee: CODIGO uses $60 fixed (includes flavors); others use $30 or highest flavor
+      if (isCodigo) {
+        basePrice = 6000; // CODIGO: $60.00 fixed, flavors included
       } else {
-        basePrice = 3000; // Default $30.00 if no flavors selected
+        const flavorPrices = flavors.map((flavor: string) => FLAVOR_PRICES[flavor] || 0);
+        if (flavorPrices.length > 0) {
+          const highestFlavorPrice = Math.max(...flavorPrices);
+          basePrice = Math.max(3000, highestFlavorPrice); // $30.00 minimum, or highest flavor price
+        } else {
+          basePrice = 3000; // Default $30.00 if no flavors selected
+        }
       }
     }
     

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { GuestProfile, FeatureFlags, MixProfile } from '@guest-types';
-import { createGhostLogEntry } from '../../libs/ghostlog/hash';
+import { createGhostLogEntry } from '../../libs/ghostlog/client-hash';
 import { Palette, Star, Clock, Save, RotateCcw } from 'lucide-react';
 
 interface FlavorComposerProps {

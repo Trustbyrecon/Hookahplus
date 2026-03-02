@@ -116,6 +116,15 @@ const MASTER_PROFILES: Record<string, { base: string; accents: string[] }> = {
   bold: { base: "double-apple", accents: ["double-apple", "cinnamon", "cardamom"] },
 };
 
+// CODIGO preset mixes (from pilot config)
+export const CODIGO_PRESETS = [
+  { id: '1', name: "Noor Al Ein", flavors: ['Lemon Mint', 'Blackberry', 'Ice'] },
+  { id: '2', name: "Shah's Eclipse", flavors: ['Black Grape', 'Blueberry', 'Cooling Mint'] },
+  { id: '3', name: 'Zarafshan Gold', flavors: ['Honeydew Melon', 'Pear', 'Soft Vanilla'] },
+  { id: '4', name: 'Lailat Al Ward', flavors: ['Pomegranate', 'Blood Orange', 'Raspberry'] },
+  { id: '5', name: 'Noor al-Layl', flavors: ['Lemon Mint', 'Blackberry', 'Ice'] },
+];
+
 // --- Props Interface ---
 export interface FlavorMixSelectorProps {
   flavors?: any[];
@@ -124,6 +133,10 @@ export interface FlavorMixSelectorProps {
   maxSelections?: number;
   className?: string;
   onPriceUpdate?: (total: number) => void;
+  /** Lounge presets (e.g. CODIGO 5 presets). When set, shows preset selector above wheel. */
+  presets?: Array<{ id: string; name: string; flavors: string[] }>;
+  /** When true, flavor add-ons are $0 (included in flat fee). */
+  flavorAddOnFree?: boolean;
 }
 
 // --- Helper Functions ---
@@ -139,7 +152,8 @@ function findFlavorLabel(id: string) {
   return id;
 }
 
-function findFlavorPrice(id: string) {
+function findFlavorPrice(id: string, flavorAddOnFree?: boolean) {
+  if (flavorAddOnFree) return 0;
   for (const c of FLAVOR_CATEGORIES) {
     const f = c.items.find((x) => x.id === id);
     if (f) return f.price;
@@ -261,7 +275,9 @@ export default function FlavorMixSelector({
   onSelectionChange,
   maxSelections = 4,
   className,
-  onPriceUpdate
+  onPriceUpdate,
+  presets,
+  flavorAddOnFree = false,
 }: FlavorMixSelectorProps) {
   const [mode, setMode] = useState<"wheel" | "flow">("wheel");
   const [query, setQuery] = useState("");
@@ -283,10 +299,10 @@ export default function FlavorMixSelector({
     }
   }, [selectedFlavors]);
 
-  // Calculate total price
+  // Calculate total price (flavorAddOnFree = $0 for CODIGO)
   const totalPrice = useMemo(() => {
-    return selected.reduce((sum, id) => sum + findFlavorPrice(id), 0);
-  }, [selected]);
+    return selected.reduce((sum, id) => sum + findFlavorPrice(id, flavorAddOnFree), 0);
+  }, [selected, flavorAddOnFree]);
 
   // Notify parent of price changes
   React.useEffect(() => {
@@ -355,9 +371,55 @@ export default function FlavorMixSelector({
     setMood(null);
   }
 
+  const handlePresetClick = (preset: { id: string; name: string; flavors: string[] }) => {
+    const isActive = JSON.stringify(selected.sort()) === JSON.stringify([...preset.flavors].sort());
+    if (isActive) {
+      setSelected([]);
+      onSelectionChangeRef.current([]);
+    } else {
+      setSelected(preset.flavors);
+      onSelectionChangeRef.current(preset.flavors);
+    }
+  };
+
   return (
     <div className={cn("w-full bg-neutral-950 text-neutral-100 p-6 rounded-xl", className)}>
       <div className="max-w-6xl mx-auto grid gap-6">
+        {/* Preset Mixes (CODIGO) */}
+        {presets && presets.length > 0 && (
+          <div className="rounded-xl bg-white/5 border border-amber-500/30 p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="h-4 w-4 text-amber-400" />
+              <h3 className="font-semibold text-amber-200">Signature Presets</h3>
+            </div>
+            <p className="text-sm text-neutral-400 mb-3">
+              Choose a curated mix crafted by our Shisha Master, or build your own below.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+              {presets.map((preset) => {
+                const isActive = JSON.stringify([...selected].sort()) === JSON.stringify([...preset.flavors].sort());
+                return (
+                  <button
+                    key={preset.id}
+                    onClick={() => handlePresetClick(preset)}
+                    className={cx(
+                      "rounded-xl p-4 border-2 text-left transition-all",
+                      isActive
+                        ? "border-amber-400 bg-amber-500/20 text-amber-100"
+                        : "border-white/10 bg-white/5 hover:border-amber-500/40 hover:bg-amber-500/10 text-neutral-200"
+                    )}
+                  >
+                    <div className="font-medium text-sm">{preset.name}</div>
+                    <div className="text-xs text-neutral-400 mt-1">
+                      {preset.flavors.join(' + ')}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -400,7 +462,7 @@ export default function FlavorMixSelector({
             {selected.length ? (
               selected.map((id) => (
                 <span key={id} className="text-xs px-2 py-1 rounded-full bg-teal-500/20 border border-teal-500/30 text-teal-300">
-                  {findFlavorLabel(id)} (${findFlavorPrice(id).toFixed(2)})
+                  {findFlavorLabel(id)}{!flavorAddOnFree ? ` ($${findFlavorPrice(id, false).toFixed(2)})` : ''}
                 </span>
               ))
             ) : (
