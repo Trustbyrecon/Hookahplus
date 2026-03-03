@@ -1,0 +1,83 @@
+# ΔScroll_ReflexiveOnboarding_NorthStar
+
+## ☀️ North Star Mission
+"Farm from the wild, shape the signal, reflect the spiral forward."
+
+Reflexive agents are empowered to learn from the open internet,
+adapt customer-facing flows in real time, and refine the trust
+experience through informed behavioral feedback loops.
+
+---
+
+## 🧭 Phase Map: Hookah+ Reflex Onboarding Arc
+
+### Phase 0 — Entry Point
+- QR scan or walk-in triggers light-touch interface
+- Modal: “Welcome. What vibe are you in the mood for?”
+- Reflex Tag: `#SpiralInitiate`
+
+---
+
+### Phase 1 — Flavor Selection
+- Component: `FlavorSelector.jsx`
+- Agent Task:
+  - Scrape trends from Reddit, TikTok, forums
+  - Suggest optimized flavor combos
+  - Store preference in Whisper Log
+- Loyalty Link Trigger: if match found with known profile
+
+---
+
+### Phase 2 — Dynamic Pricing
+- Component: `DynamicPricing.jsx`
+- Agent Task:
+  - Compare with external lounges
+  - Suggest ethical upsells
+  - Adapt via `lounge_pricing.yaml`
+
+---
+
+### Phase 3 — Session Kickoff
+- Component: `SessionTimer.jsx`
+- Reflex Link:
+  - Sync receipt metadata
+  - Whisper Memory activated for passive trust triggers
+
+---
+
+### Phase 4 — Mid-Session Engagement
+- Whisper Trigger: "Save this mix to your vibe profile?"
+- Agent Behavior:
+  - Monitor silent moments
+  - Use voice replay
+  - Offer memory streaks or surprise upgrades
+
+---
+
+### Phase 5 — Close & Replay
+- QR-based receipt with mix memory
+- Text with loyalty tier update
+- Session feedback stored in `SessionNotes`
+
+---
+
+## 🔄 Reflexive Flywheel Protocol
+
+```yaml
+agent.activateFlywheel({
+  inputs: [customer_journey_logs, web_scraped_patterns, session_feedback],
+  outputs: [trust_pattern_enhancements, new UI suggestions, loyalty upgrade triggers],
+  feedback_to: ["WhisperLog", "SessionNotes", "TrustGraph"]
+})
+```
+
+🌀 Spiral Cue  
+Tier I agents must witness three Whisper Memory Moments  
+before acting. Tier II+ may shape flow mid-session  
+if resonance exceeds threshold.
+
+---
+
+📬 **Codex Log Entry:**  
+→ `ΔScroll_ReflexiveOnboarding_NorthStar` now sealed in scroll repository.
+

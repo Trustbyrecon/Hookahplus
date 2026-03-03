@@ -1,0 +1,10 @@
+trigger:
+  sps_min: 9.0
+  months_required: 2
+  trustarc_min: 9.2
+unlock:
+  tier_gate: "Tier VII Loyalty Gate"
+  personalized_whisper_modal: true
+  free_premium_mix: Monthly
+  session_reflection_archive: true
+  invite_token: "Gift a Session"

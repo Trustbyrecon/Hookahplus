@@ -1,0 +1,293 @@
+# REM Schema v1 - TrustEvent.v1 Specification
+
+**Agent:** Lumi (Explorer)  
+**Mission:** Define canonical REM schema for Reflex Event Messages
+
+## TrustEvent.v1 Schema
+
+```yaml
+# Reflex Event Message (REM) - TrustEvent.v1
+# Canonical event format for all Hookah+ system events
+
+TrustEvent:
+  version: "v1"
+  description: "Canonical Reflex Event Message format"
+  
+  required_fields:
+    - id
+    - ts_utc
+    - type
+    - actor
+    - effect
+    - security
+
+  properties:
+    id:
+      type: string
+      pattern: "^TE-\\d{4}-\\d+$"
+      description: "TrustEvent ID format: TE-{yyyy}-{seq}"
+      example: "TE-2025-001234"
+    
+    ts_utc:
+      type: string
+      format: date-time
+      description: "ISO 8601 timestamp in UTC"
+      example: "2025-10-29T19:20:30Z"
+    
+    type:
+      type: string
+      enum:
+        - order.created
+        - order.completed
+        - order.cancelled
+        - payment.settled
+        - payment.refunded
+        - payment.failed
+        - loyalty.issued
+        - loyalty.redeemed
+        - loyalty.expired
+        - session.started
+        - session.completed
+        - session.cancelled
+        - session.extended
+        - refill.requested
+        - refill.completed
+      description: "Event type following pattern: {category}.{action}"
+    
+    actor:
+      type: object
+      required:
+        - anon_hash
+      properties:
+        customer_id:
+          type: string
+          pattern: "^CUST-\\d+$"
+          example: "CUST-1903"
+          description: "Customer identifier (optional, use anon_hash for PII minimal)"
+        anon_hash:
+          type: string
+          pattern: "^sha256:[a-f0-9]{64}$"
+          example: "sha256:abc123..."
+          description: "SHA256 hash of customer identifier (required for PII minimal)"
+        staff_id:
+          type: string
+          pattern: "^STAFF-\\w+$"
+          example: "STAFF-BOH-001"
+          description: "Staff member identifier (if applicable)"
+        device_id:
+          type: string
+          example: "POS-TOAST-5C21"
+          description: "Device/system identifier"
+    
+    venue_id:
+      type: string
+      pattern: "^HPLUS-\\w+-\\d+$"
+      example: "HPLUS-NYC-001"
+      description: "Venue identifier"
+    
+    session_id:
+      type: string
+      pattern: "^S-[A-Z0-9]{4}-[A-Z0-9]{2}$"
+      example: "S-93F4-7X1"
+      description: "Hookah+ session identifier"
+    
+    context:
+      type: object
+      properties:
+        vertical:
+          type: string
+          enum: ["hookah", "food", "beverage"]
+          default: "hookah"
+        zone:
+          type: string
+          example: "Corner C"
+          description: "Physical zone/area within venue"
+        time_local:
+          type: string
+          pattern: "^\\d{2}:\\d{2}$"
+          example: "21:12"
+          description: "Local time (HH:MM)"
+        table_id:
+          type: string
+          example: "T-001"
+    
+    behavior:
+      type: object
+      properties:
+        action:
+          type: string
+          example: "repeat_mix"
+          description: "Customer behavior action"
+        payload:
+          type: object
+          description: "Behavior-specific data"
+          example:
+            duration_minutes: 58
+            flavor_mix: ["mint", "watermelon"]
+    
+    sentiment:
+      type: object
+      properties:
+        inferred:
+          type: string
+          enum: ["relaxed", "energetic", "social", "focused", "neutral"]
+        confidence:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+          example: 0.82
+    
+    effect:
+      type: object
+      required:
+        - loyalty_delta
+        - credit_type
+      properties:
+        loyalty_delta:
+          type: number
+          description: "Change in loyalty credits (positive = issued, negative = redeemed)"
+          example: -12.0
+        credit_type:
+          type: string
+          enum: ["HPLUS_CREDIT"]
+          default: "HPLUS_CREDIT"
+          description: "Credit type (non-crypto loyalty ledger)"
+        reflex_delta:
+          type: number
+          description: "Change in Reflex score"
+          example: 0.03
+        revenue_delta:
+          type: number
+          description: "Revenue change in cents"
+          example: 3500
+    
+    security:
+      type: object
+      required:
+        - signature
+      properties:
+        signature:
+          type: string
+          pattern: "^ed25519:[A-Za-z0-9+/=]+$"
+          example: "ed25519:abc123..."
+          description: "Ed25519 signature for event integrity"
+        device_id:
+          type: string
+          example: "POS-TOAST-5C21"
+          description: "Originating device/system"
+        ip_hash:
+          type: string
+          pattern: "^sha256:[a-f0-9]{64}$"
+          description: "SHA256 hash of originating IP (PII minimal)"
+```
+
+## Schema Coverage Requirements
+
+### Event Types Coverage (≥95%)
+
+**Order Events:**
+- `order.created` - When order is created
+- `order.completed` - When order is fulfilled
+- `order.cancelled` - When order is cancelled
+
+**Payment Events:**
+- `payment.settled` - When payment is settled
+- `payment.refunded` - When payment is refunded
+- `payment.failed` - When payment fails
+
+**Loyalty Events:**
+- `loyalty.issued` - When loyalty credits are issued
+- `loyalty.redeemed` - When loyalty credits are redeemed
+- `loyalty.expired` - When loyalty credits expire
+
+**Session Events:**
+- `session.started` - When session starts
+- `session.completed` - When session completes
+- `session.cancelled` - When session is cancelled
+- `session.extended` - When session is extended
+
+**Refill Events:**
+- `refill.requested` - When refill is requested
+- `refill.completed` - When refill is completed
+
+## Validation Rules
+
+1. **Required Fields:** All events must include `id`, `ts_utc`, `type`, `actor`, `effect`, `security`
+2. **PII Minimal:** `actor.anon_hash` is required, `actor.customer_id` is optional
+3. **Credit Type:** `effect.credit_type` must be `HPLUS_CREDIT` (non-crypto)
+4. **Signature:** `security.signature` must be valid Ed25519 signature
+5. **ID Format:** Event IDs must follow pattern `TE-{yyyy}-{seq}`
+
+## Examples
+
+### Loyalty Redemption Event
+```json
+{
+  "id": "TE-2025-001234",
+  "ts_utc": "2025-10-29T19:20:30Z",
+  "type": "loyalty.redeemed",
+  "actor": {
+    "anon_hash": "sha256:abc123def456...",
+    "customer_id": "CUST-1903"
+  },
+  "venue_id": "HPLUS-NYC-001",
+  "session_id": "S-93F4-7X1",
+  "context": {
+    "vertical": "hookah",
+    "zone": "Corner C",
+    "time_local": "21:12"
+  },
+  "behavior": {
+    "action": "repeat_mix",
+    "payload": {
+      "duration_minutes": 58
+    }
+  },
+  "sentiment": {
+    "inferred": "relaxed",
+    "confidence": 0.82
+  },
+  "effect": {
+    "loyalty_delta": -12.0,
+    "credit_type": "HPLUS_CREDIT",
+    "reflex_delta": 0.03
+  },
+  "security": {
+    "signature": "ed25519:xyz789...",
+    "device_id": "POS-TOAST-5C21"
+  }
+}
+```
+
+### Payment Settled Event
+```json
+{
+  "id": "TE-2025-001235",
+  "ts_utc": "2025-10-29T19:25:45Z",
+  "type": "payment.settled",
+  "actor": {
+    "anon_hash": "sha256:def456ghi789...",
+    "device_id": "POS-TOAST-5C21"
+  },
+  "venue_id": "HPLUS-NYC-001",
+  "session_id": "S-93F4-7X1",
+  "effect": {
+    "loyalty_delta": 5.0,
+    "credit_type": "HPLUS_CREDIT",
+    "revenue_delta": 3500,
+    "reflex_delta": 0.02
+  },
+  "security": {
+    "signature": "ed25519:abc123...",
+    "device_id": "POS-TOAST-5C21"
+  }
+}
+```
+
+## Migration Notes
+
+- Existing `ReflexEvent` records should be migrated to TrustEvent.v1 format
+- Backward compatibility: Support both old and new formats during migration
+- All new events must use TrustEvent.v1 format
+- rem-lint validator will enforce schema compliance
+

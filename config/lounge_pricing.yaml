@@ -1,0 +1,6 @@
+base_price: 30
+add_ons:
+  - name: Mint Boost
+    price: 5
+  - name: Ice Tip
+    price: 3

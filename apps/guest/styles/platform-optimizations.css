@@ -1,0 +1,359 @@
+/* iOS and Android Platform-Specific Optimizations */
+
+/* iOS-Specific Styles */
+.ios-optimized {
+  /* iOS Safe Area Support */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+.ios-status-bar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.ios-content {
+  /* iOS-specific scrolling */
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+.ios-flavor-wheel,
+.ios-fire-session {
+  /* iOS-specific touch handling */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.ios-touch-handler {
+  /* iOS-specific touch feedback */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+}
+
+.ios-home-indicator {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 8px 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: 1000;
+}
+
+/* iOS-specific animations */
+@keyframes ios-bounce {
+  0%, 20%, 53%, 80%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  40%, 43% {
+    transform: translate3d(0, -30px, 0);
+  }
+  70% {
+    transform: translate3d(0, -15px, 0);
+  }
+  90% {
+    transform: translate3d(0, -4px, 0);
+  }
+}
+
+.ios-bounce {
+  animation: ios-bounce 1s ease-in-out;
+}
+
+/* iOS-specific button styles */
+.ios-button {
+  -webkit-appearance: none;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(135deg, #007AFF, #0051D5);
+  color: white;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ios-button:active {
+  transform: scale(0.95);
+  background: linear-gradient(135deg, #0051D5, #003A9B);
+}
+
+/* iOS-specific input styles */
+.ios-input {
+  -webkit-appearance: none;
+  border-radius: 8px;
+  border: 1px solid #E5E5E7;
+  background: white;
+  padding: 12px 16px;
+  font-size: 16px; /* Prevents zoom on iOS */
+  transition: border-color 0.2s ease;
+}
+
+.ios-input:focus {
+  border-color: #007AFF;
+  outline: none;
+}
+
+/* Android-Specific Styles */
+.android-optimized {
+  /* Android-specific optimizations */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+}
+
+.android-status-bar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: #1976D2;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.android-content {
+  /* Android-specific scrolling */
+  overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+.android-flavor-wheel,
+.android-fire-session {
+  /* Android-specific touch handling */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+}
+
+.android-touch-handler {
+  /* Android-specific touch feedback */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+}
+
+.android-nav-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #121212;
+  z-index: 1000;
+}
+
+/* Material Design Components */
+.material-design {
+  /* Material Design elevation */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.material-design.elevation-1 {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+.material-design.elevation-2 {
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+}
+
+.material-design.elevation-3 {
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
+}
+
+/* Android-specific animations */
+@keyframes android-ripple-animation {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+.android-ripple {
+  animation: android-ripple-animation 0.6s ease-out;
+}
+
+/* Android-specific button styles */
+.android-button {
+  border-radius: 4px;
+  border: none;
+  background: #1976D2;
+  color: white;
+  font-weight: 500;
+  transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.android-button:active {
+  background: #1565C0;
+  transform: scale(0.98);
+}
+
+.android-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.3s ease, height 0.3s ease;
+}
+
+.android-button:active::before {
+  width: 200px;
+  height: 200px;
+}
+
+/* Android-specific input styles */
+.android-input {
+  border-radius: 4px;
+  border: 1px solid #E0E0E0;
+  background: white;
+  padding: 12px 16px;
+  font-size: 16px;
+  transition: border-color 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.android-input:focus {
+  border-color: #1976D2;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+}
+
+/* Dark Theme Support */
+.dark-theme {
+  background: #121212;
+  color: #FFFFFF;
+}
+
+.dark-theme .android-button {
+  background: #BB86FC;
+  color: #000000;
+}
+
+.dark-theme .android-input {
+  background: #1E1E1E;
+  border-color: #424242;
+  color: #FFFFFF;
+}
+
+.dark-theme .android-input:focus {
+  border-color: #BB86FC;
+  box-shadow: 0 0 0 2px rgba(187, 134, 252, 0.2);
+}
+
+/* PWA-Specific Styles */
+.pwa-install-prompt {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  right: 20px;
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  animation: slide-up 0.3s ease-out;
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.pwa-install-button {
+  background: #1976D2;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.pwa-install-button:hover {
+  background: #1565C0;
+}
+
+/* Cross-Platform Optimizations */
+.platform-optimized {
+  /* Ensure consistent behavior across platforms */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Responsive Design for Different Screen Sizes */
+@media (max-width: 480px) {
+  .ios-status-bar,
+  .android-status-bar {
+    padding: 8px 16px;
+  }
+  
+  .ios-home-indicator,
+  .android-nav-bar {
+    padding: 6px 0;
+  }
+}
+
+@media (min-width: 768px) {
+  .ios-optimized,
+  .android-optimized {
+    max-width: 768px;
+    margin: 0 auto;
+  }
+}
+
+/* High DPI Display Support */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .ios-button,
+  .android-button {
+    border-width: 0.5px;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .ios-bounce,
+  .android-ripple {
+    animation: none;
+  }
+  
+  .ios-button:active,
+  .android-button:active {
+    transform: none;
+  }
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  .ios-button,
+  .android-button {
+    border: 2px solid currentColor;
+  }
+  
+  .ios-input,
+  .android-input {
+    border-width: 2px;
+  }
+}

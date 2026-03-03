@@ -1,0 +1,15 @@
+.vercel
+
+# Environment variables
+.env
+.env.local
+.env*.local
+
+# Database connection strings (security)
+*DATABASE_URL*
+*SUPABASE_URL*
+*postgresql://*
+*postgres://*
+*.db
+*.sqlite
+*.sqlite3

@@ -59,6 +59,7 @@ const tiers = [
 
 export default function SignupPage() {
   const [selectedTier, setSelectedTier] = useState('pro');
+  const [businessName, setBusinessName] = useState('');
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -81,7 +82,7 @@ export default function SignupPage() {
       const response = await fetch('/api/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier: selectedTier, email })
+        body: JSON.stringify({ tier: selectedTier, email, businessName })
       });
 
       if (!response.ok) {
@@ -190,6 +191,20 @@ export default function SignupPage() {
             
             <form onSubmit={handleSubmit} className="max-w-md mx-auto">
               <div className="mb-6">
+                <label htmlFor="businessName" className="block text-white font-medium mb-2">
+                  Business Name (Lounge Name)
+                </label>
+                <input
+                  type="text"
+                  id="businessName"
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Enter your lounge name"
+                />
+              </div>
+              <div className="mb-6">
                 <label htmlFor="email" className="block text-white font-medium mb-2">
                   Email Address
                 </label>
@@ -212,7 +227,7 @@ export default function SignupPage() {
 
               <button
                 type="submit"
-                disabled={isLoading || !email}
+                disabled={isLoading || !email || !businessName}
                 className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100"
               >
                 {isLoading ? 'Creating Subscription...' : `Start ${tiers.find(t => t.id === selectedTier)?.name}`}

@@ -1,0 +1,372 @@
+import { prisma } from '../db';
+import { SquareAdapter } from './square';
+import { ToastAdapter } from './toast';
+import { CloverAdapter } from './clover';
+import { resolveHID } from '../hid/resolver';
+import { syncSessionToNetwork } from '../profiles/network';
+
+export interface PosSyncResult {
+  success: boolean;
+  syncedCount: number;
+  failedCount: number;
+  errors: string[];
+  reconciliationRate?: number;
+}
+
+export interface PosSyncOptions {
+  loungeId: string;
+  tenantId?: string | null;
+  posSystem: 'square' | 'toast' | 'clover';
+  startDate?: Date;
+  endDate?: Date;
+  autoReconcile?: boolean;
+}
+
+/**
+ * POS Sync Service
+ * Handles synchronization between Hookah+ sessions and POS systems
+ */
+export class PosSyncService {
+  /**
+   * Sync sessions with POS system
+   */
+  async syncSessions(options: PosSyncOptions): Promise<PosSyncResult> {
+    const { loungeId, tenantId, posSystem, startDate, endDate, autoReconcile = true } = options;
+    const errors: string[] = [];
+    let syncedCount = 0;
+    let failedCount = 0;
+
+    try {
+      // Get adapter for POS system
+      const adapter = this.getAdapter(posSystem, loungeId);
+      if (!adapter) {
+        return {
+          success: false,
+          syncedCount: 0,
+          failedCount: 0,
+          errors: [`POS system ${posSystem} not supported`]
+        };
+      }
+
+      // Get sessions that need syncing
+      const where: any = {
+        loungeId,
+        ...(tenantId ? { tenantId } : {}),
+        paymentStatus: 'succeeded'
+      };
+
+      if (startDate || endDate) {
+        where.createdAt = {};
+        if (startDate) where.createdAt.gte = startDate;
+        if (endDate) where.createdAt.lte = endDate;
+      }
+
+      const sessions = await prisma.session.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        take: 100 // Limit for performance
+      });
+
+      // Sync each session
+      for (const session of sessions) {
+        try {
+          // Check if already synced
+          const existingTicket = await prisma.posTicket.findFirst({
+            where: {
+              sessionId: session.id,
+              posSystem
+            }
+          });
+
+          if (existingTicket) {
+            continue; // Already synced
+          }
+
+          // Create POS order/ticket using attachOrder
+          const sessionItems = this.extractSessionItems(session);
+          // Convert to HpItem format
+          const items: Array<{ sku: string; name: string; qty: number; unit_amount: number }> = sessionItems.map(item => ({
+            sku: `hp_${item.name.toLowerCase().replace(/\s+/g, '_')}`,
+            name: item.name,
+            qty: item.quantity,
+            unit_amount: item.priceCents
+          }));
+          
+          const hpOrder = {
+            hp_order_id: `hp_ord_${session.id}`,
+            venue_id: session.loungeId,
+            table: session.tableId || undefined,
+            items,
+            totals: {
+              subtotal: session.priceCents || 0,
+              grand_total: session.priceCents || 0
+            },
+            trust_lock: { sig: `sig_${session.id}_${Date.now()}` }
+          };
+          
+          const posResult = await adapter.attachOrder(hpOrder);
+
+          if (posResult.pos_order_id) {
+            // Create POS ticket record
+            await prisma.posTicket.create({
+              data: {
+                ticketId: posResult.pos_order_id,
+                sessionId: session.id,
+                amountCents: session.priceCents || 0,
+                status: 'pending',
+                posSystem
+              }
+            });
+
+            syncedCount++;
+
+            // NEW: Resolve HID and sync to network if customer identified
+            if (session.customerPhone || session.customerRef) {
+              try {
+                const hidResult = await resolveHID({
+                  phone: session.customerPhone || undefined,
+                  email: session.customerRef?.includes('@') ? session.customerRef : undefined,
+                });
+
+                if (hidResult.hid) {
+                  await syncSessionToNetwork(
+                    session.id,
+                    hidResult.hid,
+                    session.loungeId,
+                    this.extractSessionItems(session),
+                    session.priceCents || undefined,
+                    posResult.pos_order_id
+                  );
+                }
+              } catch (error) {
+                console.error(`[POS Sync] Failed to sync session ${session.id} to network:`, error);
+                // Don't fail the sync, just log
+              }
+            }
+
+            // Auto-reconcile if enabled
+            if (autoReconcile && session.paymentIntent) {
+              await this.reconcileSession(session.id, posResult.pos_order_id, posSystem);
+            }
+          } else {
+            failedCount++;
+            errors.push(`Failed to sync session ${session.id}: Failed to create POS order`);
+          }
+        } catch (error) {
+          failedCount++;
+          errors.push(`Error syncing session ${session.id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+      }
+
+      // Calculate reconciliation rate if auto-reconcile was enabled
+      let reconciliationRate: number | undefined;
+      if (autoReconcile && syncedCount > 0) {
+        const reconciled = await prisma.settlementReconciliation.count({
+          where: {
+            sessionId: { in: sessions.map(s => s.id) },
+            status: 'matched'
+          }
+        });
+        reconciliationRate = (reconciled / syncedCount) * 100;
+      }
+
+      return {
+        success: failedCount === 0,
+        syncedCount,
+        failedCount,
+        errors: errors.slice(0, 10), // Limit errors
+        reconciliationRate
+      };
+    } catch (error) {
+      return {
+        success: false,
+        syncedCount,
+        failedCount,
+        errors: [error instanceof Error ? error.message : 'Unknown error']
+      };
+    }
+  }
+
+  /**
+   * Reconcile a session with POS ticket
+   */
+  async reconcileSession(sessionId: string, ticketId: string, posSystem: string): Promise<boolean> {
+    try {
+      const session = await prisma.session.findUnique({
+        where: { id: sessionId }
+      });
+
+      if (!session || !session.paymentIntent) {
+        return false;
+      }
+
+      // Check if already reconciled
+      const existing = await prisma.settlementReconciliation.findFirst({
+        where: {
+          sessionId,
+          posTicketId: ticketId
+        }
+      });
+
+      if (existing && existing.status === 'matched') {
+        return true; // Already reconciled
+      }
+
+      // Create or update reconciliation record
+      await prisma.settlementReconciliation.upsert({
+        where: {
+          id: existing?.id || `recon_${sessionId}_${ticketId}`
+        },
+        create: {
+          stripeChargeId: session.paymentIntent,
+          posTicketId: ticketId,
+          sessionId,
+          amount: session.priceCents || 0,
+          currency: 'USD',
+          status: 'matched',
+          matchedAt: new Date()
+        },
+        update: {
+          status: 'matched',
+          matchedAt: new Date()
+        }
+      });
+
+      return true;
+    } catch (error) {
+      console.error('[POS Sync] Error reconciling session:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get reconciliation statistics
+   */
+  async getReconciliationStats(loungeId: string, tenantId?: string | null): Promise<{
+    totalSessions: number;
+    reconciledSessions: number;
+    reconciliationRate: number;
+    orphanedCharges: number;
+    unmatchedTickets: number;
+  }> {
+    try {
+      // Get total paid sessions
+      const sessionWhere: any = { loungeId, paymentStatus: 'succeeded' };
+      if (tenantId) sessionWhere.tenantId = tenantId;
+
+      const sessions = await prisma.session.findMany({
+        where: sessionWhere,
+        select: { id: true },
+        take: 5000,
+      });
+      const sessionIds = sessions.map((s) => s.id);
+      const totalSessions = sessionIds.length;
+
+      // Get reconciled sessions
+      const reconciledSessions = await prisma.settlementReconciliation.count({
+        where: {
+          sessionId: { in: sessionIds },
+          status: 'matched',
+        } as any,
+      });
+
+      // Get orphaned charges (Stripe charges without POS tickets)
+      const orphanedCharges = await prisma.settlementReconciliation.count({
+        where: {
+          sessionId: { in: sessionIds },
+          status: 'orphaned',
+          stripeChargeId: { not: null },
+          posTicketId: null
+        } as any,
+      });
+
+      // Get unmatched tickets (POS tickets without Stripe charges)
+      const unmatchedTickets = await prisma.settlementReconciliation.count({
+        where: {
+          sessionId: { in: sessionIds },
+          status: 'orphaned',
+          posTicketId: { not: null },
+          stripeChargeId: null
+        } as any,
+      });
+
+      const reconciliationRate = totalSessions > 0 
+        ? (reconciledSessions / totalSessions) * 100 
+        : 0;
+
+      return {
+        totalSessions,
+        reconciledSessions,
+        reconciliationRate,
+        orphanedCharges,
+        unmatchedTickets
+      };
+    } catch (error) {
+      console.error('[POS Sync] Error getting reconciliation stats:', error);
+      return {
+        totalSessions: 0,
+        reconciledSessions: 0,
+        reconciliationRate: 0,
+        orphanedCharges: 0,
+        unmatchedTickets: 0
+      };
+    }
+  }
+
+  /**
+   * Get POS adapter instance
+   */
+  private getAdapter(posSystem: string, venueId: string) {
+    switch (posSystem) {
+      case 'square':
+        return new SquareAdapter({ venueId });
+      case 'toast':
+        return new ToastAdapter({ venueId });
+      case 'clover':
+        return new CloverAdapter({ venueId });
+      default:
+        return null;
+    }
+  }
+
+  /**
+   * Extract items from session for POS
+   */
+  private extractSessionItems(session: any): Array<{ name: string; quantity: number; priceCents: number }> {
+    const items: Array<{ name: string; quantity: number; priceCents: number }> = [];
+
+    // Base session
+    items.push({
+      name: 'Hookah Session',
+      quantity: 1,
+      priceCents: session.priceCents || 0
+    });
+
+    // Add flavor mix if available
+    if (session.flavorMix) {
+      try {
+        const mix = typeof session.flavorMix === 'string' 
+          ? JSON.parse(session.flavorMix) 
+          : session.flavorMix;
+        
+        if (Array.isArray(mix.flavors)) {
+          mix.flavors.forEach((flavor: string) => {
+            items.push({
+              name: `Flavor: ${flavor}`,
+              quantity: 1,
+              priceCents: 0 // Flavors included in base price
+            });
+          });
+        }
+      } catch (e) {
+        // Ignore parse errors
+      }
+    }
+
+    return items;
+  }
+}
+
+// Singleton instance
+export const posSyncService = new PosSyncService();
+

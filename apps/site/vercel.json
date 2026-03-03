@@ -1,0 +1,28 @@
+{
+  "version": 2,
+  "buildCommand": "cd ../.. && cd apps/site && unset npm_config_workspace npm_config_workspaces npm_config_workspaces_enabled npm_config_user_agent && npx prisma generate --schema=../../prisma/schema.prisma && npx next build && node scripts/generate-sitemap.js",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "installCommand": "cd ../.. && npm ci --include=dev",
+  "ignoreCommand": "exit 1",
+  "redirects": [
+    {
+      "source": "/app/:path*",
+      "destination": "https://hookahplus-app-prod.vercel.app/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/guest/:path*",
+      "destination": "https://hookahplus-guest-prod.vercel.app/:path*",
+      "permanent": false
+    }
+  ],
+  "env": {
+    "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+    "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "1",
+    "NEXT_PUBLIC_CLARITY_THRESHOLD": "0.98",
+    "NEXT_PUBLIC_RESONANCE_FIELD": "soft-gold-on-obsidian",
+    "NEXT_PUBLIC_SYMBOLIC_MARK": "Open-Gate-Phi",
+    "NEXT_PUBLIC_HARMONIC_SIGNATURE": "Delta-A7"
+  }
+}

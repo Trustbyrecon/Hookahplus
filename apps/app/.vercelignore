@@ -1,0 +1,30 @@
+# Vercel Build Ignore
+# Only build on main branch for production deployments
+# This prevents preview deployments for feature branches
+
+# Ignore all files - the Vercel dashboard "Ignored Build Step" setting
+# should be configured to only build on main branch
+# Command: if [ "$VERCEL_GIT_COMMIT_REF" != "main" ]; then exit 0; fi
+
+# Development files
+*.log
+*.swp
+*.swo
+*~
+.DS_Store
+.env.local
+.env.*.local
+
+# Test files
+test-results/
+playwright-report/
+coverage/
+
+# Build artifacts (will be regenerated)
+.next/
+node_modules/
+
+# Documentation (not needed for deployment)
+*.md
+!README.md
+

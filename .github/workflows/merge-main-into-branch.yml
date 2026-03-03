@@ -1,0 +1,38 @@
+# Merge origin/main into this branch (origin/main has paths invalid on Windows)
+# Runs automatically on push to fix/phased-clean-pr; also available as manual trigger
+name: Merge main into branch
+
+on:
+  push:
+    branches: [fix/phased-clean-pr]
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: "Branch to merge main into"
+        required: true
+        default: "fix/phased-clean-pr"
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.target_branch }}
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Merge origin/main
+        run: |
+          git fetch origin main
+          git merge origin/main --allow-unrelated-histories -m "Merge origin/main: establish common base for PR"
+
+      - name: Push
+        run: git push origin ${{ github.event.inputs.target_branch }}

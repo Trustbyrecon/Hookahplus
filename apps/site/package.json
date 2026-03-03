@@ -1,0 +1,61 @@
+{
+  "name": "@hookahplus/site",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "dev:default": "next dev",
+    "build": "npx prisma generate --schema=../../prisma/schema.prisma && next build && node scripts/generate-sitemap.js",
+    "start": "next start",
+    "lint": "next lint",
+    "generate-playbook-pdf": "node scripts/generate-smart-lounge-playbook-pdf.js",
+    "generate-investor-deck-pdf": "node scripts/generate-investor-deck-pdf.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "@supabase/supabase-js": "^2.83.0",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "clsx": "^2.0.0",
+    "dotenv": "^17.2.2",
+    "framer-motion": "^10.16.4",
+    "js-yaml": "4.1.1",
+    "lucide-react": "^0.263.1",
+    "next": "15.5.12",
+    "postcss-preset-env": "^10.3.1",
+    "qrcode": "^1.5.3",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "react-markdown": "10.1.0",
+    "remark-gfm": "4.0.1",
+    "resend": "6.4.2",
+    "stripe": "^14.21.0",
+    "tailwind-merge": "^2.0.0",
+    "tailwindcss": "3.4.17",
+    "typescript": "^5.0.0"
+  },
+  "description": "",
+  "main": "next.config.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@types/js-yaml": "4.0.9",
+    "@types/qrcode": "^1.5.5",
+    "@vitest/ui": "^3.2.4",
+    "eslint": "8.57.0",
+    "eslint-config-next": "15.5.12",
+    "jsdom": "^27.0.0",
+    "vitest": "^3.2.4"
+  },
+  "optionalDependencies": {
+    "@playwright/test": "^1.56.0",
+    "puppeteer": "24.37.3"
+  }
+}
