@@ -65,6 +65,25 @@ function buildDatabaseUrlOrThrow(): string {
       : `${databaseUrl}?query_timeout=5000`;
   }
 
+  // Supabase pooler (port 6543) + Vercel serverless: prevent "Max client connections reached"
+  // https://supabase.com/docs/guides/database/prisma/prisma-troubleshooting
+  if (
+    process.env.NODE_ENV === "production" &&
+    databaseUrl.includes("supabase.com") &&
+    databaseUrl.includes(":6543")
+  ) {
+    if (!databaseUrl.includes("pgbouncer=true")) {
+      databaseUrl = databaseUrl.includes("?")
+        ? `${databaseUrl}&pgbouncer=true`
+        : `${databaseUrl}?pgbouncer=true`;
+    }
+    if (!databaseUrl.includes("connection_limit=")) {
+      databaseUrl = databaseUrl.includes("?")
+        ? `${databaseUrl}&connection_limit=1`
+        : `${databaseUrl}?connection_limit=1`;
+    }
+  }
+
   // Helpful diagnostics for common Supabase P1001 cases.
   if (process.env.NODE_ENV !== "production" && databaseUrl.includes("supabase.com")) {
     const isDirect5432 = databaseUrl.includes(":5432");

@@ -15,12 +15,21 @@ BEGIN
 END
 $$;
 
+-- ParticipantStatus enum required by Prisma
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type t WHERE t.typname = 'ParticipantStatus') THEN
+    CREATE TYPE "ParticipantStatus" AS ENUM ('ACTIVE', 'LEFT');
+  END IF;
+END
+$$;
+
 CREATE TABLE IF NOT EXISTS participants (
   id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
   session_id text NOT NULL REFERENCES "Session"(id) ON DELETE CASCADE,
   identity_key text NOT NULL,
   display_name text NOT NULL DEFAULT 'Guest',
-  status text NOT NULL DEFAULT 'ACTIVE',
+  status "ParticipantStatus" NOT NULL DEFAULT 'ACTIVE',
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
@@ -34,7 +43,8 @@ CREATE TABLE IF NOT EXISTS participant_prefs (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS idx_session_lounge_table_state ON "Session"(lounge_id, table_id, state);
+-- Session uses camelCase columns (loungeId, tableId) in production
+CREATE INDEX IF NOT EXISTS idx_session_lounge_table_state ON "Session"("loungeId", "tableId", state);
 CREATE INDEX IF NOT EXISTS idx_participants_session_id ON participants(session_id);
 CREATE INDEX IF NOT EXISTS idx_participants_identity_key ON participants(identity_key);
 CREATE INDEX IF NOT EXISTS idx_participants_session_identity_status ON participants(session_id, identity_key, status);
