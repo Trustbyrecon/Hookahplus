@@ -122,7 +122,7 @@ export const CODIGO_PRESETS = [
   { id: '2', name: "Shah's Eclipse", flavors: ['Black Grape', 'Blueberry', 'Cooling Mint'] },
   { id: '3', name: 'Zarafshan Gold', flavors: ['Honeydew Melon', 'Pear', 'Soft Vanilla'] },
   { id: '4', name: 'Lailat Al Ward', flavors: ['Pomegranate', 'Blood Orange', 'Raspberry'] },
-  { id: '5', name: 'Noor al-Layl', flavors: ['Lemon Mint', 'Blackberry', 'Ice'] },
+  { id: '5', name: 'Noor al-Layl', flavors: ['Blueberry', 'Soft Vanilla', 'Cooling Mint'] },
 ];
 
 // --- Props Interface ---
@@ -262,7 +262,36 @@ function getStrengthLabel(value: number) {
   if (value >= 67) return "Strong";
   if (value >= 34) return "Medium";
   if (value > 0) return "Light";
-  return "Gentle";
+  return "Neutral";
+}
+
+type VibeLevel = 'low' | 'medium' | 'high';
+
+function getRecommendationsFromVibe(profile: { balance: VibeLevel; sweetness: VibeLevel; strength: VibeLevel }): string[][] {
+  const { balance, sweetness, strength } = profile;
+  const count = balance === 'low' ? 2 : balance === 'medium' ? 3 : 4;
+
+  const sweetLow = ['mint', 'lemon', 'lime', 'ice-mint'];
+  const sweetMed = ['watermelon', 'grape', 'vanilla', 'berry'];
+  const sweetHigh = ['mango', 'peach', 'caramel', 'vanilla'];
+
+  const strongLow = ['mint', 'watermelon', 'vanilla', 'peach'];
+  const strongMed = ['berry', 'lemon', 'grape', 'lime'];
+  const strongHigh = ['double-apple', 'cinnamon', 'cardamom', 'rose'];
+
+  const pick = (arr: string[], n: number) => {
+    const shuffled = [...arr].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, Math.min(n, shuffled.length));
+  };
+
+  const sweetnessPool = sweetness === 'low' ? sweetLow : sweetness === 'high' ? sweetHigh : sweetMed;
+  const strengthPool = strength === 'low' ? strongLow : strength === 'high' ? strongHigh : strongMed;
+
+  const rec1 = [...new Set([...pick(sweetnessPool, 2), ...pick(strengthPool, count - 2)])].slice(0, count);
+  const rec2 = [...new Set([...pick(sweetnessPool, 1), ...pick(strengthPool, count - 1)])].slice(0, count);
+  const rec3 = [...new Set([...pick(sweetnessPool, count - 1), ...pick(strengthPool, 1)])].slice(0, count);
+
+  return [rec1, rec2, rec3].map((r) => (r.length >= count ? r : [...r, ...pick(sweetMed, count - r.length)].slice(0, count));
 }
 
 function toRad(deg: number) {
@@ -283,6 +312,12 @@ export default function FlavorMixSelector({
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string[]>(selectedFlavors);
   const [mood, setMood] = useState<string | null>(null);
+  const [vibeProfile, setVibeProfile] = useState<{ balance: VibeLevel; sweetness: VibeLevel; strength: VibeLevel }>({
+    balance: 'medium',
+    sweetness: 'medium',
+    strength: 'medium',
+  });
+  const [eatDrink, setEatDrink] = useState("");
   const prevSelectedRef = React.useRef<string[]>(selectedFlavors);
   const onSelectionChangeRef = React.useRef(onSelectionChange);
 
@@ -369,6 +404,8 @@ export default function FlavorMixSelector({
   function clearAll() {
     setSelected([]);
     setMood(null);
+    setVibeProfile({ balance: 'medium', sweetness: 'medium', strength: 'medium' });
+    setEatDrink("");
   }
 
   const handlePresetClick = (preset: { id: string; name: string; flavors: string[] }) => {
@@ -496,10 +533,18 @@ export default function FlavorMixSelector({
           <GuidedMode
             selected={selected}
             onToggle={toggleFlavor}
+            onApplyRec={(ids: string[]) => {
+              setSelected(ids);
+              onSelectionChangeRef.current(ids);
+            }}
             mood={mood}
             setMood={setMood}
             recommended={recommended}
             maxSelections={maxSelections}
+            vibeProfile={vibeProfile}
+            setVibeProfile={setVibeProfile}
+            eatDrink={eatDrink}
+            setEatDrink={setEatDrink}
           />
         )}
 
@@ -647,7 +692,29 @@ function WheelMode({
 }
 
 // --- Guided Mode Component ---
-function GuidedMode({ selected, onToggle, mood, setMood, recommended, maxSelections }: any) {
+const VIBE_LEVELS: { id: VibeLevel; label: string }[] = [
+  { id: 'low', label: 'Low' },
+  { id: 'medium', label: 'Medium' },
+  { id: 'high', label: 'High' },
+];
+
+function GuidedMode({
+  selected,
+  onToggle,
+  onApplyRec,
+  mood,
+  setMood,
+  recommended,
+  maxSelections,
+  vibeProfile,
+  setVibeProfile,
+  eatDrink,
+  setEatDrink,
+}: any) {
+  const masterRecs = useMemo(
+    () => getRecommendationsFromVibe(vibeProfile),
+    [vibeProfile.balance, vibeProfile.sweetness, vibeProfile.strength]
+  );
   return (
     <div className="space-y-4">
       {/* Master Header Strip */}
@@ -665,32 +732,62 @@ function GuidedMode({ selected, onToggle, mood, setMood, recommended, maxSelecti
             </div>
           </div>
         </div>
-        {(() => {
-          const meters = computeMasterMeters(selected);
-          const moodConfig = MOODS.find((m) => m.id === mood);
-          const hasSelection = selected.length > 0;
-          const profileLabel = moodConfig ? moodConfig.label : "Choose a vibe";
-          const balance = hasSelection ? meters.balanceScore : 0;
-          const sweetnessLabel = hasSelection ? getSweetnessLabel(meters.sweetness) : "—";
-          const strengthLabel = hasSelection ? getStrengthLabel(meters.strength) : "—";
-
-          return (
-            <div className="flex flex-wrap gap-2 text-xs">
-              <span className="px-2 py-1 rounded-full bg-black/40 border border-white/10 text-neutral-200">
-                Profile: {profileLabel}
+        {/* Selectable Vibe Profile: Balance, Sweetness, Strength */}
+        <div className="flex flex-wrap gap-4">
+          {(['balance', 'sweetness', 'strength'] as const).map((key) => (
+            <div key={key} className="flex flex-col gap-1">
+              <span className="text-[11px] uppercase tracking-wide text-neutral-400">
+                {key === 'balance' ? 'Balance' : key === 'sweetness' ? 'Sweetness' : 'Strength'}
               </span>
-              <span className="px-2 py-1 rounded-full bg-black/40 border border-amber-400/50 text-amber-200">
-                Balance: {hasSelection ? balance : "—"}
-              </span>
-              <span className="px-2 py-1 rounded-full bg-black/40 border border-white/10 text-neutral-200">
-                Sweetness: {sweetnessLabel}
-              </span>
-              <span className="px-2 py-1 rounded-full bg-black/40 border border-white/10 text-neutral-200">
-                Strength: {strengthLabel}
-              </span>
+              <div className="flex gap-1">
+                {VIBE_LEVELS.map(({ id, label }) => (
+                  <button
+                    key={id}
+                    onClick={() => setVibeProfile((p: any) => ({ ...p, [key]: id }))}
+                    className={cx(
+                      "px-2 py-1 rounded-lg text-xs border transition",
+                      vibeProfile[key] === id
+                        ? "bg-amber-500/20 border-amber-400/50 text-amber-200"
+                        : "bg-black/40 border-white/10 text-neutral-300 hover:bg-white/10"
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
-          );
-        })()}
+          ))}
+        </div>
+
+        {/* Eat/Drink Question */}
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] uppercase tracking-wide text-neutral-400">
+            What did you have to eat and drink?
+          </label>
+          <input
+            type="text"
+            value={eatDrink}
+            onChange={(e) => setEatDrink(e.target.value)}
+            placeholder="e.g. coffee, dessert, spicy food..."
+            className="rounded-lg bg-black/40 border border-white/10 px-3 py-2 text-sm text-white placeholder:text-neutral-500 focus:border-amber-500/40 focus:outline-none"
+          />
+        </div>
+
+        {/* 3 Recommendations based on vibe profile */}
+        <div className="flex flex-col gap-2">
+          <span className="text-[11px] uppercase tracking-wide text-amber-300">3 Recommendations for you</span>
+          <div className="flex flex-wrap gap-2">
+            {masterRecs.map((rec, idx) => (
+              <button
+                key={idx}
+                onClick={() => onApplyRec(rec.slice(0, maxSelections))}
+                className="flex flex-wrap gap-1 px-3 py-2 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-200 text-xs transition"
+              >
+                {rec.map((id) => findFlavorLabel(id)).join(' + ')}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, ReactNode, useState, useEffect } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useGuestSessionData } from '../hooks/useGuestSessionData';
 import { FireSession } from '../../app/types/enhancedSession';
 
@@ -19,8 +20,20 @@ interface GuestSessionContextType {
 const GuestSessionContext = createContext<GuestSessionContextType | undefined>(undefined);
 
 export function GuestSessionProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [tableId, setTableId] = useState<string | null>(null);
   const [customerPhone, setCustomerPhone] = useState<string | null>(null);
+
+  // Sync tableId from URL when on guest/CODIGO or hookah-tracker
+  useEffect(() => {
+    const urlTableId = searchParams?.get('tableId');
+    const isGuestPage = pathname?.startsWith('/guest/');
+    const isTrackerPage = pathname === '/hookah-tracker';
+    if ((isGuestPage || isTrackerPage) && urlTableId) {
+      setTableId(urlTableId);
+    }
+  }, [pathname, searchParams]);
 
   // Load customer phone from localStorage on mount
   useEffect(() => {

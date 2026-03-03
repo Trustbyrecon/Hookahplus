@@ -29,7 +29,7 @@ const PILOT_CONFIG = {
     { id: '2', name: "Shah's Eclipse", flavors: ['Black Grape', 'Blueberry', 'Cooling Mint'] },
     { id: '3', name: 'Zarafshan Gold', flavors: ['Honeydew Melon', 'Pear', 'Soft Vanilla'] },
     { id: '4', name: 'Lailat Al Ward', flavors: ['Pomegranate', 'Blood Orange', 'Raspberry'] },
-    { id: '5', name: 'Noor al-Layl', flavors: ['Lemon Mint', 'Blackberry', 'Ice'] },
+    { id: '5', name: 'Noor al-Layl', flavors: ['Blueberry', 'Soft Vanilla', 'Cooling Mint'] },
   ],
   menuCatalogs: {
     'Al Fakher x Cookies': ['Blueberry Caviar', 'Citrus Zen', 'Lemon Icy', 'Purple Sunset', 'Sandia'],

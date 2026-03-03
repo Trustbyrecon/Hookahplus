@@ -151,7 +151,9 @@ export default function QRGate({ qrData, guestProfile, flags, onProfileUpdate, i
           <Shield className="w-6 h-6 text-primary-400" />
         </div>
         <div>
-          <h2 className="text-xl font-semibold text-white">Welcome to Hookah+</h2>
+          <h2 className="text-xl font-semibold text-white">
+            {qrData.loungeId === 'CODIGO' ? 'District Hookah powered by H+' : 'Welcome to Hookah+'}
+          </h2>
           <p className="text-sm text-zinc-400">Scan complete - Ready to start your session</p>
         </div>
       </div>
