@@ -51,6 +51,45 @@ export async function resolveSessionParticipant(
   });
 
   if (activeSessions.length > 1) {
+    // CODIGO pilot demo: allow join to most recent session instead of blocking
+    if (loungeId === "CODIGO") {
+      const mostRecent = activeSessions[activeSessions.length - 1];
+      const sessionId = mostRecent!.id;
+
+      const existingParticipant = await prisma.participant.findFirst({
+        where: {
+          sessionId,
+          identityKey,
+          status: "ACTIVE",
+        },
+        select: { id: true },
+      });
+
+      if (existingParticipant) {
+        return {
+          mode: "rejoin",
+          sessionId,
+          participantId: existingParticipant.id,
+        };
+      }
+
+      const participant = await prisma.participant.create({
+        data: {
+          sessionId,
+          identityKey,
+          displayName: displayName || "Guest",
+          status: "ACTIVE",
+        },
+        select: { id: true },
+      });
+
+      return {
+        mode: "join",
+        sessionId,
+        participantId: participant.id,
+      };
+    }
+
     const sessionIds = activeSessions.map((s) => s.id);
     const driftKey = `recon.session.multi_active:${loungeId}:${tableId}:${sessionIds.join(",")}`;
 
