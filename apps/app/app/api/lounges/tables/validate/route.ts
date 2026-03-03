@@ -82,6 +82,38 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Fallback to FloorplanLayout (e.g. CODIGO pilot) if no seats found
+    if (!tableExists && effectiveLoungeId) {
+      try {
+        const floorplan = await prisma.floorplanLayout.findFirst({
+          where: { loungeId: effectiveLoungeId },
+          orderBy: { floorId: 'asc' },
+        });
+        if (floorplan?.nodes && Array.isArray(floorplan.nodes)) {
+          const nodes = floorplan.nodes as Array<{ id?: string; label?: string; type?: string; capacity?: number }>;
+          tables = nodes.map((node) => ({
+            id: node.id || '',
+            name: node.label || node.id || '',
+            capacity: node.capacity ?? 4,
+            seatingType: node.type === 'kiosk' ? 'Kiosk' : 'Booth',
+            zone: 'Main Floor',
+          }));
+          table = tables.find(
+            (t) =>
+              t.id === tableId ||
+              t.name === tableId ||
+              (t.id && t.id.toLowerCase() === tableId?.toLowerCase()) ||
+              (t.name && t.name.toLowerCase() === tableId?.toLowerCase())
+          );
+          if (table) {
+            tableExists = true;
+          }
+        }
+      } catch (error) {
+        console.error('[Table Validation API] Error loading floorplan:', error);
+      }
+    }
+
     // Fallback to orgSetting if no seats found
     if (!tableExists) {
       let layoutSetting;

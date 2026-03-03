@@ -1193,6 +1193,30 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
         }
       }
 
+      // Fallback to FloorplanLayout (e.g. CODIGO pilot) if no seats found
+      if (!tableExists && tables.length === 0 && finalLoungeId) {
+        const floorplan = await prisma.floorplanLayout.findFirst({
+          where: { loungeId: finalLoungeId },
+          orderBy: { floorId: 'asc' },
+        });
+        if (floorplan?.nodes && Array.isArray(floorplan.nodes)) {
+          const nodes = floorplan.nodes as Array<{ id?: string; label?: string; type?: string; capacity?: number }>;
+          tables = nodes.map((node) => ({
+            id: node.id || '',
+            name: node.label || node.id || '',
+            capacity: node.capacity ?? 4,
+            zone: 'Main Floor',
+          }));
+          tableExists = nodes.some(
+            (node) =>
+              node.id === data.tableId ||
+              node.label === data.tableId ||
+              (node.id && node.id.toLowerCase() === data.tableId?.toLowerCase()) ||
+              (node.label && node.label.toLowerCase() === data.tableId?.toLowerCase())
+          );
+        }
+      }
+
       // Fallback to orgSetting if no seats found
       if (!tableExists && tables.length === 0) {
         const scopedKey = finalLoungeId ? `lounge_layout:${finalLoungeId}` : null;

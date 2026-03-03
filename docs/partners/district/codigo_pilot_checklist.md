@@ -9,6 +9,35 @@
 - **DB**: ensure Prisma migrations are applied for the `Session.hid` + network profile tables used by the pilot.
 - **Smoke**: verify `/codigo/join` loads on desktop and Toast handheld browser.
 
+## Lounge Layout → Create New Session → NAN Flow (Runbook)
+
+Ensures staff can select CODIGO tables and create sessions that flow into the NAN (Need and Now) BOH workflow: Prep → Heat Up → Ready → Delivered.
+
+1. **Apply floorplan schema** (if not already applied):
+   ```bash
+   cd apps/app
+   npx prisma db execute --file prisma/add_pilot_floorplan_tables.sql
+   ```
+
+2. **Seed CODIGO data**:
+   ```bash
+   cd apps/app
+   npx tsx scripts/seed-codigo-pilot.ts
+   ```
+
+3. **Open Fire Session Dashboard** with CODIGO lounge:
+   - URL: `/fire-session-dashboard?lounge=CODIGO`
+   - Without `?lounge=CODIGO`, Create New Session will not load CODIGO tables.
+
+4. **Create New Session**:
+   - Click Create New Session
+   - Select a table (e.g. 301, 302, … 313 from seeded floorplan)
+   - Fill customer details, flavor mix, submit
+
+5. **Verify NAN flow**:
+   - New session appears in the dashboard
+   - Staff can claim Prep and progress through Heat Up → Ready → Delivered
+
 ## Verify join flow (light enrollment)
 - Open `/codigo/join`
 - Enter first name (nickname optional) → submit
