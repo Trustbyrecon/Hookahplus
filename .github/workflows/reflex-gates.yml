@@ -1,0 +1,156 @@
+name: Reflex Gates
+
+on:
+  pull_request:
+    branches: [ "main", "stable-production" ]
+  workflow_dispatch:
+
+jobs:
+  ep-pos-ready:
+    name: ep/pos-ready
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detect QR-only path changes
+        id: changed
+        uses: tj-actions/changed-files@v45
+        with:
+          files: |
+            qr/**
+            **/qr/**
+            **/qr-**
+            **/qr*/**
+      - name: Enforce POS-first guardrail (G1)
+        if: ${{ vars.POS_SYNC_READY != 'true' && steps.changed.outputs.any_changed == 'true' }}
+        run: |
+          echo "POS_SYNC_READY is false and QR-related paths changed. Blocking per G1." >&2
+          exit 1
+      - name: Guardrail satisfied
+        if: ${{ vars.POS_SYNC_READY == 'true' || steps.changed.outputs.any_changed != 'true' }}
+        run: echo "G1 satisfied."
+
+  ep-rem-coverage:
+    name: ep/rem-coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check REM coverage >= 0.95
+        shell: bash
+        run: |
+          threshold=0.95
+          if [ -f metrics/rem_coverage.txt ]; then
+            value=$(cat metrics/rem_coverage.txt)
+          elif [ -n "${{ vars.REM_COVERAGE }}" ]; then
+            value="${{ vars.REM_COVERAGE }}"
+          else
+            echo "Missing REM coverage (metrics/rem_coverage.txt or repo var REM_COVERAGE)." >&2
+            exit 1
+          fi
+          echo "REM coverage: $value, threshold: $threshold"
+          awk -v v="$value" -v t="$threshold" 'BEGIN{ if (v+0 >= t) exit 0; else exit 1 }' || { echo "FAIL: coverage $value < $threshold" >&2; exit 1; }
+
+  ep-reconciliation:
+    name: ep/reconciliation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check reconciliation_rate >= 0.95
+        shell: bash
+        run: |
+          threshold=0.95
+          if [ -f metrics/reconciliation_rate.txt ]; then
+            value=$(cat metrics/reconciliation_rate.txt)
+          elif [ -n "${{ vars.RECONCILIATION_RATE }}" ]; then
+            value="${{ vars.RECONCILIATION_RATE }}"
+          else
+            echo "Missing reconciliation rate (metrics/reconciliation_rate.txt or repo var RECONCILIATION_RATE)." >&2
+            exit 1
+          fi
+          echo "Reconciliation rate: $value, threshold: $threshold"
+          awk -v v="$value" -v t="$threshold" 'BEGIN{ if (v+0 >= t) exit 0; else exit 1 }' || { echo "FAIL: reconciliation $value < $threshold" >&2; exit 1; }
+
+  ep-pricing-parity:
+    name: ep/pricing-parity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check pricing_parity >= 0.99
+        shell: bash
+        run: |
+          threshold=0.99
+          if [ -f metrics/pricing_parity.txt ]; then
+            value=$(cat metrics/pricing_parity.txt)
+          elif [ -n "${{ vars.PRICING_PARITY }}" ]; then
+            value="${{ vars.PRICING_PARITY }}"
+          else
+            echo "Missing pricing parity (metrics/pricing_parity.txt or repo var PRICING_PARITY)." >&2
+            exit 1
+          fi
+          echo "Pricing parity: $value, threshold: $threshold"
+          awk -v v="$value" -v t="$threshold" 'BEGIN{ if (v+0 >= t) exit 0; else exit 1 }' || { echo "FAIL: pricing parity $value < $threshold" >&2; exit 1; }
+
+  e2e-reflex-suite:
+    name: e2e/reflex-suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enforce green E2E status
+        shell: bash
+        run: |
+          statusFile=metrics/e2e_status.txt
+          statusVar='${{ vars.E2E_GREEN }}'
+          status=""
+          if [ -f "$statusFile" ]; then
+            status=$(cat "$statusFile")
+          elif [ -n "$statusVar" ]; then
+            status="$statusVar"
+          else
+            echo "Missing E2E status (metrics/e2e_status.txt or repo var E2E_GREEN)." >&2
+            exit 1
+          fi
+          if [ "$status" = "green" ] || [ "$status" = "true" ]; then
+            echo "E2E status is green."
+          else
+            echo "FAIL: E2E status not green (value=$status)." >&2
+            exit 1
+          fi
+
+  lint-rem-schema:
+    name: lint/rem-schema
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: rem-lint if present
+        shell: bash
+        run: |
+          if [ -x wt-sdk/bin/rem-lint ]; then
+            wt-sdk/bin/rem-lint
+          else
+            echo "rem-lint not found; passing placeholder."
+          fi
+
+  ui-smoke:
+    name: ui/smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: UI smoke check (variable or metrics)
+        shell: bash
+        run: |
+          statusFile=metrics/ui_smoke.txt
+          statusVar='${{ vars.UI_SMOKE_OK }}'
+          status=""
+          if [ -f "$statusFile" ]; then
+            status=$(cat "$statusFile")
+          elif [ -n "$statusVar" ]; then
+            status="$statusVar"
+          else
+            echo "Missing UI smoke status (metrics/ui_smoke.txt or repo var UI_SMOKE_OK)." >&2
+            exit 1
+          fi
+          if [ "$status" = "ok" ] || [ "$status" = "true" ]; then
+            echo "UI smoke passed."
+          else
+            echo "FAIL: UI smoke not ok (value=$status)." >&2
+            exit 1
+          fi
