@@ -511,14 +511,17 @@ export default function FlavorWheelSelector({
       {/* Flavor Categories */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         {filteredCategories.map((category) => (
-          <div key={category.id} className="p-3 bg-zinc-800 rounded-lg">
+          <div
+            key={category.id}
+            className={`p-3 bg-zinc-800 rounded-lg ${category.id === 'custom' ? 'md:col-span-3' : ''}`}
+          >
             <div 
               className="text-xs mb-2 text-zinc-300 font-medium"
               style={{ color: `hsl(${category.hue} 80% 70%)` }}
             >
               {category.label}
             </div>
-            <div className="space-y-1">
+            <div className={category.id === 'custom' ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2' : 'space-y-1'}>
               {category.items.map((flavor) => (
                 <button
                   key={flavor.id}
@@ -538,7 +541,7 @@ export default function FlavorWheelSelector({
                 >
                   <div className="flex justify-between items-center gap-2">
                     <div className="flex items-center gap-1 flex-1 min-w-0">
-                      <span className="truncate">{flavor.label}</span>
+                      <span className="break-words text-left" title={flavor.label}>{flavor.label}</span>
                       {sortByPopularity && popularityData.get(flavor.id) && popularityData.get(flavor.id)! > 0 && (
                         <span className="flex items-center gap-0.5 text-yellow-400 flex-shrink-0" title={`Used ${popularityData.get(flavor.id)} times`}>
                           <TrendingUp className="w-3 h-3" />

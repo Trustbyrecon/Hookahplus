@@ -2,11 +2,21 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import Image from 'next/image';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { Shield, HelpCircle, FileText, Home, Clock, Trophy, Menu, X, Flame } from 'lucide-react';
 import { useGuestSessionContext } from '../contexts/GuestSessionContext';
 import { STATUS_TO_TRACKER_STAGE } from '../../app/types/enhancedSession';
 import Badge from './Badge';
+
+function useIsCodigo(): boolean {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  return (
+    (pathname?.startsWith('/guest/CODIGO') ?? false) ||
+    searchParams?.get('loungeId') === 'CODIGO'
+  );
+}
 
 interface GlobalNavigationProps {
   currentPage?: string;
@@ -19,9 +29,10 @@ export const GlobalNavigation: React.FC<GlobalNavigationProps> = ({
   trustScore = 0.87,
   flowStatus = 71
 }) => {
-  const { activeSession } = useGuestSessionContext();
+  const { activeSession, tableId } = useGuestSessionContext();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const isCodigo = useIsCodigo();
   
   // Auto-detect current page from pathname if not provided
   const getCurrentPage = () => {
@@ -50,10 +61,27 @@ export const GlobalNavigation: React.FC<GlobalNavigationProps> = ({
           {/* Left Side - Logo */}
           <div className="flex items-center space-x-6">
             <div className="flex items-center space-x-2">
-              <div className="text-2xl">🍃</div>
-              <div>
-                <div className="text-lg font-bold text-white">H+ Guest</div>
-              </div>
+              {isCodigo ? (
+                <>
+                  <Image
+                    src="/images/district-hookah-logo.png"
+                    alt="District Hookah"
+                    width={48}
+                    height={48}
+                    className="rounded object-contain"
+                  />
+                  <div>
+                    <div className="text-lg font-bold text-white">District Hookah powered by H+</div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="text-2xl">🍃</div>
+                  <div>
+                    <div className="text-lg font-bold text-white">H+ Guest</div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -90,7 +118,9 @@ export const GlobalNavigation: React.FC<GlobalNavigationProps> = ({
                 <Badge className="bg-teal-500/20 text-teal-400 text-xs border-0">
                   {STATUS_TO_TRACKER_STAGE[activeSession.status as keyof typeof STATUS_TO_TRACKER_STAGE]}
                 </Badge>
-                <span className="text-xs text-zinc-300">{activeSession.tableId}</span>
+                <span className="text-xs text-zinc-300">
+                  Table {tableId || activeSession.tableId || '—'}
+                </span>
               </div>
             )}
             <div className="flex items-center space-x-3">
@@ -108,7 +138,12 @@ export const GlobalNavigation: React.FC<GlobalNavigationProps> = ({
                 <FileText className="w-4 h-4" />
               </Link>
             </div>
-            <div className="w-8 h-8 bg-zinc-700 rounded-full flex items-center justify-center">
+            <div
+              className="w-8 h-8 bg-zinc-700 rounded-full flex items-center justify-center"
+              role="img"
+              aria-label="User profile"
+              title="User profile"
+            >
               <div className="w-6 h-6 bg-zinc-600 rounded-full" />
             </div>
           </div>
@@ -118,8 +153,23 @@ export const GlobalNavigation: React.FC<GlobalNavigationProps> = ({
         <div className="md:hidden flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center space-x-2">
-            <div className="text-2xl">🍃</div>
-            <div className="text-lg font-bold text-white">H+ Guest</div>
+            {isCodigo ? (
+              <>
+                <Image
+                  src="/images/district-hookah-logo.png"
+                  alt="District Hookah"
+                  width={36}
+                  height={36}
+                  className="rounded object-contain"
+                />
+                <div className="text-lg font-bold text-white">District Hookah powered by H+</div>
+              </>
+            ) : (
+              <>
+                <div className="text-2xl">🍃</div>
+                <div className="text-lg font-bold text-white">H+ Guest</div>
+              </>
+            )}
           </div>
 
           {/* Hamburger Menu Button */}
