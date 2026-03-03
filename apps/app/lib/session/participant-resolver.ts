@@ -51,49 +51,43 @@ export async function resolveSessionParticipant(
   });
 
   if (activeSessions.length > 1) {
-    // CODIGO pilot demo: allow join to most recent session instead of blocking
+    // CODIGO pilot demo: close all conflicting sessions and create fresh (guarantees clean state)
     if (loungeId?.toUpperCase() === "CODIGO") {
-      const mostRecent = activeSessions[activeSessions.length - 1];
-      const sessionId = mostRecent!.id;
-
-      // Close stale sessions so next request sees clean state
-      const staleIds = activeSessions.slice(0, -1).map((s) => s.id);
+      const allIds = activeSessions.map((s) => s.id);
       await prisma.session.updateMany({
-        where: { id: { in: staleIds } },
+        where: { id: { in: allIds } },
         data: { state: SessionState.CLOSED },
       }).catch(() => {});
 
-      const existingParticipant = await prisma.participant.findFirst({
-        where: {
-          sessionId,
-          identityKey,
-          status: "ACTIVE",
-        },
-        select: { id: true },
-      });
+      const created = await prisma.$transaction(async (tx) => {
+        const session = await tx.session.create({
+          data: {
+            loungeId,
+            tableId,
+            source: SessionSource.QR,
+            state: SessionState.ACTIVE,
+            trustSignature: createTrustSignature(),
+          },
+          select: { id: true },
+        });
 
-      if (existingParticipant) {
-        return {
-          mode: "rejoin",
-          sessionId,
-          participantId: existingParticipant.id,
-        };
-      }
+        const participant = await tx.participant.create({
+          data: {
+            sessionId: session.id,
+            identityKey,
+            displayName: displayName || "Guest",
+            status: "ACTIVE",
+          },
+          select: { id: true },
+        });
 
-      const participant = await prisma.participant.create({
-        data: {
-          sessionId,
-          identityKey,
-          displayName: displayName || "Guest",
-          status: "ACTIVE",
-        },
-        select: { id: true },
+        return { sessionId: session.id, participantId: participant.id };
       });
 
       return {
-        mode: "join",
-        sessionId,
-        participantId: participant.id,
+        mode: "create",
+        sessionId: created.sessionId,
+        participantId: created.participantId,
       };
     }
 
