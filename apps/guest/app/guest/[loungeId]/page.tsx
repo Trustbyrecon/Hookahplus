@@ -38,6 +38,7 @@ export default function GuestLoungePage() {
   const [specialInstructions, setSpecialInstructions] = useState<string>('');
   const [flavorMixPrice, setFlavorMixPrice] = useState<number>(0);
   const [sessionStarted, setSessionStarted] = useState<boolean>(false); // Track if session started after payment
+  const [appSessionId, setAppSessionId] = useState<string | null>(null); // App DB session ID from resolve (for Hookah Tracker)
   const [showIntelligenceDashboard, setShowIntelligenceDashboard] = useState(false);
   const [campaignId, setCampaignId] = useState<string | undefined>(undefined);
   const [staffResolutionUrl, setStaffResolutionUrl] = useState<string | null>(null);
@@ -212,6 +213,7 @@ export default function GuestLoungePage() {
       // Auto-start: enter already resolved session via canonical resolver; skip "Start Session" tap
       if (enterData.sessionId && tableId) {
         setSessionStarted(true);
+        setAppSessionId(enterData.sessionId);
       }
 
       // Log guest entry event (client-side logging only - server-side logging happens in API)
@@ -394,6 +396,10 @@ export default function GuestLoungePage() {
                 onPriceUpdate={() => {}}
                 onCheckoutSuccess={(sessionId) => {
                   setSessionStarted(true);
+                  if (loungeId === 'CODIGO' && qrData?.tableId) {
+                    const sid = appSessionId || sessionId;
+                    window.location.href = `/hookah-tracker?sessionId=${sid}&loungeId=${loungeId}&tableId=${qrData.tableId}`;
+                  }
                 }}
               />
             )}
@@ -742,9 +748,12 @@ export default function GuestLoungePage() {
                 // Handle price updates
               }}
                   onCheckoutSuccess={(sessionId) => {
-                    // Start session after successful checkout
                     setSessionStarted(true);
                     console.log('Session started after checkout:', sessionId);
+                    if (loungeId === 'CODIGO' && qrData?.tableId) {
+                      const sid = appSessionId || sessionId;
+                      window.location.href = `/hookah-tracker?sessionId=${sid}&loungeId=${loungeId}&tableId=${qrData.tableId}`;
+                    }
                   }}
                 />
               </div>
