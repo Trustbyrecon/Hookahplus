@@ -52,9 +52,16 @@ export async function resolveSessionParticipant(
 
   if (activeSessions.length > 1) {
     // CODIGO pilot demo: allow join to most recent session instead of blocking
-    if (loungeId === "CODIGO") {
+    if (loungeId?.toUpperCase() === "CODIGO") {
       const mostRecent = activeSessions[activeSessions.length - 1];
       const sessionId = mostRecent!.id;
+
+      // Close stale sessions so next request sees clean state
+      const staleIds = activeSessions.slice(0, -1).map((s) => s.id);
+      await prisma.session.updateMany({
+        where: { id: { in: staleIds } },
+        data: { state: SessionState.CLOSED },
+      }).catch(() => {});
 
       const existingParticipant = await prisma.participant.findFirst({
         where: {
