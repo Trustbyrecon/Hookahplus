@@ -24,6 +24,12 @@ function generateUUID(): string {
  */
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Guest flow: always allow session resolve (guest app server calls this when guest scans table QR)
+  if (pathname === '/api/session/resolve' || pathname.startsWith('/api/session/resolve/')) {
+    return NextResponse.next();
+  }
+
   const demoQueryMode = request.nextUrl.searchParams.get('mode');
   const demoQueryIsDemo = request.nextUrl.searchParams.get('isDemo');
   const demoHeader = request.headers.get('x-demo-mode');
