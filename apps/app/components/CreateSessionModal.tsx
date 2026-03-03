@@ -219,13 +219,15 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
             const data = await response.json();
             if (data.config) {
               // Load base price (from pricing rules or config data)
+              let appliedPrice = false;
               if (data.config.baseSessionPrice) {
-                // baseSessionPrice is in cents, convert to dollars
                 applyBasePrice(data.config.baseSessionPrice / 100);
+                appliedPrice = true;
               } else if (data.config.configData?.base_session_price) {
-                // Fallback to configData if pricing rules don't have it
                 applyBasePrice(data.config.configData.base_session_price);
+                appliedPrice = true;
               }
+              if (isCodigoMode && !appliedPrice) applyBasePrice(60);
 
               const configData = data.config.configData;
               if (configData) {
@@ -246,7 +248,7 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
                     name: p.name || (Array.isArray(p.flavors) ? p.flavors.join(' + ') : ''),
                     flavors: Array.isArray(p.flavors) ? p.flavors : [],
                     description: p.name ? `LaunchPad preset: ${p.name}` : undefined,
-                    price: isCodigoMode ? 0 : undefined,
+                    price: isCodigoMode ? 60 : undefined,
                   }));
                   setLaunchpadPresets(presets);
                 } else if (configData.common_mixes && configData.common_mixes.length > 0) {
@@ -257,7 +259,7 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
                       name: mix,
                       flavors: flavors,
                       description: `LaunchPad preset: ${mix}`,
-                      price: isCodigoMode ? 0 : undefined,
+                      price: isCodigoMode ? 60 : undefined,
                     };
                   });
                   setLaunchpadPresets(presets);
@@ -279,7 +281,9 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
 
       // Second attempt: LaunchPad progress stored locally (works in demo/offline)
       loadLaunchpadFromLocalProgress();
-    };
+      // CODIGO fallback: $60 base if config didn't provide it
+      if (isCodigoMode) applyBasePrice(60);
+    }
 
     loadLaunchpadData();
   }, [loungeId, selectedTable, isCodigoMode]);
@@ -307,7 +311,7 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
               name: p.name || (Array.isArray(p.flavors) ? p.flavors.join(' + ') : ''),
               flavors: Array.isArray(p.flavors) ? p.flavors : [],
               description: p.name ? `LaunchPad preset: ${p.name}` : undefined,
-              price: isCodigoMode ? 0 : undefined,
+              price: isCodigoMode ? 60 : undefined,
             })));
           }
           if (isCodigoMode && cd?.staff?.length) {
