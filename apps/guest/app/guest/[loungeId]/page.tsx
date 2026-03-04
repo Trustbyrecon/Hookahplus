@@ -42,10 +42,40 @@ export default function GuestLoungePage() {
   const [showIntelligenceDashboard, setShowIntelligenceDashboard] = useState(false);
   const [campaignId, setCampaignId] = useState<string | undefined>(undefined);
   const [staffResolutionUrl, setStaffResolutionUrl] = useState<string | null>(null);
+  // CODIGO: config from app API (presets + flavors) - mirrors CreateSessionModal
+  const [codigoPresets, setCodigoPresets] = useState<Array<{ id: string; name: string; flavors: string[] }>>([]);
+  const [codigoFlavors, setCodigoFlavors] = useState<string[]>([]);
 
   useEffect(() => {
     initializeGuest();
     detectMobile();
+  }, [loungeId]);
+
+  // CODIGO: fetch menu config from app API (presets + flavors) - mirrors CreateSessionModal
+  useEffect(() => {
+    if (loungeId !== 'CODIGO') return;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
+    fetch(`${appUrl}/api/lounges/CODIGO/config`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!data?.config?.configData) return;
+        const cd = data.config.configData;
+        if (Array.isArray(cd.menu_presets) && cd.menu_presets.length > 0) {
+          setCodigoPresets(cd.menu_presets.map((p: { id?: string; name?: string; flavors?: string[] }, idx: number) => ({
+            id: p.id || `preset-${idx}`,
+            name: p.name || (Array.isArray(p.flavors) ? p.flavors.join(' + ') : ''),
+            flavors: Array.isArray(p.flavors) ? p.flavors : [],
+          })));
+        }
+        if (cd.flavors) {
+          const all = [
+            ...(cd.flavors.standard || []).map((f: { name?: string }) => f?.name).filter(Boolean),
+            ...(cd.flavors.premium || []).map((f: { name?: string }) => f?.name).filter(Boolean),
+          ];
+          if (all.length) setCodigoFlavors(all);
+        }
+      })
+      .catch(() => {});
   }, [loungeId]);
 
   // Safety timeout - if loading takes too long, show error
@@ -361,12 +391,34 @@ export default function GuestLoungePage() {
             {/* Flavor Selection */}
             {qrData?.tableId && (
             <MobileFlavorSelector
-              flavors={MOCK_FLAVORS}
+              flavors={
+                loungeId === 'CODIGO'
+                  ? (codigoFlavors.length > 0
+                      ? codigoFlavors.map((name, i) => ({
+                          id: name,
+                          name,
+                          category: 'menu',
+                          popular: i < 5,
+                          price: 0,
+                          color: 'bg-amber-500/30',
+                        }))
+                      : [...new Set((codigoPresets.length > 0 ? codigoPresets : CODIGO_PRESETS).flatMap((p) => p.flavors))].map(
+                          (name, i) => ({
+                            id: name,
+                            name,
+                            category: 'menu',
+                            popular: i < 3,
+                            price: 0,
+                            color: 'bg-amber-500/30',
+                          })
+                        ))
+                  : MOCK_FLAVORS
+              }
               selectedFlavors={selectedFlavors}
               onFlavorToggle={handleFlavorToggle}
               onClearAll={handleClearAllFlavors}
               basePrice={loungeId === 'CODIGO' ? 6000 : 3000}
-              presets={loungeId === 'CODIGO' ? CODIGO_PRESETS : undefined}
+              presets={loungeId === 'CODIGO' ? (codigoPresets.length > 0 ? codigoPresets : CODIGO_PRESETS) : undefined}
               onPresetSelect={loungeId === 'CODIGO' ? (flavors) => setSelectedFlavors(flavors) : undefined}
             />
             )}
@@ -669,7 +721,14 @@ export default function GuestLoungePage() {
                     onSelectionChange={setSelectedFlavors}
                     maxSelections={4}
                     onPriceUpdate={setFlavorMixPrice}
-                    presets={loungeId === 'CODIGO' ? CODIGO_PRESETS : undefined}
+                    presets={loungeId === 'CODIGO' ? (codigoPresets.length > 0 ? codigoPresets : CODIGO_PRESETS) : undefined}
+                    customFlavors={
+                      loungeId === 'CODIGO'
+                        ? (codigoFlavors.length > 0
+                            ? codigoFlavors
+                            : [...new Set((codigoPresets.length > 0 ? codigoPresets : CODIGO_PRESETS).flatMap((p) => p.flavors))])
+                        : undefined
+                    }
                     flavorAddOnFree={loungeId === 'CODIGO'}
                   />
                   

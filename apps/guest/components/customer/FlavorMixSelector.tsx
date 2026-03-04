@@ -135,6 +135,8 @@ export interface FlavorMixSelectorProps {
   onPriceUpdate?: (total: number) => void;
   /** Lounge presets (e.g. CODIGO 5 presets). When set, shows preset selector above wheel. */
   presets?: Array<{ id: string; name: string; flavors: string[] }>;
+  /** Custom flavors from lounge config (e.g. CODIGO menu). When set, hides generic categories and shows only these + presets. */
+  customFlavors?: string[];
   /** When true, flavor add-ons are $0 (included in flat fee). */
   flavorAddOnFree?: boolean;
 }
@@ -144,7 +146,16 @@ function cx(...classes: (string | false | undefined)[]) {
   return classes.filter(Boolean).join(" ");
 }
 
-function findFlavorLabel(id: string) {
+function findFlavorLabel(id: string, customFlavors?: string[]) {
+  // Custom flavors use name as id (e.g. "Lemon Mint"); when in custom mode, unknown ids are display names
+  if (customFlavors) {
+    if (customFlavors.includes(id)) return id;
+    for (const c of FLAVOR_CATEGORIES) {
+      const f = c.items.find((x) => x.id === id);
+      if (f) return f.label;
+    }
+    return id; // Preset flavor names not in customFlavors - use as display
+  }
   for (const c of FLAVOR_CATEGORIES) {
     const f = c.items.find((x) => x.id === id);
     if (f) return f.label;
@@ -152,8 +163,9 @@ function findFlavorLabel(id: string) {
   return id;
 }
 
-function findFlavorPrice(id: string, flavorAddOnFree?: boolean) {
+function findFlavorPrice(id: string, flavorAddOnFree?: boolean, customFlavors?: string[]) {
   if (flavorAddOnFree) return 0;
+  if (customFlavors?.includes(id)) return 0;
   for (const c of FLAVOR_CATEGORIES) {
     const f = c.items.find((x) => x.id === id);
     if (f) return f.price;
@@ -309,6 +321,7 @@ export default function FlavorMixSelector({
   className,
   onPriceUpdate,
   presets,
+  customFlavors,
   flavorAddOnFree = false,
 }: FlavorMixSelectorProps) {
   const [mode, setMode] = useState<"wheel" | "flow">("wheel");
@@ -339,8 +352,8 @@ export default function FlavorMixSelector({
 
   // Calculate total price (flavorAddOnFree = $0 for CODIGO)
   const totalPrice = useMemo(() => {
-    return selected.reduce((sum, id) => sum + findFlavorPrice(id, flavorAddOnFree), 0);
-  }, [selected, flavorAddOnFree]);
+    return selected.reduce((sum, id) => sum + findFlavorPrice(id, flavorAddOnFree, customFlavors), 0);
+  }, [selected, flavorAddOnFree, customFlavors]);
 
   // Notify parent of price changes
   React.useEffect(() => {
@@ -370,14 +383,26 @@ export default function FlavorMixSelector({
     return Array.from(out);
   }, [mood, selected]);
 
+  // When customFlavors provided (CODIGO), use menu flavors instead of generic categories
   const filteredCategories = useMemo(() => {
     const q = query.toLowerCase();
+    if (customFlavors && customFlavors.length > 0) {
+      const filtered = q ? customFlavors.filter((f) => f.toLowerCase().includes(q)) : customFlavors;
+      if (filtered.length === 0) return [];
+      return [{
+        id: 'menu',
+        label: 'Menu Flavors',
+        hue: 38,
+        tier: 'standard' as const,
+        items: filtered.map((name) => ({ id: name, label: name, price: 0 })),
+      }];
+    }
     if (!q) return FLAVOR_CATEGORIES;
     return FLAVOR_CATEGORIES.map((c) => ({
       ...c,
       items: c.items.filter((i) => i.label.toLowerCase().includes(q)),
     })).filter((c) => c.items.length);
-  }, [query]);
+  }, [query, customFlavors]);
 
   // Call callback only when selected actually changes (not when callback reference changes)
   React.useEffect(() => {
@@ -460,36 +485,40 @@ export default function FlavorMixSelector({
           </div>
         )}
 
-        {/* Header */}
+        {/* Header - hide Wheel/Shisha Master when using custom flavors (CODIGO) */}
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl md:text-2xl font-semibold tracking-tight">Choose Your Flavor Mix</h2>
             <p className="text-neutral-400">
-              Choose up to {maxSelections} flavors. Explore with the Wheel or let a Shisha Master craft your mix.
+              {customFlavors?.length
+                ? `Choose up to ${maxSelections} flavors from our menu.`
+                : `Choose up to ${maxSelections} flavors. Explore with the Wheel or let a Shisha Master craft your mix.`}
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setMode("wheel")}
-              className={cx(
-                "px-3 py-2 rounded-xl border text-sm",
-                mode === "wheel" ? "border-teal-500/50 bg-teal-500/10 text-teal-300" : "border-white/10 text-neutral-300"
-              )}
-            >
-              Wheel
-            </button>
-            <button
-              onClick={() => setMode("flow")}
-              className={cx(
-                "px-3 py-2 rounded-xl border text-sm",
-                mode === "flow"
-                  ? "border-amber-400/60 bg-amber-500/10 text-amber-300"
-                  : "border-white/10 text-neutral-300"
-              )}
-            >
-              Shisha Master
-            </button>
-          </div>
+          {!customFlavors?.length && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setMode("wheel")}
+                className={cx(
+                  "px-3 py-2 rounded-xl border text-sm",
+                  mode === "wheel" ? "border-teal-500/50 bg-teal-500/10 text-teal-300" : "border-white/10 text-neutral-300"
+                )}
+              >
+                Wheel
+              </button>
+              <button
+                onClick={() => setMode("flow")}
+                className={cx(
+                  "px-3 py-2 rounded-xl border text-sm",
+                  mode === "flow"
+                    ? "border-amber-400/60 bg-amber-500/10 text-amber-300"
+                    : "border-white/10 text-neutral-300"
+                )}
+              >
+                Shisha Master
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Selection Bar */}
@@ -502,7 +531,7 @@ export default function FlavorMixSelector({
             {selected.length ? (
               selected.map((id) => (
                 <span key={id} className="text-xs px-2 py-1 rounded-full bg-teal-500/20 border border-teal-500/30 text-teal-300">
-                  {findFlavorLabel(id)}{!flavorAddOnFree ? ` ($${findFlavorPrice(id, false).toFixed(2)})` : ''}
+                  {findFlavorLabel(id, customFlavors)}{!flavorAddOnFree ? ` ($${findFlavorPrice(id, false, customFlavors).toFixed(2)})` : ''}
                 </span>
               ))
             ) : (
@@ -521,8 +550,8 @@ export default function FlavorMixSelector({
           </button>
         </div>
 
-        {/* Main Content */}
-        {mode === "wheel" ? (
+        {/* Main Content - when customFlavors, only show wheel (menu flavors) */}
+        {mode === "wheel" || customFlavors?.length ? (
           <WheelMode
             categories={filteredCategories}
             selected={selected}
@@ -531,6 +560,7 @@ export default function FlavorMixSelector({
             setQuery={setQuery}
             recommended={recommended}
             maxSelections={maxSelections}
+            customFlavors={customFlavors}
           />
         ) : (
           <GuidedMode
@@ -548,11 +578,12 @@ export default function FlavorMixSelector({
             setVibeProfile={setVibeProfile}
             eatDrink={eatDrink}
             setEatDrink={setEatDrink}
+            customFlavors={customFlavors}
           />
         )}
 
         {/* Mix Preview Card */}
-        <MixPreview selected={selected} recommended={recommended} totalPrice={totalPrice} />
+        <MixPreview selected={selected} recommended={recommended} totalPrice={totalPrice} customFlavors={customFlavors} />
       </div>
     </div>
   );
@@ -566,14 +597,17 @@ function WheelMode({
   query,
   setQuery,
   recommended,
-  maxSelections
+  maxSelections,
+  customFlavors,
 }: any) {
-  const size = 300;
+  const size = customFlavors?.length ? 240 : 300; // Smaller wheel for CODIGO (fewer segments)
   const radius = size / 2;
-  const segmentAngle = 360 / categories.length;
+  const segmentAngle = categories.length ? 360 / categories.length : 360;
+
+  const isPresetsOnly = customFlavors && categories.length <= 1;
 
   return (
-    <div className="grid md:grid-cols-2 gap-6 items-center">
+    <div className={cn("grid gap-6 items-start", isPresetsOnly ? "grid-cols-1" : "md:grid-cols-2")}>
       <div className="rounded-xl bg-white/5 border border-white/10 p-4">
         <div className="flex items-center gap-2 mb-3">
           <div className="p-2 rounded-xl bg-white/5 border border-white/10">
@@ -587,7 +621,8 @@ function WheelMode({
           />
         </div>
         
-        {/* Flavor Wheel */}
+        {/* Flavor Wheel - hidden for CODIGO (presets + menu flavors only) */}
+        {!isPresetsOnly && (
         <div className="relative mx-auto mb-4" style={{ width: size, height: size }}>
           <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="drop-shadow-sm">
             {categories.map((c: any, i: number) => {
@@ -629,38 +664,61 @@ function WheelMode({
             </div>
           </div>
         </div>
+        )}
 
-        {/* Flavor Chips */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-          {categories.map((c: any) => (
-            <div key={c.id} className="rounded-xl p-3 border border-white/10 bg-white/5">
-              <div className="text-xs mb-2 text-neutral-300" style={{ color: `hsl(${c.hue} 80% 70%)` }}>
-                {c.label}
+        {/* Flavor Chips - mobile-friendly for CODIGO (larger touch targets) */}
+        {isPresetsOnly ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {categories.flatMap((c: any) => c.items).map((it: any) => (
+              <button
+                key={it.id}
+                onClick={() => onToggle(it.id)}
+                disabled={!selected.includes(it.id) && selected.length >= maxSelections}
+                className={cx(
+                  "text-sm px-3 py-2.5 rounded-xl border transition touch-manipulation",
+                  selected.includes(it.id)
+                    ? "bg-teal-500/20 border-teal-500/30 text-teal-300"
+                    : "bg-white/5 border-white/10 text-neutral-300 hover:bg-white/10 active:bg-white/15",
+                  !selected.includes(it.id) && selected.length >= maxSelections && "opacity-50 cursor-not-allowed"
+                )}
+              >
+                {it.label}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            {categories.map((c: any) => (
+              <div key={c.id} className="rounded-xl p-3 border border-white/10 bg-white/5">
+                <div className="text-xs mb-2 text-neutral-300" style={{ color: `hsl(${c.hue} 80% 70%)` }}>
+                  {c.label}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {c.items.map((it: any) => (
+                    <button
+                      key={it.id}
+                      onClick={() => onToggle(it.id)}
+                      disabled={!selected.includes(it.id) && selected.length >= maxSelections}
+                      className={cx(
+                        "text-xs px-2 py-1 rounded-full border transition",
+                        selected.includes(it.id)
+                          ? "bg-teal-500/20 border-teal-500/30 text-teal-300"
+                          : "bg-white/5 border-white/10 text-neutral-300 hover:bg-white/10",
+                        !selected.includes(it.id) && selected.length >= maxSelections && "opacity-50 cursor-not-allowed"
+                      )}
+                    >
+                      {it.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {c.items.map((it: any) => (
-                  <button
-                    key={it.id}
-                    onClick={() => onToggle(it.id)}
-                    disabled={!selected.includes(it.id) && selected.length >= maxSelections}
-                    className={cx(
-                      "text-xs px-2 py-1 rounded-full border transition",
-                      selected.includes(it.id)
-                        ? "bg-teal-500/20 border-teal-500/30 text-teal-300"
-                        : "bg-white/5 border-white/10 text-neutral-300 hover:bg-white/10",
-                      !selected.includes(it.id) && selected.length >= maxSelections && "opacity-50 cursor-not-allowed"
-                    )}
-                  >
-                    {it.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Recommendations */}
+      {/* Recommendations - hide for CODIGO (presets are the main choice) */}
+      {!isPresetsOnly && (
       <aside className="rounded-xl bg-white/5 border border-white/10 p-5">
         <div className="flex items-center gap-2 mb-2">
           <Sparkles className="h-4 w-4 text-teal-400"/>
@@ -681,7 +739,7 @@ function WheelMode({
                 selected.length >= maxSelections && "opacity-50 cursor-not-allowed"
               )}
             >
-              {findFlavorLabel(rid)}
+              {findFlavorLabel(rid, customFlavors)}
             </button>
           ))}
         </div>
@@ -690,6 +748,7 @@ function WheelMode({
           Pro tip: mint + fruit for cool/sweet balance; citrus cuts sweetness; dessert rounds sharp notes.
         </div>
       </aside>
+      )}
     </div>
   );
 }
@@ -713,6 +772,7 @@ function GuidedMode({
   setVibeProfile,
   eatDrink,
   setEatDrink,
+  customFlavors,
 }: any) {
   const masterRecs = useMemo(
     () => getRecommendationsFromVibe(vibeProfile),
@@ -786,7 +846,7 @@ function GuidedMode({
                 onClick={() => onApplyRec(rec.slice(0, maxSelections))}
                 className="flex flex-wrap gap-1 px-3 py-2 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-200 text-xs transition"
               >
-                {rec.map((id) => findFlavorLabel(id)).join(' + ')}
+                {rec.map((id) => findFlavorLabel(id, customFlavors)).join(' + ')}
               </button>
             ))}
           </div>
@@ -926,7 +986,7 @@ function GuidedMode({
 }
 
 // --- Mix Preview Component ---
-function MixPreview({ selected, recommended, totalPrice }: any) {
+function MixPreview({ selected, recommended, totalPrice, customFlavors }: any) {
   const meters = computeMasterMeters(selected);
 
   return (
@@ -986,7 +1046,7 @@ function MixPreview({ selected, recommended, totalPrice }: any) {
                 key={id}
                 className="text-xs px-2 py-1 rounded-full bg-white/5 border border-white/10 text-neutral-300"
               >
-                {findFlavorLabel(id)}
+                {findFlavorLabel(id, customFlavors)}
               </span>
             ))}
           </div>

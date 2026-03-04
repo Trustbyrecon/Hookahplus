@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Palette, Star, Plus, Minus, ShoppingCart, RotateCcw, CheckCircle } from 'lucide-react';
+import { cn } from '../../utils/cn';
 
 interface Flavor {
   id: string;
@@ -67,10 +68,11 @@ export default function MobileFlavorSelector({
 
   return (
     <div className="space-y-4">
-      {/* CODIGO Presets */}
+      {/* CODIGO Presets - mobile-friendly, prominent */}
       {presets && presets.length > 0 && onPresetSelect && (
         <div className="rounded-xl bg-amber-500/10 border border-amber-500/30 p-4">
           <h3 className="font-semibold text-amber-200 mb-2">Signature Presets</h3>
+          <p className="text-xs text-neutral-400 mb-3">Tap a preset or build your own below.</p>
           <div className="grid grid-cols-1 gap-2">
             {presets.map((preset) => {
               const isActive = JSON.stringify([...selectedFlavors].sort()) === JSON.stringify([...preset.flavors].sort());
@@ -78,7 +80,7 @@ export default function MobileFlavorSelector({
                 <button
                   key={preset.id}
                   onClick={() => onPresetSelect(isActive ? [] : preset.flavors)}
-                  className={`rounded-lg p-3 border-2 text-left transition-all ${
+                  className={`rounded-xl p-3.5 border-2 text-left transition-all touch-manipulation active:scale-[0.98] ${
                     isActive ? 'border-amber-400 bg-amber-500/20' : 'border-zinc-600 bg-zinc-800/50 hover:border-amber-500/40'
                   }`}
                 >
@@ -110,7 +112,8 @@ export default function MobileFlavorSelector({
         </button>
       </div>
 
-      {/* Category Filter */}
+      {/* Category Filter - hide when all flavors are "menu" (CODIGO) */}
+      {flavors.some((f) => f.category !== 'menu') && (
       <div className="flex gap-2 overflow-x-auto pb-2">
         {FLAVOR_CATEGORIES.map((category) => (
           <button
@@ -126,18 +129,22 @@ export default function MobileFlavorSelector({
           </button>
         ))}
       </div>
+      )}
 
-      {/* Flavor Grid - Mobile Optimized */}
-      <div className="grid grid-cols-2 gap-3">
+      {/* Flavor Grid - Mobile Optimized (larger touch targets for CODIGO) */}
+      <div className={cn("grid gap-3", flavors[0]?.category === 'menu' ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2")}>
         {filteredFlavors.map((flavor) => {
           const isSelected = selectedFlavors.includes(flavor.id);
+          const isMenuMode = flavor.category === 'menu';
           return (
             <motion.button
               key={flavor.id}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => onFlavorToggle(flavor.id)}
-              className={`relative p-4 rounded-xl border-2 transition-all duration-200 ${
+              className={`relative rounded-xl border-2 transition-all duration-200 touch-manipulation ${
+                isMenuMode ? 'p-3' : 'p-4'
+              } ${
                 isSelected
                   ? 'border-teal-400 bg-teal-500/10'
                   : 'border-zinc-700 bg-zinc-800/50 hover:border-zinc-600'
