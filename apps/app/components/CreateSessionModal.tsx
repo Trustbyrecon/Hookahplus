@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { X, User, Phone, Clock, Flame, DollarSign, Users, FileText, MapPin, ChevronDown, ChevronRight, Sparkles } from 'lucide-react';
+import { X, User, Phone, Clock, Flame, DollarSign, Users, FileText, MapPin, ChevronDown, ChevronRight, Sparkles, Check } from 'lucide-react';
+import CopyForToastButton from './CopyForToastButton';
 import { TableSelector } from './TableSelector';
 import { TableType } from '../lib/tableTypes';
 import FlavorWheelSelector from './FlavorWheelSelector';
@@ -104,6 +105,18 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
     }
   }, [isOpen, onClose]);
 
+  // Clear "Copied" feedback after 1.5s
+  useEffect(() => {
+    if (copiedState === 'none') return;
+    const t = setTimeout(() => setCopiedState('none'), 1500);
+    return () => clearTimeout(t);
+  }, [copiedState]);
+
+  // Reset copy state when modal opens
+  useEffect(() => {
+    if (isOpen) setCreatedSessionForCopy(null);
+  }, [isOpen]);
+
   const [formData, setFormData] = useState<SessionData>({
     tableId: 'table-001',
     tableType: {} as TableType,
@@ -143,6 +156,12 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
   const [codigoStaff, setCodigoStaff] = useState<Array<{ name: string; role: string }>>([]);
 
   const [errors, setErrors] = useState<Partial<Record<keyof SessionData, string>>>({});
+  const [createdSessionForCopy, setCreatedSessionForCopy] = useState<{
+    sessionId: string;
+    tableId: string;
+    customerName: string;
+  } | null>(null);
+  const [copiedState, setCopiedState] = useState<'none' | 'note' | 'sessionId'>('none');
 
   // Shisha Master: eat/drink preferences and pairing recommendation
   const [shishaEat, setShishaEat] = useState('');
@@ -543,6 +562,23 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
         // Don't proceed to payment if session creation failed
         return;
       }
+
+      // Toast pilot (CODIGO): show Copy for Toast, no Stripe
+      if (isCodigoMode) {
+        const tableId = formData.tableId || selectedTable?.id || 'table-001';
+        const normalizeTableLabel = (id: string) => {
+          const m = id?.toLowerCase().match(/^table-0*(\d{1,4})$/);
+          if (!m) return id;
+          return `T-${String(parseInt(m[1], 10)).padStart(3, '0')}`;
+        };
+        setCreatedSessionForCopy({
+          sessionId,
+          tableId: normalizeTableLabel(tableId),
+          customerName: formData.customerName?.trim() || '',
+        });
+        window.dispatchEvent(new Event('refreshSessions'));
+        return;
+      }
       
       // Calculate total amount in cents (same as pre-order)
       // Ensure cart items are calculated and reflected
@@ -682,6 +718,61 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
   };
 
   if (!isOpen) return null;
+
+  // Toast pilot: show Copy for Toast confirmation after session created
+  if (createdSessionForCopy) {
+    return (
+      <div
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) onClose();
+        }}
+      >
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl w-full max-w-lg p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 rounded-lg bg-green-500/20">
+              <Flame className="w-6 h-6 text-green-400" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-white">Session Created</h2>
+              <p className="text-sm text-zinc-400">Copy for Toast, then paste into order name or note.</p>
+            </div>
+          </div>
+          <div className="flex flex-col gap-3 mb-4">
+            <CopyForToastButton
+              sessionId={createdSessionForCopy.sessionId}
+              tableId={createdSessionForCopy.tableId}
+              customerName={createdSessionForCopy.customerName || null}
+              variant="note"
+              includeTimestamp
+              primary
+              onCopySuccess={() => setCopiedState('note')}
+            />
+            <CopyForToastButton
+              sessionId={createdSessionForCopy.sessionId}
+              tableId={createdSessionForCopy.tableId}
+              customerName={createdSessionForCopy.customerName || null}
+              variant="sessionId"
+              onCopySuccess={() => setCopiedState('sessionId')}
+            />
+          </div>
+          {copiedState !== 'none' && (
+            <div className="flex items-center gap-2 text-green-400 text-sm mb-4">
+              <Check className="w-4 h-4 flex-shrink-0" />
+              <span>Copied</span>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full py-3 px-4 bg-teal-600 hover:bg-teal-500 text-white font-medium rounded-xl transition-colors"
+          >
+            Done
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div 

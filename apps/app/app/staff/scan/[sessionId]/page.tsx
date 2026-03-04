@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { QrCode, Clock, MapPin, Sparkles, DollarSign, User, Calendar, AlertCircle, ArrowLeft, Wrench, Printer } from 'lucide-react';
+import { QrCode, Clock, MapPin, Sparkles, DollarSign, User, Calendar, AlertCircle, Wrench, Printer, Check } from 'lucide-react';
 import GlobalNavigation from '../../../../components/GlobalNavigation';
 import Card from '../../../../components/Card';
 import Button from '../../../../components/Button';
+import CopyForToastButton from '../../../../components/CopyForToastButton';
 import Link from 'next/link';
 
 interface Session {
@@ -43,6 +44,7 @@ export default function StaffScanPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [copiedState, setCopiedState] = useState<'none' | 'note' | 'sessionId'>('none');
 
   // Track recent scans for staff continuity (client-only).
   useEffect(() => {
@@ -80,6 +82,13 @@ export default function StaffScanPage() {
       fetchSession();
     }
   }, [sessionId]);
+
+  // Clear "Copied" feedback after 1.5s
+  useEffect(() => {
+    if (copiedState === 'none') return;
+    const t = setTimeout(() => setCopiedState('none'), 1500);
+    return () => clearTimeout(t);
+  }, [copiedState]);
 
   if (loading) {
     return (
@@ -192,6 +201,41 @@ export default function StaffScanPage() {
               </div>
             )}
           </div>
+        </Card>
+
+        {/* Copy for Toast — one true path: Scan → Copy → Paste into Toast */}
+        <Card className="p-6 mb-6">
+          <h3 className="text-lg font-semibold text-white mb-3">Copy for Toast</h3>
+          <p className="text-sm text-zinc-400 mb-4">
+            Paste into Toast order name or note for reconciliation.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1 min-w-0">
+              <CopyForToastButton
+                sessionId={session.id}
+                tableId={session.tableId || session.table_id}
+                customerName={session.customerName || session.customer_name}
+                variant="note"
+                includeTimestamp
+                primary
+                onCopySuccess={() => setCopiedState('note')}
+              />
+            </div>
+            <CopyForToastButton
+              sessionId={session.id}
+              tableId={session.tableId || session.table_id}
+              customerName={session.customerName || session.customer_name}
+              variant="sessionId"
+              onCopySuccess={() => setCopiedState('sessionId')}
+              className="sm:w-auto"
+            />
+          </div>
+          {copiedState !== 'none' && (
+            <div className="mt-3 flex items-center gap-2 text-green-400 text-sm">
+              <Check className="w-4 h-4 flex-shrink-0" />
+              <span>Copied</span>
+            </div>
+          )}
         </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
