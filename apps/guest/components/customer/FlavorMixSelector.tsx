@@ -291,7 +291,10 @@ function getRecommendationsFromVibe(profile: { balance: VibeLevel; sweetness: Vi
   const rec2 = [...new Set([...pick(sweetnessPool, 1), ...pick(strengthPool, count - 1)])].slice(0, count);
   const rec3 = [...new Set([...pick(sweetnessPool, count - 1), ...pick(strengthPool, 1)])].slice(0, count);
 
-  return [rec1, rec2, rec3].map((r) => (r.length >= count ? r : [...r, ...pick(sweetMed, count - r.length)].slice(0, count));
+  const result = [rec1, rec2, rec3].map((r) => {
+    return r.length >= count ? r : [...r, ...pick(sweetMed, count - r.length)].slice(0, count);
+  });
+  return result;
 }
 
 function toRad(deg: number) {

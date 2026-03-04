@@ -105,18 +105,6 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
     }
   }, [isOpen, onClose]);
 
-  // Clear "Copied" feedback after 1.5s
-  useEffect(() => {
-    if (copiedState === 'none') return;
-    const t = setTimeout(() => setCopiedState('none'), 1500);
-    return () => clearTimeout(t);
-  }, [copiedState]);
-
-  // Reset copy state when modal opens
-  useEffect(() => {
-    if (isOpen) setCreatedSessionForCopy(null);
-  }, [isOpen]);
-
   const [formData, setFormData] = useState<SessionData>({
     tableId: 'table-001',
     tableType: {} as TableType,
@@ -162,6 +150,18 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
     customerName: string;
   } | null>(null);
   const [copiedState, setCopiedState] = useState<'none' | 'note' | 'sessionId'>('none');
+
+  // Clear "Copied" feedback after 1.5s
+  useEffect(() => {
+    if (copiedState === 'none') return;
+    const t = setTimeout(() => setCopiedState('none'), 1500);
+    return () => clearTimeout(t);
+  }, [copiedState]);
+
+  // Reset copy state when modal opens
+  useEffect(() => {
+    if (isOpen) setCreatedSessionForCopy(null);
+  }, [isOpen]);
 
   // Shisha Master: eat/drink preferences and pairing recommendation
   const [shishaEat, setShishaEat] = useState('');

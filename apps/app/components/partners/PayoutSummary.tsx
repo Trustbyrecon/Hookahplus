@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { DollarSign, Download, TrendingUp, Calendar, CheckCircle, Clock } from "lucide-react";
@@ -31,11 +31,7 @@ export default function PayoutSummary({ partnerId }: PayoutSummaryProps) {
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
 
-  useEffect(() => {
-    fetchPayouts();
-  }, [partnerId]);
-
-  const fetchPayouts = async () => {
+  const fetchPayouts = useCallback(async () => {
     try {
       const response = await fetch(`/api/partners/${partnerId}/payouts`);
       const data = await response.json();
@@ -49,7 +45,11 @@ export default function PayoutSummary({ partnerId }: PayoutSummaryProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [partnerId]);
+
+  useEffect(() => {
+    fetchPayouts();
+  }, [fetchPayouts]);
 
   const handleExportCSV = async () => {
     setExporting(true);
