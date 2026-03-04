@@ -1,3 +1,4 @@
+import React, { Suspense } from 'react'
 import './globals.css'
 import '../styles/mobile.css'
 import '../styles/platform-optimizations.css'
@@ -30,13 +31,15 @@ export default function RootLayout({
         <AnalyticsScript />
       </head>
       <body className="min-h-screen bg-zinc-950 text-white mobile-content-container">
-        <ScrollManager />
-        <GuestSessionProvider>
-          <CartProvider>
-            <GlobalNavigation />
-            {children}
-          </CartProvider>
-        </GuestSessionProvider>
+        <Suspense fallback={<div className="min-h-screen bg-zinc-950" />}>
+          <ScrollManager />
+          <GuestSessionProvider>
+            <CartProvider>
+              <GlobalNavigation />
+              {children}
+            </CartProvider>
+          </GuestSessionProvider>
+        </Suspense>
       </body>
     </html>
   );
