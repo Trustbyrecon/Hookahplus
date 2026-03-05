@@ -60,7 +60,7 @@ export default function CodigoFloorPlan({
 }: CodigoFloorPlanProps) {
   const [now, setNow] = useState(() => Date.now());
   const [activeSeatId, setActiveSeatId] = useState<string | null>(null);
-  const [selectedFlavorId, setSelectedFlavorId] = useState(CODIGO_MENU[0].id);
+  const [selectedFlavorId, setSelectedFlavorId] = useState<string>(CODIGO_MENU[0].id);
   const [isStarting, setIsStarting] = useState(false);
 
   useEffect(() => {
