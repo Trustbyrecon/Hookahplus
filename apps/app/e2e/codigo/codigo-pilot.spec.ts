@@ -4,31 +4,52 @@
  * Lounge ID: CODIGO
  * Covers: FSD Floor tab, Create Session, table validation, layout plumbing,
  * session lifecycle, and edge cases (invalid table, availability, etc.)
+ *
+ * Prerequisite: Run `npx tsx scripts/seed-codigo-pilot.ts` from apps/app to seed CODIGO data.
+ * UI tests run on chromium only (CODIGO compact layout optimized for desktop).
  */
 
 import { test, expect } from '@playwright/test';
 
 const CODIGO_FSD_URL = '/fire-session-dashboard?lounge=CODIGO';
 const BASE = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3002';
+const CONFIG_TIMEOUT = 25000; // Config API can be slow on cold DB
 
 test.describe('CODIGO Pilot — Use Cases (80%)', () => {
+  test.describe.configure({ mode: 'serial' }); // Reduce parallel load on config API
+
+  // Warm up config API (cold DB can take 10-15s on first request)
+  test.beforeAll(async ({ request }) => {
+    const res = await request.get(`${BASE}/api/lounges/CODIGO/config`);
+    expect(res.ok(), `Config API warmup failed: ${res.status()}`).toBeTruthy();
+  });
+
   test('FSD loads with CODIGO and shows Floor tab by default', async ({ page }) => {
-    const configPromise = page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config'), { timeout: 15000 });
+    const configPromise = page.waitForResponse(
+      (r) => r.url().includes('/api/lounges/CODIGO/config'),
+      { timeout: CONFIG_TIMEOUT }
+    );
     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });
     await configPromise;
-    await expect(page.getByText('Fire Session Dashboard').first()).toBeVisible({ timeout: 10000 });
-    await expect(page.getByTestId('tab-floor').or(page.getByRole('button', { name: /Floor/i }))).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText('Fire Session Dashboard').first()).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId('tab-floor').or(page.getByRole('button', { name: /Floor/i }))).toBeVisible({ timeout: 15000 });
   });
 
   test('CODIGO compact hero shows Create Session CTA', async ({ page }) => {
-    const configPromise = page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config'), { timeout: 15000 });
+    const configPromise = page.waitForResponse(
+      (r) => r.url().includes('/api/lounges/CODIGO/config'),
+      { timeout: CONFIG_TIMEOUT }
+    );
     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });
     await configPromise;
     await expect(page.getByTestId('create-session-cta').or(page.getByRole('button', { name: /Create Session/i }))).toBeVisible({ timeout: 8000 });
   });
 
   test('Floor tab shows at-a-glance status strip', async ({ page }) => {
-    const configPromise = page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config'), { timeout: 15000 });
+    const configPromise = page.waitForResponse(
+      (r) => r.url().includes('/api/lounges/CODIGO/config'),
+      { timeout: CONFIG_TIMEOUT }
+    );
     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });
     await configPromise;
     const floorTab = page.getByTestId('tab-floor').or(page.getByRole('button', { name: /Floor/i }));
@@ -37,7 +58,10 @@ test.describe('CODIGO Pilot — Use Cases (80%)', () => {
   });
 
   test('Create Session modal opens and shows CODIGO tables from floorplan', async ({ page }) => {
-    const configPromise = page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config'), { timeout: 15000 });
+    const configPromise = page.waitForResponse(
+      (r) => r.url().includes('/api/lounges/CODIGO/config'),
+      { timeout: CONFIG_TIMEOUT }
+    );
     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });
     await configPromise;
     await page.getByTestId('create-session-cta').or(page.getByRole('button', { name: /Create Session/i })).first().click();
@@ -140,7 +164,10 @@ test.describe('CODIGO Pilot — Edge Cases (80%)', () => {
   });
 
   test('FSD Floor tab shows seat nodes (no MiniMap)', async ({ page }) => {
-    const configPromise = page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config'), { timeout: 15000 });
+    const configPromise = page.waitForResponse(
+      (r) => r.url().includes('/api/lounges/CODIGO/config'),
+      { timeout: CONFIG_TIMEOUT }
+    );
     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });
     await configPromise;
     await page.getByTestId('tab-floor').or(page.getByRole('button', { name: /Floor/i })).first().click();

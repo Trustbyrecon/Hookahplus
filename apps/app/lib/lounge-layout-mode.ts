@@ -17,7 +17,17 @@ export async function getLoungeLayoutMode(loungeId: string): Promise<LayoutMode>
 
   const trimmed = loungeId.trim();
 
-  // 1. Check LoungeConfig for explicit layoutMode override
+  // 1. Check PilotConfig first for layoutMode (e.g. CODIGO) — pilot config takes precedence
+  const pilotConfig = await prisma.pilotConfig.findUnique({
+    where: { loungeId: trimmed },
+  });
+  if (pilotConfig?.configData && typeof pilotConfig.configData === 'object') {
+    const config = pilotConfig.configData as Record<string, unknown>;
+    const mode = config?.layoutMode as string | undefined;
+    if (mode === 'floor' || mode === 'classic') return mode as LayoutMode;
+  }
+
+  // 2. Check LoungeConfig for explicit layoutMode override
   const loungeConfig = await prisma.loungeConfig.findFirst({
     where: { loungeId: trimmed },
     orderBy: { version: 'desc' },
@@ -30,16 +40,6 @@ export async function getLoungeLayoutMode(loungeId: string): Promise<LayoutMode>
     } catch {
       // ignore
     }
-  }
-
-  // 2. Check PilotConfig for layoutMode (e.g. CODIGO)
-  const pilotConfig = await prisma.pilotConfig.findUnique({
-    where: { loungeId: trimmed },
-  });
-  if (pilotConfig?.configData && typeof pilotConfig.configData === 'object') {
-    const config = pilotConfig.configData as Record<string, unknown>;
-    const mode = config?.layoutMode as string | undefined;
-    if (mode === 'floor' || mode === 'classic') return mode as LayoutMode;
   }
 
   // 3. If FloorplanLayout exists for lounge, use floor mode (POS-mirrored)

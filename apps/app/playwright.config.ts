@@ -47,14 +47,16 @@ export default defineConfig({
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
     },
-    /* Test against mobile viewports. */
+    /* Test against mobile viewports. CODIGO FSD layout is desktop-optimized. */
     {
       name: 'Mobile Chrome',
       use: { ...devices['Pixel 5'] },
+      testIgnore: '**/codigo/**',
     },
     {
       name: 'Mobile Safari',
       use: { ...devices['iPhone 12'] },
+      testIgnore: '**/codigo/**',
     },
   ],
 

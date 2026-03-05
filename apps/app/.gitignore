@@ -61,4 +61,9 @@ build/
 tmp/
 temp/
 
+# Playwright test artifacts
+test-results/
+playwright-report/
+.playwright-artifacts*/
+
 .vercel
