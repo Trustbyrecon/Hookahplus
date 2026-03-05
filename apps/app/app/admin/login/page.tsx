@@ -3,8 +3,8 @@
 import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { clientClient } from '../../../lib/supabase-client';
-import { Shield, Mail, Loader2, Lock, ArrowLeft } from 'lucide-react';
+import { clientClient, isSupabaseConfigured } from '../../../lib/supabase-client';
+import { Shield, Mail, Loader2, Lock, ArrowLeft, Settings } from 'lucide-react';
 
 function AdminLoginContent() {
   const searchParams = useSearchParams();
@@ -17,6 +17,8 @@ function AdminLoginContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const [error, setError] = useState<string | null>(errorParam || null);
+
+  const supabaseConfigured = isSupabaseConfigured();
 
   const getAppUrl = () => {
     if (typeof window !== 'undefined') {
@@ -87,6 +89,43 @@ function AdminLoginContent() {
       setIsLoading(false);
     }
   };
+
+  if (!supabaseConfigured) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="bg-zinc-900/80 border border-amber-500/30 rounded-xl p-8 shadow-xl">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-amber-500/20 rounded-lg">
+                <Settings className="w-6 h-6 text-amber-400" />
+              </div>
+              <div>
+                <h1 className="text-xl font-semibold">Admin Login</h1>
+                <p className="text-sm text-zinc-400">Supabase not configured</p>
+              </div>
+            </div>
+            <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-200 text-sm space-y-2">
+              <p>Add these environment variables in Vercel:</p>
+              <ul className="list-disc list-inside font-mono text-xs">
+                <li>NEXT_PUBLIC_SUPABASE_URL</li>
+                <li>NEXT_PUBLIC_SUPABASE_ANON_KEY</li>
+              </ul>
+              <p className="pt-2 text-zinc-400">
+                Get values from your Supabase project dashboard → Settings → API.
+              </p>
+            </div>
+            <Link
+              href="/"
+              className="mt-6 flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-300"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to home
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white flex items-center justify-center p-4">

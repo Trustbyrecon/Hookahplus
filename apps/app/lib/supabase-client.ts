@@ -1,34 +1,40 @@
 import { createClient } from '@supabase/supabase-js';
 
-/**
- * Singleton client-side Supabase client (for use in client components)
- * This prevents multiple GoTrueClient instances in the same browser context
- * Note: Prefer using serverClient() in server components for better security
- */
+/** Check if Supabase auth is configured (for admin login, etc.) */
+export function isSupabaseConfigured(): boolean {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  return !!(url && key && url.length > 0 && key.length > 0);
+}
+
 let clientInstance: ReturnType<typeof createClient> | null = null;
 
+/**
+ * Singleton client-side Supabase client (for use in client components)
+ * @throws Error if NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY are not set
+ */
 export function clientClient() {
-  if (typeof window === 'undefined') {
-    // Server-side: return a new instance (shouldn't be used, but handle gracefully)
-    return createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  if (!isSupabaseConfigured()) {
+    throw new Error(
+      'Supabase is not configured. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to your Vercel environment variables.'
     );
   }
 
-  // Client-side: use singleton pattern
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+  if (typeof window === 'undefined') {
+    return createClient(url, key);
+  }
+
   if (!clientInstance) {
-    clientInstance = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        auth: {
-          persistSession: true,
-          autoRefreshToken: true,
-          detectSessionInUrl: true,
-        },
-      }
-    );
+    clientInstance = createClient(url, key, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+    });
   }
 
   return clientInstance;
