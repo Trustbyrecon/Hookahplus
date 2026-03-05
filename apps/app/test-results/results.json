@@ -14,29 +14,6 @@
       "actualWorkers": 1
     },
     "preserveOutput": "always",
-    "reporter": [
-      [
-        "html",
-        null
-      ],
-      [
-        "json",
-        {
-          "outputFile": "test-results/results.json"
-        }
-      ],
-      [
-        "junit",
-        {
-          "outputFile": "test-results/results.xml"
-        }
-      ]
-    ],
-    "reportSlowTests": {
-      "max": 5,
-      "threshold": 300000
-    },
-    "quiet": false,
     "projects": [
       {
         "outputDir": "C:/Users/Dwayne Clark/Projects/Hookahplus/apps/app/test-results",
@@ -119,30 +96,55 @@
         "timeout": 90000
       }
     ],
+    "quiet": false,
+    "reporter": [
+      [
+        "html",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/results.json"
+        }
+      ],
+      [
+        "junit",
+        {
+          "outputFile": "test-results/results.xml"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "runAgents": "none",
     "shard": null,
+    "tags": [],
     "updateSnapshots": "missing",
     "updateSourceMethod": "patch",
-    "version": "1.56.0",
+    "version": "1.58.2",
     "workers": 1,
     "webServer": null
   },
   "suites": [
     {
-      "title": "flows\\night-after-night-engine.spec.ts",
-      "file": "flows/night-after-night-engine.spec.ts",
+      "title": "codigo\\codigo-pilot.spec.ts",
+      "file": "codigo/codigo-pilot.spec.ts",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "Night After Night Engine - E2E Tests",
-          "file": "flows/night-after-night-engine.spec.ts",
-          "line": 12,
+          "title": "CODIGO Pilot — Use Cases (80%)",
+          "file": "codigo/codigo-pilot.spec.ts",
+          "line": 14,
           "column": 6,
           "specs": [
             {
-              "title": "Pathway 1: Pre-order → Payment → Session Creation → Guest Tracker",
-              "ok": true,
+              "title": "FSD loads with CODIGO and shows Floor tab by default",
+              "ok": false,
               "tags": [],
               "tests": [
                 {
@@ -155,28 +157,71 @@
                     {
                       "workerIndex": 0,
                       "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 2864,
-                      "errors": [],
+                      "status": "failed",
+                      "duration": 26543,
+                      "error": {
+                        "message": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"",
+                        "stack": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:16:32",
+                        "location": {
+                          "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                          "column": 32,
+                          "line": 16
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 14 |\u001b[39m test\u001b[33m.\u001b[39mdescribe(\u001b[32m'CODIGO Pilot — Use Cases (80%)'\u001b[39m\u001b[33m,\u001b[39m () \u001b[33m=>\u001b[39m {\n \u001b[90m 15 |\u001b[39m   test(\u001b[32m'FSD loads with CODIGO and shows Floor tab by default'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 16 |\u001b[39m     \u001b[36mconst\u001b[39m configPromise \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mwaitForResponse((r) \u001b[33m=>\u001b[39m r\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/api/lounges/CODIGO/config'\u001b[39m)\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m15000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 17 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[33mCODIGO_FSD_URL\u001b[39m\u001b[33m,\u001b[39m { waitUntil\u001b[33m:\u001b[39m \u001b[32m'domcontentloaded'\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 18 |\u001b[39m     \u001b[36mawait\u001b[39m configPromise\u001b[33m;\u001b[39m\n \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByText(\u001b[32m'Fire Session Dashboard'\u001b[39m)\u001b[33m.\u001b[39mfirst())\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m10000\u001b[39m })\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                            "column": 32,
+                            "line": 16
+                          },
+                          "message": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"\n\n\u001b[0m \u001b[90m 14 |\u001b[39m test\u001b[33m.\u001b[39mdescribe(\u001b[32m'CODIGO Pilot — Use Cases (80%)'\u001b[39m\u001b[33m,\u001b[39m () \u001b[33m=>\u001b[39m {\n \u001b[90m 15 |\u001b[39m   test(\u001b[32m'FSD loads with CODIGO and shows Floor tab by default'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 16 |\u001b[39m     \u001b[36mconst\u001b[39m configPromise \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mwaitForResponse((r) \u001b[33m=>\u001b[39m r\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/api/lounges/CODIGO/config'\u001b[39m)\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m15000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 17 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[33mCODIGO_FSD_URL\u001b[39m\u001b[33m,\u001b[39m { waitUntil\u001b[33m:\u001b[39m \u001b[32m'domcontentloaded'\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 18 |\u001b[39m     \u001b[36mawait\u001b[39m configPromise\u001b[33m;\u001b[39m\n \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByText(\u001b[32m'Fire Session Dashboard'\u001b[39m)\u001b[33m.\u001b[39mfirst())\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m10000\u001b[39m })\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:16:32\u001b[22m"
+                        },
+                        {
+                          "location": {
+                            "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                            "column": 16,
+                            "line": 17
+                          },
+                          "message": "Error: page.goto: Test ended.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3002/fire-session-dashboard?lounge=CODIGO\", waiting until \"domcontentloaded\"\u001b[22m\n\n\n\u001b[0m \u001b[90m 15 |\u001b[39m   test(\u001b[32m'FSD loads with CODIGO and shows Floor tab by default'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m 16 |\u001b[39m     \u001b[36mconst\u001b[39m configPromise \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mwaitForResponse((r) \u001b[33m=>\u001b[39m r\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/api/lounges/CODIGO/config'\u001b[39m)\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m15000\u001b[39m })\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 17 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[33mCODIGO_FSD_URL\u001b[39m\u001b[33m,\u001b[39m { waitUntil\u001b[33m:\u001b[39m \u001b[32m'domcontentloaded'\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 18 |\u001b[39m     \u001b[36mawait\u001b[39m configPromise\u001b[33m;\u001b[39m\n \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByText(\u001b[32m'Fire Session Dashboard'\u001b[39m)\u001b[33m.\u001b[39mfirst())\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m10000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'tab-floor'\u001b[39m)\u001b[33m.\u001b[39mor(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'button'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/Floor/i\u001b[39m })))\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m8000\u001b[39m })\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:17:16\u001b[22m"
+                        }
+                      ],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-02-03T21:28:54.249Z",
+                      "startTime": "2026-03-05T18:25:36.342Z",
                       "annotations": [],
-                      "attachments": []
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-761a3--shows-Floor-tab-by-default-chromium\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-761a3--shows-Floor-tab-by-default-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                        "column": 32,
+                        "line": 16
+                      }
                     }
                   ],
-                  "status": "expected"
+                  "status": "unexpected"
                 }
               ],
-              "id": "f1a6c5611daedfbbca0b-c80c4c63ee3e441d2243",
-              "file": "flows/night-after-night-engine.spec.ts",
-              "line": 58,
+              "id": "37521c8ad1bf10d3e976-403d7434c52937a14415",
+              "file": "codigo/codigo-pilot.spec.ts",
+              "line": 15,
               "column": 7
             },
             {
-              "title": "Pathway 2: Session → Order → Delivery → Active (Night After Night Flow)",
-              "ok": true,
+              "title": "CODIGO compact hero shows Create Session CTA",
+              "ok": false,
               "tags": [],
               "tests": [
                 {
@@ -187,29 +232,215 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 1,
                       "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 3398,
-                      "errors": [],
+                      "status": "failed",
+                      "duration": 25648,
+                      "error": {
+                        "message": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"",
+                        "stack": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:24:32",
+                        "location": {
+                          "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                          "column": 32,
+                          "line": 24
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 22 |\u001b[39m\n \u001b[90m 23 |\u001b[39m   test(\u001b[32m'CODIGO compact hero shows Create Session CTA'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 24 |\u001b[39m     \u001b[36mconst\u001b[39m configPromise \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mwaitForResponse((r) \u001b[33m=>\u001b[39m r\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/api/lounges/CODIGO/config'\u001b[39m)\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m15000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 25 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[33mCODIGO_FSD_URL\u001b[39m\u001b[33m,\u001b[39m { waitUntil\u001b[33m:\u001b[39m \u001b[32m'domcontentloaded'\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 26 |\u001b[39m     \u001b[36mawait\u001b[39m configPromise\u001b[33m;\u001b[39m\n \u001b[90m 27 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'create-session-cta'\u001b[39m)\u001b[33m.\u001b[39mor(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'button'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/Create Session/i\u001b[39m })))\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m8000\u001b[39m })\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                            "column": 32,
+                            "line": 24
+                          },
+                          "message": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"\n\n\u001b[0m \u001b[90m 22 |\u001b[39m\n \u001b[90m 23 |\u001b[39m   test(\u001b[32m'CODIGO compact hero shows Create Session CTA'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 24 |\u001b[39m     \u001b[36mconst\u001b[39m configPromise \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mwaitForResponse((r) \u001b[33m=>\u001b[39m r\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/api/lounges/CODIGO/config'\u001b[39m)\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m15000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 25 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[33mCODIGO_FSD_URL\u001b[39m\u001b[33m,\u001b[39m { waitUntil\u001b[33m:\u001b[39m \u001b[32m'domcontentloaded'\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 26 |\u001b[39m     \u001b[36mawait\u001b[39m configPromise\u001b[33m;\u001b[39m\n \u001b[90m 27 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'create-session-cta'\u001b[39m)\u001b[33m.\u001b[39mor(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'button'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/Create Session/i\u001b[39m })))\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m8000\u001b[39m })\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:24:32\u001b[22m"
+                        }
+                      ],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-02-03T21:28:58.763Z",
+                      "startTime": "2026-03-05T18:26:09.640Z",
                       "annotations": [],
-                      "attachments": []
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-78ef7-ro-shows-Create-Session-CTA-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-78ef7-ro-shows-Create-Session-CTA-chromium\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-78ef7-ro-shows-Create-Session-CTA-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                        "column": 32,
+                        "line": 24
+                      }
                     }
                   ],
-                  "status": "expected"
+                  "status": "unexpected"
                 }
               ],
-              "id": "f1a6c5611daedfbbca0b-4825b757db0be29fdcdd",
-              "file": "flows/night-after-night-engine.spec.ts",
-              "line": 84,
+              "id": "37521c8ad1bf10d3e976-3e1b1a75c177f76becb0",
+              "file": "codigo/codigo-pilot.spec.ts",
+              "line": 23,
               "column": 7
             },
             {
-              "title": "Pathway 3: Payment Confirmation Triggers Hookah Tracker Redirect",
+              "title": "Floor tab shows at-a-glance status strip",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 31969,
+                      "error": {
+                        "message": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"",
+                        "stack": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:31:32",
+                        "location": {
+                          "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                          "column": 32,
+                          "line": 31
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 29 |\u001b[39m\n \u001b[90m 30 |\u001b[39m   test(\u001b[32m'Floor tab shows at-a-glance status strip'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 31 |\u001b[39m     \u001b[36mconst\u001b[39m configPromise \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mwaitForResponse((r) \u001b[33m=>\u001b[39m r\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/api/lounges/CODIGO/config'\u001b[39m)\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m15000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 32 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[33mCODIGO_FSD_URL\u001b[39m\u001b[33m,\u001b[39m { waitUntil\u001b[33m:\u001b[39m \u001b[32m'domcontentloaded'\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 33 |\u001b[39m     \u001b[36mawait\u001b[39m configPromise\u001b[33m;\u001b[39m\n \u001b[90m 34 |\u001b[39m     \u001b[36mconst\u001b[39m floorTab \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'tab-floor'\u001b[39m)\u001b[33m.\u001b[39mor(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'button'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/Floor/i\u001b[39m }))\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                            "column": 32,
+                            "line": 31
+                          },
+                          "message": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"\n\n\u001b[0m \u001b[90m 29 |\u001b[39m\n \u001b[90m 30 |\u001b[39m   test(\u001b[32m'Floor tab shows at-a-glance status strip'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 31 |\u001b[39m     \u001b[36mconst\u001b[39m configPromise \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mwaitForResponse((r) \u001b[33m=>\u001b[39m r\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/api/lounges/CODIGO/config'\u001b[39m)\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m15000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 32 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[33mCODIGO_FSD_URL\u001b[39m\u001b[33m,\u001b[39m { waitUntil\u001b[33m:\u001b[39m \u001b[32m'domcontentloaded'\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 33 |\u001b[39m     \u001b[36mawait\u001b[39m configPromise\u001b[33m;\u001b[39m\n \u001b[90m 34 |\u001b[39m     \u001b[36mconst\u001b[39m floorTab \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'tab-floor'\u001b[39m)\u001b[33m.\u001b[39mor(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'button'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/Floor/i\u001b[39m }))\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:31:32\u001b[22m"
+                        },
+                        {
+                          "location": {
+                            "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                            "column": 16,
+                            "line": 32
+                          },
+                          "message": "Error: page.goto: Test ended.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3002/fire-session-dashboard?lounge=CODIGO\", waiting until \"domcontentloaded\"\u001b[22m\n\n\n\u001b[0m \u001b[90m 30 |\u001b[39m   test(\u001b[32m'Floor tab shows at-a-glance status strip'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m 31 |\u001b[39m     \u001b[36mconst\u001b[39m configPromise \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mwaitForResponse((r) \u001b[33m=>\u001b[39m r\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/api/lounges/CODIGO/config'\u001b[39m)\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m15000\u001b[39m })\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 32 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[33mCODIGO_FSD_URL\u001b[39m\u001b[33m,\u001b[39m { waitUntil\u001b[33m:\u001b[39m \u001b[32m'domcontentloaded'\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 33 |\u001b[39m     \u001b[36mawait\u001b[39m configPromise\u001b[33m;\u001b[39m\n \u001b[90m 34 |\u001b[39m     \u001b[36mconst\u001b[39m floorTab \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'tab-floor'\u001b[39m)\u001b[33m.\u001b[39mor(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'button'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/Floor/i\u001b[39m }))\u001b[33m;\u001b[39m\n \u001b[90m 35 |\u001b[39m     \u001b[36mawait\u001b[39m floorTab\u001b[33m.\u001b[39mfirst()\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:32:16\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-05T18:26:43.776Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-fb057-ws-at-a-glance-status-strip-chromium\\video.webm"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                        "column": 32,
+                        "line": 31
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "37521c8ad1bf10d3e976-e97a6e950e0546be80dc",
+              "file": "codigo/codigo-pilot.spec.ts",
+              "line": 30,
+              "column": 7
+            },
+            {
+              "title": "Create Session modal opens and shows CODIGO tables from floorplan",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 16278,
+                      "error": {
+                        "message": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"",
+                        "stack": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:40:32",
+                        "location": {
+                          "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                          "column": 32,
+                          "line": 40
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 38 |\u001b[39m\n \u001b[90m 39 |\u001b[39m   test(\u001b[32m'Create Session modal opens and shows CODIGO tables from floorplan'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 40 |\u001b[39m     \u001b[36mconst\u001b[39m configPromise \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mwaitForResponse((r) \u001b[33m=>\u001b[39m r\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/api/lounges/CODIGO/config'\u001b[39m)\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m15000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 41 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[33mCODIGO_FSD_URL\u001b[39m\u001b[33m,\u001b[39m { waitUntil\u001b[33m:\u001b[39m \u001b[32m'domcontentloaded'\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 42 |\u001b[39m     \u001b[36mawait\u001b[39m configPromise\u001b[33m;\u001b[39m\n \u001b[90m 43 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'create-session-cta'\u001b[39m)\u001b[33m.\u001b[39mor(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'button'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/Create Session/i\u001b[39m }))\u001b[33m.\u001b[39mfirst()\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                            "column": 32,
+                            "line": 40
+                          },
+                          "message": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"\n\n\u001b[0m \u001b[90m 38 |\u001b[39m\n \u001b[90m 39 |\u001b[39m   test(\u001b[32m'Create Session modal opens and shows CODIGO tables from floorplan'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 40 |\u001b[39m     \u001b[36mconst\u001b[39m configPromise \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mwaitForResponse((r) \u001b[33m=>\u001b[39m r\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/api/lounges/CODIGO/config'\u001b[39m)\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m15000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 41 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[33mCODIGO_FSD_URL\u001b[39m\u001b[33m,\u001b[39m { waitUntil\u001b[33m:\u001b[39m \u001b[32m'domcontentloaded'\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 42 |\u001b[39m     \u001b[36mawait\u001b[39m configPromise\u001b[33m;\u001b[39m\n \u001b[90m 43 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'create-session-cta'\u001b[39m)\u001b[33m.\u001b[39mor(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'button'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/Create Session/i\u001b[39m }))\u001b[33m.\u001b[39mfirst()\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:40:32\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-05T18:27:23.191Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-5ca85-ODIGO-tables-from-floorplan-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-5ca85-ODIGO-tables-from-floorplan-chromium\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-5ca85-ODIGO-tables-from-floorplan-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                        "column": 32,
+                        "line": 40
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "37521c8ad1bf10d3e976-08507058d35bf3e0161a",
+              "file": "codigo/codigo-pilot.spec.ts",
+              "line": 39,
+              "column": 7
+            },
+            {
+              "title": "API: CODIGO layout returns floorplan tables",
               "ok": true,
               "tags": [],
               "tests": [
@@ -221,15 +452,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 4,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1875,
+                      "duration": 3596,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-02-03T21:29:02.189Z",
+                      "startTime": "2026-03-05T18:27:49.106Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -237,14 +468,192 @@
                   "status": "expected"
                 }
               ],
-              "id": "f1a6c5611daedfbbca0b-e62a37e8979035381253",
-              "file": "flows/night-after-night-engine.spec.ts",
+              "id": "37521c8ad1bf10d3e976-1975023b7538aaccfa12",
+              "file": "codigo/codigo-pilot.spec.ts",
+              "line": 47,
+              "column": 7
+            },
+            {
+              "title": "API: Table 705 validates for CODIGO",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7057,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-05T18:27:52.802Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "37521c8ad1bf10d3e976-615ab04644c99ccde0e8",
+              "file": "codigo/codigo-pilot.spec.ts",
+              "line": 57,
+              "column": 7
+            },
+            {
+              "title": "API: Sessions list accepts lounge=CODIGO",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 10091,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-05T18:27:59.890Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "37521c8ad1bf10d3e976-a54f22ee328056e28606",
+              "file": "codigo/codigo-pilot.spec.ts",
+              "line": 67,
+              "column": 7
+            },
+            {
+              "title": "Create session via API with CODIGO table 705",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8541,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-05T18:28:10.021Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "37521c8ad1bf10d3e976-225573f89cd6feb224f3",
+              "file": "codigo/codigo-pilot.spec.ts",
+              "line": 74,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "CODIGO Pilot — Edge Cases (80%)",
+          "file": "codigo/codigo-pilot.spec.ts",
+          "line": 98,
+          "column": 6,
+          "specs": [
+            {
+              "title": "API: Invalid table ID returns validation error",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1656,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-05T18:28:18.599Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "37521c8ad1bf10d3e976-e69b1d378360690647bd",
+              "file": "codigo/codigo-pilot.spec.ts",
+              "line": 99,
+              "column": 7
+            },
+            {
+              "title": "API: Table availability check with loungeId for CODIGO",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2726,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-05T18:28:20.298Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "37521c8ad1bf10d3e976-ddd5aebc4478429b1ce9",
+              "file": "codigo/codigo-pilot.spec.ts",
               "line": 108,
               "column": 7
             },
             {
-              "title": "Pathway 4: Full Night After Night Flow - Pre-order to Active Session",
-              "ok": true,
+              "title": "API: Lounges layout fallback returns CODIGO floorplan",
+              "ok": false,
               "tags": [],
               "tests": [
                 {
@@ -255,29 +664,53 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 4,
                       "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 2845,
-                      "errors": [],
+                      "status": "failed",
+                      "duration": 1221,
+                      "error": {
+                        "message": "Error: Table 705 not in layout. Tables: table-001, table-002, table-003, table-004, table-005, table-006, table-007, table-008, table-009, table-010\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: Table 705 not in layout. Tables: table-001, table-002, table-003, table-004, table-005, table-006, table-007, table-008, table-009, table-010\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:131:109",
+                        "location": {
+                          "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                          "column": 109,
+                          "line": 131
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 129 |\u001b[39m         \u001b[33mString\u001b[39m(t\u001b[33m.\u001b[39mid \u001b[33m||\u001b[39m t\u001b[33m.\u001b[39mname \u001b[33m||\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m.\u001b[39mincludes(\u001b[32m'705'\u001b[39m)\n \u001b[90m 130 |\u001b[39m     )\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 131 |\u001b[39m     expect(has705\u001b[33m,\u001b[39m \u001b[32m`Table 705 not in layout. Tables: ${tables.map((t: any) => t.id || t.name).join(', ')}`\u001b[39m)\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                                                                                             \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 132 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 133 |\u001b[39m\n \u001b[90m 134 |\u001b[39m   test(\u001b[32m'API: Config returns layoutMode for CODIGO'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ request }) \u001b[33m=>\u001b[39m {\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                            "column": 109,
+                            "line": 131
+                          },
+                          "message": "Error: Table 705 not in layout. Tables: table-001, table-002, table-003, table-004, table-005, table-006, table-007, table-008, table-009, table-010\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n\n\u001b[0m \u001b[90m 129 |\u001b[39m         \u001b[33mString\u001b[39m(t\u001b[33m.\u001b[39mid \u001b[33m||\u001b[39m t\u001b[33m.\u001b[39mname \u001b[33m||\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m.\u001b[39mincludes(\u001b[32m'705'\u001b[39m)\n \u001b[90m 130 |\u001b[39m     )\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 131 |\u001b[39m     expect(has705\u001b[33m,\u001b[39m \u001b[32m`Table 705 not in layout. Tables: ${tables.map((t: any) => t.id || t.name).join(', ')}`\u001b[39m)\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                                                                                             \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 132 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 133 |\u001b[39m\n \u001b[90m 134 |\u001b[39m   test(\u001b[32m'API: Config returns layoutMode for CODIGO'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ request }) \u001b[33m=>\u001b[39m {\u001b[0m\n\u001b[2m    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:131:109\u001b[22m"
+                        }
+                      ],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-02-03T21:29:04.090Z",
+                      "startTime": "2026-03-05T18:28:23.056Z",
                       "annotations": [],
-                      "attachments": []
+                      "attachments": [],
+                      "errorLocation": {
+                        "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                        "column": 109,
+                        "line": 131
+                      }
                     }
                   ],
-                  "status": "expected"
+                  "status": "unexpected"
                 }
               ],
-              "id": "f1a6c5611daedfbbca0b-f9c5dfd06fad36a4900c",
-              "file": "flows/night-after-night-engine.spec.ts",
-              "line": 118,
+              "id": "37521c8ad1bf10d3e976-abbcaf224e6f0520c80a",
+              "file": "codigo/codigo-pilot.spec.ts",
+              "line": 117,
               "column": 7
             },
             {
-              "title": "Pathway 5: Guest Experience - Payment → Tracker → Session Status Updates",
+              "title": "API: Config returns layoutMode for CODIGO",
               "ok": true,
               "tags": [],
               "tests": [
@@ -289,15 +722,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 5,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3525,
+                      "duration": 9356,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-02-03T21:29:06.949Z",
+                      "startTime": "2026-03-05T18:28:29.804Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -305,9 +738,193 @@
                   "status": "expected"
                 }
               ],
-              "id": "f1a6c5611daedfbbca0b-ea292ddd16576d430a80",
-              "file": "flows/night-after-night-engine.spec.ts",
-              "line": 154,
+              "id": "37521c8ad1bf10d3e976-2fbc9c1d3fdd6da7e55f",
+              "file": "codigo/codigo-pilot.spec.ts",
+              "line": 134,
+              "column": 7
+            },
+            {
+              "title": "FSD Floor tab shows seat nodes (no MiniMap)",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 16666,
+                      "error": {
+                        "message": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"",
+                        "stack": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:143:32",
+                        "location": {
+                          "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                          "column": 32,
+                          "line": 143
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 141 |\u001b[39m\n \u001b[90m 142 |\u001b[39m   test(\u001b[32m'FSD Floor tab shows seat nodes (no MiniMap)'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 143 |\u001b[39m     \u001b[36mconst\u001b[39m configPromise \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mwaitForResponse((r) \u001b[33m=>\u001b[39m r\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/api/lounges/CODIGO/config'\u001b[39m)\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m15000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 144 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[33mCODIGO_FSD_URL\u001b[39m\u001b[33m,\u001b[39m { waitUntil\u001b[33m:\u001b[39m \u001b[32m'domcontentloaded'\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 145 |\u001b[39m     \u001b[36mawait\u001b[39m configPromise\u001b[33m;\u001b[39m\n \u001b[90m 146 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'tab-floor'\u001b[39m)\u001b[33m.\u001b[39mor(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'button'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/Floor/i\u001b[39m }))\u001b[33m.\u001b[39mfirst()\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                            "column": 32,
+                            "line": 143
+                          },
+                          "message": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"\n\n\u001b[0m \u001b[90m 141 |\u001b[39m\n \u001b[90m 142 |\u001b[39m   test(\u001b[32m'FSD Floor tab shows seat nodes (no MiniMap)'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 143 |\u001b[39m     \u001b[36mconst\u001b[39m configPromise \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mwaitForResponse((r) \u001b[33m=>\u001b[39m r\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/api/lounges/CODIGO/config'\u001b[39m)\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m15000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 144 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[33mCODIGO_FSD_URL\u001b[39m\u001b[33m,\u001b[39m { waitUntil\u001b[33m:\u001b[39m \u001b[32m'domcontentloaded'\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 145 |\u001b[39m     \u001b[36mawait\u001b[39m configPromise\u001b[33m;\u001b[39m\n \u001b[90m 146 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'tab-floor'\u001b[39m)\u001b[33m.\u001b[39mor(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'button'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/Floor/i\u001b[39m }))\u001b[33m.\u001b[39mfirst()\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:143:32\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-05T18:28:39.238Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-0bec5-hows-seat-nodes-no-MiniMap--chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-0bec5-hows-seat-nodes-no-MiniMap--chromium\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-0bec5-hows-seat-nodes-no-MiniMap--chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                        "column": 32,
+                        "line": 143
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "37521c8ad1bf10d3e976-c6e0f1710a2bc983f9bf",
+              "file": "codigo/codigo-pilot.spec.ts",
+              "line": 142,
+              "column": 7
+            },
+            {
+              "title": "Session creation with missing required fields returns error",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 17421,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-05T18:29:03.112Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "37521c8ad1bf10d3e976-c8b82b597065a249f8ad",
+              "file": "codigo/codigo-pilot.spec.ts",
+              "line": 151,
+              "column": 7
+            },
+            {
+              "title": "Duplicate session on same table - availability reflects occupancy",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8175,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-05T18:29:21.430Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "37521c8ad1bf10d3e976-b019f30abc0bffcb7892",
+              "file": "codigo/codigo-pilot.spec.ts",
+              "line": 164,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "CODIGO Concurrency",
+          "file": "codigo/codigo-pilot.spec.ts",
+          "line": 186,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Concurrent session creation - 10 parallel requests",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 14174,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-05T18:29:29.668Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "37521c8ad1bf10d3e976-2ad661b08941135330b3",
+              "file": "codigo/codigo-pilot.spec.ts",
+              "line": 187,
               "column": 7
             }
           ]
@@ -317,11 +934,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-02-03T21:28:53.262Z",
-    "duration": 17334.823,
-    "expected": 5,
+    "startTime": "2026-03-05T18:25:31.587Z",
+    "duration": 252481.266,
+    "expected": 10,
     "skipped": 0,
-    "unexpected": 0,
+    "unexpected": 6,
     "flaky": 0
   }
 }

@@ -107,12 +107,22 @@ export async function GET(
       }
     }
 
+    // Layout mode: floor (POS-mirrored) vs classic. Foundation for per-lounge UI.
+    let layoutMode: 'floor' | 'classic' = 'classic';
+    try {
+      const { getLoungeLayoutMode } = await import('../../../../lib/lounge-layout-mode');
+      layoutMode = (await getLoungeLayoutMode(loungeId)) as 'floor' | 'classic';
+    } catch (e) {
+      console.warn('[Config] getLoungeLayoutMode failed, defaulting to classic:', e);
+    }
+
     return NextResponse.json({
       success: true,
       config: {
         version: loungeConfig?.version || 1,
         effectiveAt: loungeConfig?.effectiveAt.toISOString() || new Date().toISOString(),
         configData: configData || {},
+        layoutMode,
         venueIdentity: (configData as any)?.venue_identity || null,
         pricingRules: pricingRules.map(rule => ({
           id: rule.id,

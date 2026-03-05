@@ -1,0 +1,192 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - navigation [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e7]:
+            - generic [ref=e8]:
+              - generic [ref=e10]: Trust-Lock ACTIVE
+              - generic [ref=e11]: (100%)
+            - generic [ref=e14]: Reflex Score 87%
+            - generic [ref=e15]:
+              - generic [ref=e16]: "Flow:"
+              - generic [ref=e17]:
+                - 'generic "Payment: 0%" [ref=e18]'
+                - 'generic "Prep: 0%" [ref=e19]'
+                - 'generic "Ready: 0%" [ref=e20]'
+                - 'generic "Deliver: 0%" [ref=e21]'
+                - 'generic "Light: 0%" [ref=e22]'
+              - generic [ref=e23]: Payment
+            - generic [ref=e26]: Live Sessions 0
+          - generic [ref=e27]:
+            - generic [ref=e28]: "Auto-refresh: ON"
+            - generic [ref=e29]: "Last updated: 1:29:04 PM"
+        - generic [ref=e30]:
+          - link "H+ HOOKAH+" [ref=e32]:
+            - /url: /
+            - generic [ref=e34]: H+
+            - generic [ref=e35]: HOOKAH+
+          - generic [ref=e36]:
+            - link "Dashboard" [ref=e37]:
+              - /url: /fire-session-dashboard
+            - link "Pre-Order" [ref=e38]:
+              - /url: /preorder/T-001
+            - link "Sessions" [ref=e39]:
+              - /url: /sessions
+            - link "Staff" [ref=e40]:
+              - /url: /staff-panel
+            - button "Quick Access Menu" [ref=e42] [cursor=pointer]:
+              - generic [ref=e43]: Quick Access
+              - img [ref=e44]
+          - generic [ref=e46]:
+            - button "Settings" [ref=e47] [cursor=pointer]:
+              - img [ref=e48]
+              - generic [ref=e51]: Settings
+            - button "Support Docs" [ref=e52] [cursor=pointer]:
+              - img [ref=e53]
+              - generic [ref=e56]: Support Docs
+            - generic [ref=e57]:
+              - generic [ref=e58]: "Role:"
+              - combobox [ref=e59]:
+                - option "MANAGER" [selected]
+                - option "FOH"
+                - option "BOH"
+                - option "ADMIN"
+              - generic [ref=e60]: (MANAGER View)
+            - button [ref=e61] [cursor=pointer]:
+              - img [ref=e62]
+    - generic [ref=e69]: Checking First Light status...
+    - generic [ref=e70]:
+      - navigation "Breadcrumb" [ref=e71]:
+        - list [ref=e72]:
+          - listitem [ref=e73]:
+            - link "Go to Home" [ref=e74] [cursor=pointer]:
+              - /url: /
+              - img [ref=e75]
+          - listitem [ref=e78]:
+            - img [ref=e79]
+            - generic [ref=e81]: Fire Session Dashboard
+      - generic [ref=e86]:
+        - heading "Fire Session Dashboard" [level=1] [ref=e87]
+        - paragraph [ref=e88]: Real-time session management with intelligent workflow automation. Monitor live sessions, manage BOH/FOH workflows, and optimize operations.
+        - generic [ref=e89]:
+          - img [ref=e90]
+          - generic [ref=e92]:
+            - generic [ref=e93]: 0 Active Sessions
+            - generic [ref=e94]: $0.00 revenue • 0 staff assigned
+        - generic [ref=e95]:
+          - link "View Analytics" [ref=e96]:
+            - /url: /analytics
+            - text: View Analytics
+            - img [ref=e97]
+          - link "View All Sessions" [ref=e99]:
+            - /url: /sessions
+        - generic [ref=e100]:
+          - generic [ref=e101]:
+            - img [ref=e102]
+            - generic [ref=e107]: Real-time updates
+          - generic [ref=e108]:
+            - img [ref=e109]
+            - generic [ref=e111]: 0 alerts
+      - generic [ref=e114]:
+        - generic [ref=e115]:
+          - generic [ref=e116]:
+            - img [ref=e117]
+            - heading "Daily Pulse" [level=3] [ref=e119]
+            - button "AM" [ref=e120] [cursor=pointer]
+          - generic [ref=e121]: Loading...
+        - generic [ref=e122]:
+          - button "Refresh" [ref=e123] [cursor=pointer]:
+            - img [ref=e124]
+          - link [ref=e129]:
+            - /url: /pulse
+            - img [ref=e130]
+      - generic [ref=e132]:
+        - generic [ref=e134]:
+          - img [ref=e135]
+          - generic [ref=e140]: "Last updated: Never"
+        - generic [ref=e141]:
+          - button "Refresh" [disabled] [ref=e142]:
+            - img [ref=e143]
+            - generic [ref=e148]: Refresh
+          - generic [ref=e149]:
+            - generic [ref=e150]: "Role:"
+            - generic [ref=e151]: MANAGER
+          - generic [ref=e153] [cursor=pointer]:
+            - checkbox "First Light Focus" [ref=e154]
+            - generic [ref=e155]: First Light Focus
+      - generic [ref=e157]:
+        - img [ref=e158]
+        - generic [ref=e161]: "Week-1 view for: CODIGO"
+      - button "Start shift" [ref=e168] [cursor=pointer]:
+        - img [ref=e169]
+        - text: Start shift
+      - generic [ref=e172]:
+        - generic [ref=e173]:
+          - generic [ref=e174]:
+            - img [ref=e176]
+            - generic [ref=e178]:
+              - heading "Session Management" [level=2] [ref=e179]
+              - paragraph [ref=e180]: Manage active hookah sessions
+              - generic [ref=e181]: "Scoped to: CODIGO"
+          - button "Create Test Paid Session" [ref=e182] [cursor=pointer]:
+            - img [ref=e183]
+            - generic [ref=e184]: Create Test Paid Session
+        - generic [ref=e185]:
+          - button "📊 All Orders" [ref=e186] [cursor=pointer]:
+            - generic [ref=e187]: 📊
+            - generic [ref=e188]: All Orders
+          - button "👨‍🍳 Kitchen" [ref=e189] [cursor=pointer]:
+            - generic [ref=e190]: 👨‍🍳
+            - generic [ref=e191]: Kitchen
+          - button "👨‍💼 Floor" [ref=e192] [cursor=pointer]:
+            - generic [ref=e193]: 👨‍💼
+            - generic [ref=e194]: Floor
+          - button "⚠️ Issues" [ref=e195] [cursor=pointer]:
+            - generic [ref=e196]: ⚠️
+            - generic [ref=e197]: Issues
+        - generic [ref=e198]:
+          - generic [ref=e199]:
+            - generic [ref=e200]:
+              - generic [ref=e201]:
+                - heading "What Needs Your Attention Now" [level=3] [ref=e202]
+                - paragraph [ref=e203]: Take action on these items to keep orders moving
+              - generic [ref=e205]: 0 total
+            - button "Update" [ref=e207] [cursor=pointer]:
+              - img [ref=e208]
+              - generic [ref=e213]: Update
+          - generic [ref=e214]:
+            - img [ref=e216]
+            - heading "No Active Sessions" [level=3] [ref=e218]
+            - paragraph [ref=e219]: Create your first session to get started
+            - button "Start New Order" [ref=e220] [cursor=pointer]:
+              - img [ref=e221]
+              - generic [ref=e222]: Start New Order
+      - generic [ref=e223]:
+        - heading "Related Features" [level=3] [ref=e224]
+        - generic [ref=e225]:
+          - link "Sessions Management Advanced session management and monitoring" [ref=e226]:
+            - /url: /sessions
+            - generic [ref=e227]:
+              - img [ref=e228]
+              - generic [ref=e230]: Sessions Management
+            - paragraph [ref=e231]: Advanced session management and monitoring
+          - link "Analytics View detailed analytics and reports" [ref=e232]:
+            - /url: /analytics
+            - generic [ref=e233]:
+              - img [ref=e234]
+              - generic [ref=e239]: Analytics
+            - paragraph [ref=e240]: View detailed analytics and reports
+          - link "Staff Operations Daily operations and staff management" [ref=e241]:
+            - /url: /staff-ops
+            - generic [ref=e242]:
+              - img [ref=e243]
+              - generic [ref=e245]: Staff Operations
+            - paragraph [ref=e246]: Daily operations and staff management
+  - button "Open Next.js Dev Tools" [ref=e252] [cursor=pointer]:
+    - img [ref=e253]
+  - alert [ref=e258]
+```

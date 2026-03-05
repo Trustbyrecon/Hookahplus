@@ -21,6 +21,7 @@ export default function SeatNode({ data }: NodeProps<SeatNodeData>) {
 
   return (
     <div
+      data-testid="codigo-seat-node"
       className={[
         "rounded-xl border px-3 py-2 shadow-sm select-none",
         "bg-zinc-900 border-zinc-700 text-zinc-100",

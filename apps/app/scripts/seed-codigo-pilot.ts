@@ -13,6 +13,7 @@ import { prisma } from '../lib/db';
 const LOUNGE_ID_CODIGO = 'CODIGO';
 
 const PILOT_CONFIG = {
+  layoutMode: 'floor' as const, // Foundation: POS-mirrored UI (Toast), reduces cognitive switching
   peakNights: ['Thursday', 'Friday', 'Saturday'],
   operatingWindow: { start: '22:00', end: '02:00' },
   pricing: {

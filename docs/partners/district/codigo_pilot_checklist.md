@@ -85,6 +85,18 @@ Ensures staff can select CODIGO tables and create sessions that flow into the NA
   - `/admin/codigo-kpis`
 - Confirm date range selector works and cards populate.
 
+## E2E Testing (Playwright)
+- **Install browsers** (required once): `npm run test:e2e:install` or `npx playwright install chromium`
+- **Run CODIGO tests**: `npm run test:e2e:codigo` (or `USE_EXISTING_SERVER=1 npx playwright test e2e/codigo/codigo-pilot.spec.ts`)
+- **Concurrency test**: `npm run test:concurrency:codigo` (or `npx tsx scripts/performance/load-test-codigo.ts 20`)
+- **Prerequisites**: Seed CODIGO pilot (`npx tsx scripts/seed-codigo-pilot.ts`) and install Playwright browsers before running tests.
+
+## Layout Mode (Foundation)
+- **useFloorPlan**: Each lounge can have `layoutMode: 'floor'` (POS-mirrored UI) or `'classic'`.
+- **Derived from**: FloorplanLayout existence, or `PilotConfig.configData.layoutMode` / `LoungeConfig.configData.layoutMode`.
+- **CODIGO**: Has FloorplanLayout + `layoutMode: 'floor'` in PilotConfig → compact hero, Floor tab default, no First Light/Daily Pulse.
+- **Extend to other lounges**: Add FloorplanLayout for a lounge → it gets floor UI automatically.
+
 ## Common failure points + fixes
 - **DB connection errors**:
   - Confirm `DATABASE_URL` is set and reachable (pooler vs direct URL considerations).

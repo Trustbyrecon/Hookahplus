@@ -72,6 +72,8 @@ interface SimpleFSDDesignProps {
   isDemoMode?: boolean;
   scopeLabel?: string;
   loungeId?: string;
+  /** Foundation: POS-mirrored floor UI. When true, Floor tab leads, compact layout. */
+  useFloorPlan?: boolean;
 }
 
 // Enhanced State Machine - Complete Hookah Lounge Operations
@@ -142,7 +144,8 @@ export default function SimpleFSDDesign({
   className = '',
   isDemoMode = false,
   scopeLabel,
-  loungeId
+  loungeId,
+  useFloorPlan = false,
 }: SimpleFSDDesignProps) {
   // Initialize feature flags with defaults to avoid hydration mismatch
   const [featureFlags, setFeatureFlags] = useState({
@@ -170,8 +173,8 @@ export default function SimpleFSDDesign({
     }
   }, []);
   
-  // CODIGO: default to Floor tab for Toast handheld - higher value leads spatially
-  const [activeTab, setActiveTab] = useState(loungeId === 'CODIGO' ? 'foh' : 'overview');
+  // useFloorPlan: layout mode from config - Floor tab leads for POS-mirrored (Toast) lounges
+  const [activeTab, setActiveTab] = useState(useFloorPlan ? 'foh' : 'overview');
   const [hoveredAction, setHoveredAction] = useState<string | null>(null);
   const [selectedSession, setSelectedSession] = useState<FireSession | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -1427,7 +1430,7 @@ export default function SimpleFSDDesign({
           </div>
         </div>
         
-        {sessions.length > 0 && loungeId !== 'CODIGO' && (
+        {sessions.length > 0 && !useFloorPlan && (
           <button
             onClick={handleCreateSession}
             className="flex items-center space-x-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
@@ -1437,7 +1440,7 @@ export default function SimpleFSDDesign({
           </button>
         )}
         {/* Test Session Button - Show only in development mode based on feature flags. Hidden for CODIGO. */}
-        {!isDemoMode && featureFlags.showTestSessionButton && loungeId !== 'CODIGO' && (
+        {!isDemoMode && featureFlags.showTestSessionButton && !useFloorPlan && (
           <button
             onClick={async () => {
               try {
@@ -1526,12 +1529,13 @@ export default function SimpleFSDDesign({
         {[
           { id: 'overview', label: 'All Orders', icon: '📊' },
           { id: 'boh', label: 'Kitchen', icon: '👨‍🍳' },
-          { id: 'foh', label: 'Floor', icon: '👨‍💼' },
+          { id: 'foh', label: 'Floor', icon: '👨‍💼', testId: 'tab-floor' },
           { id: 'edge', label: 'Issues', icon: '⚠️' }
         ].map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
+            data-testid={(tab as { testId?: string }).testId}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2 ${
               activeTab === tab.id
                 ? 'bg-orange-500 text-white'
@@ -1555,7 +1559,7 @@ export default function SimpleFSDDesign({
                 <p className="text-sm text-zinc-400">Take action on these items to keep orders moving</p>
               </div>
               <div className="flex items-center gap-2">
-                {loungeId === 'CODIGO' && (
+                {useFloorPlan && (
                   <button
                     onClick={() => setActiveTab('foh')}
                     className="px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-sm font-medium flex items-center gap-2 transition-colors"
@@ -1797,9 +1801,9 @@ export default function SimpleFSDDesign({
               </div>
               <h3 className="text-lg font-medium text-zinc-300 mb-2">No Active Sessions</h3>
               <p className="text-zinc-500 mb-4">
-                {loungeId === 'CODIGO' ? 'Use the Floor tab to start sessions from the floor plan.' : 'Create your first session to get started'}
+                {useFloorPlan ? 'Use the Floor tab to start sessions from the floor plan.' : 'Create your first session to get started'}
               </p>
-              {loungeId !== 'CODIGO' && (
+              {!useFloorPlan && (
                 <button
                   onClick={handleCreateSession}
                   className="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors inline-flex items-center gap-2 font-medium"
@@ -1878,7 +1882,7 @@ export default function SimpleFSDDesign({
       {/* FOH Tab */}
       {activeTab === 'foh' && (
         <div className="space-y-4">
-          {loungeId === 'CODIGO' && onCreateSession ? (
+          {useFloorPlan && loungeId && onCreateSession ? (
             <>
               {/* CODIGO: At-a-glance status strip - higher value leads */}
               {(() => {

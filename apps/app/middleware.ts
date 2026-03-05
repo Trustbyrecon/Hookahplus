@@ -90,7 +90,7 @@ export async function middleware(request: NextRequest) {
     '/api/webhooks',
     '/api/tenants', // Allow tenant creation during signup
     '/api/memberships', // Allow membership creation during signup (uses service role internally)
-    '/api/lounges', // Allow lounge list access for QR generator
+    '/api/lounges', // Allow lounge list + config + layout (CODIGO pilot, E2E)
     '/api/qr-generator', // Allow QR generator API access
     // CODIGO guest flows must be public (used by `/codigo/*` pages)
     '/api/codigo/join',

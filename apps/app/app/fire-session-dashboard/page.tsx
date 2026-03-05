@@ -32,6 +32,7 @@ import { PreviewModeBanner } from '../../components/launchpad/PreviewModeBanner'
 import { SoftLaunchBanner } from '../../components/launchpad/SoftLaunchBanner';
 import ShiftGuide from '../../components/ShiftGuide';
 import { getFeatureFlags, markFirstLightCompleted, enableMetrics, activateAlphaStability } from '../../lib/feature-flags';
+import { useLoungeLayoutMode } from '../../hooks/useLoungeLayoutMode';
 
 const SELECT_ALL_LOCATIONS = '__all_locations__';
 
@@ -174,6 +175,7 @@ function FireSessionDashboardContent() {
     [candidateLoungeIds]
   );
   const [selectedLoungeId, setSelectedLoungeId] = useState<string | null>(demoLounge || parsedLoungeIds[0] || null);
+  const { useFloorPlan } = useLoungeLayoutMode(selectedLoungeId);
   const [week1Rollup, setWeek1Rollup] = useState<{
     locationCount: number;
     activeLocations: number;
@@ -782,7 +784,7 @@ function FireSessionDashboardContent() {
       </Suspense>
       
       {/* First Light Banner - Show based on feature flags, hidden for CODIGO (floor leads) */}
-      {featureFlags.showFirstLightBanner && selectedLoungeId !== 'CODIGO' && (
+      {featureFlags.showFirstLightBanner && !useFloorPlan && (
         <FirstLightBanner 
           onRunTest={() => {
             setShowCreateModal(true);
@@ -880,7 +882,7 @@ function FireSessionDashboardContent() {
         </Suspense>
         
         {/* CODIGO: Compact hero - higher value leads spatially for Toast handheld */}
-        {selectedLoungeId === 'CODIGO' ? (
+        {useFloorPlan ? (
           <section className="mb-6 rounded-xl border border-zinc-800 bg-zinc-950/50 p-4">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="flex flex-wrap items-center gap-4">
@@ -891,6 +893,7 @@ function FireSessionDashboardContent() {
               <button
                 onClick={() => setShowCreateModal(true)}
                 className="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-lg font-medium flex items-center gap-2"
+                data-testid="create-session-cta"
               >
                 <Flame className="w-4 h-4" />
                 Create Session
@@ -922,7 +925,7 @@ function FireSessionDashboardContent() {
         )}
 
         {/* Daily Pulse Card - Hidden in demo mode and CODIGO (floor leads) */}
-        {!isDemoMode && selectedLoungeId !== 'CODIGO' && (
+        {!isDemoMode && !useFloorPlan && (
           <div className="mb-6">
             <PulseCard 
               compact={true} 
@@ -1504,6 +1507,7 @@ function FireSessionDashboardContent() {
           isDemoMode={isDemoMode}
           scopeLabel={selectedLoungeId || 'All locations (org-wide)'}
           loungeId={selectedLoungeId || undefined}
+          useFloorPlan={useFloorPlan}
         />
 
         {/* Related Features - Hidden in demo mode */}
