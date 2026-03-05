@@ -86,6 +86,11 @@ function FireSessionDashboardContent() {
   });
   const [sessionClaimTimes, setSessionClaimTimes] = useState<Map<string, number>>(new Map());
   const demoProgressionTimersRef = useRef<Map<string, NodeJS.Timeout[]>>(new Map());
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   const normalizeRole = (role: string | null): 'BOH' | 'FOH' | 'MANAGER' | 'ADMIN' => {
     const upper = (role || '').toUpperCase();
@@ -401,8 +406,10 @@ function FireSessionDashboardContent() {
   }, [sessions, isDemoMode, sessionClaimTimes]);
 
   const handleCreateSession = async (sessionData: any) => {
-    // In demo mode, create in-memory session and inject so Claim Prep / NAN flow work
-    if (isDemoMode) {
+    // CODIGO operator: always call API to create real session (ACTIVE for floor)
+    const codigoOperator = sessionData?.codigoOperator === true;
+    // In demo mode (and not CODIGO), create in-memory session and inject so Claim Prep / NAN flow work
+    if (isDemoMode && !codigoOperator) {
       console.log('[Create Session] 🎭 Demo Mode: Creating in-memory demo session (no API call)');
       const now = Date.now();
       const demoSessionId = `demo-session-${now}-${Math.random().toString(36).substr(2, 9)}`;
@@ -464,8 +471,9 @@ function FireSessionDashboardContent() {
         source: sessionData.session_type === 'reservation' ? 'RESERVE' : 
                 sessionData.session_type === 'vip' ? 'WALK_IN' : 'WALK_IN', // VIP maps to WALK_IN (not a valid SessionSource)
         externalRef: sessionData.externalRef || `table-${sessionData.table_id || sessionData.tableId}-${Date.now()}`,
-        // Add demo mode flag
-        isDemo: isDemoMode
+        // CODIGO operator flow: treat as paid (Toast handles payment)
+        isDemo: sessionData.isDemo ?? sessionData.codigoOperator ?? isDemoMode,
+        codigoOperator: sessionData.codigoOperator ?? false,
       };
 
       console.log('[Create Session] Sending to API:', apiPayload);
@@ -516,7 +524,11 @@ function FireSessionDashboardContent() {
       return responseData.session?.id || responseData.id;
     } catch (error) {
       console.error('[Create Session] Error:', error);
-      alert(`Failed to create session: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      const displayMsg = msg.includes('Failed to fetch') || msg.includes('NetworkError')
+        ? 'Network error. Check your connection and try again.'
+        : msg;
+      alert(`Failed to create session: ${displayMsg}`);
       throw error; // Re-throw so modal can handle it
     }
   };
@@ -906,7 +918,7 @@ function FireSessionDashboardContent() {
           <div className="mb-6 flex items-center justify-between">
             <SyncIndicator
               lastUpdated={lastUpdated}
-              isLoading={loading}
+              isLoading={hasMounted ? loading : false}
               error={error}
               autoRefreshInterval={30}
               isDemoMode={isDemoMode}
@@ -915,9 +927,9 @@ function FireSessionDashboardContent() {
               <button
                 onClick={() => refreshSessions()}
                 className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors flex items-center gap-2"
-                disabled={loading}
+                disabled={hasMounted ? loading : false}
               >
-                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-4 h-4 ${hasMounted && loading ? 'animate-spin' : ''}`} />
                 <span>Refresh</span>
               </button>
               <div className="flex items-center space-x-2">
@@ -1468,8 +1480,10 @@ function FireSessionDashboardContent() {
           userRole={userRole}
           refreshSessions={refreshSessions}
           onSessionAction={handleStatusChange}
+          onCreateSession={handleCreateSession}
           isDemoMode={isDemoMode}
           scopeLabel={selectedLoungeId || 'All locations (org-wide)'}
+          loungeId={selectedLoungeId || undefined}
         />
 
         {/* Related Features - Hidden in demo mode */}

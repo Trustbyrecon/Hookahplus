@@ -16,6 +16,8 @@
   - No raw PII in logs; store hashed identifiers only
 - Deliverables:
   - Endpoints: `/api/codigo/join`, `/api/codigo/profile`, `/api/codigo/wallet-card`, `/api/codigo/kpis/summary`
-  - UI: `/codigo/join`, `/codigo/profile`, `/admin/codigo-kpis`
+  - UI: `/codigo/join`, `/codigo/profile`, `/codigo/operator` (seat session control — primary pilot surface), `/admin/codigo-kpis`
   - Minimal admin KPI view (cards; no charts required)
+  - `/codigo` redirects to `/codigo/operator` (floor plan is the face)
+  - Fire Dashboard Floor tab: when lounge=CODIGO, embeds CodigoFloorPlan (visual control surface). Sessions are system of record.
 

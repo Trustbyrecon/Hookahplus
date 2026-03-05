@@ -184,6 +184,9 @@ const SessionDetailModal: React.FC<SessionDetailModalProps> = ({
         if (result.success) {
           alert('Refill requested! BOH will prepare new coals.');
           if (refreshSessions) await refreshSessions();
+        } else if (result.details === 'Refill already requested' || result.error === 'Refill already requested') {
+          alert('Refill already requested — BOH is on it.');
+          if (refreshSessions) await refreshSessions();
         } else {
           throw new Error(result.details || result.error || 'Failed to request refill');
         }
@@ -203,6 +206,9 @@ const SessionDetailModal: React.FC<SessionDetailModalProps> = ({
         const result = await response.json();
         if (result.success) {
           alert('Flavor bowl requested! BOH will prepare new bowl.');
+          if (refreshSessions) await refreshSessions();
+        } else if (result.details === 'Refill already requested' || result.error === 'Refill already requested') {
+          alert('Refill already requested — BOH is on it.');
           if (refreshSessions) await refreshSessions();
         } else {
           throw new Error(result.details || result.error || 'Failed to request flavor bowl');

@@ -64,10 +64,10 @@ With Demo mode: `&ref=demo` for tracking.
 
 ---
 
-## 4. NAN Kitchen Notification
+## 4. Guest Refill Requests (Kitchen)
 
 ### Implemented
-- **BOH tab**: "Guest Refill Requests — NAN Kitchen" section at top
+- **BOH tab**: "Guest Refill Requests — Kitchen" section at top
 - Shows ACTIVE sessions with `edgeCase: 'refill_requested'` or `refillStatus: 'requested'`
 - Staff can "Complete refill" from each session card
 
@@ -90,7 +90,7 @@ With Demo mode: `&ref=demo` for tracking.
 3. **Guest enters**: Session resolve or join
 4. **Staff creates session**: Fire Session Dashboard → Create Session (if needed)
 5. **Guest requests coal**: Guest app → Request Coal Refill
-6. **NAN kitchen sees**: BOH tab → "Guest Refill Requests" section
+6. **Kitchen sees**: BOH tab → "Guest Refill Requests" section
 7. **Staff completes**: Click "Complete refill" on session card
 
 ---

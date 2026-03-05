@@ -335,7 +335,17 @@ export default function GuestControlPanel({ sessionId: sessionIdProp, onClose }:
         })
       });
       
+      const data = await response.json().catch(() => ({}));
+      
       if (!response.ok) {
+        // Refill already requested: idempotent, treat as success
+        if (data.details === 'Refill already requested' || data.error === 'Refill already requested') {
+          setSuccess('Refill already requested — BOH is on it.');
+          setActionType(null);
+          await refreshSessions();
+          setTimeout(() => setSuccess(null), 3000);
+          return;
+        }
         // Demo/offline fallback: treat as success for 400/404
         if (response.status === 400 || response.status === 404) {
           setSuccess('Coal refill requested! (Demo mode)');
@@ -344,20 +354,21 @@ export default function GuestControlPanel({ sessionId: sessionIdProp, onClose }:
           setIsProcessing(false);
           return;
         }
-        
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || errorData.details || 'Failed to request refill');
+        throw new Error(data.error || data.details || 'Failed to request refill');
       }
-      
-      const data = await response.json();
       
       if (data.success) {
         setSuccess('Coal refill requested! Staff will bring fresh coals shortly.');
         setActionType(null);
         await refreshSessions();
         setTimeout(() => setSuccess(null), 3000);
+      } else if (data.details === 'Refill already requested' || data.error === 'Refill already requested') {
+        setSuccess('Refill already requested — BOH is on it.');
+        setActionType(null);
+        await refreshSessions();
+        setTimeout(() => setSuccess(null), 3000);
       } else {
-        throw new Error(data.error || 'Failed to request refill');
+        throw new Error(data.error || data.details || 'Failed to request refill');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to request refill. Please try again.');

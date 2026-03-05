@@ -409,6 +409,8 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
       let displayError = errorMessage;
       if (errorMessage.includes('HTTP 500') || errorMessage.includes('Database connection')) {
         displayError = 'Database connection failed. Check DATABASE_URL and ensure database is running.';
+      } else if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
+        displayError = 'Network error. Check your connection and try again.';
       } else if (errorMessage.includes('HTTP')) {
         // Keep the formatted error message
         displayError = errorMessage;
@@ -809,7 +811,10 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
       }
     } catch (err) {
       console.error('Error updating session:', err);
-      setError(err instanceof Error ? err.message : 'Failed to update session');
+      const msg = err instanceof Error ? err.message : 'Failed to update session';
+      setError(msg.includes('Failed to fetch') || msg.includes('NetworkError')
+        ? 'Network error. Check your connection and try again.'
+        : msg);
     } finally {
       setLoading(false);
     }

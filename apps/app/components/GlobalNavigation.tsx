@@ -22,7 +22,8 @@ import {
   QrCode,
   ChevronDown,
   TrendingUp,
-  Target
+  Target,
+  LayoutGrid
 } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { SecureRoleSelector } from './SecureRoleSelector';
@@ -363,6 +364,15 @@ const GlobalNavigation: React.FC = () => {
           aiRecommendation: 'Monitor live sessions'
         },
         {
+          label: 'CODIGO Floor',
+          href: '/codigo/operator',
+          icon: <LayoutGrid className="w-4 h-4" />,
+          description: 'Seat session control (pilot)',
+          flowState: 'active',
+          nextAction: 'Tap seats to start/end sessions',
+          aiRecommendation: 'Primary pilot surface'
+        },
+        {
           label: 'Operator Dashboard',
           href: '/operator',
           icon: <Crown className="w-4 h-4" />,
@@ -570,7 +580,7 @@ const GlobalNavigation: React.FC = () => {
               </div>
               {/* Workflow Progress Indicator */}
               <div className="flex items-center space-x-2 px-2 py-1 bg-zinc-800/50 rounded border border-zinc-700">
-                <span className="text-[10px] text-zinc-400 font-medium">NAN:</span>
+                <span className="text-[10px] text-zinc-400 font-medium">Flow:</span>
                 <div className="flex items-center gap-0.5">
                   <div className={`w-1.5 h-1.5 rounded ${workflowProgress.payment > 0 ? 'bg-green-500' : 'bg-zinc-600'}`} title={`Payment: ${workflowProgress.payment}%`} />
                   <div className={`w-1.5 h-1.5 rounded ${workflowProgress.prep > 0 ? 'bg-green-500' : 'bg-zinc-600'}`} title={`Prep: ${workflowProgress.prep}%`} />
@@ -703,6 +713,17 @@ const GlobalNavigation: React.FC = () => {
                         <div>
                           <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3">Core Operations</h3>
                           <div className="space-y-2">
+                            <Link
+                              href="/codigo/operator"
+                              onClick={() => setQuickAccessOpen(false)}
+                              className="flex items-center space-x-3 p-2 rounded-lg hover:bg-zinc-800 transition-colors group"
+                            >
+                              <LayoutGrid className="w-5 h-5 text-emerald-400" />
+                              <div className="flex-1">
+                                <div className="text-sm font-medium text-white group-hover:text-teal-400">CODIGO Floor</div>
+                                <div className="text-xs text-zinc-400">Seat session control • Pilot</div>
+                              </div>
+                            </Link>
                             <Link
                               href="/fire-session-dashboard"
                               onClick={() => setQuickAccessOpen(false)}

@@ -928,6 +928,8 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
     
     // Check for demo mode flag
     const isDemoMode = body.isDemo === true || body.isDemo === 'true';
+    // CODIGO operator: Toast handles payment, create as ACTIVE for floor display
+    const codigoOperator = body.codigoOperator === true;
     
     // Normalize all fields with safe defaults
     // P0: Debug normalization - log raw values before processing
@@ -1399,8 +1401,8 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
       tableNotes: data.notes, // null is fine
       durationSecs: data.sessionDuration,
       source: data.source, // Already validated
-      state: isDemoMode ? 'PENDING' : 'PENDING', // Start as PENDING, but in demo mode we'll auto-confirm payment
-      paymentStatus: isDemoMode ? 'succeeded' : null, // Demo mode: auto-confirm payment
+      state: codigoOperator ? 'ACTIVE' : 'PENDING', // CODIGO operator: start ACTIVE for floor
+      paymentStatus: (isDemoMode || codigoOperator) ? 'succeeded' : null, // Demo/CODIGO: treat as paid
     };
 
     // Log the data being sent for debugging
@@ -1433,7 +1435,7 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
         id: sessionId,
         externalRef: finalExternalRef,
         source: data.source as SessionSource,
-        state: 'PENDING' as SessionState,
+        state: (codigoOperator ? 'ACTIVE' : 'PENDING') as SessionState,
         trustSignature,
         tableId: data.tableId,
         customerRef: data.customerName,
@@ -1449,7 +1451,7 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
         tableNotes: data.notes || null,
         durationSecs: data.sessionDuration || null,
         // tenantId: finalTenantId || null, // Commented out - column doesn't exist in database
-        paymentStatus: isDemoMode ? 'succeeded' : null,
+        paymentStatus: (isDemoMode || codigoOperator) ? 'succeeded' : null,
         // Note: hadRefill, refillCount, sessionType, sessionStateV1, paused columns skipped
         // These may not exist in the database yet - migrations may not be run
       };
@@ -1496,12 +1498,12 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
                 ${escapeSql(finalLoungeId)},
                 ${escapeSql(data.memberId || null)},
                 ${escapeSql(finalPriceCents)},
-                ${escapeSql('PENDING')},
+                ${escapeSql(codigoOperator ? 'ACTIVE' : 'PENDING')},
                 ${escapeSql(data.assignedBoh || null)},
                 ${escapeSql(data.assignedFoh || null)},
                 ${escapeSql(data.notes || null)},
                 ${escapeSql(data.sessionDuration || null)},
-                ${escapeSql(isDemoMode ? 'succeeded' : null)},
+                ${escapeSql((isDemoMode || codigoOperator) ? 'succeeded' : null)},
                 NOW(),
                 NOW()
               )

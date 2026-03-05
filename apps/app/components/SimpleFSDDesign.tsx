@@ -59,15 +59,19 @@ import GuestIntelligenceModal from './GuestIntelligenceModal';
 import ResolveEdgeCaseModal from './ResolveEdgeCaseModal';
 import SessionExtensionModal from './SessionExtensionModal';
 import CloseSessionModal from './CloseSessionModal';
+import CodigoFloorPlan from './CodigoFloorPlan';
+import { LayoutGrid } from 'lucide-react';
 
 interface SimpleFSDDesignProps {
   sessions?: any[];
   userRole?: 'BOH' | 'FOH' | 'MANAGER' | 'ADMIN';
   onSessionAction?: (sessionId: string, action: string) => void;
+  onCreateSession?: (sessionData: any) => Promise<string | undefined>;
   refreshSessions?: () => void | Promise<void>;
   className?: string;
   isDemoMode?: boolean;
   scopeLabel?: string;
+  loungeId?: string;
 }
 
 // Enhanced State Machine - Complete Hookah Lounge Operations
@@ -133,10 +137,12 @@ export default function SimpleFSDDesign({
   sessions = [],
   userRole = 'MANAGER',
   onSessionAction,
+  onCreateSession,
   refreshSessions,
   className = '',
   isDemoMode = false,
-  scopeLabel
+  scopeLabel,
+  loungeId
 }: SimpleFSDDesignProps) {
   // Initialize feature flags with defaults to avoid hydration mismatch
   const [featureFlags, setFeatureFlags] = useState({
@@ -321,6 +327,10 @@ export default function SimpleFSDDesign({
           } else {
             window.location.reload();
           }
+        } else if (result.details === 'Refill already requested' || result.error === 'Refill already requested') {
+          // Idempotent: refill already in queue
+          alert('Refill already requested — BOH is on it.');
+          if (refreshSessions) await refreshSessions();
         } else {
           throw new Error(result.details || result.error || 'Failed to request refill');
         }
@@ -347,6 +357,9 @@ export default function SimpleFSDDesign({
         const result = await response.json();
         if (result.success) {
           alert('Flavor bowl requested! BOH will prepare new bowl.');
+          if (refreshSessions) await refreshSessions();
+        } else if (result.details === 'Refill already requested' || result.error === 'Refill already requested') {
+          alert('Refill already requested — BOH is on it.');
           if (refreshSessions) await refreshSessions();
         } else {
           throw new Error(result.details || result.error || 'Failed to request flavor bowl');
@@ -1413,7 +1426,7 @@ export default function SimpleFSDDesign({
           </div>
         </div>
         
-        {sessions.length > 0 && (
+        {sessions.length > 0 && loungeId !== 'CODIGO' && (
           <button
             onClick={handleCreateSession}
             className="flex items-center space-x-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
@@ -1422,8 +1435,8 @@ export default function SimpleFSDDesign({
             <span>Start New Order</span>
           </button>
         )}
-        {/* Test Session Button - Show only in development mode based on feature flags */}
-        {!isDemoMode && featureFlags.showTestSessionButton && (
+        {/* Test Session Button - Show only in development mode based on feature flags. Hidden for CODIGO. */}
+        {!isDemoMode && featureFlags.showTestSessionButton && loungeId !== 'CODIGO' && (
           <button
             onClick={async () => {
               try {
@@ -1540,7 +1553,18 @@ export default function SimpleFSDDesign({
                 <h3 className="text-lg font-bold text-white mb-1">What Needs Your Attention Now</h3>
                 <p className="text-sm text-zinc-400">Take action on these items to keep orders moving</p>
               </div>
-              <span className="text-xs text-zinc-500 bg-zinc-800/50 px-3 py-1 rounded-full">{sessions.length} total</span>
+              <div className="flex items-center gap-2">
+                {loungeId === 'CODIGO' && (
+                  <button
+                    onClick={() => setActiveTab('foh')}
+                    className="px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-sm font-medium flex items-center gap-2 transition-colors"
+                  >
+                    <LayoutGrid className="w-4 h-4" />
+                    Open Floor
+                  </button>
+                )}
+                <span className="text-xs text-zinc-500 bg-zinc-800/50 px-3 py-1 rounded-full">{sessions.length} total</span>
+              </div>
             </div>
             <div className="flex flex-wrap gap-3">
               {/* Context-Aware Actions - Only show when sessions are available */}
@@ -1771,14 +1795,18 @@ export default function SimpleFSDDesign({
                 <Flame className="w-8 h-8 text-zinc-600" />
               </div>
               <h3 className="text-lg font-medium text-zinc-300 mb-2">No Active Sessions</h3>
-              <p className="text-zinc-500 mb-4">Create your first session to get started</p>
-              <button
-                onClick={handleCreateSession}
-                className="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors inline-flex items-center gap-2 font-medium"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Start New Order</span>
-              </button>
+              <p className="text-zinc-500 mb-4">
+                {loungeId === 'CODIGO' ? 'Use the Floor tab to start sessions from the floor plan.' : 'Create your first session to get started'}
+              </p>
+              {loungeId !== 'CODIGO' && (
+                <button
+                  onClick={handleCreateSession}
+                  className="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors inline-flex items-center gap-2 font-medium"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Start New Order</span>
+                </button>
+              )}
             </div>
           ) : (
             sessions.map(renderSessionCard)
@@ -1789,7 +1817,7 @@ export default function SimpleFSDDesign({
       {/* BOH Tab */}
       {activeTab === 'boh' && (
         <div className="space-y-4">
-          {/* NAN Kitchen: Guest refill requests (coal / flavor) — notify BOH to process */}
+          {/* Guest refill requests (coal / flavor) — notify BOH to process */}
           {(() => {
             const refillRequestSessions = sessions.filter(
               (s) =>
@@ -1801,7 +1829,7 @@ export default function SimpleFSDDesign({
               <div className="bg-amber-900/30 border border-amber-600/50 rounded-lg p-4">
                 <h3 className="text-base font-semibold text-amber-200 mb-3 flex items-center space-x-2">
                   <Coffee className="w-4 h-4 text-amber-400" />
-                  <span>Guest Refill Requests — NAN Kitchen</span>
+                  <span>Guest Refill Requests — Kitchen</span>
                   <span className="ml-2 px-2 py-0.5 rounded-full bg-amber-500/30 text-amber-200 text-xs font-medium">
                     {refillRequestSessions.length}
                   </span>
@@ -1849,33 +1877,73 @@ export default function SimpleFSDDesign({
       {/* FOH Tab */}
       {activeTab === 'foh' && (
         <div className="space-y-4">
-          <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
-              <Truck className="w-5 h-5 text-teal-400" />
-              <span>Floor Orders</span>
-            </h3>
-            <div className="space-y-4">
-              {(() => {
-                const fohSessions = sessions.filter(s => {
-                  const status = getSessionStatus(s);
-                  // Exclude voided sessions - they are no longer viable transactions
-                  if (status === 'VOIDED' || s.state === 'CANCELED') return false;
-                  // Include READY_FOR_DELIVERY (FOH can pick up), OUT_FOR_DELIVERY, DELIVERED, ACTIVE
-                  // Also include CLOSE_PENDING (FOH handles closing)
-                  return ['READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE', 'CLOSE_PENDING'].includes(status);
-                });
-                return fohSessions.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Truck className="w-16 h-16 mx-auto mb-4 text-zinc-600" />
-                    <h3 className="text-lg font-medium text-zinc-300 mb-2">No Floor Orders</h3>
-                    <p className="text-zinc-500">No orders currently ready for floor service</p>
-                  </div>
-                ) : (
-                  fohSessions.map(renderSessionCard)
-                );
-              })()}
+          {loungeId === 'CODIGO' && onCreateSession ? (
+            <>
+              <h3 className="text-lg font-semibold text-white mb-2 flex items-center space-x-2">
+                <LayoutGrid className="w-5 h-5 text-teal-400" />
+                <span>CODIGO Floor Plan</span>
+              </h3>
+              <CodigoFloorPlan
+                sessions={sessions}
+                loungeId={loungeId}
+                onStartSession={async ({ seatLabel, flavorId, flavorName }) => {
+                  await onCreateSession({
+                    tableId: seatLabel,
+                    table_id: seatLabel,
+                    customerName: 'Walk-in',
+                    customer_name: 'Walk-in',
+                    flavor_mix: [flavorName],
+                    flavor: flavorName,
+                    amount: 60,
+                    lounge_id: loungeId,
+                    loungeId,
+                    source: 'POS',
+                    session_type: 'walk-in',
+                    isDemo: true, // CODIGO operator: Toast handles payment, treat as paid
+                    codigoOperator: true, // Skip to ACTIVE for floor display
+                  });
+                }}
+                onEndSession={async (sessionId) => {
+                  if (onSessionAction) {
+                    await onSessionAction(sessionId, 'CLOSE_SESSION');
+                  }
+                }}
+                onOpenSession={(sessionId) => {
+                  const s = sessions.find((sess: any) => sess.id === sessionId);
+                  if (s) {
+                    setSelectedSession(s);
+                    setIsModalOpen(true);
+                  }
+                }}
+                refreshSessions={refreshSessions}
+              />
+            </>
+          ) : (
+            <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
+                <Truck className="w-5 h-5 text-teal-400" />
+                <span>Floor Orders</span>
+              </h3>
+              <div className="space-y-4">
+                {(() => {
+                  const fohSessions = sessions.filter(s => {
+                    const status = getSessionStatus(s);
+                    if (status === 'VOIDED' || s.state === 'CANCELED') return false;
+                    return ['READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'ACTIVE', 'CLOSE_PENDING'].includes(status);
+                  });
+                  return fohSessions.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Truck className="w-16 h-16 mx-auto mb-4 text-zinc-600" />
+                      <h3 className="text-lg font-medium text-zinc-300 mb-2">No Floor Orders</h3>
+                      <p className="text-zinc-500">No orders currently ready for floor service</p>
+                    </div>
+                  ) : (
+                    fohSessions.map(renderSessionCard)
+                  );
+                })()}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 
