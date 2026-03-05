@@ -8,6 +8,7 @@
 - **App**: deploy `apps/app` (Next.js app) with `DATABASE_URL` set.
 - **DB**: ensure Prisma migrations are applied for the `Session.hid` + network profile tables used by the pilot.
 - **Smoke**: verify `/codigo/join` loads on desktop and Toast handheld browser.
+- **Verify**: run `npx tsx scripts/verify-codigo-pilot.ts` from `apps/app` to check health + CODIGO layout.
 
 ## Lounge Layout → Create New Session → NAN Flow (Runbook)
 

@@ -205,6 +205,8 @@ export type CheckoutResponse = {
   pointsEarned: number;
   totalPaid: number;
   transactionId?: string;
+  /** App DB session ID from BOH ingest (for Hookah Tracker redirect) */
+  appSessionId?: string;
 }
 
 export type RewardsResponse = {

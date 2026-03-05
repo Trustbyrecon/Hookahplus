@@ -214,9 +214,9 @@ export default function PriceBreakdown({
       // Show success message
       alert(`Checkout successful! Receipt: ${data.receiptId}\nPoints earned: ${data.pointsEarned}`);
 
-      // Call success callback
+      // Call success callback — use appSessionId when available (for Hookah Tracker redirect)
       if (onCheckoutSuccess) {
-        onCheckoutSuccess(currentSessionId);
+        onCheckoutSuccess(data.appSessionId || currentSessionId);
       }
 
     } catch (err) {

@@ -100,8 +100,9 @@ export async function POST(req: NextRequest) {
     sharedReceipts.set(receiptId, receipt);
 
     // Send session to BOH workflow (app build) - after receipt generation
+    let appSessionId: string | undefined;
     try {
-      await sendSessionToBOH(session, receiptId);
+      appSessionId = await sendSessionToBOH(session, receiptId);
     } catch (bohError) {
       console.error('Failed to send session to BOH workflow:', bohError);
       // Don't fail checkout if BOH notification fails
@@ -159,7 +160,8 @@ export async function POST(req: NextRequest) {
       receiptId,
       pointsEarned,
       totalPaid: session.price.total,
-      transactionId
+      transactionId,
+      ...(appSessionId && { appSessionId })
     };
 
     return NextResponse.json({
@@ -178,53 +180,57 @@ export async function POST(req: NextRequest) {
 }
 
 /**
- * Send session to BOH workflow after successful checkout
+ * Send session to BOH workflow after successful checkout.
+ * Calls app build POST /api/sessions so BOH sees the session in Fire Dashboard.
+ * Returns app session ID for Hookah Tracker redirect when successful.
  */
-async function sendSessionToBOH(session: any, receiptId: string): Promise<void> {
+async function sendSessionToBOH(session: any, receiptId: string): Promise<string | undefined> {
   try {
-    // Get guest profile for customer info
     const guestProfile = getGuestProfile(session.guestId);
-    
-    // Prepare session data for BOH workflow
-    const bohSessionData = {
-      sessionId: session.sessionId,
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_API_URL || 'http://localhost:3002';
+    const isCodigo = session.loungeId === 'CODIGO';
+
+    const customerName = guestProfile?.email || guestProfile?.phone || guestProfile?.guestId || 'Guest';
+    const flavorMix = session.mix?.flavors || [];
+    const amountCents = session.price?.total ?? 6000;
+
+    const sessionPayload = {
       tableId: session.tableId || 'TBD',
-      state: 'PAID_CONFIRMED',
-      meta: {
-        customerId: guestProfile?.guestId || 'Guest',
-        customerName: guestProfile?.email || guestProfile?.phone || 'Guest',
-        phone: guestProfile?.phone || undefined,
-        email: guestProfile?.email || undefined,
-        flavors: session.mix?.flavors || [],
-        specialInstructions: session.mix?.specialInstructions || undefined,
-        totalAmount: session.price?.total || 0,
-        receiptId,
-        source: 'guest-app',
-        zone: session.zone || undefined
-      },
-      timers: {
-        createdAt: Date.now(),
-        paidAt: Date.now()
-      }
+      table_id: session.tableId || 'TBD',
+      customerName,
+      customer_name: customerName,
+      customerPhone: guestProfile?.phone || undefined,
+      flavor: flavorMix.length > 0 ? flavorMix.join(' + ') : 'Custom Mix',
+      flavor_mix: flavorMix.length > 0 ? flavorMix : ['Custom Mix'],
+      amount: amountCents < 100 ? amountCents * 100 : amountCents,
+      loungeId: session.loungeId,
+      lounge_id: session.loungeId,
+      source: 'QR' as const,
+      externalRef: `guest_${session.sessionId}_${receiptId}`,
+      isDemo: true,
+      codigoOperator: isCodigo,
     };
 
-    // In production, this would call the app build API endpoint
-    // For now, we'll log it - in production, use: fetch(`${process.env.APP_API_URL}/api/sessions`, ...)
-    console.log('📤 Sending session to BOH workflow:', bohSessionData);
-    
-    // TODO: Uncomment when app build API is available
-    // const response = await fetch(`${process.env.APP_API_URL || 'http://localhost:3001'}/api/sessions`, {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //   },
-    //   body: JSON.stringify(bohSessionData)
-    // });
-    // 
-    // if (!response.ok) {
-    //   throw new Error(`BOH API error: ${response.statusText}`);
-    // }
+    console.log('📤 Sending session to BOH workflow:', { appUrl, tableId: sessionPayload.tableId, loungeId: session.loungeId });
 
+    const response = await fetch(`${appUrl}/api/sessions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(sessionPayload),
+    });
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.error || errData.details || `BOH API error: ${response.status}`);
+    }
+
+    const result = await response.json();
+    const appSessionId = result.id || result.sessionId || result.session?.id;
+    if (appSessionId) {
+      console.log('📤 BOH session created:', appSessionId);
+      return appSessionId;
+    }
+    return undefined;
   } catch (error) {
     console.error('Error sending session to BOH:', error);
     throw error;
