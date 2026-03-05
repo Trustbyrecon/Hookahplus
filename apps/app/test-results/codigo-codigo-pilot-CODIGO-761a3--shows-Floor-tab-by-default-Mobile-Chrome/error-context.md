@@ -1,0 +1,256 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - navigation [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e7]:
+            - generic [ref=e8]:
+              - generic [ref=e10]: Trust-Lock ACTIVE
+              - generic [ref=e11]: (100%)
+            - generic [ref=e14]: Reflex Score 87%
+            - generic [ref=e15]:
+              - generic [ref=e16]: "Flow:"
+              - generic [ref=e17]:
+                - 'generic "Payment: 0%" [ref=e18]'
+                - 'generic "Prep: 0%" [ref=e19]'
+                - 'generic "Ready: 0%" [ref=e20]'
+                - 'generic "Deliver: 0%" [ref=e21]'
+                - 'generic "Light: 0%" [ref=e22]'
+              - generic [ref=e23]: Payment
+            - generic [ref=e26]: Live Sessions 0
+          - generic [ref=e27]:
+            - generic [ref=e28]: "Auto-refresh: ON"
+            - generic [ref=e29]: "Last updated: 1:31:41 PM"
+        - generic [ref=e30]:
+          - link "H+ HOOKAH+" [ref=e32] [cursor=pointer]:
+            - /url: /
+            - generic [ref=e34]: H+
+            - generic [ref=e35]: HOOKAH+
+          - generic [ref=e36]:
+            - button "Settings" [ref=e37] [cursor=pointer]:
+              - img [ref=e38]
+              - generic [ref=e41]: Settings
+            - button "Support Docs" [ref=e42] [cursor=pointer]:
+              - img [ref=e43]
+              - generic [ref=e46]: Support Docs
+            - generic [ref=e47]:
+              - generic [ref=e48]: "Role:"
+              - combobox [ref=e49]:
+                - option "MANAGER" [selected]
+                - option "FOH"
+                - option "BOH"
+                - option "ADMIN"
+              - generic [ref=e50]: (MANAGER View)
+            - button [ref=e51] [cursor=pointer]:
+              - img [ref=e52]
+      - generic [ref=e56]:
+        - button "Quick Access Menu" [ref=e58] [cursor=pointer]:
+          - generic [ref=e59]:
+            - img [ref=e60]
+            - generic [ref=e66]: Quick Access
+          - img [ref=e67]
+        - generic [ref=e69]:
+          - generic [ref=e70]: Core Operations
+          - link "Dashboard" [ref=e71] [cursor=pointer]:
+            - /url: /
+            - img [ref=e72]
+            - generic [ref=e75]: Dashboard
+          - link "Sessions" [ref=e77] [cursor=pointer]:
+            - /url: /sessions
+            - img [ref=e78]
+            - generic [ref=e80]: Sessions
+          - link "Fire Sessions" [ref=e82] [cursor=pointer]:
+            - /url: /fire-session-dashboard
+            - img [ref=e83]
+            - generic [ref=e85]: Fire Sessions
+          - link "CODIGO Floor" [ref=e87] [cursor=pointer]:
+            - /url: /codigo/operator
+            - img [ref=e88]
+            - generic [ref=e93]: CODIGO Floor
+          - link "Operator Dashboard" [ref=e95] [cursor=pointer]:
+            - /url: /operator
+            - img [ref=e96]
+            - generic [ref=e98]: Operator Dashboard
+        - generic [ref=e100]:
+          - generic [ref=e101]: Staff Operations
+          - link "Staff Ops" [ref=e102] [cursor=pointer]:
+            - /url: /staff-ops
+            - img [ref=e103]
+            - generic [ref=e108]: Staff Ops
+          - link "Staff Panel" [ref=e110] [cursor=pointer]:
+            - /url: /staff-panel
+            - img [ref=e111]
+            - generic [ref=e115]: Staff Panel
+        - generic [ref=e117]:
+          - generic [ref=e118]: Visual Grounder
+          - link "Visual Grounder" [ref=e119] [cursor=pointer]:
+            - /url: /visual-grounder
+            - img [ref=e120]
+            - generic [ref=e123]: Visual Grounder
+          - link "Layout Preview" [ref=e125] [cursor=pointer]:
+            - /url: /layout-preview
+            - img [ref=e126]
+            - generic [ref=e129]: Layout Preview
+        - generic [ref=e130]:
+          - generic [ref=e131]: Partnership
+          - link "Partnership" [ref=e132] [cursor=pointer]:
+            - /url: /partnership
+            - img [ref=e133]
+            - generic [ref=e136]: Partnership
+        - generic [ref=e138]:
+          - generic [ref=e139]: Administration
+          - link "Admin" [ref=e140] [cursor=pointer]:
+            - /url: /admin
+            - img [ref=e141]
+            - generic [ref=e143]: Admin
+          - link "Pricing Intelligence" [ref=e144] [cursor=pointer]:
+            - /url: /admin/pricing-intelligence
+            - img [ref=e145]
+            - generic [ref=e147]: Pricing Intelligence
+          - link "QR Generator" [ref=e148] [cursor=pointer]:
+            - /url: /admin/qr
+            - img [ref=e149]
+            - generic [ref=e155]: QR Generator
+          - link "POS Inbox" [ref=e157] [cursor=pointer]:
+            - /url: /admin/pos-inbox
+            - img [ref=e158]
+            - generic [ref=e161]: POS Inbox
+          - link "POS Ops" [ref=e163] [cursor=pointer]:
+            - /url: /admin/pos-ops
+            - img [ref=e164]
+            - generic [ref=e166]: POS Ops
+    - generic [ref=e172]: Checking First Light status...
+    - generic [ref=e173]:
+      - navigation "Breadcrumb" [ref=e174]:
+        - list [ref=e175]:
+          - listitem [ref=e176]:
+            - link "Go to Home" [ref=e177] [cursor=pointer]:
+              - /url: /
+              - img [ref=e178]
+          - listitem [ref=e181]:
+            - img [ref=e182]
+            - generic [ref=e184]: Fire Session Dashboard
+      - generic [ref=e189]:
+        - heading "Fire Session Dashboard" [level=1] [ref=e190]
+        - paragraph [ref=e191]: Real-time session management with intelligent workflow automation. Monitor live sessions, manage BOH/FOH workflows, and optimize operations.
+        - generic [ref=e192]:
+          - img [ref=e193]
+          - generic [ref=e195]:
+            - generic [ref=e196]: 0 Active Sessions
+            - generic [ref=e197]: $0.00 revenue • 0 staff assigned
+        - generic [ref=e198]:
+          - link "View Analytics" [ref=e199] [cursor=pointer]:
+            - /url: /analytics
+            - text: View Analytics
+            - img [ref=e200]
+          - link "View All Sessions" [ref=e202] [cursor=pointer]:
+            - /url: /sessions
+        - generic [ref=e203]:
+          - generic [ref=e204]:
+            - img [ref=e205]
+            - generic [ref=e210]: Real-time updates
+          - generic [ref=e211]:
+            - img [ref=e212]
+            - generic [ref=e214]: 0 alerts
+      - generic [ref=e217]:
+        - generic [ref=e218]:
+          - generic [ref=e219]:
+            - img [ref=e220]
+            - heading "Daily Pulse" [level=3] [ref=e222]
+            - button "AM" [ref=e223] [cursor=pointer]
+          - generic [ref=e224]: Loading...
+        - generic [ref=e225]:
+          - button "Refresh" [ref=e226] [cursor=pointer]:
+            - img [ref=e227]
+          - link [ref=e232] [cursor=pointer]:
+            - /url: /pulse
+            - img [ref=e233]
+      - generic [ref=e235]:
+        - generic [ref=e237]:
+          - img [ref=e238]
+          - generic [ref=e243]: "Last updated: Never"
+        - generic [ref=e244]:
+          - button "Refresh" [disabled] [ref=e245]:
+            - img [ref=e246]
+            - generic [ref=e251]: Refresh
+          - generic [ref=e252]:
+            - generic [ref=e253]: "Role:"
+            - generic [ref=e254]: MANAGER
+          - generic [ref=e256] [cursor=pointer]:
+            - checkbox "First Light Focus" [ref=e257]
+            - generic [ref=e258]: First Light Focus
+      - generic [ref=e260]:
+        - img [ref=e261]
+        - generic [ref=e264]: "Week-1 view for: CODIGO"
+      - button "Start shift" [ref=e271] [cursor=pointer]:
+        - img [ref=e272]
+        - text: Start shift
+      - generic [ref=e275]:
+        - generic [ref=e276]:
+          - generic [ref=e277]:
+            - img [ref=e279]
+            - generic [ref=e281]:
+              - heading "Session Management" [level=2] [ref=e282]
+              - paragraph [ref=e283]: Manage active hookah sessions
+              - generic [ref=e284]: "Scoped to: CODIGO"
+          - button "Create Test Paid Session" [ref=e285] [cursor=pointer]:
+            - img [ref=e286]
+            - generic [ref=e287]: Create Test Paid Session
+        - generic [ref=e288]:
+          - button "📊 All Orders" [ref=e289] [cursor=pointer]:
+            - generic [ref=e290]: 📊
+            - generic [ref=e291]: All Orders
+          - button "👨‍🍳 Kitchen" [ref=e292] [cursor=pointer]:
+            - generic [ref=e293]: 👨‍🍳
+            - generic [ref=e294]: Kitchen
+          - button "👨‍💼 Floor" [ref=e295] [cursor=pointer]:
+            - generic [ref=e296]: 👨‍💼
+            - generic [ref=e297]: Floor
+          - button "⚠️ Issues" [ref=e298] [cursor=pointer]:
+            - generic [ref=e299]: ⚠️
+            - generic [ref=e300]: Issues
+        - generic [ref=e301]:
+          - generic [ref=e302]:
+            - generic [ref=e303]:
+              - generic [ref=e304]:
+                - heading "What Needs Your Attention Now" [level=3] [ref=e305]
+                - paragraph [ref=e306]: Take action on these items to keep orders moving
+              - generic [ref=e308]: 0 total
+            - button "Update" [ref=e310] [cursor=pointer]:
+              - img [ref=e311]
+              - generic [ref=e316]: Update
+          - generic [ref=e317]:
+            - img [ref=e319]
+            - heading "No Active Sessions" [level=3] [ref=e321]
+            - paragraph [ref=e322]: Create your first session to get started
+            - button "Start New Order" [ref=e323] [cursor=pointer]:
+              - img [ref=e324]
+              - generic [ref=e325]: Start New Order
+      - generic [ref=e326]:
+        - heading "Related Features" [level=3] [ref=e327]
+        - generic [ref=e328]:
+          - link "Sessions Management Advanced session management and monitoring" [ref=e329] [cursor=pointer]:
+            - /url: /sessions
+            - generic [ref=e330]:
+              - img [ref=e331]
+              - generic [ref=e333]: Sessions Management
+            - paragraph [ref=e334]: Advanced session management and monitoring
+          - link "Analytics View detailed analytics and reports" [ref=e335] [cursor=pointer]:
+            - /url: /analytics
+            - generic [ref=e336]:
+              - img [ref=e337]
+              - generic [ref=e342]: Analytics
+            - paragraph [ref=e343]: View detailed analytics and reports
+          - link "Staff Operations Daily operations and staff management" [ref=e344] [cursor=pointer]:
+            - /url: /staff-ops
+            - generic [ref=e345]:
+              - img [ref=e346]
+              - generic [ref=e348]: Staff Operations
+            - paragraph [ref=e349]: Daily operations and staff management
+  - button "Open Next.js Dev Tools" [ref=e355] [cursor=pointer]:
+    - img [ref=e356]
+  - alert [ref=e359]
+```
