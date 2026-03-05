@@ -4,6 +4,8 @@
 
 If you're seeing `error=access_denied&error_code=otp_expired`, the redirect URL might not be configured in Supabase.
 
+**Preview vs production:** The app now uses the current page's origin for the auth callback, so magic links return you to the same deployment (preview or production) you started from. Ensure that deployment's callback URL is in the Supabase allowlist below.
+
 ## Required Redirect URLs
 
 Add these URLs to your Supabase project's **Authentication > URL Configuration**:
@@ -13,6 +15,14 @@ Add these URLs to your Supabase project's **Authentication > URL Configuration**
 https://hookahplus-app-dwaynes-projects-1c5c280a.vercel.app/auth/callback
 https://hookahplus-app-dwaynes-projects-1c5c280a.vercel.app/admin
 ```
+
+### Vercel Preview Deployments (branch/PR previews)
+Add a wildcard so any preview URL works:
+```
+https://*.vercel.app/auth/callback
+https://*.vercel.app/admin
+```
+Or add specific preview URLs (e.g. `https://hookahplus-app-git-ship-rls-an-0d1874-dwaynes-projects-1c5c280a.vercel.app/auth/callback`) if wildcards are not supported.
 
 ### Local Development
 ```

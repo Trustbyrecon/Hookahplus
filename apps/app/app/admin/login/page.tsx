@@ -20,13 +20,12 @@ function AdminLoginContent() {
 
   const supabaseConfigured = isSupabaseConfigured();
 
-  const getAppUrl = () => {
+  // Use current origin for auth callback so magic link returns to same deployment (preview vs production)
+  const getAuthCallbackOrigin = () => {
     if (typeof window !== 'undefined') {
       const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      if (isLocal) {
-        return 'http://localhost:3002';
-      }
-      return process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+      if (isLocal) return 'http://localhost:3002';
+      return window.location.origin;
     }
     return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
   };
@@ -43,8 +42,8 @@ function AdminLoginContent() {
 
     try {
       const supabase = clientClient();
-      const appUrl = getAppUrl();
-      const callbackUrl = `${appUrl}/auth/callback?admin_login=true&redirect=${encodeURIComponent(redirect)}`;
+      const callbackOrigin = getAuthCallbackOrigin();
+      const callbackUrl = `${callbackOrigin}/auth/callback?admin_login=true&redirect=${encodeURIComponent(redirect)}`;
 
       const { error: signInError } = await supabase.auth.signInWithOtp({
         email,
