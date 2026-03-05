@@ -110,7 +110,7 @@ export async function GET(
     // Layout mode: floor (POS-mirrored) vs classic. Foundation for per-lounge UI.
     let layoutMode: 'floor' | 'classic' = 'classic';
     try {
-      const { getLoungeLayoutMode } = await import('../../../../lib/lounge-layout-mode');
+      const { getLoungeLayoutMode } = await import('../../../../../lib/lounge-layout-mode');
       layoutMode = (await getLoungeLayoutMode(loungeId)) as 'floor' | 'classic';
     } catch (e) {
       console.warn('[Config] getLoungeLayoutMode failed, defaulting to classic:', e);
