@@ -434,7 +434,12 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
         // First check capacity if we have party size (can be added later)
         const partySize = 1; // Default, can be enhanced with party size field
         
-        const response = await fetch(`/api/lounges/tables/availability?tableId=${encodeURIComponent(formData.tableId)}&partySize=${partySize}`, {
+        const params = new URLSearchParams({
+          tableId: formData.tableId,
+          partySize: String(partySize),
+          ...(loungeId ? { loungeId } : {}),
+        });
+        const response = await fetch(`/api/lounges/tables/availability?${params}`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' }
         });

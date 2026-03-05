@@ -170,7 +170,8 @@ export default function SimpleFSDDesign({
     }
   }, []);
   
-  const [activeTab, setActiveTab] = useState('overview');
+  // CODIGO: default to Floor tab for Toast handheld - higher value leads spatially
+  const [activeTab, setActiveTab] = useState(loungeId === 'CODIGO' ? 'foh' : 'overview');
   const [hoveredAction, setHoveredAction] = useState<string | null>(null);
   const [selectedSession, setSelectedSession] = useState<FireSession | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -1879,6 +1880,22 @@ export default function SimpleFSDDesign({
         <div className="space-y-4">
           {loungeId === 'CODIGO' && onCreateSession ? (
             <>
+              {/* CODIGO: At-a-glance status strip - higher value leads */}
+              {(() => {
+                const activeCount = sessions.filter((s) => {
+                  const st = s.status || s.state;
+                  return ['ACTIVE', 'DELIVERED', 'OUT_FOR_DELIVERY'].includes(st);
+                }).length;
+                const requestCount = sessions.filter((s) => s.refillStatus === 'requested' || s.edgeCase === 'refill_requested').length;
+                const revenue = sessions.reduce((sum, s) => sum + (s.amount || 0) / 100, 0);
+                return (
+                  <div className="flex flex-wrap gap-4 mb-3 text-sm">
+                    <span className="text-emerald-400 font-medium">{activeCount} Active</span>
+                    {requestCount > 0 && <span className="text-amber-400 font-medium">{requestCount} Request</span>}
+                    <span className="text-zinc-400">${revenue.toFixed(0)} revenue</span>
+                  </div>
+                );
+              })()}
               <h3 className="text-lg font-semibold text-white mb-2 flex items-center space-x-2">
                 <LayoutGrid className="w-5 h-5 text-teal-400" />
                 <span>CODIGO Floor Plan</span>

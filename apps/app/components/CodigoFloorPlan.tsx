@@ -3,8 +3,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import ReactFlow, {
   Background,
-  Controls,
-  MiniMap,
   type Node,
   type NodeTypes,
 } from "reactflow";
@@ -18,7 +16,7 @@ import type { FireSession } from "@/types/enhancedSession";
 const BASE_PRICE = 60;
 const OVER_MINUTES = 90;
 
-type SeatStatus = "empty" | "active" | "over";
+type SeatStatus = "empty" | "active" | "over" | "request";
 
 // Session states considered "on floor" (active hookah)
 const FLOOR_ACTIVE_STATES = ["ACTIVE", "DELIVERED", "OUT_FOR_DELIVERY"] as const;
@@ -70,11 +68,12 @@ export default function CodigoFloorPlan({
 
   const nodeTypes: NodeTypes = useMemo(() => ({ seat: SeatNode }), []);
 
-  // Derive seat status from Fire sessions
+  // Derive seat status from Fire sessions: empty | active | over | request (refill/service)
   const nodes: Node[] = useMemo(() => {
     return CODIGO_SEATS.map((s) => {
       const session = sessions.find((sess) => sessionMatchesSeat(sess, s.label));
       const isActive = !!session && FLOOR_ACTIVE_STATES.includes((session.status || session.state) as any);
+      const needsService = !!session && (session.refillStatus === "requested" || session.edgeCase === "refill_requested");
 
       const sessionStartMs = session?.sessionStartTime ?? session?.createdAt ?? 0;
       const elapsedMs = isActive ? now - sessionStartMs : 0;
@@ -82,9 +81,11 @@ export default function CodigoFloorPlan({
 
       const status: SeatStatus = !isActive
         ? "empty"
-        : elapsedMin >= OVER_MINUTES
-          ? "over"
-          : "active";
+        : needsService
+          ? "request"
+          : elapsedMin >= OVER_MINUTES
+            ? "over"
+            : "active";
 
       return {
         id: s.id,
@@ -144,19 +145,28 @@ export default function CodigoFloorPlan({
 
   return (
     <div className="flex h-full min-h-[400px] flex-col gap-4 lg:flex-row">
-      {/* Left: React Flow floor plan */}
-      <div className="min-h-[400px] flex-1 rounded-xl border border-zinc-800 bg-zinc-950">
+      {/* Left: React Flow floor plan - Toast handheld optimized: no MiniMap, no Controls, no scroll */}
+      <div className="min-h-[400px] flex-1 rounded-xl border border-zinc-800 bg-zinc-950 overflow-hidden">
         <ReactFlow
           nodes={nodes}
           edges={[]}
           nodeTypes={nodeTypes}
           fitView
+          fitViewOptions={{ padding: 0.1, maxZoom: 1, minZoom: 0.5 }}
+          minZoom={0.3}
+          maxZoom={1}
+          panOnScroll={false}
+          panOnDrag={false}
+          zoomOnScroll={false}
+          zoomOnPinch={false}
+          zoomOnDoubleClick={false}
+          nodesDraggable={false}
+          nodesConnectable={false}
+          elementsSelectable={true}
           onNodeClick={(_, node) => setActiveSeatId(node.id)}
           proOptions={{ hideAttribution: true }}
         >
           <Background />
-          <Controls />
-          <MiniMap />
         </ReactFlow>
       </div>
 

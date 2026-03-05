@@ -42,12 +42,14 @@ export async function GET(request: NextRequest) {
     const partySize = parseInt(searchParams.get('partySize') || '1');
     const tableId = searchParams.get('tableId');
     const requestedTime = searchParams.get('requestedTime');
+    const loungeId = searchParams.get('loungeId')?.trim() || undefined;
 
     // Generate cache key
     const cacheKey = CacheService.generateKey('table-availability', {
       partySize,
       tableId: tableId || 'all',
-      requestedTime: requestedTime || 'now'
+      requestedTime: requestedTime || 'now',
+      loungeId: loungeId || 'default'
     });
 
     // Check cache
@@ -95,7 +97,8 @@ export async function GET(request: NextRequest) {
         {
           tableId,
           partySize,
-          requestedTime: requestedTime ? new Date(requestedTime) : undefined
+          requestedTime: requestedTime ? new Date(requestedTime) : undefined,
+          loungeId
         },
         activeSessions.map(s => ({
           tableId: s.tableId || '',

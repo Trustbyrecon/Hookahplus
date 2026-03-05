@@ -5,14 +5,19 @@ import type { NodeProps } from "reactflow";
 
 type SeatNodeData = {
   label: string;
-  status: "empty" | "active" | "over";
+  status: "empty" | "active" | "over" | "request";
   elapsedLabel?: string;
 };
 
 export default function SeatNode({ data }: NodeProps<SeatNodeData>) {
   const badge =
-    data.status === "empty" ? "⚪" : data.status === "active" ? "🟢" : "🔴";
-  const sub = data.status === "empty" ? "Empty" : data.elapsedLabel ?? "Active";
+    data.status === "empty" ? "⚪" :
+    data.status === "request" ? "🟡" :
+    data.status === "active" ? "🟢" : "🔴";
+  const sub =
+    data.status === "empty" ? "Empty" :
+    data.status === "request" ? "Request" :
+    data.elapsedLabel ?? "Active";
 
   return (
     <div
@@ -21,6 +26,7 @@ export default function SeatNode({ data }: NodeProps<SeatNodeData>) {
         "bg-zinc-900 border-zinc-700 text-zinc-100",
         "min-w-[92px] text-center",
         data.status === "over" ? "ring-2 ring-red-500" : "",
+        data.status === "request" ? "ring-2 ring-amber-500" : "",
         data.status === "active" ? "ring-2 ring-emerald-500" : "",
       ].join(" ")}
     >

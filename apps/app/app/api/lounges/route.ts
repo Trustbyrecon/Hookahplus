@@ -159,6 +159,39 @@ export async function GET(req: NextRequest) {
           (await prisma.orgSetting.findUnique({ where: { key: 'lounge_layout' } }).catch(() => null));
 
         if (!layoutSetting) {
+          // Fallback: FloorplanLayout (e.g. CODIGO pilot) when no OrgSetting
+          if (effectiveLoungeId === 'CODIGO') {
+            try {
+              const floorplan = await prisma.floorplanLayout.findFirst({
+                where: { loungeId: effectiveLoungeId },
+                orderBy: { floorId: 'asc' },
+              });
+              if (floorplan?.nodes && Array.isArray(floorplan.nodes)) {
+                const nodes = floorplan.nodes as Array<{ id?: string; label?: string; type?: string; x?: number; y?: number; capacity?: number }>;
+                const tables = nodes.map((n) => ({
+                  id: n.id || '',
+                  name: n.label || n.id || '',
+                  seatingType: n.type === 'kiosk' ? 'Kiosk' : 'Booth',
+                  capacity: n.capacity ?? 4,
+                  coordinates: { x: n.x ?? 0, y: n.y ?? 0 },
+                  zone: 'Main Floor',
+                }));
+                return NextResponse.json({
+                  success: true,
+                  loungeId: effectiveLoungeId,
+                  layoutVersion: 1,
+                  layout: {
+                    loungeId: effectiveLoungeId,
+                    tables,
+                    meta: { source: 'floorplan_layout' },
+                    updatedAt: floorplan.updatedAt.toISOString(),
+                  },
+                });
+              }
+            } catch (fpError) {
+              console.error('[Lounges API] FloorplanLayout fallback error:', fpError);
+            }
+          }
           return NextResponse.json({
             success: true,
             layout: null,

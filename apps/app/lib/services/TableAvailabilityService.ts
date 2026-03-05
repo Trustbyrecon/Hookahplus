@@ -24,6 +24,7 @@ export interface AvailabilityCheck {
   tableId: string;
   partySize: number;
   requestedTime?: Date; // For future reservations
+  loungeId?: string; // For CODIGO/FloorplanLayout table resolution
 }
 
 export interface AvailabilityResult {
@@ -61,8 +62,8 @@ export class TableAvailabilityService {
     activeSessions: Array<{ tableId: string; status: string; id: string }>,
     reservations: Reservation[] = []
   ): Promise<AvailabilityResult> {
-    // Load table from layout
-    const tableValidation = await TableLayoutService.validateTableId(check.tableId);
+    // Load table from layout (pass loungeId for CODIGO FloorplanLayout)
+    const tableValidation = await TableLayoutService.validateTableId(check.tableId, check.loungeId);
     if (!tableValidation.valid || !tableValidation.table) {
       return {
         available: false,

@@ -781,8 +781,8 @@ function FireSessionDashboardContent() {
         <GlobalNavigation />
       </Suspense>
       
-      {/* First Light Banner - Show based on feature flags */}
-      {featureFlags.showFirstLightBanner && (
+      {/* First Light Banner - Show based on feature flags, hidden for CODIGO (floor leads) */}
+      {featureFlags.showFirstLightBanner && selectedLoungeId !== 'CODIGO' && (
         <FirstLightBanner 
           onRunTest={() => {
             setShowCreateModal(true);
@@ -879,30 +879,50 @@ function FireSessionDashboardContent() {
           <Breadcrumbs className="mb-6" />
         </Suspense>
         
-        <PageHero
-          headline="Fire Session Dashboard"
-          subheadline="Real-time session management with intelligent workflow automation. Monitor live sessions, manage BOH/FOH workflows, and optimize operations."
-          benefit={{
-            value: `${metrics.activeSessions} Active Sessions`,
-            description: `$${metrics.revenue.toFixed(2)} revenue • ${metrics.staffAssigned} staff assigned`,
-            icon: <Flame className="w-5 h-5 text-orange-400" />
-          }}
-          primaryCTA={{
-            text: 'View Analytics',
-            href: '/analytics'
-          }}
-          secondaryCTA={!isDemoMode ? {
-            text: 'View All Sessions',
-            href: '/sessions'
-          } : undefined}
-          trustIndicators={[
-            { icon: <RefreshCw className="w-4 h-4" />, text: 'Real-time updates' },
-            { icon: <AlertCircle className="w-4 h-4" />, text: `${metrics.alerts} alerts` }
-          ]}
-        />
+        {/* CODIGO: Compact hero - higher value leads spatially for Toast handheld */}
+        {selectedLoungeId === 'CODIGO' ? (
+          <section className="mb-6 rounded-xl border border-zinc-800 bg-zinc-950/50 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-4">
+                <span className="text-lg font-semibold text-white">Fire Session Dashboard</span>
+                <span className="text-emerald-400 font-medium">{metrics.activeSessions} Active</span>
+                <span className="text-zinc-400">${metrics.revenue.toFixed(0)}</span>
+              </div>
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-lg font-medium flex items-center gap-2"
+              >
+                <Flame className="w-4 h-4" />
+                Create Session
+              </button>
+            </div>
+          </section>
+        ) : (
+          <PageHero
+            headline="Fire Session Dashboard"
+            subheadline="Real-time session management with intelligent workflow automation. Monitor live sessions, manage BOH/FOH workflows, and optimize operations."
+            benefit={{
+              value: `${metrics.activeSessions} Active Sessions`,
+              description: `$${metrics.revenue.toFixed(2)} revenue • ${metrics.staffAssigned} staff assigned`,
+              icon: <Flame className="w-5 h-5 text-orange-400" />
+            }}
+            primaryCTA={{
+              text: 'View Analytics',
+              href: '/analytics'
+            }}
+            secondaryCTA={!isDemoMode ? {
+              text: 'View All Sessions',
+              href: '/sessions'
+            } : undefined}
+            trustIndicators={[
+              { icon: <RefreshCw className="w-4 h-4" />, text: 'Real-time updates' },
+              { icon: <AlertCircle className="w-4 h-4" />, text: `${metrics.alerts} alerts` }
+            ]}
+          />
+        )}
 
-        {/* Daily Pulse Card - Hidden in demo mode */}
-        {!isDemoMode && (
+        {/* Daily Pulse Card - Hidden in demo mode and CODIGO (floor leads) */}
+        {!isDemoMode && selectedLoungeId !== 'CODIGO' && (
           <div className="mb-6">
             <PulseCard 
               compact={true} 
