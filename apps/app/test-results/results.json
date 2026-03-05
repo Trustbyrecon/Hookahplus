@@ -2,7 +2,7 @@
   "config": {
     "configFile": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\playwright.config.ts",
     "rootDir": "C:/Users/Dwayne Clark/Projects/Hookahplus/apps/app/e2e",
-    "forbidOnly": false,
+    "forbidOnly": true,
     "fullyParallel": true,
     "globalSetup": null,
     "globalTeardown": null,
@@ -18,7 +18,7 @@
       {
         "outputDir": "C:/Users/Dwayne Clark/Projects/Hookahplus/apps/app/test-results",
         "repeatEach": 1,
-        "retries": 0,
+        "retries": 2,
         "metadata": {
           "actualWorkers": 1
         },
@@ -34,7 +34,7 @@
       {
         "outputDir": "C:/Users/Dwayne Clark/Projects/Hookahplus/apps/app/test-results",
         "repeatEach": 1,
-        "retries": 0,
+        "retries": 2,
         "metadata": {
           "actualWorkers": 1
         },
@@ -50,7 +50,7 @@
       {
         "outputDir": "C:/Users/Dwayne Clark/Projects/Hookahplus/apps/app/test-results",
         "repeatEach": 1,
-        "retries": 0,
+        "retries": 2,
         "metadata": {
           "actualWorkers": 1
         },
@@ -66,7 +66,7 @@
       {
         "outputDir": "C:/Users/Dwayne Clark/Projects/Hookahplus/apps/app/test-results",
         "repeatEach": 1,
-        "retries": 0,
+        "retries": 2,
         "metadata": {
           "actualWorkers": 1
         },
@@ -82,7 +82,7 @@
       {
         "outputDir": "C:/Users/Dwayne Clark/Projects/Hookahplus/apps/app/test-results",
         "repeatEach": 1,
-        "retries": 0,
+        "retries": 2,
         "metadata": {
           "actualWorkers": 1
         },
@@ -158,41 +158,38 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "failed",
-                      "duration": 26543,
+                      "duration": 16102,
                       "error": {
-                        "message": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"",
-                        "stack": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:16:32",
+                        "message": "TimeoutError: page.waitForResponse: Timeout 12000ms exceeded while waiting for event \"response\"",
+                        "stack": "TimeoutError: page.waitForResponse: Timeout 12000ms exceeded while waiting for event \"response\"\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:18:16",
                         "location": {
                           "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
-                          "column": 32,
-                          "line": 16
+                          "column": 16,
+                          "line": 18
                         },
-                        "snippet": "\u001b[0m \u001b[90m 14 |\u001b[39m test\u001b[33m.\u001b[39mdescribe(\u001b[32m'CODIGO Pilot — Use Cases (80%)'\u001b[39m\u001b[33m,\u001b[39m () \u001b[33m=>\u001b[39m {\n \u001b[90m 15 |\u001b[39m   test(\u001b[32m'FSD loads with CODIGO and shows Floor tab by default'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 16 |\u001b[39m     \u001b[36mconst\u001b[39m configPromise \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mwaitForResponse((r) \u001b[33m=>\u001b[39m r\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/api/lounges/CODIGO/config'\u001b[39m)\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m15000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 17 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[33mCODIGO_FSD_URL\u001b[39m\u001b[33m,\u001b[39m { waitUntil\u001b[33m:\u001b[39m \u001b[32m'domcontentloaded'\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 18 |\u001b[39m     \u001b[36mawait\u001b[39m configPromise\u001b[33m;\u001b[39m\n \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByText(\u001b[32m'Fire Session Dashboard'\u001b[39m)\u001b[33m.\u001b[39mfirst())\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m10000\u001b[39m })\u001b[33m;\u001b[39m\u001b[0m"
+                        "snippet": "  16 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });\n  17 |     await expect(page.getByText('Fire Session Dashboard').first()).toBeVisible({ timeout: 20000 });\n> 18 |     await page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config') && r.status() === 200, { timeout: 12000 });\n     |                ^\n  19 |     await expect(page.getByTestId('tab-floor').or(page.getByRole('button', { name: /Floor/i }))).toBeVisible({ timeout: 8000 });\n  20 |   });\n  21 |"
                       },
                       "errors": [
                         {
                           "location": {
                             "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
-                            "column": 32,
-                            "line": 16
-                          },
-                          "message": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"\n\n\u001b[0m \u001b[90m 14 |\u001b[39m test\u001b[33m.\u001b[39mdescribe(\u001b[32m'CODIGO Pilot — Use Cases (80%)'\u001b[39m\u001b[33m,\u001b[39m () \u001b[33m=>\u001b[39m {\n \u001b[90m 15 |\u001b[39m   test(\u001b[32m'FSD loads with CODIGO and shows Floor tab by default'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 16 |\u001b[39m     \u001b[36mconst\u001b[39m configPromise \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mwaitForResponse((r) \u001b[33m=>\u001b[39m r\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/api/lounges/CODIGO/config'\u001b[39m)\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m15000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 17 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[33mCODIGO_FSD_URL\u001b[39m\u001b[33m,\u001b[39m { waitUntil\u001b[33m:\u001b[39m \u001b[32m'domcontentloaded'\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 18 |\u001b[39m     \u001b[36mawait\u001b[39m configPromise\u001b[33m;\u001b[39m\n \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByText(\u001b[32m'Fire Session Dashboard'\u001b[39m)\u001b[33m.\u001b[39mfirst())\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m10000\u001b[39m })\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:16:32\u001b[22m"
-                        },
-                        {
-                          "location": {
-                            "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
                             "column": 16,
-                            "line": 17
+                            "line": 18
                           },
-                          "message": "Error: page.goto: Test ended.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3002/fire-session-dashboard?lounge=CODIGO\", waiting until \"domcontentloaded\"\u001b[22m\n\n\n\u001b[0m \u001b[90m 15 |\u001b[39m   test(\u001b[32m'FSD loads with CODIGO and shows Floor tab by default'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m 16 |\u001b[39m     \u001b[36mconst\u001b[39m configPromise \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mwaitForResponse((r) \u001b[33m=>\u001b[39m r\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/api/lounges/CODIGO/config'\u001b[39m)\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m15000\u001b[39m })\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 17 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[33mCODIGO_FSD_URL\u001b[39m\u001b[33m,\u001b[39m { waitUntil\u001b[33m:\u001b[39m \u001b[32m'domcontentloaded'\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 18 |\u001b[39m     \u001b[36mawait\u001b[39m configPromise\u001b[33m;\u001b[39m\n \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByText(\u001b[32m'Fire Session Dashboard'\u001b[39m)\u001b[33m.\u001b[39mfirst())\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m10000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'tab-floor'\u001b[39m)\u001b[33m.\u001b[39mor(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'button'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/Floor/i\u001b[39m })))\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m8000\u001b[39m })\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:17:16\u001b[22m"
+                          "message": "TimeoutError: page.waitForResponse: Timeout 12000ms exceeded while waiting for event \"response\"\n\n  16 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });\n  17 |     await expect(page.getByText('Fire Session Dashboard').first()).toBeVisible({ timeout: 20000 });\n> 18 |     await page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config') && r.status() === 200, { timeout: 12000 });\n     |                ^\n  19 |     await expect(page.getByTestId('tab-floor').or(page.getByRole('button', { name: /Floor/i }))).toBeVisible({ timeout: 8000 });\n  20 |   });\n  21 |\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:18:16"
                         }
                       ],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-03-05T18:25:36.342Z",
+                      "startTime": "2026-03-05T18:14:25.906Z",
                       "annotations": [],
                       "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-761a3--shows-Floor-tab-by-default-chromium\\test-failed-1.png"
+                        },
                         {
                           "name": "video",
                           "contentType": "video/webm",
@@ -206,8 +203,120 @@
                       ],
                       "errorLocation": {
                         "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
-                        "column": 32,
-                        "line": 16
+                        "column": 16,
+                        "line": 18
+                      }
+                    },
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 74362,
+                      "error": {
+                        "message": "TimeoutError: page.waitForResponse: Timeout 12000ms exceeded while waiting for event \"response\"",
+                        "stack": "TimeoutError: page.waitForResponse: Timeout 12000ms exceeded while waiting for event \"response\"\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:18:16",
+                        "location": {
+                          "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                          "column": 16,
+                          "line": 18
+                        },
+                        "snippet": "  16 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });\n  17 |     await expect(page.getByText('Fire Session Dashboard').first()).toBeVisible({ timeout: 20000 });\n> 18 |     await page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config') && r.status() === 200, { timeout: 12000 });\n     |                ^\n  19 |     await expect(page.getByTestId('tab-floor').or(page.getByRole('button', { name: /Floor/i }))).toBeVisible({ timeout: 8000 });\n  20 |   });\n  21 |"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                            "column": 16,
+                            "line": 18
+                          },
+                          "message": "TimeoutError: page.waitForResponse: Timeout 12000ms exceeded while waiting for event \"response\"\n\n  16 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });\n  17 |     await expect(page.getByText('Fire Session Dashboard').first()).toBeVisible({ timeout: 20000 });\n> 18 |     await page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config') && r.status() === 200, { timeout: 12000 });\n     |                ^\n  19 |     await expect(page.getByTestId('tab-floor').or(page.getByRole('button', { name: /Floor/i }))).toBeVisible({ timeout: 8000 });\n  20 |   });\n  21 |\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:18:16"
+                        },
+                        {
+                          "message": "Error: ENOENT: no such file or directory, open 'C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\.playwright-artifacts-1\\c2025e220fde9775875bc0e98ccf7b43.zip'"
+                        },
+                        {
+                          "message": "\u001b[31mTest timeout of 90000ms exceeded.\u001b[39m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2026-03-05T18:14:50.274Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-761a3--shows-Floor-tab-by-default-chromium-retry1\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-761a3--shows-Floor-tab-by-default-chromium-retry1\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-761a3--shows-Floor-tab-by-default-chromium-retry1\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                        "column": 16,
+                        "line": 18
+                      }
+                    },
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 31005,
+                      "error": {
+                        "message": "TimeoutError: page.waitForResponse: Timeout 12000ms exceeded while waiting for event \"response\"",
+                        "stack": "TimeoutError: page.waitForResponse: Timeout 12000ms exceeded while waiting for event \"response\"\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:18:16",
+                        "location": {
+                          "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                          "column": 16,
+                          "line": 18
+                        },
+                        "snippet": "  16 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });\n  17 |     await expect(page.getByText('Fire Session Dashboard').first()).toBeVisible({ timeout: 20000 });\n> 18 |     await page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config') && r.status() === 200, { timeout: 12000 });\n     |                ^\n  19 |     await expect(page.getByTestId('tab-floor').or(page.getByRole('button', { name: /Floor/i }))).toBeVisible({ timeout: 8000 });\n  20 |   });\n  21 |"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                            "column": 16,
+                            "line": 18
+                          },
+                          "message": "TimeoutError: page.waitForResponse: Timeout 12000ms exceeded while waiting for event \"response\"\n\n  16 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });\n  17 |     await expect(page.getByText('Fire Session Dashboard').first()).toBeVisible({ timeout: 20000 });\n> 18 |     await page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config') && r.status() === 200, { timeout: 12000 });\n     |                ^\n  19 |     await expect(page.getByTestId('tab-floor').or(page.getByRole('button', { name: /Floor/i }))).toBeVisible({ timeout: 8000 });\n  20 |   });\n  21 |\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:18:16"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 2,
+                      "startTime": "2026-03-05T18:17:42.733Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-761a3--shows-Floor-tab-by-default-chromium-retry2\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-761a3--shows-Floor-tab-by-default-chromium-retry2\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-761a3--shows-Floor-tab-by-default-chromium-retry2\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                        "column": 16,
+                        "line": 18
                       }
                     }
                   ],
@@ -232,34 +341,34 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 1,
+                      "workerIndex": 3,
                       "parallelIndex": 0,
                       "status": "failed",
-                      "duration": 25648,
+                      "duration": 19421,
                       "error": {
-                        "message": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"",
-                        "stack": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:24:32",
+                        "message": "TimeoutError: page.waitForResponse: Timeout 12000ms exceeded while waiting for event \"response\"",
+                        "stack": "TimeoutError: page.waitForResponse: Timeout 12000ms exceeded while waiting for event \"response\"\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:24:16",
                         "location": {
                           "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
-                          "column": 32,
+                          "column": 16,
                           "line": 24
                         },
-                        "snippet": "\u001b[0m \u001b[90m 22 |\u001b[39m\n \u001b[90m 23 |\u001b[39m   test(\u001b[32m'CODIGO compact hero shows Create Session CTA'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 24 |\u001b[39m     \u001b[36mconst\u001b[39m configPromise \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mwaitForResponse((r) \u001b[33m=>\u001b[39m r\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/api/lounges/CODIGO/config'\u001b[39m)\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m15000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 25 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[33mCODIGO_FSD_URL\u001b[39m\u001b[33m,\u001b[39m { waitUntil\u001b[33m:\u001b[39m \u001b[32m'domcontentloaded'\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 26 |\u001b[39m     \u001b[36mawait\u001b[39m configPromise\u001b[33m;\u001b[39m\n \u001b[90m 27 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'create-session-cta'\u001b[39m)\u001b[33m.\u001b[39mor(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'button'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/Create Session/i\u001b[39m })))\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m8000\u001b[39m })\u001b[33m;\u001b[39m\u001b[0m"
+                        "snippet": "  22 |   test('CODIGO compact hero shows Create Session CTA', async ({ page }) => {\n  23 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });\n> 24 |     await page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config') && r.status() === 200, { timeout: 12000 });\n     |                ^\n  25 |     await expect(page.getByTestId('create-session-cta').or(page.getByRole('button', { name: /Create Session/i }))).toBeVisible({ timeout: 8000 });\n  26 |   });\n  27 |"
                       },
                       "errors": [
                         {
                           "location": {
                             "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
-                            "column": 32,
+                            "column": 16,
                             "line": 24
                           },
-                          "message": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"\n\n\u001b[0m \u001b[90m 22 |\u001b[39m\n \u001b[90m 23 |\u001b[39m   test(\u001b[32m'CODIGO compact hero shows Create Session CTA'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 24 |\u001b[39m     \u001b[36mconst\u001b[39m configPromise \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mwaitForResponse((r) \u001b[33m=>\u001b[39m r\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/api/lounges/CODIGO/config'\u001b[39m)\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m15000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 25 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[33mCODIGO_FSD_URL\u001b[39m\u001b[33m,\u001b[39m { waitUntil\u001b[33m:\u001b[39m \u001b[32m'domcontentloaded'\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 26 |\u001b[39m     \u001b[36mawait\u001b[39m configPromise\u001b[33m;\u001b[39m\n \u001b[90m 27 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'create-session-cta'\u001b[39m)\u001b[33m.\u001b[39mor(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'button'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/Create Session/i\u001b[39m })))\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m8000\u001b[39m })\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:24:32\u001b[22m"
+                          "message": "TimeoutError: page.waitForResponse: Timeout 12000ms exceeded while waiting for event \"response\"\n\n  22 |   test('CODIGO compact hero shows Create Session CTA', async ({ page }) => {\n  23 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });\n> 24 |     await page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config') && r.status() === 200, { timeout: 12000 });\n     |                ^\n  25 |     await expect(page.getByTestId('create-session-cta').or(page.getByRole('button', { name: /Create Session/i }))).toBeVisible({ timeout: 8000 });\n  26 |   });\n  27 |\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:24:16"
                         }
                       ],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-03-05T18:26:09.640Z",
+                      "startTime": "2026-03-05T18:18:20.981Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -280,7 +389,113 @@
                       ],
                       "errorLocation": {
                         "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
-                        "column": 32,
+                        "column": 16,
+                        "line": 24
+                      }
+                    },
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 35790,
+                      "error": {
+                        "message": "TimeoutError: page.waitForResponse: Timeout 12000ms exceeded while waiting for event \"response\"",
+                        "stack": "TimeoutError: page.waitForResponse: Timeout 12000ms exceeded while waiting for event \"response\"\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:24:16",
+                        "location": {
+                          "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                          "column": 16,
+                          "line": 24
+                        },
+                        "snippet": "  22 |   test('CODIGO compact hero shows Create Session CTA', async ({ page }) => {\n  23 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });\n> 24 |     await page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config') && r.status() === 200, { timeout: 12000 });\n     |                ^\n  25 |     await expect(page.getByTestId('create-session-cta').or(page.getByRole('button', { name: /Create Session/i }))).toBeVisible({ timeout: 8000 });\n  26 |   });\n  27 |"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                            "column": 16,
+                            "line": 24
+                          },
+                          "message": "TimeoutError: page.waitForResponse: Timeout 12000ms exceeded while waiting for event \"response\"\n\n  22 |   test('CODIGO compact hero shows Create Session CTA', async ({ page }) => {\n  23 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });\n> 24 |     await page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config') && r.status() === 200, { timeout: 12000 });\n     |                ^\n  25 |     await expect(page.getByTestId('create-session-cta').or(page.getByRole('button', { name: /Create Session/i }))).toBeVisible({ timeout: 8000 });\n  26 |   });\n  27 |\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:24:16"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2026-03-05T18:18:48.040Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-78ef7-ro-shows-Create-Session-CTA-chromium-retry1\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-78ef7-ro-shows-Create-Session-CTA-chromium-retry1\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-78ef7-ro-shows-Create-Session-CTA-chromium-retry1\\error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-78ef7-ro-shows-Create-Session-CTA-chromium-retry1\\trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                        "column": 16,
+                        "line": 24
+                      }
+                    },
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 16833,
+                      "error": {
+                        "message": "TimeoutError: page.waitForResponse: Timeout 12000ms exceeded while waiting for event \"response\"",
+                        "stack": "TimeoutError: page.waitForResponse: Timeout 12000ms exceeded while waiting for event \"response\"\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:24:16",
+                        "location": {
+                          "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                          "column": 16,
+                          "line": 24
+                        },
+                        "snippet": "  22 |   test('CODIGO compact hero shows Create Session CTA', async ({ page }) => {\n  23 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });\n> 24 |     await page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config') && r.status() === 200, { timeout: 12000 });\n     |                ^\n  25 |     await expect(page.getByTestId('create-session-cta').or(page.getByRole('button', { name: /Create Session/i }))).toBeVisible({ timeout: 8000 });\n  26 |   });\n  27 |"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                            "column": 16,
+                            "line": 24
+                          },
+                          "message": "TimeoutError: page.waitForResponse: Timeout 12000ms exceeded while waiting for event \"response\"\n\n  22 |   test('CODIGO compact hero shows Create Session CTA', async ({ page }) => {\n  23 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });\n> 24 |     await page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config') && r.status() === 200, { timeout: 12000 });\n     |                ^\n  25 |     await expect(page.getByTestId('create-session-cta').or(page.getByRole('button', { name: /Create Session/i }))).toBeVisible({ timeout: 8000 });\n  26 |   });\n  27 |\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:24:16"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 2,
+                      "startTime": "2026-03-05T18:19:37.359Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-78ef7-ro-shows-Create-Session-CTA-chromium-retry2\\test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-78ef7-ro-shows-Create-Session-CTA-chromium-retry2\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                        "column": 16,
                         "line": 24
                       }
                     }
@@ -290,7 +505,7 @@
               ],
               "id": "37521c8ad1bf10d3e976-3e1b1a75c177f76becb0",
               "file": "codigo/codigo-pilot.spec.ts",
-              "line": 23,
+              "line": 22,
               "column": 7
             },
             {
@@ -306,10 +521,120 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 2,
+                      "workerIndex": 6,
                       "parallelIndex": 0,
                       "status": "failed",
-                      "duration": 31969,
+                      "duration": 62980,
+                      "error": {
+                        "message": "TimeoutError: page.waitForResponse: Timeout 12000ms exceeded while waiting for event \"response\"",
+                        "stack": "TimeoutError: page.waitForResponse: Timeout 12000ms exceeded while waiting for event \"response\"\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:30:16",
+                        "location": {
+                          "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                          "column": 16,
+                          "line": 30
+                        },
+                        "snippet": "  28 |   test('Floor tab shows at-a-glance status strip', async ({ page }) => {\n  29 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });\n> 30 |     await page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config') && r.status() === 200, { timeout: 12000 });\n     |                ^\n  31 |     const floorTab = page.getByTestId('tab-floor').or(page.getByRole('button', { name: /Floor/i }));\n  32 |     await floorTab.first().click();\n  33 |     await expect(page.getByText(/Active|revenue/i)).toBeVisible({ timeout: 8000 });"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                            "column": 16,
+                            "line": 30
+                          },
+                          "message": "TimeoutError: page.waitForResponse: Timeout 12000ms exceeded while waiting for event \"response\"\n\n  28 |   test('Floor tab shows at-a-glance status strip', async ({ page }) => {\n  29 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });\n> 30 |     await page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config') && r.status() === 200, { timeout: 12000 });\n     |                ^\n  31 |     const floorTab = page.getByTestId('tab-floor').or(page.getByRole('button', { name: /Floor/i }));\n  32 |     await floorTab.first().click();\n  33 |     await expect(page.getByText(/Active|revenue/i)).toBeVisible({ timeout: 8000 });\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:30:16"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-05T18:20:04.263Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-fb057-ws-at-a-glance-status-strip-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-fb057-ws-at-a-glance-status-strip-chromium\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-fb057-ws-at-a-glance-status-strip-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                        "column": 16,
+                        "line": 30
+                      }
+                    },
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 26572,
+                      "error": {
+                        "message": "TimeoutError: page.waitForResponse: Timeout 12000ms exceeded while waiting for event \"response\"",
+                        "stack": "TimeoutError: page.waitForResponse: Timeout 12000ms exceeded while waiting for event \"response\"\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:30:16",
+                        "location": {
+                          "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                          "column": 16,
+                          "line": 30
+                        },
+                        "snippet": "  28 |   });\n  29 |\n> 30 |   test('Floor tab shows at-a-glance status strip', async ({ page }) => {\n     |                ^\n  31 |     const configPromise = page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config'), { timeout: 15000 });\n  32 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });\n  33 |     await configPromise;"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                            "column": 16,
+                            "line": 30
+                          },
+                          "message": "TimeoutError: page.waitForResponse: Timeout 12000ms exceeded while waiting for event \"response\"\n\n  28 |   });\n  29 |\n> 30 |   test('Floor tab shows at-a-glance status strip', async ({ page }) => {\n     |                ^\n  31 |     const configPromise = page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config'), { timeout: 15000 });\n  32 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });\n  33 |     await configPromise;\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:30:16"
+                        },
+                        {
+                          "message": "Error: apiRequestContext._wrapApiCall: ENOENT: no such file or directory, open 'C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\.playwright-artifacts-7\\traces\\37521c8ad1bf10d3e976-e97a6e950e0546be80dc-retry1.trace'"
+                        },
+                        {
+                          "message": "Error: ENOENT: no such file or directory, open 'C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\.playwright-artifacts-7\\79bf509313fca098f665fb41c0f18eb0.zip'"
+                        },
+                        {
+                          "message": "\u001b[31mTest timeout of 90000ms exceeded.\u001b[39m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2026-03-05T18:21:13.783Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-fb057-ws-at-a-glance-status-strip-chromium-retry1\\test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-fb057-ws-at-a-glance-status-strip-chromium-retry1\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                        "column": 16,
+                        "line": 30
+                      }
+                    },
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 26478,
                       "error": {
                         "message": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"",
                         "stack": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:31:32",
@@ -318,7 +643,7 @@
                           "column": 32,
                           "line": 31
                         },
-                        "snippet": "\u001b[0m \u001b[90m 29 |\u001b[39m\n \u001b[90m 30 |\u001b[39m   test(\u001b[32m'Floor tab shows at-a-glance status strip'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 31 |\u001b[39m     \u001b[36mconst\u001b[39m configPromise \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mwaitForResponse((r) \u001b[33m=>\u001b[39m r\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/api/lounges/CODIGO/config'\u001b[39m)\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m15000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 32 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[33mCODIGO_FSD_URL\u001b[39m\u001b[33m,\u001b[39m { waitUntil\u001b[33m:\u001b[39m \u001b[32m'domcontentloaded'\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 33 |\u001b[39m     \u001b[36mawait\u001b[39m configPromise\u001b[33m;\u001b[39m\n \u001b[90m 34 |\u001b[39m     \u001b[36mconst\u001b[39m floorTab \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'tab-floor'\u001b[39m)\u001b[33m.\u001b[39mor(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'button'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/Floor/i\u001b[39m }))\u001b[33m;\u001b[39m\u001b[0m"
+                        "snippet": "  29 |\n  30 |   test('Floor tab shows at-a-glance status strip', async ({ page }) => {\n> 31 |     const configPromise = page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config'), { timeout: 15000 });\n     |                                ^\n  32 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });\n  33 |     await configPromise;\n  34 |     const floorTab = page.getByTestId('tab-floor').or(page.getByRole('button', { name: /Floor/i }));"
                       },
                       "errors": [
                         {
@@ -327,27 +652,29 @@
                             "column": 32,
                             "line": 31
                           },
-                          "message": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"\n\n\u001b[0m \u001b[90m 29 |\u001b[39m\n \u001b[90m 30 |\u001b[39m   test(\u001b[32m'Floor tab shows at-a-glance status strip'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 31 |\u001b[39m     \u001b[36mconst\u001b[39m configPromise \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mwaitForResponse((r) \u001b[33m=>\u001b[39m r\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/api/lounges/CODIGO/config'\u001b[39m)\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m15000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 32 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[33mCODIGO_FSD_URL\u001b[39m\u001b[33m,\u001b[39m { waitUntil\u001b[33m:\u001b[39m \u001b[32m'domcontentloaded'\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 33 |\u001b[39m     \u001b[36mawait\u001b[39m configPromise\u001b[33m;\u001b[39m\n \u001b[90m 34 |\u001b[39m     \u001b[36mconst\u001b[39m floorTab \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'tab-floor'\u001b[39m)\u001b[33m.\u001b[39mor(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'button'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/Floor/i\u001b[39m }))\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:31:32\u001b[22m"
-                        },
-                        {
-                          "location": {
-                            "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
-                            "column": 16,
-                            "line": 32
-                          },
-                          "message": "Error: page.goto: Test ended.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3002/fire-session-dashboard?lounge=CODIGO\", waiting until \"domcontentloaded\"\u001b[22m\n\n\n\u001b[0m \u001b[90m 30 |\u001b[39m   test(\u001b[32m'Floor tab shows at-a-glance status strip'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m 31 |\u001b[39m     \u001b[36mconst\u001b[39m configPromise \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mwaitForResponse((r) \u001b[33m=>\u001b[39m r\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/api/lounges/CODIGO/config'\u001b[39m)\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m15000\u001b[39m })\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 32 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[33mCODIGO_FSD_URL\u001b[39m\u001b[33m,\u001b[39m { waitUntil\u001b[33m:\u001b[39m \u001b[32m'domcontentloaded'\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 33 |\u001b[39m     \u001b[36mawait\u001b[39m configPromise\u001b[33m;\u001b[39m\n \u001b[90m 34 |\u001b[39m     \u001b[36mconst\u001b[39m floorTab \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'tab-floor'\u001b[39m)\u001b[33m.\u001b[39mor(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'button'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/Floor/i\u001b[39m }))\u001b[33m;\u001b[39m\n \u001b[90m 35 |\u001b[39m     \u001b[36mawait\u001b[39m floorTab\u001b[33m.\u001b[39mfirst()\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:32:16\u001b[22m"
+                          "message": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"\n\n  29 |\n  30 |   test('Floor tab shows at-a-glance status strip', async ({ page }) => {\n> 31 |     const configPromise = page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config'), { timeout: 15000 });\n     |                                ^\n  32 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });\n  33 |     await configPromise;\n  34 |     const floorTab = page.getByTestId('tab-floor').or(page.getByRole('button', { name: /Floor/i }));\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:31:32"
                         }
                       ],
                       "stdout": [],
                       "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-05T18:26:43.776Z",
+                      "retry": 2,
+                      "startTime": "2026-03-05T18:23:31.319Z",
                       "annotations": [],
                       "attachments": [
                         {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-fb057-ws-at-a-glance-status-strip-chromium-retry2\\test-failed-1.png"
+                        },
+                        {
                           "name": "video",
                           "contentType": "video/webm",
-                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-fb057-ws-at-a-glance-status-strip-chromium\\video.webm"
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-fb057-ws-at-a-glance-status-strip-chromium-retry2\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-fb057-ws-at-a-glance-status-strip-chromium-retry2\\error-context.md"
                         }
                       ],
                       "errorLocation": {
@@ -362,7 +689,7 @@
               ],
               "id": "37521c8ad1bf10d3e976-e97a6e950e0546be80dc",
               "file": "codigo/codigo-pilot.spec.ts",
-              "line": 30,
+              "line": 28,
               "column": 7
             },
             {
@@ -378,10 +705,10 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 3,
+                      "workerIndex": 9,
                       "parallelIndex": 0,
                       "status": "failed",
-                      "duration": 16278,
+                      "duration": 27620,
                       "error": {
                         "message": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"",
                         "stack": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:40:32",
@@ -390,7 +717,7 @@
                           "column": 32,
                           "line": 40
                         },
-                        "snippet": "\u001b[0m \u001b[90m 38 |\u001b[39m\n \u001b[90m 39 |\u001b[39m   test(\u001b[32m'Create Session modal opens and shows CODIGO tables from floorplan'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 40 |\u001b[39m     \u001b[36mconst\u001b[39m configPromise \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mwaitForResponse((r) \u001b[33m=>\u001b[39m r\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/api/lounges/CODIGO/config'\u001b[39m)\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m15000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 41 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[33mCODIGO_FSD_URL\u001b[39m\u001b[33m,\u001b[39m { waitUntil\u001b[33m:\u001b[39m \u001b[32m'domcontentloaded'\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 42 |\u001b[39m     \u001b[36mawait\u001b[39m configPromise\u001b[33m;\u001b[39m\n \u001b[90m 43 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'create-session-cta'\u001b[39m)\u001b[33m.\u001b[39mor(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'button'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/Create Session/i\u001b[39m }))\u001b[33m.\u001b[39mfirst()\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\u001b[0m"
+                        "snippet": "  38 |\n  39 |   test('Create Session modal opens and shows CODIGO tables from floorplan', async ({ page }) => {\n> 40 |     const configPromise = page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config'), { timeout: 15000 });\n     |                                ^\n  41 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });\n  42 |     await configPromise;\n  43 |     await page.getByTestId('create-session-cta').or(page.getByRole('button', { name: /Create Session/i })).first().click();"
                       },
                       "errors": [
                         {
@@ -399,13 +726,13 @@
                             "column": 32,
                             "line": 40
                           },
-                          "message": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"\n\n\u001b[0m \u001b[90m 38 |\u001b[39m\n \u001b[90m 39 |\u001b[39m   test(\u001b[32m'Create Session modal opens and shows CODIGO tables from floorplan'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 40 |\u001b[39m     \u001b[36mconst\u001b[39m configPromise \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mwaitForResponse((r) \u001b[33m=>\u001b[39m r\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/api/lounges/CODIGO/config'\u001b[39m)\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m15000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 41 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[33mCODIGO_FSD_URL\u001b[39m\u001b[33m,\u001b[39m { waitUntil\u001b[33m:\u001b[39m \u001b[32m'domcontentloaded'\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 42 |\u001b[39m     \u001b[36mawait\u001b[39m configPromise\u001b[33m;\u001b[39m\n \u001b[90m 43 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'create-session-cta'\u001b[39m)\u001b[33m.\u001b[39mor(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'button'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/Create Session/i\u001b[39m }))\u001b[33m.\u001b[39mfirst()\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:40:32\u001b[22m"
+                          "message": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"\n\n  38 |\n  39 |   test('Create Session modal opens and shows CODIGO tables from floorplan', async ({ page }) => {\n> 40 |     const configPromise = page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config'), { timeout: 15000 });\n     |                                ^\n  41 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });\n  42 |     await configPromise;\n  43 |     await page.getByTestId('create-session-cta').or(page.getByRole('button', { name: /Create Session/i })).first().click();\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:40:32"
                         }
                       ],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-03-05T18:27:23.191Z",
+                      "startTime": "2026-03-05T18:24:13.712Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -429,6 +756,120 @@
                         "column": 32,
                         "line": 40
                       }
+                    },
+                    {
+                      "workerIndex": 10,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 26807,
+                      "error": {
+                        "message": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"",
+                        "stack": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:40:32",
+                        "location": {
+                          "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                          "column": 32,
+                          "line": 40
+                        },
+                        "snippet": "  38 |\n  39 |   test('Create Session modal opens and shows CODIGO tables from floorplan', async ({ page }) => {\n> 40 |     const configPromise = page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config'), { timeout: 15000 });\n     |                                ^\n  41 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });\n  42 |     await configPromise;\n  43 |     await page.getByTestId('create-session-cta').or(page.getByRole('button', { name: /Create Session/i })).first().click();"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                            "column": 32,
+                            "line": 40
+                          },
+                          "message": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"\n\n  38 |\n  39 |   test('Create Session modal opens and shows CODIGO tables from floorplan', async ({ page }) => {\n> 40 |     const configPromise = page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config'), { timeout: 15000 });\n     |                                ^\n  41 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });\n  42 |     await configPromise;\n  43 |     await page.getByTestId('create-session-cta').or(page.getByRole('button', { name: /Create Session/i })).first().click();\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:40:32"
+                        },
+                        {
+                          "location": {
+                            "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                            "column": 16,
+                            "line": 41
+                          },
+                          "message": "Error: page.goto: Test ended.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3002/fire-session-dashboard?lounge=CODIGO\", waiting until \"domcontentloaded\"\u001b[22m\n\n\n  39 |   test('Create Session modal opens and shows CODIGO tables from floorplan', async ({ page }) => {\n  40 |     const configPromise = page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config'), { timeout: 15000 });\n> 41 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });\n     |                ^\n  42 |     await configPromise;\n  43 |     await page.getByTestId('create-session-cta').or(page.getByRole('button', { name: /Create Session/i })).first().click();\n  44 |     await expect(page.getByText(/Table Selection|Create New Session/i)).toBeVisible({ timeout: 10000 });\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:41:16"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2026-03-05T18:24:52.286Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-5ca85-ODIGO-tables-from-floorplan-chromium-retry1\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-5ca85-ODIGO-tables-from-floorplan-chromium-retry1\\error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-5ca85-ODIGO-tables-from-floorplan-chromium-retry1\\trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                        "column": 32,
+                        "line": 40
+                      }
+                    },
+                    {
+                      "workerIndex": 11,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 24320,
+                      "error": {
+                        "message": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"",
+                        "stack": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:40:32",
+                        "location": {
+                          "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                          "column": 32,
+                          "line": 40
+                        },
+                        "snippet": "  38 |\n  39 |   test('Create Session modal opens and shows CODIGO tables from floorplan', async ({ page }) => {\n> 40 |     const configPromise = page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config'), { timeout: 15000 });\n     |                                ^\n  41 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });\n  42 |     await configPromise;\n  43 |     await page.getByTestId('create-session-cta').or(page.getByRole('button', { name: /Create Session/i })).first().click();"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                            "column": 32,
+                            "line": 40
+                          },
+                          "message": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"\n\n  38 |\n  39 |   test('Create Session modal opens and shows CODIGO tables from floorplan', async ({ page }) => {\n> 40 |     const configPromise = page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config'), { timeout: 15000 });\n     |                                ^\n  41 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });\n  42 |     await configPromise;\n  43 |     await page.getByTestId('create-session-cta').or(page.getByRole('button', { name: /Create Session/i })).first().click();\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:40:32"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 2,
+                      "startTime": "2026-03-05T18:25:33.144Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-5ca85-ODIGO-tables-from-floorplan-chromium-retry2\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-5ca85-ODIGO-tables-from-floorplan-chromium-retry2\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-5ca85-ODIGO-tables-from-floorplan-chromium-retry2\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                        "column": 32,
+                        "line": 40
+                      }
                     }
                   ],
                   "status": "unexpected"
@@ -436,7 +877,7 @@
               ],
               "id": "37521c8ad1bf10d3e976-08507058d35bf3e0161a",
               "file": "codigo/codigo-pilot.spec.ts",
-              "line": 39,
+              "line": 36,
               "column": 7
             },
             {
@@ -452,15 +893,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 4,
+                      "workerIndex": 12,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3596,
+                      "duration": 3543,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-03-05T18:27:49.106Z",
+                      "startTime": "2026-03-05T18:26:09.658Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -470,7 +911,7 @@
               ],
               "id": "37521c8ad1bf10d3e976-1975023b7538aaccfa12",
               "file": "codigo/codigo-pilot.spec.ts",
-              "line": 47,
+              "line": 43,
               "column": 7
             },
             {
@@ -486,15 +927,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 4,
+                      "workerIndex": 12,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 7057,
+                      "duration": 6527,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-03-05T18:27:52.802Z",
+                      "startTime": "2026-03-05T18:26:13.280Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -504,7 +945,7 @@
               ],
               "id": "37521c8ad1bf10d3e976-615ab04644c99ccde0e8",
               "file": "codigo/codigo-pilot.spec.ts",
-              "line": 57,
+              "line": 53,
               "column": 7
             },
             {
@@ -520,15 +961,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 4,
+                      "workerIndex": 12,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 10091,
+                      "duration": 4114,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-03-05T18:27:59.890Z",
+                      "startTime": "2026-03-05T18:26:19.837Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -538,7 +979,7 @@
               ],
               "id": "37521c8ad1bf10d3e976-a54f22ee328056e28606",
               "file": "codigo/codigo-pilot.spec.ts",
-              "line": 67,
+              "line": 63,
               "column": 7
             },
             {
@@ -554,15 +995,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 4,
+                      "workerIndex": 12,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 8541,
+                      "duration": 11179,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-03-05T18:28:10.021Z",
+                      "startTime": "2026-03-05T18:26:23.996Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -572,7 +1013,7 @@
               ],
               "id": "37521c8ad1bf10d3e976-225573f89cd6feb224f3",
               "file": "codigo/codigo-pilot.spec.ts",
-              "line": 74,
+              "line": 70,
               "column": 7
             }
           ]
@@ -580,7 +1021,7 @@
         {
           "title": "CODIGO Pilot — Edge Cases (80%)",
           "file": "codigo/codigo-pilot.spec.ts",
-          "line": 98,
+          "line": 94,
           "column": 6,
           "specs": [
             {
@@ -596,15 +1037,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 4,
+                      "workerIndex": 12,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1656,
+                      "duration": 4204,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-03-05T18:28:18.599Z",
+                      "startTime": "2026-03-05T18:26:35.235Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -614,7 +1055,7 @@
               ],
               "id": "37521c8ad1bf10d3e976-e69b1d378360690647bd",
               "file": "codigo/codigo-pilot.spec.ts",
-              "line": 99,
+              "line": 95,
               "column": 7
             },
             {
@@ -630,15 +1071,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 4,
+                      "workerIndex": 12,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2726,
+                      "duration": 2337,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-03-05T18:28:20.298Z",
+                      "startTime": "2026-03-05T18:26:39.482Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -648,7 +1089,7 @@
               ],
               "id": "37521c8ad1bf10d3e976-ddd5aebc4478429b1ce9",
               "file": "codigo/codigo-pilot.spec.ts",
-              "line": 108,
+              "line": 104,
               "column": 7
             },
             {
@@ -664,10 +1105,10 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 4,
+                      "workerIndex": 12,
                       "parallelIndex": 0,
                       "status": "failed",
-                      "duration": 1221,
+                      "duration": 1217,
                       "error": {
                         "message": "Error: Table 705 not in layout. Tables: table-001, table-002, table-003, table-004, table-005, table-006, table-007, table-008, table-009, table-010\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m",
                         "stack": "Error: Table 705 not in layout. Tables: table-001, table-002, table-003, table-004, table-005, table-006, table-007, table-008, table-009, table-010\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:131:109",
@@ -676,7 +1117,7 @@
                           "column": 109,
                           "line": 131
                         },
-                        "snippet": "\u001b[0m \u001b[90m 129 |\u001b[39m         \u001b[33mString\u001b[39m(t\u001b[33m.\u001b[39mid \u001b[33m||\u001b[39m t\u001b[33m.\u001b[39mname \u001b[33m||\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m.\u001b[39mincludes(\u001b[32m'705'\u001b[39m)\n \u001b[90m 130 |\u001b[39m     )\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 131 |\u001b[39m     expect(has705\u001b[33m,\u001b[39m \u001b[32m`Table 705 not in layout. Tables: ${tables.map((t: any) => t.id || t.name).join(', ')}`\u001b[39m)\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                                                                                             \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 132 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 133 |\u001b[39m\n \u001b[90m 134 |\u001b[39m   test(\u001b[32m'API: Config returns layoutMode for CODIGO'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ request }) \u001b[33m=>\u001b[39m {\u001b[0m"
+                        "snippet": "  129 |         String(t.id || t.name || '').includes('705')\n  130 |     );\n> 131 |     expect(has705, `Table 705 not in layout. Tables: ${tables.map((t: any) => t.id || t.name).join(', ')}`).toBeTruthy();\n      |                                                                                                             ^\n  132 |   });\n  133 |\n  134 |   test('API: Config returns layoutMode for CODIGO', async ({ request }) => {"
                       },
                       "errors": [
                         {
@@ -685,13 +1126,96 @@
                             "column": 109,
                             "line": 131
                           },
-                          "message": "Error: Table 705 not in layout. Tables: table-001, table-002, table-003, table-004, table-005, table-006, table-007, table-008, table-009, table-010\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n\n\u001b[0m \u001b[90m 129 |\u001b[39m         \u001b[33mString\u001b[39m(t\u001b[33m.\u001b[39mid \u001b[33m||\u001b[39m t\u001b[33m.\u001b[39mname \u001b[33m||\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m.\u001b[39mincludes(\u001b[32m'705'\u001b[39m)\n \u001b[90m 130 |\u001b[39m     )\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 131 |\u001b[39m     expect(has705\u001b[33m,\u001b[39m \u001b[32m`Table 705 not in layout. Tables: ${tables.map((t: any) => t.id || t.name).join(', ')}`\u001b[39m)\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                                                                                             \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 132 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 133 |\u001b[39m\n \u001b[90m 134 |\u001b[39m   test(\u001b[32m'API: Config returns layoutMode for CODIGO'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ request }) \u001b[33m=>\u001b[39m {\u001b[0m\n\u001b[2m    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:131:109\u001b[22m"
+                          "message": "Error: Table 705 not in layout. Tables: table-001, table-002, table-003, table-004, table-005, table-006, table-007, table-008, table-009, table-010\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n\n  129 |         String(t.id || t.name || '').includes('705')\n  130 |     );\n> 131 |     expect(has705, `Table 705 not in layout. Tables: ${tables.map((t: any) => t.id || t.name).join(', ')}`).toBeTruthy();\n      |                                                                                                             ^\n  132 |   });\n  133 |\n  134 |   test('API: Config returns layoutMode for CODIGO', async ({ request }) => {\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:131:109"
                         }
                       ],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-03-05T18:28:23.056Z",
+                      "startTime": "2026-03-05T18:26:41.858Z",
+                      "annotations": [],
+                      "attachments": [],
+                      "errorLocation": {
+                        "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                        "column": 109,
+                        "line": 131
+                      }
+                    },
+                    {
+                      "workerIndex": 13,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 29378,
+                      "error": {
+                        "message": "Error: Table 705 not in layout. Tables: table-001, table-002, table-003, table-004, table-005, table-006, table-007, table-008, table-009, table-010\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: Table 705 not in layout. Tables: table-001, table-002, table-003, table-004, table-005, table-006, table-007, table-008, table-009, table-010\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:131:109",
+                        "location": {
+                          "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                          "column": 109,
+                          "line": 131
+                        },
+                        "snippet": "  129 |         String(t.id || t.name || '').includes('705')\n  130 |     );\n> 131 |     expect(has705, `Table 705 not in layout. Tables: ${tables.map((t: any) => t.id || t.name).join(', ')}`).toBeTruthy();\n      |                                                                                                             ^\n  132 |   });\n  133 |\n  134 |   test('API: Config returns layoutMode for CODIGO', async ({ request }) => {"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                            "column": 109,
+                            "line": 131
+                          },
+                          "message": "Error: Table 705 not in layout. Tables: table-001, table-002, table-003, table-004, table-005, table-006, table-007, table-008, table-009, table-010\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n\n  129 |         String(t.id || t.name || '').includes('705')\n  130 |     );\n> 131 |     expect(has705, `Table 705 not in layout. Tables: ${tables.map((t: any) => t.id || t.name).join(', ')}`).toBeTruthy();\n      |                                                                                                             ^\n  132 |   });\n  133 |\n  134 |   test('API: Config returns layoutMode for CODIGO', async ({ request }) => {\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:131:109"
+                        },
+                        {
+                          "message": "Error: apiRequestContext._wrapApiCall: ENOENT: no such file or directory, open 'C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\.playwright-artifacts-13\\traces\\37521c8ad1bf10d3e976-abbcaf224e6f0520c80a-retry1.network'"
+                        },
+                        {
+                          "message": "Error: ENOENT: no such file or directory, open 'C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\.playwright-artifacts-13\\d03fcfce1c6dae3c968c0d615bc68e1d.zip'"
+                        },
+                        {
+                          "message": "\u001b[31mTest timeout of 90000ms exceeded.\u001b[39m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2026-03-05T18:26:49.214Z",
+                      "annotations": [],
+                      "attachments": [],
+                      "errorLocation": {
+                        "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                        "column": 109,
+                        "line": 131
+                      }
+                    },
+                    {
+                      "workerIndex": 14,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 3541,
+                      "error": {
+                        "message": "Error: Table 705 not in layout. Tables: table-001, table-002, table-003, table-004, table-005, table-006, table-007, table-008, table-009, table-010\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: Table 705 not in layout. Tables: table-001, table-002, table-003, table-004, table-005, table-006, table-007, table-008, table-009, table-010\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:131:109",
+                        "location": {
+                          "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                          "column": 109,
+                          "line": 131
+                        },
+                        "snippet": "  129 |         String(t.id || t.name || '').includes('705')\n  130 |     );\n> 131 |     expect(has705, `Table 705 not in layout. Tables: ${tables.map((t: any) => t.id || t.name).join(', ')}`).toBeTruthy();\n      |                                                                                                             ^\n  132 |   });\n  133 |\n  134 |   test('API: Config returns layoutMode for CODIGO', async ({ request }) => {"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                            "column": 109,
+                            "line": 131
+                          },
+                          "message": "Error: Table 705 not in layout. Tables: table-001, table-002, table-003, table-004, table-005, table-006, table-007, table-008, table-009, table-010\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n\n  129 |         String(t.id || t.name || '').includes('705')\n  130 |     );\n> 131 |     expect(has705, `Table 705 not in layout. Tables: ${tables.map((t: any) => t.id || t.name).join(', ')}`).toBeTruthy();\n      |                                                                                                             ^\n  132 |   });\n  133 |\n  134 |   test('API: Config returns layoutMode for CODIGO', async ({ request }) => {\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:131:109"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 2,
+                      "startTime": "2026-03-05T18:28:54.151Z",
                       "annotations": [],
                       "attachments": [],
                       "errorLocation": {
@@ -706,7 +1230,7 @@
               ],
               "id": "37521c8ad1bf10d3e976-abbcaf224e6f0520c80a",
               "file": "codigo/codigo-pilot.spec.ts",
-              "line": 117,
+              "line": 113,
               "column": 7
             },
             {
@@ -722,15 +1246,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 5,
+                      "workerIndex": 15,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 9356,
+                      "duration": 19578,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-03-05T18:28:29.804Z",
+                      "startTime": "2026-03-05T18:29:03.162Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -740,7 +1264,7 @@
               ],
               "id": "37521c8ad1bf10d3e976-2fbc9c1d3fdd6da7e55f",
               "file": "codigo/codigo-pilot.spec.ts",
-              "line": 134,
+              "line": 130,
               "column": 7
             },
             {
@@ -756,10 +1280,10 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 5,
+                      "workerIndex": 15,
                       "parallelIndex": 0,
                       "status": "failed",
-                      "duration": 16666,
+                      "duration": 16223,
                       "error": {
                         "message": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"",
                         "stack": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:143:32",
@@ -768,7 +1292,7 @@
                           "column": 32,
                           "line": 143
                         },
-                        "snippet": "\u001b[0m \u001b[90m 141 |\u001b[39m\n \u001b[90m 142 |\u001b[39m   test(\u001b[32m'FSD Floor tab shows seat nodes (no MiniMap)'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 143 |\u001b[39m     \u001b[36mconst\u001b[39m configPromise \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mwaitForResponse((r) \u001b[33m=>\u001b[39m r\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/api/lounges/CODIGO/config'\u001b[39m)\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m15000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 144 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[33mCODIGO_FSD_URL\u001b[39m\u001b[33m,\u001b[39m { waitUntil\u001b[33m:\u001b[39m \u001b[32m'domcontentloaded'\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 145 |\u001b[39m     \u001b[36mawait\u001b[39m configPromise\u001b[33m;\u001b[39m\n \u001b[90m 146 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'tab-floor'\u001b[39m)\u001b[33m.\u001b[39mor(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'button'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/Floor/i\u001b[39m }))\u001b[33m.\u001b[39mfirst()\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\u001b[0m"
+                        "snippet": "  141 |\n  142 |   test('FSD Floor tab shows seat nodes (no MiniMap)', async ({ page }) => {\n> 143 |     const configPromise = page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config'), { timeout: 15000 });\n      |                                ^\n  144 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });\n  145 |     await configPromise;\n  146 |     await page.getByTestId('tab-floor').or(page.getByRole('button', { name: /Floor/i })).first().click();"
                       },
                       "errors": [
                         {
@@ -777,13 +1301,13 @@
                             "column": 32,
                             "line": 143
                           },
-                          "message": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"\n\n\u001b[0m \u001b[90m 141 |\u001b[39m\n \u001b[90m 142 |\u001b[39m   test(\u001b[32m'FSD Floor tab shows seat nodes (no MiniMap)'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 143 |\u001b[39m     \u001b[36mconst\u001b[39m configPromise \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mwaitForResponse((r) \u001b[33m=>\u001b[39m r\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/api/lounges/CODIGO/config'\u001b[39m)\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m15000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 144 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[33mCODIGO_FSD_URL\u001b[39m\u001b[33m,\u001b[39m { waitUntil\u001b[33m:\u001b[39m \u001b[32m'domcontentloaded'\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 145 |\u001b[39m     \u001b[36mawait\u001b[39m configPromise\u001b[33m;\u001b[39m\n \u001b[90m 146 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m'tab-floor'\u001b[39m)\u001b[33m.\u001b[39mor(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'button'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/Floor/i\u001b[39m }))\u001b[33m.\u001b[39mfirst()\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:143:32\u001b[22m"
+                          "message": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"\n\n  141 |\n  142 |   test('FSD Floor tab shows seat nodes (no MiniMap)', async ({ page }) => {\n> 143 |     const configPromise = page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config'), { timeout: 15000 });\n      |                                ^\n  144 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });\n  145 |     await configPromise;\n  146 |     await page.getByTestId('tab-floor').or(page.getByRole('button', { name: /Floor/i })).first().click();\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:143:32"
                         }
                       ],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-03-05T18:28:39.238Z",
+                      "startTime": "2026-03-05T18:29:22.935Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -807,6 +1331,115 @@
                         "column": 32,
                         "line": 143
                       }
+                    },
+                    {
+                      "workerIndex": 16,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 19251,
+                      "error": {
+                        "message": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"",
+                        "stack": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:143:32",
+                        "location": {
+                          "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                          "column": 32,
+                          "line": 143
+                        },
+                        "snippet": "  141 |\n  142 |   test('FSD Floor tab shows seat nodes (no MiniMap)', async ({ page }) => {\n> 143 |     const configPromise = page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config'), { timeout: 15000 });\n      |                                ^\n  144 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });\n  145 |     await configPromise;\n  146 |     await page.getByTestId('tab-floor').or(page.getByRole('button', { name: /Floor/i })).first().click();"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                            "column": 32,
+                            "line": 143
+                          },
+                          "message": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"\n\n  141 |\n  142 |   test('FSD Floor tab shows seat nodes (no MiniMap)', async ({ page }) => {\n> 143 |     const configPromise = page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config'), { timeout: 15000 });\n      |                                ^\n  144 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });\n  145 |     await configPromise;\n  146 |     await page.getByTestId('tab-floor').or(page.getByRole('button', { name: /Floor/i })).first().click();\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:143:32"
+                        },
+                        {
+                          "message": "Error: ENOENT: no such file or directory, unlink 'C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\.playwright-artifacts-16\\9f936e492909eef4c1e69e12bf1f18c8.zip'"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2026-03-05T18:29:43.885Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-0bec5-hows-seat-nodes-no-MiniMap--chromium-retry1\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-0bec5-hows-seat-nodes-no-MiniMap--chromium-retry1\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-0bec5-hows-seat-nodes-no-MiniMap--chromium-retry1\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                        "column": 32,
+                        "line": 143
+                      }
+                    },
+                    {
+                      "workerIndex": 17,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 16410,
+                      "error": {
+                        "message": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"",
+                        "stack": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:143:32",
+                        "location": {
+                          "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                          "column": 32,
+                          "line": 143
+                        },
+                        "snippet": "  141 |\n  142 |   test('FSD Floor tab shows seat nodes (no MiniMap)', async ({ page }) => {\n> 143 |     const configPromise = page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config'), { timeout: 15000 });\n      |                                ^\n  144 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });\n  145 |     await configPromise;\n  146 |     await page.getByTestId('tab-floor').or(page.getByRole('button', { name: /Floor/i })).first().click();"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                            "column": 32,
+                            "line": 143
+                          },
+                          "message": "TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\"\n\n  141 |\n  142 |   test('FSD Floor tab shows seat nodes (no MiniMap)', async ({ page }) => {\n> 143 |     const configPromise = page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config'), { timeout: 15000 });\n      |                                ^\n  144 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });\n  145 |     await configPromise;\n  146 |     await page.getByTestId('tab-floor').or(page.getByRole('button', { name: /Floor/i })).first().click();\n    at C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts:143:32"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 2,
+                      "startTime": "2026-03-05T18:30:07.829Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-0bec5-hows-seat-nodes-no-MiniMap--chromium-retry2\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-0bec5-hows-seat-nodes-no-MiniMap--chromium-retry2\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\test-results\\codigo-codigo-pilot-CODIGO-0bec5-hows-seat-nodes-no-MiniMap--chromium-retry2\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\Dwayne Clark\\Projects\\Hookahplus\\apps\\app\\e2e\\codigo\\codigo-pilot.spec.ts",
+                        "column": 32,
+                        "line": 143
+                      }
                     }
                   ],
                   "status": "unexpected"
@@ -814,7 +1447,7 @@
               ],
               "id": "37521c8ad1bf10d3e976-c6e0f1710a2bc983f9bf",
               "file": "codigo/codigo-pilot.spec.ts",
-              "line": 142,
+              "line": 138,
               "column": 7
             },
             {
@@ -830,15 +1463,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 6,
+                      "workerIndex": 18,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 17421,
+                      "duration": 25286,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-03-05T18:29:03.112Z",
+                      "startTime": "2026-03-05T18:30:31.177Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -848,7 +1481,7 @@
               ],
               "id": "37521c8ad1bf10d3e976-c8b82b597065a249f8ad",
               "file": "codigo/codigo-pilot.spec.ts",
-              "line": 151,
+              "line": 146,
               "column": 7
             },
             {
@@ -864,15 +1497,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 6,
+                      "workerIndex": 18,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 8175,
+                      "duration": 8172,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-03-05T18:29:21.430Z",
+                      "startTime": "2026-03-05T18:30:56.605Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -882,7 +1515,7 @@
               ],
               "id": "37521c8ad1bf10d3e976-b019f30abc0bffcb7892",
               "file": "codigo/codigo-pilot.spec.ts",
-              "line": 164,
+              "line": 159,
               "column": 7
             }
           ]
@@ -890,7 +1523,7 @@
         {
           "title": "CODIGO Concurrency",
           "file": "codigo/codigo-pilot.spec.ts",
-          "line": 186,
+          "line": 181,
           "column": 6,
           "specs": [
             {
@@ -906,15 +1539,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 6,
+                      "workerIndex": 18,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 14174,
+                      "duration": 15198,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-03-05T18:29:29.668Z",
+                      "startTime": "2026-03-05T18:31:04.822Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -924,7 +1557,7 @@
               ],
               "id": "37521c8ad1bf10d3e976-2ad661b08941135330b3",
               "file": "codigo/codigo-pilot.spec.ts",
-              "line": 187,
+              "line": 182,
               "column": 7
             }
           ]
@@ -934,8 +1567,8 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-03-05T18:25:31.587Z",
-    "duration": 252481.266,
+    "startTime": "2026-03-05T18:14:22.218Z",
+    "duration": 1017954.509,
     "expected": 10,
     "skipped": 0,
     "unexpected": 6,

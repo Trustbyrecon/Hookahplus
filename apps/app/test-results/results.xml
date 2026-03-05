@@ -1,39 +1,79 @@
-<testsuites id="" name="" tests="16" failures="6" skipped="0" errors="0" time="252.481266">
-<testsuite name="codigo\codigo-pilot.spec.ts" timestamp="2026-03-05T18:25:31.734Z" hostname="chromium" tests="16" failures="6" skipped="0" time="201.118" errors="0">
-<testcase name="CODIGO Pilot — Use Cases (80%) › FSD loads with CODIGO and shows Floor tab by default" classname="codigo\codigo-pilot.spec.ts" time="26.543">
+<testsuites id="" name="" tests="16" failures="6" skipped="0" errors="0" time="1017.9545089999999">
+<testsuite name="codigo\codigo-pilot.spec.ts" timestamp="2026-03-05T18:14:22.610Z" hostname="chromium" tests="16" failures="6" skipped="0" time="574.448" errors="0">
+<testcase name="CODIGO Pilot — Use Cases (80%) › FSD loads with CODIGO and shows Floor tab by default" classname="codigo\codigo-pilot.spec.ts" time="121.469">
 <failure message="codigo-pilot.spec.ts:15:7 FSD loads with CODIGO and shows Floor tab by default" type="FAILURE">
 <![CDATA[  [chromium] › codigo\codigo-pilot.spec.ts:15:7 › CODIGO Pilot — Use Cases (80%) › FSD loads with CODIGO and shows Floor tab by default 
 
-    TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event "response"
+    TimeoutError: page.waitForResponse: Timeout 12000ms exceeded while waiting for event "response"
 
-      14 | test.describe('CODIGO Pilot — Use Cases (80%)', () => {
-      15 |   test('FSD loads with CODIGO and shows Floor tab by default', async ({ page }) => {
-    > 16 |     const configPromise = page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config'), { timeout: 15000 });
-         |                                ^
-      17 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });
-      18 |     await configPromise;
-      19 |     await expect(page.getByText('Fire Session Dashboard').first()).toBeVisible({ timeout: 10000 });
-        at C:\Users\Dwayne Clark\Projects\Hookahplus\apps\app\e2e\codigo\codigo-pilot.spec.ts:16:32
-
-    Error: page.goto: Test ended.
-    Call log:
-      - navigating to "http://localhost:3002/fire-session-dashboard?lounge=CODIGO", waiting until "domcontentloaded"
-
-
-      15 |   test('FSD loads with CODIGO and shows Floor tab by default', async ({ page }) => {
-      16 |     const configPromise = page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config'), { timeout: 15000 });
-    > 17 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });
+      16 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });
+      17 |     await expect(page.getByText('Fire Session Dashboard').first()).toBeVisible({ timeout: 20000 });
+    > 18 |     await page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config') && r.status() === 200, { timeout: 12000 });
          |                ^
-      18 |     await configPromise;
-      19 |     await expect(page.getByText('Fire Session Dashboard').first()).toBeVisible({ timeout: 10000 });
-      20 |     await expect(page.getByTestId('tab-floor').or(page.getByRole('button', { name: /Floor/i }))).toBeVisible({ timeout: 8000 });
-        at C:\Users\Dwayne Clark\Projects\Hookahplus\apps\app\e2e\codigo\codigo-pilot.spec.ts:17:16
+      19 |     await expect(page.getByTestId('tab-floor').or(page.getByRole('button', { name: /Floor/i }))).toBeVisible({ timeout: 8000 });
+      20 |   });
+      21 |
+        at C:\Users\Dwayne Clark\Projects\Hookahplus\apps\app\e2e\codigo\codigo-pilot.spec.ts:18:16
 
-    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\codigo-codigo-pilot-CODIGO-761a3--shows-Floor-tab-by-default-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
     ..\test-results\codigo-codigo-pilot-CODIGO-761a3--shows-Floor-tab-by-default-chromium\video.webm
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
     Error Context: ..\test-results\codigo-codigo-pilot-CODIGO-761a3--shows-Floor-tab-by-default-chromium\error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    TimeoutError: page.waitForResponse: Timeout 12000ms exceeded while waiting for event "response"
+
+      16 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });
+      17 |     await expect(page.getByText('Fire Session Dashboard').first()).toBeVisible({ timeout: 20000 });
+    > 18 |     await page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config') && r.status() === 200, { timeout: 12000 });
+         |                ^
+      19 |     await expect(page.getByTestId('tab-floor').or(page.getByRole('button', { name: /Floor/i }))).toBeVisible({ timeout: 8000 });
+      20 |   });
+      21 |
+        at C:\Users\Dwayne Clark\Projects\Hookahplus\apps\app\e2e\codigo\codigo-pilot.spec.ts:18:16
+
+    Error: ENOENT: no such file or directory, open 'C:\Users\Dwayne Clark\Projects\Hookahplus\apps\app\test-results\.playwright-artifacts-1\c2025e220fde9775875bc0e98ccf7b43.zip'
+
+    Test timeout of 90000ms exceeded.
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\codigo-codigo-pilot-CODIGO-761a3--shows-Floor-tab-by-default-chromium-retry1\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\codigo-codigo-pilot-CODIGO-761a3--shows-Floor-tab-by-default-chromium-retry1\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\codigo-codigo-pilot-CODIGO-761a3--shows-Floor-tab-by-default-chromium-retry1\error-context.md
+
+    Retry #2 ───────────────────────────────────────────────────────────────────────────────────────
+
+    TimeoutError: page.waitForResponse: Timeout 12000ms exceeded while waiting for event "response"
+
+      16 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });
+      17 |     await expect(page.getByText('Fire Session Dashboard').first()).toBeVisible({ timeout: 20000 });
+    > 18 |     await page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config') && r.status() === 200, { timeout: 12000 });
+         |                ^
+      19 |     await expect(page.getByTestId('tab-floor').or(page.getByRole('button', { name: /Floor/i }))).toBeVisible({ timeout: 8000 });
+      20 |   });
+      21 |
+        at C:\Users\Dwayne Clark\Projects\Hookahplus\apps\app\e2e\codigo\codigo-pilot.spec.ts:18:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\codigo-codigo-pilot-CODIGO-761a3--shows-Floor-tab-by-default-chromium-retry2\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\codigo-codigo-pilot-CODIGO-761a3--shows-Floor-tab-by-default-chromium-retry2\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\codigo-codigo-pilot-CODIGO-761a3--shows-Floor-tab-by-default-chromium-retry2\error-context.md
 ]]>
 </failure>
 <system-out>
@@ -43,21 +83,31 @@
 [[ATTACHMENT|codigo-codigo-pilot-CODIGO-761a3--shows-Floor-tab-by-default-chromium\error-context.md]]
 ]]>
 </system-out>
+<system-err>
+<![CDATA[
+Warning: attachment codigo-codigo-pilot-CODIGO-761a3--shows-Floor-tab-by-default-chromium\test-failed-1.png is missing
+Warning: attachment codigo-codigo-pilot-CODIGO-761a3--shows-Floor-tab-by-default-chromium-retry1\test-failed-1.png is missing
+Warning: attachment codigo-codigo-pilot-CODIGO-761a3--shows-Floor-tab-by-default-chromium-retry1\video.webm is missing
+Warning: attachment codigo-codigo-pilot-CODIGO-761a3--shows-Floor-tab-by-default-chromium-retry1\error-context.md is missing
+Warning: attachment codigo-codigo-pilot-CODIGO-761a3--shows-Floor-tab-by-default-chromium-retry2\test-failed-1.png is missing
+Warning: attachment codigo-codigo-pilot-CODIGO-761a3--shows-Floor-tab-by-default-chromium-retry2\video.webm is missing
+Warning: attachment codigo-codigo-pilot-CODIGO-761a3--shows-Floor-tab-by-default-chromium-retry2\error-context.md is missing]]>
+</system-err>
 </testcase>
-<testcase name="CODIGO Pilot — Use Cases (80%) › CODIGO compact hero shows Create Session CTA" classname="codigo\codigo-pilot.spec.ts" time="25.648">
-<failure message="codigo-pilot.spec.ts:23:7 CODIGO compact hero shows Create Session CTA" type="FAILURE">
-<![CDATA[  [chromium] › codigo\codigo-pilot.spec.ts:23:7 › CODIGO Pilot — Use Cases (80%) › CODIGO compact hero shows Create Session CTA 
+<testcase name="CODIGO Pilot — Use Cases (80%) › CODIGO compact hero shows Create Session CTA" classname="codigo\codigo-pilot.spec.ts" time="72.044">
+<failure message="codigo-pilot.spec.ts:22:7 CODIGO compact hero shows Create Session CTA" type="FAILURE">
+<![CDATA[  [chromium] › codigo\codigo-pilot.spec.ts:22:7 › CODIGO Pilot — Use Cases (80%) › CODIGO compact hero shows Create Session CTA 
 
-    TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event "response"
+    TimeoutError: page.waitForResponse: Timeout 12000ms exceeded while waiting for event "response"
 
-      22 |
-      23 |   test('CODIGO compact hero shows Create Session CTA', async ({ page }) => {
-    > 24 |     const configPromise = page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config'), { timeout: 15000 });
-         |                                ^
-      25 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });
-      26 |     await configPromise;
-      27 |     await expect(page.getByTestId('create-session-cta').or(page.getByRole('button', { name: /Create Session/i }))).toBeVisible({ timeout: 8000 });
-        at C:\Users\Dwayne Clark\Projects\Hookahplus\apps\app\e2e\codigo\codigo-pilot.spec.ts:24:32
+      22 |   test('CODIGO compact hero shows Create Session CTA', async ({ page }) => {
+      23 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });
+    > 24 |     await page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config') && r.status() === 200, { timeout: 12000 });
+         |                ^
+      25 |     await expect(page.getByTestId('create-session-cta').or(page.getByRole('button', { name: /Create Session/i }))).toBeVisible({ timeout: 8000 });
+      26 |   });
+      27 |
+        at C:\Users\Dwayne Clark\Projects\Hookahplus\apps\app\e2e\codigo\codigo-pilot.spec.ts:24:16
 
     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
     ..\test-results\codigo-codigo-pilot-CODIGO-78ef7-ro-shows-Create-Session-CTA-chromium\test-failed-1.png
@@ -68,6 +118,56 @@
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
     Error Context: ..\test-results\codigo-codigo-pilot-CODIGO-78ef7-ro-shows-Create-Session-CTA-chromium\error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    TimeoutError: page.waitForResponse: Timeout 12000ms exceeded while waiting for event "response"
+
+      22 |   test('CODIGO compact hero shows Create Session CTA', async ({ page }) => {
+      23 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });
+    > 24 |     await page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config') && r.status() === 200, { timeout: 12000 });
+         |                ^
+      25 |     await expect(page.getByTestId('create-session-cta').or(page.getByRole('button', { name: /Create Session/i }))).toBeVisible({ timeout: 8000 });
+      26 |   });
+      27 |
+        at C:\Users\Dwayne Clark\Projects\Hookahplus\apps\app\e2e\codigo\codigo-pilot.spec.ts:24:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\codigo-codigo-pilot-CODIGO-78ef7-ro-shows-Create-Session-CTA-chromium-retry1\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\codigo-codigo-pilot-CODIGO-78ef7-ro-shows-Create-Session-CTA-chromium-retry1\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\codigo-codigo-pilot-CODIGO-78ef7-ro-shows-Create-Session-CTA-chromium-retry1\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    ..\test-results\codigo-codigo-pilot-CODIGO-78ef7-ro-shows-Create-Session-CTA-chromium-retry1\trace.zip
+    Usage:
+
+        npx playwright show-trace ..\test-results\codigo-codigo-pilot-CODIGO-78ef7-ro-shows-Create-Session-CTA-chromium-retry1\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Retry #2 ───────────────────────────────────────────────────────────────────────────────────────
+
+    TimeoutError: page.waitForResponse: Timeout 12000ms exceeded while waiting for event "response"
+
+      22 |   test('CODIGO compact hero shows Create Session CTA', async ({ page }) => {
+      23 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });
+    > 24 |     await page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config') && r.status() === 200, { timeout: 12000 });
+         |                ^
+      25 |     await expect(page.getByTestId('create-session-cta').or(page.getByRole('button', { name: /Create Session/i }))).toBeVisible({ timeout: 8000 });
+      26 |   });
+      27 |
+        at C:\Users\Dwayne Clark\Projects\Hookahplus\apps\app\e2e\codigo\codigo-pilot.spec.ts:24:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\codigo-codigo-pilot-CODIGO-78ef7-ro-shows-Create-Session-CTA-chromium-retry2\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\codigo-codigo-pilot-CODIGO-78ef7-ro-shows-Create-Session-CTA-chromium-retry2\error-context.md
 ]]>
 </failure>
 <system-out>
@@ -79,10 +179,67 @@
 [[ATTACHMENT|codigo-codigo-pilot-CODIGO-78ef7-ro-shows-Create-Session-CTA-chromium\error-context.md]]
 ]]>
 </system-out>
+<system-err>
+<![CDATA[
+Warning: attachment codigo-codigo-pilot-CODIGO-78ef7-ro-shows-Create-Session-CTA-chromium-retry1\test-failed-1.png is missing
+Warning: attachment codigo-codigo-pilot-CODIGO-78ef7-ro-shows-Create-Session-CTA-chromium-retry1\video.webm is missing
+Warning: attachment codigo-codigo-pilot-CODIGO-78ef7-ro-shows-Create-Session-CTA-chromium-retry1\error-context.md is missing
+Warning: attachment codigo-codigo-pilot-CODIGO-78ef7-ro-shows-Create-Session-CTA-chromium-retry1\trace.zip is missing
+Warning: attachment codigo-codigo-pilot-CODIGO-78ef7-ro-shows-Create-Session-CTA-chromium-retry2\test-failed-1.png is missing
+Warning: attachment codigo-codigo-pilot-CODIGO-78ef7-ro-shows-Create-Session-CTA-chromium-retry2\error-context.md is missing]]>
+</system-err>
 </testcase>
-<testcase name="CODIGO Pilot — Use Cases (80%) › Floor tab shows at-a-glance status strip" classname="codigo\codigo-pilot.spec.ts" time="31.969">
-<failure message="codigo-pilot.spec.ts:30:7 Floor tab shows at-a-glance status strip" type="FAILURE">
-<![CDATA[  [chromium] › codigo\codigo-pilot.spec.ts:30:7 › CODIGO Pilot — Use Cases (80%) › Floor tab shows at-a-glance status strip 
+<testcase name="CODIGO Pilot — Use Cases (80%) › Floor tab shows at-a-glance status strip" classname="codigo\codigo-pilot.spec.ts" time="116.03">
+<failure message="codigo-pilot.spec.ts:28:7 Floor tab shows at-a-glance status strip" type="FAILURE">
+<![CDATA[  [chromium] › codigo\codigo-pilot.spec.ts:28:7 › CODIGO Pilot — Use Cases (80%) › Floor tab shows at-a-glance status strip 
+
+    TimeoutError: page.waitForResponse: Timeout 12000ms exceeded while waiting for event "response"
+
+      28 |   test('Floor tab shows at-a-glance status strip', async ({ page }) => {
+      29 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });
+    > 30 |     await page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config') && r.status() === 200, { timeout: 12000 });
+         |                ^
+      31 |     const floorTab = page.getByTestId('tab-floor').or(page.getByRole('button', { name: /Floor/i }));
+      32 |     await floorTab.first().click();
+      33 |     await expect(page.getByText(/Active|revenue/i)).toBeVisible({ timeout: 8000 });
+        at C:\Users\Dwayne Clark\Projects\Hookahplus\apps\app\e2e\codigo\codigo-pilot.spec.ts:30:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\codigo-codigo-pilot-CODIGO-fb057-ws-at-a-glance-status-strip-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\codigo-codigo-pilot-CODIGO-fb057-ws-at-a-glance-status-strip-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\codigo-codigo-pilot-CODIGO-fb057-ws-at-a-glance-status-strip-chromium\error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    TimeoutError: page.waitForResponse: Timeout 12000ms exceeded while waiting for event "response"
+
+      28 |   });
+      29 |
+    > 30 |   test('Floor tab shows at-a-glance status strip', async ({ page }) => {
+         |                ^
+      31 |     const configPromise = page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config'), { timeout: 15000 });
+      32 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });
+      33 |     await configPromise;
+        at C:\Users\Dwayne Clark\Projects\Hookahplus\apps\app\e2e\codigo\codigo-pilot.spec.ts:30:16
+
+    Error: apiRequestContext._wrapApiCall: ENOENT: no such file or directory, open 'C:\Users\Dwayne Clark\Projects\Hookahplus\apps\app\test-results\.playwright-artifacts-7\traces\37521c8ad1bf10d3e976-e97a6e950e0546be80dc-retry1.trace'
+
+    Error: ENOENT: no such file or directory, open 'C:\Users\Dwayne Clark\Projects\Hookahplus\apps\app\test-results\.playwright-artifacts-7\79bf509313fca098f665fb41c0f18eb0.zip'
+
+    Test timeout of 90000ms exceeded.
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\codigo-codigo-pilot-CODIGO-fb057-ws-at-a-glance-status-strip-chromium-retry1\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\codigo-codigo-pilot-CODIGO-fb057-ws-at-a-glance-status-strip-chromium-retry1\error-context.md
+
+    Retry #2 ───────────────────────────────────────────────────────────────────────────────────────
 
     TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event "response"
 
@@ -95,34 +252,41 @@
       34 |     const floorTab = page.getByTestId('tab-floor').or(page.getByRole('button', { name: /Floor/i }));
         at C:\Users\Dwayne Clark\Projects\Hookahplus\apps\app\e2e\codigo\codigo-pilot.spec.ts:31:32
 
-    Error: page.goto: Test ended.
-    Call log:
-      - navigating to "http://localhost:3002/fire-session-dashboard?lounge=CODIGO", waiting until "domcontentloaded"
-
-
-      30 |   test('Floor tab shows at-a-glance status strip', async ({ page }) => {
-      31 |     const configPromise = page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config'), { timeout: 15000 });
-    > 32 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });
-         |                ^
-      33 |     await configPromise;
-      34 |     const floorTab = page.getByTestId('tab-floor').or(page.getByRole('button', { name: /Floor/i }));
-      35 |     await floorTab.first().click();
-        at C:\Users\Dwayne Clark\Projects\Hookahplus\apps\app\e2e\codigo\codigo-pilot.spec.ts:32:16
-
-    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
-    ..\test-results\codigo-codigo-pilot-CODIGO-fb057-ws-at-a-glance-status-strip-chromium\video.webm
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\codigo-codigo-pilot-CODIGO-fb057-ws-at-a-glance-status-strip-chromium-retry2\test-failed-1.png
     ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\codigo-codigo-pilot-CODIGO-fb057-ws-at-a-glance-status-strip-chromium-retry2\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\codigo-codigo-pilot-CODIGO-fb057-ws-at-a-glance-status-strip-chromium-retry2\error-context.md
 ]]>
 </failure>
 <system-out>
 <![CDATA[
 [[ATTACHMENT|codigo-codigo-pilot-CODIGO-fb057-ws-at-a-glance-status-strip-chromium\video.webm]]
+
+[[ATTACHMENT|codigo-codigo-pilot-CODIGO-fb057-ws-at-a-glance-status-strip-chromium-retry1\test-failed-1.png]]
+
+[[ATTACHMENT|codigo-codigo-pilot-CODIGO-fb057-ws-at-a-glance-status-strip-chromium-retry1\error-context.md]]
+
+[[ATTACHMENT|codigo-codigo-pilot-CODIGO-fb057-ws-at-a-glance-status-strip-chromium-retry2\test-failed-1.png]]
+
+[[ATTACHMENT|codigo-codigo-pilot-CODIGO-fb057-ws-at-a-glance-status-strip-chromium-retry2\video.webm]]
+
+[[ATTACHMENT|codigo-codigo-pilot-CODIGO-fb057-ws-at-a-glance-status-strip-chromium-retry2\error-context.md]]
 ]]>
 </system-out>
+<system-err>
+<![CDATA[
+Warning: attachment codigo-codigo-pilot-CODIGO-fb057-ws-at-a-glance-status-strip-chromium\test-failed-1.png is missing
+Warning: attachment codigo-codigo-pilot-CODIGO-fb057-ws-at-a-glance-status-strip-chromium\error-context.md is missing]]>
+</system-err>
 </testcase>
-<testcase name="CODIGO Pilot — Use Cases (80%) › Create Session modal opens and shows CODIGO tables from floorplan" classname="codigo\codigo-pilot.spec.ts" time="16.278">
-<failure message="codigo-pilot.spec.ts:39:7 Create Session modal opens and shows CODIGO tables from floorplan" type="FAILURE">
-<![CDATA[  [chromium] › codigo\codigo-pilot.spec.ts:39:7 › CODIGO Pilot — Use Cases (80%) › Create Session modal opens and shows CODIGO tables from floorplan 
+<testcase name="CODIGO Pilot — Use Cases (80%) › Create Session modal opens and shows CODIGO tables from floorplan" classname="codigo\codigo-pilot.spec.ts" time="78.747">
+<failure message="codigo-pilot.spec.ts:36:7 Create Session modal opens and shows CODIGO tables from floorplan" type="FAILURE">
+<![CDATA[  [chromium] › codigo\codigo-pilot.spec.ts:36:7 › CODIGO Pilot — Use Cases (80%) › Create Session modal opens and shows CODIGO tables from floorplan 
 
     TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event "response"
 
@@ -144,6 +308,70 @@
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
     Error Context: ..\test-results\codigo-codigo-pilot-CODIGO-5ca85-ODIGO-tables-from-floorplan-chromium\error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event "response"
+
+      38 |
+      39 |   test('Create Session modal opens and shows CODIGO tables from floorplan', async ({ page }) => {
+    > 40 |     const configPromise = page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config'), { timeout: 15000 });
+         |                                ^
+      41 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });
+      42 |     await configPromise;
+      43 |     await page.getByTestId('create-session-cta').or(page.getByRole('button', { name: /Create Session/i })).first().click();
+        at C:\Users\Dwayne Clark\Projects\Hookahplus\apps\app\e2e\codigo\codigo-pilot.spec.ts:40:32
+
+    Error: page.goto: Test ended.
+    Call log:
+      - navigating to "http://localhost:3002/fire-session-dashboard?lounge=CODIGO", waiting until "domcontentloaded"
+
+
+      39 |   test('Create Session modal opens and shows CODIGO tables from floorplan', async ({ page }) => {
+      40 |     const configPromise = page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config'), { timeout: 15000 });
+    > 41 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });
+         |                ^
+      42 |     await configPromise;
+      43 |     await page.getByTestId('create-session-cta').or(page.getByRole('button', { name: /Create Session/i })).first().click();
+      44 |     await expect(page.getByText(/Table Selection|Create New Session/i)).toBeVisible({ timeout: 10000 });
+        at C:\Users\Dwayne Clark\Projects\Hookahplus\apps\app\e2e\codigo\codigo-pilot.spec.ts:41:16
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\codigo-codigo-pilot-CODIGO-5ca85-ODIGO-tables-from-floorplan-chromium-retry1\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\codigo-codigo-pilot-CODIGO-5ca85-ODIGO-tables-from-floorplan-chromium-retry1\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ..\test-results\codigo-codigo-pilot-CODIGO-5ca85-ODIGO-tables-from-floorplan-chromium-retry1\trace.zip
+    Usage:
+
+        npx playwright show-trace ..\test-results\codigo-codigo-pilot-CODIGO-5ca85-ODIGO-tables-from-floorplan-chromium-retry1\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Retry #2 ───────────────────────────────────────────────────────────────────────────────────────
+
+    TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event "response"
+
+      38 |
+      39 |   test('Create Session modal opens and shows CODIGO tables from floorplan', async ({ page }) => {
+    > 40 |     const configPromise = page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config'), { timeout: 15000 });
+         |                                ^
+      41 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });
+      42 |     await configPromise;
+      43 |     await page.getByTestId('create-session-cta').or(page.getByRole('button', { name: /Create Session/i })).first().click();
+        at C:\Users\Dwayne Clark\Projects\Hookahplus\apps\app\e2e\codigo\codigo-pilot.spec.ts:40:32
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\codigo-codigo-pilot-CODIGO-5ca85-ODIGO-tables-from-floorplan-chromium-retry2\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\codigo-codigo-pilot-CODIGO-5ca85-ODIGO-tables-from-floorplan-chromium-retry2\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\codigo-codigo-pilot-CODIGO-5ca85-ODIGO-tables-from-floorplan-chromium-retry2\error-context.md
 ]]>
 </failure>
 <system-out>
@@ -153,24 +381,76 @@
 [[ATTACHMENT|codigo-codigo-pilot-CODIGO-5ca85-ODIGO-tables-from-floorplan-chromium\video.webm]]
 
 [[ATTACHMENT|codigo-codigo-pilot-CODIGO-5ca85-ODIGO-tables-from-floorplan-chromium\error-context.md]]
+
+[[ATTACHMENT|codigo-codigo-pilot-CODIGO-5ca85-ODIGO-tables-from-floorplan-chromium-retry1\video.webm]]
+
+[[ATTACHMENT|codigo-codigo-pilot-CODIGO-5ca85-ODIGO-tables-from-floorplan-chromium-retry1\error-context.md]]
+
+[[ATTACHMENT|codigo-codigo-pilot-CODIGO-5ca85-ODIGO-tables-from-floorplan-chromium-retry1\trace.zip]]
+
+[[ATTACHMENT|codigo-codigo-pilot-CODIGO-5ca85-ODIGO-tables-from-floorplan-chromium-retry2\test-failed-1.png]]
+
+[[ATTACHMENT|codigo-codigo-pilot-CODIGO-5ca85-ODIGO-tables-from-floorplan-chromium-retry2\video.webm]]
+
+[[ATTACHMENT|codigo-codigo-pilot-CODIGO-5ca85-ODIGO-tables-from-floorplan-chromium-retry2\error-context.md]]
 ]]>
 </system-out>
 </testcase>
-<testcase name="CODIGO Pilot — Use Cases (80%) › API: CODIGO layout returns floorplan tables" classname="codigo\codigo-pilot.spec.ts" time="3.596">
+<testcase name="CODIGO Pilot — Use Cases (80%) › API: CODIGO layout returns floorplan tables" classname="codigo\codigo-pilot.spec.ts" time="3.543">
 </testcase>
-<testcase name="CODIGO Pilot — Use Cases (80%) › API: Table 705 validates for CODIGO" classname="codigo\codigo-pilot.spec.ts" time="7.057">
+<testcase name="CODIGO Pilot — Use Cases (80%) › API: Table 705 validates for CODIGO" classname="codigo\codigo-pilot.spec.ts" time="6.527">
 </testcase>
-<testcase name="CODIGO Pilot — Use Cases (80%) › API: Sessions list accepts lounge=CODIGO" classname="codigo\codigo-pilot.spec.ts" time="10.091">
+<testcase name="CODIGO Pilot — Use Cases (80%) › API: Sessions list accepts lounge=CODIGO" classname="codigo\codigo-pilot.spec.ts" time="4.114">
 </testcase>
-<testcase name="CODIGO Pilot — Use Cases (80%) › Create session via API with CODIGO table 705" classname="codigo\codigo-pilot.spec.ts" time="8.541">
+<testcase name="CODIGO Pilot — Use Cases (80%) › Create session via API with CODIGO table 705" classname="codigo\codigo-pilot.spec.ts" time="11.179">
 </testcase>
-<testcase name="CODIGO Pilot — Edge Cases (80%) › API: Invalid table ID returns validation error" classname="codigo\codigo-pilot.spec.ts" time="1.656">
+<testcase name="CODIGO Pilot — Edge Cases (80%) › API: Invalid table ID returns validation error" classname="codigo\codigo-pilot.spec.ts" time="4.204">
 </testcase>
-<testcase name="CODIGO Pilot — Edge Cases (80%) › API: Table availability check with loungeId for CODIGO" classname="codigo\codigo-pilot.spec.ts" time="2.726">
+<testcase name="CODIGO Pilot — Edge Cases (80%) › API: Table availability check with loungeId for CODIGO" classname="codigo\codigo-pilot.spec.ts" time="2.337">
 </testcase>
-<testcase name="CODIGO Pilot — Edge Cases (80%) › API: Lounges layout fallback returns CODIGO floorplan" classname="codigo\codigo-pilot.spec.ts" time="1.221">
-<failure message="codigo-pilot.spec.ts:117:7 API: Lounges layout fallback returns CODIGO floorplan" type="FAILURE">
-<![CDATA[  [chromium] › codigo\codigo-pilot.spec.ts:117:7 › CODIGO Pilot — Edge Cases (80%) › API: Lounges layout fallback returns CODIGO floorplan 
+<testcase name="CODIGO Pilot — Edge Cases (80%) › API: Lounges layout fallback returns CODIGO floorplan" classname="codigo\codigo-pilot.spec.ts" time="34.136">
+<failure message="codigo-pilot.spec.ts:113:7 API: Lounges layout fallback returns CODIGO floorplan" type="FAILURE">
+<![CDATA[  [chromium] › codigo\codigo-pilot.spec.ts:113:7 › CODIGO Pilot — Edge Cases (80%) › API: Lounges layout fallback returns CODIGO floorplan 
+
+    Error: Table 705 not in layout. Tables: table-001, table-002, table-003, table-004, table-005, table-006, table-007, table-008, table-009, table-010
+
+    expect(received).toBeTruthy()
+
+    Received: false
+
+      129 |         String(t.id || t.name || '').includes('705')
+      130 |     );
+    > 131 |     expect(has705, `Table 705 not in layout. Tables: ${tables.map((t: any) => t.id || t.name).join(', ')}`).toBeTruthy();
+          |                                                                                                             ^
+      132 |   });
+      133 |
+      134 |   test('API: Config returns layoutMode for CODIGO', async ({ request }) => {
+        at C:\Users\Dwayne Clark\Projects\Hookahplus\apps\app\e2e\codigo\codigo-pilot.spec.ts:131:109
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: Table 705 not in layout. Tables: table-001, table-002, table-003, table-004, table-005, table-006, table-007, table-008, table-009, table-010
+
+    expect(received).toBeTruthy()
+
+    Received: false
+
+      129 |         String(t.id || t.name || '').includes('705')
+      130 |     );
+    > 131 |     expect(has705, `Table 705 not in layout. Tables: ${tables.map((t: any) => t.id || t.name).join(', ')}`).toBeTruthy();
+          |                                                                                                             ^
+      132 |   });
+      133 |
+      134 |   test('API: Config returns layoutMode for CODIGO', async ({ request }) => {
+        at C:\Users\Dwayne Clark\Projects\Hookahplus\apps\app\e2e\codigo\codigo-pilot.spec.ts:131:109
+
+    Error: apiRequestContext._wrapApiCall: ENOENT: no such file or directory, open 'C:\Users\Dwayne Clark\Projects\Hookahplus\apps\app\test-results\.playwright-artifacts-13\traces\37521c8ad1bf10d3e976-abbcaf224e6f0520c80a-retry1.network'
+
+    Error: ENOENT: no such file or directory, open 'C:\Users\Dwayne Clark\Projects\Hookahplus\apps\app\test-results\.playwright-artifacts-13\d03fcfce1c6dae3c968c0d615bc68e1d.zip'
+
+    Test timeout of 90000ms exceeded.
+
+    Retry #2 ───────────────────────────────────────────────────────────────────────────────────────
 
     Error: Table 705 not in layout. Tables: table-001, table-002, table-003, table-004, table-005, table-006, table-007, table-008, table-009, table-010
 
@@ -189,11 +469,11 @@
 ]]>
 </failure>
 </testcase>
-<testcase name="CODIGO Pilot — Edge Cases (80%) › API: Config returns layoutMode for CODIGO" classname="codigo\codigo-pilot.spec.ts" time="9.356">
+<testcase name="CODIGO Pilot — Edge Cases (80%) › API: Config returns layoutMode for CODIGO" classname="codigo\codigo-pilot.spec.ts" time="19.578">
 </testcase>
-<testcase name="CODIGO Pilot — Edge Cases (80%) › FSD Floor tab shows seat nodes (no MiniMap)" classname="codigo\codigo-pilot.spec.ts" time="16.666">
-<failure message="codigo-pilot.spec.ts:142:7 FSD Floor tab shows seat nodes (no MiniMap)" type="FAILURE">
-<![CDATA[  [chromium] › codigo\codigo-pilot.spec.ts:142:7 › CODIGO Pilot — Edge Cases (80%) › FSD Floor tab shows seat nodes (no MiniMap) 
+<testcase name="CODIGO Pilot — Edge Cases (80%) › FSD Floor tab shows seat nodes (no MiniMap)" classname="codigo\codigo-pilot.spec.ts" time="51.884">
+<failure message="codigo-pilot.spec.ts:138:7 FSD Floor tab shows seat nodes (no MiniMap)" type="FAILURE">
+<![CDATA[  [chromium] › codigo\codigo-pilot.spec.ts:138:7 › CODIGO Pilot — Edge Cases (80%) › FSD Floor tab shows seat nodes (no MiniMap) 
 
     TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event "response"
 
@@ -215,6 +495,54 @@
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
     Error Context: ..\test-results\codigo-codigo-pilot-CODIGO-0bec5-hows-seat-nodes-no-MiniMap--chromium\error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event "response"
+
+      141 |
+      142 |   test('FSD Floor tab shows seat nodes (no MiniMap)', async ({ page }) => {
+    > 143 |     const configPromise = page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config'), { timeout: 15000 });
+          |                                ^
+      144 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });
+      145 |     await configPromise;
+      146 |     await page.getByTestId('tab-floor').or(page.getByRole('button', { name: /Floor/i })).first().click();
+        at C:\Users\Dwayne Clark\Projects\Hookahplus\apps\app\e2e\codigo\codigo-pilot.spec.ts:143:32
+
+    Error: ENOENT: no such file or directory, unlink 'C:\Users\Dwayne Clark\Projects\Hookahplus\apps\app\test-results\.playwright-artifacts-16\9f936e492909eef4c1e69e12bf1f18c8.zip'
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\codigo-codigo-pilot-CODIGO-0bec5-hows-seat-nodes-no-MiniMap--chromium-retry1\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\codigo-codigo-pilot-CODIGO-0bec5-hows-seat-nodes-no-MiniMap--chromium-retry1\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\codigo-codigo-pilot-CODIGO-0bec5-hows-seat-nodes-no-MiniMap--chromium-retry1\error-context.md
+
+    Retry #2 ───────────────────────────────────────────────────────────────────────────────────────
+
+    TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event "response"
+
+      141 |
+      142 |   test('FSD Floor tab shows seat nodes (no MiniMap)', async ({ page }) => {
+    > 143 |     const configPromise = page.waitForResponse((r) => r.url().includes('/api/lounges/CODIGO/config'), { timeout: 15000 });
+          |                                ^
+      144 |     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });
+      145 |     await configPromise;
+      146 |     await page.getByTestId('tab-floor').or(page.getByRole('button', { name: /Floor/i })).first().click();
+        at C:\Users\Dwayne Clark\Projects\Hookahplus\apps\app\e2e\codigo\codigo-pilot.spec.ts:143:32
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\codigo-codigo-pilot-CODIGO-0bec5-hows-seat-nodes-no-MiniMap--chromium-retry2\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\codigo-codigo-pilot-CODIGO-0bec5-hows-seat-nodes-no-MiniMap--chromium-retry2\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\codigo-codigo-pilot-CODIGO-0bec5-hows-seat-nodes-no-MiniMap--chromium-retry2\error-context.md
 ]]>
 </failure>
 <system-out>
@@ -224,14 +552,26 @@
 [[ATTACHMENT|codigo-codigo-pilot-CODIGO-0bec5-hows-seat-nodes-no-MiniMap--chromium\video.webm]]
 
 [[ATTACHMENT|codigo-codigo-pilot-CODIGO-0bec5-hows-seat-nodes-no-MiniMap--chromium\error-context.md]]
+
+[[ATTACHMENT|codigo-codigo-pilot-CODIGO-0bec5-hows-seat-nodes-no-MiniMap--chromium-retry1\test-failed-1.png]]
+
+[[ATTACHMENT|codigo-codigo-pilot-CODIGO-0bec5-hows-seat-nodes-no-MiniMap--chromium-retry1\video.webm]]
+
+[[ATTACHMENT|codigo-codigo-pilot-CODIGO-0bec5-hows-seat-nodes-no-MiniMap--chromium-retry1\error-context.md]]
+
+[[ATTACHMENT|codigo-codigo-pilot-CODIGO-0bec5-hows-seat-nodes-no-MiniMap--chromium-retry2\test-failed-1.png]]
+
+[[ATTACHMENT|codigo-codigo-pilot-CODIGO-0bec5-hows-seat-nodes-no-MiniMap--chromium-retry2\video.webm]]
+
+[[ATTACHMENT|codigo-codigo-pilot-CODIGO-0bec5-hows-seat-nodes-no-MiniMap--chromium-retry2\error-context.md]]
 ]]>
 </system-out>
 </testcase>
-<testcase name="CODIGO Pilot — Edge Cases (80%) › Session creation with missing required fields returns error" classname="codigo\codigo-pilot.spec.ts" time="17.421">
+<testcase name="CODIGO Pilot — Edge Cases (80%) › Session creation with missing required fields returns error" classname="codigo\codigo-pilot.spec.ts" time="25.286">
 </testcase>
-<testcase name="CODIGO Pilot — Edge Cases (80%) › Duplicate session on same table - availability reflects occupancy" classname="codigo\codigo-pilot.spec.ts" time="8.175">
+<testcase name="CODIGO Pilot — Edge Cases (80%) › Duplicate session on same table - availability reflects occupancy" classname="codigo\codigo-pilot.spec.ts" time="8.172">
 </testcase>
-<testcase name="CODIGO Concurrency › Concurrent session creation - 10 parallel requests" classname="codigo\codigo-pilot.spec.ts" time="14.174">
+<testcase name="CODIGO Concurrency › Concurrent session creation - 10 parallel requests" classname="codigo\codigo-pilot.spec.ts" time="15.198">
 </testcase>
 </testsuite>
 </testsuites>
