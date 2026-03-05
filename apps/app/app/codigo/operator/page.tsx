@@ -58,7 +58,7 @@ export default function CodigoOperatorPage() {
   }, []);
 
   const [activeSeatId, setActiveSeatId] = useState<string | null>(null);
-  const [selectedFlavorId, setSelectedFlavorId] = useState(CODIGO_MENU[0].id);
+  const [selectedFlavorId, setSelectedFlavorId] = useState<string>(CODIGO_MENU[0].id);
   const [calibrationMode, setCalibrationMode] = useState(false);
 
   const nodeTypes: NodeTypes = useMemo(() => ({ seat: SeatNode }), []);
