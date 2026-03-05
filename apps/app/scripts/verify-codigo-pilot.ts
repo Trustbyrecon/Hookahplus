@@ -43,17 +43,37 @@ async function main() {
   try {
     const layoutRes = await fetch(`${APP_URL}/api/lounges/CODIGO/layout`);
     const data = layoutRes.ok ? await layoutRes.json() : null;
-    const hasLayout = data?.nodes?.length > 0 || data?.layout?.nodes?.length > 0;
+    const nodes = data?.nodes ?? data?.layout?.nodes ?? [];
+    const seats = data?.layout?.seats ?? data?.seats ?? [];
+    const hasLayout = nodes.length > 0 || seats.length > 0;
     checks.push({
       name: 'GET /api/lounges/CODIGO/layout',
       ok: layoutRes.ok && hasLayout,
       detail: layoutRes.ok
-        ? (hasLayout ? `Layout has ${data?.nodes?.length ?? data?.layout?.nodes?.length ?? 0} nodes` : 'Empty layout - run seed')
+        ? (hasLayout ? `Layout has ${nodes.length || seats.length} nodes/seats` : 'Empty layout - run seed')
         : `${layoutRes.status}`,
     });
   } catch (e) {
     checks.push({
       name: 'GET /api/lounges/CODIGO/layout',
+      ok: false,
+      detail: e instanceof Error ? e.message : 'Fetch failed',
+    });
+  }
+
+  // 4. CODIGO config (layoutMode)
+  try {
+    const configRes = await fetch(`${APP_URL}/api/lounges/CODIGO/config`);
+    const configData = configRes.ok ? await configRes.json() : null;
+    const layoutMode = configData?.config?.layoutMode;
+    checks.push({
+      name: 'GET /api/lounges/CODIGO/config',
+      ok: configRes.ok && (layoutMode === 'floor' || layoutMode === 'classic'),
+      detail: configRes.ok ? `layoutMode=${layoutMode}` : `${configRes.status}`,
+    });
+  } catch (e) {
+    checks.push({
+      name: 'GET /api/lounges/CODIGO/config',
       ok: false,
       detail: e instanceof Error ? e.message : 'Fetch failed',
     });

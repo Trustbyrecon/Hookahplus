@@ -22,7 +22,7 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
     "test:e2e": "playwright test --project=chromium",
-    "test:e2e:codigo": "playwright test e2e/codigo/codigo-pilot.spec.ts --project=chromium",
+    "test:e2e:codigo": "playwright test e2e/codigo/ --project=chromium",
     "test:e2e:install": "npx playwright install chromium",
     "test:e2e:ui": "playwright test --ui",
     "test:concurrency": "tsx scripts/performance/load-test.ts",
@@ -39,6 +39,9 @@
     "test:pos": "tsx scripts/test-square-integration.ts",
     "debug:square": "tsx scripts/debug-square-token.ts",
     "verify:square": "tsx scripts/verify-square-oauth-setup.ts",
+    "verify:codigo": "tsx scripts/verify-codigo-pilot.ts",
+    "codigo:seed": "tsx scripts/seed-codigo-pilot.ts",
+    "codigo:verify": "tsx scripts/verify-codigo-pilot.ts",
     "pos:square:pull:tickets": "tsx scripts/pull-square-tickets.ts"
   },
   "dependencies": {

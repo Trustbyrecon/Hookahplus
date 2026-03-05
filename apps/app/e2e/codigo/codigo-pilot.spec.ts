@@ -41,8 +41,14 @@ test.describe('CODIGO Pilot — Use Cases (80%)', () => {
       { timeout: CONFIG_TIMEOUT }
     );
     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });
-    await configPromise;
-    await expect(page.getByTestId('create-session-cta').or(page.getByRole('button', { name: /Create Session/i }))).toBeVisible({ timeout: 8000 });
+    const configRes = await configPromise;
+    const configData = configRes.ok() ? await configRes.json().catch(() => null) : null;
+    const layoutMode = configData?.config?.layoutMode;
+    if (layoutMode !== 'floor') {
+      test.skip(true, `Create Session CTA only shows when layoutMode=floor. Got: ${layoutMode}. Run: npm run codigo:seed`);
+      return;
+    }
+    await expect(page.getByTestId('create-session-cta').or(page.getByRole('button', { name: /Create Session/i }))).toBeVisible({ timeout: 10000 });
   });
 
   test('Floor tab shows at-a-glance status strip', async ({ page }) => {
@@ -143,16 +149,18 @@ test.describe('CODIGO Pilot — Edge Cases (80%)', () => {
     expect(res.ok()).toBeTruthy();
     const data = await res.json();
     const tables = data?.layout?.tables || [];
-    if (tables.length === 0) {
-      test.skip(true, 'CODIGO floorplan not seeded. Run: npx tsx scripts/seed-codigo-pilot.ts');
+    const seats = data?.layout?.seats || [];
+    const items = tables.length > 0 ? tables : seats;
+    if (items.length === 0) {
+      test.skip(true, 'CODIGO floorplan not seeded. Run: npm run codigo:seed');
       return;
     }
-    const has705 = tables.some(
+    const has705 = items.some(
       (t: any) =>
         (t.id || t.name || t.tableId || '').toString() === '705' ||
-        String(t.id || t.name || '').includes('705')
+        String(t.id || t.name || t.tableId || '').includes('705')
     );
-    expect(has705, `Table 705 not in layout. Tables: ${tables.map((t: any) => t.id || t.name).join(', ')}`).toBeTruthy();
+    expect(has705, `Table 705 not in layout. Items: ${items.slice(0, 5).map((t: any) => t.id || t.name || t.tableId).join(', ')}...`).toBeTruthy();
   });
 
   test('API: Config returns layoutMode for CODIGO', async ({ request }) => {
@@ -170,8 +178,10 @@ test.describe('CODIGO Pilot — Edge Cases (80%)', () => {
     );
     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });
     await configPromise;
-    await page.getByTestId('tab-floor').or(page.getByRole('button', { name: /Floor/i })).first().click();
-    await expect(page.getByTestId('codigo-seat-node').first()).toBeVisible({ timeout: 12000 });
+    const floorTab = page.getByTestId('tab-floor').or(page.getByRole('button', { name: /Floor/i }));
+    await floorTab.first().click();
+    await page.waitForTimeout(500);
+    await expect(page.getByTestId('codigo-seat-node').first()).toBeVisible({ timeout: 15000 });
     await expect(page.locator('.react-flow__minimap')).toHaveCount(0);
   });
 

@@ -87,9 +87,10 @@ Ensures staff can select CODIGO tables and create sessions that flow into the NA
 
 ## E2E Testing (Playwright)
 - **Install browsers** (required once): `npm run test:e2e:install` or `npx playwright install chromium`
-- **Run CODIGO tests**: `npm run test:e2e:codigo` (or `USE_EXISTING_SERVER=1 npx playwright test e2e/codigo/codigo-pilot.spec.ts`)
+- **Run CODIGO tests**: `npm run test:e2e:codigo` (runs codigo-pilot + codigo-checklist specs)
 - **Concurrency test**: `npm run test:concurrency:codigo` (or `npx tsx scripts/performance/load-test-codigo.ts 20`)
-- **Prerequisites**: Seed CODIGO pilot (`npx tsx scripts/seed-codigo-pilot.ts`) and install Playwright browsers before running tests.
+- **Prerequisites**: `npm run codigo:seed` (or `npx tsx scripts/seed-codigo-pilot.ts`). Global setup runs seed automatically when DATABASE_URL is set.
+- **Verify before deploy**: `npm run codigo:verify` (or `npx tsx scripts/verify-codigo-pilot.ts`)
 
 ## Layout Mode (Foundation)
 - **useFloorPlan**: Each lounge can have `layoutMode: 'floor'` (POS-mirrored UI) or `'classic'`.
