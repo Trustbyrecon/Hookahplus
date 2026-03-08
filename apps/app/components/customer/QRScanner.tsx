@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { cn } from '../../utils/cn';
 import Card from '../Card';
 import { QrCode, Camera, AlertCircle, CheckCircle } from 'lucide-react';
@@ -51,23 +51,19 @@ const QRScanner: React.FC<QRScannerProps> = ({
     setIsScanning(false);
   };
 
-  const handleScan = (data: string) => {
+  const handleScan = useCallback((data: string) => {
     setSuccess(true);
     onScan(data);
-    
-    // Reset success state after 2 seconds
-    setTimeout(() => {
-      setSuccess(false);
-    }, 2000);
-  };
+    setTimeout(() => setSuccess(false), 2000);
+  }, [onScan]);
 
   // Simulate QR code detection (replace with actual QR library)
-  const simulateQRDetection = () => {
+  const simulateQRDetection = useCallback(() => {
     if (isScanning && Math.random() > 0.95) {
       const mockData = `table_${Math.floor(Math.random() * 100)}`;
       handleScan(mockData);
     }
-  };
+  }, [isScanning, handleScan]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -77,7 +73,7 @@ const QRScanner: React.FC<QRScannerProps> = ({
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isScanning]);
+  }, [isScanning, simulateQRDetection]);
 
   useEffect(() => {
     return () => {

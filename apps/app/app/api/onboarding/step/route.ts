@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../../../../lib/db";
 import { requireRole } from "../../../../lib/auth";
 import { computePercentComplete } from "../../../../lib/onboarding/orchestrator";
@@ -50,7 +51,7 @@ export async function PATCH(req: NextRequest) {
     await prisma.onboardingStep.update({
       where: { workflowId_stepKey: { workflowId, stepKey } },
       data: {
-        dataJson: mergedData,
+        dataJson: mergedData as Prisma.InputJsonValue,
         status: step.status === "not_started" ? "in_progress" : step.status,
       },
     });
