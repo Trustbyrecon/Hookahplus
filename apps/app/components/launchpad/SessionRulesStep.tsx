@@ -25,7 +25,7 @@ export function SessionRulesStep({ initialData, onComplete, onBack }: SessionRul
     } else if (formData.sessionType === 'timed' && formData.extensionPolicy === 'na') {
       setFormData((prev) => ({ ...prev, extensionPolicy: 'manual' }));
     }
-  }, [formData.sessionType]);
+  }, [formData.sessionType, formData.extensionPolicy]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

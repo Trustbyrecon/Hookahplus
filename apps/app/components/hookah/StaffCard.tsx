@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { cn } from '../../utils/cn';
 import { formatRelativeTime } from '../../utils/format';
 import Badge from '../Badge';
@@ -96,12 +97,15 @@ const StaffCard: React.FC<StaffCardProps> = ({ staff, onAction, className }) => 
     <Card className={cn('hover:shadow-lg transition-all duration-200', className)}>
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-zinc-700 rounded-full flex items-center justify-center">
+          <div className="w-12 h-12 bg-zinc-700 rounded-full flex items-center justify-center overflow-hidden">
             {staff.avatar ? (
-              <img 
-                src={staff.avatar} 
+              <Image
+                src={staff.avatar}
                 alt={staff.name}
+                width={48}
+                height={48}
                 className="w-12 h-12 rounded-full object-cover"
+                unoptimized
               />
             ) : (
               <span className="text-2xl">{getRoleIcon(staff.role)}</span>
