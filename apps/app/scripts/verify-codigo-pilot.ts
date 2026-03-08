@@ -16,11 +16,12 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL
 async function main() {
   const checks: { name: string; ok: boolean; detail?: string }[] = [];
 
-  // 1. DATABASE_URL
+  // 1. DATABASE_URL (only relevant when running locally / seeding)
+  const isRemote = APP_URL && !APP_URL.includes('localhost');
   checks.push({
     name: 'DATABASE_URL set',
-    ok: !!process.env.DATABASE_URL,
-    detail: process.env.DATABASE_URL ? 'Configured' : 'Not set',
+    ok: isRemote || !!process.env.DATABASE_URL,
+    detail: process.env.DATABASE_URL ? 'Configured' : (isRemote ? 'N/A (remote verify)' : 'Not set'),
   });
 
   // 2. Health endpoint (requires server running)
@@ -61,15 +62,21 @@ async function main() {
     });
   }
 
-  // 4. CODIGO config (layoutMode)
+  // 4. CODIGO config (layoutMode) — required for FSD Floor tab
   try {
     const configRes = await fetch(`${APP_URL}/api/lounges/CODIGO/config`);
     const configData = configRes.ok ? await configRes.json() : null;
     const layoutMode = configData?.config?.layoutMode;
+    const hasLayoutMode = layoutMode === 'floor' || layoutMode === 'classic';
+    const configOk = configRes.ok && hasLayoutMode;
+    let detail = configRes.ok ? `layoutMode=${layoutMode ?? 'undefined'}` : `${configRes.status}`;
+    if (configRes.ok && !hasLayoutMode) {
+      detail += ' — deploy latest app build (config route must include layoutMode for FSD Floor tab)';
+    }
     checks.push({
       name: 'GET /api/lounges/CODIGO/config',
-      ok: configRes.ok && (layoutMode === 'floor' || layoutMode === 'classic'),
-      detail: configRes.ok ? `layoutMode=${layoutMode}` : `${configRes.status}`,
+      ok: configOk,
+      detail,
     });
   } catch (e) {
     checks.push({
