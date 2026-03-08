@@ -3,6 +3,7 @@ import { prisma } from "../../../../lib/db";
 import { requireRole } from "../../../../lib/auth";
 import { validateStep } from "../../../../lib/onboarding/validators";
 import { computePercentComplete } from "../../../../lib/onboarding/orchestrator";
+import type { OnboardingStep } from "../../../../types/onboarding";
 
 export async function POST(req: NextRequest) {
   if (process.env.NODE_ENV === "production") {
@@ -56,10 +57,10 @@ export async function POST(req: NextRequest) {
       orderBy: { orderIndex: "asc" },
     });
 
-    const stepsForPercent = allSteps.map((s) => ({
+    const stepsForPercent: OnboardingStep[] = allSteps.map((s) => ({
       stepKey: s.stepKey,
       title: s.title,
-      status: s.stepKey === stepKey ? result.status : s.status,
+      status: (s.stepKey === stepKey ? result.status : s.status) as OnboardingStep["status"],
       order: s.orderIndex,
       required: s.required,
       data: {},
