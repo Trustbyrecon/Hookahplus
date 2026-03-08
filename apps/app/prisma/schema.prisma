@@ -1368,6 +1368,45 @@ model PasskitRegistration {
   @@map("passkit_registrations")
 }
 
+// H+ Onboarding Engine - Composable operator onboarding workflow
+model OnboardingWorkflow {
+  id              String   @id @default(cuid())
+  tenantId        String?  @map("tenant_id") @db.Uuid // Account scope: auth, billing
+  loungeId        String   @unique @map("lounge_id") // Venue scope: layout, pricing, sessions
+  workflowType    String   @map("workflow_type")
+  overallStatus   String   @map("overall_status")
+  currentStepKey  String   @map("current_step_key")
+  percentComplete Int      @default(0) @map("percent_complete")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  steps           OnboardingStep[]
+
+  @@index([loungeId])
+  @@index([tenantId])
+  @@index([overallStatus])
+  @@map("onboarding_workflows")
+}
+
+model OnboardingStep {
+  id             String   @id @default(cuid())
+  workflowId     String   @map("workflow_id")
+  stepKey        String   @map("step_key")
+  title          String
+  status         String
+  orderIndex     Int      @map("order_index")
+  required       Boolean  @default(true)
+  dataJson       Json?    @map("data_json")
+  errorsJson     Json?    @map("errors_json")
+  warningsJson   Json?    @map("warnings_json")
+  blockingReason String?  @map("blocking_reason")
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  workflow       OnboardingWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@unique([workflowId, stepKey])
+  @@index([workflowId])
+  @@map("onboarding_steps")
+}
+
 // LaunchPad SetupSession - Anonymous onboarding sessions
 model SetupSession {
   id              String    @id @default(cuid())

@@ -381,6 +381,15 @@ const GlobalNavigation: React.FC = () => {
           nextAction: 'Access operator controls',
           aiRecommendation: 'Monitor system metrics and trust score'
         },
+        {
+          label: 'Onboarding',
+          href: '/onboarding/CODIGO',
+          icon: <Target className="w-4 h-4" />,
+          description: 'Lounge setup and configuration',
+          flowState: 'idle',
+          nextAction: 'Complete onboarding steps',
+          aiRecommendation: 'Configure lounge identity, pricing, POS'
+        },
         // NOTE: Public pricing + ROI live on hookahplus.net (marketing site).
       ]
     },
