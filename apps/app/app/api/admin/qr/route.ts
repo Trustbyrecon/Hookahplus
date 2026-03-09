@@ -33,9 +33,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Missing loungeId' }, { status: 400 })
     }
 
-    // Default to production guest domain if provided, fallback to env or localhost
-    const defaultGuestBase = process.env.NEXT_PUBLIC_GUEST_BASE_URL || 'http://localhost:3001'
-    const guestBase = (baseUrl || defaultGuestBase).replace(/\/$/, '')
+    // Default: production uses guest.hookahplus.net; dev uses env or localhost
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
+    const isProduction = process.env.NODE_ENV === 'production' || appUrl.includes('hookahplus.net')
+    const defaultGuestBase =
+      process.env.NEXT_PUBLIC_GUEST_BASE_URL ||
+      (isProduction ? 'https://guest.hookahplus.net' : 'http://localhost:3001')
+    const guestBase = (baseUrl?.trim() || defaultGuestBase).replace(/\/$/, '')
 
     const url = new URL(`${guestBase}/guest/${encodeURIComponent(loungeId)}`)
     url.searchParams.set('loungeId', loungeId)
@@ -81,8 +85,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Missing loungeId' }, { status: 400 })
     }
 
-    const defaultGuestBase = process.env.NEXT_PUBLIC_GUEST_BASE_URL || 'http://localhost:3001'
-    const guestBase = (baseUrl || defaultGuestBase).replace(/\/$/, '')
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
+    const isProduction = process.env.NODE_ENV === 'production' || appUrl.includes('hookahplus.net')
+    const defaultGuestBase =
+      process.env.NEXT_PUBLIC_GUEST_BASE_URL ||
+      (isProduction ? 'https://guest.hookahplus.net' : 'http://localhost:3001')
+    const guestBase = (baseUrl?.trim() || defaultGuestBase).replace(/\/$/, '')
 
     const url = new URL(`${guestBase}/guest/${encodeURIComponent(loungeId)}`)
     url.searchParams.set('loungeId', loungeId)

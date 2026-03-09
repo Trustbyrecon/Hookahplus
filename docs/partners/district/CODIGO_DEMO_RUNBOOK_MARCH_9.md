@@ -12,6 +12,15 @@
 - **Join flow working** — H+ Passport enrollment returns memberId
 - **Config layoutMode** — Production must run the latest app build. If verify shows `layoutMode=undefined`, redeploy so the config route includes `layoutMode` (required for FSD Floor tab).
 
+### FSD 500 Troubleshooting
+
+If `GET /fire-session-dashboard?lounge=CODIGO` returns 500:
+
+1. **Check server logs** — The terminal running the app will show the error stack trace.
+2. **Verify config API** — `curl http://localhost:3002/api/lounges/CODIGO/config` (or production URL). If this returns 500, the config route is failing.
+3. **Verify floorplan** — After calibrating and saving floor JSON, ensure `FloorplanLayout` exists for CODIGO. Run `npx tsx scripts/verify-codigo-pilot.ts`.
+4. **Redeploy** — Ensure the latest app build is deployed (includes layoutMode + defensive config handling).
+
 ---
 
 ## Production Deployment Checklist

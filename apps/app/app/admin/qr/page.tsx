@@ -25,7 +25,11 @@ export default function AdminQRPage() {
   const [demoMode, setDemoMode] = useState(true) // Demo QR: adds ref=demo for CODIGO pilot
   const [size, setSize] = useState(512)
   const [format, setFormat] = useState<'png' | 'svg'>('png')
-  const [baseUrl, setBaseUrl] = useState('')
+  const [baseUrl, setBaseUrl] = useState(() =>
+    typeof window !== 'undefined' && window.location.hostname.includes('hookahplus.net')
+      ? 'https://guest.hookahplus.net'
+      : ''
+  )
   const [qrDataUrl, setQrDataUrl] = useState<string>('')
   const [svg, setSvg] = useState<string>('')
   const [targetUrl, setTargetUrl] = useState<string>('')
@@ -186,12 +190,12 @@ export default function AdminQRPage() {
     }
   }, [loungeId])
 
-  // Auto-generate on mount or when table changes
+  // Auto-generate on mount or when table/config changes
   useEffect(() => {
     if (tableId) {
       generateQRCode()
     }
-  }, [tableId, campaign, demoMode])
+  }, [tableId, campaign, demoMode, baseUrl])
 
   const fetchStoredQRs = async () => {
     if (!loungeId) return

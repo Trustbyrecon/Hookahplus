@@ -43,11 +43,16 @@ export async function getLoungeLayoutMode(loungeId: string): Promise<LayoutMode>
   }
 
   // 3. If FloorplanLayout exists for lounge, use floor mode (POS-mirrored)
-  const floorplan = await prisma.floorplanLayout.findFirst({
-    where: { loungeId: trimmed },
-  });
-  if (floorplan?.nodes && Array.isArray(floorplan.nodes) && floorplan.nodes.length > 0) {
-    return 'floor';
+  try {
+    const floorplan = await prisma.floorplanLayout.findFirst({
+      where: { loungeId: trimmed },
+    });
+    const nodes = floorplan?.nodes;
+    if (nodes != null && Array.isArray(nodes) && nodes.length > 0) {
+      return 'floor';
+    }
+  } catch (e) {
+    console.warn('[LayoutMode] FloorplanLayout lookup failed:', e);
   }
 
   return 'classic';

@@ -120,7 +120,7 @@ export async function GET(
       success: true,
       config: {
         version: loungeConfig?.version || 1,
-        effectiveAt: loungeConfig?.effectiveAt.toISOString() || new Date().toISOString(),
+        effectiveAt: loungeConfig?.effectiveAt?.toISOString?.() ?? new Date().toISOString(),
         configData: configData || {},
         layoutMode,
         venueIdentity: (configData as any)?.venue_identity || null,
