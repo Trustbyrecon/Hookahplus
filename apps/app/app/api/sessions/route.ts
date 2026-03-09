@@ -928,7 +928,8 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
     
     // Check for demo mode flag
     const isDemoMode = body.isDemo === true || body.isDemo === 'true';
-    // CODIGO operator: Toast handles payment, create as ACTIVE for floor display
+    // CODIGO operator: Toast handles payment. Create as PENDING + paymentStatus so UI shows PAID_CONFIRMED
+    // → Kitchen shows Claim Prep for NAN flow; Floor shows session in "pending" state until delivered.
     const codigoOperator = body.codigoOperator === true;
     
     // Normalize all fields with safe defaults
@@ -1401,7 +1402,7 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
       tableNotes: data.notes, // null is fine
       durationSecs: data.sessionDuration,
       source: data.source, // Already validated
-      state: codigoOperator ? 'ACTIVE' : 'PENDING', // CODIGO operator: start ACTIVE for floor
+      state: codigoOperator ? 'PENDING' : 'PENDING', // CODIGO: PENDING + payment → PAID_CONFIRMED for Kitchen Claim Prep
       paymentStatus: (isDemoMode || codigoOperator) ? 'succeeded' : null, // Demo/CODIGO: treat as paid
     };
 
@@ -1435,7 +1436,7 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
         id: sessionId,
         externalRef: finalExternalRef,
         source: data.source as SessionSource,
-        state: (codigoOperator ? 'ACTIVE' : 'PENDING') as SessionState,
+        state: 'PENDING' as SessionState, // CODIGO: PENDING + payment → PAID_CONFIRMED for NAN Claim Prep
         trustSignature,
         tableId: data.tableId,
         customerRef: data.customerName,
@@ -1498,7 +1499,7 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
                 ${escapeSql(finalLoungeId)},
                 ${escapeSql(data.memberId || null)},
                 ${escapeSql(finalPriceCents)},
-                ${escapeSql(codigoOperator ? 'ACTIVE' : 'PENDING')},
+                ${escapeSql('PENDING')},
                 ${escapeSql(data.assignedBoh || null)},
                 ${escapeSql(data.assignedFoh || null)},
                 ${escapeSql(data.notes || null)},

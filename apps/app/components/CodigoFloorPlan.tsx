@@ -16,9 +16,11 @@ import type { FireSession } from "@/types/enhancedSession";
 const BASE_PRICE = 60;
 const OVER_MINUTES = 90;
 
-type SeatStatus = "empty" | "active" | "over" | "request";
+type SeatStatus = "empty" | "pending" | "active" | "over" | "request";
 
-// Session states considered "on floor" (active hookah)
+// Session states: in kitchen pipeline (waiting for Claim Prep / NAN flow)
+const FLOOR_PENDING_STATES = ["PAID_CONFIRMED", "PREP_IN_PROGRESS", "HEAT_UP", "READY_FOR_DELIVERY"] as const;
+// Session states: on floor (active hookah, delivered)
 const FLOOR_ACTIVE_STATES = ["ACTIVE", "DELIVERED", "OUT_FOR_DELIVERY"] as const;
 
 function formatElapsed(ms: number) {
@@ -68,24 +70,29 @@ export default function CodigoFloorPlan({
 
   const nodeTypes: NodeTypes = useMemo(() => ({ seat: SeatNode }), []);
 
-  // Derive seat status from Fire sessions: empty | active | over | request (refill/service)
+  // Derive seat status: empty | pending (in kitchen) | active (on floor) | over | request
   const nodes: Node[] = useMemo(() => {
     return CODIGO_SEATS.map((s) => {
       const session = sessions.find((sess) => sessionMatchesSeat(sess, s.label));
       const isActive = !!session && FLOOR_ACTIVE_STATES.includes((session.status || session.state) as any);
+      const isPending = !!session && FLOOR_PENDING_STATES.includes((session.status || session.state) as any);
       const needsService = !!session && (session.refillStatus === "requested" || session.edgeCase === "refill_requested");
 
       const sessionStartMs = session?.sessionStartTime ?? session?.createdAt ?? 0;
       const elapsedMs = isActive ? now - sessionStartMs : 0;
       const elapsedMin = isActive ? Math.floor(elapsedMs / 60000) : 0;
 
-      const status: SeatStatus = !isActive
+      const status: SeatStatus = !session
         ? "empty"
-        : needsService
-          ? "request"
-          : elapsedMin >= OVER_MINUTES
-            ? "over"
-            : "active";
+        : isPending
+          ? "pending"
+          : !isActive
+            ? "empty"
+            : needsService
+              ? "request"
+              : elapsedMin >= OVER_MINUTES
+                ? "over"
+                : "active";
 
       return {
         id: s.id,
@@ -111,6 +118,7 @@ export default function CodigoFloorPlan({
     : null;
 
   const isSelectedActive = !!selectedSession && FLOOR_ACTIVE_STATES.includes((selectedSession.status || selectedSession.state) as any);
+  const isSelectedPending = !!selectedSession && FLOOR_PENDING_STATES.includes((selectedSession.status || selectedSession.state) as any);
 
   async function handleStartSession() {
     if (!activeSeatId || !selectedLabel || isStarting) return;
@@ -192,7 +200,31 @@ export default function CodigoFloorPlan({
             <div className="text-xl font-semibold">${BASE_PRICE}</div>
           </div>
 
-          {!isSelectedActive ? (
+          {isSelectedPending ? (
+            <>
+              <div className="space-y-2 mb-4 text-sm">
+                <div>
+                  <span className="text-zinc-400">Flavor:</span>{" "}
+                  {selectedSession?.flavor ?? "—"}
+                </div>
+                <div>
+                  <span className="text-zinc-400">Status:</span>{" "}
+                  <span className="text-orange-400">In Kitchen — Claim Prep</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="w-full rounded-xl bg-orange-600 hover:bg-orange-500 px-4 py-3 font-semibold"
+                onClick={() => {
+                  if (selectedSession?.id) {
+                    onOpenSession(selectedSession.id);
+                  }
+                }}
+              >
+                Open in Kitchen
+              </button>
+            </>
+          ) : !isSelectedActive ? (
             <>
               <div className="mb-4">
                 <div className="text-sm text-zinc-300 mb-2">Flavor</div>

@@ -12,7 +12,7 @@ After successful checkout, the guest is redirected to **Hookah Tracker** (`/hook
 ### 2. Staff Experience: Fire Session Dashboard (BOH/NAN)
 Payment metadata flows to the app's Fire Session Dashboard (`/fire-session-dashboard?lounge=CODIGO`). The NAN workflow begins: staff see the session, claim prep, heat up, deliver.
 
-**Implemented:** `sendSessionToBOH` in `apps/guest/app/api/guest/checkout/route.ts` calls `POST /api/sessions` on the app build (`NEXT_PUBLIC_APP_URL` or `APP_API_URL`). Creates session with `codigoOperator: true` for CODIGO so it appears as ACTIVE on the floor. Returns `appSessionId` in checkout response for Hookah Tracker redirect.
+**Implemented:** `sendSessionToBOH` in `apps/guest/app/api/guest/checkout/route.ts` calls `POST /api/sessions` on the app build (`NEXT_PUBLIC_APP_URL` or `APP_API_URL`). Creates session with `codigoOperator: true` for CODIGO as PENDING + paymentStatus succeeded → PAID_CONFIRMED in UI. Floor shows "Prep" (pending); Kitchen shows Claim Prep for NAN flow. Returns `appSessionId` in checkout response for Hookah Tracker redirect.
 
 ---
 

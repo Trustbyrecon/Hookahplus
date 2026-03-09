@@ -475,7 +475,7 @@ function FireSessionDashboardContent() {
         externalRef: sessionData.externalRef || `table-${sessionData.table_id || sessionData.tableId}-${Date.now()}`,
         // CODIGO operator flow: treat as paid (Toast handles payment)
         isDemo: sessionData.isDemo ?? sessionData.codigoOperator ?? isDemoMode,
-        codigoOperator: sessionData.codigoOperator ?? false,
+        codigoOperator: sessionData.codigoOperator ?? (sessionData.lounge_id === 'CODIGO' || selectedLoungeId === 'CODIGO'),
       };
 
       console.log('[Create Session] Sending to API:', apiPayload);
@@ -521,7 +521,12 @@ function FireSessionDashboardContent() {
       }
 
       await refreshSessions(); // Refresh live data (may be empty in fallback mode)
-      
+      // CODIGO: double-refresh for faster Floor→Kitchen propagation (catches DB lag)
+      const isCodigo = apiPayload?.codigoOperator || apiPayload?.loungeId === 'CODIGO' || selectedLoungeId === 'CODIGO';
+      if (isCodigo) {
+        setTimeout(() => refreshSessions(), 500);
+      }
+
       // Return session ID for payment checkout
       return responseData.session?.id || responseData.id;
     } catch (error) {

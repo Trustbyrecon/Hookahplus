@@ -847,10 +847,14 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
   }, []);
 
   // Auto-refresh data every 5 seconds (optimized for real-time updates)
+  // Polling: 2s for CODIGO (faster Floor→Kitchen propagation), 5s otherwise
   useEffect(() => {
+    const isCodigo = typeof window !== 'undefined' &&
+      new URLSearchParams(window.location.search).get('lounge') === 'CODIGO';
+    const intervalMs = isCodigo ? 2000 : 5000;
     const interval = setInterval(() => {
       refreshSessions();
-    }, 5000);
+    }, intervalMs);
 
     return () => clearInterval(interval);
   }, []); // Remove refreshSessions dependency to prevent recreation
