@@ -50,7 +50,7 @@ export interface CodigoFloorPlanProps {
   refreshSessions?: () => void | Promise<void>;
 }
 
-export default function CodigoFloorPlan({
+function CodigoFloorPlan({
   sessions,
   loungeId = "CODIGO",
   onStartSession,
@@ -62,9 +62,11 @@ export default function CodigoFloorPlan({
   const [activeSeatId, setActiveSeatId] = useState<string | null>(null);
   const [selectedFlavorId, setSelectedFlavorId] = useState<string>(CODIGO_MENU[0].id);
   const [isStarting, setIsStarting] = useState(false);
+  const [hasFittedView, setHasFittedView] = useState(false);
 
+  // Update elapsed every 5s (not 1s) to reduce layout thrash — trust builder: stable floor
   useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 1000);
+    const t = setInterval(() => setNow(Date.now()), 5000);
     return () => clearInterval(t);
   }, []);
 
@@ -153,13 +155,17 @@ export default function CodigoFloorPlan({
 
   return (
     <div className="flex h-full min-h-[400px] flex-col gap-4 lg:flex-row">
-      {/* Left: React Flow floor plan - Toast handheld optimized: no MiniMap, no Controls, no scroll */}
-      <div className="min-h-[400px] flex-1 rounded-xl border border-zinc-800 bg-zinc-950 overflow-hidden">
+      {/* Left: React Flow floor plan — static layout, no fitView on update (trust builder) */}
+      <div
+        className="min-h-[400px] flex-1 rounded-xl border border-zinc-800 bg-zinc-950 overflow-hidden"
+        style={{ contain: "layout" }}
+      >
         <ReactFlow
           nodes={nodes}
           edges={[]}
           nodeTypes={nodeTypes}
-          fitView
+          fitView={!hasFittedView}
+          onInit={() => setHasFittedView(true)}
           fitViewOptions={{ padding: 0.1, maxZoom: 1, minZoom: 0.5 }}
           minZoom={0.3}
           maxZoom={1}
@@ -296,3 +302,5 @@ export default function CodigoFloorPlan({
     </div>
   );
 }
+
+export default React.memo(CodigoFloorPlan);

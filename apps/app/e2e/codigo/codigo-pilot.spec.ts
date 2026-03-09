@@ -48,7 +48,7 @@ test.describe('CODIGO Pilot — Use Cases (80%)', () => {
       test.skip(true, `Create Session CTA only shows when layoutMode=floor. Got: ${layoutMode}. Run: npm run codigo:seed`);
       return;
     }
-    await expect(page.getByTestId('create-session-cta').or(page.getByRole('button', { name: /Create Session/i }))).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId('create-session-cta').or(page.getByRole('button', { name: /Shisha Master/i }))).toBeVisible({ timeout: 10000 });
   });
 
   test('Floor tab shows at-a-glance status strip', async ({ page }) => {
@@ -70,7 +70,7 @@ test.describe('CODIGO Pilot — Use Cases (80%)', () => {
     );
     await page.goto(CODIGO_FSD_URL, { waitUntil: 'domcontentloaded' });
     await configPromise;
-    await page.getByTestId('create-session-cta').or(page.getByRole('button', { name: /Create Session/i })).first().click();
+    await page.getByTestId('create-session-cta').or(page.getByRole('button', { name: /Shisha Master/i })).first().click();
     await expect(page.getByText(/Table Selection|Create New Session/i)).toBeVisible({ timeout: 10000 });
   });
 

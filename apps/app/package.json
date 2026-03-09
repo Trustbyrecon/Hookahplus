@@ -42,6 +42,7 @@
     "verify:codigo": "tsx scripts/verify-codigo-pilot.ts",
     "codigo:seed": "tsx scripts/seed-codigo-pilot.ts",
     "codigo:verify": "tsx scripts/verify-codigo-pilot.ts",
+    "admin:create": "tsx scripts/create-admin-user.ts",
     "pos:square:pull:tickets": "tsx scripts/pull-square-tickets.ts"
   },
   "dependencies": {

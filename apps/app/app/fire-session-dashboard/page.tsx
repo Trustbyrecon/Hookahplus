@@ -886,14 +886,21 @@ function FireSessionDashboardContent() {
           <Breadcrumbs className="mb-6" />
         </Suspense>
         
-        {/* CODIGO: Compact hero - higher value leads spatially for Toast handheld */}
+        {/* CODIGO: Compact hero — live session-derived metrics, Shisha Master CTA */}
         {useFloorPlan ? (
           <section className="mb-6 rounded-xl border border-zinc-800 bg-zinc-950/50 p-4">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="flex flex-wrap items-center gap-4">
                 <span className="text-lg font-semibold text-white">Fire Session Dashboard</span>
-                <span className="text-emerald-400 font-medium">{metrics.activeSessions} Active</span>
-                <span className="text-zinc-400">${metrics.revenue.toFixed(0)}</span>
+                <span className="text-emerald-400 font-medium">
+                  {sessions.filter((s) => {
+                    const st = s.status || s.state;
+                    return ['ACTIVE', 'DELIVERED', 'OUT_FOR_DELIVERY', 'PAID_CONFIRMED', 'PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(st);
+                  }).length} Active
+                </span>
+                <span className="text-zinc-400">
+                  ${sessions.reduce((sum, s) => sum + ((s.amount || s.priceCents || 0) / 100), 0).toFixed(0)}
+                </span>
               </div>
               <button
                 onClick={() => setShowCreateModal(true)}
@@ -901,7 +908,7 @@ function FireSessionDashboardContent() {
                 data-testid="create-session-cta"
               >
                 <Flame className="w-4 h-4" />
-                Create Session
+                Shisha Master
               </button>
             </div>
           </section>
