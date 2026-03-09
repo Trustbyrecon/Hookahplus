@@ -1423,8 +1423,16 @@ export default function SimpleFSDDesign({
             <h2 className="text-xl font-semibold text-white">Session Management</h2>
             <p className="text-sm text-zinc-400">Manage active hookah sessions</p>
             {scopeLabel ? (
-              <div className="mt-2 inline-flex items-center rounded-full border border-teal-500/40 bg-teal-500/10 px-3 py-1 text-xs font-medium text-teal-200">
-                Scoped to: {scopeLabel}
+              <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-teal-500/40 bg-teal-500/10 px-3 py-1 text-xs font-medium text-teal-200">
+                <span>Scoped to: {scopeLabel}</span>
+                <button
+                  type="button"
+                  onClick={() => navigator.clipboard.writeText(scopeLabel)}
+                  className="text-teal-400 hover:text-teal-300 transition-colors"
+                  title="Copy Lounge ID"
+                >
+                  Copy
+                </button>
               </div>
             ) : null}
           </div>

@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { ArrowRight, ArrowLeft, CheckCircle, Mail, Phone, Lock, Link as LinkIcon } from 'lucide-react';
+import { ArrowRight, ArrowLeft, CheckCircle, Mail, Phone, Lock, Link as LinkIcon, Target } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { clientClient, isSupabaseConfigured } from '../../lib/supabase-client';
 
 interface GoLiveStepProps {
   sessionToken: string;
@@ -93,6 +94,19 @@ export function GoLiveStep({ sessionToken, onBack }: GoLiveStepProps) {
         throw new Error(errorMsg);
       }
 
+      // Auto sign-in when using password so Onboarding Engine and Dashboard work immediately
+      if (!formData.useMagicLink && formData.password && isSupabaseConfigured()) {
+        try {
+          const { error } = await clientClient().auth.signInWithPassword({
+            email: formData.email.trim(),
+            password: formData.password,
+          });
+          if (error) console.warn('[Go Live] Auto sign-in failed:', error.message);
+        } catch (e) {
+          console.warn('[Go Live] Auto sign-in error:', e);
+        }
+      }
+
       setResult(result);
     } catch (error: any) {
       console.error('[Go Live] Error:', error);
@@ -139,6 +153,27 @@ export function GoLiveStep({ sessionToken, onBack }: GoLiveStepProps) {
           </div>
 
           <div className="p-4 bg-zinc-800/60 border border-zinc-700 rounded-lg">
+            <div className="font-semibold text-white mb-2">Lounge ID</div>
+            <div className="flex items-center gap-2">
+              <code className="text-sm text-teal-300 font-mono bg-zinc-900/60 px-2 py-1 rounded break-all">
+                {result.loungeId}
+              </code>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(result.loungeId);
+                }}
+                className="text-xs px-2 py-1 bg-zinc-700 hover:bg-zinc-600 rounded text-zinc-300"
+              >
+                Copy
+              </button>
+            </div>
+            <p className="text-xs text-zinc-400 mt-1">
+              Use this ID to access the Onboarding Engine or share with your team.
+            </p>
+          </div>
+
+          <div className="p-4 bg-zinc-800/60 border border-zinc-700 rounded-lg">
             <div className="font-semibold text-white mb-2">GMV Readiness</div>
             {readinessLoading ? (
               <div className="text-sm text-zinc-400">Checking setup…</div>
@@ -167,14 +202,22 @@ export function GoLiveStep({ sessionToken, onBack }: GoLiveStepProps) {
           <div className="flex flex-wrap gap-3 pt-2">
             <button
               type="button"
+              onClick={() => router.push(`/onboarding/${result.loungeId}`)}
+              className="flex items-center gap-2 px-6 py-3 bg-teal-600 hover:bg-teal-700 rounded-lg text-white font-semibold transition-colors"
+            >
+              <Target className="w-4 h-4" />
+              Continue to Onboarding
+            </button>
+            <button
+              type="button"
               onClick={() => router.push(`/dashboard?lounge=${result.loungeId}&welcome=true`)}
-              className="px-6 py-3 bg-teal-600 hover:bg-teal-700 rounded-lg text-white font-semibold transition-colors"
+              className="px-6 py-3 bg-zinc-700 hover:bg-zinc-600 border border-zinc-600 rounded-lg text-white font-semibold transition-colors"
             >
               Open Dashboard
             </button>
             <a
               href={`/api/launchpad/download/playbook/${result.loungeId}`}
-              className="px-6 py-3 bg-zinc-800 border border-zinc-600 rounded-lg text-white hover:border-teal-500 transition-colors"
+              className="px-6 py-3 bg-zinc-800 border border-zinc-600 rounded-lg text-white hover:border-teal-500 transition-colors inline-flex items-center"
             >
               Download Staff Playbook
             </a>

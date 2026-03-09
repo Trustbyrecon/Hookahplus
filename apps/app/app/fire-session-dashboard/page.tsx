@@ -1023,29 +1023,49 @@ function FireSessionDashboardContent() {
         {showWelcome && (
           <div className="mb-6 animate-in fade-in slide-in-from-top duration-500">
             <div className="bg-gradient-to-r from-teal-500/20 via-emerald-500/20 to-green-500/20 border-2 border-teal-500/50 rounded-lg p-6 shadow-lg shadow-teal-500/20">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-gradient-to-br from-teal-400 to-emerald-500 rounded-full flex items-center justify-center animate-pulse">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                  <div className="w-16 h-16 bg-gradient-to-br from-teal-400 to-emerald-500 rounded-full flex items-center justify-center animate-pulse shrink-0">
                     <CheckCircle className="w-8 h-8 text-white" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <h3 className="text-2xl font-bold text-white mb-1">
                       🎉 Welcome to H+! 🎉
                     </h3>
-                    <p className="text-teal-200">
+                    <p className="text-teal-200 mb-3">
                       Your lounge is live! Start creating sessions and track your Week-1 Wins.
                     </p>
+                    {selectedLoungeId && (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs text-zinc-400">Lounge ID:</span>
+                        <code className="text-sm text-teal-300 font-mono bg-zinc-900/60 px-2 py-1 rounded break-all">
+                          {selectedLoungeId}
+                        </code>
+                        <button
+                          type="button"
+                          onClick={() => navigator.clipboard.writeText(selectedLoungeId)}
+                          className="text-xs px-2 py-1 bg-zinc-700 hover:bg-zinc-600 rounded text-zinc-300"
+                        >
+                          Copy
+                        </button>
+                        <a
+                          href={`/onboarding/${selectedLoungeId}`}
+                          className="inline-flex items-center gap-1.5 text-sm font-medium text-teal-400 hover:text-teal-300"
+                        >
+                          Continue to Onboarding →
+                        </a>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <button
                   onClick={() => {
-                    // Remove welcome param from URL
                     const newUrl = new URL(window.location.href);
                     newUrl.searchParams.delete('welcome');
                     window.history.replaceState({}, '', newUrl);
                     window.location.reload();
                   }}
-                  className="text-zinc-400 hover:text-white transition-colors px-3 py-1"
+                  className="text-zinc-400 hover:text-white transition-colors px-3 py-1 shrink-0"
                 >
                   ✕
                 </button>
