@@ -899,7 +899,7 @@ function FireSessionDashboardContent() {
                   }).length} Active
                 </span>
                 <span className="text-zinc-400">
-                  ${sessions.reduce((sum, s) => sum + ((s.amount || s.priceCents || 0) / 100), 0).toFixed(0)}
+                  ${sessions.reduce((sum, s) => sum + ((s.amount ?? 0) / 100), 0).toFixed(0)}
                 </span>
               </div>
               <button
