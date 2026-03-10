@@ -18,7 +18,7 @@ type StepActionBarProps = {
 };
 
 export function StepActionBar({ workflow, onRefresh, demoMode }: StepActionBarProps) {
-  const demoParams = demoMode ? { mode: "demo" } : {};
+  const demoParams: Record<string, string> = demoMode ? { mode: "demo" } : {};
   const [isSaving, setIsSaving] = useState(false);
   const stepOrder = getStepsForWorkflow(workflow.workflowType);
   const currentIndex = stepOrder.indexOf(workflow.currentStepKey);
