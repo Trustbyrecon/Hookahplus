@@ -24,6 +24,7 @@ export function StepActionBar({ workflow, onRefresh, demoMode }: StepActionBarPr
   const currentIndex = stepOrder.indexOf(workflow.currentStepKey);
   const prevStep = currentIndex > 0 ? stepOrder[currentIndex - 1] : null;
   const nextStep = currentIndex >= 0 && currentIndex < stepOrder.length - 1 ? stepOrder[currentIndex + 1] : null;
+  const isLastStep = currentIndex >= 0 && currentIndex === stepOrder.length - 1;
 
   const handleBack = async () => {
     if (prevStep) {
@@ -44,7 +45,7 @@ export function StepActionBar({ workflow, onRefresh, demoMode }: StepActionBarPr
   };
 
   const handleContinue = async () => {
-    if (!nextStep) return;
+    if (!nextStep && !isLastStep) return;
     try {
       const validateRes = await fetch(apiUrl("/api/onboarding/validate", demoParams), {
         method: "POST",
@@ -100,9 +101,9 @@ export function StepActionBar({ workflow, onRefresh, demoMode }: StepActionBarPr
           <Save className="w-4 h-4 mr-2" />
           {isSaving ? "Refreshing..." : "Refresh"}
         </Button>
-        {nextStep && (
+        {(nextStep || isLastStep) && (
           <Button size="sm" onClick={handleContinue}>
-            Continue
+            {isLastStep ? "Complete" : "Continue"}
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         )}
