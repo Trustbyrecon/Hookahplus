@@ -20,6 +20,8 @@ type StepActionBarProps = {
 export function StepActionBar({ workflow, onRefresh, demoMode }: StepActionBarProps) {
   const demoParams: Record<string, string> = demoMode ? { mode: "demo" } : {};
   const [isSaving, setIsSaving] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
+  const [completeError, setCompleteError] = useState<string | null>(null);
   const stepOrder = getStepsForWorkflow(workflow.workflowType);
   const currentIndex = stepOrder.indexOf(workflow.currentStepKey);
   const prevStep = currentIndex > 0 ? stepOrder[currentIndex - 1] : null;
@@ -46,6 +48,8 @@ export function StepActionBar({ workflow, onRefresh, demoMode }: StepActionBarPr
 
   const handleContinue = async () => {
     if (!nextStep && !isLastStep) return;
+    setCompleteError(null);
+    setIsCompleting(true);
     try {
       const validateRes = await fetch(apiUrl("/api/onboarding/validate", demoParams), {
         method: "POST",
@@ -57,6 +61,10 @@ export function StepActionBar({ workflow, onRefresh, demoMode }: StepActionBarPr
       });
       const validateData = await validateRes.json();
       if (validateData.status !== "complete") {
+        const msg = Array.isArray(validateData.errors) && validateData.errors.length > 0
+          ? validateData.errors.join(". ")
+          : "Save draft first, then complete all checklist items.";
+        setCompleteError(msg);
         await onRefresh();
         return;
       }
@@ -68,45 +76,61 @@ export function StepActionBar({ workflow, onRefresh, demoMode }: StepActionBarPr
           currentStepKey: workflow.currentStepKey,
         }),
       });
-      if (res.ok) await onRefresh();
+      const transitionData = await res.json();
+      if (!res.ok) {
+        setCompleteError(transitionData.error || transitionData.details || "Failed to complete");
+        return;
+      }
+      await onRefresh();
     } catch (err) {
       console.error("[StepActionBar] transition", err);
+      setCompleteError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setIsCompleting(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-between pt-4 border-t border-zinc-700">
-      <div className="flex gap-2">
-        {prevStep && (
-          <Button variant="outline" size="sm" onClick={handleBack}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
+    <div className="space-y-3 pt-4 border-t border-zinc-700">
+      {completeError && (
+        <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-sm text-amber-200">
+          {completeError}
+        </div>
+      )}
+      <div className="flex items-center justify-between">
+        <div className="flex gap-2">
+          {prevStep && (
+            <Button variant="outline" size="sm" onClick={handleBack} disabled={isCompleting}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back
+            </Button>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={isSaving || isCompleting}
+            onClick={async () => {
+              setIsSaving(true);
+              setCompleteError(null);
+              try {
+                await onRefresh();
+              } finally {
+                setIsSaving(false);
+              }
+            }}
+          >
+            <Save className="w-4 h-4 mr-2" />
+            {isSaving ? "Refreshing..." : "Refresh"}
           </Button>
-        )}
-      </div>
-      <div className="flex gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={isSaving}
-          onClick={async () => {
-            setIsSaving(true);
-            try {
-              await onRefresh();
-            } finally {
-              setIsSaving(false);
-            }
-          }}
-        >
-          <Save className="w-4 h-4 mr-2" />
-          {isSaving ? "Refreshing..." : "Refresh"}
-        </Button>
-        {(nextStep || isLastStep) && (
-          <Button size="sm" onClick={handleContinue}>
-            {isLastStep ? "Complete" : "Continue"}
-            <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
-        )}
+          {(nextStep || isLastStep) && (
+            <Button size="sm" onClick={handleContinue} disabled={isCompleting}>
+              {isCompleting ? "Completing..." : isLastStep ? "Complete" : "Continue"}
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

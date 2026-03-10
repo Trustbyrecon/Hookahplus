@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
+import { CheckCircle, ArrowRight } from "lucide-react";
 import type { OnboardingWorkflow } from "../../types/onboarding";
 import { OnboardingSidebar } from "./OnboardingSidebar";
 import { ProgressHeader } from "./ProgressHeader";
@@ -114,6 +116,43 @@ export function OnboardingShell({ loungeId, demoMode }: OnboardingShellProps) {
         loungeId={loungeId}
         onWorkflowCreated={createWorkflow}
       />
+    );
+  }
+
+  if (workflow.overallStatus === "complete") {
+    return (
+      <div className="grid grid-cols-12 gap-6">
+        <aside className="col-span-3">
+          <OnboardingSidebar workflow={workflow} />
+        </aside>
+        <main className="col-span-6 space-y-6">
+          <div className="p-8 bg-green-900/20 border border-green-600/40 rounded-xl text-center">
+            <CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-white mb-2">Onboarding complete</h2>
+            <p className="text-zinc-400 mb-6">
+              {workflow.loungeId} is ready. Head to your dashboard to start managing sessions.
+            </p>
+            <div className="flex flex-wrap justify-center gap-3">
+              <Link
+                href={`/fire-session-dashboard?lounge=${workflow.loungeId}`}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-teal-600 hover:bg-teal-700 rounded-lg text-white font-semibold transition-colors"
+              >
+                Open Dashboard
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link
+                href={`/dashboard?lounge=${workflow.loungeId}`}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-zinc-700 hover:bg-zinc-600 rounded-lg text-white font-medium transition-colors"
+              >
+                Lounge Settings
+              </Link>
+            </div>
+          </div>
+        </main>
+        <section className="col-span-3">
+          <OnboardingSupportRail workflow={workflow} />
+        </section>
+      </div>
     );
   }
 

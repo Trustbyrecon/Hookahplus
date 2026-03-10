@@ -55,6 +55,8 @@ export class TableLayoutService {
    * Supports:
    * - `table-002` <-> `T-002`
    * - `Table-002` / `Table 002` (LaunchPad-generated names)
+   * - Plain numeric IDs from FloorplanLayout (e.g. 401, 402, KB1)
+   * - `seat-401` (codigo operator format) -> 401
    */
   private static tableIdCandidates(raw: string): string[] {
     const token = this.normalizeTableToken(raw);
@@ -63,12 +65,17 @@ export class TableLayoutService {
     const out = new Set<string>([token]);
     const lower = token.toLowerCase();
 
+    // seat-401 -> 401 (codigo operator / codigoSeats format)
+    const mSeat = lower.match(/^seat[-\s]?([a-z0-9]+)$/i);
+    if (mSeat) out.add(mSeat[1]);
+
     // Match common numeric patterns
     const mTable = lower.match(/^table[-\s]?0*(\d{1,4})$/);
     const mT = lower.match(/^t[-\s]?0*(\d{1,4})$/);
     const mName = lower.match(/^table[-\s]+0*(\d{1,4})$/);
+    const mPlain = lower.match(/^(\d{1,4})$/); // Plain numeric: 401, 402
 
-    const numStr = (mTable?.[1] || mT?.[1] || mName?.[1]) ?? null;
+    const numStr = (mTable?.[1] || mT?.[1] || mName?.[1] || mPlain?.[1]) ?? null;
     if (numStr) {
       const n = parseInt(numStr, 10);
       const pad = String(n).padStart(3, '0');
@@ -76,6 +83,7 @@ export class TableLayoutService {
       out.add(`T-${pad}`);
       out.add(`Table-${pad}`);
       out.add(`Table ${pad}`);
+      out.add(String(n)); // 401
       // Also accept non-padded forms
       out.add(`table-${n}`);
       out.add(`T-${n}`);
@@ -114,6 +122,14 @@ export class TableLayoutService {
     };
   }
 
+  /** Base URL for server-side fetch (API routes calling internal APIs) */
+  private static getBaseUrl(): string {
+    if (typeof window !== 'undefined') return '';
+    return process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : (process.env.NEXTAUTH_URL ?? 'http://localhost:3002');
+  }
+
   /**
    * Load tables from saved layout
    */
@@ -126,9 +142,10 @@ export class TableLayoutService {
         return cached.layout?.tables || [];
       }
 
-      const url = loungeId
+      const path = loungeId
         ? `/api/lounges?layout=true&loungeId=${encodeURIComponent(loungeId)}`
         : '/api/lounges?layout=true';
+      const url = `${this.getBaseUrl()}${path}`;
       const response = await fetch(url);
       if (!response.ok) {
         console.warn('[TableLayoutService] Failed to load layout, returning empty array');

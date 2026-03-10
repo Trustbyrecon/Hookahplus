@@ -153,59 +153,58 @@ export async function GET(req: NextRequest) {
         const effectiveLoungeId = loungeId || 'HOPE_GLOBAL_FORUM';
         const key = layoutKey(effectiveLoungeId);
 
-        // Backward compatible read: try scoped key first, then legacy global key.
+        // Prefer FloorplanLayout for lounges that use it (e.g. CODIGO operator at /codigo/operator).
+        // This ensures table selection in Create Session modal uses the floorplan configured there.
+        try {
+          const floorplan = await prisma.floorplanLayout.findFirst({
+            where: { loungeId: effectiveLoungeId },
+            orderBy: { floorId: 'asc' },
+          });
+          if (floorplan?.nodes && Array.isArray(floorplan.nodes) && (floorplan.nodes as unknown[]).length > 0) {
+            const nodes = floorplan.nodes as Array<{ id?: string; label?: string; type?: string; x?: number; y?: number; capacity?: number }>;
+            const tables = nodes.map((n) => ({
+              id: n.id || '',
+              name: n.label || n.id || '',
+              seatingType: n.type === 'kiosk' ? 'Kiosk' : 'Booth',
+              capacity: n.capacity ?? 4,
+              coordinates: { x: n.x ?? 0, y: n.y ?? 0 },
+              zone: 'Main Floor',
+            }));
+            return NextResponse.json({
+              success: true,
+              loungeId: effectiveLoungeId,
+              layoutVersion: 1,
+              layout: {
+                loungeId: effectiveLoungeId,
+                tables,
+                meta: { source: 'floorplan_layout' },
+                updatedAt: floorplan.updatedAt.toISOString(),
+              },
+            });
+          }
+        } catch (fpError) {
+          console.error('[Lounges API] FloorplanLayout read error:', fpError);
+        }
+
+        // Fallback: OrgSetting (Lounge Layout Manager)
         const layoutSetting =
           (await prisma.orgSetting.findUnique({ where: { key } })) ||
           (await prisma.orgSetting.findUnique({ where: { key: 'lounge_layout' } }).catch(() => null));
 
-        if (!layoutSetting) {
-          // Fallback: FloorplanLayout (e.g. CODIGO pilot) when no OrgSetting
-          if (effectiveLoungeId === 'CODIGO') {
-            try {
-              const floorplan = await prisma.floorplanLayout.findFirst({
-                where: { loungeId: effectiveLoungeId },
-                orderBy: { floorId: 'asc' },
-              });
-              if (floorplan?.nodes && Array.isArray(floorplan.nodes)) {
-                const nodes = floorplan.nodes as Array<{ id?: string; label?: string; type?: string; x?: number; y?: number; capacity?: number }>;
-                const tables = nodes.map((n) => ({
-                  id: n.id || '',
-                  name: n.label || n.id || '',
-                  seatingType: n.type === 'kiosk' ? 'Kiosk' : 'Booth',
-                  capacity: n.capacity ?? 4,
-                  coordinates: { x: n.x ?? 0, y: n.y ?? 0 },
-                  zone: 'Main Floor',
-                }));
-                return NextResponse.json({
-                  success: true,
-                  loungeId: effectiveLoungeId,
-                  layoutVersion: 1,
-                  layout: {
-                    loungeId: effectiveLoungeId,
-                    tables,
-                    meta: { source: 'floorplan_layout' },
-                    updatedAt: floorplan.updatedAt.toISOString(),
-                  },
-                });
-              }
-            } catch (fpError) {
-              console.error('[Lounges API] FloorplanLayout fallback error:', fpError);
-            }
-          }
+        if (layoutSetting) {
+          const layoutData = JSON.parse(layoutSetting.value);
           return NextResponse.json({
             success: true,
-            layout: null,
-            message: 'No layout configured yet'
+            loungeId: layoutData?.loungeId || effectiveLoungeId,
+            layoutVersion: layoutData?.layoutVersion || layoutData?.meta?.layoutVersion || null,
+            layout: layoutData
           });
         }
 
-        const layoutData = JSON.parse(layoutSetting.value);
-        
         return NextResponse.json({
           success: true,
-          loungeId: layoutData?.loungeId || effectiveLoungeId,
-          layoutVersion: layoutData?.layoutVersion || layoutData?.meta?.layoutVersion || null,
-          layout: layoutData
+          layout: null,
+          message: 'No layout configured yet'
         });
       } catch (dbError) {
         console.error('[Lounges API] Database error when fetching layout (non-blocking):', dbError);
