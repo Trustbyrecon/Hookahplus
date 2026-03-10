@@ -1204,8 +1204,8 @@ export default function SimpleFSDDesign({
                 </button>
               )}
               
-              {/* START_ACTIVE (Light Session) - For DELIVERED sessions */}
-              {availableActions.includes('START_ACTIVE') && canUserPerformAction('START_ACTIVE', userRole) && (
+              {/* START_ACTIVE (Light Session) - For DELIVERED sessions. CODIGO: hide - Delivered = Light */}
+              {availableActions.includes('START_ACTIVE') && canUserPerformAction('START_ACTIVE', userRole) && !(useFloorPlan || loungeId === 'CODIGO') && (
                 <button
                   data-action="START_ACTIVE"
                   onClick={(e) => {
@@ -1532,11 +1532,11 @@ export default function SimpleFSDDesign({
         )}
       </div>
 
-      {/* Tabs */}
+      {/* Tabs - CODIGO: Kitchen → Hookah Room */}
       <div className="flex space-x-1 mb-6">
         {[
           { id: 'overview', label: 'All Orders', icon: '📊' },
-          { id: 'boh', label: 'Kitchen', icon: '👨‍🍳' },
+          { id: 'boh', label: (useFloorPlan || loungeId === 'CODIGO') ? 'Hookah Room' : 'Kitchen', icon: '👨‍🍳' },
           { id: 'foh', label: 'Floor', icon: '👨‍💼', testId: 'tab-floor' },
           { id: 'edge', label: 'Issues', icon: '⚠️' }
         ].map((tab) => (
@@ -1762,8 +1762,8 @@ export default function SimpleFSDDesign({
                       </button>
                     )}
 
-                    {/* Light Hookah - Show if light session exists */}
-                    {lightSession && (
+                    {/* Light Hookah - Show if light session exists. CODIGO: hide - Delivered = Light in NAN context */}
+                    {lightSession && !(useFloorPlan || loungeId === 'CODIGO') && (
                       <button
                         onClick={async () => {
                           await handleSessionAction('start_active', lightSession.id);
@@ -1842,7 +1842,7 @@ export default function SimpleFSDDesign({
               <div className="bg-amber-900/30 border border-amber-600/50 rounded-lg p-4">
                 <h3 className="text-base font-semibold text-amber-200 mb-3 flex items-center space-x-2">
                   <Coffee className="w-4 h-4 text-amber-400" />
-                  <span>Guest Refill Requests — Kitchen</span>
+                  <span>Guest Refill Requests — {(useFloorPlan || loungeId === 'CODIGO') ? 'Hookah Room' : 'Kitchen'}</span>
                   <span className="ml-2 px-2 py-0.5 rounded-full bg-amber-500/30 text-amber-200 text-xs font-medium">
                     {refillRequestSessions.length}
                   </span>
@@ -1860,7 +1860,7 @@ export default function SimpleFSDDesign({
           <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
               <Package className="w-5 h-5 text-orange-400" />
-              <span>Kitchen Orders</span>
+              <span>{(useFloorPlan || loungeId === 'CODIGO') ? 'Hookah Room' : 'Kitchen'} Orders</span>
             </h3>
             <div className="space-y-4">
               {(() => {
@@ -1875,8 +1875,8 @@ export default function SimpleFSDDesign({
                 return bohSessions.length === 0 ? (
                   <div className="text-center py-12">
                     <Package className="w-16 h-16 mx-auto mb-4 text-zinc-600" />
-                    <h3 className="text-lg font-medium text-zinc-300 mb-2">No Kitchen Orders</h3>
-                    <p className="text-zinc-500">No orders currently in kitchen</p>
+                    <h3 className="text-lg font-medium text-zinc-300 mb-2">No {(useFloorPlan || loungeId === 'CODIGO') ? 'Hookah Room' : 'Kitchen'} Orders</h3>
+                    <p className="text-zinc-500">No orders currently in {(useFloorPlan || loungeId === 'CODIGO') ? 'hookah room' : 'kitchen'}</p>
                   </div>
                 ) : (
                   bohSessions.map(renderSessionCard)
@@ -2038,7 +2038,7 @@ export default function SimpleFSDDesign({
             <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4">
               <div className="flex items-center space-x-2">
                 <Package className="w-5 h-5 text-orange-400" />
-                <span className="text-sm text-zinc-400">In Kitchen</span>
+                <span className="text-sm text-zinc-400">{(useFloorPlan || loungeId === 'CODIGO') ? 'In Hookah Room' : 'In Kitchen'}</span>
               </div>
               <p className="text-2xl font-bold text-white mt-1">
                 {isMounted ? sessions.filter(s => ['PREP_IN_PROGRESS', 'HEAT_UP', 'READY_FOR_DELIVERY'].includes(s.status || s.state)).length : '...'}
@@ -2048,7 +2048,7 @@ export default function SimpleFSDDesign({
             <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4">
               <div className="flex items-center space-x-2">
                 <Truck className="w-5 h-5 text-teal-400" />
-                <span className="text-sm text-zinc-400">Ready to Deliver</span>
+                <span className="text-sm text-zinc-400">{(useFloorPlan || loungeId === 'CODIGO') ? 'Delivered' : 'Ready to Deliver'}</span>
               </div>
               <p className="text-2xl font-bold text-white mt-1">
                 {isMounted ? sessions.filter(s => ['OUT_FOR_DELIVERY', 'DELIVERED'].includes(s.status || s.state)).length : '...'}
@@ -2116,6 +2116,7 @@ export default function SimpleFSDDesign({
         refreshSessions={refreshSessions}
         isDemoMode={isDemoMode}
         onSessionAction={onSessionAction}
+        loungeId={loungeId}
       />
       
       {/* Guest Intelligence Modal */}

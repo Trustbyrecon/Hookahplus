@@ -159,24 +159,39 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: `Unknown cmd: ${cmd}` }, { status: 400 });
   }
 
+  // CODIGO NAN: MARK_DELIVERED = Delivered + Light. Skip DELIVERED, go directly to ACTIVE.
+  const loungeId = (dbSession as any).loungeId ?? (dbSession as any).lounge_id;
+  const isCodigo = loungeId === 'CODIGO';
+  const effectiveAction: SessionAction =
+    isCodigo && action === 'MARK_DELIVERED' ? 'START_ACTIVE' : action;
+
   try {
     const next = nextStateWithTrust(
       current,
-      { type: action, operatorId, timestamp: Date.now() },
+      { type: effectiveAction, operatorId, timestamp: Date.now() },
       userRole
     );
 
     const trackerStage = STATUS_TO_TRACKER_STAGE[next.status as SessionStatus];
-    const noteLine = `[${new Date().toISOString()}] ${cmd} (${userRole})`;
+    const noteLine = `[${new Date().toISOString()}] ${cmd}${isCodigo && cmd === 'MARK_DELIVERED' ? ' (→ACTIVE)' : ''} (${userRole})`;
+
+    const updateData: Record<string, unknown> = {
+      state: mapStatusToPrismaState(next.status),
+      stage: trackerStage,
+      action: cmd,
+      tableNotes: appendNote(dbSession.tableNotes, noteLine),
+    };
+    // When transitioning to ACTIVE (incl. CODIGO MARK_DELIVERED→START_ACTIVE), set timer
+    if (next.status === 'ACTIVE' && !(dbSession as any).startedAt) {
+      updateData.startedAt = new Date();
+      updateData.timerStartedAt = new Date();
+      updateData.timerDuration = (dbSession as any).durationSecs || 45 * 60;
+      updateData.timerStatus = 'running';
+    }
 
     const updatedDb = await prisma.session.update({
       where: { id: dbSession.id },
-      data: {
-        state: mapStatusToPrismaState(next.status),
-        stage: trackerStage,
-        action: cmd,
-        tableNotes: appendNote(dbSession.tableNotes, noteLine),
-      } as any,
+      data: updateData as any,
     });
 
     const fire = convertPrismaSessionToFireSession(updatedDb);

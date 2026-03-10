@@ -22,6 +22,8 @@ interface SessionDetailModalProps {
   refreshSessions?: () => void | Promise<void>;
   isDemoMode?: boolean;
   onSessionAction?: (sessionId: string, action: string) => void;
+  /** CODIGO: hide Light Session - Delivered = Light in NAN context */
+  loungeId?: string;
 }
 
 const SessionDetailModal: React.FC<SessionDetailModalProps> = ({
@@ -32,6 +34,7 @@ const SessionDetailModal: React.FC<SessionDetailModalProps> = ({
   refreshSessions,
   isDemoMode = false,
   onSessionAction,
+  loungeId,
 }) => {
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [editedNotes, setEditedNotes] = useState('');
@@ -619,7 +622,9 @@ const SessionDetailModal: React.FC<SessionDetailModalProps> = ({
             </div>
           )}
           <div className="flex flex-wrap gap-2">
-            {getAvailableActions().map((action) => {
+            {getAvailableActions()
+              .filter((action) => !(loungeId === 'CODIGO' && action === 'START_ACTIVE'))
+              .map((action) => {
               const canPerform = canPerformAction(userRole as UserRole, action);
               return (
                 <button
