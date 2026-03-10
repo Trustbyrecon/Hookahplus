@@ -71,6 +71,9 @@ Before the meeting, ensure:
 | Page | URL |
 |------|-----|
 | Fire Session Dashboard | `/fire-session-dashboard?lounge=CODIGO` |
+| Onboarding Engine (demo mode) | `/onboarding/CODIGO?mode=demo` |
 | H+ Passport Join | `/codigo/join` |
 | Admin QR (demo mode) | `/admin/qr?mode=demo` |
 | KPI View | `/admin/codigo-kpis` |
+
+**Note:** Use `?mode=demo` on Onboarding Engine to validate without auth (pilot/demo validation).

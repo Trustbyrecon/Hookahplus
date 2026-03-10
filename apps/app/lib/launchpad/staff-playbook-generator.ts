@@ -59,7 +59,7 @@ ${config.flavors.premium.map(f => `- ${f.name} ($${f.price.toFixed(2)})`).join('
 - **Shift Handoff:** Notes carry forward between shifts
 - **Memory:** System remembers repeat guests' preferences
 - **Add-ons:** Track extras (coals, drinks, etc.)
-- **POS Bridge:** ${config.pos_bridge.pos_type === 'none' ? 'Manual entry' : `Syncs with ${config.pos_bridge.pos_type}`}
+- **POS Bridge:** ${['none', 'other'].includes(config.pos_bridge.pos_type) ? 'Runs alongside your POS (reconciliation via export)' : `Reconciliation mapping for ${config.pos_bridge.pos_type}`}
 
 ---
 

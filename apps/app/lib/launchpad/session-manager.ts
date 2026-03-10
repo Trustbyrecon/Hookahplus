@@ -129,8 +129,9 @@ export async function createSetupSession(
     // Optional prefill: POS + session rules when known (keeps onboarding short).
     if (prefillData.pos_used) {
       const pos = String(prefillData.pos_used).trim().toLowerCase();
-      const allowed = new Set(['square', 'clover', 'toast', 'stripe', 'none']);
+      const allowed = new Set(['square', 'clover', 'toast', 'stripe', 'other', 'none']);
       initialProgress.data.step5 = {
+        usageMode: 'alongside',
         posType: (allowed.has(pos) ? pos : 'none') as any,
       };
     }

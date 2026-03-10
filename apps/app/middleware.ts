@@ -137,6 +137,7 @@ export async function middleware(request: NextRequest) {
           '/admin/operator-onboarding',
           '/api/admin',
           '/api/admin/operator-onboarding',
+          '/api/onboarding', // Onboarding Engine validation without auth in development
           '/api/pos/tickets', // CI/E2E + local dev helpers
           '/api/pos/reconcile', // Local metrics dashboard + CI/E2E
           '/api/analytics', // Allow analytics APIs without auth in development
@@ -151,6 +152,8 @@ export async function middleware(request: NextRequest) {
           '/api/campaigns', // Campaign APIs in development
         ]
       : []),
+    // Demo mode: allow onboarding API for pilot validation (e.g. CODIGO)
+    ...(isDemoRequest ? ['/api/onboarding'] : []),
   ];
 
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));

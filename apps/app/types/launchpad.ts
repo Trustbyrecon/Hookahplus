@@ -53,7 +53,10 @@ export interface StaffRolesData {
 }
 
 export interface POSBridgeData {
-  posType: 'square' | 'clover' | 'toast' | 'stripe' | 'none';
+  /** How the team will use H+ (default: alongside = POS-agnostic) */
+  usageMode: 'alongside' | 'without_pos' | 'not_sure';
+  /** POS type for reconciliation mapping, staff instructions, receipt conventions */
+  posType: 'square' | 'clover' | 'toast' | 'stripe' | 'other' | 'none';
 }
 
 export interface LaunchPadProgress {
@@ -133,7 +136,8 @@ export interface LoungeOpsConfig {
     role: 'owner' | 'manager' | 'staff';
   }>;
   pos_bridge: {
-    pos_type: 'square' | 'clover' | 'toast' | 'stripe' | 'none';
+    pos_type: 'square' | 'clover' | 'toast' | 'stripe' | 'other' | 'none';
+    usage_mode?: 'alongside' | 'without_pos' | 'not_sure';
     integration_guide_url?: string;
   };
   operating_hours: {

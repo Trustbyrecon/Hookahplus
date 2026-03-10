@@ -212,6 +212,8 @@ H+ tracks sessions and memory. Stripe processes payments.
 **Note:** Stripe integration supports both online and in-person payments.`,
   };
 
-  return baseGuide[posType as keyof typeof baseGuide] || baseGuide.none;
+  // 'other' uses same POS-agnostic guide as 'none'
+  const key = posType === 'other' ? 'none' : posType;
+  return baseGuide[key as keyof typeof baseGuide] || baseGuide.none;
 }
 

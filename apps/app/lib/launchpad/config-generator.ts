@@ -71,6 +71,7 @@ export function generateLoungeOpsConfig(
       })) || [],
     pos_bridge: {
       pos_type: step5?.posType || 'none',
+      usage_mode: step5?.usageMode || 'alongside',
     },
     operating_hours: overrides?.operatingHours || step1.operatingHours || {}, // Optional for mobile operators
     tables_count: overrides?.tablesCount ?? step1.tablesCount,

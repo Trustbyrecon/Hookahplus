@@ -12,9 +12,15 @@ import { WorkflowSetupStep } from "./WorkflowSetupStep";
 
 export type OnboardingShellProps = {
   loungeId: string;
+  demoMode?: boolean;
 };
 
-export function OnboardingShell({ loungeId }: OnboardingShellProps) {
+function apiUrl(path: string, params: Record<string, string> = {}): string {
+  const search = new URLSearchParams(params).toString();
+  return `${path}${search ? `?${search}` : ""}`;
+}
+
+export function OnboardingShell({ loungeId, demoMode }: OnboardingShellProps) {
   const [workflow, setWorkflow] = useState<OnboardingWorkflow | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,9 +29,14 @@ export function OnboardingShell({ loungeId }: OnboardingShellProps) {
     try {
       setIsLoading(true);
       setError(null);
-      const res = await fetch(`/api/onboarding/workflow?loungeId=${encodeURIComponent(loungeId)}`);
+      const params: Record<string, string> = { loungeId };
+      if (demoMode) params.mode = "demo";
+      const res = await fetch(apiUrl("/api/onboarding/workflow", params));
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to load workflow");
+      if (!res.ok) {
+        const msg = [data.error, data.details, data.hint].filter(Boolean).join(" — ");
+        throw new Error(msg || "Failed to load workflow");
+      }
       setWorkflow(data.workflow ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load workflow");
@@ -33,7 +44,7 @@ export function OnboardingShell({ loungeId }: OnboardingShellProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [loungeId]);
+  }, [loungeId, demoMode]);
 
   useEffect(() => {
     fetchWorkflow();
@@ -42,7 +53,10 @@ export function OnboardingShell({ loungeId }: OnboardingShellProps) {
   const createWorkflow = useCallback(
     async (workflowType: string) => {
       try {
-        const res = await fetch("/api/onboarding/workflow", {
+        const params: Record<string, string> = {};
+        if (demoMode) params.mode = "demo";
+        const url = apiUrl("/api/onboarding/workflow", params);
+        const res = await fetch(url, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ loungeId, workflowType }),
@@ -54,14 +68,15 @@ export function OnboardingShell({ loungeId }: OnboardingShellProps) {
         setError(err instanceof Error ? err.message : "Failed to create workflow");
       }
     },
-    [loungeId]
+    [loungeId, demoMode]
   );
 
   const saveStepDraft = useCallback(
     async (stepKey: string, data: Record<string, unknown>) => {
       if (!workflow) return;
       try {
-        const res = await fetch("/api/onboarding/step", {
+        const url = apiUrl("/api/onboarding/step", demoMode ? { mode: "demo" } : {});
+        const res = await fetch(url, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ workflowId: workflow.workflowId, stepKey, data }),
@@ -74,7 +89,7 @@ export function OnboardingShell({ loungeId }: OnboardingShellProps) {
         throw err;
       }
     },
-    [workflow, fetchWorkflow]
+    [workflow, fetchWorkflow, demoMode]
   );
 
   if (isLoading) {
@@ -118,6 +133,7 @@ export function OnboardingShell({ loungeId }: OnboardingShellProps) {
         <StepActionBar
           workflow={workflow}
           onRefresh={fetchWorkflow}
+          demoMode={demoMode}
         />
       </main>
 

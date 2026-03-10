@@ -1,17 +1,24 @@
 "use client";
 
 import React, { useState } from "react";
-import { ArrowLeft, ArrowRight, Save, CheckCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight, Save } from "lucide-react";
 import { Button } from "../ui/button";
 import type { OnboardingWorkflow } from "../../types/onboarding";
 import { getStepsForWorkflow } from "../../lib/onboarding/workflow-config";
 
+function apiUrl(path: string, params: Record<string, string> = {}): string {
+  const search = new URLSearchParams(params).toString();
+  return `${path}${search ? `?${search}` : ""}`;
+}
+
 type StepActionBarProps = {
   workflow: OnboardingWorkflow;
   onRefresh: () => Promise<void>;
+  demoMode?: boolean;
 };
 
-export function StepActionBar({ workflow, onRefresh }: StepActionBarProps) {
+export function StepActionBar({ workflow, onRefresh, demoMode }: StepActionBarProps) {
+  const demoParams = demoMode ? { mode: "demo" } : {};
   const [isSaving, setIsSaving] = useState(false);
   const stepOrder = getStepsForWorkflow(workflow.workflowType);
   const currentIndex = stepOrder.indexOf(workflow.currentStepKey);
@@ -21,7 +28,7 @@ export function StepActionBar({ workflow, onRefresh }: StepActionBarProps) {
   const handleBack = async () => {
     if (prevStep) {
       try {
-        const res = await fetch("/api/onboarding/workflow", {
+        const res = await fetch(apiUrl("/api/onboarding/workflow", demoParams), {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -39,7 +46,7 @@ export function StepActionBar({ workflow, onRefresh }: StepActionBarProps) {
   const handleContinue = async () => {
     if (!nextStep) return;
     try {
-      const validateRes = await fetch("/api/onboarding/validate", {
+      const validateRes = await fetch(apiUrl("/api/onboarding/validate", demoParams), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -52,7 +59,7 @@ export function StepActionBar({ workflow, onRefresh }: StepActionBarProps) {
         await onRefresh();
         return;
       }
-      const res = await fetch("/api/onboarding/transition", {
+      const res = await fetch(apiUrl("/api/onboarding/transition", demoParams), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
