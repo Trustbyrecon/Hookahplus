@@ -1,0 +1,38 @@
+swarm:
+  worktrees:
+    - name: pos
+      path: ./wt-pos
+      goal: "POS spine adapters + reconciliation"
+    - name: ledger
+      path: ./wt-ledger
+      goal: "HPLUS_LEDGER issue/redeem/balance"
+    - name: sdk
+      path: ./wt-sdk
+      goal: "REM schema + SDK + linter"
+    - name: ui
+      path: ./wt-ui
+      goal: "Operator Reflex dashboard"
+    - name: tests
+      path: ./wt-tests
+      goal: "E2E + EP gates"
+  guardrails:
+    - id: G1
+      name: "POS-first"
+      rule: "if pos_sync_ready == false then forbid(paths=/qr/**)"
+    - id: G2
+      name: "One-ledger"
+      rule: "credit_type == HPLUS_CREDIT"
+    - id: G3
+      name: "Canonical-REM"
+      rule: "reject if missing actor.anon_hash || effect.loyalty_delta"
+  kpis:
+    - key: reconciliation_rate
+      target: ">=0.95"
+    - key: pricing_parity
+      target: ">=0.99"
+    - key: reflex_uplift_wow
+      alert_if: "< -0.20"
+  ep_gates:
+    - EP.POS.Ready
+    - EP.REM.Coverage
+    - EP.Drift.Alert
