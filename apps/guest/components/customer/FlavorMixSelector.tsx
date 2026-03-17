@@ -450,15 +450,12 @@ export default function FlavorMixSelector({
   return (
     <div className={cn("w-full bg-neutral-950 text-neutral-100 p-6 rounded-xl", className)}>
       <div className="max-w-6xl mx-auto grid gap-6">
-        {/* Preset Mixes (CODIGO) */}
+        {/* Preset Mixes (CODIGO) - primary choice, low cognitive load */}
         {presets && presets.length > 0 && (
           <div className="rounded-xl bg-white/5 border border-amber-500/30 p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Sparkles className="h-4 w-4 text-amber-400" />
-              <h3 className="font-semibold text-amber-200">Signature Presets</h3>
-            </div>
+            <h3 className="font-semibold text-amber-200 mb-2">Pick a mix</h3>
             <p className="text-sm text-neutral-400 mb-3">
-              Choose a curated mix crafted by our Shisha Master, or build your own below.
+              Tap a preset or build your own below.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
               {presets.map((preset) => {
@@ -485,12 +482,14 @@ export default function FlavorMixSelector({
           </div>
         )}
 
-        {/* Header - hide Wheel/Shisha Master when using custom flavors (CODIGO) */}
+        {/* Header - simplified for CODIGO (presets) to reduce cognitive load */}
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl md:text-2xl font-semibold tracking-tight">Choose Your Flavor Mix</h2>
             <p className="text-neutral-400">
-              {customFlavors?.length
+              {presets?.length
+                ? `Pick a preset or add up to ${maxSelections} flavors.`
+                : customFlavors?.length
                 ? `Choose up to ${maxSelections} flavors from our menu.`
                 : `Choose up to ${maxSelections} flavors. Explore with the Wheel or let a Shisha Master craft your mix.`}
             </p>
@@ -521,11 +520,11 @@ export default function FlavorMixSelector({
           )}
         </div>
 
-        {/* Selection Bar */}
+        {/* Selection Bar - compact for CODIGO when presets */}
         <div className="flex flex-wrap items-center gap-2 rounded-xl bg-white/5 p-3 border border-white/10">
           <div className="flex items-center gap-2">
             <CircleDot className="h-4 w-4 text-teal-400" />
-            <span className="text-sm text-neutral-300">Selected:</span>
+            <span className="text-sm text-neutral-300">{presets?.length ? 'Your mix:' : 'Selected:'}</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {selected.length ? (
@@ -535,19 +534,29 @@ export default function FlavorMixSelector({
                 </span>
               ))
             ) : (
-              <span className="text-neutral-500 text-sm">None yet</span>
+              <span className="text-neutral-500 text-sm">{presets?.length ? 'Tap a preset above' : 'None yet'}</span>
             )}
           </div>
-          <div className="grow" />
-          <div className="text-sm text-teal-400 font-medium">
-            Total: ${totalPrice.toFixed(2)}
-          </div>
-          <button 
-            onClick={clearAll} 
-            className="text-xs flex items-center gap-1 px-2 py-1 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition"
-          >
-            <RotateCcw className="h-3 w-3" /> Reset
-          </button>
+          {!presets?.length && (
+            <>
+              <div className="grow" />
+              <div className="text-sm text-teal-400 font-medium">Total: ${totalPrice.toFixed(2)}</div>
+              <button 
+                onClick={clearAll} 
+                className="text-xs flex items-center gap-1 px-2 py-1 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition"
+              >
+                <RotateCcw className="h-3 w-3" /> Reset
+              </button>
+            </>
+          )}
+          {presets?.length && selected.length > 0 && (
+            <button 
+              onClick={clearAll} 
+              className="text-xs ml-auto flex items-center gap-1 px-2 py-1 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition"
+            >
+              <RotateCcw className="h-3 w-3" /> Clear
+            </button>
+          )}
         </div>
 
         {/* Main Content - when customFlavors, only show wheel (menu flavors) */}
@@ -582,8 +591,10 @@ export default function FlavorMixSelector({
           />
         )}
 
-        {/* Mix Preview Card */}
-        <MixPreview selected={selected} recommended={recommended} totalPrice={totalPrice} customFlavors={customFlavors} />
+        {/* Mix Preview - hidden for CODIGO to reduce cognitive load */}
+        {!presets?.length && (
+          <MixPreview selected={selected} recommended={recommended} totalPrice={totalPrice} customFlavors={customFlavors} />
+        )}
       </div>
     </div>
   );

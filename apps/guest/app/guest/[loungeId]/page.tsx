@@ -85,9 +85,14 @@ export default function GuestLoungePage() {
     
     const timeoutId = setTimeout(() => {
       console.error('Guest initialization timeout');
-      setError('Connection slow. Ask staff to check WiFi, or try again in a moment.');
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
+      const isLocal = typeof window !== 'undefined' && (appUrl.includes('localhost') || appUrl.includes('127.0.0.1'));
+      const msg = isLocal
+        ? `Connection timeout. Is the app running at ${appUrl}? Start it with: cd apps/app && npm run dev`
+        : 'Connection slow. Ask staff to check WiFi, or try again in a moment.';
+      setError(msg);
       setIsLoading(false);
-    }, 10000); // 10 second timeout
+    }, 20000); // 20 second timeout (was 10s - app cold start can be slow)
     
     return () => clearTimeout(timeoutId);
   }, [isLoading]);
@@ -461,7 +466,8 @@ export default function GuestLoungePage() {
                   setSessionStarted(true);
                   if (loungeId === 'CODIGO' && qrData?.tableId) {
                     const sid = appSessionId || sessionId;
-                    window.location.href = `/hookah-tracker?sessionId=${sid}&loungeId=${loungeId}&tableId=${qrData.tableId}`;
+                    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
+                    window.location.href = `${appUrl}/fire-session-dashboard?lounge=CODIGO&session=${sid}`;
                   }
                 }}
               />
@@ -820,7 +826,9 @@ export default function GuestLoungePage() {
                     console.log('Session started after checkout:', sessionId);
                     if (loungeId === 'CODIGO' && qrData?.tableId) {
                       const sid = appSessionId || sessionId;
-                      window.location.href = `/hookah-tracker?sessionId=${sid}&loungeId=${loungeId}&tableId=${qrData.tableId}`;
+                      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
+                      // Route to fire-session-dashboard (NAN tabs) for CODIGO demo
+                      window.location.href = `${appUrl}/fire-session-dashboard?lounge=CODIGO&session=${sid}`;
                     }
                   }}
                 />

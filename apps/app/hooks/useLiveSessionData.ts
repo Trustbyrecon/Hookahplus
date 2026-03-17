@@ -402,8 +402,12 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
         throw new Error(sessionsResult.error || 'Failed to load sessions');
       }
     } catch (err) {
-      console.error('[useLiveSessionData] Error loading sessions:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to load sessions';
+      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
+        console.warn('[useLiveSessionData] Sessions unavailable (network):', errorMessage);
+      } else {
+        console.error('[useLiveSessionData] Error loading sessions:', err);
+      }
       
       // First Light: No demo data fallback - fail hard with clear error
       let displayError = errorMessage;
@@ -547,7 +551,12 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
         });
       }
     } catch (err) {
-      console.error('[useLiveSessionData] Error loading metrics:', err);
+      const msg = err instanceof Error ? err.message : 'Unknown';
+      if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
+        console.warn('[useLiveSessionData] Metrics unavailable (network), using fallback');
+      } else {
+        console.error('[useLiveSessionData] Error loading metrics:', err);
+      }
       // Use fallback metrics
       setMetrics({
         activeSessions: 1,
@@ -820,9 +829,19 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
     }
   }, [sessions, loadSessions, loadMetrics]);
 
-  // Refresh all data
+  // Refresh all data (never rejects - catches network/server errors to avoid unhandled rejections)
   const refreshSessions = useCallback(async () => {
-    await Promise.all([loadSessions(), loadMetrics()]);
+    try {
+      await Promise.all([loadSessions(), loadMetrics()]);
+    } catch (err) {
+      // loadSessions/loadMetrics handle their own errors; catch any unexpected rejections
+      const msg = err instanceof Error ? err.message : 'Unknown';
+      if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
+        console.debug('[useLiveSessionData] Refresh skipped (network unavailable)');
+      } else {
+        console.warn('[useLiveSessionData] Refresh failed:', msg);
+      }
+    }
   }, [loadSessions, loadMetrics]);
 
   // Timer updates
@@ -853,7 +872,7 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
       new URLSearchParams(window.location.search).get('lounge') === 'CODIGO';
     const intervalMs = isCodigo ? 2000 : 5000;
     const interval = setInterval(() => {
-      refreshSessions();
+      refreshSessions().catch(() => {});
     }, intervalMs);
 
     return () => clearInterval(interval);
@@ -861,7 +880,7 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
 
   // Initial load
   useEffect(() => {
-    refreshSessions();
+    refreshSessions().catch(() => {});
   }, []); // Remove refreshSessions dependency to prevent recreation
 
   return {

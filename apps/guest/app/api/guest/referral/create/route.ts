@@ -58,9 +58,9 @@ export async function POST(req: NextRequest) {
     // Store referral link
     referralLinks.set(code, referralLink);
 
-    // Generate QR code URL
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://hookahplus.net';
-    const qrUrl = `${baseUrl}/guest/${loungeId}?ref=${code}`;
+    // Referral link must point to guest app (guest.hookahplus.net), not app - /guest/CODIGO lives on guest
+    const guestBaseUrl = process.env.NEXT_PUBLIC_GUEST_BASE_URL || process.env.NEXT_PUBLIC_GUEST_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://guest.hookahplus.net';
+    const qrUrl = `${guestBaseUrl}/guest/${loungeId}?ref=${code}`;
 
     // Generate QR code image
     let qrCodeImage: string;

@@ -182,7 +182,18 @@ const GlobalNavigation: React.FC = () => {
     const updateSystemStatus = async () => {
       try {
         // Fetch real session count and calculate workflow progress
-        const sessionsResponse = await fetch('/api/sessions');
+        let sessionsResponse: Response;
+        try {
+          sessionsResponse = await fetch('/api/sessions');
+        } catch (networkErr) {
+          const msg = networkErr instanceof Error ? networkErr.message : 'Unknown';
+          if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
+            console.debug('[GlobalNavigation] Sessions API unavailable (network)');
+          } else {
+            console.warn('[GlobalNavigation] Sessions fetch failed:', msg);
+          }
+          return;
+        }
         if (sessionsResponse.ok) {
           const sessionsData = await sessionsResponse.json();
           
@@ -258,7 +269,19 @@ const GlobalNavigation: React.FC = () => {
         let currentTrustLockStatus: 'active' | 'pending' | 'verified' = 'active';
         let currentVerificationRate = 100;
         
-        const trustLockResponse = await fetch('/api/trust-lock/status');
+        let trustLockResponse: Response;
+        try {
+          trustLockResponse = await fetch('/api/trust-lock/status');
+        } catch (networkErr) {
+          const msg = networkErr instanceof Error ? networkErr.message : 'Unknown';
+          if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
+            console.debug('[GlobalNavigation] Trust-Lock API unavailable (network)');
+          } else {
+            console.warn('[GlobalNavigation] Trust-Lock fetch failed:', msg);
+          }
+          // Keep defaults, skip Reflex score update
+          return;
+        }
         if (trustLockResponse.ok) {
           const trustLockData = await trustLockResponse.json();
           if (trustLockData.success) {
@@ -303,7 +326,12 @@ const GlobalNavigation: React.FC = () => {
           setReflexScore(Math.round(minScore + (maxScore - minScore) * rateFactor));
         }
       } catch (error) {
-        console.error('[GlobalNavigation] Error fetching system status:', error);
+        const msg = error instanceof Error ? error.message : String(error);
+        if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
+          console.debug('[GlobalNavigation] System status unavailable (network)');
+        } else {
+          console.error('[GlobalNavigation] Error fetching system status:', error);
+        }
       }
     };
 

@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { Shield, HelpCircle, Home, Clock, Trophy, Menu, X, Flame } from 'lucide-react';
 import { useGuestSessionContext } from '../contexts/GuestSessionContext';
@@ -83,13 +82,9 @@ export const GlobalNavigation: React.FC<GlobalNavigationProps> = ({
             <div className="flex items-center space-x-2">
               {isCodigo ? (
                 <>
-                  <Image
-                    src="/images/district-hookah-logo.png"
-                    alt="District Hookah"
-                    width={48}
-                    height={48}
-                    className="rounded object-contain"
-                  />
+                  <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 font-bold text-sm">
+                    DH
+                  </div>
                   <div>
                     <div className="text-lg font-bold text-white">District Hookah powered by H+</div>
                   </div>
@@ -167,13 +162,9 @@ export const GlobalNavigation: React.FC<GlobalNavigationProps> = ({
           <div className="flex items-center space-x-2">
             {isCodigo ? (
               <>
-                <Image
-                  src="/images/district-hookah-logo.png"
-                  alt="District Hookah"
-                  width={36}
-                  height={36}
-                  className="rounded object-contain"
-                />
+                <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 font-bold text-xs">
+                  DH
+                </div>
                 <div className="text-lg font-bold text-white">District Hookah powered by H+</div>
               </>
             ) : (
