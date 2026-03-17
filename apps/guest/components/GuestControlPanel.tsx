@@ -46,6 +46,16 @@ export default function GuestControlPanel({ sessionId: sessionIdProp, onClose }:
   // Get sessionId from URL params or prop
   const sessionIdFromUrl = searchParams.get('sessionId') || sessionIdProp;
   
+  // CODIGO: persist context when arriving via nav with loungeId=CODIGO
+  useEffect(() => {
+    const loungeId = searchParams.get('loungeId');
+    const tableId = searchParams.get('tableId');
+    if (loungeId === 'CODIGO' && typeof window !== 'undefined') {
+      sessionStorage.setItem('hp_codigo_loungeId', loungeId);
+      if (tableId) sessionStorage.setItem('hp_codigo_tableId', tableId);
+    }
+  }, [searchParams]);
+  
   // Fetch session directly from URL if provided (only once)
   useEffect(() => {
     // Prevent multiple fetches
@@ -521,7 +531,17 @@ export default function GuestControlPanel({ sessionId: sessionIdProp, onClose }:
               </p>
               <Button
                 variant="primary"
-                onClick={() => window.location.href = '/'}
+                onClick={() => {
+                  // CODIGO: stay in CODIGO context when starting new session
+                  const isCodigo = searchParams.get('loungeId') === 'CODIGO' ||
+                    (typeof window !== 'undefined' && sessionStorage.getItem('hp_codigo_loungeId') === 'CODIGO');
+                  const codigoTableId = typeof window !== 'undefined' ? sessionStorage.getItem('hp_codigo_tableId') : null;
+                  if (isCodigo) {
+                    window.location.href = `/guest/CODIGO?tableId=${codigoTableId || '301'}&ref=demo`;
+                  } else {
+                    window.location.href = '/';
+                  }
+                }}
                 className="w-full transition-all hover:scale-105"
               >
                 Start New Session

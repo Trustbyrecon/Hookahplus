@@ -9,6 +9,13 @@
  * - /api/lounges/CODIGO/layout returns layout (requires seed)
  */
 
+import { config } from 'dotenv';
+import { resolve } from 'path';
+
+// Load .env.local so DATABASE_URL and NEXT_PUBLIC_APP_URL are available (matches seed script)
+config({ path: resolve(process.cwd(), '.env.local') });
+config({ path: resolve(process.cwd(), '.env') });
+
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL
   || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
   || 'http://localhost:3002';

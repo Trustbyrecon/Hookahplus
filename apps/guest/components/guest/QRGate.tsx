@@ -173,7 +173,7 @@ export default function QRGate({ qrData, guestProfile, flags, onProfileUpdate, i
                 Save your preferences and rewards for next time.
               </p>
               <Link
-                href={`/register?loungeId=${encodeURIComponent(qrData.loungeId)}&return=${encodeURIComponent(`/guest/${qrData.loungeId}`)}`}
+                href={`/register?loungeId=${encodeURIComponent(qrData.loungeId)}&return=${encodeURIComponent(`/guest/${qrData.loungeId}${qrData.tableId ? `?tableId=${qrData.tableId}${qrData.ref ? `&ref=${qrData.ref}` : ''}` : ''}`)}`}
                 className="inline-flex items-center gap-2 px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-medium transition-colors"
               >
                 <UserPlus className="w-3 h-3" />

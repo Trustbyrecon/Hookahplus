@@ -29,6 +29,14 @@ function RewardsContent() {
     }
   }, [customerPhone, refreshSessions]);
 
+  // CODIGO: persist context when arriving via nav with loungeId=CODIGO
+  useEffect(() => {
+    const loungeId = searchParams.get('loungeId');
+    if (loungeId === 'CODIGO' && typeof window !== 'undefined') {
+      sessionStorage.setItem('hp_codigo_loungeId', loungeId);
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     initializeGuest();
   }, []);
@@ -197,7 +205,14 @@ function RewardsContent() {
     );
   }
 
-  const loungeId = searchParams.get('loungeId') || 'default-lounge';
+  // CODIGO: preserve loungeId from URL or sessionStorage
+  const loungeId = searchParams.get('loungeId')
+    || (typeof window !== 'undefined' ? sessionStorage.getItem('hp_codigo_loungeId') : null)
+    || 'default-lounge';
+  const codigoTableId = typeof window !== 'undefined' ? sessionStorage.getItem('hp_codigo_tableId') : null;
+  const backToLoungeHref = loungeId === 'CODIGO' && codigoTableId
+    ? `/guest/CODIGO?tableId=${codigoTableId}&ref=demo`
+    : `/guest/${loungeId}`;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
@@ -206,7 +221,7 @@ function RewardsContent() {
         {/* Header */}
         <div className="mb-8">
           <Link
-            href={`/guest/${loungeId}`}
+            href={backToLoungeHref}
             className="inline-flex items-center gap-2 text-zinc-400 hover:text-white mb-4 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />

@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { Shield, HelpCircle, FileText, Home, Clock, Trophy, Menu, X, Flame } from 'lucide-react';
+import { Shield, HelpCircle, Home, Clock, Trophy, Menu, X, Flame } from 'lucide-react';
 import { useGuestSessionContext } from '../contexts/GuestSessionContext';
 import { STATUS_TO_TRACKER_STAGE } from '../../app/types/enhancedSession';
 import Badge from './Badge';
@@ -12,10 +12,22 @@ import Badge from './Badge';
 function useIsCodigo(): boolean {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  // Also check sessionStorage for CODIGO context (rewards, control-panel)
+  if (typeof window !== 'undefined' && sessionStorage.getItem('hp_codigo_loungeId') === 'CODIGO') {
+    return true;
+  }
   return (
     (pathname?.startsWith('/guest/CODIGO') ?? false) ||
     searchParams?.get('loungeId') === 'CODIGO'
   );
+}
+
+function useCodigoNavParams(): { loungeId: string; tableId: string } | null {
+  if (typeof window === 'undefined') return null;
+  const loungeId = sessionStorage.getItem('hp_codigo_loungeId');
+  const tableId = sessionStorage.getItem('hp_codigo_tableId');
+  if (loungeId === 'CODIGO' && tableId) return { loungeId, tableId };
+  return null;
 }
 
 interface GlobalNavigationProps {
@@ -33,24 +45,32 @@ export const GlobalNavigation: React.FC<GlobalNavigationProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const isCodigo = useIsCodigo();
+  const codigoParams = useCodigoNavParams();
   
   // Auto-detect current page from pathname if not provided
   const getCurrentPage = () => {
     if (currentPage) return currentPage;
-    if (pathname === '/') return 'home';
+    if (pathname === '/' || pathname?.startsWith('/guest/')) return 'home';
     if (pathname === '/rewards') return 'rewards';
     if (pathname === '/extend-session' || pathname === '/control-panel') return 'control-panel';
     if (pathname === '/support') return 'support';
-    if (pathname === '/docs') return 'docs';
     return 'home';
   };
   
   const activePage = getCurrentPage();
   
+  // CODIGO: keep links in CODIGO context to prevent UX leakage
+  const codigoTableId = codigoParams?.tableId || '301';
+  const homeHref = isCodigo
+    ? `/guest/CODIGO?tableId=${codigoTableId}&ref=demo`
+    : '/';
+  const rewardsHref = isCodigo ? '/rewards?loungeId=CODIGO' : '/rewards';
+  const controlPanelHref = isCodigo ? '/control-panel?loungeId=CODIGO' : '/control-panel';
+  
   const navigationItems = [
-    { name: 'Home', href: '/', icon: Home, current: activePage === 'home' },
-    { name: 'Your Rewards', href: '/rewards', icon: Trophy, current: activePage === 'rewards' },
-    { name: 'Control Panel', href: '/control-panel', icon: Clock, current: activePage === 'control-panel' }
+    { name: 'Home', href: homeHref, icon: Home, current: activePage === 'home' },
+    { name: 'Your Rewards', href: rewardsHref, icon: Trophy, current: activePage === 'rewards' },
+    { name: 'Control Panel', href: controlPanelHref, icon: Clock, current: activePage === 'control-panel' }
   ];
 
   return (
@@ -123,21 +143,13 @@ export const GlobalNavigation: React.FC<GlobalNavigationProps> = ({
                 </span>
               </div>
             )}
-            <div className="flex items-center space-x-3">
-              <Link
-                href="/support"
-                className="flex items-center space-x-1 text-sm text-zinc-300 hover:text-white transition-colors"
-              >
-                <HelpCircle className="w-4 h-4" />
-                <span>Support</span>
-              </Link>
-              <Link
-                href="/docs"
-                className="text-sm text-zinc-300 hover:text-white transition-colors"
-              >
-                <FileText className="w-4 h-4" />
-              </Link>
-            </div>
+            <Link
+              href="/support"
+              className="flex items-center space-x-1 text-sm text-zinc-300 hover:text-white transition-colors"
+            >
+              <HelpCircle className="w-4 h-4" />
+              <span>Support</span>
+            </Link>
             <div
               className="w-8 h-8 bg-zinc-700 rounded-full flex items-center justify-center"
               role="img"
@@ -212,7 +224,7 @@ export const GlobalNavigation: React.FC<GlobalNavigationProps> = ({
                 );
               })}
               
-              {/* Support and Docs in Mobile Menu */}
+              {/* Support in Mobile Menu */}
               <div className="pt-2 mt-2 border-t border-zinc-800">
                 <Link
                   href="/support"
@@ -221,14 +233,6 @@ export const GlobalNavigation: React.FC<GlobalNavigationProps> = ({
                 >
                   <HelpCircle className="w-5 h-5" />
                   <span>Support</span>
-                </Link>
-                <Link
-                  href="/docs"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium text-zinc-300 hover:text-white hover:bg-zinc-800 transition-all"
-                >
-                  <FileText className="w-5 h-5" />
-                  <span>Docs</span>
                 </Link>
               </div>
             </div>

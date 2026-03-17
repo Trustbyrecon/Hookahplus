@@ -55,7 +55,12 @@
     "reflex:score": "node scripts/reflex-score.js",
     "security:scan:staged": "node scripts/secret-guard.mjs --staged",
     "security:scan:range": "node scripts/secret-guard.mjs --range",
-    "security:scan:all": "node scripts/secret-guard.mjs --all"
+    "security:scan:all": "node scripts/secret-guard.mjs --all",
+    "codigo:seed": "cd apps/app && npm run codigo:seed",
+    "codigo:verify": "cd apps/app && npm run codigo:verify",
+    "codigo:demo": "cd apps/app && npm run codigo:seed && npm run codigo:verify",
+    "codigo:guest:demo": "cd apps/app && npm run codigo:seed && (npm run codigo:verify || node -e \"process.exit(0)\") && node ../../scripts/codigo-guest-demo-checklist.js",
+    "test:e2e:codigo": "cd apps/app && npm run test:e2e:codigo"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

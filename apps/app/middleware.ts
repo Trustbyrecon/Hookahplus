@@ -18,6 +18,29 @@ function generateUUID(): string {
   });
 }
 
+/** Allowed origins for CORS (guest app, site, local dev) */
+const CORS_ALLOWED_ORIGINS = [
+  'http://localhost:3001', // Guest build
+  'http://localhost:3000',
+  'http://localhost:3002',
+  'https://guest.hookahplus.net',
+  'https://hookahplus.net',
+  'https://www.hookahplus.net',
+  'https://app.hookahplus.net',
+].filter(Boolean);
+
+function addCorsHeaders(response: NextResponse, request: NextRequest): void {
+  const origin = request.headers.get('origin');
+  const allowOrigin =
+    origin && (CORS_ALLOWED_ORIGINS.includes(origin) || (origin.includes('localhost') && process.env.NODE_ENV !== 'production'))
+      ? origin
+      : CORS_ALLOWED_ORIGINS[0];
+  response.headers.set('Access-Control-Allow-Origin', allowOrigin);
+  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS, DELETE');
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  response.headers.set('Access-Control-Allow-Credentials', 'true');
+}
+
 /**
  * Middleware for Supabase Auth with multi-tenant RLS
  * Protects admin routes and app routes based on authentication and roles
@@ -25,9 +48,18 @@ function generateUUID(): string {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // CORS preflight: respond immediately for OPTIONS on API routes (guest app cross-origin)
+  if (request.method === 'OPTIONS' && pathname.startsWith('/api/')) {
+    const res = new NextResponse(null, { status: 204 });
+    addCorsHeaders(res, request);
+    return res;
+  }
+
   // Guest flow: always allow session resolve (guest app server calls this when guest scans table QR)
   if (pathname === '/api/session/resolve' || pathname.startsWith('/api/session/resolve/')) {
-    return NextResponse.next();
+    const response = NextResponse.next();
+    addCorsHeaders(response, request);
+    return response;
   }
 
   const demoQueryMode = request.nextUrl.searchParams.get('mode');
@@ -43,6 +75,11 @@ export async function middleware(request: NextRequest) {
       headers: request.headers,
     },
   });
+
+  // Add CORS headers for API routes (guest app at localhost:3001 calls app at localhost:3002)
+  if (pathname.startsWith('/api/')) {
+    addCorsHeaders(response, request);
+  }
   
   // Add request ID to response headers for client correlation
   response.headers.set('X-Request-ID', requestId);

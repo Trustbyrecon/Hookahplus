@@ -9,6 +9,24 @@ const { withSentryConfig } = require('@sentry/nextjs');
 const nextConfig = {
   // Removed webpack alias that was blocking @supabase/supabase-js imports
   // The Supabase client is now needed for client-side auth in login/signup pages
+
+  // CORS: allow guest app (localhost:3001) to call app API (localhost:3002)
+  async headers() {
+    const allowOrigin = process.env.NODE_ENV === 'production'
+      ? 'https://guest.hookahplus.net'
+      : 'http://localhost:3001';
+    return [
+      {
+        source: '/api/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Credentials', value: 'true' },
+          { key: 'Access-Control-Allow-Origin', value: allowOrigin },
+          { key: 'Access-Control-Allow-Methods', value: 'GET, POST, PATCH, OPTIONS, DELETE' },
+          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization, X-Requested-With' },
+        ],
+      },
+    ];
+  },
   
   // Enable instrumentation hook for server-side Sentry initialization
   experimental: {

@@ -40,6 +40,7 @@ export default function GuestLoungePage() {
   const [sessionStarted, setSessionStarted] = useState<boolean>(false); // Track if session started after payment
   const [appSessionId, setAppSessionId] = useState<string | null>(null); // App DB session ID from resolve (for Hookah Tracker)
   const [showIntelligenceDashboard, setShowIntelligenceDashboard] = useState(false);
+  const [registrationSkipped, setRegistrationSkipped] = useState(false); // Hide Register card when user skips
   const [campaignId, setCampaignId] = useState<string | undefined>(undefined);
   const [staffResolutionUrl, setStaffResolutionUrl] = useState<string | null>(null);
   // CODIGO: config from app API (presets + flavors) - mirrors CreateSessionModal
@@ -106,7 +107,11 @@ export default function GuestLoungePage() {
       const ref = searchParams.get('ref');
       const s = searchParams.get('s');
       const u = searchParams.get('u');
-      const tableId = searchParams.get('tableId');
+      // CODIGO demo: when no tableId, use table 301 for operational demo flow (demo QR)
+      let tableId = searchParams.get('tableId');
+      if (loungeId === 'CODIGO' && !tableId) {
+        tableId = '301';
+      }
       const zone = searchParams.get('zone');
 
       const qrData: QRData = {
@@ -117,6 +122,12 @@ export default function GuestLoungePage() {
         tableId: tableId || undefined,
         zone: zone || undefined
       };
+
+      // Persist CODIGO context for nav (rewards, control-panel) to maintain branding
+      if (loungeId === 'CODIGO' && tableId && typeof window !== 'undefined') {
+        sessionStorage.setItem('hp_codigo_loungeId', loungeId);
+        sessionStorage.setItem('hp_codigo_tableId', tableId);
+      }
 
       setQrData(qrData);
 
@@ -571,8 +582,8 @@ export default function GuestLoungePage() {
             />
             </div>
 
-            {/* Step 2: Register (for anonymous users) */}
-            {guestProfile?.anon && qrData && (
+            {/* Step 2: Register (for anonymous users) - hidden when skipped */}
+            {guestProfile?.anon && !registrationSkipped && qrData && (
               <div className="relative">
                 {/* Step Indicator */}
                 <div className="flex items-center mb-4">
@@ -615,17 +626,15 @@ export default function GuestLoungePage() {
                         Save your preferences, favorite flavors, and rewards so we can personalize your next visit. Takes just 30 seconds!
                       </p>
                       <Link
-                        href={`/register?loungeId=${encodeURIComponent(loungeId)}&return=${encodeURIComponent(`/guest/${loungeId}`)}`}
+                        href={`/register?loungeId=${encodeURIComponent(loungeId)}&return=${encodeURIComponent(`/guest/${loungeId}${qrData?.tableId ? `?tableId=${qrData.tableId}${qrData?.ref ? `&ref=${qrData.ref}` : ''}` : ''}`)}`}
                         className="inline-flex items-center gap-2 px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-medium transition-all shadow-lg shadow-teal-500/20 hover:shadow-teal-500/30 transform hover:scale-105"
                       >
                         <UserPlus className="w-4 h-4" />
                         Register Now
                       </Link>
                       <button
-                        onClick={() => {
-                          // Skip registration - just continue workflow
-                        }}
-                        className="ml-3 text-sm text-zinc-400 hover:text-zinc-300 transition-colors"
+                        onClick={() => setRegistrationSkipped(true)}
+                        className="ml-3 px-4 py-2 text-sm text-zinc-400 hover:text-zinc-300 border border-zinc-600 hover:border-zinc-500 rounded-lg transition-colors"
                       >
                         Skip for now
                       </button>
