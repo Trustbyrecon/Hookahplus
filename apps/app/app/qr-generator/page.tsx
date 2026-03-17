@@ -75,7 +75,7 @@ export default function QRGeneratorApp() {
 
 function QRGeneratorAppContent() {
   const { sessions } = useSessionContext();
-  const [loungeId, setLoungeId] = useState('CODIGO');
+  const [loungeId, setLoungeId] = useState('CODIGO-Pilot');
   const [tableId, setTableId] = useState('');
   const [campaignRef, setCampaignRef] = useState('');
   const [generatedQR, setGeneratedQR] = useState<QRCodeData | null>(null);
@@ -220,6 +220,8 @@ function QRGeneratorAppContent() {
     try {
       // Check if bulk mode
       const isBulk = bulkMode && selectedTablesForBulk.length > 0;
+      // Map CODIGO-Pilot to CODIGO for guest URL (pilot uses CODIGO lounge flow)
+      const effectiveLoungeId = loungeId === 'CODIGO-Pilot' ? 'CODIGO' : loungeId;
       
       const response = await fetch('/api/qr-generator', {
         method: 'POST',
@@ -227,7 +229,7 @@ function QRGeneratorAppContent() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          loungeId,
+          loungeId: effectiveLoungeId,
           tableId: !isBulk ? (tableId || undefined) : undefined,
           campaignRef: campaignRef || undefined,
           bulkTables: isBulk ? selectedTablesForBulk : undefined,

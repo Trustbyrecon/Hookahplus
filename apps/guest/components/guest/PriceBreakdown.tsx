@@ -55,8 +55,8 @@ export default function PriceBreakdown({
       setIsLoading(true);
       setError(null);
 
-      // First, create a session with selected flavors
-      const createResponse = await fetch('/api/guest/session/create', {
+      // Single request: create session + get price quote (avoids "Session not found" across workers)
+      const response = await fetch('/api/guest/session/create-and-quote', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -68,38 +68,28 @@ export default function PriceBreakdown({
           specialInstructions,
           tableId,
           zone,
-          sessionType // Include session type
+          sessionType,
+          promoCode: promoCode || undefined,
+          campaignId: campaignId || undefined
         })
       });
 
-      if (!createResponse.ok) {
-        const errorData = await createResponse.json();
-        throw new Error(errorData.error || 'Failed to create session');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create session or get price');
       }
 
-      const createData = await createResponse.json();
-      const sessionId = createData.sessionId;
-      setCurrentSessionId(sessionId);
-
-      // Then get price quote
-      const quoteResponse = await fetch('/api/guest/price/quote', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          sessionId,
-          promoCode: promoCode || undefined
-        })
+      const data = await response.json();
+      setCurrentSessionId(data.sessionId);
+      setPriceData({
+        base: data.base,
+        addons: data.addons,
+        total: data.total,
+        currency: data.currency,
+        promo: data.promo,
+        campaign: data.campaign,
+        breakdown: data.breakdown
       });
-
-      if (!quoteResponse.ok) {
-        const errorData = await quoteResponse.json();
-        throw new Error(errorData.error || 'Failed to get price quote');
-      }
-
-      const quoteData = await quoteResponse.json();
-      setPriceData(quoteData);
       onPriceUpdate();
 
     } catch (err) {

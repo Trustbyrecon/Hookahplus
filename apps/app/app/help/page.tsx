@@ -10,10 +10,8 @@ import {
   CheckCircle, 
   AlertTriangle,
   Search,
-  Filter,
   Send,
   FileText,
-  Video,
   BookOpen,
   Users,
   Settings,
@@ -25,8 +23,6 @@ import {
   ThumbsDown,
   Plus,
   Edit,
-  Trash2,
-  Download,
   Shield,
   BarChart3
 } from 'lucide-react';
@@ -37,7 +33,7 @@ interface FAQ {
   id: string;
   question: string;
   answer: string;
-  category: 'general' | 'technical' | 'billing' | 'features';
+  category: 'general' | 'technical' | 'billing' | 'features' | 'staff';
   helpful: number;
   notHelpful: number;
   tags: string[];
@@ -113,6 +109,36 @@ export default function HelpPage() {
       notHelpful: 1,
       tags: ['support', 'technical', 'troubleshooting'],
       lastUpdated: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+    },
+    {
+      id: 'faq_6',
+      question: 'How do I use Scan-to-act?',
+      answer: 'Scan-to-act lets you jump straight into a session cockpit from a table QR code, receipt, or table tent. Enter or paste the session ID in the Scan-to-act input (on the Staff Panel or Fire Session Dashboard) and click "Open cockpit". Best for timer changes, delivery updates, and quick notes.',
+      category: 'staff',
+      helpful: 0,
+      notHelpful: 0,
+      tags: ['staff', 'scan-to-act', 'session', 'floor'],
+      lastUpdated: new Date()
+    },
+    {
+      id: 'faq_7',
+      question: 'How do I manage my schedule?',
+      answer: 'Go to the Staff Panel and open the Schedule tab. There you can view your shifts, request time off, and see upcoming assignments. Managers can create and edit shifts from the same panel.',
+      category: 'staff',
+      helpful: 0,
+      notHelpful: 0,
+      tags: ['staff', 'schedule', 'shifts'],
+      lastUpdated: new Date()
+    },
+    {
+      id: 'faq_8',
+      question: 'Where do I view my performance?',
+      answer: 'Your performance metrics are available in the Staff Panel under the Performance tab. You can see sessions completed, ratings, on-time delivery, and other key metrics. Managers have access to team-wide analytics.',
+      category: 'staff',
+      helpful: 0,
+      notHelpful: 0,
+      tags: ['staff', 'performance', 'analytics'],
+      lastUpdated: new Date()
     }
   ]);
 
@@ -171,7 +197,8 @@ export default function HelpPage() {
     { value: 'general', label: 'General' },
     { value: 'technical', label: 'Technical' },
     { value: 'billing', label: 'Billing' },
-    { value: 'features', label: 'Features' }
+    { value: 'features', label: 'Features' },
+    { value: 'staff', label: 'Staff' }
   ];
 
   const statusColors = {
@@ -379,7 +406,14 @@ export default function HelpPage() {
 
       {/* Tickets List */}
       <div className="space-y-4">
-        {filteredTickets.map(ticket => (
+        {filteredTickets.length === 0 ? (
+          <Card className="p-12 text-center">
+            <MessageCircle className="w-12 h-12 text-zinc-500 mx-auto mb-4" />
+            <p className="text-zinc-400">No support tickets yet</p>
+            <p className="text-sm text-zinc-500 mt-1">Create a ticket above when you need assistance</p>
+          </Card>
+        ) : (
+        filteredTickets.map(ticket => (
           <Card key={ticket.id} className="p-6">
             <div className="flex items-start justify-between">
               <div className="flex-1">
@@ -412,7 +446,8 @@ export default function HelpPage() {
               </div>
             </div>
           </Card>
-        ))}
+        ))
+        )}
       </div>
     </div>
   );
@@ -436,14 +471,15 @@ export default function HelpPage() {
           <p className="text-sm text-zinc-500 mt-1">Response within 24 hours</p>
         </Card>
 
-        <Card className="p-6 text-center">
+        <Card className="p-6 text-center relative">
+          <span className="absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">TBD</span>
           <MessageCircle className="w-12 h-12 text-purple-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-white mb-2">Live Chat</h3>
           <p className="text-zinc-400 mb-4">Chat with our support team</p>
-          <Button className="w-full">
+          <Button className="w-full" disabled title="Live chat coming soon">
             Start Chat
           </Button>
-          <p className="text-sm text-zinc-500 mt-2">Available 24/7</p>
+          <p className="text-sm text-zinc-500 mt-2">Coming soon</p>
         </Card>
       </div>
 
@@ -496,103 +532,33 @@ export default function HelpPage() {
     </div>
   );
 
-  const handleDownloadPDF = () => {
-    // Create a mock PDF download
-    const link = document.createElement('a');
-    link.href = '/api/download/user-manual';
-    link.download = 'HookahPLUS-User-Manual.pdf';
-    link.click();
-  };
-
   const handleViewAPI = () => {
     window.open('/api/docs', '_blank');
   };
 
-  const handleWatchVideos = () => {
-    window.open('https://youtube.com/playlist?list=hookahplus-tutorials', '_blank');
-  };
-
   const renderResources = () => (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card className="p-6">
-          <FileText className="w-12 h-12 text-blue-400 mb-4" />
-          <h3 className="text-lg font-semibold text-white mb-2">User Manual</h3>
-          <p className="text-zinc-400 mb-4">Complete guide to using HookahPLUS</p>
-          <div className="space-y-2 mb-4">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-zinc-400">Version:</span>
-              <span className="text-white">2.1.0</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-zinc-400">Size:</span>
-              <span className="text-white">2.4 MB</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-zinc-400">Pages:</span>
-              <span className="text-white">48</span>
-            </div>
-          </div>
-          <Button onClick={handleDownloadPDF} className="w-full">
-            <Download className="w-4 h-4 mr-2" />
-            Download PDF
-          </Button>
-        </Card>
+      <Card className="p-12 text-center">
+        <BookOpen className="w-16 h-16 text-zinc-500 mx-auto mb-4" />
+        <h3 className="text-xl font-semibold text-white mb-2">Resources</h3>
+        <p className="text-zinc-400 mb-6">Content coming soon. Check back for User Manual, Video Tutorials, API Docs, and Additional Resources.</p>
+        <div className="flex flex-wrap justify-center gap-4">
+          <a href="/docs/user-manual" className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-lg transition-colors">
+            <FileText className="w-4 h-4" />
+            View User Manual
+          </a>
+          <button onClick={handleViewAPI} className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg transition-colors">
+            <ExternalLink className="w-4 h-4" />
+            API Documentation
+          </button>
+        </div>
+      </Card>
 
-        <Card className="p-6">
-          <Video className="w-12 h-12 text-green-400 mb-4" />
-          <h3 className="text-lg font-semibold text-white mb-2">Video Tutorials</h3>
-          <p className="text-zinc-400 mb-4">Step-by-step video guides</p>
-          <div className="space-y-2 mb-4">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-zinc-400">Videos:</span>
-              <span className="text-white">12</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-zinc-400">Duration:</span>
-              <span className="text-white">2h 15m</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-zinc-400">Language:</span>
-              <span className="text-white">English</span>
-            </div>
-          </div>
-          <Button onClick={handleWatchVideos} variant="outline" className="w-full">
-            <ExternalLink className="w-4 h-4 mr-2" />
-            Watch Videos
-          </Button>
-        </Card>
-
-        <Card className="p-6">
-          <BookOpen className="w-12 h-12 text-purple-400 mb-4" />
-          <h3 className="text-lg font-semibold text-white mb-2">API Documentation</h3>
-          <p className="text-zinc-400 mb-4">Technical documentation for developers</p>
-          <div className="space-y-2 mb-4">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-zinc-400">Endpoints:</span>
-              <span className="text-white">47</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-zinc-400">Version:</span>
-              <span className="text-white">v1.2</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-zinc-400">Format:</span>
-              <span className="text-white">REST</span>
-            </div>
-          </div>
-          <Button onClick={handleViewAPI} variant="outline" className="w-full">
-            <ExternalLink className="w-4 h-4 mr-2" />
-            View Docs
-          </Button>
-        </Card>
-      </div>
-
-      {/* Additional Resources */}
+      {/* Additional Resources - Wire to Guides */}
       <Card className="p-6">
         <h3 className="text-lg font-semibold text-white mb-4">Additional Resources</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg">
+          <a href="/docs/getting-started/quick-start" className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition-colors">
             <div className="flex items-center space-x-3">
               <Settings className="w-6 h-6 text-teal-400" />
               <div>
@@ -600,12 +566,10 @@ export default function HelpPage() {
                 <p className="text-sm text-zinc-400">Quick start setup instructions</p>
               </div>
             </div>
-            <Button size="sm" variant="outline">
-              <ExternalLink className="w-4 h-4" />
-            </Button>
-          </div>
+            <ExternalLink className="w-4 h-4 text-zinc-400" />
+          </a>
 
-          <div className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg">
+          <a href="/docs/security-guide" className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition-colors">
             <div className="flex items-center space-x-3">
               <Shield className="w-6 h-6 text-blue-400" />
               <div>
@@ -613,12 +577,10 @@ export default function HelpPage() {
                 <p className="text-sm text-zinc-400">Best practices for security</p>
               </div>
             </div>
-            <Button size="sm" variant="outline">
-              <ExternalLink className="w-4 h-4" />
-            </Button>
-          </div>
+            <ExternalLink className="w-4 h-4 text-zinc-400" />
+          </a>
 
-          <div className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg">
+          <a href="/docs/analytics-guide" className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition-colors">
             <div className="flex items-center space-x-3">
               <BarChart3 className="w-6 h-6 text-green-400" />
               <div>
@@ -626,23 +588,19 @@ export default function HelpPage() {
                 <p className="text-sm text-zinc-400">Understanding your data</p>
               </div>
             </div>
-            <Button size="sm" variant="outline">
-              <ExternalLink className="w-4 h-4" />
-            </Button>
-          </div>
+            <ExternalLink className="w-4 h-4 text-zinc-400" />
+          </a>
 
-          <div className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg">
+          <a href="/docs/team-management" className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition-colors">
             <div className="flex items-center space-x-3">
               <Users className="w-6 h-6 text-purple-400" />
               <div>
-                <h4 className="font-semibold text-white">Team Management</h4>
+                <h4 className="font-semibold text-white">Team Management Guide</h4>
                 <p className="text-sm text-zinc-400">Managing staff and roles</p>
               </div>
             </div>
-            <Button size="sm" variant="outline">
-              <ExternalLink className="w-4 h-4" />
-            </Button>
-          </div>
+            <ExternalLink className="w-4 h-4 text-zinc-400" />
+          </a>
         </div>
       </Card>
     </div>

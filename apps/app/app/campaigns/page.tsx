@@ -50,6 +50,7 @@ interface Campaign {
   createdAt: Date;
   createdBy: string;
   campaignConfig?: any; // JSON field from Prisma
+  qrPrefix?: string; // For QR code tracking
 }
 
 export default function CampaignsPage() {
@@ -69,6 +70,8 @@ export default function CampaignsPage() {
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showQrPrefixModal, setShowQrPrefixModal] = useState(false);
+  const [qrPrefixCampaign, setQrPrefixCampaign] = useState<Campaign | null>(null);
   
   // Loyalty Program state
   const [loyaltyTiers, setLoyaltyTiers] = useState<any[]>([]);
@@ -335,6 +338,19 @@ export default function CampaignsPage() {
     }
   };
 
+  const handleDeleteCampaign = async (campaign: Campaign) => {
+    if (!confirm(`Delete campaign "${campaign.name}"? This cannot be undone.`)) return;
+    try {
+      const response = await fetch(`/api/campaigns/${campaign.id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Failed to delete campaign');
+      await loadCampaigns();
+      if (activeTab === 'analytics') await loadAnalytics();
+    } catch (err) {
+      console.error('Error deleting campaign:', err);
+      alert(err instanceof Error ? err.message : 'Failed to delete campaign');
+    }
+  };
+
   const handleStatusChange = async (campaignId: string, newStatus: Campaign['status']) => {
     try {
       const response = await fetch(`/api/campaigns/${campaignId}`, {
@@ -392,7 +408,7 @@ export default function CampaignsPage() {
       startDate: campaign.startDate.toISOString().split('T')[0],
       endDate: campaign.endDate ? campaign.endDate.toISOString().split('T')[0] : '',
       channels: campaign.channels || [],
-      qrPrefix: '', // QR prefix is read-only for edits
+      qrPrefix: (campaign as Campaign & { qrPrefix?: string }).qrPrefix || '',
       percentageOff: (campaign.campaignConfig as any)?.percentageOff || 10,
       firstXCustomers: (campaign.campaignConfig as any)?.firstXCustomers || 50,
       buyXGetY: (campaign.campaignConfig as any)?.buyXGetY || { buy: 2, get: 1 },
@@ -451,7 +467,8 @@ export default function CampaignsPage() {
           endDate: newCampaign.endDate || null,
           budget: newCampaign.budget,
           channels: newCampaign.channels,
-          campaignConfig
+          campaignConfig,
+          qrPrefix: newCampaign.qrPrefix || null
         })
       });
 
@@ -800,8 +817,14 @@ export default function CampaignsPage() {
                     <Pause className="w-4 h-4" />
                   </Button>
                 )}
-                <Button size="sm" variant="outline" onClick={() => handleEditCampaign(campaign)}>
+                <Button size="sm" variant="outline" onClick={() => handleEditCampaign(campaign)} title="Edit">
                   <Edit className="w-4 h-4" />
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => { setQrPrefixCampaign(campaign); setShowQrPrefixModal(true); }} title="View QR Prefix">
+                  <Eye className="w-4 h-4" />
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => handleDeleteCampaign(campaign)} title="Delete" className="text-red-400 hover:text-red-300 hover:border-red-500/50">
+                  <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
               <span className="text-xs text-zinc-500">
@@ -1539,19 +1562,17 @@ export default function CampaignsPage() {
                   </div>
                 </div>
 
-                {!editingCampaign && (
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-300 mb-2">QR Prefix (for tracking)</label>
-                    <input
-                      type="text"
-                      value={newCampaign.qrPrefix}
-                      onChange={(e) => setNewCampaign(prev => ({ ...prev, qrPrefix: e.target.value }))}
-                      className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                      placeholder="e.g., weekend25"
-                    />
-                    <p className="text-xs text-zinc-400 mt-1">Used in QR codes for campaign tracking</p>
-                  </div>
-                )}
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">QR Prefix (for tracking)</label>
+                  <input
+                    type="text"
+                    value={newCampaign.qrPrefix}
+                    onChange={(e) => setNewCampaign(prev => ({ ...prev, qrPrefix: e.target.value }))}
+                    className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    placeholder="e.g., weekend25"
+                  />
+                  <p className="text-xs text-zinc-400 mt-1">Used in QR codes for campaign tracking</p>
+                </div>
               </div>
 
               <div className="flex space-x-3 mt-6">
@@ -1594,6 +1615,28 @@ export default function CampaignsPage() {
                   Cancel
                 </Button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* QR Prefix Modal */}
+        {showQrPrefixModal && qrPrefixCampaign && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-zinc-800 rounded-xl p-6 w-full max-w-md">
+              <h3 className="text-xl font-semibold text-white mb-2">QR Prefix (for tracking)</h3>
+              <p className="text-sm text-zinc-400 mb-4">{qrPrefixCampaign.name}</p>
+              <div className="p-4 bg-zinc-900 rounded-lg border border-zinc-700">
+                <p className="text-lg font-mono text-teal-400 break-all">
+                  {qrPrefixCampaign.qrPrefix || '(not set)'}
+                </p>
+              </div>
+              <p className="text-xs text-zinc-500 mt-2">Use this prefix in QR codes to track campaign attribution</p>
+              <Button
+                className="mt-4 w-full"
+                onClick={() => { setShowQrPrefixModal(false); setQrPrefixCampaign(null); }}
+              >
+                Close
+              </Button>
             </div>
           </div>
         )}

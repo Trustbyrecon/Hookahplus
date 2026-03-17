@@ -342,32 +342,33 @@ function StaffPanelPageContent() {
   }, [sessions]);
   
   // Keep manual staff management for adding new staff (UI only for now)
+  // Default to Shisha Master only; live data from sessions will populate allStaffMembers
   const [manualStaff, setManualStaff] = useState<StaffMember[]>([
     {
-      id: 'staff-001',
-      name: 'Mike Rodriguez',
+      id: 'staff-shisha-master',
+      name: 'Shisha Master',
       role: 'BOH',
       status: 'available',
-      email: 'mike@hookahplus.com',
-      phone: '+1 (555) 123-4567',
-      hireDate: '2024-01-15',
-      performance: 4.8,
-      sessionsCompleted: 156,
-      lastActive: '2 minutes ago',
+      email: 'shisha-master@hookahplus.com',
+      phone: '+1 (555) 000-0000',
+      hireDate: new Date().toISOString().split('T')[0],
+      performance: 5.0,
+      sessionsCompleted: 0,
+      lastActive: 'Just now',
       metrics: {
-        sessionsCompleted: 156,
-        averageRating: 4.8,
-        onTimeDelivery: 94.2,
-        customerSatisfaction: 92.5,
-        efficiency: 88.7,
-        attendance: 96.8
+        sessionsCompleted: 0,
+        averageRating: 5.0,
+        onTimeDelivery: 100,
+        customerSatisfaction: 100,
+        efficiency: 100,
+        attendance: 100
       },
       trends: {
-        sessionsCompleted: 12.5,
-        averageRating: 0.3,
-        onTimeDelivery: 2.1
+        sessionsCompleted: 0,
+        averageRating: 0,
+        onTimeDelivery: 0
       },
-      achievements: ['Top Performer Q1', 'Perfect Attendance'],
+      achievements: [],
       availability: {
         monday: [{ start: '09:00', end: '17:00', available: true }],
         tuesday: [{ start: '09:00', end: '17:00', available: true }],
@@ -378,118 +379,7 @@ function StaffPanelPageContent() {
         sunday: [{ start: '10:00', end: '18:00', available: true }]
       },
       maxHoursPerWeek: 40,
-      currentHoursThisWeek: 32
-    },
-    {
-      id: 'staff-002', 
-      name: 'Sarah Chen',
-      role: 'FOH',
-      status: 'busy',
-      email: 'sarah@hookahplus.com',
-      phone: '+1 (555) 234-5678',
-      hireDate: '2024-02-01',
-      performance: 4.9,
-      sessionsCompleted: 203,
-      lastActive: '5 minutes ago',
-      metrics: {
-        sessionsCompleted: 203,
-        averageRating: 4.9,
-        onTimeDelivery: 96.8,
-        customerSatisfaction: 95.2,
-        efficiency: 91.3,
-        attendance: 98.1
-      },
-      trends: {
-        sessionsCompleted: 18.2,
-        averageRating: 0.5,
-        onTimeDelivery: 3.2
-      },
-      achievements: ['Customer Favorite', 'Efficiency Expert'],
-      availability: {
-        monday: [{ start: '12:00', end: '20:00', available: true }],
-        tuesday: [{ start: '12:00', end: '20:00', available: true }],
-        wednesday: [{ start: '12:00', end: '20:00', available: true }],
-        thursday: [{ start: '12:00', end: '20:00', available: true }],
-        friday: [{ start: '12:00', end: '20:00', available: true }],
-        saturday: [{ start: '14:00', end: '22:00', available: true }],
-        sunday: [{ start: '14:00', end: '22:00', available: true }]
-      },
-      maxHoursPerWeek: 40,
-      currentHoursThisWeek: 28
-    },
-    {
-      id: 'staff-003',
-      name: 'Alex Johnson', 
-      role: 'MANAGER',
-      status: 'available',
-      email: 'alex@hookahplus.com',
-      phone: '+1 (555) 345-6789',
-      hireDate: '2023-11-20',
-      performance: 4.9,
-      sessionsCompleted: 312,
-      lastActive: '1 minute ago',
-      metrics: {
-        sessionsCompleted: 312,
-        averageRating: 4.9,
-        onTimeDelivery: 97.5,
-        customerSatisfaction: 96.8,
-        efficiency: 93.2,
-        attendance: 99.2
-      },
-      trends: {
-        sessionsCompleted: 8.7,
-        averageRating: 0.2,
-        onTimeDelivery: 1.8
-      },
-      achievements: ['Manager of the Year', 'Team Leader'],
-      availability: {
-        monday: [{ start: '08:00', end: '18:00', available: true }],
-        tuesday: [{ start: '08:00', end: '18:00', available: true }],
-        wednesday: [{ start: '08:00', end: '18:00', available: true }],
-        thursday: [{ start: '08:00', end: '18:00', available: true }],
-        friday: [{ start: '08:00', end: '18:00', available: true }],
-        saturday: [{ start: '10:00', end: '20:00', available: true }],
-        sunday: [{ start: '10:00', end: '20:00', available: true }]
-      },
-      maxHoursPerWeek: 50,
-      currentHoursThisWeek: 42
-    },
-    {
-      id: 'staff-004',
-      name: 'Maria Garcia',
-      role: 'FOH',
-      status: 'offline',
-      email: 'maria@hookahplus.com',
-      phone: '+1 (555) 456-7890',
-      hireDate: '2024-03-10',
-      performance: 4.7,
-      sessionsCompleted: 89,
-      lastActive: '2 hours ago',
-      metrics: {
-        sessionsCompleted: 89,
-        averageRating: 4.7,
-        onTimeDelivery: 91.5,
-        customerSatisfaction: 89.3,
-        efficiency: 85.6,
-        attendance: 92.4
-      },
-      trends: {
-        sessionsCompleted: 5.2,
-        averageRating: 0.1,
-        onTimeDelivery: 1.2
-      },
-      achievements: ['Rising Star'],
-      availability: {
-        monday: [{ start: '16:00', end: '24:00', available: true }],
-        tuesday: [{ start: '16:00', end: '24:00', available: true }],
-        wednesday: [{ start: '16:00', end: '24:00', available: true }],
-        thursday: [{ start: '16:00', end: '24:00', available: true }],
-        friday: [{ start: '16:00', end: '24:00', available: true }],
-        saturday: [{ start: '18:00', end: '02:00', available: true }],
-        sunday: [{ start: '18:00', end: '02:00', available: true }]
-      },
-      maxHoursPerWeek: 35,
-      currentHoursThisWeek: 24
+      currentHoursThisWeek: 0
     }
   ]);
   
@@ -706,20 +596,37 @@ function StaffPanelPageContent() {
             </div>
 
             {/* Scan-to-act + ops continuity */}
+            {/* H+ Scan-to-act: Direct session jump from floor. Used when staff has session ID from QR, receipt, or table tent. */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
               <Card className="card-tablet lg:col-span-1">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-white">Scan-to-act</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-semibold text-white">Scan-to-act</h3>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-300 border border-teal-500/30">Quick jump</span>
+                  </div>
                   <QrCode className="w-6 h-6 text-teal-400" />
                 </div>
-                <p className="text-sm text-zinc-400 mb-4">
-                  Open the session cockpit from a scanned ID.
+                <p className="text-sm text-zinc-400 mb-1">
+                  Scan a table QR or paste a session ID to jump straight into that session cockpit.
+                </p>
+                <p className="text-xs text-zinc-500 mb-3">
+                  Fastest way to manage a live session from the floor.
+                </p>
+                <p className="text-xs text-teal-400/80 mb-4">
+                  Best for: timer changes, delivery updates, quick notes
                 </p>
                 <div className="space-y-3">
                   <input
                     value={scanSessionId}
                     onChange={(e) => setScanSessionId(e.target.value)}
-                    placeholder="Paste session ID…"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const id = scanSessionId.trim();
+                        if (id) window.location.href = `/staff/scan/${encodeURIComponent(id)}`;
+                      }
+                    }}
+                    placeholder="Scan or enter session ID"
+                    title="Use this when you already have the session ID from a receipt, table tent, or QR code."
                     className="w-full px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-700 text-white placeholder:text-zinc-500"
                   />
                   <div className="flex gap-2">
@@ -1035,7 +942,7 @@ function StaffPanelPageContent() {
 
         {activeTab === 'communication' && (
           <StaffCommunication
-            currentUserId="staff-003" // Current user (Alex Johnson - Manager)
+            currentUserId="staff-shisha-master"
             staffMembers={allStaffMembers.map(staff => ({
               id: staff.id,
               name: staff.name,

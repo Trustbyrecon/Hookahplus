@@ -163,44 +163,7 @@ export default function RoleBasedPermissions({
     }
   ]);
 
-  const [userRoles, setUserRoles] = useState<UserRole[]>([
-    {
-      userId: 'staff-001',
-      userName: 'Mike Rodriguez',
-      roleId: 'staff',
-      roleName: 'Staff',
-      assignedBy: 'Alex Johnson',
-      assignedAt: new Date('2024-01-15'),
-      isActive: true
-    },
-    {
-      userId: 'staff-002',
-      userName: 'Sarah Chen',
-      roleId: 'supervisor',
-      roleName: 'Supervisor',
-      assignedBy: 'Alex Johnson',
-      assignedAt: new Date('2024-02-01'),
-      isActive: true
-    },
-    {
-      userId: 'staff-003',
-      userName: 'Alex Johnson',
-      roleId: 'manager',
-      roleName: 'Manager',
-      assignedBy: 'System',
-      assignedAt: new Date('2023-11-20'),
-      isActive: true
-    },
-    {
-      userId: 'staff-004',
-      userName: 'Maria Garcia',
-      roleId: 'staff',
-      roleName: 'Staff',
-      assignedBy: 'Alex Johnson',
-      assignedAt: new Date('2024-03-10'),
-      isActive: true
-    }
-  ]);
+  const [userRoles, setUserRoles] = useState<UserRole[]>([]);
 
   const getRoleById = (roleId: string) => roles.find(r => r.id === roleId);
   const getPermissionsByCategory = (category: string) => allPermissions.filter(p => p.category === category);

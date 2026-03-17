@@ -206,63 +206,6 @@ export default function StaffCommunication({
     }
   };
 
-  // Generate demo data
-  useEffect(() => {
-    const demoMessages: Message[] = [
-      {
-        id: 'msg-1',
-        senderId: 'staff-003',
-        senderName: 'Alex Johnson',
-        senderRole: 'MANAGER',
-        subject: 'New Table Setup Protocol',
-        content: 'Hey team, we\'ve updated the table setup protocol for better efficiency. Please review the attached document and let me know if you have any questions.',
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-        priority: 'high',
-        type: 'announcement',
-        status: 'read',
-        isPinned: true,
-        attachments: [
-          {
-            name: 'Table_Setup_Protocol_v2.pdf',
-            type: 'pdf',
-            size: 1024 * 1024 * 2.5,
-            url: '#'
-          }
-        ]
-      },
-      {
-        id: 'msg-2',
-        senderId: 'staff-001',
-        senderName: 'Mike Rodriguez',
-        senderRole: 'BOH',
-        recipientId: 'staff-003',
-        recipientName: 'Alex Johnson',
-        subject: 'Question about Table 5',
-        content: 'Alex, Table 5 is requesting a flavor change but we\'re running low on that specific flavor. Should I offer alternatives or check inventory first?',
-        timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000),
-        priority: 'medium',
-        type: 'question',
-        status: 'delivered',
-        isPinned: false
-      },
-      {
-        id: 'msg-3',
-        senderId: 'staff-002',
-        senderName: 'Sarah Chen',
-        senderRole: 'FOH',
-        subject: 'Customer Complaint - Table 3',
-        content: 'We had a customer complaint about service speed at Table 3. The customer mentioned waiting 20 minutes for their order. I\'ve already addressed it, but wanted to bring it to your attention.',
-        timestamp: new Date(Date.now() - 30 * 60 * 1000),
-        priority: 'high',
-        type: 'update',
-        status: 'read',
-        isPinned: false
-      }
-    ];
-
-    setMessages(demoMessages);
-  }, []);
-
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'urgent': return 'text-red-400 bg-red-500/20 border-red-500/30';

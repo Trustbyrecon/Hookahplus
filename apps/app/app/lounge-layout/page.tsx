@@ -68,7 +68,7 @@ function LoungeLayoutPageContent() {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [viewMode, setViewMode] = useState<ViewMode>('live');
   const [showWizard, setShowWizard] = useState(false);
-  const [loungeId, setLoungeId] = useState<string>('HOPE_GLOBAL_FORUM');
+  const [loungeId, setLoungeId] = useState<string>('CODIGO');
   const [layoutMeta, setLayoutMeta] = useState<{
     loungeId?: string | null;
     layoutVersion?: number | null;
@@ -99,7 +99,7 @@ function LoungeLayoutPageContent() {
       const params = new URLSearchParams(window.location.search);
       const fromQuery = (params.get('loungeId') || '').trim();
       const fromStorage = (localStorage.getItem('hp_active_lounge_id_v1') || '').trim();
-      const next = fromQuery || fromStorage || 'HOPE_GLOBAL_FORUM';
+      const next = fromQuery || fromStorage || 'CODIGO';
       setLoungeId(next);
       localStorage.setItem('hp_active_lounge_id_v1', next);
     } catch {
@@ -252,7 +252,8 @@ function LoungeLayoutPageContent() {
     'Bar Seating',
     'Outdoor',
     'VIP',
-    'Private Room'
+    'Private Room',
+    'Kiosk'
   ];
 
   const handleAddTable = () => {
@@ -269,36 +270,38 @@ function LoungeLayoutPageContent() {
   };
 
   /**
-   * Loads a demo layout for testing and calibration
-   * Includes:
-   * - 10 tables covering all 6 seating types (Booth, Couch, Bar Seating, Outdoor, VIP, Private Room)
-   * - Various capacities (2, 4, 6, 8, 10) for capacity testing
-   * - Strategic positioning in 3 zones (top/main, middle/mixed, bottom/premium)
-   * - Table IDs: table-001 through table-010
-   * - Table names: T-001 through T-010 (for session matching tests)
+   * Loads CODIGO Third Floor layout from floorplan API.
+   * Fetches GET /api/lounges/CODIGO/floorplan?floorId=F3 and maps nodes to Table format.
    */
-  const handleLoadDemoLayout = () => {
+  const handleLoadCodigoFloorLayout = async () => {
     if (tables.length > 0) {
       const confirmed = window.confirm(
-        'This will replace your current layout with a demo layout. Continue?'
+        'This will replace your current layout with the CODIGO Third Floor layout. Continue?'
       );
       if (!confirmed) return;
     }
-    
-    const demoLayout: Table[] = [
-      { id: 'table-001', name: 'T-001', x: 20, y: 20, capacity: 4, seatingType: 'Booth' },
-      { id: 'table-002', name: 'T-002', x: 40, y: 20, capacity: 4, seatingType: 'Booth' },
-      { id: 'table-003', name: 'T-003', x: 60, y: 20, capacity: 6, seatingType: 'Couch' },
-      { id: 'table-004', name: 'T-004', x: 80, y: 20, capacity: 2, seatingType: 'Bar Seating' },
-      { id: 'table-005', name: 'T-005', x: 20, y: 50, capacity: 6, seatingType: 'Couch' },
-      { id: 'table-006', name: 'T-006', x: 50, y: 50, capacity: 8, seatingType: 'Outdoor' },
-      { id: 'table-007', name: 'T-007', x: 80, y: 50, capacity: 4, seatingType: 'Booth' },
-      { id: 'table-008', name: 'T-008', x: 20, y: 80, capacity: 10, seatingType: 'VIP' },
-      { id: 'table-009', name: 'T-009', x: 50, y: 80, capacity: 6, seatingType: 'Couch' },
-      { id: 'table-010', name: 'T-010', x: 80, y: 80, capacity: 8, seatingType: 'Private Room' }
-    ];
-    setTables(demoLayout);
-    setSelectedTable(null);
+    try {
+      const response = await fetch('/api/lounges/CODIGO/floorplan?floorId=F3');
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || `Failed to load floorplan (${response.status})`);
+      }
+      const data = await response.json();
+      const nodes = Array.isArray(data.nodes) ? data.nodes : [];
+      const tablesFromFloorplan: Table[] = nodes.map((n: { id?: string; label?: string; type?: string; x?: number; y?: number; capacity?: number }) => ({
+        id: n.id || `table-${n.label || Date.now()}`,
+        name: n.label || n.id || 'T-?',
+        x: typeof n.x === 'number' ? n.x : 50,
+        y: typeof n.y === 'number' ? n.y : 50,
+        capacity: typeof n.capacity === 'number' ? n.capacity : 4,
+        seatingType: n.type === 'kiosk' ? 'Kiosk' : 'Booth'
+      }));
+      setTables(tablesFromFloorplan);
+      setSelectedTable(null);
+    } catch (error) {
+      console.error('Error loading CODIGO floor layout:', error);
+      alert(error instanceof Error ? error.message : 'Failed to load CODIGO floor layout. Run: npx tsx scripts/seed-codigo-pilot.ts from apps/app');
+    }
   };
 
   const handleDeleteTable = (id: string) => {
@@ -609,14 +612,14 @@ function LoungeLayoutPageContent() {
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
-                  onClick={handleLoadDemoLayout}
+                  onClick={handleLoadCodigoFloorLayout}
                   className="bg-teal-900/20 border-teal-500/30 hover:bg-teal-900/30"
                 >
                   <Sparkles className="w-4 h-4 mr-2" />
-                  Load Demo Layout
+                  Load CODIGO Floor Layout
                 </Button>
                 <HelpIcon 
-                  content="Load a sample layout with 10 tables for testing and demonstration purposes."
+                  content="Load the CODIGO Third Floor layout from the floorplan database. Requires CODIGO floorplan to be seeded."
                   position="bottom"
                   variant="info"
                 />

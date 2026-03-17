@@ -139,18 +139,25 @@ export async function GET(req: NextRequest) {
     // Default: Return lounge list (for QR generator dropdown)
     // This is what the QR generator expects: { success: true, lounges: [...] }
     const lounges = [
-      {
-        lounge_id: 'HOPE_GLOBAL_FORUM',
-        lounge_name: 'Hope Global Forum',
-        slug: 'hope-global-forum',
-      },
-      // Add other lounges here as needed
+      { lounge_id: 'CODIGO-Pilot', lounge_name: 'CODIGO Lounge', slug: 'codigo-pilot' },
+      { lounge_id: 'YALLA_BY_SPACE', lounge_name: 'Yalla By Space', slug: 'yalla-by-space' },
+      { lounge_id: 'DON_TITO', lounge_name: "Don Tito", slug: 'don-tito' },
+      { lounge_id: 'OPERA_ULTRA', lounge_name: 'Opera Ultra Lounge', slug: 'opera-ultra-lounge' },
+      { lounge_id: 'TAP_MGM', lounge_name: 'Tap MGM', slug: 'tap-mgm' },
+      { lounge_id: 'DIABLOS_CANTINA', lounge_name: "Diablo's Cantina", slug: 'diablos-cantina' },
+      { lounge_id: 'THE_BULLPEN_DC', lounge_name: 'The Bullpen DC', slug: 'the-bullpen-dc' },
+      { lounge_id: 'ABIGAIL_DC', lounge_name: 'Abigail DC', slug: 'abigail-dc' },
+      { lounge_id: 'SOCIETY_LOUNGE', lounge_name: 'Society Restaurant & Lounge', slug: 'society-restaurant-lounge' },
+      { lounge_id: 'SPACE_DC', lounge_name: 'Space DC', slug: 'space-dc' },
+      { lounge_id: 'ST_YVES', lounge_name: 'St Yves', slug: 'st-yves' },
+      { lounge_id: 'ARLINGTON_BEER_GARDEN', lounge_name: 'Arlington Beer Garden', slug: 'arlington-beer-garden' },
+      { lounge_id: 'FELT_LOUNGE', lounge_name: 'FELT Bar & Lounge', slug: 'felt-bar-lounge' },
     ];
 
     // If specifically requesting layout data
     if (layoutOnly) {
       try {
-        const effectiveLoungeId = loungeId || 'HOPE_GLOBAL_FORUM';
+        const effectiveLoungeId = loungeId || 'CODIGO';
         const key = layoutKey(effectiveLoungeId);
 
         // Prefer FloorplanLayout for lounges that use it (e.g. CODIGO operator at /codigo/operator).
@@ -227,11 +234,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ 
       success: true,
       lounges: [
-        {
-          lounge_id: 'HOPE_GLOBAL_FORUM',
-          lounge_name: 'Hope Global Forum',
-          slug: 'hope-global-forum',
-        },
+        { lounge_id: 'CODIGO-Pilot', lounge_name: 'CODIGO Lounge', slug: 'codigo-pilot' },
       ],
       total: 1,
       error: error instanceof Error ? error.message : 'Unknown error'
