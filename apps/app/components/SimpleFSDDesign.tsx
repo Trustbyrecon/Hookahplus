@@ -1532,13 +1532,13 @@ export default function SimpleFSDDesign({
         )}
       </div>
 
-      {/* Tabs - CODIGO: Kitchen → Hookah Room */}
+      {/* Tabs - Floor first (POS-mirrored), Kitchen 2nd, Issues 3rd, All Orders last */}
       <div className="flex space-x-1 mb-6">
         {[
-          { id: 'overview', label: 'All Orders', icon: '📊' },
-          { id: 'boh', label: (useFloorPlan || loungeId === 'CODIGO') ? 'Hookah Room' : 'Kitchen', icon: '👨‍🍳' },
           { id: 'foh', label: 'Floor', icon: '👨‍💼', testId: 'tab-floor' },
-          { id: 'edge', label: 'Issues', icon: '⚠️' }
+          { id: 'boh', label: (useFloorPlan || loungeId === 'CODIGO') ? 'Hookah Room' : 'Kitchen', icon: '👨‍🍳' },
+          { id: 'edge', label: 'Issues', icon: '⚠️' },
+          { id: 'overview', label: 'All Orders', icon: '📊' }
         ].map((tab) => (
           <button
             key={tab.id}

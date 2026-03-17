@@ -917,8 +917,8 @@ function FireSessionDashboardContent() {
             headline="Fire Session Dashboard"
             subheadline="Real-time session management with intelligent workflow automation. Monitor live sessions, manage BOH/FOH workflows, and optimize operations."
             benefit={{
-              value: `${metrics.activeSessions} Active Sessions`,
-              description: `$${metrics.revenue.toFixed(2)} revenue • ${metrics.staffAssigned} staff assigned`,
+              value: hasMounted ? `${metrics.activeSessions} Active Sessions` : '... Active Sessions',
+              description: hasMounted ? `$${metrics.revenue.toFixed(2)} revenue • ${metrics.staffAssigned} staff assigned` : 'Loading metrics...',
               icon: <Flame className="w-5 h-5 text-orange-400" />
             }}
             primaryCTA={{
@@ -931,7 +931,7 @@ function FireSessionDashboardContent() {
             } : undefined}
             trustIndicators={[
               { icon: <RefreshCw className="w-4 h-4" />, text: 'Real-time updates' },
-              { icon: <AlertCircle className="w-4 h-4" />, text: `${metrics.alerts} alerts` }
+              { icon: <AlertCircle className="w-4 h-4" />, text: hasMounted ? `${metrics.alerts} alerts` : '... alerts' }
             ]}
           />
         )}

@@ -15,10 +15,13 @@ export default function FirstLightHealthCard() {
   const [health, setHealth] = useState<HealthStatus | null>(null);
   const [loading, setLoading] = useState(false);
   const [sessionsApiReady, setSessionsApiReady] = useState<boolean | null>(null);
+  const [metricsApiReady, setMetricsApiReady] = useState<boolean | null>(null);
 
   const checkHealth = async () => {
     try {
       setLoading(true);
+      setSessionsApiReady(null);
+      setMetricsApiReady(null);
       const healthResponse = await fetch('/api/health');
       const healthData = await healthResponse.json();
       setHealth(healthData);
@@ -29,6 +32,14 @@ export default function FirstLightHealthCard() {
         setSessionsApiReady(sessionsResponse.ok || sessionsResponse.status === 503);
       } catch {
         setSessionsApiReady(false);
+      }
+
+      // Test metrics API
+      try {
+        const metricsResponse = await fetch('/api/metrics/live');
+        setMetricsApiReady(metricsResponse.ok || metricsResponse.status === 401);
+      } catch {
+        setMetricsApiReady(false);
       }
     } catch (error) {
       console.error('[FirstLightHealthCard] Health check failed:', error);
@@ -119,8 +130,19 @@ export default function FirstLightHealthCard() {
             <span className="text-sm text-zinc-300">Metrics API</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 border-2 border-zinc-500 rounded-full"></div>
-            <span className="text-sm text-zinc-400">Not required for First Light</span>
+            {metricsApiReady === null ? (
+              <>
+                <div className="w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-sm text-zinc-400">Checking...</span>
+              </>
+            ) : (
+              <>
+                <StatusIcon connected={metricsApiReady} />
+                <span className={`text-sm ${metricsApiReady ? 'text-green-400' : 'text-red-400'}`}>
+                  {metricsApiReady ? 'Ready' : 'Blocked'}
+                </span>
+              </>
+            )}
           </div>
         </div>
 
@@ -130,10 +152,19 @@ export default function FirstLightHealthCard() {
             <span className="text-sm text-zinc-300">Auth</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 border-2 border-zinc-500 rounded-full"></div>
-            <span className="text-sm text-zinc-400">
-              {health.firstLightMode ? 'Bypassed for First Light' : 'Enabled'}
-            </span>
+            {health.firstLightMode ? (
+              <>
+                <div className="w-4 h-4 border-2 border-zinc-500 rounded-full"></div>
+                <span className="text-sm text-zinc-400">Bypassed for First Light</span>
+              </>
+            ) : (
+              <>
+                <StatusIcon connected={health.auth === 'enabled'} />
+                <span className={`text-sm ${health.auth === 'enabled' ? 'text-green-400' : 'text-zinc-400'}`}>
+                  {health.auth === 'enabled' ? 'Enabled' : 'Bypassed'}
+                </span>
+              </>
+            )}
           </div>
         </div>
       </div>
