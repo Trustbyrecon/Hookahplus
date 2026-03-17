@@ -158,6 +158,9 @@ export async function middleware(request: NextRequest) {
     '/login',
     '/signup',
     '/admin/login', // Admin login page is public
+    '/codigo/access-expired', // Shown when CODIGO access has expired
+    '/codigo/join', // Guest join flow is public
+    '/codigo/privacy', // Privacy page is public
     '/demo', // Demo/test link routes are public (no auth required)
     '/_next',
     '/favicon.ico',
@@ -198,6 +201,54 @@ export async function middleware(request: NextRequest) {
   // Allow public routes
   if (isPublicRoute) {
     return response;
+  }
+
+  // Protected app routes (require auth when not First Light)
+  const protectedAppRoutes = [
+    '/fire-session-dashboard',
+    '/staff-panel',
+    '/lounge-layout',
+    '/staff',
+    '/sessions',
+    '/codigo/operator',
+    '/codigo/profile',
+    '/codigo/kpis',
+    '/dashboard',
+    '/analytics',
+    '/campaigns',
+    '/reconciliation',
+    '/revenue',
+    '/help',
+    '/qr-generator',
+    '/onboarding',
+    '/square',
+    '/waitlist',
+    '/pulse',
+    '/revenue',
+    '/roi-calculator',
+    '/partnership',
+    '/pricing',
+    '/support',
+    '/operator',
+    '/staff-dashboard',
+    '/staff-ops',
+    '/staff-tracking',
+    '/guest-intelligence',
+    '/monitoring',
+    '/status',
+    '/visual-grounder',
+    '/layout-preview',
+    '/docs',
+  ];
+
+  const isProtectedAppRoute = protectedAppRoutes.some(
+    (route) => pathname === route || pathname.startsWith(route + '/')
+  );
+
+  if (isProtectedAppRoute && !firstLightMode && hasSupabaseEnv && !user) {
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('redirect', pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
   // Protect admin routes
@@ -252,6 +303,37 @@ export const config = {
     '/admin/:path*',
     '/api/admin/:path*',
     '/api/:path*',
+    '/fire-session-dashboard',
+    '/staff-panel',
+    '/lounge-layout',
+    '/staff/:path*',
+    '/sessions',
+    '/codigo/:path*',
+    '/dashboard/:path*',
+    '/analytics',
+    '/campaigns',
+    '/reconciliation',
+    '/revenue',
+    '/help',
+    '/qr-generator',
+    '/onboarding/:path*',
+    '/square/:path*',
+    '/waitlist',
+    '/pulse',
+    '/docs/:path*',
+    '/operator',
+    '/staff-dashboard',
+    '/staff-ops',
+    '/staff-tracking',
+    '/guest-intelligence',
+    '/monitoring',
+    '/status',
+    '/visual-grounder',
+    '/layout-preview',
+    '/support',
+    '/partnership',
+    '/pricing',
+    '/roi-calculator',
   ],
 };
 

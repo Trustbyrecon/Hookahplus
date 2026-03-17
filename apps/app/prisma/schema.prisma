@@ -666,6 +666,24 @@ model PilotConfig {
   @@map("pilot_configs")
 }
 
+/// CODIGO access entitlement: time-boxed access that auto-expires after 14 days.
+model CodigoAccess {
+  id           String    @id @default(cuid())
+  userId       String    @map("user_id") @db.Uuid
+  grantedAt    DateTime  @map("granted_at") @db.Timestamptz(6)
+  expiresAt    DateTime  @map("expires_at") @db.Timestamptz(6)
+  status       String    @default("active") @map("status") // active | expired | revoked
+  grantedBy    String?   @map("granted_by") @db.Uuid
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([userId])
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([status])
+  @@map("codigo_access")
+}
+
 /// Floorplan layout per lounge/floor. Compatible with future Visual Layout Grounder output.
 model FloorplanLayout {
   id        String   @id @default(cuid())

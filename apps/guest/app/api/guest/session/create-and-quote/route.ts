@@ -7,9 +7,9 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
-import { sharedSessions, getGuestProfile, setGuestProfile } from '../../../shared-storage';
-import { createGhostLogEntry } from '../../../hash';
-import { featureFlags } from '../../../flags';
+import { sharedSessions, getGuestProfile, setGuestProfile } from '../../shared-storage';
+import { createGhostLogEntry } from '../../hash';
+import { featureFlags } from '../../flags';
 import { PriceQuoteResponse } from '@guest-types';
 
 const FLAVOR_PRICES: Record<string, number> = {
@@ -68,7 +68,7 @@ function createPriceBreakdown(flavors: string[], basePrice: number, addons: numb
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { guestId, loungeId, flavors, specialInstructions, tableId, zone, sessionType, promoCode, campaignId } = body;
+    const { guestId, loungeId, flavors, specialInstructions, tableId, zone, sessionType, duration, promoCode, campaignId } = body;
 
     if (!guestId || !loungeId) {
       return NextResponse.json({ ok: false, error: 'Missing required fields: guestId, loungeId' }, { status: 400 });
@@ -98,6 +98,7 @@ export async function POST(req: NextRequest) {
       tableId: tableId || undefined,
       zone: zone || undefined,
       sessionType: sessionType || 'flat',
+      duration: duration ?? undefined,
       status: 'pending',
       mix: { flavors: flavors || [], specialInstructions: specialInstructions || undefined },
       price: { base: 0, addons: 0, total: 0, currency: 'USD' },
@@ -111,8 +112,8 @@ export async function POST(req: NextRequest) {
     let basePrice = 0;
 
     if (session.sessionType === 'time-based') {
-      const duration = session.duration || 60;
-      basePrice = Math.round(duration * 50);
+      const durationMinutes = session.duration ?? 60;
+      basePrice = Math.round(durationMinutes * 50);
       const flavorPrices = flavorList.map((f: string) => FLAVOR_PRICES[f] || 0);
       basePrice += flavorPrices.reduce((a: number, b: number) => a + b, 0);
     } else {
@@ -157,7 +158,7 @@ export async function POST(req: NextRequest) {
     const discount = campaignDiscount || (promo ? promo.discount : 0);
     const total = Math.max(0, subtotal - discount);
 
-    session.price = {
+    (session as any).price = {
       base: basePrice,
       addons,
       total,
