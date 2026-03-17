@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '../../../../lib/auth';
-import { getCodigoAccess, getCodigoAccessDaysRemaining, hasCodigoAccess } from '../../../../lib/codigo-access';
-import { hasRole } from '../../../../lib/auth';
+import { getCurrentUser, hasRole } from '../../../../../lib/auth';
+import { getCodigoAccess, getCodigoAccessDaysRemaining, hasCodigoAccess } from '../../../../../lib/codigo-access';
 
 /**
  * GET /api/codigo/access/status

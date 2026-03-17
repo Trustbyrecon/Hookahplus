@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '../../../../lib/auth';
-import { hasRole } from '../../../../lib/auth';
-import { grantCodigoAccess } from '../../../../lib/codigo-access';
+import { getCurrentUser, hasRole } from '../../../../../lib/auth';
+import { grantCodigoAccess } from '../../../../../lib/codigo-access';
 
 /**
  * POST /api/codigo/access/grant
