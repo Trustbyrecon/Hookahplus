@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card, Button, Badge } from '../components';
 import { 
@@ -62,12 +63,19 @@ import {
   HelpCircle
 } from 'lucide-react';
 
-export default function LandingPage() {
-  // Theme is now managed entirely by ThemeToggle component
-  // No local state needed to prevent hydration mismatch
-  // Quick Access has been moved to Global Navigation
+function LandingContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  // Always use pretty theme - ThemeToggle component manages the actual theme switching
+  // Supabase sometimes redirects to /?code=... instead of /auth/callback (e.g. when email template uses SiteURL).
+  // Redirect to auth callback so the code gets exchanged and user lands on set-password or dashboard.
+  useEffect(() => {
+    const code = searchParams.get('code');
+    if (code && typeof window !== 'undefined') {
+      const redirect = searchParams.get('redirect') || '/auth/set-password';
+      router.replace(`/auth/callback?code=${encodeURIComponent(code)}&redirect=${encodeURIComponent(redirect)}`);
+    }
+  }, [searchParams, router]);
 
   // Pretty Theme Design
   return (
@@ -165,5 +173,13 @@ export default function LandingPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LandingPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-zinc-950" />}>
+      <LandingContent />
+    </Suspense>
   );
 }
