@@ -13,6 +13,7 @@ export default function CodigoLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const isAccessExpired = pathname === '/codigo/access-expired';
 
   const navItems = [
     { href: "/codigo/operator", label: "Floor" },
@@ -22,7 +23,8 @@ export default function CodigoLayout({
 
   return (
     <div className="flex h-screen min-h-screen flex-col overflow-hidden bg-zinc-950">
-      {/* Slim nav bar — touch-friendly, POS-style */}
+      {/* Slim nav bar — hidden on access-expired for standalone experience */}
+      {!isAccessExpired && (
       <nav className="flex-shrink-0 border-b border-zinc-800 bg-zinc-950/95 backdrop-blur-sm">
         <div className="flex items-center justify-center gap-1 px-2 py-2 sm:gap-4 sm:px-4">
           {navItems.map((item) => {
@@ -44,6 +46,7 @@ export default function CodigoLayout({
           })}
         </div>
       </nav>
+      )}
 
       <main className="min-h-0 flex-1">{children}</main>
     </div>

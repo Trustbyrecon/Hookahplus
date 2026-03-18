@@ -62,26 +62,40 @@ npx prisma migrate dev --name add_codigo_access
 ## How to Activate CODIGO Access for a User
 
 ### Option A: API (Admin)
-```bash
-# Grant to self (admin must be logged in)
-curl -X POST https://your-app.com/api/codigo/access/grant \
-  -H "Cookie: sb-..." \
-  -H "Content-Type: application/json" \
-  -d '{}'
+Use the **full URL** of your app. Admin must be logged in (include session cookies).
 
-# Grant to specific user
-curl -X POST https://your-app.com/api/codigo/access/grant \
-  -H "Cookie: sb-..." \
+```bash
+# Local dev
+curl -X POST http://localhost:3002/api/codigo/access/grant \
   -H "Content-Type: application/json" \
-  -d '{"userId":"uuid-of-user"}'
+  -d '{}' \
+  --cookie "sb-<project-ref>-auth-token=..." \
+  --cookie "sb-<project-ref>-auth-token-code-verifier=..."
+
+# Production (replace with your domain)
+curl -X POST https://app.hookahplus.net/api/codigo/access/grant \
+  -H "Content-Type: application/json" \
+  -d '{}' \
+  --cookie "sb-<project-ref>-auth-token=..." \
+  --cookie "sb-<project-ref>-auth-token-code-verifier=..."
+
+# Grant to specific user (admin only)
+curl -X POST https://app.hookahplus.net/api/codigo/access/grant \
+  -H "Content-Type: application/json" \
+  -d '{"userId":"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"}' \
+  --cookie "..." 
 ```
 
+**Tip:** Copy cookies from your browser (DevTools → Application → Cookies) after signing in at `/admin/login`.
+
 ### Option B: Database (Manual)
+Replace `'YOUR-SUPABASE-USER-UUID'` with a **valid UUID** from Supabase Auth. Get it from Supabase Dashboard → Authentication → Users, or from `auth.users.id`.
+
 ```sql
 INSERT INTO codigo_access (id, user_id, granted_at, expires_at, status, created_at, updated_at)
 VALUES (
   gen_random_uuid()::text,
-  'user-uuid-from-supabase-auth',
+  'YOUR-SUPABASE-USER-UUID'::uuid,   -- e.g. 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
   NOW(),
   NOW() + INTERVAL '14 days',
   'active',
@@ -89,6 +103,10 @@ VALUES (
   NOW()
 );
 ```
+
+**Getting your user UUID:**
+1. Supabase Dashboard → Authentication → Users → copy the UUID from the user row
+2. Or run: `SELECT id FROM auth.users WHERE email = 'your@email.com' LIMIT 1;`
 
 ### Option C: Script (Future)
 Create `scripts/grant-codigo-access.ts` that uses `grantCodigoAccess()` from `lib/codigo-access.ts`.
