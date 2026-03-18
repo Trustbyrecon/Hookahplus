@@ -161,6 +161,8 @@ export async function middleware(request: NextRequest) {
     '/codigo/access-expired', // Shown when CODIGO access has expired
     '/codigo/join', // Guest join flow is public
     '/codigo/privacy', // Privacy page is public
+    '/codigo/onboard', // 3-step onboarding (Join → Privacy → Ready)
+    '/codigo', // Root redirects to onboard or operator
     '/demo', // Demo/test link routes are public (no auth required)
     '/_next',
     '/favicon.ico',

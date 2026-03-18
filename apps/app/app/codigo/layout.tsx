@@ -14,17 +14,18 @@ export default function CodigoLayout({
 }) {
   const pathname = usePathname();
   const isAccessExpired = pathname === '/codigo/access-expired';
+  const isOnboard = pathname === '/codigo/onboard';
 
   const navItems = [
     { href: "/codigo/operator", label: "Floor" },
-    { href: "/codigo/join", label: "Join" },
+    { href: "/codigo/onboard", label: "Get started" },
     { href: "/codigo/privacy", label: "Privacy" },
   ];
 
   return (
     <div className="flex h-screen min-h-screen flex-col overflow-hidden bg-zinc-950">
-      {/* Slim nav bar — hidden on access-expired for standalone experience */}
-      {!isAccessExpired && (
+      {/* Slim nav bar — hidden on access-expired and onboard for standalone flow */}
+      {!isAccessExpired && !isOnboard && (
       <nav className="flex-shrink-0 border-b border-zinc-800 bg-zinc-950/95 backdrop-blur-sm">
         <div className="flex items-center justify-center gap-1 px-2 py-2 sm:gap-4 sm:px-4">
           {navItems.map((item) => {
