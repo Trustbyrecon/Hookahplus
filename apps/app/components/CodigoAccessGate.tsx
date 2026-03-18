@@ -13,7 +13,7 @@ export async function CodigoAccessGate({ children }: { children: React.ReactNode
 
   const user = await getCurrentUser();
   if (!user) {
-    redirect('/login?redirect=/codigo/operator');
+    redirect('/login/codigo');
   }
 
   const role = await getCurrentRole();

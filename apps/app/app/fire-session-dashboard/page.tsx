@@ -89,7 +89,6 @@ function FireSessionDashboardContent() {
   const [sessionClaimTimes, setSessionClaimTimes] = useState<Map<string, number>>(new Map());
   const demoProgressionTimersRef = useRef<Map<string, NodeJS.Timeout[]>>(new Map());
   const [hasMounted, setHasMounted] = useState(false);
-  const [scanSessionId, setScanSessionId] = useState('');
 
   useEffect(() => {
     setHasMounted(true);
@@ -905,32 +904,6 @@ function FireSessionDashboardContent() {
                 </span>
               </div>
               <div className="flex items-center gap-3">
-                {/* H+ Scan-to-act: Direct session jump from floor. */}
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-900/60 border border-zinc-700">
-                  <input
-                    type="text"
-                    value={scanSessionId}
-                    onChange={(e) => setScanSessionId(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        const id = scanSessionId.trim();
-                        if (id) router.push(`/staff/scan/${encodeURIComponent(id)}`);
-                      }
-                    }}
-                    placeholder="Scan or enter session ID"
-                    title="Use this when you already have the session ID from a receipt, table tent, or QR code."
-                    className="w-40 px-2 py-1.5 text-sm bg-zinc-800 border border-zinc-600 rounded text-white placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-                  />
-                  <button
-                    onClick={() => {
-                      const id = scanSessionId.trim();
-                      if (id) router.push(`/staff/scan/${encodeURIComponent(id)}`);
-                    }}
-                    className="px-3 py-1.5 text-sm bg-teal-600 hover:bg-teal-500 text-white rounded font-medium"
-                  >
-                    Open cockpit
-                  </button>
-                </div>
                 <button
                   onClick={() => setShowCreateModal(true)}
                   className="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-lg font-medium flex items-center gap-2"
@@ -988,32 +961,6 @@ function FireSessionDashboardContent() {
               autoRefreshInterval={30}
               isDemoMode={isDemoMode}
             />
-            {/* H+ Scan-to-act: Direct session jump from floor. */}
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-900/60 border border-zinc-700">
-              <input
-                type="text"
-                value={scanSessionId}
-                onChange={(e) => setScanSessionId(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    const id = scanSessionId.trim();
-                    if (id) router.push(`/staff/scan/${encodeURIComponent(id)}`);
-                  }
-                }}
-                placeholder="Scan or enter session ID"
-                title="Use this when you already have the session ID from a receipt, table tent, or QR code."
-                className="w-44 px-2 py-1.5 text-sm bg-zinc-800 border border-zinc-600 rounded text-white placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-              />
-              <button
-                onClick={() => {
-                  const id = scanSessionId.trim();
-                  if (id) router.push(`/staff/scan/${encodeURIComponent(id)}`);
-                }}
-                className="px-3 py-1.5 text-sm bg-teal-600 hover:bg-teal-500 text-white rounded font-medium"
-              >
-                Open cockpit
-              </button>
-            </div>
             <div className="flex items-center gap-4">
               <button
                 onClick={() => refreshSessions()}

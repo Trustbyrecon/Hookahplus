@@ -258,14 +258,21 @@ function LoginContent() {
             </button>
           )}
 
-          <div className="mt-6 flex items-center justify-between text-sm">
-            <Link href="/fire-session-dashboard" className="text-zinc-400 hover:text-zinc-300">
-              <ArrowLeft className="w-4 h-4 inline mr-1" />
-              Back to dashboard
-            </Link>
-            <Link href="/admin/login" className="text-teal-400 hover:text-teal-300">
-              Admin sign in
-            </Link>
+          <div className="mt-6 flex flex-col gap-2 text-sm">
+            <div className="flex items-center justify-between">
+              <Link href="/fire-session-dashboard" className="text-zinc-400 hover:text-zinc-300">
+                <ArrowLeft className="w-4 h-4 inline mr-1" />
+                Back to dashboard
+              </Link>
+            </div>
+            <div className="flex items-center gap-4 text-teal-400">
+              <Link href="/login/codigo" className="hover:text-teal-300 font-medium">
+                CODIGO sign in
+              </Link>
+              <Link href="/admin/login" className="hover:text-teal-300">
+                Admin sign in
+              </Link>
+            </div>
           </div>
         </div>
       </div>

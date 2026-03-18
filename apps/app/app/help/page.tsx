@@ -111,16 +111,6 @@ export default function HelpPage() {
       lastUpdated: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
     },
     {
-      id: 'faq_6',
-      question: 'How do I use Scan-to-act?',
-      answer: 'Scan-to-act lets you jump straight into a session cockpit from a table QR code, receipt, or table tent. Enter or paste the session ID in the Scan-to-act input (on the Staff Panel or Fire Session Dashboard) and click "Open cockpit". Best for timer changes, delivery updates, and quick notes.',
-      category: 'staff',
-      helpful: 0,
-      notHelpful: 0,
-      tags: ['staff', 'scan-to-act', 'session', 'floor'],
-      lastUpdated: new Date()
-    },
-    {
       id: 'faq_7',
       question: 'How do I manage my schedule?',
       answer: 'Go to the Staff Panel and open the Schedule tab. There you can view your shifts, request time off, and see upcoming assignments. Managers can create and edit shifts from the same panel.',

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
+import Link from 'next/link';
 import GlobalNavigation from '../../components/GlobalNavigation';
 import { Card, Button, Badge } from '../../components';
 import StaffPerformanceAnalytics from '../../components/StaffPerformanceAnalytics';
@@ -34,8 +35,6 @@ import {
   Bell,
   BarChart3,
   Lightbulb,
-  QrCode,
-  Activity,
   ExternalLink,
   AlertTriangle
 } from 'lucide-react';
@@ -103,10 +102,6 @@ function StaffPanelPageContent() {
     role: 'FOH' as 'BOH' | 'FOH' | 'MANAGER' | 'ADMIN'
   });
 
-  // Staff cockpit helpers (overview only)
-  const [scanSessionId, setScanSessionId] = useState('');
-  const [recentScans, setRecentScans] = useState<Array<{ sessionId: string; ts: number }>>([]);
-  const [recentScanDetails, setRecentScanDetails] = useState<Record<string, any>>({});
   const [liveParticipantCounts, setLiveParticipantCounts] = useState<Record<string, number>>({});
   const [driftSummary, setDriftSummary] = useState<{ count: number; items: any[] } | null>(null);
   const [health, setHealth] = useState<any>(null);
@@ -129,48 +124,6 @@ function StaffPanelPageContent() {
         });
     }
   }, [activeTab]);
-
-  // Load recent scans (client-only)
-  useEffect(() => {
-    if (activeTab !== 'overview') return;
-    try {
-      const key = 'hp_staff_recent_scans_v1';
-      const raw = localStorage.getItem(key);
-      const parsed = raw ? JSON.parse(raw) : [];
-      if (Array.isArray(parsed)) setRecentScans(parsed.slice(0, 10));
-    } catch {
-      setRecentScans([]);
-    }
-  }, [activeTab]);
-
-  // Fetch details for recent scans (best-effort)
-  useEffect(() => {
-    if (activeTab !== 'overview') return;
-    const ids = recentScans.map((r) => r.sessionId).filter(Boolean).slice(0, 5);
-    if (!ids.length) return;
-    let cancelled = false;
-    (async () => {
-      const entries = await Promise.all(
-        ids.map(async (id) => {
-          try {
-            const resp = await fetch(`/api/sessions/${encodeURIComponent(id)}`);
-            const data = await resp.json().catch(() => null);
-            if (!resp.ok) return [id, null] as const;
-            return [id, data] as const;
-          } catch {
-            return [id, null] as const;
-          }
-        })
-      );
-      if (cancelled) return;
-      const next: Record<string, any> = {};
-      for (const [id, data] of entries) next[id] = data;
-      setRecentScanDetails(next);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [activeTab, recentScans]);
 
   // Fetch drift summary + health (overview only)
   useEffect(() => {
@@ -595,100 +548,6 @@ function StaffPanelPageContent() {
               </Card>
             </div>
 
-            {/* Scan-to-act + ops continuity */}
-            {/* H+ Scan-to-act: Direct session jump from floor. Used when staff has session ID from QR, receipt, or table tent. */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-              <Card className="card-tablet lg:col-span-1">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-semibold text-white">Scan-to-act</h3>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-300 border border-teal-500/30">Quick jump</span>
-                  </div>
-                  <QrCode className="w-6 h-6 text-teal-400" />
-                </div>
-                <p className="text-sm text-zinc-400 mb-1">
-                  Scan a table QR or paste a session ID to jump straight into that session cockpit.
-                </p>
-                <p className="text-xs text-zinc-500 mb-3">
-                  Fastest way to manage a live session from the floor.
-                </p>
-                <p className="text-xs text-teal-400/80 mb-4">
-                  Best for: timer changes, delivery updates, quick notes
-                </p>
-                <div className="space-y-3">
-                  <input
-                    value={scanSessionId}
-                    onChange={(e) => setScanSessionId(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        const id = scanSessionId.trim();
-                        if (id) window.location.href = `/staff/scan/${encodeURIComponent(id)}`;
-                      }
-                    }}
-                    placeholder="Scan or enter session ID"
-                    title="Use this when you already have the session ID from a receipt, table tent, or QR code."
-                    className="w-full px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-700 text-white placeholder:text-zinc-500"
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      className="btn-pretty-primary btn-tablet flex-1"
-                      onClick={() => {
-                        const id = scanSessionId.trim();
-                        if (!id) return;
-                        window.location.href = `/staff/scan/${encodeURIComponent(id)}`;
-                      }}
-                    >
-                      Open cockpit
-                    </Button>
-                    <Button
-                      className="btn-pretty-outline btn-tablet"
-                      onClick={() => setScanSessionId('')}
-                    >
-                      Clear
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="card-tablet lg:col-span-2">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-white">Recent scans</h3>
-                  <Activity className="w-6 h-6 text-blue-400" />
-                </div>
-                {recentScans.length === 0 ? (
-                  <p className="text-sm text-zinc-400">No recent scans yet.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {recentScans.slice(0, 5).map((r) => {
-                      const detail = recentScanDetails[r.sessionId];
-                      const tableId = detail?.table_id || detail?.tableId || detail?.table_id;
-                      const participants = Array.isArray(detail?.participants) ? detail.participants.length : null;
-                      return (
-                        <div key={r.sessionId} className="flex items-center justify-between p-3 rounded-lg bg-zinc-900/50 border border-zinc-800">
-                          <div className="min-w-0">
-                            <div className="text-white font-medium truncate">
-                              {tableId ? `Table ${tableId}` : 'Session'} <span className="text-zinc-500">•</span>{' '}
-                              <span className="font-mono text-sm text-zinc-300">{r.sessionId.slice(0, 10)}</span>
-                            </div>
-                            <div className="text-xs text-zinc-500">
-                              {new Date(r.ts).toLocaleString()}
-                              {participants != null ? ` • ${participants} participant(s)` : ''}
-                            </div>
-                          </div>
-                          <a
-                            href={`/staff/scan/${encodeURIComponent(r.sessionId)}`}
-                            className="inline-flex items-center gap-2 text-sm text-teal-300 hover:text-teal-200"
-                          >
-                            Open <ExternalLink className="w-4 h-4" />
-                          </a>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </Card>
-            </div>
-
             {/* Operational alerts + live sessions */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
               <Card className="card-tablet lg:col-span-1">
@@ -738,12 +597,12 @@ function StaffPanelPageContent() {
                               {typeof liveParticipantCounts[s.id] === 'number' ? ` • ${liveParticipantCounts[s.id]} participant(s)` : ''}
                             </div>
                           </div>
-                          <a
-                            href={`/staff/scan/${encodeURIComponent(s.id)}`}
+                          <Link
+                            href="/sessions"
                             className="inline-flex items-center gap-2 text-sm text-teal-300 hover:text-teal-200"
                           >
-                            Open <ExternalLink className="w-4 h-4" />
-                          </a>
+                            View <ExternalLink className="w-4 h-4" />
+                          </Link>
                         </div>
                       ))}
                   </div>
