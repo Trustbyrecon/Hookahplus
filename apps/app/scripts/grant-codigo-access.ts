@@ -11,8 +11,14 @@
  * The codigo_access.user_id must match Supabase auth.users.id.
  */
 
+import { config } from 'dotenv';
+import { resolve } from 'path';
 import { adminClient } from '../lib/supabase';
 import { grantCodigoAccess } from '../lib/codigo-access';
+
+// Load .env.local so SUPABASE_SERVICE_ROLE_KEY etc. are available when run via tsx
+config({ path: resolve(process.cwd(), '.env.local') });
+config({ path: resolve(process.cwd(), '.env') });
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
