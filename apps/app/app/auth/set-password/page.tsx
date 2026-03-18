@@ -21,7 +21,8 @@ export default function SetPasswordPage() {
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
     const supabase = clientClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then((res) => {
+      const user = res.data.user;
       if (!user) {
         router.replace('/login?redirect=/fire-session-dashboard&error=Session expired. Please request a new reset link.');
       }
