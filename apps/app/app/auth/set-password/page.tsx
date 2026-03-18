@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import type { User } from '@supabase/supabase-js';
 import { clientClient, isSupabaseConfigured } from '../../../lib/supabase-client';
 import { Flame, Lock, Loader2, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
@@ -21,7 +22,7 @@ export default function SetPasswordPage() {
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
     const supabase = clientClient();
-    supabase.auth.getUser().then((res) => {
+    supabase.auth.getUser().then((res: { data: { user: User | null } }) => {
       const user = res.data.user;
       if (!user) {
         router.replace('/login?redirect=/fire-session-dashboard&error=Session expired. Please request a new reset link.');
