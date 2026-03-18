@@ -16,6 +16,7 @@ function LoginContent() {
   const [useMagicLink, setUseMagicLink] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [forgotPasswordSent, setForgotPasswordSent] = useState(false);
   const [error, setError] = useState<string | null>(errorParam || null);
 
   const getAuthCallbackOrigin = () => {
@@ -65,7 +66,32 @@ function LoginContent() {
       if (signInError) throw signInError;
       window.location.href = redirect.startsWith('/') ? redirect : `/${redirect}`;
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Invalid email or password');
+      const msg = err instanceof Error ? err.message : 'Invalid email or password';
+      const isCredentialError = msg.toLowerCase().includes('invalid') || msg.toLowerCase().includes('credential');
+      setError(isCredentialError ? 'Invalid email or password. No password set? Use magic link or Forgot password.' : msg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) {
+      setError('Please enter your email address');
+      return;
+    }
+    setIsLoading(true);
+    setError(null);
+    try {
+      const supabase = clientClient();
+      const callbackUrl = `${getAuthCallbackOrigin()}/auth/callback?redirect=${encodeURIComponent('/auth/set-password')}&type=recovery`;
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: callbackUrl,
+      });
+      if (resetError) throw resetError;
+      setForgotPasswordSent(true);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to send reset email');
     } finally {
       setIsLoading(false);
     }
@@ -162,6 +188,22 @@ function LoginContent() {
                 </button>
               </form>
             )
+          ) : forgotPasswordSent ? (
+            <div className="text-center py-6">
+              <Mail className="w-12 h-12 text-teal-400 mx-auto mb-4" />
+              <p className="text-zinc-300 mb-2">
+                Password reset sent to <span className="font-medium text-white">{email}</span>
+              </p>
+              <p className="text-sm text-zinc-500 mb-6">
+                Check your email and click the link to set a new password.
+              </p>
+              <button
+                onClick={() => { setForgotPasswordSent(false); setError(null); }}
+                className="text-sm text-teal-400 hover:text-teal-300"
+              >
+                Use a different email
+              </button>
+            </div>
           ) : (
             <form onSubmit={handlePasswordSignIn} className="space-y-4">
               <div>
@@ -194,6 +236,14 @@ function LoginContent() {
                 className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 disabled:bg-zinc-700 disabled:cursor-not-allowed text-white rounded-lg transition-colors font-medium"
               >
                 {isLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Signing in...</> : <><Lock className="w-4 h-4" /> Sign in with password</>}
+              </button>
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                disabled={isLoading || !email}
+                className="w-full text-sm text-zinc-400 hover:text-teal-400"
+              >
+                Forgot password?
               </button>
             </form>
           )}

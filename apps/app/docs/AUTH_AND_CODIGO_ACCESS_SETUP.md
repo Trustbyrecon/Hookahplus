@@ -27,6 +27,13 @@ Professional-grade SaaS auth and time-boxed CODIGO access (14-day auto-expiry) h
 - **`POST /api/codigo/access/grant`** — Admin-only; grant access to a user
 - **`POST /api/codigo/access/extend`** — Admin-only; extend by 14 days
 
+## Auth Troubleshooting
+
+If magic link or password login fails, see [AUTH_TROUBLESHOOTING.md](./AUTH_TROUBLESHOOTING.md). Common fixes:
+
+- **Supabase Redirect URLs** — Add `https://app.hookahplus.net/**` in Supabase Dashboard → Auth → URL Configuration
+- **No password** — Magic-link-only users: use "Forgot password?" to set one, or use magic link
+
 ## Environment Variables
 
 | Variable | Required | Description |

@@ -1,3 +1,4 @@
+import { createBrowserClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 
 /** Check if Supabase auth is configured (for admin login, etc.) */
@@ -7,10 +8,12 @@ export function isSupabaseConfigured(): boolean {
   return !!(url && key && url.length > 0 && key.length > 0);
 }
 
-let clientInstance: ReturnType<typeof createClient> | null = null;
+let clientInstance: ReturnType<typeof createBrowserClient> | ReturnType<typeof createClient> | null = null;
 
 /**
- * Singleton client-side Supabase client (for use in client components)
+ * Singleton client-side Supabase client (for use in client components).
+ * Uses createBrowserClient from @supabase/ssr so the session is read from cookies
+ * (set by auth callback / middleware), not localStorage.
  * @throws Error if NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY are not set
  */
 export function clientClient() {
@@ -28,13 +31,7 @@ export function clientClient() {
   }
 
   if (!clientInstance) {
-    clientInstance = createClient(url, key, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-      },
-    });
+    clientInstance = createBrowserClient(url, key);
   }
 
   return clientInstance;
