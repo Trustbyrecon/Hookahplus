@@ -17,17 +17,19 @@ Add these to **Redirect URLs**:
 
 Set **Site URL** to your main app URL (e.g. `https://app.hookahplus.net`).
 
-### 1b. Reset password lands on home page (`/?code=...`)
+### 1b. Reset password: wrong template variable
 
-If the reset link drops you on the home page with `?code=...` in the URL instead of `/auth/set-password`, the **Reset Password** email template is using `{{ .SiteURL }}` instead of `{{ .RedirectTo }}`.
+**Use `{{ .ConfirmationURL }}`** for the reset link href, **not** `{{ .RedirectTo }}`.
 
-**Fix:** Supabase Dashboard → Authentication → Email Templates → **Reset Password**. Change the confirmation link to use `{{ .RedirectTo }}`:
+- `{{ .ConfirmationURL }}` — Full link that goes to Supabase first (verifies token), then redirects to your app with the code. **This is correct.**
+- `{{ .RedirectTo }}` — Only your app URL. Using it as the href sends users directly to your app with no code, so they never reach set-password.
 
+**Correct template:**
 ```html
-<a href="{{ .RedirectTo }}">Reset password</a>
+<p><a href="{{ .ConfirmationURL }}">Reset Password</a></p>
 ```
 
-The app also has a fallback: landing on `/?code=...` will auto-redirect to the auth callback and then to `/auth/set-password`.
+The `redirectTo` you pass in `resetPasswordForEmail()` is used by Supabase when building the ConfirmationURL. Ensure `https://app.hookahplus.net/**` is in Supabase → Auth → URL Configuration → Redirect URLs.
 
 ### 2. No password set (magic-link-only users)
 
