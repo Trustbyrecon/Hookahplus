@@ -207,6 +207,7 @@ export async function middleware(request: NextRequest) {
   const protectedAppRoutes = [
     '/fire-session-dashboard',
     '/staff-panel',
+    '/preorder',
     '/lounge-layout',
     '/staff',
     '/sessions',
@@ -303,6 +304,7 @@ export const config = {
     '/admin/:path*',
     '/api/admin/:path*',
     '/api/:path*',
+    '/preorder/:path*',
     '/fire-session-dashboard',
     '/staff-panel',
     '/lounge-layout',

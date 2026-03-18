@@ -108,8 +108,26 @@ VALUES (
 1. Supabase Dashboard → Authentication → Users → copy the UUID from the user row
 2. Or run: `SELECT id FROM auth.users WHERE email = 'your@email.com' LIMIT 1;`
 
-### Option C: Script (Future)
-Create `scripts/grant-codigo-access.ts` that uses `grantCodigoAccess()` from `lib/codigo-access.ts`.
+### Option C: Script (by email)
+For magic-link users who don't have admin/owner membership, grant CODIGO access by email:
+
+```bash
+cd apps/app
+npx tsx scripts/grant-codigo-access.ts your@email.com
+```
+
+Or with env: `EMAIL=your@email.com npx tsx scripts/grant-codigo-access.ts`
+
+The script looks up the user in Supabase Auth (they must have signed in at least once) and grants 14-day CODIGO access.
+
+## Magic Link + CODIGO Access
+
+Magic link sign-in at `/login` creates a valid Supabase session. CODIGO access is separate:
+
+- **Admin/owner** — If you have a membership with role `admin` or `owner`, you bypass CODIGO expiry.
+- **Other users** — Need a `codigo_access` row. Run `scripts/grant-codigo-access.ts your@email.com` after first sign-in.
+
+The `codigo_access.user_id` must match your Supabase `auth.users.id`. The grant script resolves email → userId automatically.
 
 ## What to Test Manually
 
