@@ -9,7 +9,7 @@ const MEMBER_ID_KEY = 'hp_codigo_member_id_v1';
 /**
  * /codigo root — redirect based on onboarding state.
  * Not onboarded (no memberId or no onboarded flag) → /codigo/onboard
- * Onboarded → /codigo/operator
+ * Onboarded → /codigo/resolve (intent resume → party / preorder / guest hub)
  */
 export default function CodigoPage() {
   const router = useRouter();
@@ -18,7 +18,7 @@ export default function CodigoPage() {
     const onboarded = localStorage.getItem(ONBOARDED_KEY) === 'true';
     const memberId = (localStorage.getItem(MEMBER_ID_KEY) || '').trim();
     if (onboarded && memberId) {
-      router.replace('/fire-session-dashboard?loungeIds=CODIGO&lounge=CODIGO');
+      router.replace('/codigo/resolve');
     } else {
       router.replace('/codigo/onboard');
     }

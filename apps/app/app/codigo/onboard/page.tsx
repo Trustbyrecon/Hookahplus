@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
 import { Flame, ChevronRight, CheckCircle, Shield, User } from 'lucide-react';
+import { codigoIntentPatchHasValues, intentFromSearchParams, writeStoredCodigoIntent } from '@/lib/codigo/intent';
 
 const DEVICE_ID_KEY = 'hp_codigo_device_id_v1';
 const MEMBER_ID_KEY = 'hp_codigo_member_id_v1';
@@ -26,7 +28,9 @@ function getOrCreateDeviceId(): string {
 
 type Step = 1 | 2 | 3;
 
-export default function CodigoOnboardPage() {
+function CodigoOnboardInner() {
+  const router = useRouter();
+  const sp = useSearchParams();
   const [step, setStep] = useState<Step>(1);
   const [deviceId, setDeviceId] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -37,15 +41,22 @@ export default function CodigoOnboardPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const fromUrl = intentFromSearchParams(sp);
+    if (codigoIntentPatchHasValues(fromUrl)) {
+      writeStoredCodigoIntent(fromUrl);
+    }
+  }, [sp]);
+
+  useEffect(() => {
     const did = getOrCreateDeviceId();
     setDeviceId(did);
     const existing = (localStorage.getItem(MEMBER_ID_KEY) || '').trim();
     const alreadyOnboarded = localStorage.getItem(ONBOARDED_KEY) === 'true';
     if (existing) setMemberId(existing);
     if (alreadyOnboarded && existing) {
-      window.location.href = '/fire-session-dashboard?loungeIds=CODIGO&lounge=CODIGO';
+      router.replace('/codigo/resolve');
     }
-  }, []);
+  }, [router]);
 
   const canProceedStep1 = useMemo(() => firstName.trim().length > 0 && !isSubmitting, [firstName, isSubmitting]);
 
@@ -106,7 +117,7 @@ export default function CodigoOnboardPage() {
 
   function handleEnterExperience() {
     localStorage.setItem(ONBOARDED_KEY, 'true');
-    window.location.href = '/fire-session-dashboard?loungeIds=CODIGO&lounge=CODIGO';
+    router.push('/codigo/resolve');
   }
 
   // Already has memberId from prior visit — skip to step 2 or 3
@@ -256,11 +267,25 @@ export default function CodigoOnboardPage() {
             Privacy & data controls
           </Link>
           {' · '}
-          <Link href="/fire-session-dashboard?loungeIds=CODIGO&lounge=CODIGO" className="hover:text-zinc-400 underline">
-            Skip to Floor
+          <Link href="/codigo/operator" className="hover:text-zinc-400 underline">
+            Skip to Floor (staff)
           </Link>
         </p>
       </div>
     </div>
+  );
+}
+
+export default function CodigoOnboardPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-zinc-500 text-sm">
+          Loading…
+        </div>
+      }
+    >
+      <CodigoOnboardInner />
+    </Suspense>
   );
 }

@@ -1,8 +1,17 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { Suspense, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
+import {
+  codigoIntentPatchHasValues,
+  intentFromSearchParams,
+  readStoredCodigoIntent,
+  resolveCodigoIntent,
+  intentToSearchParams,
+  writeStoredCodigoIntent,
+} from '@/lib/codigo/intent';
 
 const DEVICE_ID_KEY = 'hp_codigo_device_id_v1';
 const MEMBER_ID_KEY = 'hp_codigo_member_id_v1';
@@ -21,13 +30,27 @@ function getOrCreateDeviceId(): string {
   }
 }
 
-export default function CodigoJoinPage() {
+function CodigoJoinInner() {
+  const sp = useSearchParams();
   const [deviceId, setDeviceId] = useState<string>('');
   const [firstName, setFirstName] = useState('');
   const [nickname, setNickname] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [memberId, setMemberId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fromUrl = intentFromSearchParams(sp);
+    if (codigoIntentPatchHasValues(fromUrl)) {
+      writeStoredCodigoIntent(fromUrl);
+    }
+  }, [sp]);
+
+  const privacyHref = useMemo(() => {
+    const intent = resolveCodigoIntent(readStoredCodigoIntent(), intentFromSearchParams(sp));
+    const q = intentToSearchParams(intent);
+    return q ? `/codigo/privacy?${q}` : '/codigo/privacy';
+  }, [sp]);
 
   useEffect(() => {
     const did = getOrCreateDeviceId();
@@ -72,7 +95,7 @@ export default function CodigoJoinPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white flex items-center justify-center p-4">
+    <div className="min-h-full bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <Card className="bg-zinc-900/60 border-zinc-700/60">
           <CardHeader>
@@ -140,7 +163,7 @@ export default function CodigoJoinPage() {
                   </a>
                 </Button>
                 <Button asChild variant="secondary" className="w-full">
-                  <a href="/codigo/privacy">Privacy</a>
+                  <a href={privacyHref}>Privacy & continue</a>
                 </Button>
               </CardFooter>
             </>
@@ -151,3 +174,16 @@ export default function CodigoJoinPage() {
   );
 }
 
+export default function CodigoJoinPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-full items-center justify-center bg-zinc-950 text-zinc-500 text-sm p-8">
+          Loading…
+        </div>
+      }
+    >
+      <CodigoJoinInner />
+    </Suspense>
+  );
+}

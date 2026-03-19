@@ -1,8 +1,18 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { Suspense, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
+import {
+  codigoIntentPatchHasValues,
+  intentFromSearchParams,
+  readStoredCodigoIntent,
+  resolveCodigoIntent,
+  intentToSearchParams,
+  writeStoredCodigoIntent,
+} from '@/lib/codigo/intent';
 
 const DEVICE_ID_KEY = 'hp_codigo_device_id_v1';
 const MEMBER_ID_KEY = 'hp_codigo_member_id_v1';
@@ -13,7 +23,8 @@ type HidProfile = {
   tier?: string;
 };
 
-export default function CodigoPrivacyPage() {
+function CodigoPrivacyInner() {
+  const sp = useSearchParams();
   const [deviceId, setDeviceId] = useState('');
   const [memberId, setMemberId] = useState('');
   const [profile, setProfile] = useState<HidProfile | null>(null);
@@ -21,6 +32,19 @@ export default function CodigoPrivacyPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fromUrl = intentFromSearchParams(sp);
+    if (codigoIntentPatchHasValues(fromUrl)) {
+      writeStoredCodigoIntent(fromUrl);
+    }
+  }, [sp]);
+
+  const resolveHref = useMemo(() => {
+    const intent = resolveCodigoIntent(readStoredCodigoIntent(), intentFromSearchParams(sp));
+    const q = intentToSearchParams(intent);
+    return q ? `/codigo/resolve?${q}` : '/codigo/resolve';
+  }, [sp]);
 
   useEffect(() => {
     const did = (localStorage.getItem(DEVICE_ID_KEY) || '').trim();
@@ -170,6 +194,11 @@ export default function CodigoPrivacyPage() {
           </CardContent>
 
           <CardFooter className="flex flex-col gap-3">
+            {memberId && (
+              <Button asChild className="w-full">
+                <Link href={resolveHref}>Continue your visit</Link>
+              </Button>
+            )}
             <Button onClick={saveConsent} disabled={!canAct} className="w-full">
               {loading ? 'Saving…' : 'Save consent'}
             </Button>
@@ -183,6 +212,20 @@ export default function CodigoPrivacyPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function CodigoPrivacyPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-full items-center justify-center bg-zinc-950 text-zinc-500 text-sm p-8">
+          Loading…
+        </div>
+      }
+    >
+      <CodigoPrivacyInner />
+    </Suspense>
   );
 }
 
