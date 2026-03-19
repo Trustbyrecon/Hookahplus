@@ -469,6 +469,7 @@ function FireSessionDashboardContent() {
         flavor: sessionData.flavor_mix && sessionData.flavor_mix.length > 0 
           ? (Array.isArray(sessionData.flavor_mix) ? sessionData.flavor_mix.join(' + ') : sessionData.flavor_mix)
           : 'Custom Mix',
+        flavorMix: Array.isArray(sessionData.flavor_mix) ? sessionData.flavor_mix : undefined,
         amount: sessionData.amount ? Math.round(sessionData.amount * 100) : 3000, // Convert to cents
         assignedStaff: {
           boh: sessionData.boh_staff || sessionData.bohStaff || undefined,

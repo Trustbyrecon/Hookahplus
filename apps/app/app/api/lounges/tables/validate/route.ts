@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../../lib/db';
+import { CODIGO_SEATS } from '../../../../../lib/codigoSeats';
 
 function layoutKey(loungeId: string) {
   return `lounge_layout:${loungeId}`;
@@ -35,8 +36,36 @@ export async function POST(request: NextRequest) {
     let tables: any[] = [];
     let table: any = null;
 
+    // CODIGO: Use source-of-truth CODIGO_SEATS first — no DB
+    if (effectiveLoungeId === 'CODIGO') {
+      const tid = String(tableId || '').trim().toLowerCase();
+      const seat = CODIGO_SEATS.find(
+        (s) =>
+          s.id.toLowerCase() === tid ||
+          s.label.toLowerCase() === tid ||
+          s.id.replace(/^seat-/, '').toLowerCase() === tid
+      );
+      if (seat) {
+        tableExists = true;
+        table = {
+          id: seat.id,
+          name: seat.label,
+          capacity: 2,
+          seatingType: seat.id.startsWith('seat-kb') ? 'Bar Seating' : 'Booth',
+          zone: seat.id.startsWith('seat-5') ? 'VIP' : 'Main Floor',
+        };
+        tables = CODIGO_SEATS.map((s) => ({
+          id: s.id,
+          name: s.label,
+          capacity: 2,
+          seatingType: s.id.startsWith('seat-kb') ? 'Bar Seating' : 'Booth',
+          zone: s.id.startsWith('seat-5') ? 'VIP' : 'Main Floor',
+        }));
+      }
+    }
+
     // Check Seat table first (new system) if loungeId provided
-    if (effectiveLoungeId) {
+    if (!tableExists && effectiveLoungeId) {
       try {
         const seats = await prisma.seat.findMany({
           where: { 

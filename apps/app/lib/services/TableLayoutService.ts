@@ -5,6 +5,8 @@
  * Integrates layout data with session data for availability checking.
  */
 
+import { CODIGO_SEATS } from '../codigoSeats';
+
 export interface LayoutTable {
   id: string;
   name: string;
@@ -132,10 +134,23 @@ export class TableLayoutService {
 
   /**
    * Load tables from saved layout
+   * CODIGO: Use source-of-truth CODIGO_SEATS — no API, instant
    */
   static async loadTables(loungeId?: string): Promise<LayoutTable[]> {
+    const tid = (loungeId || '').trim();
+    if (tid === 'CODIGO') {
+      return CODIGO_SEATS.map((s) => ({
+        id: s.id,
+        name: s.label,
+        seatingType: s.id.startsWith('seat-kb') ? 'Bar Seating' : 'Booth',
+        capacity: 2,
+        coordinates: { x: s.x, y: s.y },
+        zone: s.id.startsWith('seat-5') ? 'VIP' : 'Main Floor',
+      }));
+    }
+
     try {
-      const cacheKey = (loungeId || '').trim() || 'HOPE_GLOBAL_FORUM';
+      const cacheKey = tid || 'HOPE_GLOBAL_FORUM';
       // Check cache first
       const cached = this.layoutCacheByLounge.get(cacheKey);
       if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {

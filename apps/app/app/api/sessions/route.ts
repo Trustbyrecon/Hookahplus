@@ -38,6 +38,7 @@ import { withQueryTimeout, QUERY_TIMEOUTS } from '../../../lib/db-helpers';
 import { resolveHID } from '../../../lib/hid/resolver';
 import { syncSessionToNetwork } from '../../../lib/profiles/network';
 import { buildIdentityKey, resolveSessionParticipant } from '../../../lib/session/participant-resolver';
+import { CODIGO_SEATS } from '../../../lib/codigoSeats';
 
 async function getCodigoMemberDisplay(memberId: string): Promise<{
   memberId: string;
@@ -927,11 +928,16 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
     });
     
     // P0: Harden input coercion - normalize all inputs to safe types
-    // Normalize flavor: handle array, string, or comma-separated
+    // Normalize flavor: handle array, string, comma-separated, or " + " (CODIGO preset format)
     const flavorArr = Array.isArray(body.flavor)
       ? body.flavor.map((f: any) => String(f).trim()).filter(Boolean)
+      : Array.isArray(body.flavorMix)
+      ? body.flavorMix.map((f: any) => String(f).trim()).filter(Boolean)
       : body.flavor
-      ? String(body.flavor).split(',').map((s: string) => s.trim()).filter(Boolean)
+      ? String(body.flavor)
+          .split(/\s*\+\s*|,/)
+          .map((s: string) => s.trim())
+          .filter(Boolean)
       : ['Custom Mix'];
     
     // Normalize source with validation
@@ -1174,13 +1180,31 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
     }
 
     // Validate tableId against saved layout
-    // First check Seat table (new system), then fallback to orgSetting (legacy)
+    // CODIGO: Use source-of-truth CODIGO_SEATS first — no DB, fast validation
     try {
       let tableExists = false;
       let tables: any[] = [];
 
-      // Check Seat table first (new system)
-      if (finalLoungeId) {
+      if (finalLoungeId === 'CODIGO') {
+        const tid = (data.tableId || '').trim().toLowerCase();
+        tableExists = CODIGO_SEATS.some(
+          (s) =>
+            s.id.toLowerCase() === tid ||
+            s.label.toLowerCase() === tid ||
+            s.id.replace(/^seat-/, '').toLowerCase() === tid
+        );
+        if (tableExists) {
+          tables = CODIGO_SEATS.map((s) => ({
+            id: s.id,
+            name: s.label,
+            capacity: 2,
+            zone: s.id.startsWith('seat-5') ? 'VIP' : 'Main Floor',
+          }));
+        }
+      }
+
+      // Check Seat table (new system) — skip for CODIGO (already handled)
+      if (!tableExists && finalLoungeId) {
         const seats = await prisma.seat.findMany({
           where: { 
             loungeId: finalLoungeId,

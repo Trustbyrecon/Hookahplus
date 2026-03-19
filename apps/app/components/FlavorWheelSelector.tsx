@@ -135,6 +135,7 @@ interface FlavorWheelSelectorProps {
   flavorAddOnFree?: boolean; // CODIGO: flat price includes flavors, no add-on
   sortByPopularity?: boolean; // Sort flavors by popularity (default: true)
   loungeId?: string; // Optional lounge ID for popularity calculation
+  compactWhenPresetSelected?: boolean; // Hide search + menu flavors when flavors selected (regain real estate)
 }
 
 export default function FlavorWheelSelector({
@@ -148,10 +149,19 @@ export default function FlavorWheelSelector({
   isDemoMode = false,
   flavorAddOnFree = false,
   sortByPopularity = true,
-  loungeId
+  loungeId,
+  compactWhenPresetSelected = false,
 }: FlavorWheelSelectorProps) {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string[]>(selectedFlavors);
+
+  // Sync selected with parent when selectedFlavors changes (e.g. preset applied, form reset)
+  useEffect(() => {
+    if (Array.isArray(selectedFlavors) && selectedFlavors.length >= 0) {
+      setSelected(selectedFlavors);
+    }
+  }, [selectedFlavors]);
+
   // Merge custom presets with default presets (CODIGO: only custom presets, $0 add-on)
   const allPresets = useMemo(() => {
     const custom = customPresets.map(p => ({
@@ -456,26 +466,28 @@ export default function FlavorWheelSelector({
         </div>
       )}
 
-      {/* Search */}
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-4 h-4" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search flavors..."
-            className="w-full pl-10 pr-4 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-teal-500"
-          />
+      {/* Search — hidden when preset selected and compactWhenPresetSelected (regain real estate) */}
+      {(!compactWhenPresetSelected || selected.length === 0) && (
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-4 h-4" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search flavors..."
+              className="w-full pl-10 pr-4 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-teal-500"
+            />
+          </div>
+          {mode === 'staff' && !showPresets && (
+            <button
+              onClick={() => setShowPresets(true)}
+              className="px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm transition-colors"
+            >
+              Presets
+            </button>
+          )}
         </div>
-        {mode === 'staff' && !showPresets && (
-          <button
-            onClick={() => setShowPresets(true)}
-            className="px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm transition-colors"
-          >
-            Presets
-          </button>
-        )}
-      </div>
+      )}
 
       {/* Selected Flavors Display */}
       {selected.length > 0 && (
@@ -486,6 +498,15 @@ export default function FlavorWheelSelector({
               <span className="text-sm font-semibold text-green-400">
                 Total: ${totalPrice.toFixed(2)}
               </span>
+              {compactWhenPresetSelected && (
+                <button
+                  type="button"
+                  onClick={() => setShowPresets(true)}
+                  className="text-xs text-teal-400 hover:text-teal-300"
+                >
+                  Change
+                </button>
+              )}
               <button
                 onClick={clearAll}
                 className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1"
@@ -508,7 +529,8 @@ export default function FlavorWheelSelector({
         </div>
       )}
 
-      {/* Flavor Categories */}
+      {/* Flavor Categories — hidden when preset selected and compactWhenPresetSelected (regain real estate) */}
+      {(!compactWhenPresetSelected || selected.length === 0) && (
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         {filteredCategories.map((category) => (
           <div
@@ -556,6 +578,7 @@ export default function FlavorWheelSelector({
           </div>
         ))}
       </div>
+      )}
 
       {/* Selection Limit Warning */}
       {selected.length >= maxSelections && (

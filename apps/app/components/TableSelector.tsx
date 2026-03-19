@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Users, MapPin, Clock, Crown, Star, AlertCircle } from 'lucide-react';
 import { TableType, TABLE_TYPES, getTableAvailabilityStats, getTableTypeStats } from '../lib/tableTypes';
 import { useSessionContext } from '../contexts/SessionContext';
+import { CODIGO_SEATS } from '../lib/codigoSeats';
 
 // Helper hook that safely uses SessionContext
 function useSessionContextSafe() {
@@ -51,6 +52,21 @@ export function TableSelector({
     if (useLayoutData) {
       const loadTables = async () => {
         try {
+          // CODIGO: Use source-of-truth CODIGO_SEATS immediately — no API, sub-2s UX
+          if (loungeId === 'CODIGO') {
+            const codigoTables = CODIGO_SEATS.map((seat) => ({
+              id: seat.id,
+              name: seat.label,
+              capacity: 2,
+              seatingType: seat.id.startsWith('seat-kb') ? 'Bar Seating' : 'Booth',
+              zone: seat.id.startsWith('seat-5') ? 'VIP' : 'Main Floor',
+              tableId: seat.id,
+            }));
+            setLayoutTables(codigoTables);
+            setLoading(false);
+            return;
+          }
+
           // Quick check: If no loungeId, skip loading and use demo tables immediately
           if (!loungeId) {
             console.log('[TableSelector] No loungeId, using demo table fallback immediately');

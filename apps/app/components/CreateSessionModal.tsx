@@ -8,6 +8,8 @@ import { TableType } from '../lib/tableTypes';
 import FlavorWheelSelector from './FlavorWheelSelector';
 import type { FireSession } from '../types/enhancedSession';
 import { loadProgressLocal } from '../lib/launchpad/progress-persistence';
+import { CODIGO_MENU } from '../lib/codigoMenu';
+import { CODIGO_SEATS } from '../lib/codigoSeats';
 
 interface CreateSessionModalProps {
   isOpen: boolean;
@@ -307,6 +309,58 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
     loadLaunchpadData();
   }, [loungeId, selectedTable, isCodigoMode]);
 
+  // CODIGO: Instant defaults from source-of-truth — no API wait, sub-2s UX
+  useEffect(() => {
+    if (!isOpen || !isCodigoMode) return;
+    // Auto-select first table so session creation always has valid tableId (avoids API rejection)
+    if (CODIGO_SEATS.length > 0 && !selectedTable) {
+      const first = CODIGO_SEATS[0];
+      const tableType: TableType = {
+        id: first.id,
+        name: first.label,
+        type: first.id.startsWith('seat-kb') ? 'bar' : 'booth',
+        capacity: 2,
+        availability: 'available',
+        location: first.id.startsWith('seat-5') ? 'VIP Section' : 'Main Floor',
+        description: 'CODIGO seat',
+        icon: '🪑',
+        color: 'bg-blue-500',
+        priceMultiplier: 1,
+      };
+      setSelectedTable(tableType);
+      setFormData((prev) => ({ ...prev, tableId: first.id, tableType }));
+    }
+    setLaunchpadPresets((prev) => {
+      if (prev.length > 0) return prev;
+      return CODIGO_MENU.map((p) => ({
+        id: p.id,
+        name: p.name,
+        flavors: p.profile.split(/\s*[•]\s*/).map((f) => f.trim()).filter(Boolean),
+        description: `LaunchPad preset: ${p.name}`,
+        price: 60,
+      }));
+    });
+    setLaunchpadBasePrice((p) => (p != null ? p : 60));
+    setFormData((prev) => {
+      if (prev.basePrice === 60) return prev;
+      const base = 60;
+      return {
+        ...prev,
+        basePrice: base,
+        amount: base + prev.flavorMixPrice,
+      };
+    });
+    setCodigoStaff((prev) =>
+      prev.length > 0
+        ? prev
+        : [
+            { name: 'Rose', role: 'Host/FOH' },
+            { name: 'Shisha', role: 'Server/FOH' },
+            { name: 'Master', role: 'Coal Master/BOH' },
+          ]
+    );
+  }, [isOpen, isCodigoMode]);
+
   // Refetch config when modal opens (ensures fresh CODIGO data when user opens Create Session)
   useEffect(() => {
     if (isOpen && loungeId) {
@@ -429,6 +483,8 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
     if (!formData.tableId.trim()) {
       newErrors.tableId = 'Table ID is required';
     } else if (selectedTable) {
+      // CODIGO: Skip API validation — table already validated by CODIGO_SEATS in TableSelector
+      if (!(isCodigoMode && loungeId === 'CODIGO')) {
       // Enhanced validation with capacity and availability checking
       try {
         // First check capacity if we have party size (can be added later)
@@ -510,6 +566,7 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
         } catch (fallbackError) {
           console.warn('Fallback validation error:', fallbackError);
         }
+      }
       }
     }
 
@@ -958,6 +1015,7 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession, i
                     customPresets={launchpadPresets}
                     isDemoMode={isDemoMode}
                     flavorAddOnFree={isCodigoMode}
+                    compactWhenPresetSelected={isCodigoMode || launchpadPresets.length > 0}
                   />
                 </div>
                 {/* Show flavor pricing breakdown - professional display even in demo */}
