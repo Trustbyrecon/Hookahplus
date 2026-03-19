@@ -152,13 +152,6 @@ function FireSessionDashboardContent() {
     }
   }, []);
 
-  // CODIGO: Unpause metrics when CODIGO instance is selected
-  useEffect(() => {
-    if (selectedLoungeId === 'CODIGO' && typeof window !== 'undefined' && localStorage.getItem('metricsEnabled') !== 'true') {
-      enableMetrics();
-      setMetricsEnabled(true);
-    }
-  }, [selectedLoungeId]);
   const paymentConfirmed = searchParams.get('payment') === 'confirmed';
   const sessionIdFromUrl = searchParams.get('session');
   const demoLounge = searchParams.get('lounge') || null;
@@ -183,6 +176,14 @@ function FireSessionDashboardContent() {
   );
   const [selectedLoungeId, setSelectedLoungeId] = useState<string | null>(demoLounge || parsedLoungeIds[0] || null);
   const { useFloorPlan } = useLoungeLayoutMode(selectedLoungeId);
+
+  // CODIGO: Unpause metrics when CODIGO instance is selected
+  useEffect(() => {
+    if (selectedLoungeId === 'CODIGO' && typeof window !== 'undefined' && localStorage.getItem('metricsEnabled') !== 'true') {
+      enableMetrics();
+      setMetricsEnabled(true);
+    }
+  }, [selectedLoungeId]);
   const [week1Rollup, setWeek1Rollup] = useState<{
     locationCount: number;
     activeLocations: number;
