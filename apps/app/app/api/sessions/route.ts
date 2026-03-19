@@ -506,9 +506,16 @@ export const GET = withRequestContext(async (req: NextRequest): Promise<NextResp
     // Build where clause outside try block so it's available in catch
     const whereClause: any = {};
     
-    // If authenticated, filter by tenant_id (RLS will also enforce)
+    // If authenticated, filter by tenant_id — but when loungeId is provided (e.g. CODIGO),
+    // also include sessions with tenantId=null (lounge-scoped sessions created without tenant)
     if (tenantId) {
-      whereClause.tenantId = tenantId;
+      if (loungeIdFilter) {
+        whereClause.AND = [
+          { OR: [{ tenantId }, { tenantId: null }] },
+        ];
+      } else {
+        whereClause.tenantId = tenantId;
+      }
     }
 
     // Optional location scope for operator multi-location context.
@@ -521,10 +528,15 @@ export const GET = withRequestContext(async (req: NextRequest): Promise<NextResp
     
     // CRITICAL: Only show sessions with payment confirmed
     // Sessions should only appear after payment is verified
-    whereClause.OR = [
+    const paymentOr = [
       { paymentStatus: 'succeeded' },
       { externalRef: { not: null } } // Has Stripe checkout session ID
     ];
+    if (Array.isArray(whereClause.AND)) {
+      whereClause.AND.push({ OR: paymentOr });
+    } else {
+      whereClause.OR = paymentOr;
+    }
     console.log('[Sessions API] Filtering: Only showing sessions with payment confirmed');
     
     // First Light Focus: Only show sessions from the last hour

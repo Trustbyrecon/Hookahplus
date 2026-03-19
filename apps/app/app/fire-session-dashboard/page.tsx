@@ -521,6 +521,15 @@ function FireSessionDashboardContent() {
         }
       }
 
+      // CODIGO: Optimistically inject session so card appears immediately (avoids tenantId/refresh delay)
+      if (responseData?.session && (apiPayload?.codigoOperator || apiPayload?.loungeId === 'CODIGO' || selectedLoungeId === 'CODIGO')) {
+        try {
+          window.dispatchEvent(new CustomEvent('hp:addSession', { detail: { session: responseData.session } }));
+        } catch (e) {
+          // non-blocking
+        }
+      }
+
       await refreshSessions(); // Refresh live data (may be empty in fallback mode)
       // CODIGO: double-refresh for faster Floor→Kitchen propagation (catches DB lag)
       const isCodigo = apiPayload?.codigoOperator || apiPayload?.loungeId === 'CODIGO' || selectedLoungeId === 'CODIGO';

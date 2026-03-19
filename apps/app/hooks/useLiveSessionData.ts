@@ -128,19 +128,19 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
       window.location &&
       new URLSearchParams(window.location.search).get('mode') === 'demo';
 
-    if (!isDemoMode) return;
-
     const handler = (event: Event) => {
       const detail = (event as CustomEvent)?.detail as { session?: FireSession } | undefined;
       const incoming = detail?.session;
       if (!incoming?.id) return;
 
-      setUpdatedDemoSessions(prev => ({
-        ...prev,
-        [incoming.id]: incoming,
-      }));
+      if (isDemoMode) {
+        setUpdatedDemoSessions(prev => ({
+          ...prev,
+          [incoming.id]: incoming,
+        }));
+      }
 
-      // Optimistically merge into current sessions to reflect instantly
+      // Optimistically merge into current sessions (demo + CODIGO/production)
       setSessions(prev => {
         const idx = prev.findIndex(s => s.id === incoming.id);
         if (idx >= 0) {
@@ -153,7 +153,11 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
     };
 
     window.addEventListener('hp:addDemoSession', handler as EventListener);
-    return () => window.removeEventListener('hp:addDemoSession', handler as EventListener);
+    window.addEventListener('hp:addSession', handler as EventListener);
+    return () => {
+      window.removeEventListener('hp:addDemoSession', handler as EventListener);
+      window.removeEventListener('hp:addSession', handler as EventListener);
+    };
   }, []);
 
   // Load live session data
