@@ -8,6 +8,11 @@ import Button from "../../../components/Button";
 import { Badge } from "../../../components";
 import Link from "next/link";
 import { Building2, CheckCircle, AlertTriangle, Copy, Target, Settings } from "lucide-react";
+import {
+  ADMIN_ACTIVE_LOUNGE_KEY,
+  SELECT_ALL_LOCATIONS,
+  STORAGE_LAST_LOUNGE,
+} from "../../../lib/admin-lounge-scope";
 
 type VenueIdentity = "casino_velocity" | "sports_momentum" | "luxury_memory";
 
@@ -46,7 +51,7 @@ export default function VenueIdentityAdminPage() {
       const params = new URLSearchParams(window.location.search);
       const qLounge = (params.get("loungeId") || "").trim();
       const stored = (localStorage.getItem(STORAGE_LAST_LOUNGE) || "").trim();
-      const active = (localStorage.getItem("active_lounge") || "").trim();
+      const active = (localStorage.getItem(ADMIN_ACTIVE_LOUNGE_KEY) || "").trim();
       const initial = qLounge || stored || (active && active !== SELECT_ALL_LOCATIONS ? active : "");
       if (initial) setLoungeId(initial);
     } catch {
@@ -79,6 +84,15 @@ export default function VenueIdentityAdminPage() {
   }, [trimmedLoungeId]);
   const identityMeta = IDENTITY_LABELS[venueIdentity];
 
+  function persistLastLoungeId() {
+    if (typeof window === "undefined" || !trimmedLoungeId) return;
+    try {
+      localStorage.setItem(STORAGE_LAST_LOUNGE, trimmedLoungeId);
+    } catch {
+      // ignore
+    }
+  }
+
   const curlCommand = useMemo(() => {
     const id = trimmedLoungeId || "{loungeId}";
     return [
@@ -110,6 +124,7 @@ export default function VenueIdentityAdminPage() {
         throw new Error(data?.error || `HTTP ${resp.status}`);
       }
       setResult(data);
+      persistLastLoungeId();
     } catch (e: any) {
       setError(e?.message || "Failed to set venue identity");
     } finally {
@@ -152,6 +167,7 @@ export default function VenueIdentityAdminPage() {
               <input
                 value={loungeId}
                 onChange={(e) => setLoungeId(e.target.value)}
+                onBlur={() => persistLastLoungeId()}
                 placeholder="e.g. DIABLOS_MGM or a loungeId UUID/slug"
                 className="w-full px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:border-teal-500"
               />
