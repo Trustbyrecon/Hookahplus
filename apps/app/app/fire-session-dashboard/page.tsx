@@ -25,8 +25,6 @@ import SyncIndicator from '../../components/SyncIndicator';
 import RelatedSessions from '../../components/RelatedSessions';
 import PulseCard from '../../components/PulseCard';
 import FirstLightBanner from '../../components/FirstLightBanner';
-import FirstLightHealthCard from '../../components/FirstLightHealthCard';
-import FirstLightChecklist from '../../components/FirstLightChecklist';
 import { WeekOneWinsCard } from '../../components/launchpad/WeekOneWinsCard';
 import { PreviewModeBanner } from '../../components/launchpad/PreviewModeBanner';
 import { SoftLaunchBanner } from '../../components/launchpad/SoftLaunchBanner';
@@ -1094,19 +1092,6 @@ function FireSessionDashboardContent() {
                 </button>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* First Light Health Card and Checklist - Show based on feature flags */}
-        {(featureFlags.showFirstLightHealthCard || featureFlags.showFirstLightChecklist) && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            {featureFlags.showFirstLightHealthCard && <FirstLightHealthCard />}
-            {featureFlags.showFirstLightChecklist && (
-              <FirstLightChecklist 
-                sessionsCount={sessions.length}
-                databaseConnected={databaseConnected}
-              />
-            )}
           </div>
         )}
 

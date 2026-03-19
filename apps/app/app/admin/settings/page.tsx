@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Settings, 
   Save, 
@@ -20,9 +20,12 @@ import {
   MemoryStick,
   AlertTriangle,
   CheckCircle,
-  Info
+  Info,
+  Flame
 } from 'lucide-react';
 import GlobalNavigation from '../../../components/GlobalNavigation';
+import FirstLightHealthCard from '../../../components/FirstLightHealthCard';
+import FirstLightChecklist from '../../../components/FirstLightChecklist';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('general');
@@ -30,6 +33,33 @@ export default function SettingsPage() {
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [firstLightData, setFirstLightData] = useState<{ sessionsCount: number; databaseConnected: boolean }>({
+    sessionsCount: 0,
+    databaseConnected: false,
+  });
+
+  // Fetch First Light data when tab is active
+  useEffect(() => {
+    if (activeTab !== 'first-light') return;
+    const fetchFirstLightData = async () => {
+      try {
+        const [healthRes, sessionsRes] = await Promise.all([
+          fetch('/api/health'),
+          fetch('/api/sessions'),
+        ]);
+        const health = healthRes.ok ? await healthRes.json() : {};
+        const sessions = sessionsRes.ok ? await sessionsRes.json() : { sessions: [] };
+        setFirstLightData({
+          sessionsCount: Array.isArray(sessions.sessions) ? sessions.sessions.length : 0,
+          databaseConnected: health.database === 'connected',
+        });
+      } catch {
+        setFirstLightData((prev) => prev);
+      }
+    };
+    fetchFirstLightData();
+  }, [activeTab]);
+
   const [settings, setSettings] = useState({
     appName: 'HookahPLUS',
     appVersion: '1.2.3',
@@ -52,6 +82,7 @@ export default function SettingsPage() {
     { id: 'notifications', label: 'Notifications', icon: <Bell className="w-4 h-4" /> },
     { id: 'security', label: 'Security', icon: <Shield className="w-4 h-4" /> },
     { id: 'system', label: 'System', icon: <Monitor className="w-4 h-4" /> },
+    { id: 'first-light', label: 'First Light', icon: <Flame className="w-4 h-4" /> },
     { id: 'backup', label: 'Backup', icon: <Database className="w-4 h-4" /> }
   ];
 
@@ -322,6 +353,27 @@ export default function SettingsPage() {
     </div>
   );
 
+  const renderFirstLightSettings = () => (
+    <div className="space-y-6">
+      <div className="card-pretty p-6">
+        <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+          <Flame className="w-5 h-5 text-orange-400" />
+          First Light System Health & Checklist
+        </h3>
+        <p className="text-sm text-zinc-400 mb-6">
+          Monitor system health and track First Light milestone progress. These tools help verify the core sessions engine is running with live data.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FirstLightHealthCard />
+          <FirstLightChecklist
+            sessionsCount={firstLightData.sessionsCount}
+            databaseConnected={firstLightData.databaseConnected}
+          />
+        </div>
+      </div>
+    </div>
+  );
+
   const renderBackupSettings = () => (
     <div className="space-y-6">
       <div className="card-pretty p-6">
@@ -421,6 +473,7 @@ export default function SettingsPage() {
       case 'notifications': return renderNotificationSettings();
       case 'security': return renderSecuritySettings();
       case 'system': return renderSystemSettings();
+      case 'first-light': return renderFirstLightSettings();
       case 'backup': return renderBackupSettings();
       default: return renderGeneralSettings();
     }
