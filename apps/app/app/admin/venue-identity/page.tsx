@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import GlobalNavigation from "../../../components/GlobalNavigation";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import PageHero from "../../../components/PageHero";
@@ -35,8 +35,48 @@ export default function VenueIdentityAdminPage() {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loadedFromServer, setLoadedFromServer] = useState(false);
 
   const trimmedLoungeId = loungeId.trim();
+
+  // Restore last lounge + load saved identity from API (fixes "empty when I came back")
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const qLounge = (params.get("loungeId") || "").trim();
+      const stored = (localStorage.getItem(STORAGE_LAST_LOUNGE) || "").trim();
+      const active = (localStorage.getItem("active_lounge") || "").trim();
+      const initial = qLounge || stored || (active && active !== SELECT_ALL_LOCATIONS ? active : "");
+      if (initial) setLoungeId(initial);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!trimmedLoungeId) {
+      setLoadedFromServer(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const resp = await fetch(`/api/lounges/${encodeURIComponent(trimmedLoungeId)}/venue-identity`);
+        const data = await resp.json().catch(() => ({}));
+        if (cancelled) return;
+        if (data?.success && data.venueIdentity) {
+          setVenueIdentity(data.venueIdentity);
+        }
+        setLoadedFromServer(true);
+      } catch {
+        if (!cancelled) setLoadedFromServer(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [trimmedLoungeId]);
   const identityMeta = IDENTITY_LABELS[venueIdentity];
 
   const curlCommand = useMemo(() => {
@@ -116,7 +156,11 @@ export default function VenueIdentityAdminPage() {
                 className="w-full px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:border-teal-500"
               />
               <p className="mt-2 text-xs text-zinc-500">
-                This writes `LoungeConfig.configData.venue_identity` and increments config version.
+                This writes `LoungeConfig.configData.venue_identity` and increments config version. For CODIGO, use lounge ID{" "}
+                <code className="text-teal-400/90">CODIGO</code> — values reload automatically when you return to this page.
+                {trimmedLoungeId && loadedFromServer && (
+                  <span className="block mt-1 text-zinc-600">Loaded current identity from server for this lounge.</span>
+                )}
               </p>
               {trimmedLoungeId && (
                 <Link

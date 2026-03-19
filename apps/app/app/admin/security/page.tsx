@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   Shield, 
   Lock, 
@@ -24,14 +24,118 @@ import {
   Monitor
 } from 'lucide-react';
 import GlobalNavigation from '../../../components/GlobalNavigation';
+import { SELECT_ALL_LOCATIONS } from '../../../lib/admin-lounge-scope';
+
+type SecEvent = {
+  id: string;
+  type: string;
+  user: string;
+  ip: string;
+  location: string;
+  timestamp: string;
+  status: string;
+  details: string;
+};
+
+type SecMember = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  status: string;
+  lastLogin: string;
+  joinDate: string;
+};
 
 export default function SecurityPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
-  const [showEventDetails, setShowEventDetails] = useState<number | null>(null);
+  const [showEventDetails, setShowEventDetails] = useState<string | null>(null);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [isEnabling2FA, setIsEnabling2FA] = useState(false);
+  const [securityStats, setSecurityStats] = useState({
+    overallStatus: '…',
+    threatLevel: 'Low',
+    activeSessions: 0,
+    failedLogins: 0,
+    blockedIPs: 0,
+    securityScore: 0,
+    lastScan: '',
+    auditEvents24h: 0,
+  });
+  const [securityEvents, setSecurityEvents] = useState<SecEvent[]>([]);
+  const [userSecurity, setUserSecurity] = useState<SecMember[]>([]);
+  const [secLoading, setSecLoading] = useState(true);
+  const [secError, setSecError] = useState<string | null>(null);
+
+  const loadSecurity = useCallback(async () => {
+    setSecLoading(true);
+    setSecError(null);
+    try {
+      const raw = typeof window !== 'undefined' ? localStorage.getItem('active_lounge') : null;
+      const params = new URLSearchParams({ limit: '60' });
+      if (raw && raw !== SELECT_ALL_LOCATIONS) params.set('loungeId', raw);
+      const r = await fetch(`/api/admin/security-summary?${params.toString()}`);
+      const j = await r.json();
+      if (!r.ok || !j.success) {
+        setSecError(j.error || 'Failed to load security data');
+        return;
+      }
+      setSecurityStats({
+        overallStatus: j.stats?.overallStatus ?? 'Operational',
+        threatLevel: j.stats?.threatLevel ?? 'Low',
+        activeSessions: j.stats?.activeSessions ?? 0,
+        failedLogins: j.stats?.failedLogins ?? 0,
+        blockedIPs: j.stats?.blockedIPs ?? 0,
+        securityScore: j.stats?.securityScore ?? 0,
+        lastScan: j.stats?.lastScan ?? '',
+        auditEvents24h: j.stats?.auditEvents24h ?? 0,
+      });
+      setSecurityEvents(
+        (j.events || []).map((e: SecEvent) => ({
+          ...e,
+          timestamp: formatTs(e.timestamp),
+        }))
+      );
+
+      const mr = await fetch('/api/admin/tenant-members');
+      const mj = await mr.json();
+      if (mr.ok && mj.success) {
+        setUserSecurity(
+          (mj.users || []).map(
+            (u: { id: string; name: string; email: string; role: string; status: string; lastLogin: string; joinDate: string }) => ({
+              id: u.id,
+              name: u.name,
+              email: u.email,
+              role: u.role,
+              status: u.status || 'active',
+              lastLogin: u.lastLogin || '—',
+              joinDate: u.joinDate || '—',
+            })
+          )
+        );
+      }
+    } catch (e) {
+      setSecError(e instanceof Error ? e.message : 'Failed to load');
+    } finally {
+      setSecLoading(false);
+    }
+  }, []);
+
+  function formatTs(iso: string) {
+    try {
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return iso;
+      return d.toLocaleString();
+    } catch {
+      return iso;
+    }
+  }
+
+  useEffect(() => {
+    loadSecurity();
+  }, [loadSecurity]);
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: <Shield className="w-4 h-4" /> },
@@ -41,117 +145,16 @@ export default function SecurityPage() {
     { id: 'logs', label: 'Security Logs', icon: <Database className="w-4 h-4" /> }
   ];
 
-  // Mock security data
-  const securityStats = {
-    overallStatus: 'Secure',
-    threatLevel: 'Low',
-    activeSessions: 24,
-    failedLogins: 3,
-    blockedIPs: 1,
-    securityScore: 95,
-    lastScan: '2 hours ago',
-    nextScan: '22 hours from now'
-  };
-
-  const securityEvents = [
-    {
-      id: 1,
-      type: 'Login Success',
-      user: 'John Smith',
-      ip: '192.168.1.100',
-      location: 'New York, NY',
-      timestamp: '2 hours ago',
-      status: 'success',
-      details: 'Successful login from office network'
-    },
-    {
-      id: 2,
-      type: 'Failed Login',
-      user: 'Unknown',
-      ip: '203.45.67.89',
-      location: 'Unknown',
-      timestamp: '3 hours ago',
-      status: 'failed',
-      details: 'Multiple failed login attempts detected'
-    },
-    {
-      id: 3,
-      type: 'Permission Change',
-      user: 'Emily Davis',
-      ip: '192.168.1.105',
-      location: 'New York, NY',
-      timestamp: '1 day ago',
-      status: 'success',
-      details: 'User role changed from FOH to Manager'
-    },
-    {
-      id: 4,
-      type: 'Data Export',
-      user: 'Mike Rodriguez',
-      ip: '192.168.1.110',
-      location: 'New York, NY',
-      timestamp: '2 days ago',
-      status: 'success',
-      details: 'Session data exported to CSV'
-    },
-    {
-      id: 5,
-      type: 'Suspicious Activity',
-      user: 'Unknown',
-      ip: '45.67.89.123',
-      location: 'Unknown',
-      timestamp: '3 days ago',
-      status: 'blocked',
-      details: 'Multiple rapid requests from unknown IP'
-    }
-  ];
-
-  const userSecurity = [
-    {
-      id: 1,
-      name: 'John Smith',
-      email: 'john@hookahplus.com',
-      lastLogin: '2 hours ago',
-      loginCount: 45,
-      status: 'active',
-      twoFactor: true,
-      passwordAge: 30,
-      riskLevel: 'low'
-    },
-    {
-      id: 2,
-      name: 'Sarah Chen',
-      email: 'sarah@hookahplus.com',
-      lastLogin: '1 hour ago',
-      loginCount: 23,
-      status: 'active',
-      twoFactor: false,
-      passwordAge: 60,
-      riskLevel: 'medium'
-    },
-    {
-      id: 3,
-      name: 'Mike Rodriguez',
-      email: 'mike@hookahplus.com',
-      lastLogin: '1 day ago',
-      loginCount: 12,
-      status: 'inactive',
-      twoFactor: true,
-      passwordAge: 90,
-      riskLevel: 'high'
-    }
-  ];
-
-  const systemSecurity = {
-    sslStatus: 'Enabled',
-    firewallStatus: 'Active',
-    antivirusStatus: 'Up to date',
-    lastUpdate: '2025-01-15',
-    securityPatches: 3,
-    vulnerabilityScan: 'Passed',
-    backupStatus: 'Current',
-    encryptionStatus: 'Enabled'
-  };
+  const systemSecurity = useMemo(
+    () => ({
+      sslStatus: 'TLS (hosting)',
+      firewallStatus: 'Provider-managed',
+      auditStream: `${securityStats.auditEvents24h} audit rows (24h)`,
+      dbStatus: securityStats.overallStatus,
+      encryptionStatus: 'At-rest (database provider)',
+    }),
+    [securityStats.auditEvents24h, securityStats.overallStatus]
+  );
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -173,12 +176,30 @@ export default function SecurityPage() {
     }
   };
 
-  const handleViewEventDetails = (eventId: number) => {
+  const filteredEvents = useMemo(() => {
+    const q = searchTerm.toLowerCase();
+    return securityEvents.filter((e) => {
+      const match =
+        !q ||
+        e.type.toLowerCase().includes(q) ||
+        e.details.toLowerCase().includes(q) ||
+        e.user.toLowerCase().includes(q);
+      if (!match) return false;
+      if (filterType === 'all') return true;
+      if (filterType === 'login') return /login|auth|session/i.test(e.type);
+      if (filterType === 'permission') return /role|permission|VENUE/i.test(e.type);
+      if (filterType === 'data') return /export|data/i.test(e.type);
+      if (filterType === 'suspicious') return e.status === 'failed' || e.status === 'blocked';
+      return true;
+    });
+  }, [securityEvents, searchTerm, filterType]);
+
+  const handleViewEventDetails = (eventId: string) => {
     setShowEventDetails(eventId);
     console.log('Viewing event details for:', eventId);
   };
 
-  const handleResetPassword = async (userId: number) => {
+  const handleResetPassword = async (userId: string) => {
     setIsResettingPassword(true);
     try {
       // Simulate password reset
@@ -193,7 +214,7 @@ export default function SecurityPage() {
     }
   };
 
-  const handleEnable2FA = async (userId: number) => {
+  const handleEnable2FA = async (userId: string) => {
     setIsEnabling2FA(true);
     try {
       // Simulate 2FA setup
@@ -210,6 +231,14 @@ export default function SecurityPage() {
 
   const renderOverview = () => (
     <div className="space-y-6">
+      {secError && (
+        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+          {secError}
+        </div>
+      )}
+      {secLoading && (
+        <p className="text-sm text-zinc-400">Loading live security data…</p>
+      )}
       {/* Security Status */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="card-pretty p-6">
@@ -221,7 +250,7 @@ export default function SecurityPage() {
             <Shield className="w-8 h-8 text-green-400" />
           </div>
           <div className="text-sm text-zinc-300">
-            Security Score: {securityStats.securityScore}/100
+            Audit events (24h): {securityStats.auditEvents24h}
           </div>
         </div>
 
@@ -233,9 +262,7 @@ export default function SecurityPage() {
             </div>
             <Activity className="w-8 h-8 text-blue-400" />
           </div>
-          <div className="text-sm text-zinc-300">
-            All sessions secure
-          </div>
+          <div className="text-sm text-zinc-300">Non-terminal sessions in scope</div>
         </div>
 
         <div className="card-pretty p-6">
@@ -246,9 +273,7 @@ export default function SecurityPage() {
             </div>
             <AlertTriangle className="w-8 h-8 text-red-400" />
           </div>
-          <div className="text-sm text-zinc-300">
-            Last 24 hours
-          </div>
+          <div className="text-sm text-zinc-300">Login telemetry not wired — use Supabase Auth logs</div>
         </div>
 
         <div className="card-pretty p-6">
@@ -259,9 +284,7 @@ export default function SecurityPage() {
             </div>
             <Lock className="w-8 h-8 text-orange-400" />
           </div>
-          <div className="text-sm text-zinc-300">
-            Currently blocked
-          </div>
+          <div className="text-sm text-zinc-300">WAF / IP blocks via hosting provider</div>
         </div>
       </div>
 
@@ -335,7 +358,7 @@ export default function SecurityPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-700">
-              {securityEvents.map((event) => (
+              {filteredEvents.map((event) => (
                 <tr key={event.id} className="hover:bg-zinc-800/50">
                   <td className="px-4 py-3">
                     <div className="text-white font-medium">{event.type}</div>
@@ -368,10 +391,10 @@ export default function SecurityPage() {
             <thead className="bg-zinc-800">
               <tr>
                 <th className="px-4 py-3 text-left text-sm font-medium text-zinc-300">User</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-zinc-300">Last Login</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-zinc-300">2FA</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-zinc-300">Password Age</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-zinc-300">Risk Level</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-zinc-300">Role</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-zinc-300">Status</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-zinc-300">Member since</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-zinc-300">Notes</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-zinc-300">Actions</th>
               </tr>
             </thead>
@@ -384,18 +407,14 @@ export default function SecurityPage() {
                       <div className="text-sm text-zinc-400">{user.email}</div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-zinc-300">{user.lastLogin}</td>
+                  <td className="px-4 py-3 text-zinc-300 capitalize">{user.role}</td>
                   <td className="px-4 py-3">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(user.twoFactor ? 'success' : 'failed')}`}>
-                      {user.twoFactor ? 'Enabled' : 'Disabled'}
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(user.status)}`}>
+                      {user.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-zinc-300">{user.passwordAge} days</td>
-                  <td className="px-4 py-3">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRiskColor(user.riskLevel)}`}>
-                      {user.riskLevel}
-                    </span>
-                  </td>
+                  <td className="px-4 py-3 text-zinc-300">{user.joinDate}</td>
+                  <td className="px-4 py-3 text-zinc-500 text-sm">2FA / last login: Supabase Dashboard</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center space-x-2">
                         <button 
@@ -436,38 +455,29 @@ export default function SecurityPage() {
   const renderSystem = () => (
     <div className="space-y-6">
       <div className="card-pretty p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">System Security Status</h3>
+        <h3 className="text-lg font-semibold text-white mb-4">System security (live signals)</h3>
+        <p className="text-sm text-zinc-500 mb-4">
+          Operational posture from app database connectivity and audit volume — not mock antivirus/patch rows.
+        </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-zinc-400">SSL Certificate</span>
+              <span className="text-zinc-400">Transport</span>
               <span className="text-green-400">{systemSecurity.sslStatus}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-zinc-400">Firewall</span>
+              <span className="text-zinc-400">Edge / firewall</span>
               <span className="text-green-400">{systemSecurity.firewallStatus}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-zinc-400">Antivirus</span>
-              <span className="text-green-400">{systemSecurity.antivirusStatus}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-zinc-400">Last Update</span>
-              <span className="text-white">{systemSecurity.lastUpdate}</span>
+              <span className="text-zinc-400">Audit stream</span>
+              <span className="text-teal-400">{systemSecurity.auditStream}</span>
             </div>
           </div>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-zinc-400">Security Patches</span>
-              <span className="text-orange-400">{systemSecurity.securityPatches} pending</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-zinc-400">Vulnerability Scan</span>
-              <span className="text-green-400">{systemSecurity.vulnerabilityScan}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-zinc-400">Backup Status</span>
-              <span className="text-green-400">{systemSecurity.backupStatus}</span>
+              <span className="text-zinc-400">Database</span>
+              <span className="text-green-400">{systemSecurity.dbStatus}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-zinc-400">Encryption</span>
@@ -484,6 +494,9 @@ export default function SecurityPage() {
       <div className="card-pretty p-6">
         <h3 className="text-lg font-semibold text-white mb-4">Security Logs</h3>
         <div className="space-y-3">
+          {securityEvents.length === 0 && !secLoading && (
+            <p className="text-zinc-500 text-sm">No audit events in the last 24 hours for this scope.</p>
+          )}
           {securityEvents.map((event) => (
             <div key={event.id} className="p-4 bg-zinc-800/50 rounded-lg">
               <div className="flex items-start justify-between">

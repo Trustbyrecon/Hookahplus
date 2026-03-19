@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../../../../lib/db';
 
 type VenueIdentity = 'casino_velocity' | 'sports_momentum' | 'luxury_memory';
 
@@ -10,13 +8,55 @@ function isVenueIdentity(value: unknown): value is VenueIdentity {
 }
 
 /**
+ * GET /api/lounges/[loungeId]/venue-identity
+ * Returns current venue_identity from LoungeConfig (if any).
+ */
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ loungeId: string }> }
+) {
+  try {
+    const { loungeId: loungeIdRaw } = await params;
+    const loungeId = (loungeIdRaw || '').trim();
+    if (!loungeId) {
+      return NextResponse.json({ success: false, error: 'loungeId is required' }, { status: 400 });
+    }
+
+    const current = await prisma.loungeConfig.findFirst({
+      where: { loungeId },
+      orderBy: { version: 'desc' },
+      select: { version: true, configData: true, effectiveAt: true },
+    });
+
+    let venueIdentity: VenueIdentity | null = null;
+    if (current?.configData) {
+      try {
+        const configData = JSON.parse(current.configData) as Record<string, unknown>;
+        const raw = configData.venue_identity;
+        if (isVenueIdentity(raw)) venueIdentity = raw;
+      } catch {
+        // ignore
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      loungeId,
+      venueIdentity,
+      version: current?.version ?? 0,
+      effectiveAt: current?.effectiveAt?.toISOString() ?? null,
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[Venue Identity GET] Error:', error);
+    return NextResponse.json({ success: false, error: 'Failed to load venue identity', details: message }, { status: 500 });
+  }
+}
+
+/**
  * POST /api/lounges/[loungeId]/venue-identity
  *
  * Stores stable, manually-defined venue identity in `LoungeConfig.configData.venue_identity`.
- * Identity must never auto-switch; behavior can adapt only within the identity.
- *
- * Body:
- * { venueIdentity: "casino_velocity" | "sports_momentum" | "luxury_memory" }
  */
 export async function POST(
   req: NextRequest,
@@ -44,10 +84,11 @@ export async function POST(
       select: { id: true, version: true, configData: true },
     });
 
-    let configData: any = {};
+    let configData: Record<string, unknown> = {};
     if (current?.configData) {
       try {
-        configData = JSON.parse(current.configData) || {};
+        const parsed = JSON.parse(current.configData);
+        if (parsed && typeof parsed === 'object') configData = parsed as Record<string, unknown>;
       } catch {
         configData = {};
       }
@@ -93,12 +134,12 @@ export async function POST(
       version: updated.version,
       effectiveAt: updated.effectiveAt.toISOString(),
     });
-  } catch (error: any) {
-    console.error('[Venue Identity] Error:', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[Venue Identity POST] Error:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to set venue identity', details: error?.message || 'Unknown error' },
+      { success: false, error: 'Failed to set venue identity', details: message },
       { status: 500 }
     );
   }
 }
-

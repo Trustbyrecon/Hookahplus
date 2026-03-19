@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { 
   Settings, 
@@ -43,6 +43,7 @@ import {
 import Button from '../../components/Button';
 import GlobalNavigation from '../../components/GlobalNavigation';
 import AdminReportModal from '../../components/AdminReportModal';
+import { SELECT_ALL_LOCATIONS } from '../../lib/admin-lounge-scope';
 
 interface SystemMetric {
   id: string;
@@ -63,6 +64,81 @@ interface AdminAction {
   href: string;
   status: 'active' | 'inactive' | 'maintenance';
 }
+
+const ADMIN_ACTIONS: AdminAction[] = [
+  {
+    id: 'users',
+    title: 'User Management',
+    description: 'Manage user accounts and permissions',
+    icon: <Users className="w-6 h-6" />,
+    color: 'text-blue-400',
+    href: '/admin/users',
+    status: 'active',
+  },
+  {
+    id: 'analytics',
+    title: 'Analytics Dashboard',
+    description: 'View system analytics and reports',
+    icon: <BarChart3 className="w-6 h-6" />,
+    color: 'text-green-400',
+    href: '/admin/analytics',
+    status: 'active',
+  },
+  {
+    id: 'settings',
+    title: 'System Settings',
+    description: 'Configure system preferences',
+    icon: <Settings className="w-6 h-6" />,
+    color: 'text-purple-400',
+    href: '/admin/settings',
+    status: 'active',
+  },
+  {
+    id: 'security',
+    title: 'Security Center',
+    description: 'Monitor security and access logs',
+    icon: <Shield className="w-6 h-6" />,
+    color: 'text-red-400',
+    href: '/admin/security',
+    status: 'active',
+  },
+  {
+    id: 'database',
+    title: 'Database Management',
+    description: 'Manage database operations',
+    icon: <Database className="w-6 h-6" />,
+    color: 'text-orange-400',
+    href: '/admin/database',
+    status: 'active',
+  },
+  {
+    id: 'operator-onboarding',
+    title: 'Operator Onboarding',
+    description: 'Manage new leads, intake, follow-up, scheduling, and onboarding',
+    icon: <Users className="w-6 h-6" />,
+    color: 'text-teal-400',
+    href: '/admin/operator-onboarding',
+    status: 'active',
+  },
+  {
+    id: 'venue-identity',
+    title: 'Venue Identity',
+    description: 'Set stable venue identity (velocity / momentum / memory) per location',
+    icon: <Building2 className="w-6 h-6" />,
+    color: 'text-emerald-400',
+    href: '/admin/venue-identity',
+    status: 'active',
+  },
+  {
+    id: 'onboarding-inspector',
+    title: 'Onboarding Inspector',
+    description: 'Inspect a SetupSession token/sid and multi-location readiness',
+    icon: <Eye className="w-6 h-6" />,
+    color: 'text-cyan-400',
+    href: '/admin/onboarding-inspector',
+    status: 'active',
+  },
+];
 
 // Taxonomy Tab Component
 function TaxonomyTab() {
@@ -267,6 +343,14 @@ function TaxonomyTab() {
   );
 }
 
+type OverviewPayload = {
+  teamMemberCount: number;
+  activeSessionsNow: number;
+  todayRevenueCents: number;
+  todayRevenueChangePct: number | null;
+  sessionChangePct: number | null;
+};
+
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [showAddUserModal, setShowAddUserModal] = useState(false);
@@ -276,6 +360,10 @@ export default function AdminPage() {
   const [systemStatus, setSystemStatus] = useState('operational');
   const [showReportModal, setShowReportModal] = useState(false);
   const [selectedReport, setSelectedReport] = useState<{ type: string; title: string } | null>(null);
+  const [overview, setOverview] = useState<OverviewPayload | null>(null);
+  const [dashLoading, setDashLoading] = useState(true);
+  const [dashError, setDashError] = useState<string | null>(null);
+  const [codigoOnlyNav, setCodigoOnlyNav] = useState(false);
   
   const [newUser, setNewUser] = useState({
     name: '',
@@ -284,119 +372,122 @@ export default function AdminPage() {
     phone: ''
   });
 
-  const systemMetrics: SystemMetric[] = [
-    {
-      id: 'users',
-      title: 'Total Users',
-      value: '24',
-      change: '+12%',
-      trend: 'up',
-      icon: <Users className="w-5 h-5" />,
-      color: 'text-blue-400'
-    },
-    {
-      id: 'sessions',
-      title: 'Active Sessions',
-      value: '8',
-      change: '+3',
-      trend: 'up',
-      icon: <Activity className="w-5 h-5" />,
-      color: 'text-green-400'
-    },
-    {
-      id: 'revenue',
-      title: 'Today\'s Revenue',
-      value: '$2,847',
-      change: '+18%',
-      trend: 'up',
-      icon: <TrendingUp className="w-5 h-5" />,
-      color: 'text-purple-400'
-    },
-    {
-      id: 'system',
-      title: 'System Status',
-      value: 'Operational',
-      change: '99.9%',
-      trend: 'neutral',
-      icon: <Server className="w-5 h-5" />,
-      color: 'text-green-400'
-    }
-  ];
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    setCodigoOnlyNav(localStorage.getItem('active_lounge') === 'CODIGO');
+  }, []);
 
-  const adminActions: AdminAction[] = [
-    {
-      id: 'users',
-      title: 'User Management',
-      description: 'Manage user accounts and permissions',
-      icon: <Users className="w-6 h-6" />,
-      color: 'text-blue-400',
-      href: '/admin/users',
-      status: 'active'
-    },
-    {
-      id: 'analytics',
-      title: 'Analytics Dashboard',
-      description: 'View system analytics and reports',
-      icon: <BarChart3 className="w-6 h-6" />,
-      color: 'text-green-400',
-      href: '/admin/analytics',
-      status: 'active'
-    },
-    {
-      id: 'settings',
-      title: 'System Settings',
-      description: 'Configure system preferences',
-      icon: <Settings className="w-6 h-6" />,
-      color: 'text-purple-400',
-      href: '/admin/settings',
-      status: 'active'
-    },
-    {
-      id: 'security',
-      title: 'Security Center',
-      description: 'Monitor security and access logs',
-      icon: <Shield className="w-6 h-6" />,
-      color: 'text-red-400',
-      href: '/admin/security',
-      status: 'active'
-    },
-    {
-      id: 'database',
-      title: 'Database Management',
-      description: 'Manage database operations',
-      icon: <Database className="w-6 h-6" />,
-      color: 'text-orange-400',
-      href: '/admin/database',
-      status: 'active'
-    },
-    {
-      id: 'operator-onboarding',
-      title: 'Operator Onboarding',
-      description: 'Manage new leads, intake, follow-up, scheduling, and onboarding',
-      icon: <Users className="w-6 h-6" />,
-      color: 'text-teal-400',
-      href: '/admin/operator-onboarding',
-      status: 'active'
-    },
-    {
-      id: 'venue-identity',
-      title: 'Venue Identity',
-      description: 'Set stable venue identity (velocity / momentum / memory) per location',
-      icon: <Building2 className="w-6 h-6" />,
-      color: 'text-emerald-400',
-      href: '/admin/venue-identity',
-      status: 'active'
-    },
-    {
-      id: 'onboarding-inspector',
-      title: 'Onboarding Inspector',
-      description: 'Inspect a SetupSession token/sid and multi-location readiness',
-      icon: <Eye className="w-6 h-6" />,
-      color: 'text-cyan-400',
-      href: '/admin/onboarding-inspector',
-      status: 'active'
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setDashLoading(true);
+      setDashError(null);
+      try {
+        const raw = typeof window !== 'undefined' ? localStorage.getItem('active_lounge') : null;
+        const params = new URLSearchParams({ range: '7d' });
+        if (raw && raw !== SELECT_ALL_LOCATIONS) params.set('loungeId', raw);
+        const r = await fetch(`/api/admin/analytics-summary?${params.toString()}`);
+        const j = await r.json();
+        if (cancelled) return;
+        if (!r.ok || !j.success) {
+          setDashError(j.error || 'Failed to load metrics');
+          setOverview(null);
+          return;
+        }
+        const o = j.overview;
+        setOverview({
+          teamMemberCount: o.teamMemberCount ?? 0,
+          activeSessionsNow: o.activeSessionsNow ?? 0,
+          todayRevenueCents: o.todayRevenueCents ?? 0,
+          todayRevenueChangePct: o.todayRevenueChangePct ?? null,
+          sessionChangePct: o.sessionChangePct ?? null,
+        });
+      } catch (e) {
+        if (!cancelled) {
+          setDashError(e instanceof Error ? e.message : 'Failed to load metrics');
+          setOverview(null);
+        }
+      } finally {
+        if (!cancelled) setDashLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const formatPct = (p: number | null) => {
+    if (p == null) return '—';
+    const sign = p >= 0 ? '+' : '';
+    return `${sign}${p}%`;
+  };
+
+  const systemMetrics: SystemMetric[] = useMemo(() => {
+    if (dashLoading && !overview) {
+      return [
+        { id: 'users', title: 'Team accounts', value: '—', change: '…', trend: 'neutral', icon: <Users className="w-5 h-5" />, color: 'text-blue-400' },
+        { id: 'sessions', title: 'Active Sessions', value: '—', change: '…', trend: 'neutral', icon: <Activity className="w-5 h-5" />, color: 'text-green-400' },
+        { id: 'revenue', title: "Today's Revenue", value: '—', change: '…', trend: 'neutral', icon: <TrendingUp className="w-5 h-5" />, color: 'text-purple-400' },
+        { id: 'system', title: 'System Status', value: '…', change: '…', trend: 'neutral', icon: <Server className="w-5 h-5" />, color: 'text-zinc-400' },
+      ];
     }
-  ];
+    if (!overview) {
+      return [
+        { id: 'users', title: 'Team accounts', value: '—', change: dashError || 'Unavailable', trend: 'neutral', icon: <Users className="w-5 h-5" />, color: 'text-blue-400' },
+        { id: 'sessions', title: 'Active Sessions', value: '—', change: '—', trend: 'neutral', icon: <Activity className="w-5 h-5" />, color: 'text-green-400' },
+        { id: 'revenue', title: "Today's Revenue", value: '—', change: '—', trend: 'neutral', icon: <TrendingUp className="w-5 h-5" />, color: 'text-purple-400' },
+        { id: 'system', title: 'System Status', value: 'Degraded', change: '—', trend: 'down', icon: <Server className="w-5 h-5" />, color: 'text-red-400' },
+      ];
+    }
+    const rev = overview.todayRevenueCents / 100;
+    return [
+      {
+        id: 'users',
+        title: 'Team accounts',
+        value: String(overview.teamMemberCount),
+        change: 'live',
+        trend: 'neutral' as const,
+        icon: <Users className="w-5 h-5" />,
+        color: 'text-blue-400',
+      },
+      {
+        id: 'sessions',
+        title: 'Active Sessions',
+        value: String(overview.activeSessionsNow),
+        change: formatPct(overview.sessionChangePct),
+        trend: (overview.sessionChangePct ?? 0) >= 0 ? ('up' as const) : ('down' as const),
+        icon: <Activity className="w-5 h-5" />,
+        color: 'text-green-400',
+      },
+      {
+        id: 'revenue',
+        title: "Today's Revenue",
+        value: `$${rev.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
+        change: formatPct(overview.todayRevenueChangePct),
+        trend: (overview.todayRevenueChangePct ?? 0) >= 0 ? ('up' as const) : ('down' as const),
+        icon: <TrendingUp className="w-5 h-5" />,
+        color: 'text-purple-400',
+      },
+      {
+        id: 'system',
+        title: 'System Status',
+        value: dashError ? 'Check data' : 'Operational',
+        change: dashError ? '—' : 'DB OK',
+        trend: 'neutral' as const,
+        icon: <Server className="w-5 h-5" />,
+        color: dashError ? 'text-amber-400' : 'text-green-400',
+      },
+    ];
+  }, [overview, dashLoading, dashError]);
+
+  const visibleAdminActions = useMemo(
+    () =>
+      ADMIN_ACTIONS.filter(
+        (a) =>
+          !codigoOnlyNav || !['operator-onboarding', 'onboarding-inspector'].includes(a.id)
+      ),
+    [codigoOnlyNav]
+  );
 
   const handleAddUser = () => {
     if (newUser.name && newUser.email && newUser.phone) {
@@ -505,7 +596,7 @@ export default function AdminPage() {
             <div className="card-tablet">
               <h3 className="text-xl font-semibold mb-6">Administration Tools</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {adminActions.map((action) => (
+                {visibleAdminActions.map((action) => (
                   <Link
                     key={action.id}
                     href={action.href}

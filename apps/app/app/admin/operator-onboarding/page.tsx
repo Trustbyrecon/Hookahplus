@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import Link from 'next/link';
 import { 
   Shield, 
@@ -33,6 +33,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import GlobalNavigation from '../../../components/GlobalNavigation';
+import { isCodigoOnlyAdminScope } from '../../../lib/admin-lounge-scope';
 import Button from '../../../components/Button';
 import Breadcrumbs from '../../../components/Breadcrumbs';
 import PageHero from '../../../components/PageHero';
@@ -171,10 +172,16 @@ export default function OperatorOnboardingPage() {
   const [testLinkUrl, setTestLinkUrl] = useState('');
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const actionMessageTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [hideInternalTools, setHideInternalTools] = useState(false);
+
+  useLayoutEffect(() => {
+    setHideInternalTools(isCodigoOnlyAdminScope());
+  }, []);
 
   useEffect(() => {
+    if (hideInternalTools) return;
     loadLeads();
-  }, [selectedStage]);
+  }, [selectedStage, hideInternalTools]);
 
   useEffect(() => {
     return () => {
@@ -196,6 +203,10 @@ export default function OperatorOnboardingPage() {
 
   const loadLeads = async () => {
     try {
+      if (typeof window !== 'undefined' && localStorage.getItem('active_lounge') === 'CODIGO') {
+        setIsLoading(false);
+        return;
+      }
       setIsLoading(true);
       setError(null);
 
@@ -736,6 +747,27 @@ export default function OperatorOnboardingPage() {
       minute: '2-digit'
     });
   };
+
+  if (hideInternalTools) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
+        <GlobalNavigation />
+        <div className="max-w-lg mx-auto px-4 py-16 text-center">
+          <Shield className="w-12 h-12 text-zinc-500 mx-auto mb-4" />
+          <h1 className="text-xl font-semibold text-white mb-2">Internal tool</h1>
+          <p className="text-zinc-400 text-sm mb-6">
+            Operator Onboarding is available when Fire Session scope is <strong className="text-zinc-200">All locations</strong> (Hookah+ internal). CODIGO pilot admins use the tools under Admin Control Center instead.
+          </p>
+          <Link
+            href="/admin"
+            className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-teal-600 text-white text-sm font-medium hover:bg-teal-500"
+          >
+            Back to Admin
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

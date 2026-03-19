@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Users, 
   UserCheck, 
@@ -38,77 +38,79 @@ export default function UsersPage() {
     password: ''
   });
 
-  // Mock user data
-  const users = [
-    { 
-      id: 1, 
-      name: 'John Smith', 
-      email: 'john@hookahplus.com', 
-      phone: '+1 (555) 123-4567',
-      role: 'Manager', 
-      status: 'active', 
-      lastLogin: '2 hours ago',
-      joinDate: '2024-01-15',
-      avatar: '👨‍💼'
-    },
-    { 
-      id: 2, 
-      name: 'Sarah Chen', 
-      email: 'sarah@hookahplus.com', 
-      phone: '+1 (555) 234-5678',
-      role: 'BOH', 
-      status: 'active', 
-      lastLogin: '1 hour ago',
-      joinDate: '2024-02-20',
-      avatar: '👩‍🍳'
-    },
-    { 
-      id: 3, 
-      name: 'Mike Rodriguez', 
-      email: 'mike@hookahplus.com', 
-      phone: '+1 (555) 345-6789',
-      role: 'FOH', 
-      status: 'inactive', 
-      lastLogin: '1 day ago',
-      joinDate: '2024-01-10',
-      avatar: '👨‍💼'
-    },
-    { 
-      id: 4, 
-      name: 'Emily Davis', 
-      email: 'emily@hookahplus.com', 
-      phone: '+1 (555) 456-7890',
-      role: 'Admin', 
-      status: 'active', 
-      lastLogin: '30 minutes ago',
-      joinDate: '2023-12-01',
-      avatar: '👩‍💻'
-    },
-    { 
-      id: 5, 
-      name: 'Alex Johnson', 
-      email: 'alex@hookahplus.com', 
-      phone: '+1 (555) 567-8901',
-      role: 'BOH', 
-      status: 'active', 
-      lastLogin: '3 hours ago',
-      joinDate: '2024-03-05',
-      avatar: '👨‍🍳'
-    }
-  ];
+  const [users, setUsers] = useState<
+    Array<{
+      id: string;
+      name: string;
+      email: string;
+      phone: string;
+      role: string;
+      status: string;
+      lastLogin: string;
+      joinDate: string;
+      avatar: string;
+    }>
+  >([]);
+  const [usersLoading, setUsersLoading] = useState(true);
+  const [usersError, setUsersError] = useState<string | null>(null);
 
-  const filteredUsers = users.filter(user => {
+  useEffect(() => {
+    let c = false;
+    (async () => {
+      setUsersLoading(true);
+      setUsersError(null);
+      try {
+        const r = await fetch('/api/admin/tenant-members');
+        const j = await r.json();
+        if (c) return;
+        if (!r.ok || !j.success) {
+          setUsersError(j.error || 'Failed to load users');
+          setUsers([]);
+          return;
+        }
+        setUsers(
+          (j.users || []).map((u: { id: string; name: string; email: string; phone: string; role: string; status: string; lastLogin: string; joinDate: string; avatar: string }) => ({
+            ...u,
+            role:
+              u.role === 'admin'
+                ? 'Admin'
+                : u.role === 'owner'
+                  ? 'Owner'
+                  : u.role === 'staff'
+                    ? 'Staff'
+                    : u.role === 'viewer'
+                      ? 'Viewer'
+                      : u.role,
+          }))
+        );
+      } catch (e) {
+        if (!c) {
+          setUsersError(e instanceof Error ? e.message : 'Failed to load');
+          setUsers([]);
+        }
+      } finally {
+        if (!c) setUsersLoading(false);
+      }
+    })();
+    return () => {
+      c = true;
+    };
+  }, []);
+
+  const filteredUsers = useMemo(() => users.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = filterRole === 'all' || user.role.toLowerCase() === filterRole;
     const matchesStatus = filterStatus === 'all' || user.status === filterStatus;
     
     return matchesSearch && matchesRole && matchesStatus;
-  });
+  }), [users, searchTerm, filterRole, filterStatus]);
 
   const getRoleIcon = (role: string) => {
     switch (role) {
-      case 'Admin': return <Crown className="w-4 h-4" />;
+      case 'Admin':
+      case 'Owner':
+        return <Crown className="w-4 h-4" />;
       case 'Manager': return <UserCheck className="w-4 h-4" />;
       case 'BOH': return <ChefHat className="w-4 h-4" />;
       case 'FOH': return <User className="w-4 h-4" />;
@@ -118,7 +120,9 @@ export default function UsersPage() {
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case 'Admin': return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
+      case 'Admin':
+      case 'Owner':
+        return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
       case 'Manager': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
       case 'BOH': return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
       case 'FOH': return 'bg-green-500/20 text-green-400 border-green-500/30';
@@ -148,11 +152,10 @@ export default function UsersPage() {
     setShowEditUserModal(true);
   };
 
-  const handleDeleteUser = (userId: number) => {
+  const handleDeleteUser = (userId: string) => {
     if (confirm('Are you sure you want to delete this user?')) {
       console.log('Deleting user:', userId);
-      // Here you would typically make an API call to delete the user
-      alert('User deleted successfully!');
+      alert('User deletion is not implemented — use Supabase Dashboard or support.');
     }
   };
 
@@ -160,7 +163,7 @@ export default function UsersPage() {
     setShowManageRolesModal(true);
   };
 
-  const handleRoleChange = (userId: number, newRole: string) => {
+  const handleRoleChange = (userId: string, newRole: string) => {
     console.log(`Changing user ${userId} role to ${newRole}`);
     // Here you would typically make an API call to update the user role
     alert(`User role changed to ${newRole}!`);
@@ -194,6 +197,12 @@ export default function UsersPage() {
         </div>
 
         {/* Stats */}
+        {usersError && (
+          <div className="mb-6 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+            {usersError}
+          </div>
+        )}
+
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
           <div className="card-pretty p-4">
             <div className="flex items-center justify-between">
