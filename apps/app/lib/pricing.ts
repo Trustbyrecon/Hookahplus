@@ -22,9 +22,13 @@ export interface PricingOptions {
   tableId?: string;
   loungeId?: string;
   isWeekend?: boolean;
-  pricingModel?: 'flat' | 'time-based'; // New: pricing model
+  pricingModel?: 'flat' | 'time-based';
   sessionDuration?: number; // Minutes, required for time-based
-  flavorPrices?: Record<string, number>; // Optional: flavor price map (in dollars)
+  flavorPrices?: Record<string, number>; // Flavor price map (dollars)
+  /** Override base price in cents (e.g. CODIGO $60 = 6000) */
+  basePriceCents?: number;
+  /** If true, flavors included in base (no add-on charge) */
+  flavorAddOnFree?: boolean;
 }
 
 // Top flavors that get surge pricing on weekends
@@ -88,28 +92,28 @@ export function calculatePrice(options: PricingOptions): PricingBreakdown {
     addOns = [],
     isWeekend = false,
     pricingModel = 'flat',
-    sessionDuration = 60, // Default 60 minutes
+    sessionDuration = 60,
     flavorPrices = DEFAULT_FLAVOR_PRICES,
+    basePriceCents,
+    flavorAddOnFree = false,
   } = options;
 
   let basePrice = 0;
   let flavorAddons = 0;
   let surgePricing = 0;
 
-  // Calculate base session price based on model
+  // Base session price: override from lounge config or default
   if (pricingModel === 'flat') {
-    basePrice = BASE_PRICE_CENTS;
+    basePrice = basePriceCents ?? BASE_PRICE_CENTS;
   } else {
-    // Time-based: $0.50 per minute
     basePrice = Math.round(sessionDuration * TIME_BASED_RATE_CENTS_PER_MIN);
   }
 
-  // Calculate flavor add-ons (sum of individual flavor prices)
-  if (flavors.length > 0) {
-    // Use provided flavor prices or default map
+  // Flavor add-ons: skip if flavorAddOnFree (CODIGO: flat includes flavors)
+  if (flavors.length > 0 && !flavorAddOnFree) {
     flavorAddons = flavors.reduce((total, flavorId) => {
-      const price = flavorPrices[flavorId] || 2.00; // Default $2.00 if not found
-      return total + Math.round(price * 100); // Convert to cents
+      const price = flavorPrices[flavorId] || 2.00;
+      return total + Math.round(price * 100);
     }, 0);
   }
 

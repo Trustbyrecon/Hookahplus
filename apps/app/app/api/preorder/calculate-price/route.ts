@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '../../../../lib/db';
 import { calculatePrice, isWeekend, DEFAULT_FLAVOR_PRICES } from '../../../../lib/pricing';
 
 export async function POST(request: NextRequest) {
@@ -13,7 +14,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate pricing model
     if (pricingModel && pricingModel !== 'flat' && pricingModel !== 'time-based') {
       return NextResponse.json(
         { error: 'Invalid pricing model. Must be "flat" or "time-based"' },
@@ -21,7 +21,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate session duration for time-based pricing
     if (pricingModel === 'time-based' && (!sessionDuration || sessionDuration < 15)) {
       return NextResponse.json(
         { error: 'Session duration is required for time-based pricing (minimum 15 minutes)' },
@@ -29,7 +28,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Calculate pricing with flavor price map
+    // CODIGO: Fetch PilotConfig for base price; flavors included in flat
+    let basePriceCents: number | undefined;
+    let flavorAddOnFree = false;
+    if (loungeId === 'CODIGO') {
+      try {
+        const pilot = await prisma.pilotConfig.findUnique({
+          where: { loungeId: 'CODIGO' },
+        });
+        if (pilot?.configData && typeof pilot.configData === 'object') {
+          const data = pilot.configData as Record<string, unknown>;
+          const pricing = data.pricing as Record<string, { amountCents?: number }> | undefined;
+          if (pricing?.hookah?.amountCents != null) {
+            basePriceCents = pricing.hookah.amountCents;
+          }
+          flavorAddOnFree = true; // CODIGO: flat price includes flavors
+        }
+      } catch {
+        // Fallback to default pricing
+      }
+    }
+
     const pricing = calculatePrice({
       flavors,
       addOns: addOns || [],
@@ -38,7 +57,9 @@ export async function POST(request: NextRequest) {
       isWeekend: isWeekend(),
       pricingModel: pricingModel || 'flat',
       sessionDuration: pricingModel === 'time-based' ? sessionDuration : undefined,
-      flavorPrices: DEFAULT_FLAVOR_PRICES, // Pass flavor price map
+      flavorPrices: DEFAULT_FLAVOR_PRICES,
+      basePriceCents,
+      flavorAddOnFree,
     });
 
     return NextResponse.json({

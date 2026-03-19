@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Clock, LogIn, LogOut, CheckCircle, DollarSign } from 'lucide-react';
 
 const SHIFT_START_KEY = 'h+_shift_started_at';
@@ -29,18 +29,43 @@ export default function ShiftGuide() {
     setMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (!mounted || typeof window === 'undefined') return;
+  const readShiftFromStorage = useCallback(() => {
+    if (typeof window === 'undefined') return;
     setShiftStartedAt(localStorage.getItem(SHIFT_START_KEY));
     setShiftEndedAt(localStorage.getItem(SHIFT_END_KEY));
     const goal = localStorage.getItem(TIP_GOAL_KEY);
     if (goal) setTipGoalCents(parseInt(goal, 10) || 0);
     const tips = localStorage.getItem(TIPS_ENTERED_KEY);
     if (tips) setTipsEnteredCents(parseInt(tips, 10) || 0);
-  }, [mounted]);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted || typeof window === 'undefined') return;
+    readShiftFromStorage();
+  }, [mounted, readShiftFromStorage]);
+
+  // Keep shift UI in sync across tabs (End shift stays available for the whole shift)
+  useEffect(() => {
+    if (!mounted || typeof window === 'undefined') return;
+    const onStorage = (e: StorageEvent) => {
+      if (
+        e.key === SHIFT_START_KEY ||
+        e.key === SHIFT_END_KEY ||
+        e.key === TIP_GOAL_KEY ||
+        e.key === TIPS_ENTERED_KEY
+      ) {
+        readShiftFromStorage();
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [mounted, readShiftFromStorage]);
 
   const handleStartShift = () => {
     const now = new Date().toISOString();
+    // New shift must clear any previous end time or "started" UI + End shift disappear
+    localStorage.removeItem(SHIFT_END_KEY);
+    setShiftEndedAt(null);
     localStorage.setItem(SHIFT_START_KEY, now);
     setShiftStartedAt(now);
     setShowStartGuide(false);

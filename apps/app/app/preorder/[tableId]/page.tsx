@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import GlobalNavigation from '../../../components/GlobalNavigation';
 import PreorderEntry from '../../../components/PreorderEntry';
 import QRCode from 'qrcode';
@@ -10,24 +10,27 @@ import {
   BarChart3, 
   Users, 
   MapPin, 
-  ShoppingCart,
   QrCode,
   Copy,
   CheckCircle,
   Flame,
   AlertCircle,
-  ArrowRight
+  ArrowRight,
+  Shield
 } from 'lucide-react';
 import Button from '../../../components/Button';
 import { SessionProvider, useSessionContext } from '../../../contexts/SessionContext';
-import { STATUS_TO_TRACKER_STAGE, TrackerStage } from '../../../types/enhancedSession';
+import { STATUS_TO_TRACKER_STAGE } from '../../../types/enhancedSession';
 import { Badge } from '../../../components';
 
 function PreOrderPageContent() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const tableId = params.tableId as string;
-  const { sessions, refreshSessions } = useSessionContext();
+  // Lounge context from URL: ?lounge=CODIGO for CODIGO pilot
+  const loungeId = searchParams.get('lounge') || 'default-lounge';
+  const { sessions } = useSessionContext();
   
   // QR Code state (for quick share)
   const [qrCodeDataURL, setQrCodeDataURL] = useState<string>('');
@@ -54,7 +57,7 @@ function PreOrderPageContent() {
   } | null>(null);
   const [tableValidationError, setTableValidationError] = useState<string | null>(null);
 
-  // Validate table on mount
+  // Validate table on mount (pass loungeId for CODIGO/seat resolution)
   useEffect(() => {
     const validateTable = async () => {
       try {
@@ -62,9 +65,10 @@ function PreOrderPageContent() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            tableId: tableId,
-            checkAvailability: true
-          })
+            tableId,
+            loungeId,
+            checkAvailability: true,
+          }),
         });
 
         if (response.ok) {
@@ -102,13 +106,15 @@ function PreOrderPageContent() {
     };
 
     validateTable();
-  }, [tableId]);
+  }, [tableId, loungeId]);
 
-  // Generate QR Code for quick sharing
+  // Generate QR Code for quick sharing (include lounge param for CODIGO)
   const generateQRCode = async () => {
     try {
       const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://hookahplus.net';
-      const qrUrl = `${baseUrl}/preorder/${tableId}`;
+      const qrUrl = loungeId !== 'default-lounge'
+        ? `${baseUrl}/preorder/${tableId}?lounge=${loungeId}`
+        : `${baseUrl}/preorder/${tableId}`;
       
       const qrDataURL = await QRCode.toDataURL(qrUrl, {
         width: 200,
@@ -140,7 +146,7 @@ function PreOrderPageContent() {
   // Generate QR code on component mount
   useEffect(() => {
     generateQRCode();
-  }, [tableId]);
+  }, [tableId, loungeId]);
 
   // Show error if table validation failed
   if (tableValidationError && !tableData) {
@@ -184,19 +190,31 @@ function PreOrderPageContent() {
       <GlobalNavigation />
       
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
-                <ShoppingCart className="w-10 h-10 text-teal-400" />
-                Pre-Order
-              </h1>
-              <p className="text-xl text-zinc-400 flex items-center gap-2">
-                <MapPin className="w-5 h-5" />
-                Table {tableId} • {tableData.zone} • {tableData.capacity} People
-              </p>
-            </div>
+        {/* Header — editorial hierarchy, mobile-first */}
+        <div className="mb-6 sm:mb-8">
+          <p className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.25em] text-teal-500/80 mb-2">
+            Hookah+ Guest
+          </p>
+          <h1 className="text-2xl sm:text-4xl font-semibold text-white tracking-tight leading-tight">
+            Pre-order
+          </h1>
+          <p className="mt-2 text-sm sm:text-base text-zinc-400 max-w-2xl">
+            Curate your session before you settle in. Your team prepares from this order—nothing hits the kitchen until you complete checkout.
+          </p>
+          <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-zinc-500">
+            <span className="inline-flex items-center gap-1.5 text-zinc-300">
+              <MapPin className="w-4 h-4 text-teal-500/80 shrink-0" />
+              {tableData.name || tableId}
+              <span className="text-zinc-600">·</span>
+              {tableData.zone}
+              <span className="text-zinc-600">·</span>
+              Up to {tableData.capacity} guests
+            </span>
+            <span className="hidden sm:inline text-zinc-600">|</span>
+            <span className="inline-flex items-center gap-1.5">
+              <Shield className="w-4 h-4 text-teal-500/70 shrink-0" />
+              Secure checkout
+            </span>
           </div>
         </div>
 
@@ -222,7 +240,7 @@ function PreOrderPageContent() {
                 </div>
               </div>
               <Button
-                onClick={() => router.push(`/fire-session-dashboard?sessionId=${existingSession.id}`)}
+                onClick={() => router.push(`/fire-session-dashboard?session=${existingSession.id}`)}
                 className="bg-teal-600 hover:bg-teal-700"
               >
                 <ArrowRight className="w-4 h-4 mr-2" />
@@ -245,7 +263,7 @@ function PreOrderPageContent() {
                     This table already has an active session. Please complete or close the current session before creating a new one.
                   </p>
                   <Button
-                    onClick={() => router.push(`/fire-session-dashboard?sessionId=${existingSession.id}`)}
+                    onClick={() => router.push(`/fire-session-dashboard?session=${existingSession.id}`)}
                     className="bg-teal-600 hover:bg-teal-700"
                   >
                     Go to Session Dashboard
@@ -253,39 +271,46 @@ function PreOrderPageContent() {
                 </div>
               </Card>
             ) : (
-              <PreorderEntry tableId={tableId} loungeId="default-lounge" />
+              <PreorderEntry
+                tableId={tableId}
+                loungeId={loungeId}
+                showTestMode={searchParams.get('test') === '1'}
+                tableLabel={tableData.name || tableId}
+                zoneLabel={tableData.zone}
+                capacity={tableData.capacity}
+              />
             )}
           </div>
 
           {/* Order Summary Sidebar */}
           <div className="space-y-6">
             {/* Quick Stats */}
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Card className="p-6 border-zinc-800/80">
+              <h3 className="text-lg font-semibold mb-1 flex items-center gap-2">
                 <BarChart3 className="w-5 h-5 text-teal-400" />
-                Order Summary
+                Floor pulse
               </h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-zinc-800 rounded-lg">
-                  <span className="text-zinc-400">Active Orders</span>
-                  <span className="text-white font-semibold">{activeOrders}</span>
+              <p className="text-xs text-zinc-500 mb-4">Live view for this table (operator context)</p>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-zinc-900/80 rounded-xl border border-zinc-800/60">
+                  <span className="text-zinc-400 text-sm">In service</span>
+                  <span className="text-white font-semibold tabular-nums">{activeOrders}</span>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-zinc-800 rounded-lg">
-                  <span className="text-zinc-400">Pending</span>
-                  <span className="text-yellow-400 font-semibold">{pendingOrders}</span>
+                <div className="flex items-center justify-between p-3 bg-zinc-900/80 rounded-xl border border-zinc-800/60">
+                  <span className="text-zinc-400 text-sm">Awaiting prep</span>
+                  <span className="text-amber-400/90 font-semibold tabular-nums">{pendingOrders}</span>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-zinc-800 rounded-lg">
-                  <span className="text-zinc-400">Completed</span>
-                  <span className="text-green-400 font-semibold">{completedOrders}</span>
+                <div className="flex items-center justify-between p-3 bg-zinc-900/80 rounded-xl border border-zinc-800/60">
+                  <span className="text-zinc-400 text-sm">Closed today</span>
+                  <span className="text-emerald-400/90 font-semibold tabular-nums">{completedOrders}</span>
                 </div>
               </div>
             </Card>
 
-            {/* Table Info */}
-            <Card className="p-6">
+            <Card className="p-6 border-zinc-800/80">
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <Users className="w-5 h-5 text-teal-400" />
-                Table Info
+                Your table
               </h3>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -309,13 +334,14 @@ function PreOrderPageContent() {
 
             {/* Quick QR Share */}
             {qrCodeDataURL && (
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Card className="p-6 border-zinc-800/80">
+                <h3 className="text-lg font-semibold mb-1 flex items-center gap-2">
                   <QrCode className="w-5 h-5 text-teal-400" />
-                  Share This Page
+                  Invite your party
                 </h3>
+                <p className="text-xs text-zinc-500 mb-4">Same menu & pricing for everyone at this table</p>
                 <div className="text-center">
-                  <div className="inline-block p-3 bg-white rounded-lg mb-4">
+                  <div className="inline-block p-3 bg-white rounded-xl mb-4 shadow-inner">
                     <img 
                       src={qrCodeDataURL} 
                       alt="QR Code" 
@@ -323,7 +349,7 @@ function PreOrderPageContent() {
                     />
                   </div>
                   <p className="text-sm text-zinc-400 mb-3">
-                    Share this QR code for quick ordering
+                    Scan or share link—guests land on this pre-order flow
                   </p>
                   <Button
                     onClick={copyToClipboard}
@@ -352,7 +378,13 @@ function PreOrderPageContent() {
 export default function PreOrderPage() {
   return (
     <SessionProvider>
-      <PreOrderPageContent />
+      <Suspense fallback={
+        <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-400" />
+        </div>
+      }>
+        <PreOrderPageContent />
+      </Suspense>
     </SessionProvider>
   );
 }

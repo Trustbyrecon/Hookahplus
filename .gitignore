@@ -12,15 +12,25 @@ package-lock.json
 .env
 .env.*
 *.env
+**/.env.local
+**/.env.*.local
 apps/*/.env
 apps/*/.env.*
 *.log
+.envrc
+.env.sentry-build-plugin
+**/.env.sentry-build-plugin
 /logs/
 /.env.*
 
-# secrets
+# secrets (never commit Stripe sk_live_ / API keys)
 *.pem
 *.key
+*.pfx
+*.p12
+secrets.local.*
+**/secrets.local.*
+stripe-secret*.json
 
 # Local Netlify folder
 .netlify

@@ -2,17 +2,19 @@
 
 import React, { useState, useEffect } from 'react';
 import Card from './Card';
-import Button from './Button';
-import { 
-  TrendingUp, 
-  Clock, 
-  DollarSign, 
-  AlertCircle, 
+import {
+  TrendingUp,
+  Clock,
+  DollarSign,
+  AlertCircle,
   RefreshCw,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  RotateCcw,
 } from 'lucide-react';
 import Link from 'next/link';
+
+const PULSE_RESET_NONCE_KEY = 'h+_pulse_fetch_nonce';
 
 interface PulseData {
   summary: string;
@@ -49,16 +51,20 @@ export default function PulseCard({
   const [currentWindow, setCurrentWindow] = useState<'24h' | 'pm'>(timeWindow);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
-  const fetchPulse = async () => {
+  const fetchPulse = async (options?: { clearFirst?: boolean }) => {
     try {
+      if (options?.clearFirst) {
+        setPulseData(null);
+      }
       setLoading(true);
       setError(null);
-      
+
       // Check if we're in demo mode from URL
-      const isDemoMode = typeof window !== 'undefined' && 
+      const isDemoMode =
+        typeof window !== 'undefined' &&
         window.location &&
         new URLSearchParams(window.location.search).get('mode') === 'demo';
-      
+
       const params = new URLSearchParams({
         window: currentWindow,
       });
@@ -68,8 +74,16 @@ export default function PulseCard({
       if (isDemoMode) {
         params.append('demo', 'true');
       }
+      // Cache-bust: pulse is computed from DB; param + no-store avoids stale client/proxy caches
+      const nonce =
+        typeof window !== 'undefined'
+          ? sessionStorage.getItem(PULSE_RESET_NONCE_KEY) || String(Date.now())
+          : String(Date.now());
+      params.append('_', nonce);
 
-      const response = await fetch(`/api/pulse?${params.toString()}`);
+      const response = await fetch(`/api/pulse?${params.toString()}`, {
+        cache: 'no-store',
+      });
       const data = await response.json();
 
       if (data.success && data.pulse) {
@@ -87,7 +101,10 @@ export default function PulseCard({
           if (loungeId) {
             demoParams.append('loungeId', loungeId);
           }
-          const demoResponse = await fetch(`/api/pulse?${demoParams.toString()}`);
+          demoParams.append('_', String(Date.now()));
+          const demoResponse = await fetch(`/api/pulse?${demoParams.toString()}`, {
+            cache: 'no-store',
+          });
           const demoData = await demoResponse.json();
           if (demoData.success && demoData.pulse) {
             setPulseData(demoData.pulse);
@@ -109,7 +126,10 @@ export default function PulseCard({
           if (loungeId) {
             demoParams.append('loungeId', loungeId);
           }
-          const demoResponse = await fetch(`/api/pulse?${demoParams.toString()}`);
+          demoParams.append('_', String(Date.now()));
+          const demoResponse = await fetch(`/api/pulse?${demoParams.toString()}`, {
+            cache: 'no-store',
+          });
           const demoData = await demoResponse.json();
           if (demoData.success && demoData.pulse) {
             setPulseData(demoData.pulse);
@@ -144,6 +164,15 @@ export default function PulseCard({
 
   const handleRefresh = () => {
     fetchPulse();
+  };
+
+  /** Bump nonce and refetch — does not delete DB sessions; forces a fresh read for this device. */
+  const handleResetDailyPulse = () => {
+    if (typeof window !== 'undefined') {
+      const prev = parseInt(sessionStorage.getItem(PULSE_RESET_NONCE_KEY) || '0', 10) || 0;
+      sessionStorage.setItem(PULSE_RESET_NONCE_KEY, String(prev + 1));
+    }
+    fetchPulse({ clearFirst: true });
   };
 
   const handleWindowToggle = () => {
@@ -187,9 +216,18 @@ export default function PulseCard({
           </div>
           <div className="flex items-center gap-2 ml-4">
             <button
+              onClick={handleResetDailyPulse}
+              className="p-1 text-zinc-400 hover:text-amber-400 transition-colors"
+              title="Reset pulse view (refetch from server)"
+              type="button"
+            >
+              <RotateCcw className={`w-4 h-4 ${loading ? 'opacity-50' : ''}`} />
+            </button>
+            <button
               onClick={handleRefresh}
               className="p-1 text-zinc-400 hover:text-teal-400 transition-colors"
               title="Refresh"
+              type="button"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
@@ -215,13 +253,24 @@ export default function PulseCard({
             {currentWindow === '24h' ? 'Morning (24h)' : '3PM (12h)'}
           </button>
         </div>
-        <button
-          onClick={handleRefresh}
-          className="p-2 text-zinc-400 hover:text-teal-400 transition-colors rounded-lg hover:bg-zinc-800/50"
-          title="Refresh"
-        >
-          <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={handleResetDailyPulse}
+            className="p-2 text-zinc-400 hover:text-amber-400 transition-colors rounded-lg hover:bg-zinc-800/50"
+            title="Reset pulse view (refetch from server)"
+            type="button"
+          >
+            <RotateCcw className={`w-5 h-5 ${loading ? 'opacity-50' : ''}`} />
+          </button>
+          <button
+            onClick={handleRefresh}
+            className="p-2 text-zinc-400 hover:text-teal-400 transition-colors rounded-lg hover:bg-zinc-800/50"
+            title="Refresh"
+            type="button"
+          >
+            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
       </div>
 
       {loading ? (
