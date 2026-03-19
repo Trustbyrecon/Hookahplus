@@ -1,16 +1,29 @@
 #!/usr/bin/env tsx
 /**
  * Seed CODIGO pilot config + floorplan for loungeID_CODIGO.
+ * Also seeds Mohamed (District Hookah Founder) auth when Supabase is configured.
  *
  * Usage:
  *   npx tsx scripts/seed-codigo-pilot.ts
  *
  * Run from apps/app directory. Requires add_pilot_floorplan_tables.sql applied first.
+ * For Mohamed auth: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, DATABASE_URL.
  */
 
+import { config } from 'dotenv';
+import { resolve } from 'path';
+import { createClient } from '@supabase/supabase-js';
+
+config({ path: resolve(process.cwd(), '.env.local') });
+config({ path: resolve(process.cwd(), '.env') });
 import { prisma } from '../lib/db';
+import { grantCodigoAccess } from '../lib/codigo-access';
 
 const LOUNGE_ID_CODIGO = 'CODIGO';
+
+// Mohamed Abdelaziz (District Hookah Founder) — from WELCOME_EMAIL_MOHAMED.md
+const MOHAMED_EMAIL = 'moe@districthookah.com';
+const MOHAMED_PASSWORD = 'CODIGO202';
 
 const PILOT_CONFIG = {
   layoutMode: 'floor' as const, // Foundation: POS-mirrored UI (Toast), reduces cognitive switching
@@ -109,6 +122,63 @@ async function main() {
     },
   });
   console.log('✅ Floorplan F3 seeded for CODIGO');
+
+  // Seed Mohamed (District Hookah Founder) auth when Supabase is configured
+  const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? '').trim();
+  const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY ?? '').trim();
+  if (supabaseUrl && serviceKey) {
+    const supabase = createClient(supabaseUrl, serviceKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+
+    let userId: string;
+    const { data: createData, error: createError } = await supabase.auth.admin.createUser({
+      email: MOHAMED_EMAIL,
+      password: MOHAMED_PASSWORD,
+      email_confirm: true,
+      user_metadata: { display_name: 'Mohamed Abdelaziz', role: 'District Hookah Founder' },
+    });
+
+    if (createData?.user?.id) {
+      userId = createData.user.id;
+      console.log('✅ Created Supabase Auth user:', MOHAMED_EMAIL);
+    } else if (createError?.message?.toLowerCase().includes('already') || createError?.message?.toLowerCase().includes('registered')) {
+      const { data: listData, error: listError } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+      if (listError) {
+        console.warn('Could not list users for Mohamed update:', listError.message);
+        return;
+      } else {
+        const user = listData?.users?.find((u) => u.email?.toLowerCase() === MOHAMED_EMAIL.toLowerCase());
+        if (user?.id) {
+          userId = user.id;
+          await supabase.auth.admin.updateUserById(userId, { password: MOHAMED_PASSWORD });
+          console.log('✅ Updated password for existing user:', MOHAMED_EMAIL);
+        } else {
+          console.warn('Mohamed user exists but could not be found. Run: ADMIN_EMAIL="' + MOHAMED_EMAIL + '" ADMIN_PASSWORD="' + MOHAMED_PASSWORD + '" npx tsx scripts/create-admin-user.ts');
+          return;
+        }
+      }
+    } else {
+      console.warn('Could not create Mohamed auth:', createError?.message ?? 'Unknown error');
+      return;
+    }
+
+    if (userId) {
+      let tenant = await prisma.tenant.findFirst({ orderBy: { createdAt: 'asc' } });
+      if (!tenant) {
+        tenant = await prisma.tenant.create({ data: { name: 'Admin Tenant' } });
+      }
+      await prisma.membership.upsert({
+        where: { userId_tenantId: { userId, tenantId: tenant.id } },
+        update: { role: 'admin' },
+        create: { userId, tenantId: tenant.id, role: 'admin' },
+      });
+      await grantCodigoAccess(userId);
+      console.log('✅ Mohamed auth seeded: admin + CODIGO access');
+    }
+  } else {
+    console.log('⏭️  Supabase not configured — skipping Mohamed auth seed');
+  }
 }
 
 main()
