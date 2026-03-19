@@ -9,9 +9,12 @@ import ReactFlow, {
 import "reactflow/dist/style.css";
 
 import SeatNode from "@/components/SeatNode";
-import { CODIGO_SEATS } from "@/lib/codigoSeats";
+import { CODIGO_SEATS, type SeatDef } from "@/lib/codigoSeats";
 import { CODIGO_MENU } from "@/lib/codigoMenu";
 import type { FireSession } from "@/types/enhancedSession";
+
+// Scale factor: layout editor uses 0–100, ReactFlow uses pixel-like coords
+const LAYOUT_SCALE = 9;
 
 const BASE_PRICE = 60;
 const OVER_MINUTES = 90;
@@ -63,6 +66,37 @@ function CodigoFloorPlan({
   const [selectedFlavorId, setSelectedFlavorId] = useState<string>(CODIGO_MENU[0].id);
   const [isStarting, setIsStarting] = useState(false);
   const [hasFittedView, setHasFittedView] = useState(false);
+  const [layoutSeats, setLayoutSeats] = useState<SeatDef[] | null>(null);
+
+  // Source of truth: fetch saved layout from Lounge Layout (FloorplanLayout or OrgSetting)
+  useEffect(() => {
+    if (loungeId !== "CODIGO") return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/lounges?layout=true&loungeId=${encodeURIComponent(loungeId)}`);
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        const tables = data?.layout?.tables ?? data?.layout?.layout?.tables;
+        if (Array.isArray(tables) && tables.length > 0) {
+          const seats: SeatDef[] = tables.map((t: any, i: number) => {
+            const id = t.id || t.tableId || `seat-${t.name || i}`;
+            const label = t.name || t.label || String(t.id || i);
+            const coords = t.coordinates ?? t;
+            const x = (typeof coords.x === "number" ? coords.x : 50) * LAYOUT_SCALE;
+            const y = (typeof coords.y === "number" ? coords.y : 50) * LAYOUT_SCALE;
+            return { id, label, x, y };
+          });
+          if (!cancelled) setLayoutSeats(seats);
+        }
+      } catch {
+        // Fall back to CODIGO_SEATS
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [loungeId]);
+
+  const seatDefs = layoutSeats ?? CODIGO_SEATS;
 
   // Update elapsed every 5s (not 1s) to reduce layout thrash — trust builder: stable floor
   useEffect(() => {
@@ -74,7 +108,7 @@ function CodigoFloorPlan({
 
   // Derive seat status: empty | pending (in kitchen) | active (on floor) | over | request
   const nodes: Node[] = useMemo(() => {
-    return CODIGO_SEATS.map((s) => {
+    return seatDefs.map((s) => {
       const session = sessions.find((sess) => sessionMatchesSeat(sess, s.label));
       const isActive = !!session && FLOOR_ACTIVE_STATES.includes((session.status || session.state) as any);
       const isPending = !!session && FLOOR_PENDING_STATES.includes((session.status || session.state) as any);
@@ -109,10 +143,10 @@ function CodigoFloorPlan({
         selectable: true,
       };
     });
-  }, [sessions, now]);
+  }, [sessions, now, seatDefs]);
 
   const selectedLabel = activeSeatId
-    ? CODIGO_SEATS.find((s) => s.id === activeSeatId)?.label
+    ? seatDefs.find((s) => s.id === activeSeatId)?.label
     : undefined;
 
   const selectedSession = activeSeatId && selectedLabel

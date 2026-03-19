@@ -151,6 +151,14 @@ function FireSessionDashboardContent() {
       return () => window.removeEventListener('storage', updateFlags);
     }
   }, []);
+
+  // CODIGO: Unpause metrics when CODIGO instance is selected
+  useEffect(() => {
+    if (selectedLoungeId === 'CODIGO' && typeof window !== 'undefined' && localStorage.getItem('metricsEnabled') !== 'true') {
+      enableMetrics();
+      setMetricsEnabled(true);
+    }
+  }, [selectedLoungeId]);
   const paymentConfirmed = searchParams.get('payment') === 'confirmed';
   const sessionIdFromUrl = searchParams.get('session');
   const demoLounge = searchParams.get('lounge') || null;
@@ -1301,36 +1309,6 @@ function FireSessionDashboardContent() {
           </div>
         )}
 
-        {/* Clear Old Sessions Button - First Light Mode Only */}
-        {featureFlags.showClearOldSessions && (
-          <div className="mb-4 flex justify-end">
-            <button
-              onClick={async () => {
-                if (confirm('Clear all sessions older than 1 hour? This will help focus on First Light testing.\n\nOnly sessions from the last hour will be kept.')) {
-                  try {
-                    const response = await fetch('/api/sessions/clear-old?keepRecent=1', {
-                      method: 'DELETE',
-                    });
-                    const data = await response.json();
-                    if (data.success) {
-                      alert(`✅ Cleared ${data.deleted} old sessions.\n\nKept sessions from the last hour.`);
-                      await refreshSessions();
-                    } else {
-                      alert(`❌ Failed to clear sessions: ${data.error || 'Unknown error'}`);
-                    }
-                  } catch (error) {
-                    console.error('Failed to clear old sessions:', error);
-                    alert('❌ Failed to clear old sessions. Check console for details.');
-                  }
-                }
-              }}
-              className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition-colors"
-            >
-              🗑️ Clear Old Sessions (Keep Last Hour)
-            </button>
-          </div>
-        )}
-
         {/* Error Display - First Light messaging */}
         {error && !isDemoMode && (
           <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6">
@@ -1375,8 +1353,8 @@ function FireSessionDashboardContent() {
           </div>
         )}
 
-        {/* Metrics Status Message */}
-        {!isDemoMode && firstLightFocus && !metricsEnabled && (
+        {/* Metrics Status Message — hidden for CODIGO (metrics unpaused) */}
+        {!isDemoMode && firstLightFocus && !metricsEnabled && selectedLoungeId !== 'CODIGO' && (
           <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-3 mb-6 text-sm text-zinc-400">
             Metrics are paused during First Light. Sessions are the only required system for this milestone.
           </div>

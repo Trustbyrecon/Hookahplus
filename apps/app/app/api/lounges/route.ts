@@ -98,6 +98,27 @@ export async function POST(req: NextRequest) {
           },
         });
 
+        // CODIGO: Also save to FloorplanLayout so FSD Floor tab uses saved layout as source of truth
+        if (effectiveLoungeId === 'CODIGO') {
+          const nodes = tables.map((t: any) => ({
+            id: t.id,
+            label: t.name || t.id,
+            type: (t.seatingType || '').toLowerCase().includes('kiosk') ? 'kiosk' : 'table',
+            x: typeof t.x === 'number' ? t.x : t.coordinates?.x ?? 50,
+            y: typeof t.y === 'number' ? t.y : t.coordinates?.y ?? 50,
+            capacity: t.capacity ?? 4,
+          }));
+          await prisma.floorplanLayout.upsert({
+            where: { loungeId_floorId: { loungeId: effectiveLoungeId, floorId: 'F3' } },
+            update: { nodes: nodes as object },
+            create: {
+              loungeId: effectiveLoungeId,
+              floorId: 'F3',
+              nodes: nodes as object,
+            },
+          }).catch((e) => console.warn('[Lounges] FloorplanLayout upsert failed:', e));
+        }
+
         return NextResponse.json({
           success: true,
           message: 'Lounge layout saved successfully',
