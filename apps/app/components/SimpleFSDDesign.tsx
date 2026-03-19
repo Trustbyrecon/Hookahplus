@@ -199,6 +199,13 @@ export default function SimpleFSDDesign({
     setIsMounted(true);
   }, []);
 
+  // CODIGO: Switch to Hookah Room tab when session created (Shisha Master or Floor) — steady-state card + Night After Night flow
+  useEffect(() => {
+    const handler = () => setActiveTab('boh');
+    window.addEventListener('hp:switchToHookahRoom', handler);
+    return () => window.removeEventListener('hp:switchToHookahRoom', handler);
+  }, []);
+
   // Real-time timer updates for active sessions
   useEffect(() => {
     const activeSessions = sessions.filter(s => 
@@ -1931,6 +1938,8 @@ export default function SimpleFSDDesign({
                     isDemo: true, // CODIGO operator: Toast handles payment, treat as paid
                     codigoOperator: true, // Skip to ACTIVE for floor display
                   });
+                  // Switch to Hookah Room tab so user sees steady-state card + Night After Night flow (Claim Prep)
+                  setActiveTab('boh');
                 }}
                 onEndSession={async (sessionId) => {
                   if (onSessionAction) {

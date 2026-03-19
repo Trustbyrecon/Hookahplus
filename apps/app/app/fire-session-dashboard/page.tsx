@@ -526,6 +526,10 @@ function FireSessionDashboardContent() {
       const isCodigo = apiPayload?.codigoOperator || apiPayload?.loungeId === 'CODIGO' || selectedLoungeId === 'CODIGO';
       if (isCodigo) {
         setTimeout(() => refreshSessions(), 500);
+        // Signal SimpleFSDDesign to switch to Hookah Room tab (steady-state card + Night After Night flow)
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('hp:switchToHookahRoom'));
+        }
       }
 
       // Return session ID for payment checkout

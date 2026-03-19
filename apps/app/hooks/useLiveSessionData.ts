@@ -204,7 +204,9 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
       // Load active sessions from root Prisma API
       // Add firstLightFocus param if First Light mode is enabled
       const sessionsUrl = new URL('/api/sessions', window.location.origin);
-      const selectedLoungeId = new URLSearchParams(window.location.search).get('lounge');
+      const params = new URLSearchParams(window.location.search);
+      // Support both lounge and loungeIds (CODIGO FSD uses loungeIds=CODIGO)
+      const selectedLoungeId = params.get('lounge') || (params.get('loungeIds') || '').split(',')[0]?.trim() || null;
       if (selectedLoungeId) {
         sessionsUrl.searchParams.set('loungeId', selectedLoungeId);
       }
