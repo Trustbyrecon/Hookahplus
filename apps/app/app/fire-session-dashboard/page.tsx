@@ -248,8 +248,14 @@ function FireSessionDashboardContent() {
     refreshSessions();
   }, [selectedLoungeId, refreshSessions]);
 
+  // When URL has loungeIds (e.g. loungeIds=CODIGO), prefer URL scope over localStorage.
+  // This ensures CODIGO and other single-lounge flows show the correct scope instead of "All locations (org-wide)".
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    if (parsedLoungeIds.length > 0 && selectedLoungeId !== parsedLoungeIds[0]) {
+      setSelectedLoungeId(parsedLoungeIds[0]);
+      return;
+    }
     if (selectedLoungeId) return;
     const remembered = localStorage.getItem('active_lounge');
     if (remembered === SELECT_ALL_LOCATIONS) {
@@ -258,7 +264,7 @@ function FireSessionDashboardContent() {
     if (remembered && candidateLoungeIds.includes(remembered)) {
       setSelectedLoungeId(remembered);
     }
-  }, [candidateLoungeIds, selectedLoungeId]);
+  }, [candidateLoungeIds, selectedLoungeId, parsedLoungeIds]);
 
   useEffect(() => {
     if (selectedLoungeId === null) return;

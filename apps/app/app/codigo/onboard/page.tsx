@@ -43,7 +43,7 @@ export default function CodigoOnboardPage() {
     const alreadyOnboarded = localStorage.getItem(ONBOARDED_KEY) === 'true';
     if (existing) setMemberId(existing);
     if (alreadyOnboarded && existing) {
-      window.location.href = '/fire-session-dashboard?loungeIds=CODIGO';
+      window.location.href = '/fire-session-dashboard?loungeIds=CODIGO&lounge=CODIGO';
     }
   }, []);
 
@@ -106,7 +106,7 @@ export default function CodigoOnboardPage() {
 
   function handleEnterExperience() {
     localStorage.setItem(ONBOARDED_KEY, 'true');
-    window.location.href = '/fire-session-dashboard?loungeIds=CODIGO';
+    window.location.href = '/fire-session-dashboard?loungeIds=CODIGO&lounge=CODIGO';
   }
 
   // Already has memberId from prior visit — skip to step 2 or 3
@@ -256,7 +256,7 @@ export default function CodigoOnboardPage() {
             Privacy & data controls
           </Link>
           {' · '}
-          <Link href="/fire-session-dashboard?loungeIds=CODIGO" className="hover:text-zinc-400 underline">
+          <Link href="/fire-session-dashboard?loungeIds=CODIGO&lounge=CODIGO" className="hover:text-zinc-400 underline">
             Skip to Floor
           </Link>
         </p>

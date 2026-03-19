@@ -18,7 +18,7 @@ export default function CodigoPage() {
     const onboarded = localStorage.getItem(ONBOARDED_KEY) === 'true';
     const memberId = (localStorage.getItem(MEMBER_ID_KEY) || '').trim();
     if (onboarded && memberId) {
-      router.replace('/fire-session-dashboard?loungeIds=CODIGO');
+      router.replace('/fire-session-dashboard?loungeIds=CODIGO&lounge=CODIGO');
     } else {
       router.replace('/codigo/onboard');
     }
