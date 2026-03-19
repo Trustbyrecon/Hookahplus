@@ -184,6 +184,7 @@ export function convertPrismaSessionToFireSession(session: any): FireSession {
     coalStatus: 'active' as const,
     refillStatus,
     notes: session.tableNotes || '',
+    specialRequests: session.specialRequests || null,
     edgeCase: session.edgeCase || null,
     sessionTimer: session.timerStartedAt ? {
       remaining: calculateRemainingTimeFromPrisma(session),

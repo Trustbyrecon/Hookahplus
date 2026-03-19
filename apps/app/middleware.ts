@@ -207,6 +207,7 @@ export async function middleware(request: NextRequest) {
 
   // Protected app routes (require auth when not First Light)
   const protectedAppRoutes = [
+    '/select-lounge',
     '/fire-session-dashboard',
     '/staff-panel',
     '/preorder',
@@ -303,6 +304,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    '/select-lounge',
     '/admin/:path*',
     '/api/admin/:path*',
     '/api/:path*',

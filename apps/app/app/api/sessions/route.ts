@@ -968,6 +968,8 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
       return str;
     };
     
+    const isQrPreorder = body.preorderChannel === 'qr_preorder';
+
     const data = {
       tableId: normalizeString(body.tableId),
       customerName: normalizeString(body.customerName),
@@ -975,7 +977,20 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
       memberId: normalizeString(body.memberId) || null,
       source: sourceValue,
       flavorMix: flavorArr,
-      notes: body.notes ? String(body.notes).trim() : null,
+      notes: isQrPreorder
+        ? null
+        : body.notes
+          ? String(body.notes).trim()
+          : null,
+      specialRequests:
+        body.specialRequests != null && String(body.specialRequests).trim() !== ''
+          ? String(body.specialRequests).trim()
+          : null,
+      preorderChannel: isQrPreorder ? ('qr_preorder' as const) : null,
+      preorderOperatorMetadata:
+        isQrPreorder && body.preorderOperatorMetadata && typeof body.preorderOperatorMetadata === 'object'
+          ? body.preorderOperatorMetadata
+          : null,
       amount: Number.isFinite(body.amount) ? Number(body.amount) : null,
       externalRef: body.externalRef ? String(body.externalRef).trim() : null,
       loungeId: body.loungeId ? String(body.loungeId).trim() : 'default-lounge',
@@ -984,6 +999,10 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
       sessionDuration: Number.isFinite(body.sessionDuration) ? Number(body.sessionDuration) : 45 * 60,
       pricingModel: body.pricingModel ? String(body.pricingModel).toLowerCase() : 'flat', // 'flat' | 'time-based'
     };
+
+    if (data.preorderChannel === 'qr_preorder' && (!data.tableId || data.tableId.length === 0)) {
+      data.tableId = 'UNASSIGNED';
+    }
     
     // Validate required fields - check for non-empty strings
     console.log('[Sessions API] Normalized data:', {
@@ -1435,7 +1454,12 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
       sessionType: sessionPricingType,
       assignedBOHId: data.assignedBoh, // null is fine
       assignedFOHId: data.assignedFoh, // null is fine
-      tableNotes: data.notes, // null is fine
+      tableNotes: data.preorderChannel === 'qr_preorder' ? null : data.notes, // Staff notes only; pre-order meta → edgeNote
+      specialRequests: data.specialRequests,
+      edgeNote:
+        data.preorderChannel === 'qr_preorder' && data.preorderOperatorMetadata
+          ? `HOOKAH_PREORDER_JSON:${JSON.stringify(data.preorderOperatorMetadata).slice(0, 6000)}`
+          : null,
       durationSecs: data.sessionDuration,
       source: data.source, // Already validated
       state: codigoOperator ? 'PENDING' : 'PENDING', // CODIGO: PENDING + payment → PAID_CONFIRMED for Kitchen Claim Prep
@@ -1485,7 +1509,12 @@ export const POST = withRequestContext(async (req: NextRequest): Promise<NextRes
         // sessionType: sessionPricingType, // Commented out - column may not exist
         assignedBOHId: data.assignedBoh || null,
         assignedFOHId: data.assignedFoh || null,
-        tableNotes: data.notes || null,
+        tableNotes: data.preorderChannel === 'qr_preorder' ? null : data.notes || null,
+        specialRequests: data.specialRequests || null,
+        edgeNote:
+          data.preorderChannel === 'qr_preorder' && data.preorderOperatorMetadata
+            ? `HOOKAH_PREORDER_JSON:${JSON.stringify(data.preorderOperatorMetadata).slice(0, 6000)}`
+            : null,
         durationSecs: data.sessionDuration || null,
         // tenantId: finalTenantId || null, // Commented out - column doesn't exist in database
         paymentStatus: (isDemoMode || codigoOperator) ? 'succeeded' : null,

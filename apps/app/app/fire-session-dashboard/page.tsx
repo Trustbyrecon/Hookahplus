@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, Suspense } from 'react';
+import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import CreateSessionModal from '../../components/CreateSessionModal';
 import GlobalNavigation from '../../components/GlobalNavigation';
@@ -166,10 +167,40 @@ function FireSessionDashboardContent() {
     () => (loungeIdsParam || '').split(',').map((id) => id.trim()).filter(Boolean),
     [loungeIdsParam]
   );
+  const [operatorLoungesFromApi, setOperatorLoungesFromApi] = useState<
+    Array<{ loungeId: string; name: string; role: string }>
+  >([]);
+
   const candidateLoungeIds = React.useMemo(
-    () => Array.from(new Set([...(demoLounge ? [demoLounge] : []), ...parsedLoungeIds])),
-    [demoLounge, parsedLoungeIds]
+    () =>
+      Array.from(
+        new Set([
+          ...(demoLounge ? [demoLounge] : []),
+          ...parsedLoungeIds,
+          ...operatorLoungesFromApi.map((l) => l.loungeId),
+        ])
+      ),
+    [demoLounge, parsedLoungeIds, operatorLoungesFromApi]
   );
+
+  useEffect(() => {
+    if (isDemoMode || typeof window === 'undefined') return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/me/operator-context', { credentials: 'include' });
+        if (!res.ok) return;
+        const data = await res.json().catch(() => ({}));
+        if (!data?.success || cancelled) return;
+        setOperatorLoungesFromApi(Array.isArray(data.lounges) ? data.lounges : []);
+      } catch {
+        /* not signed in or API error — keep URL-only scope */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isDemoMode]);
   const candidateLoungeIdsKey = React.useMemo(
     () => candidateLoungeIds.join(','),
     [candidateLoungeIds]
@@ -1122,27 +1153,36 @@ function FireSessionDashboardContent() {
           <SoftLaunchBanner loungeId={selectedLoungeId} />
         )}
 
-        {/* Operator location context (multi-location wedge) */}
-        {!isDemoMode && candidateLoungeIds.length > 1 && (
+        {/* Operator location context — URL scope + lounges from your account (after /select-lounge) */}
+        {!isDemoMode && candidateLoungeIds.length > 0 && (
           <div className="mb-6 bg-zinc-900/60 border border-zinc-800 rounded-lg p-4">
             <div className="flex items-center gap-2 text-zinc-300 mb-3">
               <Building2 className="w-4 h-4 text-teal-400" />
-              <span className="text-sm font-medium">Operator Location Context</span>
+              <span className="text-sm font-medium">Operator location</span>
+              {operatorLoungesFromApi.length > 0 && (
+                <span className="text-[10px] text-zinc-500 font-normal">(signed-in)</span>
+              )}
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <label className="text-xs text-zinc-400">Active location:</label>
               <select
                 value={selectedLoungeId || SELECT_ALL_LOCATIONS}
                 onChange={(e) => setSelectedLoungeId(e.target.value === SELECT_ALL_LOCATIONS ? null : e.target.value)}
-                className="px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white"
+                className="px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white min-w-[12rem]"
               >
-                <option value={SELECT_ALL_LOCATIONS}>All locations</option>
+                <option value={SELECT_ALL_LOCATIONS}>All locations (org-wide)</option>
                 {candidateLoungeIds.map((id) => (
                   <option key={id} value={id}>
-                    {id}
+                    {operatorLoungesFromApi.find((l) => l.loungeId === id)?.name || id}
                   </option>
                 ))}
               </select>
+              <Link
+                href={`/select-lounge?next=${encodeURIComponent('/fire-session-dashboard')}`}
+                className="text-xs text-teal-400 hover:text-teal-300"
+              >
+                Change location scope…
+              </Link>
             </div>
             {week1Rollup && (
               <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">

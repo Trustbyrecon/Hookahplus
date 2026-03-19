@@ -6,9 +6,19 @@ import { useSearchParams } from 'next/navigation';
 import { clientClient, isSupabaseConfigured } from '../../lib/supabase-client';
 import { Flame, Mail, Loader2, Lock, ArrowLeft } from 'lucide-react';
 
+/** After identity is proven, send operators through lounge scope (skip for admin-only destinations). */
+function resolvePostAuthDestination(path: string): string {
+  const p = path.startsWith('/') ? path : `/${path}`;
+  if (p.startsWith('/admin') || p.startsWith('/auth/') || p.startsWith('/select-lounge')) {
+    return p;
+  }
+  return `/select-lounge?next=${encodeURIComponent(p)}`;
+}
+
 function LoginContent() {
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/fire-session-dashboard';
+  const postAuthDestination = resolvePostAuthDestination(redirect);
   const errorParam = searchParams.get('error');
 
   const [email, setEmail] = useState('');
@@ -38,7 +48,7 @@ function LoginContent() {
     setError(null);
     try {
       const supabase = clientClient();
-      const callbackUrl = `${getAuthCallbackOrigin()}/auth/callback?redirect=${encodeURIComponent(redirect)}`;
+      const callbackUrl = `${getAuthCallbackOrigin()}/auth/callback?redirect=${encodeURIComponent(postAuthDestination)}`;
       const { error: signInError } = await supabase.auth.signInWithOtp({
         email,
         options: { emailRedirectTo: callbackUrl },
@@ -64,7 +74,7 @@ function LoginContent() {
       const supabase = clientClient();
       const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
       if (signInError) throw signInError;
-      window.location.href = redirect.startsWith('/') ? redirect : `/${redirect}`;
+      window.location.href = postAuthDestination;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Invalid email or password';
       const isCredentialError = msg.toLowerCase().includes('invalid') || msg.toLowerCase().includes('credential');

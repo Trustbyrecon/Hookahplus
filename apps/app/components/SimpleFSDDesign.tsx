@@ -115,6 +115,13 @@ const ACTION_COLORS: Record<SessionAction, string> = {
   'VOID_SESSION': "bg-red-500 hover:bg-red-600"
 };
 
+/** QR pre-order flow: RESERVE + hp-preorder external ref (Stripe/checkout may still be pending). */
+function isQrPreorderSession(session: any): boolean {
+  const src = String(session?.source || '').toUpperCase();
+  const ref = String(session?.externalRef || session?.external_ref || '');
+  return src === 'RESERVE' && ref.startsWith('hp-preorder-');
+}
+
 const STATE_ICONS: Record<SessionStatus, React.ReactNode> = {
   'NEW': <DollarSign className="w-4 h-4" />,
   'PAID_CONFIRMED': <CheckCircle className="w-4 h-4" />,
@@ -193,7 +200,14 @@ export default function SimpleFSDDesign({
   } | null>(null);
   const [showCloseModal, setShowCloseModal] = useState(false);
   const [closeSessionId, setCloseSessionId] = useState<string>('');
-  
+  const [fsdToast, setFsdToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!fsdToast) return;
+    const id = window.setTimeout(() => setFsdToast(null), 6500);
+    return () => window.clearTimeout(id);
+  }, [fsdToast]);
+
   // Fix hydration mismatch - only render counts after mount
   useEffect(() => {
     setIsMounted(true);
@@ -654,14 +668,17 @@ export default function SimpleFSDDesign({
     // This ensures we show the correct state even if the session object has stale data
     // For demo sessions, check status first if state is not available
     const state = session.state || (session.status === 'PAID_CONFIRMED' ? 'PENDING' : session.status === 'PREP_IN_PROGRESS' ? 'ACTIVE' : 'NEW');
-    const hasPayment = session.paymentStatus === 'succeeded' || 
-                      (session.externalRef && (
-                        session.externalRef.startsWith('cs_') || 
-                        session.externalRef.startsWith('test_cs_') ||
-                        session.externalRef.startsWith('guest-') // Guest sessions from guest build are treated as paid
-                      )) ||
-                      session.status === 'PAID_CONFIRMED' || // Demo mode: status indicates payment
-                      (session.amount && session.amount > 0); // Has amount = paid
+    const preorderQr = isQrPreorderSession(session);
+    const amountImpliesPaid =
+      !preorderQr && !!(session.amount && session.amount > 0);
+    const hasPayment =
+      session.paymentStatus === 'succeeded' ||
+      (session.externalRef &&
+        (session.externalRef.startsWith('cs_') ||
+          session.externalRef.startsWith('test_cs_') ||
+          session.externalRef.startsWith('guest-'))) ||
+      session.status === 'PAID_CONFIRMED' ||
+      amountImpliesPaid;
     const assignedBOHId = session.assignedBOHId || session.assigned_boh_id || session.assignedStaff?.boh;
     const explicitStatus = session.status as SessionStatus | undefined;
     
@@ -862,8 +879,16 @@ export default function SimpleFSDDesign({
               {stateIcon}
             </div>
             <div>
-              <h3 className="font-medium text-white">
-                {session.table_id || session.tableId || 'Table Unknown'}
+              <h3
+                className={`font-medium ${
+                  String(session.table_id || session.tableId || '').toUpperCase() === 'UNASSIGNED'
+                    ? 'text-amber-300'
+                    : 'text-white'
+                }`}
+              >
+                {String(session.table_id || session.tableId || '').toUpperCase() === 'UNASSIGNED'
+                  ? 'Table: assign when guest sits'
+                  : session.table_id || session.tableId || 'Table Unknown'}
               </h3>
               <p className="text-sm text-zinc-400">
                 {session.customer_name || session.customerName || 'Guest Customer'}
@@ -914,8 +939,16 @@ export default function SimpleFSDDesign({
                 <span className="text-xs font-semibold text-green-300">PAID</span>
               </div>
             )}
-            {/* Payment Pending Indicator */}
-            {sessionStatus === 'NEW' && !session.externalRef && (
+            {isQrPreorderSession(session) && (
+              <div
+                className="flex items-center gap-1 px-2 py-1 bg-teal-900/40 border border-teal-500/50 rounded"
+                title="Created from QR pre-order flow"
+              >
+                <span className="text-xs font-semibold text-teal-200">PRE-ORDER</span>
+              </div>
+            )}
+            {/* Payment Pending Indicator — includes pre-orders (they carry hp-preorder externalRef) */}
+            {sessionStatus === 'NEW' && (
               <div className="flex items-center gap-1 px-2 py-1 bg-yellow-900/40 border border-yellow-500/50 rounded">
                 <CreditCard className="w-3 h-3 text-yellow-400" />
                 <span className="text-xs font-semibold text-yellow-300">AWAITING PAYMENT</span>
@@ -1002,7 +1035,17 @@ export default function SimpleFSDDesign({
           <div className="p-2 bg-zinc-900/50 rounded text-xs">
             <div className="flex items-center justify-between">
               <span className="text-zinc-400">Table:</span>
-              <span className="text-white font-medium">{session.table_id || session.tableId}</span>
+              <span
+                className={`font-medium ${
+                  String(session.table_id || session.tableId || '').toUpperCase() === 'UNASSIGNED'
+                    ? 'text-amber-300'
+                    : 'text-white'
+                }`}
+              >
+                {String(session.table_id || session.tableId || '').toUpperCase() === 'UNASSIGNED'
+                  ? 'Staff to assign'
+                  : session.table_id || session.tableId}
+              </span>
             </div>
           </div>
           
@@ -1023,7 +1066,21 @@ export default function SimpleFSDDesign({
             <Info className="w-3 h-3" />
             <span className="font-medium">Current State:</span>
           </div>
-          <p>{STATE_DESCRIPTIONS[sessionStatus]}</p>
+          {isQrPreorderSession(session) && sessionStatus === 'NEW' ? (
+            <div className="space-y-2">
+              <p className="text-teal-200 font-medium">
+                New pre-order (QR): session created — awaiting payment confirmation.
+              </p>
+              <p className="text-zinc-400">
+                Use <strong className="text-zinc-300">Take Payment</strong> for Stripe, or confirm payment in{' '}
+                <strong className="text-zinc-300">Toast</strong> and use{' '}
+                <strong className="text-zinc-300">Copy Toast recon line</strong> for your nightly reconciliation.
+                Add details to <strong className="text-zinc-300">Staff session notes</strong> below when needed.
+              </p>
+            </div>
+          ) : (
+            <p>{STATE_DESCRIPTIONS[sessionStatus]}</p>
+          )}
         </div>
 
         {/* Timer Display - Real-time updates */}
@@ -1077,14 +1134,53 @@ export default function SimpleFSDDesign({
           </div>
         )}
 
-        {/* Session Notes */}
-        {session.notes && (
+        {/* Guest requests (pre-order) — not staff notes */}
+        {(session.specialRequests || session.special_requests) && (
+          <div className="mb-3 p-2 bg-violet-900/20 border border-violet-600/30 rounded text-xs">
+            <div className="flex items-center space-x-1 mb-1">
+              <span className="text-violet-400">💬</span>
+              <span className="font-medium text-violet-200">Guest requests:</span>
+            </div>
+            <p className="text-violet-100/90 whitespace-pre-wrap">
+              {session.specialRequests || session.special_requests}
+            </p>
+          </div>
+        )}
+
+        {/* Staff session notes (workflow + operator) */}
+        {session.notes && String(session.notes).trim().length > 0 && (
           <div className="mb-3 p-2 bg-blue-900/20 border border-blue-600/30 rounded text-xs">
             <div className="flex items-center space-x-1 mb-1">
               <span className="text-blue-400">📝</span>
-              <span className="font-medium text-blue-300">Session Notes:</span>
+              <span className="font-medium text-blue-300">Staff session notes:</span>
             </div>
-            <p className="text-blue-200">{session.notes}</p>
+            <p className="text-blue-200 whitespace-pre-wrap">{session.notes}</p>
+          </div>
+        )}
+
+        {isQrPreorderSession(session) && sessionStatus === 'NEW' && (
+          <div className="mb-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={async (e) => {
+                e.stopPropagation();
+                const tid = session.tableId || session.table_id || '—';
+                const name = session.customerName || session.customer_name || 'Guest';
+                const amt = session.amount ? (session.amount / 100).toFixed(2) : '0.00';
+                const line = `Hookah+ Pre-order | Guest: ${name} | Table: ${tid} | $${amt} | Session: ${sessionId} | Toast check #: ______ | Confirmed by: ______`;
+                try {
+                  await navigator.clipboard.writeText(line);
+                  setFsdToast(
+                    'Copied Toast reconciliation line — paste into Toast / recon sheet. Staff can add Session notes when payment is confirmed.'
+                  );
+                } catch {
+                  setFsdToast('Could not copy to clipboard — copy Session ID from the card manually.');
+                }
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-700 hover:bg-zinc-600 text-xs font-medium text-white border border-zinc-600"
+            >
+              Copy Toast recon line
+            </button>
           </div>
         )}
 
@@ -1420,6 +1516,22 @@ export default function SimpleFSDDesign({
 
   return (
     <div className={className}>
+      {fsdToast && (
+        <div
+          className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-teal-500/40 bg-teal-950/95 px-4 py-3 text-sm text-teal-100 shadow-lg"
+          role="status"
+        >
+          <span>{fsdToast}</span>
+          <button
+            type="button"
+            onClick={() => setFsdToast(null)}
+            className="shrink-0 rounded px-2 py-0.5 text-teal-300 hover:bg-teal-900/50 hover:text-white"
+            aria-label="Dismiss"
+          >
+            ×
+          </button>
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
@@ -1647,6 +1759,9 @@ export default function SimpleFSDDesign({
                               const data = await response.json();
                               
                               if (data.success) {
+                                setFsdToast(
+                                  'Payment recorded (demo). For Toast lounges, still paste recon details from POS when you run end-of-night reconciliation.'
+                                );
                                 alert(`✅ Payment confirmed (Demo Mode)!\n\nSession "${unpaidSession.customerName || unpaidSession.tableId}" is now ready for BOH prep → FOH delivery → Light!`);
                                 
                                 // Refresh sessions to show updated state
@@ -1679,6 +1794,7 @@ export default function SimpleFSDDesign({
                                 if (checkoutResponse.ok) {
                                   const checkoutData = await checkoutResponse.json();
                                   if (checkoutData.session?.payment_status === 'paid') {
+                                    setFsdToast('Payment already confirmed for this session. Refresh if the card still shows awaiting payment.');
                                     alert(`✅ Payment already confirmed for ${unpaidSession.tableId || unpaidSession.table_id}.\n\nSession is ready for BOH prep → FOH delivery → Light!`);
                                     // Refresh to show updated status
                                     if (refreshSessions) await refreshSessions();
@@ -1714,9 +1830,13 @@ export default function SimpleFSDDesign({
                             });
                             
                             const data = await response.json();
-                            if (data.success && data.sessionUrl) {
+                            const payUrl = data.url || data.sessionUrl;
+                            if (data.success && payUrl) {
                               // Open Stripe checkout in new window
-                              window.open(data.sessionUrl, '_blank');
+                              window.open(payUrl, '_blank');
+                              setFsdToast(
+                                `Checkout opened for ${unpaidSession.tableId || unpaidSession.table_id || 'table'}. After payment (or Toast confirmation), refresh — use Copy Toast recon line on pre-orders for reconciliation.`
+                              );
                               alert(`✅ Payment checkout opened for ${unpaidSession.tableId || unpaidSession.table_id}.\n\nAfter payment confirmation, session will be ready for BOH prep → FOH delivery → Light!`);
                             } else if (data.error && data.error.includes('Stripe not configured')) {
                               alert(

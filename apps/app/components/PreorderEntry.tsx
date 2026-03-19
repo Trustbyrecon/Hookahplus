@@ -27,7 +27,6 @@ import Card from './Card';
 import Button from './Button';
 import PreorderStepIndicator from './preorder/PreorderStepIndicator';
 import type { PreorderStage, PreorderOperatorMetadata } from '../lib/preorder/types';
-import { buildPreorderTableNotes } from '../lib/preorder/types';
 import { flavorIdsToDisplayLabels } from '../lib/preorder/flavor-display';
 
 export interface PreorderEntryProps {
@@ -79,6 +78,9 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
   const [partySize, setPartySize] = useState(2);
   const [specialRequests, setSpecialRequests] = useState('');
   const [clarkMemoryOptIn, setClarkMemoryOptIn] = useState(false);
+  /** Where the guest is sitting — QR default, staff assigns later, or guest types a table */
+  const [guestTableMode, setGuestTableMode] = useState<'qr' | 'open' | 'custom'>('qr');
+  const [customTableId, setCustomTableId] = useState('');
 
   const [loungeConfig, setLoungeConfig] = useState<{
     menuPresets?: Array<{ id: string; name: string; flavors: string[] }>;
@@ -96,6 +98,22 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const effectivePreorderTableId = useMemo(() => {
+    if (guestTableMode === 'open') return 'UNASSIGNED';
+    if (guestTableMode === 'custom') {
+      const t = customTableId.trim();
+      return t || 'UNASSIGNED';
+    }
+    return tableId;
+  }, [guestTableMode, customTableId, tableId]);
+
+  const tableTitleForReview =
+    effectivePreorderTableId === 'UNASSIGNED'
+      ? 'Staff will assign table'
+      : tableLabel && guestTableMode === 'qr'
+        ? tableLabel
+        : `Table ${effectivePreorderTableId}`;
 
   const tableTitle = tableLabel || `Table ${tableId}`;
   const skipOptions = isCodigo;
@@ -247,7 +265,13 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
   const buildOperatorMeta = (): PreorderOperatorMetadata => ({
     channel: 'qr_preorder',
     loungeId,
-    tableId,
+    tableId: effectivePreorderTableId,
+    tableAssignment:
+      guestTableMode === 'qr'
+        ? 'qr_link'
+        : guestTableMode === 'open'
+          ? 'staff_will_assign'
+          : 'guest_specified',
     draftStartedAt: draftStartedAtRef.current,
     pricingModel,
     sessionDurationMinutes: sessionDuration,
@@ -267,13 +291,13 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
     try {
       const flavorMixForDb = displayFlavorLabels;
       const flavorLine = flavorMixForDb.join(' + ');
-      const notes = buildPreorderTableNotes(specialRequests, buildOperatorMeta());
+      const extTable = effectivePreorderTableId.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 64);
 
       const sessionResponse = await fetch('/api/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          tableId,
+          tableId: effectivePreorderTableId,
           customerName: guestName.trim(),
           customerPhone: guestPhone.trim() || undefined,
           flavor: flavorLine,
@@ -283,8 +307,10 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
             pricingModel === 'time-based' ? sessionDuration * 60 : 60 * 60,
           loungeId,
           source: 'RESERVE',
-          externalRef: `hp-preorder-${loungeId}-${tableId}-${Date.now()}`,
-          notes,
+          externalRef: `hp-preorder-${loungeId}-${extTable}-${Date.now()}`,
+          preorderChannel: 'qr_preorder',
+          preorderOperatorMetadata: buildOperatorMeta(),
+          specialRequests: specialRequests.trim() || undefined,
           pricingModel,
         }),
       });
@@ -307,7 +333,7 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
           sessionId,
           flavors: selectedFlavorIds,
           addOns: selectedAddOns,
-          tableId,
+          tableId: effectivePreorderTableId,
           loungeId,
           amount: finalTotalCents,
           total: finalTotalDollars,
@@ -660,10 +686,64 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
                     ))}
                   </select>
                 </div>
+
+                <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-4 space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                    Your table (pre-orders only)
+                  </p>
+                  <p className="text-xs text-zinc-500">
+                    QR links may use a default table. If you&apos;re not there yet, choose &quot;Staff assigns&quot; or enter where you&apos;ll sit.
+                  </p>
+                  <label className="flex items-center gap-3 cursor-pointer text-sm text-zinc-200">
+                    <input
+                      type="radio"
+                      name="hp-table-mode"
+                      checked={guestTableMode === 'qr'}
+                      onChange={() => setGuestTableMode('qr')}
+                      className="text-teal-500 focus:ring-teal-500"
+                    />
+                    <span>
+                      I&apos;m at the table from this QR ({tableTitle})
+                    </span>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer text-sm text-zinc-200">
+                    <input
+                      type="radio"
+                      name="hp-table-mode"
+                      checked={guestTableMode === 'open'}
+                      onChange={() => setGuestTableMode('open')}
+                      className="text-teal-500 focus:ring-teal-500"
+                    />
+                    <span>Staff / Shisha Master will assign my table</span>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer text-sm text-zinc-200">
+                    <input
+                      type="radio"
+                      name="hp-table-mode"
+                      checked={guestTableMode === 'custom'}
+                      onChange={() => setGuestTableMode('custom')}
+                      className="text-teal-500 focus:ring-teal-500"
+                    />
+                    <span>I know my table — I&apos;ll enter it</span>
+                  </label>
+                  {guestTableMode === 'custom' && (
+                    <input
+                      type="text"
+                      value={customTableId}
+                      onChange={(e) => setCustomTableId(e.target.value)}
+                      placeholder="e.g. T-012 or Patio 3"
+                      className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white placeholder:text-zinc-600 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                    />
+                  )}
+                </div>
+
                 <div>
                   <label htmlFor="hp-notes" className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">
-                    Notes for the house (optional)
+                    Guest requests (optional)
                   </label>
+                  <p className="text-xs text-zinc-600 mb-2">
+                    Shown to your team as guest requests — not mixed with staff session notes.
+                  </p>
                   <textarea
                     id="hp-notes"
                     value={specialRequests}
@@ -720,7 +800,7 @@ const PreorderEntry: React.FC<PreorderEntryProps> = ({
               <div className="rounded-xl border border-zinc-800 divide-y divide-zinc-800 overflow-hidden">
                 <div className="p-4 flex justify-between gap-4">
                   <span className="text-zinc-500 text-sm">Table</span>
-                  <span className="text-white font-medium text-right">{tableTitle}</span>
+                  <span className="text-white font-medium text-right">{tableTitleForReview}</span>
                 </div>
                 <div className="p-4 flex justify-between gap-4">
                   <span className="text-zinc-500 text-sm">Guest</span>

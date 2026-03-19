@@ -62,6 +62,8 @@ export interface FireSession {
   coalStatus: 'active' | 'needs_refill' | 'burnt_out';
   refillStatus: 'none' | 'requested' | 'delivered';
   notes: string;
+  /** Guest-entered requests from QR pre-order (not staff notes). */
+  specialRequests?: string | null;
   edgeCase: string | null;
   sessionTimer?: SessionTimer;
   bohState?: 'PREPARING' | 'WARMING_UP' | 'READY_FOR_PICKUP' | 'PICKED_UP';

@@ -53,7 +53,7 @@ export async function initializeReflexChain(session: FireSession): Promise<void>
       priority: 1,
       estimatedPrepTime: 15, // minutes
       flavors: session.flavor ? [session.flavor] : [],
-      specialRequests: session.notes || undefined,
+      specialRequests: session.specialRequests || session.notes || undefined,
     },
     supplyTimer: {
       coalLastChanged: Date.now(),
