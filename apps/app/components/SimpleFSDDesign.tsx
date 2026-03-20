@@ -74,6 +74,8 @@ interface SimpleFSDDesignProps {
   loungeId?: string;
   /** Foundation: POS-mirrored floor UI. When true, Floor tab leads, compact layout. */
   useFloorPlan?: boolean;
+  /** URL-driven initial tab: `floor` → Floor (foh), `hookah`/`kitchen` → Hookah Room (boh), `issues` → edge, `orders`/`all` → overview */
+  requestedTab?: string | null;
 }
 
 // Enhanced State Machine - Complete Hookah Lounge Operations
@@ -153,6 +155,7 @@ export default function SimpleFSDDesign({
   scopeLabel,
   loungeId,
   useFloorPlan = false,
+  requestedTab = null,
 }: SimpleFSDDesignProps) {
   // Initialize feature flags with defaults to avoid hydration mismatch
   const [featureFlags, setFeatureFlags] = useState({
@@ -182,6 +185,27 @@ export default function SimpleFSDDesign({
   
   // useFloorPlan: layout mode from config - Floor tab leads for POS-mirrored (Toast) lounges
   const [activeTab, setActiveTab] = useState(useFloorPlan ? 'foh' : 'overview');
+  const appliedRequestedTabRef = React.useRef(false);
+
+  const mapRequestedTabToId = React.useCallback((raw: string | null | undefined): string | null => {
+    if (!raw || !String(raw).trim()) return null;
+    const x = String(raw).toLowerCase().trim();
+    if (x === 'floor' || x === 'foh') return 'foh';
+    if (x === 'hookah' || x === 'kitchen' || x === 'boh' || x === 'prep') return 'boh';
+    if (x === 'issues' || x === 'edge') return 'edge';
+    if (x === 'overview' || x === 'orders' || x === 'all') return 'overview';
+    return null;
+  }, []);
+
+  // Deep links: ?tab=floor opens Floor tab even when default would be All Orders
+  useEffect(() => {
+    if (appliedRequestedTabRef.current) return;
+    const id = mapRequestedTabToId(requestedTab);
+    if (id) {
+      setActiveTab(id);
+      appliedRequestedTabRef.current = true;
+    }
+  }, [requestedTab, mapRequestedTabToId]);
   const [hoveredAction, setHoveredAction] = useState<string | null>(null);
   const [selectedSession, setSelectedSession] = useState<FireSession | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);

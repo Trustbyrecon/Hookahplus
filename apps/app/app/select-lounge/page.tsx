@@ -10,6 +10,24 @@ const SELECT_ALL = '__all_locations__';
 
 type LoungeRow = { loungeId: string; name: string; role: string };
 
+/** Pilot venue — always offer in the picker even if not yet on operator-context API. */
+const CODIGO_PILOT_LOUNGE: LoungeRow = {
+  loungeId: 'CODIGO',
+  name: 'District Hookah',
+  role: 'CODIGO',
+};
+
+function withCodigoPilotOption(lounges: LoungeRow[]): LoungeRow[] {
+  const hasCodigo = lounges.some((l) => l.loungeId === 'CODIGO');
+  const merged = hasCodigo ? [...lounges] : [...lounges, CODIGO_PILOT_LOUNGE];
+  return merged.length > 0 ? merged : [CODIGO_PILOT_LOUNGE];
+}
+
+function optionLabel(l: LoungeRow): string {
+  if (l.loungeId === 'CODIGO') return 'District Hookah: CODIGO';
+  return `${l.name} (${l.role})`;
+}
+
 function SelectLoungeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -49,10 +67,11 @@ function SelectLoungeContent() {
           setAllowOrgWide(true);
           return;
         }
-        setLounges(data.lounges || []);
+        const rawList: LoungeRow[] = data.lounges || [];
+        setLounges(rawList);
         const aw = Boolean(data.allowOrgWide);
         setAllowOrgWide(aw);
-        const list: LoungeRow[] = data.lounges || [];
+        const list = withCodigoPilotOption(rawList);
         if (list.length === 0) {
           setChoice(SELECT_ALL);
         } else if (list.length === 1) {
@@ -77,6 +96,8 @@ function SelectLoungeContent() {
     };
   }, [router, nextPath]);
 
+  const loungesForSelect = withCodigoPilotOption(lounges);
+
   const applyAndGo = () => {
     setSubmitting(true);
     try {
@@ -86,6 +107,11 @@ function SelectLoungeContent() {
         } else {
           localStorage.setItem('active_lounge', choice);
         }
+      }
+      // District Hookah pilot → Fire Session Dashboard, Floor tab (not /codigo guest hub)
+      if (choice === 'CODIGO') {
+        router.replace('/fire-session-dashboard?lounge=CODIGO&loungeIds=CODIGO&tab=floor');
+        return;
       }
       router.replace(nextPath);
     } finally {
@@ -135,15 +161,21 @@ function SelectLoungeContent() {
                 </div>
               )}
 
-              {lounges.length === 0 ? (
+              {loungesForSelect.length === 0 ? (
                 <div className="space-y-4">
                   <p className="text-sm text-zinc-400">
-                    No operator locations are linked to this account yet. You can still open the app — use{' '}
-                    <span className="text-zinc-300">All locations</span> or complete LaunchPad to provision a lounge.
+                    No locations available. Try again or contact support.
                   </p>
                 </div>
               ) : (
                 <div className="space-y-4">
+                  {lounges.length === 0 && (
+                    <p className="text-sm text-zinc-400">
+                      No operator locations are linked to this account yet. You can still open the{' '}
+                      <span className="text-zinc-300">District Hookah (CODIGO)</span> pilot below, or complete
+                      LaunchPad to provision a lounge.
+                    </p>
+                  )}
                   <div className="flex items-center gap-2 text-zinc-300 text-sm">
                     <Building2 className="w-4 h-4 text-teal-400" />
                     <span>Active location</span>
@@ -156,13 +188,13 @@ function SelectLoungeContent() {
                     {allowOrgWide && (
                       <option value={SELECT_ALL}>All locations (org-wide)</option>
                     )}
-                    {lounges.map((l) => (
+                    {loungesForSelect.map((l) => (
                       <option key={l.loungeId} value={l.loungeId}>
-                        {l.name} ({l.role})
+                        {optionLabel(l)}
                       </option>
                     ))}
                   </select>
-                  {!allowOrgWide && lounges.length > 1 && (
+                  {!allowOrgWide && loungesForSelect.length > 1 && (
                     <p className="text-xs text-zinc-500">Org-wide view unlocks when you have multiple locations or an owner/admin role.</p>
                   )}
                 </div>

@@ -159,6 +159,7 @@ function FireSessionDashboardContent() {
   const loungeIdsParam = searchParams.get('loungeIds');
   const organizationIdParam = searchParams.get('organizationId');
   const showWelcome = searchParams.get('welcome') === 'true';
+  const fsdTabFromUrl = searchParams.get('tab') || searchParams.get('fsdTab');
   const demoSource = searchParams.get('source') as 'onboarding' | 'marketing' | null;
   const isDemoSlug = isDemoMode && demoLounge !== null; // True when accessed via /demo/[slug]
   const demoFlavorsParam = searchParams.get('flavors');
@@ -1567,6 +1568,7 @@ function FireSessionDashboardContent() {
           scopeLabel={selectedLoungeId || 'All locations (org-wide)'}
           loungeId={selectedLoungeId || undefined}
           useFloorPlan={useFloorPlan}
+          requestedTab={fsdTabFromUrl}
         />
 
         {/* Related Features - Hidden in demo mode */}

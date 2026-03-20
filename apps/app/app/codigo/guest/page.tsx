@@ -70,8 +70,11 @@ function GuestHubInner() {
             </Button>
             <p className="text-xs text-zinc-500 text-center pt-1">
               Operators:{' '}
-              <Link href="/codigo/operator" className="text-teal-400 hover:underline">
-                CODIGO floor view
+              <Link
+                href="/fire-session-dashboard?lounge=CODIGO&loungeIds=CODIGO&tab=floor"
+                className="text-teal-400 hover:underline"
+              >
+                Open Floor (Fire Session)
               </Link>
             </p>
           </CardFooter>
