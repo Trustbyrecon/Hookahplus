@@ -13,7 +13,7 @@ Professional-grade SaaS auth and time-boxed CODIGO access (14-day auto-expiry) h
 
 ### 2. CODIGO Access Control
 - **`CodigoAccess`** model in Prisma — stores `userId`, `grantedAt`, `expiresAt`, `status`
-- **`lib/codigo-access.ts`** — `hasCodigoAccess(user)`, `grantCodigoAccess`, `extendCodigoAccess`, `revokeCodigoAccess`
+- **`lib/codigo-access.ts`** — `hasCodigoAccess(user)`, `grantCodigoAccess`, `extendCodigoAccess`, `revokeCodigoAccess`, `expireCodigoAccessNow` (sets `expiresAt` in the past; status stays `active`)
 - **14-day expiry** — centralized in `CODIGO_ACCESS_DURATION_DAYS`
 - **Admin override** — owner/admin roles bypass expiry
 
@@ -126,6 +126,67 @@ npx tsx scripts/grant-codigo-access.ts your@email.com
 Or with env: `EMAIL=your@email.com npx tsx scripts/grant-codigo-access.ts`
 
 The script looks up the user in Supabase Auth (they must have signed in at least once) and grants 14-day CODIGO access.
+
+### Option D: Expire pilot immediately (Option A — `expiresAt` in the past)
+
+Ends CODIGO entitlement right away by setting `expiresAt` to ~1 minute ago. **`status` stays `active`**; checks use `now < expiresAt`.
+
+```bash
+cd apps/app
+npm run codigo:expire -- moe@districthookah.com
+# or
+EMAIL=moe@districthookah.com npx tsx scripts/expire-codigo-access.ts
+```
+
+**SQL equivalent:**
+
+```sql
+UPDATE codigo_access
+SET expires_at = NOW() - INTERVAL '1 minute', updated_at = NOW()
+WHERE user_id = (SELECT id FROM auth.users WHERE email = 'moe@districthookah.com' LIMIT 1);
+```
+
+### Downgrade tenant role to `viewer` (remove owner/admin bypass)
+
+`owner` / `admin` bypass CODIGO expiry in `hasCodigoAccess`. To use only `codigo_access` gating, downgrade to **`viewer`** (lowest role).
+
+```bash
+cd apps/app
+# Default: only owner/admin → viewer (staff unchanged)
+npm run membership:downgrade-viewer -- moe@districthookah.com
+
+# Every non-viewer membership → viewer (includes staff)
+npm run membership:downgrade-viewer -- --all moe@districthookah.com
+
+# Preview only
+DRY_RUN=1 npm run membership:downgrade-viewer -- moe@districthookah.com
+```
+
+**SQL equivalent** (Hookah+ DB `memberships` table; UUID from Supabase Auth):
+
+```sql
+UPDATE memberships
+SET role = 'viewer'
+WHERE user_id = 'YOUR-SUPABASE-USER-UUID'::uuid
+  AND role IN ('owner', 'admin');
+```
+
+### Revoke all Hookah+ access (Supabase Auth)
+
+Blocks **app.hookahplus.net** (and any flow using the same Supabase project) by **banning** the Auth user. Reversible in **Supabase Dashboard → Authentication → Users** (remove ban).
+
+```bash
+cd apps/app
+npm run access:revoke -- moe@districthookah.com
+```
+
+**Permanent removal** (deletes Auth user + `memberships` + `codigo_access` for that UUID):
+
+```bash
+CONFIRM_DELETE=yes npm run access:revoke -- --delete moe@districthookah.com
+```
+
+Requires `NEXT_PUBLIC_SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`. `--delete` also requires `DATABASE_URL`.
 
 ## Magic Link + CODIGO Access
 

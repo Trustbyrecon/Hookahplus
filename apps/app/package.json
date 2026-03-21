@@ -44,6 +44,9 @@
     "codigo:verify": "tsx scripts/verify-codigo-pilot.ts",
     "admin:create": "tsx scripts/create-admin-user.ts",
     "codigo:grant": "prisma generate && tsx scripts/grant-codigo-access.ts",
+    "codigo:expire": "prisma generate && tsx scripts/expire-codigo-access.ts",
+    "membership:downgrade-viewer": "prisma generate && tsx scripts/downgrade-membership-role.ts",
+    "access:revoke": "prisma generate && tsx scripts/revoke-hookahplus-access.ts",
     "pos:square:pull:tickets": "tsx scripts/pull-square-tickets.ts"
   },
   "dependencies": {

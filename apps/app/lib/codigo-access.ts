@@ -124,3 +124,17 @@ export async function revokeCodigoAccess(userId: string): Promise<void> {
     data: { status: 'revoked', updatedAt: new Date() },
   });
 }
+
+/**
+ * End entitlement immediately (Option A): set `expiresAt` in the past.
+ * Keeps `status` = `active`; `hasCodigoAccess` returns false because `now >= expiresAt`.
+ */
+export async function expireCodigoAccessNow(userId: string): Promise<{ expiresAt: Date }> {
+  const past = new Date();
+  past.setMinutes(past.getMinutes() - 1);
+  const row = await prisma.codigoAccess.update({
+    where: { userId },
+    data: { expiresAt: past },
+  });
+  return { expiresAt: row.expiresAt };
+}
