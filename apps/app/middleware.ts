@@ -165,6 +165,7 @@ export async function middleware(request: NextRequest) {
     // Dev/First Light convenience: allow disconnect without auth to re-authorize scopes locally.
     // Protected in production by omission (see below).
     ...(process.env.NODE_ENV !== 'production' || firstLightMode ? ['/api/square/disconnect'] : []),
+    '/privacy', // Public privacy policy (GPT Actions / store, legal)
     '/login',
     '/signup',
     '/admin/login', // Admin login page is public
