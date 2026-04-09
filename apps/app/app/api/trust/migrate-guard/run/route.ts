@@ -1,3 +1,8 @@
+/**
+ * Automation / curl path for MigrateGuard. Requires optional x-migrate-guard-secret when
+ * MIGRATE_GUARD_SECRET is set. The `/trust/migrate-guard` UI uses a server action instead
+ * (same executeGuardedMigration core, no browser secret).
+ */
 import { NextRequest, NextResponse } from 'next/server';
 import { hasRole } from '../../../../../lib/auth';
 import { executeGuardedMigration } from '../../../../../lib/trust/migrate-guard-service';
