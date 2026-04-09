@@ -37,7 +37,10 @@ function addCorsHeaders(response: NextResponse, request: NextRequest): void {
       : CORS_ALLOWED_ORIGINS[0];
   response.headers.set('Access-Control-Allow-Origin', allowOrigin);
   response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS, DELETE');
-  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  response.headers.set(
+    'Access-Control-Allow-Headers',
+    'Content-Type, Authorization, X-Requested-With, X-Operator-Actions-Key'
+  );
   response.headers.set('Access-Control-Allow-Credentials', 'true');
 }
 
@@ -120,6 +123,7 @@ export async function middleware(request: NextRequest) {
     '/api/health/live',
     '/api/health/ready',
     '/api/sessions', // QR code access (POST only)
+    '/api/operator/actions', // Custom GPT Actions — OPERATOR_ACTIONS_API_KEY (Bearer or X-Operator-Actions-Key)
     '/api/session/resolve', // Guest flow: guest app calls this when guest scans table QR (server-to-server, no auth)
     '/api/preorders', // Pre-order flow must be public (QR + E2E)
     '/api/reflex/track', // Reflex tracking is intentionally public (client + server events)
