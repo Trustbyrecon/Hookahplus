@@ -22,7 +22,10 @@ const nextConfig = {
           { key: 'Access-Control-Allow-Credentials', value: 'true' },
           { key: 'Access-Control-Allow-Origin', value: allowOrigin },
           { key: 'Access-Control-Allow-Methods', value: 'GET, POST, PATCH, OPTIONS, DELETE' },
-          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization, X-Requested-With' },
+          {
+            key: 'Access-Control-Allow-Headers',
+            value: 'Content-Type, Authorization, X-Requested-With, X-Operator-Actions-Key, X-Request-ID',
+          },
         ],
       },
     ];

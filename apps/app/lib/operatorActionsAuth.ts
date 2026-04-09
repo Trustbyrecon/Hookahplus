@@ -21,8 +21,15 @@ export function verifyOperatorActionsApiKey(req: NextRequest): OperatorActionsAu
   const authHeader = req.headers.get('authorization')?.trim() ?? '';
   const bearer = /^Bearer\s+(.+)$/i.exec(authHeader);
   const bearerToken = bearer?.[1]?.trim();
-  const headerToken = req.headers.get('x-operator-actions-key')?.trim();
-  const token = bearerToken || headerToken;
+  // Rare: raw token in Authorization without "Bearer " prefix (some proxies / GPT Action variants)
+  const rawAuthToken =
+    authHeader && !/^Bearer\s+/i.test(authHeader) && !/^Basic\s+/i.test(authHeader)
+      ? authHeader
+      : undefined;
+  const headerToken =
+    req.headers.get('x-operator-actions-key')?.trim() ||
+    req.headers.get('x-api-key')?.trim();
+  const token = bearerToken || rawAuthToken || headerToken;
 
   if (!token || token !== secret) {
     return { ok: false, error: 'Unauthorized', status: 401 };

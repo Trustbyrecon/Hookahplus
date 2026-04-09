@@ -87,6 +87,12 @@ export async function middleware(request: NextRequest) {
   // Add request ID to response headers for client correlation
   response.headers.set('X-Request-ID', requestId);
 
+  // Custom GPT Actions: validated with OPERATOR_ACTIONS_API_KEY inside route handlers (Bearer / X-Operator-Actions-Key).
+  // Must bypass Supabase session checks — otherwise ChatGPT gets { message: "Authentication required" } from middleware.
+  if (pathname.startsWith('/api/operator/actions')) {
+    return response;
+  }
+
   // Check if First Light mode is enabled (bypasses auth for core routes)
   const firstLightMode = process.env.FIRST_LIGHT_MODE === 'true';
 
