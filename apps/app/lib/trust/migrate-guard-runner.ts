@@ -6,15 +6,41 @@
 import { execFile } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { promisify } from 'node:util';
 
 const execFileAsync = promisify(execFile);
 
+/** Where package.json + prisma/schema.prisma live (Vercel cwd may be repo root or apps/app). */
+function resolveAppRoot(explicit?: string): string {
+  if (explicit) {
+    return explicit;
+  }
+  const fromEnv = process.env.MIGRATE_GUARD_APP_ROOT?.trim();
+  if (
+    fromEnv &&
+    existsSync(join(fromEnv, 'package.json')) &&
+    existsSync(join(fromEnv, 'prisma', 'schema.prisma'))
+  ) {
+    return fromEnv;
+  }
+  const candidates = [process.cwd(), join(process.cwd(), 'apps', 'app')];
+  for (const c of candidates) {
+    if (
+      existsSync(join(c, 'package.json')) &&
+      existsSync(join(c, 'prisma', 'schema.prisma'))
+    ) {
+      return c;
+    }
+  }
+  return process.cwd();
+}
+
 export interface MigrateGuardRunInput {
   label: string;
   command?: 'db_push' | 'migrate_deploy';
-  /** App root (where package.json + prisma/schema.prisma live). Defaults to process.cwd(). */
+  /** App root (where package.json + prisma/schema.prisma live). Defaults to resolved app root. */
   cwd?: string;
 }
 
@@ -57,18 +83,31 @@ function resolvePrismaCliPath(cwd: string): string | null {
   return existsSync(legacy) ? legacy : null;
 }
 
+function withCliBanner(cwd: string, cliJs: string, chunk: string): string {
+  const banner = [
+    `[MigrateGuard] prisma CLI: ${cliJs}`,
+    `[MigrateGuard] cwd: ${cwd}`,
+    `[MigrateGuard] runner: node execFile (no npx)`,
+    '---',
+  ].join('\n');
+  return chunk ? `${banner}\n${chunk}` : banner;
+}
+
 export async function runMigrateGuardedPrisma(
   input: MigrateGuardRunInput
 ): Promise<MigrateGuardRunResult> {
   const startedAt = new Date().toISOString();
   const cmdKind = input.command ?? 'db_push';
-  const cwd = input.cwd ?? process.cwd();
+  const cwd = resolveAppRoot(input.cwd);
   const args = resolveArgs(cmdKind);
+  const tmpHome = process.env.TMPDIR || tmpdir();
   const env = {
     ...process.env,
     CI: 'true',
-    // Avoid tooling writing under a missing sandbox home (some npm-adjacent code paths)
-    HOME: process.env.HOME || process.env.TMPDIR || '/tmp',
+    // Vercel serverless: default HOME may point at a missing path; npm/npx break with ENOENT.
+    HOME: process.env.VERCEL ? tmpHome : process.env.HOME || tmpHome,
+    NPM_CONFIG_CACHE: process.env.NPM_CONFIG_CACHE || join(tmpHome, '.npm-cache'),
+    npm_config_cache: process.env.npm_config_cache || join(tmpHome, '.npm-cache'),
   };
 
   const cliJs = resolvePrismaCliPath(cwd);
@@ -81,10 +120,14 @@ export async function runMigrateGuardedPrisma(
       startedAt,
       finishedAt,
       stdout: '',
-      stderr: [
-        `Could not resolve Prisma CLI from ${cwd} (no prisma package or build/index.js).`,
-        'This deploy may omit devDependencies; use CI `prisma migrate deploy` for production DB instead.',
-      ].join('\n'),
+      stderr: withCliBanner(
+        cwd,
+        '(unresolved)',
+        [
+          `Could not resolve Prisma CLI from ${cwd} (no prisma package or build/index.js).`,
+          'This deploy may omit devDependencies; use CI `prisma migrate deploy` for production DB instead.',
+        ].join('\n')
+      ),
       auditLine: `[MigrateGuard] ${input.label} failed via ${cmdKind}`,
     };
   }
@@ -97,8 +140,8 @@ export async function runMigrateGuardedPrisma(
     });
 
     const finishedAt = new Date().toISOString();
-    const stdout = result.stdout ?? '';
-    const stderr = result.stderr ?? '';
+    const stdout = withCliBanner(cwd, cliJs, result.stdout ?? '');
+    const stderr = withCliBanner(cwd, cliJs, result.stderr ?? '');
 
     return {
       ok: true,
@@ -130,8 +173,8 @@ export async function runMigrateGuardedPrisma(
       command: cmdKind,
       startedAt,
       finishedAt,
-      stdout: err.stdout ?? '',
-      stderr: detail,
+      stdout: withCliBanner(cwd, cliJs, err.stdout ?? ''),
+      stderr: withCliBanner(cwd, cliJs, detail),
       auditLine: `[MigrateGuard] ${input.label} failed via ${cmdKind}`,
     };
   }
