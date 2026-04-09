@@ -4,7 +4,7 @@
  * (same executeGuardedMigration core, no browser secret).
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { hasRole } from '../../../../../lib/auth';
+import { getCurrentUser, hasRole } from '../../../../../lib/auth';
 import { executeGuardedMigration } from '../../../../../lib/trust/migrate-guard-service';
 import { logger } from '../../../../../lib/logger';
 
@@ -84,6 +84,8 @@ export async function POST(req: NextRequest) {
     const command =
       body?.command === 'migrate_deploy' ? 'migrate_deploy' : 'db_push';
 
+    const user = await getCurrentUser(req);
+
     const result = await executeGuardedMigration({
       id,
       label,
@@ -91,6 +93,7 @@ export async function POST(req: NextRequest) {
       expectedChanges,
       riskLevel,
       command,
+      actorUserId: user?.id ?? null,
     });
 
     logger.info(result.auditLine, {

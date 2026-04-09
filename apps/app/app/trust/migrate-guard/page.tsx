@@ -43,6 +43,14 @@ export default function MigrateGuardPage() {
       </div>
 
       <MigrateGuardRunCard />
+
+      <p className="text-xs text-zinc-600">
+        Each run is appended to <code className="text-zinc-400">migrate_guard_runs</code> (intent, actor,
+        phase, audit, stdout/stderr, timestamps). Query:{' '}
+        <code className="text-zinc-500 break-all">
+          SELECT * FROM migrate_guard_runs ORDER BY finished_at DESC LIMIT 10;
+        </code>
+      </p>
     </div>
   );
 }

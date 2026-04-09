@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { hasRole } from '@/lib/auth';
+import { getCurrentUser, hasRole } from '@/lib/auth';
 import { executeGuardedMigration } from '@/lib/trust/migrate-guard-service';
 
 export interface RunCustomerMemoryMigrationActionState {
@@ -33,6 +33,15 @@ export async function runCustomerMemoryMigrationAction(
     };
   }
 
+  const user = await getCurrentUser(undefined);
+  if (!user) {
+    return {
+      ok: false,
+      message: 'You must be signed in to run guarded migrations.',
+      phase: 'forbidden',
+    };
+  }
+
   const allowed = await hasRole(undefined, ['owner', 'admin']);
   if (!allowed) {
     return {
@@ -49,6 +58,7 @@ export async function runCustomerMemoryMigrationAction(
     expectedChanges: ['customer_memory table'],
     riskLevel: 'low',
     command: 'db_push',
+    actorUserId: user.id,
   });
 
   revalidatePath('/trust/migrate-guard');

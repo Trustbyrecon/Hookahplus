@@ -9,6 +9,8 @@ export interface GuardedMigrationIntent {
   expectedChanges: string[];
   riskLevel: 'low' | 'medium' | 'high';
   command?: 'db_push' | 'migrate_deploy';
+  /** Set by server action / API route for trust ledger */
+  actorUserId?: string | null;
 }
 
 export interface GuardedMigrationResponse {
@@ -27,9 +29,52 @@ async function verifyCustomerMemoryTable(): Promise<boolean> {
   return true;
 }
 
+async function persistMigrateGuardRun(args: {
+  intent: GuardedMigrationIntent;
+  response: GuardedMigrationResponse;
+  defaultStartedAt: Date;
+}): Promise<void> {
+  const { intent, response, defaultStartedAt } = args;
+  const startedAt = response.result?.startedAt
+    ? new Date(response.result.startedAt)
+    : defaultStartedAt;
+  const finishedAt = response.result?.finishedAt
+    ? new Date(response.result.finishedAt)
+    : new Date();
+
+  try {
+    await prisma.migrateGuardRun.create({
+      data: {
+        intentId: intent.id,
+        label: intent.label,
+        actorUserId: intent.actorUserId ?? null,
+        ok: response.ok,
+        phase: response.phase,
+        auditLine: response.auditLine,
+        stdout: response.result?.stdout ?? null,
+        stderr: response.result?.stderr ?? null,
+        startedAt,
+        finishedAt,
+      },
+    });
+  } catch (e: unknown) {
+    logger.warn('[MigrateGuard] Failed to persist run ledger', {
+      component: 'migrate-guard',
+      error: e instanceof Error ? e.message : String(e),
+    });
+  }
+}
+
 export async function executeGuardedMigration(
   intent: GuardedMigrationIntent
 ): Promise<GuardedMigrationResponse> {
+  const defaultStartedAt = new Date();
+
+  const finalize = async (response: GuardedMigrationResponse): Promise<GuardedMigrationResponse> => {
+    await persistMigrateGuardRun({ intent, response, defaultStartedAt });
+    return response;
+  };
+
   const precheck = {
     approved: true as boolean,
     reason: 'Additive schema change path (db push / migrate deploy). Review intent.expectedChanges before production.',
@@ -38,13 +83,13 @@ export async function executeGuardedMigration(
   if (intent.riskLevel === 'high') {
     precheck.approved = false;
     precheck.reason = 'High-risk intents are blocked by MigrateGuard v1 — use a manual DBA run.';
-    return {
+    return finalize({
       ok: false,
       phase: 'precheck',
       intent,
       precheck,
       auditLine: `[MigrateGuard] Blocked ${intent.id}: ${precheck.reason}`,
-    };
+    });
   }
 
   const result = await runMigrateGuardedPrisma({
@@ -55,13 +100,13 @@ export async function executeGuardedMigration(
   logger.info(result.auditLine, { component: 'migrate-guard', intentId: intent.id });
 
   if (!result.ok) {
-    return {
+    return finalize({
       ok: false,
       phase: 'execute_failed',
       intent,
       result,
       auditLine: result.auditLine,
-    };
+    });
   }
 
   let verified = true;
@@ -76,7 +121,7 @@ export async function executeGuardedMigration(
     verificationError = e instanceof Error ? e.message : 'Verification query failed';
   }
 
-  return {
+  return finalize({
     ok: result.ok && verified,
     phase: verified ? 'verified' : 'verify_failed',
     intent,
@@ -86,5 +131,5 @@ export async function executeGuardedMigration(
     auditLine: verified
       ? `${result.auditLine} (post-check OK)`
       : `${result.auditLine} (post-check failed: ${verificationError ?? 'unknown'})`,
-  };
+  });
 }

@@ -109,6 +109,25 @@ model CustomerMemory {
   @@map("customer_memory")
 }
 
+/// Audit ledger for MigrateGuard runs (UI server action + API route).
+model MigrateGuardRun {
+  id          String   @id @default(cuid())
+  intentId    String   @map("intent_id")
+  label       String
+  actorUserId String?  @map("actor_user_id")
+  ok          Boolean
+  phase       String
+  auditLine   String?  @map("audit_line") @db.Text
+  stdout      String?  @db.Text
+  stderr      String?  @db.Text
+  startedAt   DateTime @map("started_at") @db.Timestamptz(6)
+  finishedAt  DateTime @map("finished_at") @db.Timestamptz(6)
+
+  @@index([intentId], map: "idx_migrate_guard_run_intent")
+  @@index([finishedAt], map: "idx_migrate_guard_run_finished")
+  @@map("migrate_guard_runs")
+}
+
 model Participant {
   id           String            @id @default(cuid())
   sessionId    String            @map("session_id")
