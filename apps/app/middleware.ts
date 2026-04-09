@@ -243,6 +243,7 @@ export async function middleware(request: NextRequest) {
     '/visual-grounder',
     '/layout-preview',
     '/docs',
+    '/trust',
   ];
 
   const isProtectedAppRoute = protectedAppRoutes.some(
@@ -332,6 +333,7 @@ export const config = {
     '/waitlist',
     '/pulse',
     '/docs/:path*',
+    '/trust/:path*',
     '/operator',
     '/staff-dashboard',
     '/staff-ops',
