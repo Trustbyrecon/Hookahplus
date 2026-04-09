@@ -88,6 +88,27 @@ model Session {
   @@map("Session")
 }
 
+/// Staff-scoped CLARK preference rollup (H+ Operator v2 write-back).
+model CustomerMemory {
+  id              String    @id @default(cuid())
+  loungeId        String    @map("lounge_id")
+  customerRef     String    @map("customer_ref")
+  customerName    String?   @map("customer_name")
+  lastSeenAt      DateTime? @map("last_seen_at") @db.Timestamptz(6)
+  lastSessionId   String?   @map("last_session_id")
+  recentFlavors   String[]  @default([]) @map("recent_flavors")
+  note            String?   @db.Text
+  sessionCount    Int       @default(0) @map("session_count")
+  premiumHint     String?   @map("premium_hint")
+  preferredTable  String?   @map("preferred_table")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@unique([loungeId, customerRef], map: "customer_memory_lounge_customer_uq")
+  @@index([loungeId], map: "idx_customer_memory_lounge")
+  @@map("customer_memory")
+}
+
 model Participant {
   id           String            @id @default(cuid())
   sessionId    String            @map("session_id")

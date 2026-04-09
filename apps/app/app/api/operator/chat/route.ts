@@ -3,6 +3,9 @@ import { HPLUS_OPERATOR_SYSTEM_PROMPT } from '../../../../lib/hplusOperatorSyste
 import { HPLUS_OPERATOR_TOOLS } from '../../../../lib/hplusOperatorTools';
 import { openaiChatCompletions, type ChatMessage } from '../../../../lib/openaiChat';
 import { executeOperatorTool } from '../../../../lib/operatorToolExecutor';
+import { executePendingOperatorAction } from '../../../../lib/operatorPendingExecution';
+import { logOperatorTrace } from '../../../../lib/operatorTraceLogger';
+import type { OperatorToolResult } from '../../../../lib/operatorTypes';
 
 export const runtime = 'nodejs';
 
@@ -10,6 +13,15 @@ const MAX_TOOL_ROUNDS = 6;
 const DEFAULT_MODEL = 'gpt-4o-mini';
 
 type IncomingMsg = { role?: string; content?: string };
+
+export type OperatorToolTraceEntry = {
+  tool: string;
+  ok: boolean;
+  status: string;
+  message: string;
+  auditLine?: string;
+  confirmation?: OperatorToolResult['confirmation'];
+};
 
 function toChatMessages(incoming: IncomingMsg[], loungeId?: string): ChatMessage[] {
   const scope =
@@ -30,12 +42,62 @@ function toChatMessages(incoming: IncomingMsg[], loungeId?: string): ChatMessage
   return [system, ...rest];
 }
 
+function serializeToolResult(result: OperatorToolResult): string {
+  return JSON.stringify({
+    ok: result.ok,
+    status: result.status,
+    tool: result.tool,
+    message: result.message,
+    data: result.data,
+    meta: result.meta,
+    confirmation: result.confirmation,
+    auditLine: result.auditLine,
+  });
+}
+
 export async function POST(req: NextRequest) {
-  let body: { messages?: IncomingMsg[]; loungeId?: string } = {};
+  const started = Date.now();
+  let body: {
+    messages?: IncomingMsg[];
+    loungeId?: string;
+    confirmedActionKey?: string | null;
+  } = {};
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+  }
+
+  const loungeId = typeof body.loungeId === 'string' ? body.loungeId : undefined;
+  const confirmedKey =
+    typeof body.confirmedActionKey === 'string' && body.confirmedActionKey.trim()
+      ? body.confirmedActionKey.trim()
+      : null;
+
+  if (confirmedKey) {
+    const result = await executePendingOperatorAction(confirmedKey, req);
+    const toolTrace: OperatorToolTraceEntry[] = [
+      {
+        tool: result.tool,
+        ok: result.ok,
+        status: result.status,
+        message: result.message,
+        auditLine: result.auditLine,
+      },
+    ];
+    logOperatorTrace({
+      loungeId,
+      toolStatus: result.status,
+      assistantReply: result.message,
+      latencyMs: Date.now() - started,
+    });
+    return NextResponse.json({
+      reply: result.message,
+      toolTrace,
+      pendingConfirmation: null,
+      model: 'confirm',
+      result,
+    });
   }
 
   if (!process.env.OPENAI_API_KEY) {
@@ -49,15 +111,21 @@ export async function POST(req: NextRequest) {
   }
 
   const incoming = Array.isArray(body.messages) ? body.messages : [];
-  const loungeId = typeof body.loungeId === 'string' ? body.loungeId : undefined;
-
   if (incoming.length === 0) {
     return NextResponse.json({ error: 'messages array is required' }, { status: 400 });
   }
 
+  const lastUser = [...incoming].reverse().find((m) => m.role === 'user' && m.content?.trim());
+  const userMessage = typeof lastUser?.content === 'string' ? lastUser.content.trim() : undefined;
+
   const model = process.env.OPENAI_MODEL || DEFAULT_MODEL;
   let messages = toChatMessages(incoming, loungeId);
-  const toolTrace: Array<{ tool: string; ok: boolean; summary?: string }> = [];
+  const toolTrace: OperatorToolTraceEntry[] = [];
+  let pendingConfirmation: {
+    actionKey: string;
+    prompt: string;
+    tool: string;
+  } | null = null;
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
     const completion = await openaiChatCompletions({
@@ -86,9 +154,17 @@ export async function POST(req: NextRequest) {
     const toolCalls = choice.tool_calls;
     if (!toolCalls?.length) {
       const text = choice.content?.trim() || '';
+      logOperatorTrace({
+        loungeId,
+        model,
+        userMessage,
+        assistantReply: text,
+        latencyMs: Date.now() - started,
+      });
       return NextResponse.json({
         reply: text,
         toolTrace,
+        pendingConfirmation,
         model,
       });
     }
@@ -111,19 +187,36 @@ export async function POST(req: NextRequest) {
 
       const result = await executeOperatorTool(fn.name, parsed, req, loungeId);
       toolTrace.push({
-        tool: fn.name,
+        tool: result.tool,
         ok: result.ok,
-        summary: result.error || (result.ok ? 'ok' : 'failed'),
+        status: result.status,
+        message: result.message,
+        auditLine: result.auditLine,
+        confirmation: result.confirmation,
+      });
+
+      if (result.status === 'needs_confirmation' && result.confirmation && !pendingConfirmation) {
+        pendingConfirmation = {
+          actionKey: result.confirmation.actionKey,
+          prompt: result.confirmation.prompt,
+          tool: result.tool,
+        };
+      }
+
+      logOperatorTrace({
+        loungeId,
+        model,
+        userMessage,
+        selectedTool: result.tool,
+        toolArgs: parsed as Record<string, unknown>,
+        toolStatus: result.status,
+        latencyMs: Date.now() - started,
       });
 
       messages.push({
         role: 'tool',
         tool_call_id: tc.id,
-        content: JSON.stringify({
-          ok: result.ok,
-          error: result.error,
-          data: result.data,
-        }),
+        content: serializeToolResult(result),
       });
     }
   }
@@ -144,5 +237,12 @@ export async function POST(req: NextRequest) {
   }
 
   const reply = final.choices?.[0]?.message?.content?.trim() || 'Done.';
-  return NextResponse.json({ reply, toolTrace, model });
+  logOperatorTrace({
+    loungeId,
+    model,
+    userMessage,
+    assistantReply: reply,
+    latencyMs: Date.now() - started,
+  });
+  return NextResponse.json({ reply, toolTrace, pendingConfirmation, model });
 }

@@ -1,35 +1,17 @@
 import type { NextRequest } from 'next/server';
-import { prisma } from './db';
 import { SessionState } from '@prisma/client';
+import { prisma } from './db';
+import { createPendingOperatorAction } from './operatorConfirmation';
+import { resolveSessionContext } from './operatorContextResolver';
+import { forwardCookieHeaders, getInternalBaseUrl } from './operatorHttp';
+import { normalizeTableId } from './operatorNormalize';
+import { operatorFail, operatorNeedsConfirmation, operatorSuccess } from './operatorToolResult';
+import type { OperatorToolName, OperatorToolResult } from './operatorTypes';
 
-export type OperatorToolResult = {
-  ok: boolean;
-  tool: string;
-  data?: unknown;
-  error?: string;
-};
+export { normalizeTableId } from './operatorNormalize';
 
-function getInternalBaseUrl(req: NextRequest): string {
-  const host = req.headers.get('x-forwarded-host') || req.headers.get('host') || 'localhost:3002';
-  const proto =
-    req.headers.get('x-forwarded-proto') ||
-    (host.includes('localhost') || host.startsWith('127.') ? 'http' : 'https');
-  return `${proto}://${host}`;
-}
-
-function forwardHeaders(req: NextRequest): HeadersInit {
-  const cookie = req.headers.get('cookie');
-  const h: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (cookie) h['Cookie'] = cookie;
-  return h;
-}
-
-export function normalizeTableId(raw: string): string {
-  const t = raw.trim();
-  if (!t) return 'UNASSIGNED';
-  const digits = t.replace(/^table\s*/i, '').replace(/^t-?/i, '').trim();
-  if (/^\d+$/.test(digits)) return `T-${digits}`;
-  return t;
+function asString(v: unknown): string | undefined {
+  return typeof v === 'string' && v.trim() ? v.trim() : undefined;
 }
 
 function parseFlavorMix(row: unknown): string[] {
@@ -62,6 +44,16 @@ function suggestUpsellHeuristics(flavors: string[]): {
   };
 }
 
+const KNOWN: Set<string> = new Set([
+  'resolve_session_context',
+  'start_session',
+  'end_session',
+  'move_table',
+  'suggest_upsell',
+  'get_customer_memory',
+  'summarize_lounge_activity',
+]);
+
 export async function executeOperatorTool(
   name: string,
   rawArgs: unknown,
@@ -73,25 +65,72 @@ export async function executeOperatorTool(
       ? (rawArgs as Record<string, unknown>)
       : {};
 
+  if (!KNOWN.has(name)) {
+    return operatorFail(
+      'resolve_session_context',
+      'validation_error',
+      `Unknown tool: ${name}`
+    );
+  }
+
+  const tool = name as OperatorToolName;
   const effectiveLounge = (loungeId || 'default-lounge').trim() || 'default-lounge';
   const base = getInternalBaseUrl(req);
-  const headers = forwardHeaders(req);
+  const headers = forwardCookieHeaders(req);
 
   try {
-    switch (name) {
+    switch (tool) {
+      case 'resolve_session_context': {
+        const resolved = await resolveSessionContext({
+          loungeId: args.loungeId != null ? String(args.loungeId) : effectiveLounge,
+          session_id: asString(args.session_id),
+          table: asString(args.table),
+          customer_name: asString(args.customer_name),
+          customer_ref: asString(args.customer_ref),
+        });
+
+        if ('error' in resolved) {
+          const st = resolved.status;
+          return operatorFail(
+            'resolve_session_context',
+            st === 'ambiguous' ? 'ambiguous' : st === 'not_found' ? 'not_found' : 'validation_error',
+            resolved.error,
+            resolved.ambiguity ? { ambiguity: resolved.ambiguity } : undefined,
+            `[RESOLVE] failed: ${resolved.error}`
+          );
+        }
+
+        return operatorSuccess(
+          'resolve_session_context',
+          resolved.active
+            ? `Resolved active session${resolved.table ? ` at ${resolved.table}` : ''}${resolved.customerRef ? ` (${resolved.customerRef})` : ''}.`
+            : 'Resolved session context (not active).',
+          resolved,
+          {
+            sessionId: resolved.sessionId,
+            table: resolved.table,
+            loungeId: resolved.loungeId,
+          },
+          `[RESOLVE] session=${resolved.sessionId ?? 'n/a'} table=${resolved.table ?? 'n/a'}`
+        );
+      }
+
       case 'start_session': {
-        const table = typeof args.table === 'string' ? args.table : '';
+        const table = asString(args.table);
         const flavors = Array.isArray(args.flavors)
           ? args.flavors.map((x) => String(x).trim()).filter(Boolean)
           : [];
         if (!table || flavors.length === 0) {
-          return { ok: false, tool: name, error: 'table and flavors are required' };
+          return operatorFail(
+            'start_session',
+            'validation_error',
+            'table and flavors are required',
+            undefined,
+            '[START] validation failed'
+          );
         }
-        const customerName =
-          typeof args.customer_name === 'string' && args.customer_name.trim()
-            ? args.customer_name.trim()
-            : 'Guest';
-        const notes = typeof args.notes === 'string' ? args.notes.trim() : '';
+        const customerName = asString(args.customer_name) || 'Guest';
+        const notes = asString(args.notes);
 
         const body = {
           tableId: normalizeTableId(table),
@@ -109,55 +148,145 @@ export async function executeOperatorTool(
           headers,
           body: JSON.stringify(body),
         });
-        const json = await res.json().catch(() => ({}));
+        const json = (await res.json().catch(() => ({}))) as {
+          error?: string;
+          session?: { id?: string; tableId?: string | null };
+        };
+
         if (!res.ok) {
-          return {
-            ok: false,
-            tool: name,
-            error: (json as { error?: string })?.error || `HTTP ${res.status}`,
-            data: json,
-          };
+          return operatorFail(
+            'start_session',
+            'error',
+            json.error || `HTTP ${res.status}`,
+            { httpStatus: res.status, body: json },
+            `[START] failed HTTP ${res.status}`
+          );
         }
-        return { ok: true, tool: name, data: json };
+
+        const sid = json.session?.id;
+        const tid = json.session?.tableId ?? body.tableId;
+        return operatorSuccess(
+          'start_session',
+          `Session started${tid ? ` at table ${tid}` : ''}${customerName !== 'Guest' ? ` for ${customerName}` : ''}.`,
+          json,
+          {
+            sessionId: sid,
+            tableId: tid,
+            loungeId: effectiveLounge,
+            customerName,
+          },
+          `[START] session=${sid ?? 'n/a'} table=${tid ?? 'n/a'}`
+        );
       }
 
-      case 'end_session':
-      case 'move_table': {
-        const sessionKey =
-          typeof args.session_id === 'string' ? args.session_id.trim() : '';
-        if (!sessionKey) {
-          return { ok: false, tool: name, error: 'session_id is required' };
-        }
-
-        const cmd = name === 'end_session' ? 'CLOSE_SESSION' : 'MOVE_TABLE';
-        const data =
-          name === 'move_table'
-            ? { table: normalizeTableId(typeof args.table === 'string' ? args.table : '') }
-            : {};
-
-        if (name === 'move_table' && !(data as { table: string }).table) {
-          return { ok: false, tool: name, error: 'table is required for move_table' };
-        }
-
-        const res = await fetch(`${base}/api/sessions/${encodeURIComponent(sessionKey)}/command`, {
-          method: 'POST',
-          headers: {
-            ...headers,
-            'Content-Type': 'application/json',
-            'Idempotency-Key': `${sessionKey}:${cmd}:${Date.now()}`,
-          },
-          body: JSON.stringify({ cmd, data, actor: 'agent' }),
+      case 'end_session': {
+        const resolved = await resolveSessionContext({
+          loungeId: effectiveLounge,
+          session_id: asString(args.session_id),
+          table: asString(args.table),
+          customer_name: asString(args.customer_name),
+          customer_ref: asString(args.customer_ref),
         });
-        const json = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          return {
-            ok: false,
-            tool: name,
-            error: (json as { error?: string })?.error || `HTTP ${res.status}`,
-            data: json,
-          };
+
+        if ('error' in resolved) {
+          const st = resolved.status;
+          return operatorFail(
+            'end_session',
+            st === 'ambiguous' ? 'ambiguous' : st === 'not_found' ? 'not_found' : 'validation_error',
+            resolved.error,
+            resolved.ambiguity ? { ambiguity: resolved.ambiguity } : undefined
+          );
         }
-        return { ok: true, tool: name, data: json };
+
+        if (!resolved.sessionId) {
+          return operatorFail('end_session', 'validation_error', 'Could not resolve a session to close.');
+        }
+
+        const pending = createPendingOperatorAction(
+          'end_session',
+          { session_id: resolved.sessionId },
+          effectiveLounge
+        );
+
+        return operatorNeedsConfirmation(
+          'end_session',
+          `Ready to close${resolved.table ? ` table ${resolved.table}` : ''}${resolved.customerRef ? ` (${resolved.customerRef})` : ''}.`,
+          {
+            required: true,
+            actionKey: pending.actionKey,
+            prompt: `Confirm closing session ${resolved.sessionId}${resolved.table ? ` (table ${resolved.table})` : ''}?`,
+          },
+          {
+            sessionId: resolved.sessionId,
+            table: resolved.table,
+            customerRef: resolved.customerRef,
+          },
+          `[CLOSE?] session=${resolved.sessionId}`
+        );
+      }
+
+      case 'move_table': {
+        const destination =
+          asString(args.destination_table) ||
+          asString(args.destination) ||
+          asString(args.to_table);
+        if (!destination) {
+          return operatorFail(
+            'move_table',
+            'validation_error',
+            'destination_table is required (where to move the session).',
+            undefined,
+            '[MOVE] missing destination'
+          );
+        }
+
+        const resolved = await resolveSessionContext({
+          loungeId: effectiveLounge,
+          session_id: asString(args.session_id),
+          table: asString(args.table) || asString(args.from_table),
+          customer_name: asString(args.customer_name),
+          customer_ref: asString(args.customer_ref),
+        });
+
+        if ('error' in resolved) {
+          const st = resolved.status;
+          return operatorFail(
+            'move_table',
+            st === 'ambiguous' ? 'ambiguous' : st === 'not_found' ? 'not_found' : 'validation_error',
+            resolved.error,
+            resolved.ambiguity ? { ambiguity: resolved.ambiguity } : undefined
+          );
+        }
+
+        if (!resolved.sessionId) {
+          return operatorFail('move_table', 'validation_error', 'Could not resolve a session to move.');
+        }
+
+        const destNorm = normalizeTableId(destination);
+        const pending = createPendingOperatorAction(
+          'move_table',
+          {
+            session_id: resolved.sessionId,
+            destination_table: destNorm,
+          },
+          effectiveLounge
+        );
+
+        return operatorNeedsConfirmation(
+          'move_table',
+          `Ready to move${resolved.table ? ` from table ${resolved.table}` : ''} to ${destNorm}.`,
+          {
+            required: true,
+            actionKey: pending.actionKey,
+            prompt: `Confirm moving session ${resolved.sessionId} to table ${destNorm}?`,
+          },
+          {
+            sessionId: resolved.sessionId,
+            fromTable: resolved.table,
+            destinationTable: destNorm,
+          },
+          `[MOVE?] session=${resolved.sessionId} → ${destNorm}`
+        );
       }
 
       case 'suggest_upsell': {
@@ -165,17 +294,34 @@ export async function executeOperatorTool(
           ? args.flavors.map((x) => String(x).trim()).filter(Boolean)
           : [];
         if (flavors.length === 0) {
-          return { ok: false, tool: name, error: 'flavors required' };
+          return operatorFail('suggest_upsell', 'validation_error', 'flavors required');
         }
-        return { ok: true, tool: name, data: suggestUpsellHeuristics(flavors) };
+        const data = suggestUpsellHeuristics(flavors);
+        return operatorSuccess(
+          'suggest_upsell',
+          'Upsell suggestions ready.',
+          data,
+          { flavors },
+          `[UPSELL] ${flavors.join('+')}`
+        );
       }
 
       case 'get_customer_memory': {
-        const customerName =
-          typeof args.customer_name === 'string' ? args.customer_name.trim() : '';
+        const customerName = asString(args.customer_name);
         if (!customerName) {
-          return { ok: false, tool: name, error: 'customer_name required' };
+          return operatorFail('get_customer_memory', 'validation_error', 'customer_name required');
         }
+
+        const rollup = await prisma.customerMemory.findFirst({
+          where: {
+            loungeId: effectiveLounge,
+            OR: [
+              { customerRef: { contains: customerName, mode: 'insensitive' } },
+              { customerName: { contains: customerName, mode: 'insensitive' } },
+            ],
+          },
+          orderBy: { updatedAt: 'desc' },
+        });
 
         const rows = await prisma.session.findMany({
           where: {
@@ -206,15 +352,27 @@ export async function executeOperatorTool(
           at: r.createdAt.toISOString(),
         }));
 
-        return {
-          ok: true,
-          tool: name,
-          data: {
+        return operatorSuccess(
+          'get_customer_memory',
+          rollup || rows.length
+            ? `Found ${rows.length} session(s)${rollup ? '; saved preference rollup available' : ''}.`
+            : 'No prior visits found for that name in this lounge.',
+          {
             customer: customerName,
             visits: rows.length,
             recent: summary,
+            rollup: rollup
+              ? {
+                  recentFlavors: rollup.recentFlavors,
+                  preferredTable: rollup.preferredTable,
+                  sessionCount: rollup.sessionCount,
+                  note: rollup.note,
+                }
+              : null,
           },
-        };
+          { loungeId: effectiveLounge },
+          `[MEMORY] ${customerName}`
+        );
       }
 
       case 'summarize_lounge_activity': {
@@ -229,7 +387,7 @@ export async function executeOperatorTool(
         const recent = await prisma.session.findMany({
           where: { loungeId: effectiveLounge },
           orderBy: { updatedAt: 'desc' },
-          take: 5,
+          take: 8,
           select: {
             id: true,
             tableId: true,
@@ -239,18 +397,39 @@ export async function executeOperatorTool(
           },
         });
 
-        return {
-          ok: true,
-          tool: name,
-          data: { loungeId: effectiveLounge, activeSessionCount: active, recentSessions: recent },
-        };
+        const closedTonight = await prisma.session.count({
+          where: {
+            loungeId: effectiveLounge,
+            state: SessionState.CLOSED,
+            updatedAt: { gte: new Date(Date.now() - 12 * 60 * 60 * 1000) },
+          },
+        });
+
+        return operatorSuccess(
+          'summarize_lounge_activity',
+          `${active} active session(s) in this lounge; ${closedTonight} closed in last 12h (approx).`,
+          {
+            loungeId: effectiveLounge,
+            activeSessionCount: active,
+            recentSessions: recent,
+            closedApprox12h: closedTonight,
+          },
+          { loungeId: effectiveLounge },
+          `[SUMMARY] lounge=${effectiveLounge} active=${active}`
+        );
       }
 
       default:
-        return { ok: false, tool: name, error: `Unknown tool: ${name}` };
+        return operatorFail(tool, 'validation_error', `Unhandled tool: ${tool}`);
     }
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : 'Tool execution failed';
-    return { ok: false, tool: name, error: msg };
+    return operatorFail(
+      name as OperatorToolName,
+      'error',
+      msg,
+      undefined,
+      `[ERROR] ${name}: ${msg}`
+    );
   }
 }

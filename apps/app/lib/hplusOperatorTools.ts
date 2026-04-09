@@ -1,7 +1,25 @@
 import type { ChatCompletionTool } from './openaiChat';
 
-/** OpenAI Chat Completions tool definitions for H+ Operator (v1). */
+/** OpenAI Chat Completions tool definitions for H+ Operator (v2). */
 export const HPLUS_OPERATOR_TOOLS: ChatCompletionTool[] = [
+  {
+    type: 'function',
+    function: {
+      name: 'resolve_session_context',
+      description:
+        'Resolve a table, customer, or session reference into lounge-scoped context before risky actions. Read-only.',
+      parameters: {
+        type: 'object',
+        properties: {
+          loungeId: { type: 'string', description: 'Override lounge (usually omitted; scope comes from UI)' },
+          session_id: { type: 'string' },
+          table: { type: 'string', description: 'Table label or id, e.g. 3, T-5, patio' },
+          customer_name: { type: 'string' },
+          customer_ref: { type: 'string' },
+        },
+      },
+    },
+  },
   {
     type: 'function',
     function: {
@@ -29,16 +47,15 @@ export const HPLUS_OPERATOR_TOOLS: ChatCompletionTool[] = [
     function: {
       name: 'end_session',
       description:
-        'End a hookah session. Session key can be session id, external ref, or table id (resolved by API).',
+        'Request to end a session. Requires staff confirmation in the UI. Pass session_id OR table OR customer to resolve.',
       parameters: {
         type: 'object',
         properties: {
-          session_id: {
-            type: 'string',
-            description: 'Session id, or table id if that is how staff refers to it',
-          },
+          session_id: { type: 'string', description: 'Direct session id if known' },
+          table: { type: 'string', description: 'Table to resolve an active session' },
+          customer_name: { type: 'string' },
+          customer_ref: { type: 'string' },
         },
-        required: ['session_id'],
       },
     },
   },
@@ -46,17 +63,19 @@ export const HPLUS_OPERATOR_TOOLS: ChatCompletionTool[] = [
     type: 'function',
     function: {
       name: 'move_table',
-      description: 'Move a session to a different table (MOVE_TABLE command).',
+      description:
+        'Request to move a session to another table (MOVE_TABLE). Requires confirmation. Resolve source by session_id OR table OR customer; destination is destination_table.',
       parameters: {
         type: 'object',
         properties: {
-          session_id: {
-            type: 'string',
-            description: 'Session id or table id the session is currently under',
-          },
-          table: { type: 'string', description: 'Destination table id, e.g. T-14' },
+          session_id: { type: 'string' },
+          table: { type: 'string', description: 'Current / source table if resolving by table' },
+          from_table: { type: 'string' },
+          destination_table: { type: 'string', description: 'Target table id or label' },
+          customer_name: { type: 'string' },
+          customer_ref: { type: 'string' },
         },
-        required: ['session_id', 'table'],
+        required: ['destination_table'],
       },
     },
   },
@@ -83,7 +102,7 @@ export const HPLUS_OPERATOR_TOOLS: ChatCompletionTool[] = [
     function: {
       name: 'get_customer_memory',
       description:
-        'CLARK lite: look up recent sessions for a guest name in this lounge to infer preferences.',
+        'CLARK: look up saved rollup + recent sessions for a guest name in this lounge.',
       parameters: {
         type: 'object',
         properties: {
@@ -98,7 +117,7 @@ export const HPLUS_OPERATOR_TOOLS: ChatCompletionTool[] = [
     function: {
       name: 'summarize_lounge_activity',
       description:
-        'Summarize active session count and open tables for the lounge in scope (read-only).',
+        'Summarize active session count and recent activity for the lounge in scope (read-only).',
       parameters: {
         type: 'object',
         properties: {},
