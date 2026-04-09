@@ -1,5 +1,6 @@
 // apps/app/lib/cmd.ts
 // Minimal command sender for orchestrator demo flows.
+// H+ Operator (GPT tools) maps the same verbs via lib/operatorToolExecutor.ts → POST /api/sessions and /api/sessions/[id]/command.
 
 export type CmdActor = "foh" | "boh" | "system" | "agent";
 

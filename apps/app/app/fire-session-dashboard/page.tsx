@@ -30,6 +30,7 @@ import { WeekOneWinsCard } from '../../components/launchpad/WeekOneWinsCard';
 import { PreviewModeBanner } from '../../components/launchpad/PreviewModeBanner';
 import { SoftLaunchBanner } from '../../components/launchpad/SoftLaunchBanner';
 import ShiftGuide from '../../components/ShiftGuide';
+import { HPlusOperatorPanel } from '../../components/operator/HPlusOperatorPanel';
 import { getFeatureFlags, markFirstLightCompleted, enableMetrics, activateAlphaStability } from '../../lib/feature-flags';
 import { useLoungeLayoutMode } from '../../hooks/useLoungeLayoutMode';
 
@@ -1008,6 +1009,15 @@ function FireSessionDashboardContent() {
               loungeId={selectedLoungeId || undefined}
             />
           </div>
+        )}
+
+        {/* H+ Operator — tool-calling assistant wired to /api/sessions + command API */}
+        {!isDemoMode && (
+          <HPlusOperatorPanel
+            loungeId={selectedLoungeId}
+            onActionComplete={() => refreshSessions()}
+            defaultOpen={!useFloorPlan}
+          />
         )}
 
         {/* Sync Indicator - Hidden in demo mode */}

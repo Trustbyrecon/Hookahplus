@@ -286,7 +286,12 @@ export async function middleware(request: NextRequest) {
   // First Light mode: allow /api/sessions and /api/metrics without auth
   if (pathname.startsWith('/api') && !isPublicRoute) {
     // First Light mode bypass for core routes
-    if (firstLightMode && (pathname.startsWith('/api/sessions') || pathname.startsWith('/api/metrics'))) {
+    if (
+      firstLightMode &&
+      (pathname.startsWith('/api/sessions') ||
+        pathname.startsWith('/api/metrics') ||
+        pathname.startsWith('/api/operator'))
+    ) {
       // Allow access in First Light mode
       return response;
     }
