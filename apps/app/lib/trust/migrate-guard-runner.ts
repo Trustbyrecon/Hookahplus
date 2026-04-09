@@ -1,20 +1,20 @@
 /**
- * Server-only: runs Prisma CLI. Prefer direct `node …/prisma/build/index.js` so Vercel
- * serverless (where `npx` is often missing from PATH) still works.
+ * Server-only: runs Prisma CLI via `node …/prisma/build/index.js` only.
+ * Never uses `npx` — Vercel serverless sandboxes break npm (ENOENT under /home/sbx_*).
  */
 
-import { exec, execFile } from 'node:child_process';
+import { execFile } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
 import { promisify } from 'node:util';
 
-const execAsync = promisify(exec);
 const execFileAsync = promisify(execFile);
 
 export interface MigrateGuardRunInput {
   label: string;
   command?: 'db_push' | 'migrate_deploy';
-  /** App root (where prisma/schema.prisma lives). Defaults to process.cwd(). */
+  /** App root (where package.json + prisma/schema.prisma live). Defaults to process.cwd(). */
   cwd?: string;
 }
 
@@ -29,25 +29,34 @@ export interface MigrateGuardRunResult {
   auditLine: string;
 }
 
-function prismaCliPath(cwd: string): string {
-  return join(cwd, 'node_modules', 'prisma', 'build', 'index.js');
-}
-
 function resolveArgs(command: 'db_push' | 'migrate_deploy'): string[] {
   return command === 'migrate_deploy' ? ['migrate', 'deploy'] : ['db', 'push'];
 }
 
-function resolveShellCommand(command: 'db_push' | 'migrate_deploy'): string {
-  if (command === 'migrate_deploy') {
-    return 'npx prisma migrate deploy';
+/**
+ * Resolve prisma CLI entry the same way Node would from the app package (works when
+ * node_modules is hoisted or paths differ from cwd/node_modules/prisma/...).
+ */
+function resolvePrismaCliPath(cwd: string): string | null {
+  const pkgJson = join(cwd, 'package.json');
+  if (!existsSync(pkgJson)) {
+    return null;
   }
-  return 'npx prisma db push';
+  try {
+    const requireFromApp = createRequire(pkgJson);
+    const prismaPkgFile = requireFromApp.resolve('prisma/package.json');
+    const cli = join(dirname(prismaPkgFile), 'build', 'index.js');
+    if (existsSync(cli)) {
+      return cli;
+    }
+  } catch {
+    // prisma not resolvable from this package.json
+  }
+
+  const legacy = join(cwd, 'node_modules', 'prisma', 'build', 'index.js');
+  return existsSync(legacy) ? legacy : null;
 }
 
-/**
- * Run Prisma via `node node_modules/prisma/build/index.js` when available (Vercel-friendly),
- * else fall back to shell `npx prisma …` (local dev / full shell).
- */
 export async function runMigrateGuardedPrisma(
   input: MigrateGuardRunInput
 ): Promise<MigrateGuardRunResult> {
@@ -58,33 +67,38 @@ export async function runMigrateGuardedPrisma(
   const env = {
     ...process.env,
     CI: 'true',
+    // Avoid tooling writing under a missing sandbox home (some npm-adjacent code paths)
+    HOME: process.env.HOME || process.env.TMPDIR || '/tmp',
   };
 
-  try {
-    let stdout = '';
-    let stderr = '';
+  const cliJs = resolvePrismaCliPath(cwd);
+  if (!cliJs) {
+    const finishedAt = new Date().toISOString();
+    return {
+      ok: false,
+      label: input.label,
+      command: cmdKind,
+      startedAt,
+      finishedAt,
+      stdout: '',
+      stderr: [
+        `Could not resolve Prisma CLI from ${cwd} (no prisma package or build/index.js).`,
+        'This deploy may omit devDependencies; use CI `prisma migrate deploy` for production DB instead.',
+      ].join('\n'),
+      auditLine: `[MigrateGuard] ${input.label} failed via ${cmdKind}`,
+    };
+  }
 
-    const cliJs = prismaCliPath(cwd);
-    if (existsSync(cliJs)) {
-      const result = await execFileAsync(process.execPath, [cliJs, ...args], {
-        cwd,
-        env,
-        maxBuffer: 10 * 1024 * 1024,
-      });
-      stdout = result.stdout ?? '';
-      stderr = result.stderr ?? '';
-    } else {
-      const shellCmd = resolveShellCommand(cmdKind);
-      const result = await execAsync(shellCmd, {
-        cwd,
-        env,
-        maxBuffer: 10 * 1024 * 1024,
-      });
-      stdout = result.stdout ?? '';
-      stderr = result.stderr ?? '';
-    }
+  try {
+    const result = await execFileAsync(process.execPath, [cliJs, ...args], {
+      cwd,
+      env,
+      maxBuffer: 10 * 1024 * 1024,
+    });
 
     const finishedAt = new Date().toISOString();
+    const stdout = result.stdout ?? '';
+    const stderr = result.stderr ?? '';
 
     return {
       ok: true,
