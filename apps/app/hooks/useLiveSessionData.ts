@@ -1,6 +1,25 @@
 import { useState, useEffect, useCallback } from 'react';
 import { FireSession, SessionTimer, TrackerStage, STATUS_TO_TRACKER_STAGE } from '../types/enhancedSession';
 import { calculateRemainingTime, formatDuration } from '../lib/sessionStateMachine';
+import { ADMIN_ACTIVE_LOUNGE_KEY, getAdminScopeLoungeId } from '../lib/admin-lounge-scope';
+
+/**
+ * URL ?lounge= / ?loungeIds= wins; otherwise use Fire Session / select-lounge `active_lounge` (localStorage).
+ * Aligns GET /api/sessions with GPT and walk-in rows that have tenantId=null but match loungeId.
+ */
+function resolveClientSessionLoungeId(): string | null {
+  if (typeof window === 'undefined') return null;
+  const params = new URLSearchParams(window.location.search);
+  const fromUrl =
+    params.get('lounge')?.trim() ||
+    (params.get('loungeIds') || '')
+      .split(',')
+      .map((s) => s.trim())
+      .find(Boolean) ||
+    null;
+  if (fromUrl) return fromUrl;
+  return getAdminScopeLoungeId();
+}
 
 // Environment-based demo mode configuration
 const USE_DEMO_MODE = process.env.NEXT_PUBLIC_USE_DEMO_MODE === 'true';
@@ -208,9 +227,7 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
       // Load active sessions from root Prisma API
       // Add firstLightFocus param if First Light mode is enabled
       const sessionsUrl = new URL('/api/sessions', window.location.origin);
-      const params = new URLSearchParams(window.location.search);
-      // Support both lounge and loungeIds (CODIGO FSD uses loungeIds=CODIGO)
-      const selectedLoungeId = params.get('lounge') || (params.get('loungeIds') || '').split(',')[0]?.trim() || null;
+      const selectedLoungeId = resolveClientSessionLoungeId();
       if (selectedLoungeId) {
         sessionsUrl.searchParams.set('loungeId', selectedLoungeId);
       }
@@ -495,7 +512,7 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
       
       console.log('[useLiveSessionData] Loading metrics...');
       const metricsUrl = new URL('/api/metrics/live', window.location.origin);
-      const selectedLoungeId = new URLSearchParams(window.location.search).get('lounge');
+      const selectedLoungeId = resolveClientSessionLoungeId();
       if (selectedLoungeId) {
         metricsUrl.searchParams.set('loungeId', selectedLoungeId);
       }
@@ -871,11 +888,24 @@ export function useLiveSessionData(): UseLiveSessionDataReturn {
     return () => clearInterval(interval);
   }, []);
 
+  // When another tab changes Fire Session / admin lounge scope, refetch (same-tab uses polling)
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === ADMIN_ACTIVE_LOUNGE_KEY) {
+        refreshSessions().catch(() => {});
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [refreshSessions]);
+
   // Auto-refresh data every 5 seconds (optimized for real-time updates)
   // Polling: 2s for CODIGO (faster Floor→Kitchen propagation), 5s otherwise
   useEffect(() => {
-    const isCodigo = typeof window !== 'undefined' &&
-      new URLSearchParams(window.location.search).get('lounge') === 'CODIGO';
+    const isCodigo =
+      typeof window !== 'undefined' &&
+      (new URLSearchParams(window.location.search).get('lounge') === 'CODIGO' ||
+        resolveClientSessionLoungeId() === 'CODIGO');
     const intervalMs = isCodigo ? 2000 : 5000;
     const interval = setInterval(() => {
       refreshSessions().catch(() => {});

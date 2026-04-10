@@ -28,7 +28,8 @@ export async function GET(request: NextRequest) {
     
     // Get current timestamp for calculations
     const now = new Date();
-    
+    const loungeIdFilter = searchParams.get('loungeId')?.trim() || null;
+
     let activeSessions: any[] = [];
     let alerts = 0;
     let staffAssigned = 0;
@@ -38,14 +39,19 @@ export async function GET(request: NextRequest) {
     if (useRealMetrics) {
       try {
         const { prisma } = await import('../../../../lib/db');
+
+        const activeWhere: Record<string, unknown> = {
+          state: {
+            in: ['PENDING', 'ACTIVE', 'PAUSED'],
+          },
+        };
+        if (loungeIdFilter) {
+          activeWhere.loungeId = loungeIdFilter;
+        }
         
         // Get active sessions from database
         const dbSessions = await prisma.session.findMany({
-          where: {
-            state: {
-              in: ['PENDING', 'ACTIVE', 'PAUSED']
-            }
-          },
+          where: activeWhere,
           select: {
             id: true,
             priceCents: true,
@@ -77,12 +83,16 @@ export async function GET(request: NextRequest) {
         // Count sessions created today
         const todayStart = new Date(now);
         todayStart.setHours(0, 0, 0, 0);
+        const todayWhere: Record<string, unknown> = {
+          createdAt: {
+            gte: todayStart,
+          },
+        };
+        if (loungeIdFilter) {
+          todayWhere.loungeId = loungeIdFilter;
+        }
         totalSessionsToday = await prisma.session.count({
-          where: {
-            createdAt: {
-              gte: todayStart
-            }
-          }
+          where: todayWhere,
         });
         
         console.log('[metrics/live] ✅ Calculated real metrics from database:', {

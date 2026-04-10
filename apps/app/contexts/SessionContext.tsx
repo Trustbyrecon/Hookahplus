@@ -47,12 +47,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const [lastUpdated, setLastUpdated] = React.useState<Date | null>(null);
 
-  // Track last update time
+  // Last successful refresh time (even when API returns zero sessions — avoids "Never" when list is empty)
   React.useEffect(() => {
-    if (!loading && sessions.length > 0) {
+    if (!loading) {
       setLastUpdated(new Date());
     }
-  }, [sessions, loading]);
+  }, [loading]);
 
   const value: SessionContextType = {
     sessions,

@@ -1,10 +1,13 @@
 import type { NextRequest } from 'next/server';
 import { SessionState } from '@prisma/client';
 import { prisma } from './db';
+import type { OperatorActorContext } from './operatorActorContext';
 import { createPendingOperatorAction } from './operatorConfirmation';
 import { resolveSessionContext } from './operatorContextResolver';
 import { forwardCookieHeaders, getInternalBaseUrl } from './operatorHttp';
 import { normalizeTableId } from './operatorNormalize';
+import { executeMoveTableImmediate } from './operatorPendingExecution';
+import { evaluateOperatorTrustDecision } from './operatorTrustPolicy';
 import { operatorFail, operatorNeedsConfirmation, operatorSuccess } from './operatorToolResult';
 import type { OperatorToolName, OperatorToolResult } from './operatorTypes';
 
@@ -58,12 +61,15 @@ export async function executeOperatorTool(
   name: string,
   rawArgs: unknown,
   req: NextRequest,
-  loungeId: string | undefined
+  loungeId: string | undefined,
+  actor?: OperatorActorContext
 ): Promise<OperatorToolResult> {
   const args =
     rawArgs && typeof rawArgs === 'object' && !Array.isArray(rawArgs)
       ? (rawArgs as Record<string, unknown>)
       : {};
+
+  const actorCtx: OperatorActorContext = actor ?? { trustTier: 1 };
 
   if (!KNOWN.has(name)) {
     return operatorFail(
@@ -263,6 +269,34 @@ export async function executeOperatorTool(
         }
 
         const destNorm = normalizeTableId(destination);
+
+        const trustDecision = evaluateOperatorTrustDecision({
+          trustTier: actorCtx.trustTier,
+          riskLevel: 'medium',
+          confidence: resolved.confidence,
+          isAmbiguous: false,
+          hasExplicitPolicyBlock: false,
+        });
+
+        if (trustDecision.autoRun && !trustDecision.requireConfirmation) {
+          const immediate = await executeMoveTableImmediate(resolved.sessionId, destNorm, req);
+          if (!immediate.ok) {
+            return immediate;
+          }
+          return {
+            ...immediate,
+            meta: {
+              ...(immediate.meta ?? {}),
+              riskLevel: 'medium',
+              trustTier: actorCtx.trustTier,
+              confidence: resolved.confidence,
+              autoConfirmed: true,
+              trustReason: trustDecision.reason,
+            },
+            auditLine: immediate.auditLine ?? `[MOVE] auto ${resolved.sessionId} → ${destNorm}`,
+          };
+        }
+
         const pending = createPendingOperatorAction(
           'move_table',
           {
@@ -284,6 +318,11 @@ export async function executeOperatorTool(
             sessionId: resolved.sessionId,
             fromTable: resolved.table,
             destinationTable: destNorm,
+            riskLevel: 'medium',
+            trustTier: actorCtx.trustTier,
+            confidence: resolved.confidence,
+            autoConfirmed: false,
+            trustReason: trustDecision.reason,
           },
           `[MOVE?] session=${resolved.sessionId} → ${destNorm}`
         );

@@ -6,6 +6,48 @@ import { normalizeTableId } from './operatorNormalize';
 import { operatorFail, operatorSuccess } from './operatorToolResult';
 import type { OperatorToolResult } from './operatorTypes';
 
+/**
+ * Run MOVE_TABLE immediately (trust auto-confirm). Same HTTP semantics as pending move execution.
+ */
+export async function executeMoveTableImmediate(
+  sessionId: string,
+  destinationTable: string,
+  req: NextRequest
+): Promise<OperatorToolResult> {
+  const base = getInternalBaseUrl(req);
+  const headers = forwardCookieHeaders(req);
+  const dest = normalizeTableId(destinationTable);
+  if (!sessionId || !dest) {
+    return operatorFail('move_table', 'validation_error', 'Invalid session or destination for move.');
+  }
+
+  const res = await fetch(`${base}/api/sessions/${encodeURIComponent(sessionId)}/command`, {
+    method: 'POST',
+    headers: {
+      ...headers,
+      'Idempotency-Key': `${sessionId}:MOVE_TABLE:${Date.now()}`,
+    },
+    body: JSON.stringify({ cmd: 'MOVE_TABLE', data: { table: dest }, actor: 'agent' }),
+  });
+  const json = (await res.json().catch(() => ({}))) as { error?: string; session?: unknown };
+  if (!res.ok) {
+    return operatorFail(
+      'move_table',
+      'error',
+      json.error || `Move failed: HTTP ${res.status}`,
+      { sessionId, destinationTable: dest, httpStatus: res.status }
+    );
+  }
+
+  return operatorSuccess(
+    'move_table',
+    `Session moved to table ${dest}.`,
+    { session: json.session, raw: json },
+    { sessionId, destinationTable: dest },
+    `[MOVE_TABLE] session=${sessionId} → ${dest}`
+  );
+}
+
 export async function executePendingOperatorAction(
   actionKey: string,
   req: NextRequest

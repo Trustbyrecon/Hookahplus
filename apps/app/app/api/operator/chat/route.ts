@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { HPLUS_OPERATOR_SYSTEM_PROMPT } from '../../../../lib/hplusOperatorSystemPrompt';
 import { HPLUS_OPERATOR_TOOLS } from '../../../../lib/hplusOperatorTools';
 import { openaiChatCompletions, type ChatMessage } from '../../../../lib/openaiChat';
+import { resolveOperatorActorContext } from '../../../../lib/operatorActorContext';
 import { executeOperatorTool } from '../../../../lib/operatorToolExecutor';
 import { executePendingOperatorAction } from '../../../../lib/operatorPendingExecution';
 import { logOperatorTrace } from '../../../../lib/operatorTraceLogger';
@@ -119,6 +120,7 @@ export async function POST(req: NextRequest) {
   const userMessage = typeof lastUser?.content === 'string' ? lastUser.content.trim() : undefined;
 
   const model = process.env.OPENAI_MODEL || DEFAULT_MODEL;
+  const operatorActor = await resolveOperatorActorContext(req);
   let messages = toChatMessages(incoming, loungeId);
   const toolTrace: OperatorToolTraceEntry[] = [];
   let pendingConfirmation: {
@@ -185,7 +187,7 @@ export async function POST(req: NextRequest) {
         parsed = {};
       }
 
-      const result = await executeOperatorTool(fn.name, parsed, req, loungeId);
+      const result = await executeOperatorTool(fn.name, parsed, req, loungeId, operatorActor);
       toolTrace.push({
         tool: result.tool,
         ok: result.ok,
