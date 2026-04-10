@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import type { PendingOperatorAction } from './operatorTypes';
+import type { PendingOperatorAction, PendingOperatorStep } from './operatorTypes';
 
 const pendingActions = new Map<string, PendingOperatorAction>();
 
@@ -17,7 +17,7 @@ function pruneExpired() {
 }
 
 export function createPendingOperatorAction(
-  tool: PendingOperatorAction['tool'],
+  tool: 'end_session' | 'move_table',
   args: Record<string, unknown>,
   loungeId?: string
 ): PendingOperatorAction {
@@ -27,6 +27,23 @@ export function createPendingOperatorAction(
     actionKey,
     tool,
     args,
+    loungeId,
+    createdAt: new Date().toISOString(),
+  };
+  pendingActions.set(actionKey, action);
+  return action;
+}
+
+export function createPendingMultiStepOperatorAction(
+  steps: PendingOperatorStep[],
+  loungeId?: string
+): PendingOperatorAction {
+  pruneExpired();
+  const actionKey = crypto.randomUUID();
+  const action: PendingOperatorAction = {
+    actionKey,
+    tool: 'multi_step',
+    steps,
     loungeId,
     createdAt: new Date().toISOString(),
   };

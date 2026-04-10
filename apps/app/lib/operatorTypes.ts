@@ -52,13 +52,26 @@ export interface ResolvedSessionContext {
   ambiguity?: string[];
 }
 
-export interface PendingOperatorAction {
-  actionKey: string;
-  tool: 'end_session' | 'move_table';
+export interface PendingOperatorStep {
+  tool: 'move_table' | 'end_session';
   args: Record<string, unknown>;
-  loungeId?: string;
-  createdAt: string;
 }
+
+export type PendingOperatorAction =
+  | {
+      actionKey: string;
+      tool: 'end_session' | 'move_table';
+      args: Record<string, unknown>;
+      loungeId?: string;
+      createdAt: string;
+    }
+  | {
+      actionKey: string;
+      tool: 'multi_step';
+      steps: PendingOperatorStep[];
+      loungeId?: string;
+      createdAt: string;
+    };
 
 export interface OperatorTraceEntry {
   loungeId?: string;
