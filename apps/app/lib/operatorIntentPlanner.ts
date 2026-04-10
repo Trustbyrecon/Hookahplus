@@ -20,7 +20,7 @@ export function planOperatorIntent(message: string): PlannedOperatorIntent | nul
   const customerNameMatch = message.match(
     /\bfor\s+([A-Za-z][^\s,.]+)|\b([A-Za-z][^\s,.]+)\s+is\s+back\b/i
   );
-  const tableMatches = [...message.matchAll(/\btable\s+(\S+)/gi)].map((m) =>
+  const tableMatches = Array.from(message.matchAll(/\btable\s+(\S+)/gi), (m) =>
     m[1].replace(/[.,!?]+$/, '')
   );
   const toTableMatch = message.match(/\bto\s+table\s+(\S+)/i);
