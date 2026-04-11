@@ -7,6 +7,7 @@ import { generateStaffPlaybook } from '../../../../lib/launchpad/staff-playbook-
 import { storeQRCodes } from '../../../../lib/launchpad/qr-storage';
 import { LaunchPadProgress } from '../../../../types/launchpad';
 import { createClient } from '@supabase/supabase-js';
+import { seedDefaultTables } from '../../../../lib/lounges/seedDefaultTables';
 
 export const runtime = 'nodejs';
 
@@ -32,55 +33,6 @@ function supabaseAdminOrThrow() {
   return createClient(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   });
-}
-
-async function ensureDefaultTables(loungeId: string, tablesCount: number) {
-  try {
-    let defaultZone = await prisma.zone.findFirst({
-      where: {
-        loungeId,
-        name: 'Main Floor'
-      }
-    });
-
-    if (!defaultZone) {
-      defaultZone = await prisma.zone.create({
-        data: {
-          loungeId,
-          name: 'Main Floor',
-          zoneType: 'MAIN',
-          displayOrder: 0
-        }
-      });
-    }
-
-    const existingSeats = await prisma.seat.findMany({
-      where: { loungeId }
-    });
-
-    if (existingSeats.length === 0 && tablesCount > 0) {
-      const seatsToCreate = [];
-      for (let i = 1; i <= tablesCount; i++) {
-        const tableNum = i.toString().padStart(3, '0');
-        const coordinates = JSON.stringify({ x: 0, y: 0, seatingType: 'Booth' });
-        seatsToCreate.push({
-          loungeId,
-          zoneId: defaultZone.id,
-          tableId: `table-${tableNum}`,
-          name: `T-${tableNum}`,
-          capacity: 4,
-          coordinates,
-          qrEnabled: true,
-          status: 'ACTIVE',
-          priceMultiplier: 1.0
-        });
-      }
-
-      await prisma.seat.createMany({ data: seatsToCreate });
-    }
-  } catch (error) {
-    console.error('[LaunchPad Create Lounge] Error creating default tables:', error);
-  }
 }
 
 /**
@@ -297,7 +249,11 @@ export async function POST(req: NextRequest) {
         },
       ];
       await storeQRCodes(lounge.id, qrCodesToStore);
-      await ensureDefaultTables(lounge.id, config.tables_count || 12);
+      try {
+        await seedDefaultTables(lounge.id, config.tables_count || 12);
+      } catch (error) {
+        console.error('[LaunchPad Create Lounge] Error creating default tables:', error);
+      }
       const staffPlaybook = generateStaffPlaybook(config, dashboardUrl);
 
       provisioned.push({

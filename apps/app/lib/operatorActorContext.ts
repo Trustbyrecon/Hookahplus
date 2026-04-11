@@ -24,7 +24,7 @@ export function deriveOperatorTrustTier(role?: string | null): OperatorTrustTier
   }
 }
 
-/** Browser / cookie-authenticated operator (e.g. POST /api/operator/chat). API-key-only actions omit this and default to tier 1. */
+/** Browser / cookie-authenticated operator (dashboard). API-key-only actions omit this and default to tier 1. */
 export async function resolveOperatorActorContext(req: NextRequest): Promise<OperatorActorContext> {
   const user = await getCurrentUser(req);
   const role = await getCurrentRole(req);
